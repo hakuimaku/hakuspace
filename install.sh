@@ -27,7 +27,7 @@ else
 fi
 
 DEPENDENCIES=("yay" "git" "curl")
-PKG_FILE="$HOME/hakudotfile/pkg.txt"
+PKG_FILE="$HOME/hakuspace/pkg.txt"
 
 echo ""
 echo "--- 1. Check package dependencies ---"
@@ -109,7 +109,7 @@ done
 
 
 # Define source and destination paths for config files
-SOURCE_CONFIG="$HOME/hakudotfile/config"
+SOURCE_CONFIG="$HOME/hakuspace/config"
 DEST_CONFIG="$HOME/.config"
 
 echo ""
@@ -142,7 +142,7 @@ fi
 
 
 # Define source and destination paths for local bin files
-SOURCE_BIN="$HOME/hakudotfile/bin"
+SOURCE_BIN="$HOME/hakuspace/bin"
 DEST_BIN="$HOME/.local/bin"
 
 echo ""
@@ -202,9 +202,9 @@ fi
 
 # Define source and destination paths for other files
 DEST_OTHER="$HOME"
-SOURCE_ROOT="$HOME/hakudotfile"
+SOURCE_ROOT="$HOME/hakuspace"
 DEST_WALLPAPER="$HOME/Pictures/Wallpapers"
-SOURCE_WALLPAPER="$HOME/hakudotfile/Wallpapers"
+SOURCE_WALLPAPER="$HOME/hakuspace/Wallpapers"
 
 
 echo ""
@@ -240,7 +240,7 @@ fi
 
 
 # Define source and destination paths for icons
-SOURCE_ICON="$HOME/hakudotfile/icons"
+SOURCE_ICON="$HOME/hakuspace/icons"
 DEST_ICON="$HOME/.icons"
 
 echo ""
@@ -262,7 +262,7 @@ fi
 
 
 # Define source and destination paths for themes
-SOURCE_THEME="$HOME/hakudotfile/themes"
+SOURCE_THEME="$HOME/hakuspace/themes"
 DEST_THEME="$HOME/.themes"
 
 echo ""
