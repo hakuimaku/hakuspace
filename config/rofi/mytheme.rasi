@@ -1,0 +1,68 @@
+* {
+    accent: #000000;
+    bg: rgba(0, 0, 0, 0.5);     
+    fg: #dfdfdf; 
+
+    background-color: transparent;
+    text-color: @fg;
+    margin: 0;
+    padding: 0;
+    spacing: 0;
+}
+
+window {
+    width: 45%;
+    height: 80%;
+    background-color: @bg;
+    border: 2px;
+    border-color: #000000;
+    border-radius: 12px;
+}
+
+inputbar {
+    children: [prompt, entry];
+    background-color: rgba(0, 0, 0, 0.2); 
+    border-radius: 8px;
+    margin: 10px;
+}
+
+prompt {
+    padding: 10px;
+    background-color: @accent;
+    text-color: #ffffff;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+entry {
+    padding: 10px;
+    text-color: #ffffff;
+}
+
+element {
+    padding: 10px;
+    margin: 2px 10px;
+    border-radius: 6px;
+}
+
+element selected {
+    background-color: rgba(121, 121, 121, 0.3);
+    text-color: @accent;
+    border: 1px;
+    border-color: @accent;
+}
+
+element-icon {
+    size: 24px;
+    margin: 0 10px 0 0;
+}
+
+listview {
+    scrollbar: true;
+}
+scrollbar {
+    handle-color: @accent;
+    handle-width: 6px;
+    handle-rounded-corners: true;
+    padding: 6px;
+}

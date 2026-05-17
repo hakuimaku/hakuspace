@@ -1,0 +1,90 @@
+
+#!/bin/bash
+
+
+FONT_CLOCK=9
+FONT_GENERAL=12
+FONT_TERMINAL=15
+
+
+pkill -f cavaunderbar
+
+MY_INFO=$(hyprctl activewindow -j)
+
+MY_ADDR=$(echo "$MY_INFO" | jq -r '.pid')
+
+TARGETS=$(hyprctl clients -j | jq -r --arg addr "$MY_ADDR" '.[] | select(.workspace.id == 1) | .pid')
+# remove $MY_ADDR from TARGETS
+TARGETS=$(echo "$TARGETS" | grep -v "$MY_ADDR")
+
+echo "My address: $MY_ADDR"
+for win in $TARGETS; do
+    echo "Killing window with address: $win"
+    hyprctl eval 'hl.dispatch(hl.dsp.exec_cmd("kill -9 '$win'"))'
+done
+sleep 0.05
+
+if [[ "$1" == "clear" ]]; then
+    hyprctl eval 'hl.dispatch(hl.dsp.window.kill({ address = "'$MY_ADDR'" }))'
+    exit 0
+fi
+
+hyprctl eval 'hl.dispatch(hl.dsp.focus({ workspace = "1" }))'
+sleep 0.05
+
+hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakunetclock\" --class \"seyclock\" -o font_size=$FONT_CLOCK sh -c \"tty-clock -c -C 7 -r -b\"')"
+sleep 0.1
+hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakunetcava\" --class \"seycava\" -o font_size=$FONT_GENERAL sh -c \"cava -p ~/.config/cava/config_hakunet\"')"
+sleep 0.1
+hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakunetcmd\" --class \"seycmd\" -o font_size=$FONT_TERMINAL --hold fastfetch')"
+sleep 0.1
+hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakunetlavat\" --class \"seylavat\" -o font_size=$FONT_GENERAL sh -c \"lavat -r1\"')"
+
+
+hyprctl keyword input:follow_mouse 1
+sleep 1
+#hyprctl eval 'hl.dispatch(hl.dsp.window.kill({ address = "'$MY_ADDR'" }))'
+
+
+
+
+
+hyprctl eval 'hl.dispatch(hl.dsp.focus({ workspace = "1" }))'
+
+pkill -f cavaunderbar
+
+MY_INFO=$(hyprctl activewindow -j)
+
+MY_ADDR=$(echo "$MY_INFO" | jq -r '.pid')
+
+TARGETS=$(hyprctl clients -j | jq -r --arg addr "$MY_ADDR" '.[] | select(.workspace.id == 1) | .pid')
+# remove $MY_ADDR from TARGETS
+TARGETS=$(echo "$TARGETS" | grep -v "$MY_ADDR")
+
+echo "My address: $MY_ADDR"
+for win in $TARGETS; do
+    echo "Killing window with address: $win"
+    hyprctl eval 'hl.dispatch(hl.dsp.exec_cmd("kill -9 '$win'"))'
+done
+sleep 0.05
+
+if [[ "$1" == "clear" ]]; then
+    hyprctl eval 'hl.dispatch(hl.dsp.window.kill({ address = "'$MY_ADDR'" }))'
+    exit 0
+fi
+
+sleep 0.05
+
+hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakunetclock\" --class \"seyclock\" -o font_size=$FONT_CLOCK sh -c \"tty-clock -c -C 7 -r -b\"')"
+sleep 0.1
+hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakunetcava\" --class \"seycava\" -o font_size=$FONT_GENERAL sh -c \"cava -p ~/.config/cava/config_hakunet\"')"
+sleep 0.1
+hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakunetcmd\" --class \"seycmd\" -o font_size=$FONT_TERMINAL --hold fastfetch')"
+sleep 0.1
+hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakunetlavat\" --class \"seylavat\" -o font_size=$FONT_GENERAL sh -c \"lavat -r1\"')"
+
+
+
+sleep 1
+echo "My address: $MY_ADDR"
+hyprctl eval 'hl.dispatch(hl.dsp.exec_cmd("kill -9 '$MY_ADDR'"))'
