@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Clear clipboard by adding argument "wipe"
+if [ "$1" = "--wipe" ]; then
+    cliphist wipe
+    notify-send "Clipboard" "Clear All History" -t 2000
+    exit 0
+fi
+
 if ! pgrep -x "wl-paste" > /dev/null; then
     wl-paste --type text --watch cliphist store &
     wl-paste --type image --watch cliphist store &
