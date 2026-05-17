@@ -1,6 +1,6 @@
 # 🎨 Haku Dotfiles
-
-📖 See Wiki:
+- **For now, HakuSpace is using hyprland 0.55 !!**
+- 📖 See Wiki:
 
 # OVERVEW
 | Screenshot Capture | Description |
@@ -14,10 +14,8 @@
 ## WELCOME TO HAKU SPACE! A minimal and clean dotfile configuration for Arch Linux with Hyprland
 
 Include: Waybar, Rofi, Kitty, Zsh, Zen Browser, Networkmanager, Nemo, power-profile-daemon, ...
-Use ly for login
-
-- **For now, HakuSpace is using hyprland 0.55 !!**
-- Recommend Monitor eDP-1, 1080p (because in hyprland.lua, Haku Space I use). You can change it manually at monitor in ~/.config/hypr/hyprland.lua.
+Use ly for login.
+Recommend Monitor eDP-1, 1080p (because in hyprland.lua, Haku Space I use). You can change it manually at monitor in ~/.config/hypr/hyprland.lua.
 
 ## 📋 Prerequisites
 
