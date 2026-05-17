@@ -10,29 +10,6 @@ SOCKET_PATH="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
 
 
 run_cava() {
-    local RES=$(hyprctl monitors -j | jq -r '.[] | select(.name=="eDP-1") | .width')
-
-    if [ "$RES" -le 1280 ]; then
-        hyprctl keyword windowrule "size 190 40, match:class $APP_CLASS"
-        hyprctl keyword windowrule "move 2 45, match:class $APP_CLASS"
-    else
-        hyprctl keyword windowrule "size 400 60, match:class $APP_CLASS"
-        hyprctl keyword windowrule "move 16 45, match:class $APP_CLASS"
-    fi
-
-
-    hyprctl keyword windowrule "float on, match:class $APP_CLASS"
-    hyprctl keyword windowrule "pin on, match:class $APP_CLASS"
-    hyprctl keyword windowrule "border_size 0, match:class $APP_CLASS"
-    hyprctl keyword windowrule "rounding 10, match:class $APP_CLASS"
-    hyprctl keyword windowrule "rounding_power 6, match:class $APP_CLASS"
-    hyprctl keyword windowrule "no_anim on, match:class $APP_CLASS"
-    hyprctl keyword windowrule "no_blur on, match:class $APP_CLASS"
-    hyprctl keyword windowrule "no_focus on, match:class $APP_CLASS"
-    hyprctl keyword windowrule "no_shadow on, match:class $APP_CLASS"
-    hyprctl keyword windowrule "opacity 0.5, match:class $APP_CLASS"
-
-
     kitty --class="$APP_CLASS" \
           --config NONE \
           -o background_opacity=0 \
@@ -58,8 +35,7 @@ check_fullscreen() {
     local active_win=$(hyprctl activewindow -j)
     local fs_mode=$(echo "$active_win" | jq -r '.fullscreen')
     local is_manual_on=$(cat "$STATE_FILE")
-
-    # Chỉ xử lý nếu bro đã bật nó lên thủ công 
+    
     if [[ "$is_manual_on" == "1" ]]; then
         if [[ "$fs_mode" == "2" ]]; then
             if pgrep -f "$APP_CLASS" > /dev/null; then
