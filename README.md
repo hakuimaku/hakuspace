@@ -1,6 +1,6 @@
 # <h1 style="color:#ff69b4;">🎨 Haku Dotfiles</h1>
 
-[![Hyprland](https://img.shields.io/badge/Hyprland-0.55-orange)](https://github.com/hakuimaku/hakuspace) [![Arch Linux](https://img.shields.io/badge/Arch-Linux-1793D1?logo=arch-linux&logoColor=white)](https://archlinux.org) [![Dotfiles](https://img.shields.io/badge/Dotfiles-HakuSpace-ff69b4)](https://github.com/hakuimaku/hakuspace) [![License: MIT](https://img.shields.io/badge/License-MIT-green)](https://opensource.org/licenses/MIT)
+[![Hyprland](https://img.shields.io/badge/Hyprland-0.55-orange)](https://github.com/hyprwm/hyprland) [![Arch Linux](https://img.shields.io/badge/Arch-Linux-1793D1?logo=arch-linux&logoColor=white)](https://archlinux.org) [![Dotfiles](https://img.shields.io/badge/Dotfiles-HakuSpace-ff69b4)](https://github.com/hakuimaku/hakuspace) [![License: MIT](https://img.shields.io/badge/License-MIT-green)](https://opensource.org/licenses/MIT)
 
 - **For now, HakuSpace is using hyprland 0.55 !!**
 - 📖 See Wiki:
