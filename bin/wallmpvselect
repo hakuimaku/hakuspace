@@ -1,0 +1,51 @@
+#!/bin/bash
+
+WALL_DIR="$HOME/Videos/Wallpapers"
+PREVIEW_DIR="$WALL_DIR/Preview"
+
+list_walls() {
+    cd "$WALL_DIR" || exit
+    for file in *.mp4; do
+        [[ -e "$file" ]] || continue
+        
+        filename="${file%.*}"
+        
+        if [[ -f "$PREVIEW_DIR/$filename.gif" ]]; then
+            thumb="$PREVIEW_DIR/$filename.gif"
+        elif [[ -f "$PREVIEW_DIR/$filename.jpg" ]]; then
+            thumb="$PREVIEW_DIR/$filename.jpg"
+        elif [[ -f "$PREVIEW_DIR/$filename.png" ]]; then
+            thumb="$PREVIEW_DIR/$filename.png"
+        else
+            thumb="video-x-generic"
+        fi
+
+        echo -en "$file\0icon\x1f$thumb\n"
+    done
+}
+
+CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" -show-icons \
+-theme-str "
+    window { 
+        width: 65%; 
+    }
+    listview { 
+        columns: 4; 
+        lines: 2; 
+        spacing: 5px; 
+        padding: 5px;
+    }
+    element { 
+        orientation: vertical; 
+        padding: 5px;
+        border-radius: 15px;
+    }
+    element-icon { 
+        size: 250px; 
+        horizontal-align: 0.5;
+    }")
+
+if [ -n "$CHOICE" ]; then
+    pkill mpvpaper
+    mpvpaper -v -s -o "no-audio loop" eDP-1 "$WALL_DIR/$CHOICE"
+fi

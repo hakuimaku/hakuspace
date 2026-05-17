@@ -1,0 +1,6 @@
+set titlecolor bold,red,black
+
+set statuscolor bold,white,black
+
+set keycolor red
+set functioncolor white

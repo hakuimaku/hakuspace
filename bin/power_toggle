@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# Disable animations, blur, drop shadow, and rounding for better performance
+
+LOCK_FILE="/tmp/hypr_power_save_mode"
+
+notify() {
+    notify-send -u low -t 2000 "Power Saver" "$1"
+}
+
+if [ -f "$LOCK_FILE" ]; then
+    hyprctl keyword animations:enabled 1
+    hyprctl keyword decoration:blur:enabled 1
+    hyprctl keyword decoration:drop_shadow 1
+    hyprctl keyword decoration:rounding 10
+
+    brightnessctl set 80%
+    
+    rfkill unblock bluetooth
+
+    if systemctl is-active --quiet docker; then
+        echo "Docker already running"
+    else
+        pkexec systemctl start docker
+    fi
+
+    powerprofilesctl set balanced
+
+    rm "$LOCK_FILE"
+    notify "MODE: PERFORMANCE (Normal)"
+
+else
+    hyprctl keyword animations:enabled 0
+    hyprctl keyword decoration:blur:enabled 0
+    hyprctl keyword decoration:drop_shadow 0
+    hyprctl keyword decoration:rounding 0
+
+    brightnessctl set 60%
+    brightnessctl --device='*::kbd_backlight' set 0
+
+    rfkill block bluetooth
+    warp-cli disconnect
+
+    pkill -f cava
+    pkill -f tty-clock
+    pkill -f cmatrix
+    pkill -f pipes.sh
+    pkill -f lavat
+
+    pkexec systemctl stop docker
+
+    powerprofilesctl set power-saver
+
+    touch "$LOCK_FILE"
+    notify "MODE: POWER SAVER (Max Battery)"
+fi

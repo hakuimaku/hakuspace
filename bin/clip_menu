@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if ! pgrep -x "wl-paste" > /dev/null; then
+    wl-paste --type text --watch cliphist store &
+    wl-paste --type image --watch cliphist store &
+fi
+
+result=$(cliphist list | rofi -dmenu \
+    -p "󰅌 Clipboard" \
+    -theme-str "window { width: 40%; background-color: rgba(26, 26, 26, 0.9); } \
+                listview { lines: 10; } \
+                element-text { font: 'JetBrainsMono Nerd Font Bold 14'; }")
+
+if [ ! -z "$result" ]; then
+    echo "$result" | cliphist decode | wl-copy
+    notify-send "Clipboard" "Đã nạp lại vào khay nhớ tạm" -t 2000
+fi

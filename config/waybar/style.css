@@ -1,0 +1,150 @@
+/* ============================================================================== */
+/* GLOBAL STYLES                                  */
+/* ============================================================================== */
+* {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 12px;
+}
+
+window#waybar {
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #ffffff;
+    transition: background-color 0.3s ease;
+}
+
+.modules-left, .modules-center, .modules-right {
+    background-color: transparent;
+    border-radius: 10px;
+    padding: 2px;
+    margin: 4px;
+}
+
+/* ============================================================================== */
+/* COMMON MODULE STYLES                               */
+/* ============================================================================== */
+#memory,
+#custom-master,
+#hyprland-workspaces
+#window,
+#custom-recorder,
+#custom-notification,
+#pulseaudio,
+#backlight,
+#battery,
+#tray,
+#clock,
+#cpu,
+#power-profiles-daemon {
+    padding: 0 10px;
+    transition: all 0.5s cubic-bezier(0, 0.5, 0.35, 1);
+}
+
+/* ============================================================================== */
+/* WORKSPACES                                    */
+/* ============================================================================== */
+#workspaces button {
+    color: #ffffff;
+    padding: 0 12px;
+    transition: all 0.7s cubic-bezier(0, 0.5, 0.35, 1);
+}
+
+#workspaces button.active {
+    color: #000000;
+    border: 1px solid #ffffff;
+    background-color: #ffffff;
+    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+}
+
+#workspaces button.empty {
+    color: rgba(0, 0, 0, 1);
+}
+
+/*
+#workspaces button:nth-child(1):not(.empty):not(.active) {
+    color: #ffffff;
+}
+
+#workspaces button:nth-child(2):not(.empty):not(.active) {
+    color: #ffffff;
+}
+
+#workspaces button:nth-child(3):not(.empty):not(.active) {
+    color: #ffffff;
+}
+
+#workspaces button:nth-child(4):not(.empty):not(.active) {
+    color: #ffffff;
+}
+
+#workspaces button:nth-child(5):not(.empty):not(.active) {
+    color: #ffffff;
+}
+*/
+/* ============================================================================== */
+/* SPECIFIC MODULES                                 */
+/* ============================================================================== */
+#window { color: #ffffff; }
+
+#clock { 
+    color: #ffffff; 
+}
+
+#custom-recorder {
+    color: #ffffff;
+    border: 1px solid #ffffff;
+    animation: blink 1s infinite; 
+}
+
+#custom-notification { color: #ffffff; }
+
+#backlight { color: #ffffff; }
+
+#pulseaudio { color: #ffffff; }
+
+#battery { color: #ffffff; }
+
+#memory { color: #ffffff; }
+
+#cpu { color: #ffffff; }
+/* ============================================================================== */
+/* HOVER EFFECTS                                   */
+/* ============================================================================== */
+#power-profiles-daemon:hover,
+#workspaces button:hover,
+#pulseaudio:hover,
+#backlight:hover,
+#battery:hover,
+#custom-notification:hover,
+#clock:hover,
+#memory:hover,
+#cpu:hover {
+    color: #000000;
+    background-color: #ffffff;
+    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+}
+
+/* ============================================================================== */
+/* TOOLTIPS                                     */
+/* ============================================================================== */
+tooltip {
+    background: rgba(0, 0, 0, 1);
+    border: 1px solid #ffffff;
+    border-radius: 12px;
+    padding: 10px;
+}
+
+tooltip label {
+    color: #ffffff;
+    font-size: 18px;
+}
+
+/* ============================================================================== */
+/* ANIMATIONS                                    */
+/* ============================================================================== */
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}

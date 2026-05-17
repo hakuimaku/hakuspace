@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# List options
+options="󱠩 Hibernate
+ Reboot
+ Power Off
+󰒲 Sleep
+󱅞 Lock
+󰩈 Exit
+󰌑 Return"
+
+# Design rofi
+chosen=$(echo -e "$options" | rofi -dmenu -p "HakuOS" -i -theme-str 'window
+{
+    width: 600px;
+}')
+
+# List action
+# Note: You should config hibernate manually
+case $chosen in 
+    *"Hibernate"*) notify-send 'Warning' 'Hibernate not configured' ;;
+    *"Reboot"*) systemctl reboot ;;
+    *"Power Off"*) systemctl poweroff ;;
+    *"Sleep"*) systemctl suspend ;;
+    *"Lock"*) hyprlock ;;
+    *"Exit"*) hyprctl dispatch exit ;;
+    *"Return"*) ~/.local/bin/quick_settings.sh ;;
+esac
