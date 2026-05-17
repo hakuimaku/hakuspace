@@ -286,24 +286,11 @@ fi
 echo ""
 echo "--- 10. Enabling system services ---"
 
-SERVICES=("NetworkManager" "bluetooth")
-
-for service in "${SERVICES[@]}"; do
-    if systemctl list-unit-files | grep -q "$service.service"; then
-        echo ":: Enabling $service..."
-        sudo systemctl enable --now "$service"
-    else
-        echo "!!! Service $service not found."
-    fi
-done
-
-read -p "===> Do you want to enable ly service now? (y/n): " confirm
-if [[ $confirm == [yY] ]]; then
-    systemctl enable ly@tty1.service
-    systemctl disable getty@tty1.service
-else
-    echo "Skipping ly service enable."
-fi
+sudo systemctl enable --now NetworkManager
+sudo systemctl enable --now bluetooth
+sudo systemctl --user enable --now hypridle.service
+sudo systemctl enable ly@tty1.service
+sudo systemctl disable getty@tty1.service
 
 echo "--- Configuring Nemo as default file manager ---"
 xdg-mime default nemo.desktop inode/directory application/x-gnome-saved-search
