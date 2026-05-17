@@ -3,7 +3,7 @@
 [![Hyprland](https://img.shields.io/badge/Hyprland-0.55-orange)](https://github.com/hyprwm/hyprland) [![Arch Linux](https://img.shields.io/badge/Arch-Linux-1793D1?logo=arch-linux&logoColor=white)](https://archlinux.org) [![Dotfiles](https://img.shields.io/badge/Dotfiles-HakuSpace-ff69b4)](https://github.com/hakuimaku/hakuspace) [![License: MIT](https://img.shields.io/badge/License-MIT-green)](https://opensource.org/licenses/MIT)
 
 - **For now, HakuSpace is using hyprland 0.55 !!**
-- 📖 See Wiki:
+- 📖 See Wiki: https://github.com/hakuimaku/hakuspace/wiki
 
 <h2 style="color:#1abc9c;">OVERVIEW</h2>
 
@@ -17,9 +17,10 @@
 ---
 <h2 style="color:#1abc9c;">WELCOME TO HAKU SPACE! A minimal and clean dotfile configuration for Arch Linux with Hyprland</h2>
 
-Include: Waybar, Rofi, Kitty, Zsh, Zen Browser, Networkmanager, Nemo, power-profile-daemon, ...
+- Include: Waybar, Rofi, Kitty, Zsh, Zen Browser, Networkmanager, Nemo, power-profile-daemon, ...
 Use ly for login.
-Recommend Monitor eDP-1, 1080p (because in hyprland.lua, Haku Space I use). You can change it manually at monitor in ~/.config/hypr/hyprland.lua.
+- For more infomation: [Here](https://github.com/hakuimaku/hakuspace/wiki/Important-Note#1-core-services)
+- Recommend Monitor eDP-1, 1080p (because in hyprland.lua, Haku Space I use). You can change it manually at monitor in ~/.config/hypr/hyprland.lua.
 
 <h2 style="color:#1abc9c;">📋 Prerequisites</h2>
 
