@@ -456,7 +456,7 @@ hl.window_rule({ match = { title = "hakunetcava" }, size = "290 1010", move = "1
 -- Cava Underbar
 hl.window_rule({
     name = "cava-underbar",
-    match = { class = "cava-underbar" },
+    match = { class = "cavaunderbar" },
 
     float = true,
     pin = true,
