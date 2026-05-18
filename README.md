@@ -31,6 +31,16 @@ Use ly for login.
 - ⚠️ **Strongly Recommendation:** Manually copy configurations rather than using the automated installer. Review `pkg.txt` to select which packages to install.
 - If it is your first time installing arch, just use install.sh script to quick setup
 
+---
+
+<h2 style="color:#1abc9c;">✨ Features</h2>
+
+- Minimal and clean design
+- Custom Hyprland configuration with animations and rules
+- Easy-to-use: Rofi menu, Nemo file manager, Waybar status bar, and more
+- Color will change based on your env.lua file or your wallpaper (using pywal)
+- Fonts will update based on your env.lua file or via the Change Theme option in the Haku Menu
+- **Easy to extend and customize to fit your needs**
 
 ---
 
