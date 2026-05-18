@@ -249,7 +249,35 @@ echo "--- 8. Ready to deploy icons to ~/.icons ---"
 read -p "===> Do you want to backup and copy your icons now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
     if [ -d "$SOURCE_ICON" ]; then
-        cp -rf "$SOURCE_ICON"/. "$DEST_ICON/"
+        shopt -s nullglob
+        ICON_ARCHIVES=("$SOURCE_ICON"/*.tar.gz)
+        if [ ${#ICON_ARCHIVES[@]} -eq 0 ]; then
+            echo "!!! No .tar.gz icons found in $SOURCE_ICON"
+        else
+            for archive in "${ICON_ARCHIVES[@]}"; do
+                archive_name=$(basename "$archive")
+                dest_archive="$DEST_ICON/$archive_name"
+                base_name="${archive_name%.tar.gz}"
+
+                cp -f "$archive" "$DEST_ICON/"
+
+                if [ -d "$DEST_ICON/$base_name" ]; then
+                    echo ":: Skip extract $archive_name (already exists: $DEST_ICON/$base_name)"
+                    rm -f "$dest_archive"
+                    continue
+                fi
+
+                tar -xzf "$dest_archive" -C "$DEST_ICON"
+                if [ $? -ne 0 ]; then
+                    echo "XXX [ERROR] Failed to extract $archive_name"
+                else
+                    echo ":: Extracted $archive_name to $DEST_ICON"
+                fi
+
+                rm -f "$dest_archive"
+            done
+        fi
+        shopt -u nullglob
         echo ":: Copy (icons) completed to $DEST_ICON"
     else
         echo "XXX [ERROR] Not found directory $SOURCE_ICON"
@@ -271,7 +299,35 @@ echo "--- 9. Ready to deploy themes to ~/.themes ---"
 read -p "===> Do you want to backup and copy your themes now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
     if [ -d "$SOURCE_THEME" ]; then
-        cp -rf "$SOURCE_THEME"/. "$DEST_THEME/"
+        shopt -s nullglob
+        THEME_ARCHIVES=("$SOURCE_THEME"/*.tar.gz)
+        if [ ${#THEME_ARCHIVES[@]} -eq 0 ]; then
+            echo "!!! No .tar.gz themes found in $SOURCE_THEME"
+        else
+            for archive in "${THEME_ARCHIVES[@]}"; do
+                archive_name=$(basename "$archive")
+                dest_archive="$DEST_THEME/$archive_name"
+                base_name="${archive_name%.tar.gz}"
+
+                cp -f "$archive" "$DEST_THEME/"
+
+                if [ -d "$DEST_THEME/$base_name" ]; then
+                    echo ":: Skip extract $archive_name (already exists: $DEST_THEME/$base_name)"
+                    rm -f "$dest_archive"
+                    continue
+                fi
+
+                tar -xzf "$dest_archive" -C "$DEST_THEME"
+                if [ $? -ne 0 ]; then
+                    echo "XXX [ERROR] Failed to extract $archive_name"
+                else
+                    echo ":: Extracted $archive_name to $DEST_THEME"
+                fi
+
+                rm -f "$dest_archive"
+            done
+        fi
+        shopt -u nullglob
         echo ":: Copy (themes) completed to $DEST_THEME"
     else
         echo "XXX [ERROR] Not found directory $SOURCE_THEME"
