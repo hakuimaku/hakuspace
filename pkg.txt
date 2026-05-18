@@ -72,3 +72,5 @@ grim
 cmatrix
 lavat-git
 downgrade
+python-colorthief
+python-pywal16
