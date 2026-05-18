@@ -10,7 +10,7 @@
 
 window#waybar {
     background-color: rgba(0, 0, 0, 0.8);
-    color: #ffffff;
+    color: ${ACCENT_COLOR};
     transition: background-color 0.3s ease;
 }
 
@@ -45,15 +45,14 @@ window#waybar {
 /* WORKSPACES                                    */
 /* ============================================================================== */
 #workspaces button {
-    color: #ffffff;
+    color: ${ACCENT_COLOR};
     padding: 0 12px;
     transition: all 0.7s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
 #workspaces button.active {
     color: #000000;
-    border: 1px solid #ffffff;
-    background-color: #ffffff;
+    background-color: ${ACCENT_COLOR};
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
@@ -85,29 +84,29 @@ window#waybar {
 /* ============================================================================== */
 /* SPECIFIC MODULES                                 */
 /* ============================================================================== */
-#window { color: #ffffff; }
+#window { color: ${ACCENT_COLOR}; }
 
 #clock { 
-    color: #ffffff; 
+    color: ${ACCENT_COLOR}; 
 }
 
 #custom-recorder {
-    color: #ffffff;
-    border: 1px solid #ffffff;
+    color: ${ACCENT_COLOR};
+    border: 1px solid ${ACCENT_COLOR};
     animation: blink 1s infinite; 
 }
 
-#custom-notification { color: #ffffff; }
+#custom-notification { color: ${ACCENT_COLOR}; }
 
-#backlight { color: #ffffff; }
+#backlight { color: ${ACCENT_COLOR}; }
 
-#pulseaudio { color: #ffffff; }
+#pulseaudio { color: ${ACCENT_COLOR}; }
 
-#battery { color: #ffffff; }
+#battery { color: ${ACCENT_COLOR}; }
 
-#memory { color: #ffffff; }
+#memory { color: ${ACCENT_COLOR}; }
 
-#cpu { color: #ffffff; }
+#cpu { color: ${ACCENT_COLOR}; }
 /* ============================================================================== */
 /* HOVER EFFECTS                                   */
 /* ============================================================================== */
@@ -121,7 +120,7 @@ window#waybar {
 #memory:hover,
 #cpu:hover {
     color: #000000;
-    background-color: #ffffff;
+    background-color: ${ACCENT_COLOR};
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
@@ -130,13 +129,13 @@ window#waybar {
 /* ============================================================================== */
 tooltip {
     background: rgba(0, 0, 0, 1);
-    border: 1px solid #ffffff;
+    border: 1px solid ${ACCENT_COLOR};
     border-radius: 12px;
     padding: 10px;
 }
 
 tooltip label {
-    color: #ffffff;
+    color: ${ACCENT_COLOR};
     font-size: 18px;
 }
 
