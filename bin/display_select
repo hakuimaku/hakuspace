@@ -1,6 +1,7 @@
 #!/bin/bash
 
-MONITOR_MODE=$(hyprctl monitors | grep "Monitor" | awk '{print $2}' | grep -v "eDP-1" | head -n 1)
+MONITOR="eDP-1"
+MONITOR_MODE=$(hyprctl monitors | grep "Monitor" | awk '{print $2}' | grep -v "$MONITOR" | head -n 1)
 
 if [ -z "$MONITOR_MODE" ]; then
     notify-send "Display Error" "No External Display Connect!"
@@ -14,18 +15,18 @@ chosen=$(echo -e "$options" | rofi -dmenu -p "Target: $MONITOR_MODE" -theme-str 
 case $chosen in
     *Internal)
         hyprctl keyword monitor "$MONITOR_MODE, disable"
-        hyprctl keyword monitor "eDP-1, preferred, auto, 1"
+        hyprctl keyword monitor "$MONITOR, preferred, auto, 1"
         ;;
     *Mirror)
-        hyprctl keyword monitor "eDP-1, preferred, auto, 1"
-        hyprctl keyword monitor "$MONITOR_MODE, preferred, auto, 1, mirror, eDP-1"
+        hyprctl keyword monitor "$MONITOR, preferred, auto, 1"
+        hyprctl keyword monitor "$MONITOR_MODE, preferred, auto, 1, mirror, $MONITOR"
         ;;
     *Extend)
-        hyprctl keyword monitor "eDP-1, preferred, 0x0, 1"
+        hyprctl keyword monitor "$MONITOR, preferred, 0x0, 1"
         hyprctl keyword monitor "$MONITOR_MODE, preferred, auto, 1"
         ;;
     *External)
-        hyprctl keyword monitor "eDP-1, disable"
+        hyprctl keyword monitor "$MONITOR, disable"
         hyprctl keyword monitor "$MONITOR_MODE, preferred, auto, 1"
         ;;
 esac
