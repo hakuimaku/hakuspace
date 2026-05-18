@@ -1,5 +1,5 @@
 * {
-    font-family: "JetBrainsMono Nerd Font", monospace;
+    font-family: "Terminus (TTF)", monospace;
     font-size: 16px;
     font-weight: bold;
 }
@@ -18,14 +18,14 @@
 }
 
 .notification-content .summary {
-    color: #ffffff;
+    color: #dededd;
     font-size: 16px;
     font-weight: bold;
-    text-shadow: 0 0 2px #ffffff;
+    text-shadow: 0 0 2px #dededd;
 }
 
 .notification-content .body {
-    color: #FFFFFF;
+    color: #dededd;
     font-size: 14px;
 }
 
@@ -35,7 +35,7 @@
 
 .notification-action {
     color: #11111b;
-    background: #FFFFFF;
+    background: #dededd;
     border-radius: 5px;
 }
 
@@ -48,37 +48,37 @@
 }
 
 .widget-title {
-    color: #ffffff;
+    color: #dededd;
     font-weight: bold;
     font-size: 1.2rem;
 }
 
 .widget-label {
-    color: #FFFFFF;
+    color: #dededd;
 }
 
 .widget-buttons-grid > flowbox > flowboxchild > button {
-    background: #ffffff;
+    background: #dededd;
     border-radius: 10px;
     margin: 3px;
-    border: 1px solid #ffffff;
+    border: 1px solid #dededd;
 }
 
 .widget-buttons-grid > flowbox > flowboxchild > button:hover {
-    background: #ffffff;
-    color: #ffffff;
+    background: #dededd;
+    color: #dededd;
 }
 
 .widget-dnd {
-    color: #ffffff;
+    color: #dededd;
 }
 
 .widget-dnd > switch {
-    background: #ffffff;
+    background: #dededd;
     border-radius: 10px;
-    border: 1px solid #FFFFFF;
+    border: 1px solid #dededd;
 }
 
 .widget-dnd > switch:checked {
-    background: #FFFFFF;
+    background: #dededd;
 }

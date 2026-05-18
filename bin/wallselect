@@ -1,6 +1,7 @@
 #!/bin/bash
 
 WALL_DIR="$HOME/Pictures/Wallpapers"
+ENVCONF="$HOME/.config/hypr/env.lua"
 
 list_walls() {
     cd "$WALL_DIR" || exit
@@ -12,29 +13,49 @@ list_walls() {
 
 CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" \
 -theme-str "
-    window { 
-        width: 65%; 
-    }
-    listview { 
-        columns: 4; 
-        lines: 2; 
-        spacing: 5px; 
-        padding: 5px;
-    }
-    element { 
-        orientation: vertical; 
-        padding: 5px;
-        border-radius: 15px;
-    }
-    element-icon { 
-        size: 250px; 
-        horizontal-align: 0.5;
-    }")
+    window { width: 65%; }
+    listview { columns: 4; lines: 2; spacing: 5px; padding: 5px;}
+    element { orientation: vertical; padding: 5px; border-radius: 15px; }
+    element-icon { size: 250px; horizontal-align: 0.5; }
+")
 
 if [ -n "$CHOICE" ]; then
-    awww img "$WALL_DIR/$CHOICE" \
+    WALL="$WALL_DIR/$CHOICE"
+    
+    # 1. Set awww
+    awww img "$WALL" \
         --transition-type grow \
         --transition-pos "top" \
         --transition-step 255 \
         --transition-fps 60
+    
+    # 2. Get accent color from wallpaper using colorthief, fallback to a default if too dark
+    ACCENT=$(python3 -c '
+        from colorthief import ColorThief
+        import sys
+        def brightness(c): return sum(v*v for v in c)
+        colors = ColorThief(sys.argv[1]).get_palette(color_count=5)
+        brightest = max(colors,key=brightness)
+        print("#%02x%02x%02x" % brightest)
+    ' "$WALL")
+
+    # 3. If the accent color is too dark, use a lighter default
+    r=$(printf "%d" 0x${ACCENT:1:2})
+    g=$(printf "%d" 0x${ACCENT:3:2})
+    b=$(printf "%d" 0x${ACCENT:5:2})
+    if [ $((r + g + b)) -lt 180 ]; then
+        ACCENT="#ffffff"
+    fi
+
+    # 4. Update env.lua with the new accent color
+    if grep -q 'hl.env("ACCENT_COLOR"' "$ENVCONF"; then
+        sed -i "s|hl.env(\"ACCENT_COLOR\".*|hl.env(\"ACCENT_COLOR\", \"$ACCENT\")|" "$ENVCONF"
+    else
+        echo "hl.env(\"ACCENT_COLOR\", \"$ACCENT\")" >> "$ENVCONF"
+    fi
+
+    sleep 1
+    ~/.local/bin/updatetheme
+
+    notify-send "Wallpaper + Accent updated!" "$CHOICE, Accent: $ACCENT"
 fi

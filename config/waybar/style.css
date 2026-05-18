@@ -2,7 +2,7 @@
 /* GLOBAL STYLES                                  */
 /* ============================================================================== */
 * {
-    font-family: "JetBrainsMono Nerd Font";
+    font-family: "Terminus (TTF)";
     font-size: 18px;
     font-weight: bold;
     border-radius: 12px;
@@ -10,7 +10,7 @@
 
 window#waybar {
     background-color: rgba(0, 0, 0, 0.8);
-    color: #ffffff;
+    color: #dededd;
     transition: background-color 0.3s ease;
 }
 
@@ -45,15 +45,14 @@ window#waybar {
 /* WORKSPACES                                    */
 /* ============================================================================== */
 #workspaces button {
-    color: #ffffff;
+    color: #dededd;
     padding: 0 12px;
     transition: all 0.7s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
 #workspaces button.active {
     color: #000000;
-    border: 1px solid #ffffff;
-    background-color: #ffffff;
+    background-color: #dededd;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
@@ -85,29 +84,29 @@ window#waybar {
 /* ============================================================================== */
 /* SPECIFIC MODULES                                 */
 /* ============================================================================== */
-#window { color: #ffffff; }
+#window { color: #dededd; }
 
 #clock { 
-    color: #ffffff; 
+    color: #dededd; 
 }
 
 #custom-recorder {
-    color: #ffffff;
-    border: 1px solid #ffffff;
+    color: #dededd;
+    border: 1px solid #dededd;
     animation: blink 1s infinite; 
 }
 
-#custom-notification { color: #ffffff; }
+#custom-notification { color: #dededd; }
 
-#backlight { color: #ffffff; }
+#backlight { color: #dededd; }
 
-#pulseaudio { color: #ffffff; }
+#pulseaudio { color: #dededd; }
 
-#battery { color: #ffffff; }
+#battery { color: #dededd; }
 
-#memory { color: #ffffff; }
+#memory { color: #dededd; }
 
-#cpu { color: #ffffff; }
+#cpu { color: #dededd; }
 /* ============================================================================== */
 /* HOVER EFFECTS                                   */
 /* ============================================================================== */
@@ -121,7 +120,7 @@ window#waybar {
 #memory:hover,
 #cpu:hover {
     color: #000000;
-    background-color: #ffffff;
+    background-color: #dededd;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
@@ -130,13 +129,13 @@ window#waybar {
 /* ============================================================================== */
 tooltip {
     background: rgba(0, 0, 0, 1);
-    border: 1px solid #ffffff;
+    border: 1px solid #dededd;
     border-radius: 12px;
     padding: 10px;
 }
 
 tooltip label {
-    color: #ffffff;
+    color: #dededd;
     font-size: 18px;
 }
 

@@ -1,5 +1,4 @@
 #!/bin/sh
 set -eu
-envsubst '${FONT_FAMILY} ${FONT_SIZE}' \
-  < "$HOME/.config/rofi/config.rasi.in" \
-  > "$HOME/.config/rofi/config.rasi"
+envsubst < "$HOME/.config/rofi/config.rasi.in" > "$HOME/.config/rofi/config.rasi"
+envsubst < "$HOME/.config/rofi/mytheme.rasi.in" > "$HOME/.config/rofi/mytheme.rasi"
