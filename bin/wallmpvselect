@@ -5,6 +5,30 @@ PREVIEW_DIR="$WALL_DIR/Preview"
 ENVCONF="$HOME/.config/hypr/env.lua"
 MONITOR="eDP-1"
 
+if [[ $1 == "--help" ]]; then
+    echo "Usage: $0 [--choose|--exit]"
+    echo "  --choose   Open wallpaper selection menu"
+    echo "  --exit     Stop lively wallpaper and reset accent color"
+    exit 0
+fi
+
+if [[ $1 == "--exit" ]]; then
+    if ! pgrep -x "mpvpaper" > /dev/null; then
+        notify-send "Lively Wallpaper is not running"
+        exit 1
+    fi
+    pkill mpvpaper
+    # Reset accent to default
+    if grep -q 'hl.env("ACCENT_COLOR"' "$ENVCONF"; then
+        sed -i "s|hl.env(\"ACCENT_COLOR\".*|hl.env(\"ACCENT_COLOR\", \"#ffffff\")|" "$ENVCONF"
+    else
+        echo "hl.env(\"ACCENT_COLOR\", \"#ffffff\")" >> "$ENVCONF"
+    fi
+    ~/.local/bin/updatetheme
+    notify-send "Lively Wallpaper exited"
+    exit 1
+fi
+
 list_walls() {
     cd "$WALL_DIR" || exit
     for file in *.mp4; do
@@ -26,12 +50,11 @@ list_walls() {
     done
 }
 
-CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" \
--theme-str "
+CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" -theme-str "
     window { width: 65%; }
-    listview { columns: 4; lines: 2; spacing: 5px; padding: 5px;}
-    element { orientation: vertical; padding: 5px; border-radius: 15px; }
-    element-icon { size: 250px; horizontal-align: 0.5; }
+        listview { columns: 4; lines: 2; spacing: 5px; padding: 5px;}
+        element { orientation: vertical; padding: 5px; border-radius: 15px; }
+        element-icon { size: 250px; horizontal-align: 0.5; }
 ")
 
 if [ -n "$CHOICE" ]; then
@@ -51,23 +74,24 @@ if [ -n "$CHOICE" ]; then
 
     # 1. Set mpvpaper
     pkill mpvpaper
-    mpvpaper -v -s -o "no-audio loop" "$MONITOR" "$WALL"
+    sleep 0.2
+    mpvpaper -v -s -o "no-audio loop" "$MONITOR" "$WALL" > /dev/null 2>&1 &
 
     # 2. Pick accent from PREVIEW image
     if [[ -n "$PREVIEW" ]]; then
         ACCENT=$(python3 -c '
-            from colorthief import ColorThief
-            import sys
-            def brightness(c): return sum(v*v for v in c)
-            colors = ColorThief(sys.argv[1]).get_palette(color_count=5)
-            brightest = max(colors,key=brightness)
-            print("#%02x%02x%02x" % brightest)
-        ' "$PREVIEW")
+                from colorthief import ColorThief
+                import sys
+                def brightness(c): return sum(v*v for v in c)
+                colors = ColorThief(sys.argv[1]).get_palette(color_count=5)
+                brightest = max(colors,key=brightness)
+                print("#%02x%02x%02x" % brightest)
+            ' "$PREVIEW")
     else
         ACCENT="#ffffff"
     fi
 
-    # 3. If accent too dark -> fallback
+        # 3. If accent too dark -> fallback
     r=$(printf "%d" 0x${ACCENT:1:2})
     g=$(printf "%d" 0x${ACCENT:3:2})
     b=$(printf "%d" 0x${ACCENT:5:2})
@@ -82,8 +106,11 @@ if [ -n "$CHOICE" ]; then
         echo "hl.env(\"ACCENT_COLOR\", \"$ACCENT\")" >> "$ENVCONF"
     fi
 
-    sleep 0.2
+    sleep 0.5
     ~/.local/bin/updatetheme
 
+    sleep 0.5
     notify-send "Wallpaper + Accent updated!" "$CHOICE, Accent: $ACCENT"
 fi
+
+exit 1
