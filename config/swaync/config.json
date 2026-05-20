@@ -1,8 +1,8 @@
 {
   "positionX": "right",
   "positionY": "top",
-  "timeout": 3,
-  "timeout-low": 2,
+  "timeout": 10,
+  "timeout-low": 5,
   "timeout-critical": 0,
   "fit-to-screen": true,
   "control-center-width": 400,
