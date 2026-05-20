@@ -21,6 +21,11 @@ CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" \
 
 if [ -n "$CHOICE" ]; then
     WALL="$WALL_DIR/$CHOICE"
+
+    # Check if mpvpaper is running and kill it to prevent conflicts with awww
+    if pgrep -x "mpvpaper" > /dev/null; then
+        pkill mpvpaper
+    fi
     
     # 1. Set awww
     awww img "$WALL" \
@@ -54,8 +59,9 @@ if [ -n "$CHOICE" ]; then
         echo "hl.env(\"ACCENT_COLOR\", \"$ACCENT\")" >> "$ENVCONF"
     fi
 
-    sleep 1
+    sleep 0.5
     ~/.local/bin/updatetheme
 
+    sleep 0.5
     notify-send "Wallpaper + Accent updated!" "$CHOICE, Accent: $ACCENT"
 fi
