@@ -3,9 +3,9 @@
 /* ============================================================================== */
 * {
     font-family: "${FONT_FAMILY}";
-    font-size: 18px;
+    font-size: 20px;
     font-weight: bold;
-    border-radius: 12px;
+    border-radius: 16px;
 }
 
 window#waybar {
@@ -16,7 +16,7 @@ window#waybar {
 
 .modules-left, .modules-center, .modules-right {
     background-color: transparent;
-    border-radius: 10px;
+    border-radius: 16px;
     padding: 2px;
     margin: 4px;
 }
@@ -54,6 +54,7 @@ window#waybar {
     color: #000000;
     background-color: ${ACCENT_COLOR};
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 70px;
 }
 
 #workspaces button.empty {
@@ -122,6 +123,7 @@ window#waybar {
     color: #000000;
     background-color: ${ACCENT_COLOR};
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 100px;
 }
 
 /* ============================================================================== */
