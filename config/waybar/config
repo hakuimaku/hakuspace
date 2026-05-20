@@ -10,10 +10,10 @@
     "tooltip": true,
 
     "modules-left": [
-        "hyprland/workspaces",
-        "hyprland/window"
+        "hyprland/workspaces"
     ],
     "modules-center": [
+        "clock"
     ],
     "modules-right": [
         "custom/recorder",
@@ -21,11 +21,10 @@
         "pulseaudio",   
         "backlight",
         "power-profiles-daemon",
-        "clock",
         "custom/notification",
         "tray"
     ],
-
+    
     "hyprland/workspaces": {
         "all-outputs": true,
         "sort-by-number": true,
@@ -71,13 +70,6 @@
             "datagrip": "",
             "libreoffice": ""
         }
-    },
-
-    "hyprland/window": {
-        "format": "{}",
-        "expand": false,
-        "icon": true,
-        "icon-size": 24
     },
 
     "memory": {
@@ -143,6 +135,7 @@
         }
     },
 
+    /* Note: You should configure timezone and locale to make the clock work properly. */
     "clock": {
         "timezone": "Asia/Ho_Chi_Minh",
         "locale": "vi_VN.UTF-8",
