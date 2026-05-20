@@ -41,7 +41,7 @@ case $chosen in
     $DIV) notify-send "This is not a valid option sir" ;;
     *"Cava Underbar"*) ~/.local/bin/cava_manager --toggle ;;
     *"Change Wallpaper"*) ~/.local/bin/wallselect ;;
-    *"Change Lively Wallpaper"*) ~/.local/bin/wallmpvselect --choose ;;
+    *"Change Lively Wallpaper"*) ~/.local/bin/wallmpvselect ;;
     *"Kill Lively Wallpaper"*) ~/.local/bin/wallmpvselect --exit ;;
     *"Change Theme"*) ~/.local/bin/changetheme ;;
     *"Screen Record"*) ~/.local/bin/record & ;;
