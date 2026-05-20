@@ -5,13 +5,6 @@ PREVIEW_DIR="$WALL_DIR/Preview"
 ENVCONF="$HOME/.config/hypr/env.lua"
 MONITOR="eDP-1"
 
-if [[ $1 == "--help" ]]; then
-    echo "Usage: $0 [--choose|--exit]"
-    echo "  --choose   Open wallpaper selection menu"
-    echo "  --exit     Stop lively wallpaper and reset accent color"
-    exit 0
-fi
-
 if [[ $1 == "--exit" ]]; then
     if ! pgrep -x "mpvpaper" > /dev/null; then
         notify-send "Lively Wallpaper is not running"
