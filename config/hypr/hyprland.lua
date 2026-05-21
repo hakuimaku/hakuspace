@@ -196,7 +196,7 @@ hl.animation({ leaf = "fadeOut", enabled = true, duration = 1, speed = 10, bezie
 hl.animation({ leaf = "fadeSwitch", enabled = true, duration = 1, speed = 14, bezier = "default" })
 hl.animation({ leaf = "fadeShadow", enabled = true, duration = 1, speed = 14, bezier = "default" })
 hl.animation({ leaf = "fadeDim", enabled = true, duration = 1, speed = 10, bezier = "default" })
-hl.animation({ leaf = "fadePopups", enabled = true, duration = 1, speed = 20, bezier = "default" })
+hl.animation({ leaf = "fadePopups", enabled = true, duration = 1, speed = 10, bezier = "default" })
 
 -- DPMS & BORDER
 hl.animation({ leaf = "fadeDpms", enabled = true, duration = 1, speed = 20, bezier = "default" })
@@ -356,10 +356,6 @@ hl.window_rule({
     float = true,
 })
 
-------------------------------------------------------
--------------- WORKSPACE & WINDOW RULES --------------
--------------------------------------------------------
-
 hl.workspace_rule({workspace = "1", persistent = true})
 hl.workspace_rule({workspace = "2", persistent = true})
 hl.workspace_rule({workspace = "3", persistent = true})
@@ -467,8 +463,8 @@ hl.window_rule({
     no_blur = true,
     no_focus = true,
     no_shadow = true,
-    opacity = 0.5,
-    size = "400 60",
-    move = "16 45",
+    opacity = 0.4,
+    size = "540 60",
+    move = "12 45",
 })
 
