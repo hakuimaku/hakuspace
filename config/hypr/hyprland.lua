@@ -60,9 +60,7 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("blueman-applet")
     hl.exec_cmd("hypridle")
     hl.exec_cmd("sway-audio-idle-inhibit")
-    hl.exec_cmd("/home/hakuimaku/.local/bin/haku")
     hl.exec_cmd("/home/hakuimaku/.local/bin/welcome")
-    hl.exec_cmd("~/.local/bin/cava_manager")
 end)
 
 
