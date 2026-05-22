@@ -9,10 +9,12 @@
 
 | Screenshot Capture | Description |
 |---|-----|
-| <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/4640efd9-ec98-46bf-a5d1-19381020a1f3" /> | Overview |
-| <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/54aa6a29-f6db-4efe-b52e-d75bca75ebef" /> | Haku Menu |
-| <img width="1920" height="1080" alt="20260511_113021" src="https://github.com/user-attachments/assets/fb412e1d-44f3-4af0-8139-c0f6638bcb2a" /> | `haku` - Haku Space |
-| <img width="1920" height="1080" alt="20260511_113038" src="https://github.com/user-attachments/assets/3009759a-e57a-4b1f-bdd3-5f1014686541" /> | `hakunet` - Haku Space
+| <img width="1920" height="1080" alt="20260522_105620" src="https://github.com/user-attachments/assets/e4695ad0-e810-4dc3-bdb0-1318ba6c9c02" /> | Overview |
+| <img width="1920" height="1080" alt="20260522_105628" src="https://github.com/user-attachments/assets/35b3b463-f11f-4a69-b60b-1eb1870861e2" /> | Haku Menu |
+| <img width="1920" height="1080" alt="20260522_105644" src="https://github.com/user-attachments/assets/3c86544a-35df-45ff-af02-86f352283a1d" /> | `haku` - Haku Space |
+| <img width="1920" height="1080" alt="20260522_105653" src="https://github.com/user-attachments/assets/775e255e-4c69-49f8-92d9-d264f22fb15b" /> | `hakunet` - Haku Space |
+| <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/68884fed-c204-4191-b756-f4afa945146d" /> | Nemo - File Manager |
+
 
 ---
 <h2 style="color:#1abc9c;">WELCOME TO HAKU SPACE! A minimal and clean dotfile configuration for Arch Linux with Hyprland</h2>
