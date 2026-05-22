@@ -1,0 +1,11 @@
+#!/bin/bash
+set -euo pipefail
+
+# This script is used to show the Haku Menu, which is a custom menu for launching applications and performing various actions. It uses Rofi to display the menu and handle user input.
+# Need script: hm-general, hm-theme, hm-setting
+
+rofi -show "󰮫 General" \
+  -p "Haku Menu - Search" \
+  -i \
+  -modes "󰮫 General:~/.local/bin/hm-general, Theme:~/.local/bin/hm-theme, Setting:~/.local/bin/hm-setting" \
+  -theme-str 'window { width: 40%; height: 70%; }'
