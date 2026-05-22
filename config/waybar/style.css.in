@@ -24,7 +24,6 @@ window#waybar {
 /* ============================================================================== */
 /* COMMON MODULE STYLES                               */
 /* ============================================================================== */
-#hyprland-workspaces,
 #window,
 #custom-recorder,
 #custom-notification,
@@ -39,6 +38,13 @@ window#waybar {
     padding: 0 8px;
     transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
     min-width: 50px;
+}
+
+#hyprland-workspaces {
+    margin: 2px;
+    padding: 0 8px;
+    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 0px;
 }
 
 /* ============================================================================== */
