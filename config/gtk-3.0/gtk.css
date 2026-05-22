@@ -1,0 +1,19 @@
+.nemo-window {
+    background-color: rgba(0, 0, 0, 1);
+}
+
+.nemo-window .primary-toolbar button {
+    border-radius: 8px;
+    padding: 4px;;
+}
+
+.nemo-window .sidebar .cell {
+    padding: 6px 1px;
+}
+
+.nemo-window .primary-toolbar {
+    border-radius: 12px;
+    margin: 10px 10px 5px 10px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 1);
+}
