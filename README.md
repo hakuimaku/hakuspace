@@ -10,7 +10,7 @@
 | Screenshot Capture | Description |
 |---|-----|
 | <img width="1920" height="1080" alt="20260522_105620" src="https://github.com/user-attachments/assets/e4695ad0-e810-4dc3-bdb0-1318ba6c9c02" /> | Overview |
-| <img width="1920" height="1080" alt="20260522_105628" src="https://github.com/user-attachments/assets/35b3b463-f11f-4a69-b60b-1eb1870861e2" /> | Haku Menu |
+| <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/380c469a-47e9-45a9-818d-4272da67be17" /> | Haku Menu |
 | <img width="1920" height="1080" alt="20260522_105644" src="https://github.com/user-attachments/assets/3c86544a-35df-45ff-af02-86f352283a1d" /> | `haku` - Haku Space |
 | <img width="1920" height="1080" alt="20260522_105653" src="https://github.com/user-attachments/assets/775e255e-4c69-49f8-92d9-d264f22fb15b" /> | `hakunet` - Haku Space |
 | <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/68884fed-c204-4191-b756-f4afa945146d" /> | Nemo - File Manager |
