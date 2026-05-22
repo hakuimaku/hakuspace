@@ -3,7 +3,7 @@ mode = scientific
 framerate = 60
 sensitivity = 150
 bars = 0
-bar_width = 4
+bar_width = 6
 gravity = 200
 noise_reduction = 77
 autosens = 1
@@ -17,16 +17,14 @@ method = noncurses
 style = stereo
 reverse = 1
 orientation = top
-channels = mono
-reverse = 0
 
 [color]
 background = default
 #foreground = '#FF003C'
 #foreground = '#00FFFF'
-#foreground = '#000000'
+foreground = '#000000'
 #foreground = '#EFBF04'
-foreground = '#FFFFFF'
+#foreground = '#FFFFFF'
 
 #horizontal_gradient = 1
 #horizontal_gradient_color_1 = '#FF003C'
