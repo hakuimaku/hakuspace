@@ -6,7 +6,7 @@
     "margin-left": 5,
     "margin-right": 5,
     "spacing": 2,
-    "height": 40,
+    "height": 30,
     "tooltip": true,
 
     "modules-left": [
@@ -135,7 +135,6 @@
         }
     },
 
-    /* Note: You should configure timezone and locale to make the clock work properly. */
     "clock": {
         "timezone": "Asia/Ho_Chi_Minh",
         "locale": "vi_VN.UTF-8",
@@ -153,7 +152,7 @@
                 "today": "<span color='#FF003C'><b><u>{}</u></b></span>"
             }
         },
-        "on-click": "~/.local/bin/quick_settings"
+        "on-click": "~/.local/bin/hakumenu"
     },
 
     "battery": {

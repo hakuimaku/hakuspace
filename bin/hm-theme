@@ -1,0 +1,25 @@
+#!/bin/bash
+set -euo pipefail
+spawn() { ( "$@" & ) >/dev/null 2>&1; disown; }
+
+if [[ $# -eq 0 ]]; then
+  cat <<'EOF'
+  Cava Underbar
+󰸉  Change Wallpaper
+  Change Lively Wallpaper
+󰃾  Kill Lively Wallpaper
+  Change Theme
+EOF
+  exit 0
+fi
+
+chosen="$*"
+case "$chosen" in
+  *"Cava Underbar"*) spawn ~/.local/bin/cava_manager --toggle ;;
+  *"Change Wallpaper"*) spawn ~/.local/bin/wallselect ;;
+  *"Change Lively Wallpaper"*) spawn ~/.local/bin/wallmpvselect ;;
+  *"Kill Lively Wallpaper"*) spawn ~/.local/bin/wallmpvselect --exit ;;
+  *"Change Theme"*) spawn ~/.local/bin/changetheme ;;
+esac
+
+exit 0

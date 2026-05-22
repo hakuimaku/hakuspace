@@ -13,7 +13,7 @@ list_walls() {
 
 CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" \
 -theme-str "
-    window { width: 65%; }
+    window { width: 65%; height: 80%; }
     listview { columns: 4; lines: 2; spacing: 5px; padding: 5px;}
     element { orientation: vertical; padding: 5px; border-radius: 15px; }
     element-icon { size: 250px; horizontal-align: 0.5; }
