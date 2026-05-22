@@ -9,6 +9,7 @@ options="󰍜  App Menu
   File Manager
 󰉻  Hyprland Folder
   Haku Menu Setting
+󰈆  Quit
 $DIV
   Cava Underbar
 󰸉  Change Wallpaper
@@ -21,8 +22,8 @@ $DIV
   Local Send
 󰓃  Audio Control
   Disk Manager
-󰋊  Storage Manager
-󰈆  Quit"
+󰋊  Storage Manager"
+
 
 # Design rofi
 chosen=$(echo -e "$options" | rofi -dmenu -p "Haku Menu - Search" -markup-rows -i -theme-str 'window 
@@ -37,6 +38,8 @@ case $chosen in
     *"Visual Studio Code"*) code & ;;
     *"Browser"*) zen-browser & ;;
     *"File Manager"*) nemo & ;;
+    *"Hyprland Folder"*) nemo ~/.config/hypr/ ;;
+    *"Haku Menu Setting"*) code ~/.local/bin/quick_settings ;;
     *"Quit"*) ~/.local/bin/shutdown ;;
     $DIV*) notify-send "This is not a valid option sir" ;;
     *"Cava Underbar"*) ~/.local/bin/cava_manager --toggle ;;
@@ -51,6 +54,4 @@ case $chosen in
     *"Audio Control"*) pavucontrol & ;;
     *"Disk Manager"*) gparted & ;;
     *"Storage Manager"*) kitty --class ncdu -e sudo ncdu / ;;
-    *"Hyprland Folder"*) nemo ~/.config/hypr/ ;;
-    *"Setting"*) code ~/.local/bin/quick_settings ;;
 esac
