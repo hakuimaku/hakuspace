@@ -1,13 +1,14 @@
 #!/bin/bash
 
-DIV="<span foreground='#555'>─────────────────────────────────</span>"
+DIV="<span foreground='#555'>─────────────────────────────</span>"
 
 # List options
 options="󰍜  App Menu
 󰨞  Visual Studio Code
 󰇧  Browser
   File Manager
-󰈆  Quit
+󰉻  Hyprland Folder
+  Haku Menu Setting
 $DIV
   Cava Underbar
 󰸉  Change Wallpaper
@@ -21,14 +22,13 @@ $DIV
 󰓃  Audio Control
   Disk Manager
 󰋊  Storage Manager
-󰉻  Hyprland Folder
-  Setting"
+󰈆  Quit"
 
 # Design rofi
 chosen=$(echo -e "$options" | rofi -dmenu -p "Haku Menu - Search" -markup-rows -i -theme-str 'window 
 {
-    width: 600px;
-    background-color: rgba(0, 0, 0, 0.7);
+    width: 30%;
+    height: 70%;
 }')
 
 # List action
@@ -38,7 +38,7 @@ case $chosen in
     *"Browser"*) zen-browser & ;;
     *"File Manager"*) nemo & ;;
     *"Quit"*) ~/.local/bin/shutdown ;;
-    $DIV) notify-send "This is not a valid option sir" ;;
+    $DIV*) notify-send "This is not a valid option sir" ;;
     *"Cava Underbar"*) ~/.local/bin/cava_manager --toggle ;;
     *"Change Wallpaper"*) ~/.local/bin/wallselect ;;
     *"Change Lively Wallpaper"*) ~/.local/bin/wallmpvselect ;;
