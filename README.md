@@ -101,5 +101,6 @@ If configurations don't work:
   - [zrxrevolutionz](https://www.deviantart.com/zrxrevolutionz)
   - [かづいせ](https://www.pixiv.net/en/users/1031168)
   - [airfish](https://www.pixiv.net/en/users/67512705)
+- Fastfetch logo - I couldn't find the artist, I found it on [Internet](https://store.line.me/stickershop/product/5198750/en)
 
 # **Happy Ricing! 🎨**
