@@ -58,6 +58,22 @@ if ! [[ "$FONT_SIZE" =~ ^[0-9]+$ ]] || [[ "$FONT_SIZE" -le 0 ]]; then
   FONT_SIZE="$DEFAULT_SIZE"
 fi
 
+# --- convert accent to hyprland rgba(hex8) ---
+hex_to_rgba() {
+    local hex="${1:-}"
+    hex="${hex#\#}"               # strip leading #
+    hex="${hex//[^0-9a-fA-F]/}"   # keep only hex
+    if [[ "$hex" =~ ^[0-9a-fA-F]{6}$ ]]; then
+        printf 'rgba(%sff)' "${hex,,}"
+        return 0
+    elif [[ "$hex" =~ ^[0-9a-fA-F]{8}$ ]]; then
+        printf 'rgba(%s)' "${hex,,}"
+        return 0
+    fi
+    printf 'rgba(ffffffff)'
+}
+BORDER_RGBA="$(hex_to_rgba "$ACCENT_COLOR")"
+
 # ===================================================
 # ============== Generate theme files ===============
 # ===================================================
@@ -82,6 +98,15 @@ cat > "$STATE_DIR/hyprland-style.conf" <<EOF
 # Generated - do not edit
 \$font_family = ${FONT_FAMILY}
 \$font_size = ${FONT_SIZE}
+EOF
+
+cat > "$STATE_DIR/hyprland-style.lua" <<EOF
+-- Generated - do not edit
+return {
+    font_family = "${FONT_FAMILY}",
+    font_size = ${FONT_SIZE},
+    border_color = "${BORDER_RGBA}",
+}
 EOF
 
 # Rofi style
