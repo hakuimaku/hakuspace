@@ -1,17 +1,26 @@
--- This is an example Hyprland Lua config file.
--- Refer to the wiki for more information.
--- https://wiki.hypr.land/Configuring/Start/
+--    __  __                      _                 _ 
+--   / / / /_  ______  _________ / /___ _____  ____/ /
+--  / /_/ / / / / __ \/ ___/ __  / __  / __ \/ __  / 
+-- / __  / /_/ / /_/ / /  / /_/ / /_/ / / / / /_/ /  
+--/_/ /_/\__, / .___/_/   \__,_/\__,_/_/ /_/\__,_/   
+--      /____/_/                                     
 
--- Please note not all available settings / options are set here.
--- For a full list, see the wiki
 
--- You can (and should!!) split this configuration into multiple files
--- Create your files separately and then require them like this:
--- require("myColors")
-
--- Separate file for keybindings, environment variables
+-- Keybinding
 local config_dir = os.getenv("HOME") .. "/.config/hypr/"
 dofile(config_dir .. "keybinding.lua")
+
+-- Look and feel, accent color for border
+local style_dir = os.getenv("HOME") .. "/.local/state/haku_theme/"
+local ok, style = pcall(dofile, style_dir .. "hyprland-style.lua")
+if not ok then
+    style = { font_family = "monospace", font_size = 16, border_color = "rgba(ffffffff)" }
+end
+
+local font_family = style.font_family
+local font_size = style.font_size
+local border_color = style.border_color
+
 ------------------
 ---- MONITORS ----
 ------------------
@@ -122,10 +131,10 @@ hl.config({
         gaps_in  = 5,
         gaps_out = 10,
 
-        border_size = 0,
+        border_size = 2,
 
         col = {
-            active_border   = "rgba(ffffff66)",
+            active_border   = border_color,
             --active_border   = { colors = {"rgba(33ccffee)", "rgba(00ff99ee)"}, angle = 45 },
             inactive_border = "rgba(ffffff00)",
         },
@@ -140,12 +149,12 @@ hl.config({
     },
 
     decoration = {
-        rounding       = 20,
-        rounding_power = 10,
+        rounding       = 16,
+        rounding_power = 4,
 
         -- Change transparency of focused and unfocused windows
         active_opacity   = 1.0,
-        inactive_opacity = 0.9,
+        inactive_opacity = 0.8,
 
         shadow = {
             enabled      = true,
@@ -157,7 +166,7 @@ hl.config({
         blur = {
             enabled   = true,
             size      = 4,
-            passes    = 1,
+            passes    = 3,
             vibrancy  = 0.1696,
         },
     },
@@ -381,7 +390,7 @@ hl.window_rule({
     name  = "opacity-for-certain-apps",
     match = { class = "(?i)nemo|code|kitty|jetbrains.*" },
 
-    opacity = 0.9,
+    opacity = 0.8,
 })
 
 hl.window_rule({
