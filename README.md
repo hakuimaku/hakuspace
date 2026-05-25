@@ -22,16 +22,14 @@
 - Include: Waybar, Rofi, Kitty, Zsh, Zen Browser, Networkmanager, Nemo, power-profile-daemon, ...
 Use ly for login.
 - For more infomation: [Here](https://github.com/hakuimaku/hakuspace/wiki/Important-Note#1-core-services)
-- Recommend Monitor eDP-1, 1080p (because in hyprland.lua, Haku Space I use). You can change it manually at monitor in ~/.config/hypr/hyprland.lua.
 
 <h2 style="color:#1abc9c;">📋 Prerequisites</h2>
 
 - **Arch Linux** installed and configured
 - **Hyprland** (0.55.x)
 - Basic knowledge of shell configuration and file permissions
-
-- ⚠️ **Strongly Recommendation:** Manually copy configurations rather than using the automated installer. Review `pkg.txt` to select which packages to install.
-- If it is your first time installing arch, just use install.sh script to quick setup
+- Preview pack will be installed before installing hakuspace in **pkg.txt** if needed
+- Package categories are documented in [pkg-notes.md](pkg-notes.md)
 
 ---
 
@@ -40,8 +38,7 @@ Use ly for login.
 - Minimal and clean design
 - Custom Hyprland configuration with animations and rules
 - Easy-to-use: Rofi menu, Nemo file manager, Waybar status bar, and more
-- Color will change based on your env.lua file or your wallpaper (using pywal)
-- Fonts will update based on your env.lua file or via the Change Theme option in the Haku Menu
+- Color will change based on your wallpaper
 - **Easy to extend and customize to fit your needs**
 
 ---
@@ -62,7 +59,6 @@ cd hakuspace
 ```
 
 <h3 style="color:#ff8c00;">Step 3: Run Installer</h3>
-> ⚠️ **Review the script carefully before running**
 
 ```bash
 ./install.sh
@@ -73,6 +69,9 @@ cd hakuspace
 ```bash
 reboot
 ```
+
+<h3 style="color:#ff8c00;">Step 4.99: Now you can remove the hakuspace directory if needed</h3>
+
 
 ---
 
