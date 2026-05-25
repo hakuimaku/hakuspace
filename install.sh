@@ -364,7 +364,7 @@ echo "--- 10. Enabling system services ---"
 
 sudo systemctl enable --now NetworkManager
 sudo systemctl enable --now bluetooth
-sudo systemctl --user enable --now hypridle.service
+sudo systemctl --user enable hypridle.service
 sudo systemctl enable ly@tty1.service
 sudo systemctl disable getty@tty1.service
 
@@ -375,7 +375,7 @@ xdg-mime default nemo.desktop inode/directory application/x-gnome-saved-search
 SERVICES_EXTRA=("gvfsd")
 for srv in "${SERVICES_EXTRA[@]}"; do
     if systemctl --user list-unit-files | grep -q "$srv"; then
-        systemctl --user enable --now "$srv"
+        systemctl --user enable "$srv"
     fi
 done
 
