@@ -2,7 +2,6 @@
 
 WALL_DIR="$HOME/Videos/Wallpapers"
 PREVIEW_DIR="$WALL_DIR/Preview"
-ENVCONF="$HOME/.config/hypr/env.lua"
 MONITOR="eDP-1"
 
 if [[ $1 == "--exit" ]]; then
@@ -12,12 +11,8 @@ if [[ $1 == "--exit" ]]; then
     fi
     pkill mpvpaper
     # Reset accent to default
-    if grep -q 'hl.env("ACCENT_COLOR"' "$ENVCONF"; then
-        sed -i "s|hl.env(\"ACCENT_COLOR\".*|hl.env(\"ACCENT_COLOR\", \"#ffffff\")|" "$ENVCONF"
-    else
-        echo "hl.env(\"ACCENT_COLOR\", \"#ffffff\")" >> "$ENVCONF"
-    fi
-    ~/.local/bin/updatetheme
+    ~/.local/bin/gen-style.sh "#ffffff"
+    ~/.local/bin/apply-style.sh
     notify-send "Lively Wallpaper exited"
     exit 1
 fi
@@ -92,15 +87,11 @@ if [ -n "$CHOICE" ]; then
         ACCENT="#ffffff"
     fi
 
-    # 4. Update env.lua
-    if grep -q 'hl.env("ACCENT_COLOR"' "$ENVCONF"; then
-        sed -i "s|hl.env(\"ACCENT_COLOR\".*|hl.env(\"ACCENT_COLOR\", \"$ACCENT\")|" "$ENVCONF"
-    else
-        echo "hl.env(\"ACCENT_COLOR\", \"$ACCENT\")" >> "$ENVCONF"
-    fi
+    # 4. Generate theme files with the new accent color
+    ~/.local/bin/gen-style.sh "$ACCENT"
 
     sleep 0.5
-    ~/.local/bin/updatetheme
+    ~/.local/bin/apply-style.sh
 
     sleep 0.5
     notify-send "Wallpaper + Accent updated!" "$CHOICE, Accent: $ACCENT"
