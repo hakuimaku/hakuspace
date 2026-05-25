@@ -15,7 +15,7 @@ echo ""
 
 # Check package dependencies
 # Install yay if not found
-read -p "===> Do you want to install yay now)? (y/n): " confirm
+read -p "===> Do you want to install yay now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
     git clone https://aur.archlinux.org/yay-bin.git /tmp/yay
     (cd /tmp/yay && makepkg -si --noconfirm)
@@ -83,9 +83,11 @@ echo ""
 echo "--- 3. Ready to initialize system directories ---"
 
 # List of directories to create
+# List all for easy management
 FOLDERS=(
     "$HOME/Documents"
     "$HOME/.local/bin"
+    "$HOME/.local/state/haku_theme"
     "$HOME/.config"
     "$HOME/.icons"
     "$HOME/.themes"
@@ -141,26 +143,35 @@ else
 fi
 
 
-# Define source and destination paths for local bin files
-SOURCE_BIN="$HOME/hakuspace/bin"
-DEST_BIN="$HOME/.local/bin"
+# Define source and destination paths for local files (include bin and state folders)
+SOURCE_BIN="$HOME/hakuspace/local"
+DEST="$HOME/.local"
 
 echo ""
-echo "--- 5. Ready to deploy bin files to ~/.local/bin ---"
+echo "--- 5. Ready to deploy local (bin and state) files to ~/.local ---"
 
-read -p "===> Do you want to backup and copy your current local bin now? (y/n): " confirm
+read -p "===> Do you want to backup and copy your current local files now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
-    # Copy bin files from source to destination
     if [ -d "$SOURCE_BIN" ]; then
-        cp -rf "$SOURCE_BIN"/. "$DEST_BIN/"
-        echo ":: Copy (bin files) completed to $DEST_BIN"
-        chmod +x "$DEST_BIN"/* 2>/dev/null
+        echo ":: Ready to copy local files (bin and state)..."
+        # Make backup if destination local already exists
+        if [ -d "$DEST" ]; then
+            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+            echo ":: Ready to create backup for current local files..."
+            mv "$DEST" "${DEST}_backup_$TIMESTAMP"
+            mkdir -p "$DEST"
+        fi
+
+        # Proceed with copying local files
+        cp -rf "$SOURCE_BIN"/. "$DEST/"
+        
+        echo ":: Copy (local files) completed to $DEST"
     else
         echo "XXX [ERROR] Not found directory $SOURCE_BIN"
-        echo "Please copy it manually (bin files) to $DEST_BIN"
+        echo "Please copy it manually (local files) to $DEST"
     fi
 else
-    echo "Skipping local bin backup."
+    echo "Skipping local files backup."
 fi
 
 
@@ -169,35 +180,44 @@ echo ""
 echo "--- 6. Setup Oh My Zsh and Plugins ---"
 
 if ! command -v zsh &> /dev/null; then
-    echo ":: Zsh is missing. Installing now..."
-    yay -S --noconfirm zsh
+    echo ":: Zsh is missing. Do you want to install zsh now? (y/n): "
+    read -r confirm
+    if [[ $confirm == [yY] ]]; then
+        yay -S --noconfirm zsh
+    fi
 fi
 
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
-    echo ":: Installing Oh My Zsh..."
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+read -p "===> Do you want to install Oh My Zsh now? (y/n): " confirm
+if [[ $confirm == [yY] ]]; then
+    if [ ! -d "$HOME/.oh-my-zsh" ]; then
+        echo ":: Installing Oh My Zsh..."
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    else
+        echo ":: Oh My Zsh already installed."
+    fi
+
+    ZSH_CUSTOM="$HOME/.oh-my-zsh/custom/plugins"
+
+    # zsh-autosuggestions
+    if [ ! -d "$ZSH_CUSTOM/zsh-autosuggestions" ]; then
+        echo ":: Installing zsh-autosuggestions..."
+        git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/zsh-autosuggestions"
+    fi
+
+    # zsh-syntax-highlighting
+    if [ ! -d "$ZSH_CUSTOM/zsh-syntax-highlighting" ]; then
+        echo ":: Installing zsh-syntax-highlighting..."
+        git clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/zsh-syntax-highlighting"
+    fi
+
+    # Change default shell to Zsh (Need to enter sudo password)
+    if [ "$SHELL" != "/usr/bin/zsh" ]; then
+        echo "Changing default shell to Zsh..."
+        sudo chsh -s /usr/bin/zsh $USER
+    fi
 else
-    echo ":: Oh My Zsh already installed."
+    echo "Skipping Oh My Zsh installation."
 fi
-
-ZSH_CUSTOM="$HOME/.oh-my-zsh/custom/plugins"
-
-# zsh-autosuggestions
-if [ ! -d "$ZSH_CUSTOM/zsh-autosuggestions" ]; then
-    git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/zsh-autosuggestions"
-fi
-
-# zsh-syntax-highlighting
-if [ ! -d "$ZSH_CUSTOM/zsh-syntax-highlighting" ]; then
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/zsh-syntax-highlighting"
-fi
-
-# Change default shell to Zsh (Need to enter sudo password)
-if [ "$SHELL" != "/usr/bin/zsh" ]; then
-    echo "Changing default shell to Zsh..."
-    sudo chsh -s /usr/bin/zsh $USER
-fi
-
 
 
 # Define source and destination paths for other files
@@ -349,6 +369,7 @@ sudo systemctl enable ly@tty1.service
 sudo systemctl disable getty@tty1.service
 
 echo "--- Configuring Nemo as default file manager ---"
+sleep 0.5
 xdg-mime default nemo.desktop inode/directory application/x-gnome-saved-search
 
 SERVICES_EXTRA=("gvfsd")

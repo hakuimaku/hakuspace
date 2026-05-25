@@ -1,5 +1,6 @@
+@import "../../.local/state/haku_theme/rofi-style.rasi"
+
 * {
-    accent:    #ffffff;
     background:      rgba(0, 0, 0, 1);
     foreground:      #dfdfdf;
 

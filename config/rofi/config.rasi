@@ -1,5 +1,4 @@
 configuration {
-    font: "JetBrainsMono Nerd Font 20";
     modes: "drun,run,window";
     show-icons: true;
     terminal: "kitty";
@@ -13,6 +12,5 @@ configuration {
     window-format: "{w} | {c} | {t}";
     cycle: false;
 }
-
 
 @theme "mytheme"

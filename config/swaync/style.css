@@ -1,8 +1,5 @@
-* {
-    font-family: "Terminus (TTF)", monospace;
-    font-size: 16px;
-    font-weight: bold;
-}
+@import url("../../.local/state/haku_theme/colors.css");
+@import url("../../.local/state/haku_theme/fonts.css");
 
 .notification-row {
     outline: none;
@@ -18,14 +15,14 @@
 }
 
 .notification-content .summary {
-    color: #dededd;
+    color: @accent_color;
     font-size: 16px;
     font-weight: bold;
-    text-shadow: 0 0 2px #dededd;
+    text-shadow: 0 0 2px @accent_color;
 }
 
 .notification-content .body {
-    color: #dededd;
+    color: @accent_color;
     font-size: 14px;
 }
 
@@ -35,7 +32,7 @@
 
 .notification-action {
     color: #11111b;
-    background: #dededd;
+    background: @accent_color;
     border-radius: 5px;
 }
 
@@ -48,37 +45,38 @@
 }
 
 .widget-title {
-    color: #dededd;
+    color: @accent_color;
     font-weight: bold;
     font-size: 1.2rem;
 }
 
 .widget-label {
-    color: #dededd;
+    color: @accent_color;
 }
 
 .widget-buttons-grid > flowbox > flowboxchild > button {
-    background: #dededd;
+    background: @accent_color;
     border-radius: 10px;
     margin: 3px;
-    border: 1px solid #dededd;
+    border: 1px solid @accent_color;
+    color: #11111b; /* readable on accent */
 }
 
 .widget-buttons-grid > flowbox > flowboxchild > button:hover {
-    background: #dededd;
-    color: #dededd;
+    background: @accent_color;
+    color: #000000; /* ensure contrast */
 }
 
 .widget-dnd {
-    color: #dededd;
+    color: @accent_color;
 }
 
 .widget-dnd > switch {
-    background: #dededd;
+    background: @accent_color;
     border-radius: 10px;
-    border: 1px solid #dededd;
+    border: 1px solid @accent_color;
 }
 
 .widget-dnd > switch:checked {
-    background: #dededd;
+    background: @accent_color;
 }
