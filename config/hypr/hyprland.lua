@@ -12,10 +12,6 @@
 -- Separate file for keybindings, environment variables
 local config_dir = os.getenv("HOME") .. "/.config/hypr/"
 dofile(config_dir .. "keybinding.lua")
-
-local env_dir = os.getenv("HOME") .. "/.config/hypr/"
-dofile(env_dir .. "env.lua")
-
 ------------------
 ---- MONITORS ----
 ------------------
