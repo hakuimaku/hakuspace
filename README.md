@@ -11,9 +11,8 @@
 |---|-----|
 | <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/e6bc1dd5-98f9-46e5-936b-c1091d976957" /> | Overview |
 | <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/1a7516c8-d7f8-40b2-a3ba-fa6dbf2ba437" /> | Haku Menu |
-| <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/a0d1a5c7-0945-4138-9500-9c8f2a31280a" /> | `haku` - Haku Space |
-| <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/63a208cf-015e-4193-a7e4-58d8bc3982b7" /> | `hakunet` - Haku Space |
-| <img width="1455" height="878" alt="image" src="https://github.com/user-attachments/assets/cda9deef-9301-4cc6-a39d-3ebad41b9d7c" /> | Nemo - File Manager, if using `BlackAndWhite` theme |
+| <img width="1920" height="1080" alt="20260527_205351" src="https://github.com/user-attachments/assets/451e4be1-0ff0-42ad-8e91-75937a4c5171" /> | `haku` - Haku Space |
+| <img width="1920" height="1080" alt="20260527_205402" src="https://github.com/user-attachments/assets/c514ac48-42f4-48f8-a62c-d5d5c3f0773d" /> | Swaync |
 
 
 ---
