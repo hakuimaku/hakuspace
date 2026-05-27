@@ -21,6 +21,7 @@ window#waybar {
     border-radius: 20px;
     padding: 2px;
     margin: 2px;
+    box-shadow: 0 0 2px #000000;
 }
 
 
