@@ -7,5 +7,4 @@ set -euo pipefail
 rofi -show "󰮫 General" \
   -p "Haku Menu - Search" \
   -i \
-  -modes "󰮫 General:~/.local/bin/hm-general, Theme:~/.local/bin/hm-theme, Setting:~/.local/bin/hm-setting" \
-  -theme-str 'window { width: 40%; height: 70%; }'
+  -modes "󰮫 General:~/.local/bin/hm-general, Theme:~/.local/bin/hm-theme, Setting:~/.local/bin/hm-setting"
