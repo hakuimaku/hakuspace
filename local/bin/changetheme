@@ -7,39 +7,98 @@ APPLY="$HOME/.local/bin/apply-style.sh"
 
 mkdir -p "$STATE_DIR"
 
-# 1) Read current accent from state (fallback #ffffff)
-ACCENT="#ffffff"
-if [[ -f "$STATE_DIR/colors.css" ]]; then
-  # parse: @define-color accent_color #68818f;
-  parsed="$(sed -nE 's/^\s*@define-color\s+accent_color\s+(#[0-9a-fA-F]{6})\s*;.*$/\1/p' "$STATE_DIR/colors.css" | head -n1 || true)"
-  [[ -n "$parsed" ]] && ACCENT="$parsed"
-fi
+get_current_accent() {
+  local accent="#ffffff"
+  if [[ -f "$STATE_DIR/colors.css" ]]; then
+    local parsed
+    parsed="$(sed -nE 's/^\s*@define-color\s+accent_color\s+(#[0-9a-fA-F]{6})\s*;.*$/\1/p' "$STATE_DIR/colors.css" | head -n1 || true)"
+    [[ -n "${parsed:-}" ]] && accent="$parsed"
+  fi
+  printf '%s\n' "$accent"
+}
 
-# 2) Get fonts list
-fonts="$(fc-list : family 2>/dev/null | sed 's/,.*//' | sort -u || true)"
-if [[ -z "$fonts" ]]; then
-  echo "No fonts found via fc-list" >&2
-  exit 1
-fi
+get_current_size() {
+  local size="16"
+  if [[ -f "$STATE_DIR/fonts.css" ]]; then
+    local parsed
+    parsed="$(sed -nE 's/^\s*font-size:\s*([0-9]+)px\s*;.*$/\1/p' "$STATE_DIR/fonts.css" | head -n1 || true)"
+    [[ -n "${parsed:-}" ]] && size="$parsed"
+  fi
+  printf '%s\n' "$size"
+}
 
-# 3) Choose font family via rofi
-font="$(printf '%s\n' "$fonts" | rofi -dmenu -p "Choose Font Family" -i)"
-[[ -z "${font:-}" ]] && exit 0
+get_current_font() {
+  local font="monospace"
+  if [[ -f "$STATE_DIR/fonts.css" ]]; then
+    local parsed
+    parsed="$(sed -nE 's/^\s*font-family:\s*"([^"]+)".*$/\1/p' "$STATE_DIR/fonts.css" | head -n1 || true)"
+    [[ -n "${parsed:-}" ]] && font="$parsed"
+  fi
+  printf '%s\n' "$font"
+}
 
-# 4) Default size from current state (fallback 16)
-default_size="16"
-if [[ -f "$STATE_DIR/fonts.css" ]]; then
-  # parse: font-size: 16px;
-  parsed_size="$(sed -nE 's/^\s*font-size:\s*([0-9]+)px\s*;.*$/\1/p' "$STATE_DIR/fonts.css" | head -n1 || true)"
-  [[ -n "$parsed_size" ]] && default_size="$parsed_size"
-fi
+ACCENT="$(get_current_accent)"
+FONT_FAMILY="$(get_current_font)"
+FONT_SIZE="$(get_current_size)"
 
-size="$(printf '%s\n' "$default_size" | rofi -dmenu -p "Type Font Size" -i)"
-[[ -z "${size:-}" ]] && exit 0
-[[ "$size" =~ ^[0-9]+$ ]] || size="$default_size"
+prompt="Change Theme - Choose an option:"
 
-# 5) Generate state with same accent, new font+size, then apply
-"$GEN" "$ACCENT" "$font" "$size"
+choice="$(
+  cat <<EOF | rofi -dmenu -p "$prompt" -i
+  Change font
+  Change font size
+  Change color
+EOF
+)"
+[[ -z "${choice:-}" ]] && exit 0
+
+case "$choice" in
+  "  Change font")
+    fonts="$(fc-list : family 2>/dev/null | sed 's/,.*//' | sort -u || true)"
+    [[ -z "$fonts" ]] && { echo "No fonts found via fc-list" >&2; exit 1; }
+    new_font="$(printf '%s\n' "$fonts" | rofi -dmenu -p "  Current: ${FONT_FAMILY}" -i)"
+    [[ -z "${new_font:-}" ]] && exit 0
+    FONT_FAMILY="$new_font"
+    ;;
+
+  "  Change font size")
+    new_size="$(printf '%s\n' "$FONT_SIZE" | rofi -dmenu -p "  Current: ${FONT_SIZE}px" -i)"
+    [[ -z "${new_size:-}" ]] && exit 0
+    [[ "$new_size" =~ ^[0-9]+$ ]] || exit 0
+    FONT_SIZE="$new_size"
+    ;;
+
+  "  Change color")
+    accent_choice="$(
+      cat <<'EOF' | rofi -dmenu -p "  Current: ${ACCENT}" -i
+Red     #ff003c
+Blue    #00aaff
+Green   #00ff99
+Orange  #ff7a00
+Yellow  #efbf04
+White   #ffffff
+Pink    #ff66cc
+Custom  (type hex)
+EOF
+    )"
+    [[ -z "${accent_choice:-}" ]] && exit 0
+
+    if [[ "$accent_choice" == "Custom  (type hex)" ]]; then
+      custom_hex="$(printf '%s\n' "$ACCENT" | rofi -dmenu -p "Hex (#RRGGBB)" -i)"
+      [[ -z "${custom_hex:-}" ]] && exit 0
+      custom_hex="$(printf '%s' "$custom_hex" | tr -cd '#0-9a-fA-F')"
+      [[ "$custom_hex" =~ ^#[0-9a-fA-F]{6}$ ]] || exit 0
+      ACCENT="$custom_hex"
+    else
+      picked_hex="$(printf '%s\n' "$accent_choice" | grep -oE '#[0-9a-fA-F]{6}' | head -n1 || true)"
+      [[ -n "$picked_hex" ]] && ACCENT="$picked_hex"
+    fi
+    ;;
+
+  *)
+    exit 0
+    ;;
+esac
+
+"$GEN" "$ACCENT" "$FONT_FAMILY" "$FONT_SIZE"
 "$APPLY"
-
-notify-send "Theme Updated" "Font: $font | Size: $size | Accent: $ACCENT"
