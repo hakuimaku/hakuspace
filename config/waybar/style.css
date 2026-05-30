@@ -5,21 +5,20 @@
 @import url("../../.local/state/haku_theme/fonts.css");
 
 * {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
-    border-radius: 20px;
 }
 
 window#waybar {
-    background-color: transparent;
+    background-color: rgba(0, 0, 0, 1);
     color: @accent_color;
     transition: background-color 0.3s ease;
 }
 
 .modules-left, .modules-center, .modules-right {
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 1);
     border-radius: 20px;
-    padding: 2px;
+    padding: 0px;
     margin: 2px;
     box-shadow: 0 0 2px #000000;
 }
@@ -28,6 +27,7 @@ window#waybar {
 /* ============================================================================== */
 /* COMMON MODULE STYLES                               */
 /* ============================================================================== */
+#custom-haku,
 #window,
 #custom-recorder,
 #custom-notification,
@@ -38,34 +38,77 @@ window#waybar {
 #clock,
 #cpu,
 #power-profiles-daemon {
-    margin: 2px;
-    padding: 0 8px;
+    margin: 2px 4px;
+    padding: 4px 0px;
     transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 50px;
+    border-radius: 20px;
 }
 
 #hyprland-workspaces {
-    margin: 2px;
-    padding: 0 8px;
+    margin: 2px 0px;
+    padding: 4px 0px;
     transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
+    border-radius: 20px;
+}
+
+#backlight-slider slider {
+    min-height: 0px;
     min-width: 0px;
+    opacity: 0;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    background: none;
+}
+#backlight-slider trough {
+    min-height: 50px;
+    border-radius: 5px;
+    background: rgba(203, 203, 203, 0.5);
+}
+#backlight-slider highlight {
+    min-width: 10px;
+    border-radius: 5px;
+    background: @accent_color;
+}
+
+#pulseaudio-slider slider {
+    min-height: 0px;
+    min-width: 0px;
+    opacity: 0;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+}
+#pulseaudio-slider trough {
+    min-height: 50px;
+    border-radius: 5px;
+    background: rgba(203, 203, 203, 0.5);
+}
+#pulseaudio-slider highlight {
+    min-width: 10px;
+    border-radius: 5px;
+    background: @accent_color;
 }
 
 /* ============================================================================== */
 /* WORKSPACES                                    */
 /* ============================================================================== */
+#workspaces {
+    background-color: rgb(17, 17, 17);
+    border-radius: 20px;
+}
 #workspaces button {
     color: @accent_color;
-    padding: 0 12px;
+    padding: 2px 6px;
     transition: all 0.7s cubic-bezier(0, 0.5, 0.35, 1);
     margin: 2px;
+    border-radius: 20px;
 }
 
 #workspaces button.active {
     color: #000000;
     background-color: @accent_color;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 70px;
 }
 
 #workspaces button.empty {
@@ -108,7 +151,11 @@ window#waybar {
     animation: blink 1s infinite; 
 }
 
-#custom-notification { color: @accent_color; }
+#custom-notification {
+    color: @accent_color;
+    padding: 10px;
+    margin: 0 4px 0 0;
+}
 
 #backlight { color: @accent_color; }
 
@@ -119,9 +166,15 @@ window#waybar {
 #memory { color: @accent_color; }
 
 #cpu { color: @accent_color; }
+
+#custom-haku {
+    min-height: 30px;
+}
 /* ============================================================================== */
 /* HOVER EFFECTS                                   */
 /* ============================================================================== */
+#custom-haku:hover,
+#clock:hover,
 #power-profiles-daemon:hover,
 #workspaces button:hover,
 #pulseaudio:hover,
@@ -133,19 +186,6 @@ window#waybar {
     color: #000000;
     background-color: @accent_color;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 100px;
-}
-
-#clock:hover {
-    color: #000000;
-    background-color: @accent_color;
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 450px;
-}
-
-#workspaces button.empty:hover {
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 40px;
 }
 
 /* ============================================================================== */
