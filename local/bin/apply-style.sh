@@ -32,3 +32,6 @@ pkill swaync >/dev/null 2>&1 || true
 swaync >/dev/null 2>&1 & disown || true
 
 kitty @ load-config >/dev/null 2>&1 || true
+for s in /tmp/kitty-*; do
+  kitty @ --to "unix:$s" load-config >/dev/null 2>&1 || true
+done
