@@ -17,9 +17,9 @@ window#waybar {
 
 .modules-left, .modules-center, .modules-right {
     background-color: rgba(0, 0, 0, 1);
-    border-radius: 20px;
+    border-radius: 12px;
     padding: 0px;
-    margin: 2px;
+    margin: 4px;
     box-shadow: 0 0 2px #000000;
 }
 
@@ -41,14 +41,14 @@ window#waybar {
     margin: 2px 4px;
     padding: 4px 0px;
     transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
-    border-radius: 20px;
+    border-radius: 12px;
 }
 
 #hyprland-workspaces {
     margin: 2px 0px;
     padding: 4px 0px;
     transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
-    border-radius: 20px;
+    border-radius: 12px;
 }
 
 #backlight-slider slider {
@@ -95,14 +95,14 @@ window#waybar {
 /* ============================================================================== */
 #workspaces {
     background-color: rgb(17, 17, 17);
-    border-radius: 20px;
+    border-radius: 16px;
 }
 #workspaces button {
     color: @accent_color;
     padding: 2px 6px;
     transition: all 0.7s cubic-bezier(0, 0.5, 0.35, 1);
     margin: 2px;
-    border-radius: 20px;
+    border-radius: 16px;
 }
 
 #workspaces button.active {

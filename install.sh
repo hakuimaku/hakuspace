@@ -250,9 +250,8 @@ if [[ $confirm == [yY] ]]; then
             echo "Please copy it manually ($file) to $DEST_OTHER"
         fi
     done
-    cp -f "$SOURCE_ROOT/fastfetch.jpg" "$HOME/Documents/"
     cp -f "$SOURCE_ROOT/hakufetch.txt" "$HOME/Documents/"
-    echo ":: Did copy fastfetch.jpg to $HOME/Documents/"
+    echo ":: Did copy hakufetch.txt to $HOME/Documents/"
     cp -rf "$SOURCE_WALLPAPER"/. "$DEST_WALLPAPER/"
     echo ":: Did copy wallpapers to $DEST_WALLPAPER"
 else

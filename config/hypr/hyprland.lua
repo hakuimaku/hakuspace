@@ -131,7 +131,7 @@ hl.config({
         gaps_in  = 5,
         gaps_out = 10,
 
-        border_size = 3,
+        border_size = 1,
 
         col = {
             active_border   = border_color,
@@ -145,11 +145,11 @@ hl.config({
         -- Please see https://wiki.hypr.land/Configuring/Advanced-and-Cool/Tearing/ before you turn this on
         allow_tearing = false,
 
-        layout = "master",
+        layout = "dwindle",
     },
 
     decoration = {
-        rounding       = 16,
+        rounding       = 12,
         rounding_power = 4,
 
         -- Change transparency of focused and unfocused windows
@@ -223,6 +223,7 @@ hl.animation({ leaf = "specialWorkspaceOut", enabled = true, duration = 1, speed
 -- Others
 hl.animation({ leaf = "zoomFactor", enabled = true, duration = 1, speed = 6, bezier = "smoothzz" })
 hl.animation({ leaf = "monitorAdded", enabled = true, duration = 1, speed = 6, bezier = "smoothzz" })
+
 
 
 -- Ref https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/
@@ -363,11 +364,6 @@ hl.window_rule({
     float = true,
 })
 
-hl.workspace_rule({workspace = "1", persistent = true})
-hl.workspace_rule({workspace = "2", persistent = true})
-hl.workspace_rule({workspace = "3", persistent = true})
-hl.workspace_rule({workspace = "4", persistent = true})
-hl.workspace_rule({workspace = "5", persistent = true})
 
 local codeSpecialWorkspace = hl.window_rule({
     name  = "code-scratchpad",
@@ -377,11 +373,11 @@ local codeSpecialWorkspace = hl.window_rule({
 })
 codeSpecialWorkspace:set_enabled(true) -- Disable this rule for now, as it can be annoying if you don't know how to use the special workspace
 
-hl.layer_rule({
-    match = { namespace = "waybar" },
-    
-    animations = fade
-})
+hl.workspace_rule({ workspace = "1", persistent = true, layout = "master" })
+hl.workspace_rule({ workspace = "2", persistent = true })
+hl.workspace_rule({ workspace = "3", persistent = true })
+hl.workspace_rule({ workspace = "4", persistent = true })
+hl.workspace_rule({ workspace = "5", persistent = true })
 
 -----------------------------------------------------------------
 hl.window_rule({
@@ -430,6 +426,12 @@ hl.layer_rule({
 })
 
 hl.layer_rule({
+    match = { namespace = "waybar" },
+    
+    animations = fade
+})
+
+hl.layer_rule({
     name = "swaync-control-center",
     match = { namespace = "swaync-control-center" },
 
@@ -459,6 +461,6 @@ hl.window_rule({
     no_focus = true,
     no_shadow = true,
     opacity = 0.7,
-    size = "1920 40",
+    size = "1920 60",
     move = "0 0",
 })
