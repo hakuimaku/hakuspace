@@ -1,13 +1,8 @@
 [general]
 bar_width = 2
 bar_spacing = 1
+overshoot = 100
+max_height = 100
 
 [color]
-foreground = '#FFFFFF'
-
-[eq]
-1=0.8
-2=0.5
-3=0.5
-4=0.5
-5=0.5
+foreground = blue

@@ -27,19 +27,19 @@ local border_color = style.border_color
 
 -- See https://wiki.hypr.land/Configuring/Basics/Monitors/
 hl.monitor({
-    output   = "",
+    output   = "eDP-1",
     mode     = "1920x1080@60",
     position = "auto",
     scale    = "1",
 })
 
--- hl.monitor({
---     output   = "",
---     mode     = "1280x720@60",
---     position = "auto",
---     scale    = "1",
--- })
-
+hl.monitor({
+    output   = "HDMI-A-1",
+    mode     = "preferred",
+    position = "0x0",
+    scale    = "1",
+    mirror   = "eDP-1",
+})
 
 -------------------
 ---- AUTOSTART ----
@@ -154,7 +154,7 @@ hl.config({
 
         -- Change transparency of focused and unfocused windows
         active_opacity   = 1.0,
-        inactive_opacity = 0.8,
+        inactive_opacity = 1.0,
 
         shadow = {
             enabled      = true,
@@ -395,7 +395,7 @@ hl.window_rule({
     name  = "opacity-for-certain-apps",
     match = { class = "(?i)nemo|kitty|code|jetbrains.*" },
 
-    opacity = 0.8,
+    opacity = 1,
 })
 
 hl.window_rule({

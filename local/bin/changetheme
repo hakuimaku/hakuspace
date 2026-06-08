@@ -78,7 +78,7 @@ Yellow       #efbf04
 Pink         #F9B2D7
 White        #ffffff
 Grey         #BFC9D1
-Custom  (type hex)
+Custom       (type hex)
 EOF
     )"
     [[ -z "${accent_choice:-}" ]] && exit 0

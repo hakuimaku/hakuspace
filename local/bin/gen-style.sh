@@ -2,6 +2,7 @@
 set -euo pipefail
 
 STATE_DIR="$HOME/.local/state/haku_theme"
+BTOP_THEME_DIR="$HOME/.config/btop/themes"
 mkdir -p "$STATE_DIR"
 
 # Defaults
@@ -123,6 +124,26 @@ cat > "$STATE_DIR/kitty-style.conf" <<EOF
 # Generated - do not edit
 font_family      family="${FONT_FAMILY}"
 font_size        ${FONT_SIZE}
+foreground ${ACCENT_COLOR}
+color4 ${ACCENT_COLOR}
+color12 ${ACCENT_COLOR}
+EOF
+
+# Btop theme
+cat > "$BTOP_THEME_DIR/HakuBtop.theme" <<EOF
+# Generated - do not edit
+# Minimal accent mapping (edit keys as you like)
+theme[main_bg]="#000000"
+theme[main_fg]="#c0c0c0"
+
+theme[title]="${ACCENT_COLOR}"
+theme[hi_fg]="${ACCENT_COLOR}"
+theme[selected_fg]="${ACCENT_COLOR}"
+theme[proc_misc]="${ACCENT_COLOR}"
+theme[cpu_box]="${ACCENT_COLOR}"
+theme[mem_box]="${ACCENT_COLOR}"
+theme[net_box]="${ACCENT_COLOR}"
+theme[disk_box]="${ACCENT_COLOR}"
 EOF
 
 
