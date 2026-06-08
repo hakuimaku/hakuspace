@@ -95,6 +95,7 @@ If configurations don't work:
 *Themes, Icons and Wallpapers used in Haku Space:*
 - Theme: [BlackAndWhite](https://www.gnome-look.org/p/2010116)
 - Theme: [Magnetic-Dark](https://www.gnome-look.org/p/2093088)
+- Theme: [Midnight-Gray](https://www.gnome-look.org/p/1273208)
 - Icons: [Tela-circle-black](https://www.gnome-look.org/p/1359276)
 - Mouse Cursor: [lliurex-cursors](https://www.gnome-look.org/p/999908)
 - Wallpapers Artists:
