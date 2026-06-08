@@ -23,14 +23,28 @@ fi
 # ---------------------------------------------------
 # 2) Reload apps
 # ---------------------------------------------------
+# hyprctl reload
 hyprctl reload >/dev/null 2>&1 || true
 
-pkill waybar >/dev/null 2>&1 || true
-waybar >/dev/null 2>&1 & disown || true
+# Waybar reload
+DIR_TOP="$HOME/.config/waybar/waybartop"
+STATE_FILE="/tmp/waybar_current_mode"
+CURRENT_STATE=$(cat "$STATE_FILE")
 
+killall waybar
+while pgrep -x waybar >/dev/null; do sleep 0.1; done
+
+if [ "$CURRENT_STATE" == "left" ]; then
+    waybar & 
+else
+    waybar -c "$DIR_TOP/config" -s "$DIR_TOP/style.css" &
+fi
+
+# Swaync reload
 pkill swaync >/dev/null 2>&1 || true
 swaync >/dev/null 2>&1 & disown || true
 
+# Kitty reload
 for s in /tmp/kitty-*; do
     [[ -S "$s" ]] || continue
     kitty @ --to "unix:$s" ls >/dev/null 2>&1 || continue

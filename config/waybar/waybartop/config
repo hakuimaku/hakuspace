@@ -1,0 +1,182 @@
+{
+    "layer": "top",
+    "position": "top",
+    "margin-top": 2,
+    "margin-bottom": 0,
+    "margin-left": 2,
+    "margin-right": 2,
+    "spacing": 2,
+    "tooltip": true,
+
+    "modules-left": [
+        "custom/haku",
+        "hyprland/workspaces"
+    ],
+    "modules-center": [
+        "clock"
+    ],
+    "modules-right": [
+        "custom/recorder",
+        "battery",
+        "pulseaudio",
+        "pulseaudio/slider",
+        "backlight",
+        "backlight/slider",
+        "custom/notification",
+        "tray"
+    ],
+
+    "clock": {
+        "timezone": "Asia/Ho_Chi_Minh",
+        "locale": "vi_VN.UTF-8",
+        "format": " {:%A, %d/%m/%Y [ %H:%M:%S ]} ", 
+        "interval": 1,
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+        "calendar": {
+            "mode": "month",
+            "on-scroll": 1,
+            "format": {
+                "months": "<span color='#ffead3'><b>{}</b></span>",
+                "days": "<span color='#ecc6d9'><b>{}</b></span>",
+                "weeks": "<span color='#99ffdd'><b>W{}</b></span>",
+                "weekdays": "<span color='#ffcc66'><b>{}</b></span>",
+                "today": "<span color='#FF003C'><b><u>{}</u></b></span>"
+            }
+        }
+    },
+
+    "custom/haku": {
+        "format": "{icon}",
+        "format-icons": {
+            "default": ""
+        },
+        "on-click": "~/.local/bin/hakumenu",
+        "tooltip-format": "Have a nice day!",
+        "tooltip": true
+    },
+
+    "custom/notification": {
+        "tooltip": true,
+        "format": "{icon}",
+        "format-icons": {
+            "notification": "󰂚<span foreground='red'><sup></sup></span>",
+            "none": "󰂚",
+            "dnd-notification": "<span foreground='red'><sup></sup></span>",
+            "dnd-none": "",
+            "inhibited-notification": "󰂚<span foreground='red'><sup></sup></span>",
+            "inhibited-none": "󰂚",
+            "dnd-inhibited-notification": "󰂛<span foreground='red'><sup></sup></span>",
+            "dnd-inhibited-none": ""
+        },
+        "return-type": "json",
+        "exec-if": "which swaync-client",
+        "exec": "swaync-client -swb",
+        "on-click": "swaync-client -t -sw",
+        "on-click-right": "swaync-client -d -sw",
+        "escape": true
+    },
+
+    "custom/recorder": {
+        "exec": "if [ -f /tmp/recording_time ]; then cat /tmp/recording_time; fi",
+        "interval": 1,
+        "format": "󰑋",
+        "tooltip": false,
+        "return-type": "plain",
+        "if-file-exists": "/tmp/recording_pid"
+    },
+
+    "backlight": {
+        "format": "{icon}",
+        "format-icons": ["", "", "", "", "", "", "", "", ""],
+        "on-scroll-up": "brightnessctl set 1%+",
+        "on-scroll-down": "brightnessctl set 1%-",
+        "on-click": "hyprsunset --temperature 3000",
+        "on-click-right": "pkill hyprsunset",
+        "tooltip-format": "Brightness: {percent}%"
+    },
+
+    "backlight/slider": {
+        "min": 10,
+        "max": 100,
+        "orientation": "horizontal"
+    },
+
+    "battery": {
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon}",
+        "format-icons": {
+            "default": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+            "charging": ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"]
+        },
+        "tooltip-format": "Battery: {capacity}%\nPower: {power}W\n{timeTo}",
+        "tooltip": true
+    },
+
+    "pulseaudio": {
+        "format": "{icon}",
+        "format-muted": "󰝟 ",
+        "format-icons": {
+            "headphone": "󰋋",
+            "default": ["", "", ""]
+        },
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click-right": "pavucontrol",
+        "tooltip-format": "Volume: {volume}%"
+    },
+
+    "pulseaudio/slider": {
+        "min": 0,
+        "max": 100,
+        "orientation": "horizontal"
+    },
+
+    "tray": {
+        "icon-size": 18,
+        "spacing": 10,
+        "show-passive-items": true
+    },
+
+    "hyprland/workspaces": {
+        "all-outputs": true,
+        "sort-by-number": true,
+        "show-special": true,
+        "format": "{icon} {windows}",
+        "format-icons": {
+            "magic": ""
+	    },
+        "format-window-separator": " ",
+        "window-rewrite-default": "",
+        "window-rewrite": {
+            "title<.*youtube.*>": "",
+            "class<firefox>": "󰈹",
+            "class<zen>":"",
+            "class<firefox> title<.*github.*>": "",
+            "kitty": "",
+            "thunar": "󰝰",
+            "nemo": "󰝰",
+            "code": "󰨞",
+            "cavaunderbar": "",
+            "title<.* - (.*) - VSCodium>": "codium $1",
+            "Prism Launcher .*": "󰍳",
+            "CurseForge": "󰍳",
+            "Minecraft": "󰍳",
+            "class<seyclock>": "k",
+            "class<seymatrix>": "h",
+            "class<seycava>": "h",
+            "class<seycmd>": "u",
+            "class<seypipes>": "u",
+            "class<seylavat>": "a",
+            "Steam": "",
+            "spotify": "",
+            "Star Rail": "",
+            "Send": "",
+            "brave": "",
+            "rider": "",
+            "datagrip": "",
+            "libreoffice": ""
+        }
+    }
+}

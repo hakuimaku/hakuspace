@@ -1,8 +1,24 @@
 #!/bin/bash
 
-if pgrep -x "waybar" > /dev/null
-then
-    pkill waybar
+DIR_DEFAULT="$HOME/.config/waybar"
+DIR_TOP="$HOME/.config/waybar/waybartop"
+STATE_FILE="/tmp/waybar_current_mode"
+
+# Waybar left mode is default
+if [ ! -f "$STATE_FILE" ]; then
+    echo "left" > "$STATE_FILE"
+fi
+
+CURRENT_STATE=$(cat "$STATE_FILE")
+
+killall waybar
+
+while pgrep -x waybar >/dev/null; do sleep 0.1; done
+
+if [ "$CURRENT_STATE" == "left" ]; then
+    waybar -c "$DIR_TOP/config" -s "$DIR_TOP/style.css" &
+    echo "top" > "$STATE_FILE"
 else
-    waybar &
+    waybar & 
+    echo "left" > "$STATE_FILE"
 fi
