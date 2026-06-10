@@ -1,10 +1,10 @@
 {
     "layer": "top",
     "position": "left",
-    "margin-top": 0,
-    "margin-bottom": 0,
-    "margin-left": 0,
-    "margin-right": 0,
+    "margin-top": 4,
+    "margin-bottom": 4,
+    "margin-left": 4,
+    "margin-right": 4,
     "spacing": 2,
     "tooltip": true,
 
@@ -29,9 +29,9 @@
     "clock": {
         "timezone": "Asia/Ho_Chi_Minh",
         "locale": "vi_VN.UTF-8",
-        "format": " {:%A, %d/%m/%Y [ %H:%M:%S ]} ", 
+        "format": "{:%H\n%M\n--\n%d\n%m\n%y}",
         "interval": 1,
-        "rotate": 90,
+        "rotate": 0,
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
         "calendar": {
             "mode": "month",
