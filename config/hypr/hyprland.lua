@@ -55,7 +55,6 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
     hl.exec_cmd("/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1")
     hl.exec_cmd("awww-daemon")
-    hl.exec_cmd("waybar")
     hl.exec_cmd("swaync")
     hl.exec_cmd("fcitx5 -d")
     hl.exec_cmd("wl-paste --type text --watch cliphist store")
@@ -65,10 +64,10 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("blueman-applet")
     hl.exec_cmd("hypridle")
     hl.exec_cmd("sway-audio-idle-inhibit")
-    hl.exec_cmd("/home/hakuimaku/.local/bin/cava_manager")
-    hl.exec_cmd("/home/hakuimaku/.local/bin/welcome")
+    hl.exec_cmd("~/.local/bin/waybar_toggle")
+    hl.exec_cmd("~/.local/bin/cava_manager")
+    hl.exec_cmd("~/.local/bin/welcome")
 end)
-
 
 
 -------------------------------
