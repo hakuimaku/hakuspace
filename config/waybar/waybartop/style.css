@@ -19,7 +19,7 @@ window#waybar {
     background-color: rgba(0, 0, 0, 0.4);
     border-radius: 20px;
     padding: 4px;
-    margin: 8px;
+    margin: 6px;
     box-shadow: 4px 4px 4px #000000;
 }
 
@@ -39,21 +39,21 @@ window#waybar {
 #tray,
 #clock,
 #power-profiles-daemon {
-    margin: 2px;
-    padding: 2px 8px;
+    margin: 1px;
+    padding: 0 4px;
     transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
     min-width: 50px;
 }
 
 #hyprland-workspaces {
-    margin: 2px;
-    padding: 2px 8px;
+    margin: 1px;
+    padding: 0 4px;
     transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
     min-width: 0px;
 }
 
 #tray {
-    margin: 8px;
+    margin: 4px;
 }
 
 #backlight-slider slider {
