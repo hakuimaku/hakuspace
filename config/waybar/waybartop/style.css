@@ -5,7 +5,6 @@
 @import url("../../../.local/state/haku_theme/fonts.css");
 
 * {
-    font-size: 16px;
     font-weight: bold;
     border-radius: 20px;
 }
@@ -17,7 +16,7 @@ window#waybar {
 }
 
 .modules-left, .modules-center, .modules-right {
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.4);
     border-radius: 20px;
     padding: 4px;
     margin: 8px;
@@ -39,7 +38,6 @@ window#waybar {
 #battery,
 #tray,
 #clock,
-#cpu,
 #power-profiles-daemon {
     margin: 2px;
     padding: 2px 8px;
@@ -54,6 +52,9 @@ window#waybar {
     min-width: 0px;
 }
 
+#tray {
+    margin: 8px;
+}
 
 #backlight-slider slider {
     opacity: 0;
@@ -69,7 +70,7 @@ window#waybar {
 }
 #backlight-slider highlight {
     min-width: 10px;
-    min-height: 6px;
+    min-height: 10px;
     border-radius: 5px;
     background: @accent_color;
 }
@@ -82,7 +83,7 @@ window#waybar {
 }
 #pulseaudio-slider trough {
     min-width: 60px;
-    min-height: 6px;
+    min-height: 10px;
     border-radius: 5px;
     background: rgba(203, 203, 203, 0.5);
 }
@@ -169,9 +170,7 @@ window#waybar {
 #pulseaudio:hover,
 #backlight:hover,
 #battery:hover,
-#custom-notification:hover,
-#memory:hover,
-#cpu:hover {
+#custom-notification:hover {
     color: #000000;
     background-color: @accent_color;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
@@ -185,9 +184,14 @@ window#waybar {
     min-width: 450px;
 }
 
+#pulseaudio:hover,
+#backlight:hover {
+    color: @accent_color;
+    background-color: #000000;
+}
+
 #pulseaudio-slider:hover,
 #backlight-slider:hover {
-    background-color: rgba(96, 96, 96, 0.8);
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
     min-width: 150px;
 }
