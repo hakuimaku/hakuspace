@@ -37,7 +37,7 @@ window#waybar {
 #tray,
 #clock,
 #power-profiles-daemon {
-    margin: 6px;
+    margin: 4px;
     padding: 1px;
     transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
     border-radius: 12px;
@@ -45,8 +45,6 @@ window#waybar {
 }
 
 #hyprland-workspaces {
-    margin: 2px 0px;
-    padding: 4px 0px;
     transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
     border-radius: 12px;
     min-height: 30px;
