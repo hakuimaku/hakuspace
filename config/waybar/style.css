@@ -13,7 +13,6 @@ window#waybar {
     background-color: rgba(0, 0, 0, 0.6);
     color: @accent_color;
     transition: background-color 0.3s ease;
-    padding: 10px;
     border-radius: 12px;
 }
 
