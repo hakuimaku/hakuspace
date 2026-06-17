@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if ! command -v wl-screenrec &> /dev/null; then
+    notify-send -u critical "Recording System" "Error: wl-screenrec is not installed!" -i dialog-error
+    echo "Error: wl-screenrec is not installed. Please install it first."
+    exit 1
+fi
+
 PID_FILE="/tmp/recording_pid"
 TIME_FILE="/tmp/recording_time"
 SAVE_DIR="$HOME/Videos" 
