@@ -28,10 +28,9 @@ if [ -n "$CHOICE" ]; then
     
     # 1. Set awww
     awww img "$WALL" \
-        --transition-type grow \
-        --transition-pos "top" \
-        --transition-step 255 \
-        --transition-fps 60
+            --transition-type random \
+            --transition-step 90 \
+            --transition-fps 60
     
     # 2. Get accent color from wallpaper using colorthief, fallback to a default if too dark
     ACCENT=$(python3 -c '
