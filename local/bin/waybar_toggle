@@ -1,10 +1,9 @@
 #!/bin/bash
 
-DIR_DEFAULT="$HOME/.config/waybar"
+DIR_LEFT="$HOME/.config/waybar/waybarleft"
 DIR_TOP="$HOME/.config/waybar/waybartop"
 STATE_FILE="/tmp/waybar_current_mode"
 
-# Waybar left mode is default
 if [ ! -f "$STATE_FILE" ]; then
     echo "left" > "$STATE_FILE"
 fi
@@ -12,13 +11,18 @@ fi
 CURRENT_STATE=$(cat "$STATE_FILE")
 
 killall waybar
-
 while pgrep -x waybar >/dev/null; do sleep 0.1; done
 
 if [ "$CURRENT_STATE" == "left" ]; then
-    waybar -c "$DIR_TOP/config" -s "$DIR_TOP/style.css" &
+    # Link configuration Waybar Top to root (waybar/) and run
+    ln -sf "$DIR_TOP/config" "$HOME/.config/waybar/config"
+    ln -sf "$DIR_TOP/style.css" "$HOME/.config/waybar/style.css"
+    waybar &
     echo "top" > "$STATE_FILE"
 else
+    # Link configuration Waybar Left to root and run
+    ln -sf "$DIR_LEFT/config" "$HOME/.config/waybar/config"
+    ln -sf "$DIR_LEFT/style.css" "$HOME/.config/waybar/style.css"
     waybar & 
     echo "left" > "$STATE_FILE"
 fi
