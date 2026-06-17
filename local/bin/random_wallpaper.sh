@@ -6,7 +6,7 @@ PID_FILE="/tmp/random_wallpaper.pid"
 
 trap "rm -f $PID_FILE; exit" INT TERM EXIT
 
-if [ "$1" = "toggle" ]; then
+if [ "$1" = "--toggle" ]; then
     if [ -f "$PID_FILE" ] && kill -0 $(cat "$PID_FILE") 2>/dev/null; then
         kill $(cat "$PID_FILE")
         rm -f "$PID_FILE"
@@ -26,6 +26,9 @@ fi
 if [ -f "$PID_FILE" ] && kill -0 $(cat "$PID_FILE") 2>/dev/null; then
     notify-send -u low "Wallpaper Automation" "Already running with PID $(cat "$PID_FILE")"
     exit 1
+fi
+else
+    notify-send -u low "Wallpaper Automation" "Started automatic wallpaper changing with PID $$"
 fi
 
 echo $$ > "$PID_FILE"
