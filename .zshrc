@@ -13,8 +13,10 @@ export XDG_CURRENT_DESKTOP=GNOME
 export AGNOSTER_DIR_BG="white"
 export AGNOSTER_GIT_DIRTY_BG="black"
 export AGNOSTER_GIT_DIRTY_FG="white"
-export AGNOSTER_CONTEXT_BG="#1a1a1a"
-export AGNOSTER_CONTEXT_FG="white"
+export AGNOSTER_CONTEXT_BG="#010101"
+export AGNOSTER_CONTEXT_FG="blue"
+export AGNOSTER_DIR_FG="#010101"
+export AGNOSTER_DIR_BG="blue"
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time Oh My Zsh is loaded, in which case,
