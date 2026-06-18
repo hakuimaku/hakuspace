@@ -45,33 +45,39 @@ Use ly for login.
 
 <h2 style="color:#1abc9c;">🚀 Installation</h2>
 
-<h3 style="color:#ff8c00;">Step 1: Clone the Repository</h3>
+Follow these steps to install the Hakuspace desktop environment on your system. It is highly recommended to run this on a fresh Arch Linux installation.
+
+<h3 style="color:#ff8c00;">Step 1: Clone the Repository (Stable Release)</h3>
+
+Clone the official `v1.0.0` stable release
 
 ```bash
 cd ~
-git clone https://github.com/hakuimaku/hakuspace.git
+git clone --depth 1 --branch v1.0.0 https://github.com/hakuimaku/hakuspace.git
 ```
 
-<h3 style="color:#ff8c00;">Step 2: Navigate to Directory</h3>
+Switch to the cloned directory:
 
 ```bash
 cd hakuspace
 ```
+<h3 style="color:#ff8c00;">Step 2: Make Script Executable</h3>
 
-<h3 style="color:#ff8c00;">Step 3: Run Installer</h3>
+Make sure the script is executable and run it to start the automatic package installation and configuration setup:
 
 ```bash
+chmod +x install.sh
 ./install.sh
 ```
 
-<h3 style="color:#ff8c00;">Step 4: Reboot</h3>
+<h3 style="color:#ff8c00;">Step 3: Clean Up and Reboot</h3>
+
+Once the installation is complete, you can safely remove the temporary setup directory and reboot your system to log into your new environment:
 
 ```bash
+cd ~ && rm -rf hakuspace
 reboot
 ```
-
-<h3 style="color:#ff8c00;">Step 4.99: Now you can remove the hakuspace directory if needed</h3>
-
 
 ---
 
