@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# At block 4, 5 and 7, copy config, bin, .zshrc and .nanorc files will backup current config and bin if they exist.
+# Copy config, bin, .zshrc and .nanorc files will backup current config
 # The backup will be created in the same location with a timestamp suffix (e.g., .config_backup_20240601_123456).
 # This way, you can easily restore your previous configuration if needed.
 echo ""
@@ -13,8 +13,9 @@ echo "==========================================================================
 echo ""
 
 
-# Check package dependencies
-# Install yay if not found
+# ============================================================================
+# ========= BLOCK 1: CHECK AND INSTALL DEPENDENCIES (yay, git, curl) =========
+# ============================================================================
 read -p "===> Do you want to install yay now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
     git clone https://aur.archlinux.org/yay-bin.git /tmp/yay
@@ -57,7 +58,12 @@ echo "==========================================================================
 echo "--- Everything is ready to install Config! ---"
 
 
-# Install packages from pkg.txt
+
+
+# ============================================================================
+# ========= BLOCK 2: INSTALL PACKAGES FROM pkg.txt (IF USER CONFIRM) =========
+# ============================================================================
+
 echo ""
 echo "--- 2. Ready to install packages from pkg.txt ---"
 
@@ -77,7 +83,9 @@ else
 fi
 
 
-
+# ============================================================================
+# ========= BLOCK 3: CREATE NECESSARY DIRECTORIES (IF NOT EXIST) =============
+# ============================================================================
 
 echo ""
 echo "--- 3. Ready to initialize system directories ---"
@@ -85,9 +93,9 @@ echo "--- 3. Ready to initialize system directories ---"
 # List of directories to create
 # List all for easy management
 FOLDERS=(
-    "$HOME/Documents"
     "$HOME/.local/bin"
     "$HOME/.local/state/haku_theme"
+    "$HOME/.local/share/assets"
     "$HOME/.config"
     "$HOME/.icons"
     "$HOME/.themes"
@@ -109,6 +117,10 @@ for folder in "${FOLDERS[@]}"; do
 done
 
 
+
+# ============================================================================
+# ================= BLOCK 4: BACKUP AND COPY CONFIG FILE =====================
+# ============================================================================
 
 # Define source and destination paths for config files
 SOURCE_CONFIG="$HOME/hakuspace/config"
@@ -143,6 +155,10 @@ else
 fi
 
 
+# ============================================================================================
+# ================= BLOCK 5: BACKUP AND COPY LOCAL FILES (BIN AND STATE) =====================
+# ============================================================================================
+
 # Define source and destination paths for local files (include bin and state folders)
 SOURCE_BIN="$HOME/hakuspace/local"
 DEST="$HOME/.local"
@@ -174,6 +190,9 @@ else
     echo "Skipping local files backup."
 fi
 
+# ===========================================================================================
+# ================= BLOCK 6: INSTALL OH MY ZSH AND PLUGINS (IF USER CONFIRM) ================
+# ===========================================================================================
 
 # Install Oh My Zsh and plugins
 echo ""
@@ -220,12 +239,15 @@ else
 fi
 
 
+# =======================================================================================
+# ========= BLOCK 7: BACKUP AND COPY OTHER FILES (.zshrc, .nanorc, wallpapers) ==========
+# =======================================================================================
+
 # Define source and destination paths for other files
 DEST_OTHER="$HOME"
 SOURCE_ROOT="$HOME/hakuspace"
 DEST_WALLPAPER="$HOME/Pictures/Wallpapers"
 SOURCE_WALLPAPER="$HOME/hakuspace/Wallpapers"
-
 
 echo ""
 echo "--- 7. Ready to deploy other files (like .nanorc and .zshrc) to home directory ---"
@@ -250,8 +272,7 @@ if [[ $confirm == [yY] ]]; then
             echo "Please copy it manually ($file) to $DEST_OTHER"
         fi
     done
-    cp -f "$SOURCE_ROOT/hakufetch.txt" "$HOME/Documents/"
-    echo ":: Did copy hakufetch.txt to $HOME/Documents/"
+    # Copy wallpapers
     cp -rf "$SOURCE_WALLPAPER"/. "$DEST_WALLPAPER/"
     echo ":: Did copy wallpapers to $DEST_WALLPAPER"
 else
@@ -259,12 +280,50 @@ else
 fi
 
 
+# =======================================================================================
+# ========= BLOCK 8: BACKUP AND COPY ASSETS (NEED THIS TO SHOW FASTFETCH LOGO) ==========
+# =======================================================================================
+
+# copy assets folder into ~/.local/share/assets
+SOURCE_ASSETS="$HOME/hakuspace/assets"
+DEST_ASSETS="$HOME/.local/share/assets"
+
+echo ""
+echo "--- 8. Ready to deploy assets to ~/.local/share/assets (Need this to show fastfetch logo) ---"
+read -p "===> Do you want to backup and copy your assets now? (y/n): " confirm
+if [[ $confirm == [yY] ]]; then
+    if [ -d "$SOURCE_ASSETS" ]; then
+        echo ":: Ready to copy assets..."
+        # Make backup if destination assets already exists
+        if [ -d "$DEST_ASSETS" ]; then
+            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+            echo ":: Ready to create backup for current assets..."
+            mv "$DEST_ASSETS" "${DEST_ASSETS}_backup_$TIMESTAMP"
+            mkdir -p "$DEST_ASSETS"
+        fi
+        # Proceed with copying assets
+        cp -rf "$SOURCE_ASSETS"/. "$DEST_ASSETS/"
+        echo ":: Copy (assets) completed to $DEST_ASSETS"
+    else
+        echo "XXX [ERROR] Not found directory $SOURCE_ASSETS"
+        echo "Please copy it manually (assets) to $DEST_ASSETS"
+    fi
+else
+    echo "Skipping assets backup."
+fi
+
+
+# =========================================================================
+# ==================== BLOCK 9: BACKUP AND COPY ICONS =====================
+# =========================================================================
+
+
 # Define source and destination paths for icons
 SOURCE_ICON="$HOME/hakuspace/icons"
 DEST_ICON="$HOME/.icons"
 
 echo ""
-echo "--- 8. Ready to deploy icons to ~/.icons ---"
+echo "--- 9. Ready to deploy icons to ~/.icons ---"
 
 read -p "===> Do you want to backup and copy your icons now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
@@ -309,12 +368,16 @@ fi
 
 
 
+# ==========================================================================
+# ==================== BLOCK 10: BACKUP AND COPY THEMES ====================
+# ==========================================================================
+
 # Define source and destination paths for themes
 SOURCE_THEME="$HOME/hakuspace/themes"
 DEST_THEME="$HOME/.themes"
 
 echo ""
-echo "--- 9. Ready to deploy themes to ~/.themes ---"
+echo "--- 10. Ready to deploy themes to ~/.themes ---"
 
 read -p "===> Do you want to backup and copy your themes now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
@@ -358,19 +421,19 @@ else
 fi
 
 
+# ==========================================================================
+# ==================== BLOCK 11: ENABLE SYSTEM SERVICES ====================
+# ==========================================================================
+
 # Enable service
 echo ""
-echo "--- 10. Enabling system services ---"
+echo "--- 11. Enabling system services ---"
 
 sudo systemctl enable --now NetworkManager
 sudo systemctl enable --now bluetooth
 sudo systemctl --user enable hypridle.service
 sudo systemctl enable ly@tty1.service
 sudo systemctl disable getty@tty1.service
-
-echo "--- Configuring Nemo as default file manager ---"
-sleep 0.5
-xdg-mime default nemo.desktop inode/directory application/x-gnome-saved-search
 
 SERVICES_EXTRA=("gvfsd")
 for srv in "${SERVICES_EXTRA[@]}"; do

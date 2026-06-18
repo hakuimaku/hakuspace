@@ -146,6 +146,14 @@ theme[net_box]="${ACCENT_COLOR}"
 theme[disk_box]="${ACCENT_COLOR}"
 EOF
 
+# Newtab page (Zen browser)
+cat > "$STATE_DIR/newtab.css" <<EOF
+/* Generated - do not edit */
+:root {
+    --accent_color: ${ACCENT_COLOR};
+    --font_family: "${FONT_FAMILY}";
+}
+EOF
 
 # Output summary
 echo "Generated theme state in: $STATE_DIR"
