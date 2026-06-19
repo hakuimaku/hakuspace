@@ -79,7 +79,7 @@ cd ~ && rm -rf hakuspace
 reboot
 ```
 
-### After installing **hakuspace**
+### After installing **hakuspace** *(for lastest git, not for release v1.0.0)*
 You can immediately use the plugins that I have pre-configured. Simply install and enable them using the commands below (or tweak them as you like in `plugin.lua`).
 
 * **[hyprexpo](https://github.com/sandwichfarm/hyprexpo)** - Overview layout for your workspaces.
