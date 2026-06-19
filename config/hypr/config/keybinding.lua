@@ -14,8 +14,8 @@ local browser = "zen-browser"
 ---------------------
 
 local mainMod = "SUPER" -- Sets "Windows" key as main modifier
-
 -- Bind keys to Hyprland actions and commands
+hl.bind(mainMod .. " + GRAVE", function() hl.plugin.hyprexpo.expo("toggle") end)
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))

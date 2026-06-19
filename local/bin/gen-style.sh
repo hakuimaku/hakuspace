@@ -27,42 +27,42 @@ if [[ "${1-}" != "" && "${1-}" != --* ]]; then FONT_SIZE="$1"; SIZE_PROVIDED=tru
 
 # Flags (optional)
 while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --accent|-a) ACCENT_COLOR="${2:?missing value for --accent}"; shift 2 ;;
-    --font|-f)   FONT_FAMILY="${2:?missing value for --font}"; FONT_PROVIDED=true; shift 2 ;;
-    --size|-s)   FONT_SIZE="${2:?missing value for --size}"; SIZE_PROVIDED=true; shift 2 ;;
-    *) echo "Unknown arg: $1" >&2; exit 2 ;;
-  esac
+    case "$1" in
+        --accent|-a) ACCENT_COLOR="${2:?missing value for --accent}"; shift 2 ;;
+        --font|-f)   FONT_FAMILY="${2:?missing value for --font}"; FONT_PROVIDED=true; shift 2 ;;
+        --size|-s)   FONT_SIZE="${2:?missing value for --size}"; SIZE_PROVIDED=true; shift 2 ;;
+        *) echo "Unknown arg: $1" >&2; exit 2 ;;
+    esac
 done
 
 # ---------------------------------------------------
 # Keep existing font/size from state unless explicitly provided
 # ---------------------------------------------------
 if [[ "$FONT_PROVIDED" = false && -f "$STATE_DIR/fonts.css" ]]; then
-  parsed_font="$(sed -nE 's/^\s*font-family:\s*"([^"]+)".*$/\1/p' "$STATE_DIR/fonts.css" | head -n1 || true)"
-  [[ -n "$parsed_font" ]] && FONT_FAMILY="$parsed_font"
+    parsed_font="$(sed -nE 's/^\s*font-family:\s*"([^"]+)".*$/\1/p' "$STATE_DIR/fonts.css" | head -n1 || true)"
+    [[ -n "$parsed_font" ]] && FONT_FAMILY="$parsed_font"
 fi
 
 if [[ "$SIZE_PROVIDED" = false && -f "$STATE_DIR/fonts.css" ]]; then
-  parsed_size="$(sed -nE 's/^\s*font-size:\s*([0-9]+)px.*$/\1/p' "$STATE_DIR/fonts.css" | head -n1 || true)"
-  [[ -n "$parsed_size" ]] && FONT_SIZE="$parsed_size"
+    parsed_size="$(sed -nE 's/^\s*font-size:\s*([0-9]+)px.*$/\1/p' "$STATE_DIR/fonts.css" | head -n1 || true)"
+    [[ -n "$parsed_size" ]] && FONT_SIZE="$parsed_size"
 fi
 
 # --- sanitize accent ---
 ACCENT_COLOR="$(printf '%s' "$ACCENT_COLOR" | tr -cd '#0-9a-fA-F')"
 if ! [[ "$ACCENT_COLOR" =~ ^#[0-9a-fA-F]{6}$ ]]; then
-  ACCENT_COLOR="$DEFAULT_ACCENT"
+    ACCENT_COLOR="$DEFAULT_ACCENT"
 fi
 
 # --- sanitize size ---
 if ! [[ "$FONT_SIZE" =~ ^[0-9]+$ ]] || [[ "$FONT_SIZE" -le 0 ]]; then
-  FONT_SIZE="$DEFAULT_SIZE"
+    FONT_SIZE="$DEFAULT_SIZE"
 fi
 
 # --- convert accent to hyprland rgba(hex8) ---
 hex_to_rgba() {
     local hex="${1:-}"
-    hex="${hex#\#}"               # strip leading #
+    hex="${hex#\#}"               # strip leading
     hex="${hex//[^0-9a-fA-F]/}"   # keep only hex
     if [[ "$hex" =~ ^[0-9a-fA-F]{6}$ ]]; then
         printf 'rgba(%sff)' "${hex,,}"
@@ -73,7 +73,23 @@ hex_to_rgba() {
     fi
     printf 'rgba(ffffffff)'
 }
+
+hex_to_rgb() {
+    local hex="${1:-}"
+    hex="${hex#\#}"               # strip leading
+    hex="${hex//[^0-9a-fA-F]/}"   # keep only hex
+    if [[ "$hex" =~ ^[0-9a-fA-F]{6}$ ]]; then
+        printf 'rgb(%d, %d, %d)' $((16#${hex:0:2})) $((16#${hex:2:2})) $((16#${hex:4:2}))
+        return 0
+    elif [[ "$hex" =~ ^[0-9a-fA-F]{8}$ ]]; then
+        printf 'rgb(%d, %d, %d)' $((16#${hex:0:2})) $((16#${hex:2:2})) $((16#${hex:4:2}))
+        return 0
+    fi
+    printf 'rgb(255, 255, 255)'
+}
+
 BORDER_RGBA="$(hex_to_rgba "$ACCENT_COLOR")"
+ACCENT_RGB="$(hex_to_rgb "$ACCENT_COLOR")"
 
 # ===================================================
 # ============== Generate theme files ===============
@@ -99,6 +115,7 @@ cat > "$STATE_DIR/hyprland-style.conf" <<EOF
 # Generated - do not edit
 \$font_family = ${FONT_FAMILY}
 \$font_size = ${FONT_SIZE}
+\$accent_color = ${ACCENT_RGB}
 EOF
 
 cat > "$STATE_DIR/hyprland-style.lua" <<EOF
@@ -154,6 +171,7 @@ cat > "$STATE_DIR/newtab.css" <<EOF
     --font_family: "${FONT_FAMILY}";
 }
 EOF
+
 
 # Output summary
 echo "Generated theme state in: $STATE_DIR"
