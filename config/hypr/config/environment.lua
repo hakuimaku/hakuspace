@@ -19,9 +19,9 @@ hl.env("SDL_VIDEODRIVER", "wayland")
 hl.env("CLUTTER_BACKEND", "wayland")
 
 -- Input method
-hl.env("XMODIFIERS", "@im=fcitx")
-hl.env("QT_IM_MODULE", "fcitx")
--- hl.env("GTK_IM_MODULE", "fcitx")  # uncomment if you use GTK apps and want to use fcitx in them as well
+--hl.env("XMODIFIERS", "@im=fcitx")
+--hl.env("QT_IM_MODULE", "fcitx")
+--hl.env("GTK_IM_MODULE", "fcitx")
 
 -- Scale factor
 hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
