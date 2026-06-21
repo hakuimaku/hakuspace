@@ -3,6 +3,18 @@
 # Copy config, bin, .zshrc and .nanorc files will backup current config
 # The backup will be created in the same location with a timestamp suffix (e.g., .config_backup_20240601_123456).
 # This way, you can easily restore your previous configuration if needed.
+cat << 'EOF'
+ _   _       _          _____                      
+| | | |     | |        /  ___|                     
+| |_| | __ _| | ___   _\ `--. _ __   __ _  ___ ___ 
+|  _  |/ _` | |/ / | | |`--. \ '_ \ / _` |/ __/ _ \
+| | | | (_| |   <| |_| /\__/ / |_) | (_| | (_|  __/
+\_| |_/\__,_|_|\_\\__,_\____/| .__/ \__,_|\___\___|
+                             | |                   
+                             |_|                       
+EOF
+
+
 echo ""
 echo "================================================================================================"
 echo "--- WELCOME TO HAKUSPACE CONFIG INSTALLER ---"
@@ -91,19 +103,14 @@ echo ""
 echo "--- 3. Ready to initialize system directories ---"
 
 # List of directories to create
-# List all for easy management
 FOLDERS=(
     "$HOME/.local/bin"
     "$HOME/.local/state/haku_theme"
-    "$HOME/.local/share/assets"
     "$HOME/.config"
     "$HOME/.icons"
     "$HOME/.themes"
-    "$HOME/Pictures"
     "$HOME/Pictures/Wallpapers"
     "$HOME/Pictures/Screenshots"
-    "$HOME/Videos"
-    "$HOME/Videos/Wallpapers"
     "$HOME/Videos/Wallpapers/Preview"
 )
 
@@ -250,7 +257,7 @@ DEST_WALLPAPER="$HOME/Pictures/Wallpapers"
 SOURCE_WALLPAPER="$HOME/hakuspace/Wallpapers"
 
 echo ""
-echo "--- 7. Ready to deploy other files (like .nanorc and .zshrc) to home directory ---"
+echo "--- 7. Ready to deploy other files (like .nanorc and .zshrc) to home directory and wallpapers ---"
 
 read -p "===> Do you want to backup and copy your other files now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
@@ -280,41 +287,9 @@ else
 fi
 
 
-# =======================================================================================
-# ========= BLOCK 8: BACKUP AND COPY ASSETS (NEED THIS TO SHOW FASTFETCH LOGO) ==========
-# =======================================================================================
-
-# copy assets folder into ~/.local/share/assets
-SOURCE_ASSETS="$HOME/hakuspace/assets"
-DEST_ASSETS="$HOME/.local/share/assets"
-
-echo ""
-echo "--- 8. Ready to deploy assets to ~/.local/share/assets (Need this to show fastfetch logo) ---"
-read -p "===> Do you want to backup and copy your assets now? (y/n): " confirm
-if [[ $confirm == [yY] ]]; then
-    if [ -d "$SOURCE_ASSETS" ]; then
-        echo ":: Ready to copy assets..."
-        # Make backup if destination assets already exists
-        if [ -d "$DEST_ASSETS" ]; then
-            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-            echo ":: Ready to create backup for current assets..."
-            mv "$DEST_ASSETS" "${DEST_ASSETS}_backup_$TIMESTAMP"
-            mkdir -p "$DEST_ASSETS"
-        fi
-        # Proceed with copying assets
-        cp -rf "$SOURCE_ASSETS"/. "$DEST_ASSETS/"
-        echo ":: Copy (assets) completed to $DEST_ASSETS"
-    else
-        echo "XXX [ERROR] Not found directory $SOURCE_ASSETS"
-        echo "Please copy it manually (assets) to $DEST_ASSETS"
-    fi
-else
-    echo "Skipping assets backup."
-fi
-
 
 # =========================================================================
-# ==================== BLOCK 9: BACKUP AND COPY ICONS =====================
+# ==================== BLOCK 8: BACKUP AND COPY ICONS =====================
 # =========================================================================
 
 
@@ -323,7 +298,7 @@ SOURCE_ICON="$HOME/hakuspace/icons"
 DEST_ICON="$HOME/.icons"
 
 echo ""
-echo "--- 9. Ready to deploy icons to ~/.icons ---"
+echo "--- 8. Ready to deploy icons to ~/.icons ---"
 
 read -p "===> Do you want to backup and copy your icons now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
@@ -369,7 +344,7 @@ fi
 
 
 # ==========================================================================
-# ==================== BLOCK 10: BACKUP AND COPY THEMES ====================
+# ==================== BLOCK 9: BACKUP AND COPY THEMES ====================
 # ==========================================================================
 
 # Define source and destination paths for themes
@@ -377,7 +352,7 @@ SOURCE_THEME="$HOME/hakuspace/themes"
 DEST_THEME="$HOME/.themes"
 
 echo ""
-echo "--- 10. Ready to deploy themes to ~/.themes ---"
+echo "--- 9. Ready to deploy themes to ~/.themes ---"
 
 read -p "===> Do you want to backup and copy your themes now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
@@ -422,12 +397,12 @@ fi
 
 
 # ==========================================================================
-# ==================== BLOCK 11: ENABLE SYSTEM SERVICES ====================
+# ==================== BLOCK 10: ENABLE SYSTEM SERVICES ====================
 # ==========================================================================
 
 # Enable service
 echo ""
-echo "--- 11. Enabling system services ---"
+echo "--- 10. Enabling system services ---"
 
 sudo systemctl enable --now NetworkManager
 sudo systemctl enable --now bluetooth
