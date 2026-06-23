@@ -1,103 +1,69 @@
-# <h1 style="color:#ff69b4;">🎨 Haku Dotfiles</h1>
-
-[![Hyprland](https://img.shields.io/badge/Hyprland-0.55-orange)](https://github.com/hyprwm/hyprland) [![Arch Linux](https://img.shields.io/badge/Arch-Linux-1793D1?logo=arch-linux&logoColor=white)](https://archlinux.org) [![Dotfiles](https://img.shields.io/badge/Dotfiles-HakuSpace-ff69b4)](https://github.com/hakuimaku/hakuspace) [![License: MIT](https://img.shields.io/badge/License-MIT-green)](https://opensource.org/licenses/MIT)
-
-- **For now, HakuSpace is using hyprland 0.55 !!**
-- 📖 See Wiki: https://github.com/hakuimaku/hakuspace/wiki
-
-<h2 style="color:#1abc9c;">OVERVIEW</h2>
-
-| <img width="1920" height="1080" alt="20260616_122304" src="https://github.com/user-attachments/assets/debf37dc-2d41-4bec-9c64-897940990a0e" /> | <img width="1920" height="1080" alt="20260616_122449" src="https://github.com/user-attachments/assets/68673d63-0735-4be8-83a5-0ff68807f498" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-06-23_15-38-16" src="https://github.com/user-attachments/assets/8393b504-9932-4325-80c2-3b8307f1ab57" /> | <img width="1920" height="1080" alt="20260618_074132" src="https://github.com/user-attachments/assets/5cb478b4-51b4-4db2-af11-5fb0b07fec58" /> |
 |---|---|
-| <img width="1920" height="1080" alt="20260616_121854" src="https://github.com/user-attachments/assets/0e71b444-2709-4120-8b3c-8eca03d9ba4c" /> | <img width="1920" height="1080" alt="20260616_122126" src="https://github.com/user-attachments/assets/0743854f-a7d0-4217-a85e-784f75e7ca75" /> |
-| <img width="1920" height="1080" alt="20260616_121922" src="https://github.com/user-attachments/assets/05c24625-b900-4798-a7a7-142588bc3f07" /> | <img width="1920" height="1080" alt="20260616_122629" src="https://github.com/user-attachments/assets/12b079ca-4ce6-42dc-83f0-95b34ea5873b" /> |
 
-> Note: Some wallpapers shown in the overview screenshots are not included in the dotfiles
+# 🌆 HakuSpace - Dotfiles for Hyprland and Niri
 
+[![Hyprland](https://img.shields.io/badge/Hyprland-orange)](https://github.com/hyprwm/hyprland) [![Niri](https://img.shields.io/badge/Niri-purple)](https://github.com/niri-wm/niri) [![Arch Linux](https://img.shields.io/badge/Arch-Linux-1793D1?logo=arch-linux&logoColor=white)](https://archlinux.org) [![Dotfiles](https://img.shields.io/badge/Dotfiles-HakuSpace-ff69b4)](https://github.com/hakuimaku/hakuspace) [![License: MIT](https://img.shields.io/badge/License-MIT-green)](https://opensource.org/licenses/MIT)
 
----
-<h2 style="color:#1abc9c;">WELCOME TO HAKU SPACE! A minimal and clean dotfile configuration for Arch Linux with Hyprland</h2>
+**Welcome to Haku Space! Simple — Clean — Beautiful**
 
-- Include: Waybar, Rofi, Kitty, Zsh, Zen Browser, Networkmanager, Nemo, power-profile-daemon, ...
-Use ly for login.
-- For more infomation: [Here](https://github.com/hakuimaku/hakuspace/wiki/Important-Note#1-core-services)
-
-<h2 style="color:#1abc9c;">📋 Prerequisites</h2>
-
-- **Arch Linux** installed and configured
-- **Hyprland** (0.55.x)
-- Basic knowledge of shell configuration and file permissions
-- Preview pack will be installed before installing hakuspace in **pkg.txt** if needed
-- Package categories are documented in [pkg-notes.md](pkg-notes.md)
+- **HakuSpace** is an optimized dotfiles collection supporting both **Hyprland** and **Niri** on Arch Linux.
+- **Easy to extend and customize to fit your needs!**
 
 ---
 
-<h2 style="color:#1abc9c;">✨ Features</h2>
+## ✨ Key Features
 
-- Minimal and clean design
-- Custom Hyprland configuration with animations and rules
-- Easy-to-use: Rofi menu, Nemo file manager, Waybar status bar, and more
-- Color will change based on your wallpaper
-- 2 mode Waybar Left or Top
-- **Easy to extend and customize to fit your needs**
+* **Smart Accent Colors:** Automatically generates the accent color palette based on your current wallpaper.
+* **Flexible Waybar Layouts:** Supports two standard layouts: **Left** and **Top**. *(Note: Niri currently only supports the Top layout).*
+* **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
+* **Unified Aesthetic:** Handcrafted and polished configurations for Waybar, Rofi, and Swaync *100% beautiful for real. :)*
 
 ---
 
-<h2 style="color:#1abc9c;">🚀 Installation</h2>
+## 🛠️ Installation Guide
 
-- Follow these steps to install the Hakuspace desktop environment on your system. It is highly recommended to run this on a fresh Arch Linux installation.
+> **Prerequisites:** You need a pre-installed Arch Linux or an Arch-based Linux Distro (A fresh install is highly recommended). If you already have an existing WM or DE configuration, it is best to only reference the configs in HakuSpace rather than running the installation script directly over your system.
 
-- Read install.sh carefully before running it, and make sure to understand what it does. It will install packages, set up configurations, and make changes to your system.
-
-<h3 style="color:#ff8c00;">Step 1: Clone the Repository (Stable Release)</h3>
-
-Clone the official `v1.0.1` stable release
-
+### 1. Clone the Stable Release (Recommended)
+Run the following commands to clone the stable release version `v2.0.0`:
 ```bash
 cd ~
-git clone --depth 1 --branch v1.0.1 https://github.com/hakuimaku/hakuspace.git
+git clone --depth 1 --branch v2.0.0 https://github.com/hakuimaku/hakuspace.git
+
 ```
 
-Switch to the cloned directory:
-
-```bash
-cd hakuspace
-```
-<h3 style="color:#ff8c00;">Step 2: Make Script Executable</h3>
-
-Make sure the script is executable and run it to start the automatic package installation and configuration setup:
-
-```bash
-chmod +x install.sh
-./install.sh
-```
-
-<h3 style="color:#ff8c00;">Step 3: Clean Up and Reboot</h3>
-
-Once the installation is complete, you can safely remove the temporary setup directory and reboot your system to log into your new environment:
-
-```bash
-cd ~ && rm -rf hakuspace
-reboot
-```
-
----
-
-### Clone the latest git version (for development and bleeding edge features)
-
+If you prefer to experience the latest changes (Latest Git), you can clone the default branch instead:
 ```bash
 cd ~
 git clone https://github.com/hakuimaku/hakuspace.git
+
 cd hakuspace
 ```
 
-Install:
+### 2. Navigate to the appropriate directory based on your window manager choice:
+If you are using **Hyprland**, execute the following commands:
 ```bash
-chmod +x install.sh
+cd hyprland
+```
+If you are using **Niri**, execute the following commands:
+```bash
+cd niri
+```
+
+### 3. Run the Installation Script
+
+```bash
 ./install.sh
 ```
 
-### After installing **hakuspace** *(for lastest git, not for release v1.0.0)*
+### 4. Complete the Installation
+After running the installation script, restart your computer and log in to either **Hyprland** or **Niri** to experience the new setup.
+
+---
+
+## Plugin Configuration (Hyprland Only)
+
 You can immediately use the plugins that I have pre-configured. Simply install and enable them using the commands below (or tweak them as you like in `plugin.lua`).
 
 * **[hyprexpo](https://github.com/sandwichfarm/hyprexpo)** - Overview layout for your workspaces.
@@ -118,27 +84,33 @@ Read Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 
 1) Uncomment the plugin loading line in `hyprland.lua` to load the plugin configuration on startup
 2) Make sure to set the correct permissions for the plugin binary (if needed) using `hl.permission` in `hyprland.lua`
-3) Uncommnent `hl.exec_cmd("hyprpm reload -n")` in `autostart.lua` to automatically reload Hyprland when plugins are enabled/disabled
+3) Uncomment `hl.exec_cmd("hyprpm reload -n")` in `autostart.lua` to automatically reload Hyprland when plugins are enabled/disabled
 4) Customize the plugin configuration in `plugin.lua` as needed
 
+## 📁 Assets located
+- Icons: `~/.icons`
+- Themes: `~/.themes`
+- User scripts: `~/.local/bin`
+- Fastfetch logo: `~/.config/fastfetch/`
+- Wallpapers: `~/Pictures/Wallpapers`
+- Lively wallpapers: `~/Videos/Wallpapers`
+- Lively wallpaper thumbnail: in folder Preview `~/Videos/Wallpapers/Preview` and add image .jpg/.png (same name with video) to appear thumbnail in rofi select menu if you want to use lively wallpaper
 
----
+## 🎶 Just chill
+> Currently, `haku.sh` is only available for Hyprland.
+- Open your terminal on Workspace 1 and type `haku.sh` for a little surprise. To close them, just append the 'clear' argument (e.g., `haku.sh clear`).
+- Cava Underbar: To toggle a Cava visualizer right below Waybar, select Cava Underbar from the Haku Menu. It automatically hides during fullscreen and reappears when you exit. To disable it completely, just toggle it again in the Haku Menu.
 
-<h2 style="color:#1abc9c;">🐛 Troubleshooting</h2>
 
-If configurations don't work:
-1. Check Hyprland version compatibility (should be 0.55.x)
-2. Verify file permissions with `ls -la ~/.local/bin`
-3. Check config file paths are correctly set
-4. Review individual config files for syntax errors
-5. **If module clock on waybar doesn't work. Make sure you have set Timezone, Locale for Arch linux (And change in waybar config too)**
-6. Lively Wallpaper by SUPER SHIFT + Y didn't have thumbnail?
-   > Create folder Preview (~/Videos/Wallpapers/Preview) and add image .jpg/.png (same name with video) to appear thumbnail in rofi select menu
+# 🐞 Troubleshooting
+- **Waybar clock**: You should set your timezone and locale manually in waybar configuration to ensure the clock displays correctly.
+- If you encounter any issues during installation or configuration, just ask me in some video on my [Tiktok](https://www.tiktok.com/@hakuimaku2372) or open an issue on GitHub. I will do my best to help you out.
 
-# <h2 style="color:#1abc9c;">📦 Contributing</h2>
 
-- This is a personal dotfile configuration. Feel free to fork and adapt it to your needs!
-- tiktok: @hakuimaku2372
+# 📦 Contributing
+
+- This is a personal dotfiles configuration. Feel free to fork and adapt it to your needs!
+- tiktok: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372)
 
 ---
 *Themes, Icons and Wallpapers used in Haku Space:*
@@ -153,4 +125,5 @@ If configurations don't work:
   - [airfish](https://www.pixiv.net/en/users/67512705)
 - Fastfetch logo (Old, I was used it before) - I couldn't find the artist, I found it on [Internet](https://store.line.me/stickershop/product/5198750/en)
 
-# **Happy Ricing! 🎨**
+
+## 🎨 Happy Ricing!
