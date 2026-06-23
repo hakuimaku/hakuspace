@@ -1,0 +1,34 @@
+ignore-empty-password
+
+font=monospace
+clock
+timestr=%H:%M
+datestr=%a, %d/%m/%Y
+
+screenshots
+
+fade-in=0.5
+effect-blur=20x6
+
+
+indicator
+indicator-radius=200
+
+inside-color=00000099
+inside-clear-color=00000099
+inside-caps-lock-color=00000099
+inside-ver-color=00000099
+inside-wrong-color=00000099
+
+ring-color=00000099
+ring-clear-color=00000099
+ring-caps-lock-color= 0000ff99
+ring-ver-color=00ff0099
+ring-wrong-color=ff000099
+
+text-color=ffffff99
+text-clear-color=ffffff99
+text-caps-lock-color=0000ff99
+text-ver-color=00ff0099
+text-wrong-color=ff000099
+
