@@ -4,6 +4,7 @@ nano
 waybar
 rofi
 swaync
+swayidle
 swaylock-effects
 kitty
 awww
