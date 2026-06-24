@@ -26,8 +26,9 @@ ncdu
 rsync
 wget
 jq
-nemo
-nemo-fileroller
+thunar
+thunar-archive-plugin
+thunar-volman
 file-roller
 gvfs
 gvfs-mtp
@@ -52,7 +53,6 @@ noto-fonts-emoji
 ttf-jetbrains-mono-nerd
 rofi-emoji
 xdg-desktop-portal
-xdg-desktop-portal-gnome
 xdg-desktop-portal-gtk
 xdg-utils
 polkit-gnome
