@@ -24,8 +24,8 @@ case "$chosen" in
   *"Browser"*) spawn zen-browser ;;
   *"Screen Record"*) spawn ~/.local/bin/record.sh ;;
   *"Local Send"*) spawn localsend ;;
-  *"File Manager"*) spawn nemo ;;
-  *"Hyprland Folder"*) spawn nemo ~/.config/hypr/ ;;
+  *"File Manager"*) spawn thunar ;;
+  *"Hyprland Folder"*) spawn thunar ~/.config/hypr/ ;;
   *"Quit"*) spawn ~/.local/bin/shutdown.sh ;;
 esac
 

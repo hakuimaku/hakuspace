@@ -5,7 +5,7 @@
 
 -- Set programs that you use
 local terminal    = "kitty"
-local fileManager = "nemo"
+local fileManager = "thunar"
 local menu        = "rofi -show drun"
 local browser = "zen-browser"
 
