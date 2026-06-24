@@ -4,6 +4,7 @@
 # The backup will be created in the same location with a timestamp suffix (e.g., .config_backup_20240601_123456).
 # This way, you can easily restore your previous configuration if needed.
 cat << 'EOF'
+
  _   _       _          _____                      
 | | | |     | |        /  ___|                     
 | |_| | __ _| | ___   _\ `--. _ __   __ _  ___ ___ 
@@ -132,8 +133,8 @@ done
 # ================= BLOCK 4: BACKUP AND COPY CONFIG FILE =====================
 # ============================================================================
 
-SOURCE_NIRI_CONFIG="$NIRI_DIR/config" # include folder: niri, waybar, swaylock, swayidle
-SOURCE_COMMON_CONFIG="$COMMON_DIR/config" # include folder: cava, fastfetch, gtk-3.0, kitty, rofi, swaync
+SOURCE_NIRI_CONFIG="$NIRI_DIR/config"
+SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
 DEST_CONFIG="$HOME/.config"
 
 echo ""
@@ -174,6 +175,15 @@ if [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]]; then
     echo ""
     echo ">>> Deploying Niri configs..."
     deploy_config "$SOURCE_NIRI_CONFIG" "$DEST_CONFIG"
+
+    echo ""
+    echo ">>> Deploying mimeapps.list..."
+    if [[ -f "$SOURCE_COMMON_CONFIG/mimeapps.list" ]]; then
+        cp -f "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/"
+        echo ":: Copied mimeapps.list to $HOME/.config/"
+    else
+        echo "!!! mimeapps.list not found in $SOURCE_COMMON_CONFIG. Please copy it manually to $HOME/.config/"
+    fi
     
     echo "===> Done! Configurations deployed successfully."
 else
@@ -428,8 +438,7 @@ sudo systemctl enable --now bluetooth
 sudo systemctl enable ly@tty1.service
 sudo systemctl disable getty@tty1.service
 
-gsettings set org.cinnamon.desktop.default-applications.terminal exec 'kitty'
-gsettings set org.cinnamon.desktop.default-applications.terminal exec-arg ''
+xdg-mime default thunar.desktop inode/directory
 
 $HOME/.local/bin/gen-style.sh
 
