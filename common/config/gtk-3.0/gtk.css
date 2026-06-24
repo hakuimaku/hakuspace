@@ -1,42 +1,293 @@
 @import url("../../.local/state/haku_theme/colors.css");
 
-.nemo-window .primary-toolbar {
+/* ==========================================
+   THUNAR WINDOW CONFIGURATION
+   ========================================== */
+
+.thunar {
+    background-color: rgba(0, 0, 0, 0.5);
+    box-shadow: 6px 6px 6px rgba(0, 0, 0, 0.3);
+}
+
+.thunar .view {
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+}
+
+.thunar headerbar {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.thunar menubar {
+    background-color: transparent;
+    padding: 10px 0 0 10px;
+    border-radius: 12px;
+}
+
+.thunar toolbar {
     border-radius: 12px;
     margin: 10px 10px 5px 10px;
     padding: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    box-shadow: 6px 6px 6px rgba(0, 0, 0, 0.3);
 }
 
-.nemo-window .primary-toolbar button {
+.thunar toolbar button {
     border-radius: 8px;
-    padding: 4px;
+    padding: 2px 10px;
 }
 
-.nemo-window .primary-toolbar button:hover {
-    background-color: #000000;
-}
-
-.nemo-window .primary-toolbar button:checked,
-.nemo-window .primary-toolbar button:active {
+.thunar toolbar button:hover {
     background-color: @accent_color;
     color: #000000;
 }
 
-.nemo-window .sidebar .cell {
+.thunar toolbar button:checked,
+.thunar toolbar button:active {
+    background-color: @accent_color;
+    color: #000000;
+}
+
+.thunar .sidebar {
+    background-color: rgba(0, 0, 0, 1);
+    margin: 10px;
+    padding: 10px;
+    box-shadow: 6px 6px 6px rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+}
+
+.thunar .sidebar .cell:selected {
+    border-radius: 12px;
+}
+
+.thunar .sidebar treeview row {
     padding: 6px 1px;
 }
 
-
-.nemo-window .sidebar .cell:selected {
-    background-color: @accent_color;
-    color:#000000;
-}
-
-.nemo-window .view:selected,
-.nemo-window iconview:selected {
+.thunar .sidebar treeview row:selected {
     background-color: @accent_color;
     color: #000000;
 }
 
-.nemo-window progressbar progress {
+.thunar progressbar progress {
     background-color: @accent_color;
+}
+
+.thunar treeview.view row {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+}
+
+.thunar .view:selected,
+.thunar iconview:selected {
+    background-color: @accent_color;
+    color: #000000;
+    border-radius: 8px;
+    box-shadow: 6px 6px 6px rgba(0, 0, 0, 0.15);
+}
+
+.thunar statusbar {
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 12px;
+    margin: 2px 0 2px 0;
+    padding: 2px;
+    box-shadow: 6px 6px 6px rgba(0, 0, 0, 0.3);
+}
+
+.thunar menu {
+    background-color: rgba(20, 20, 20, 0.95);
+    border-radius: 12px;
+}
+
+.thunar notebook > header {
+    background-color: rgba(0, 0, 0, 0.25);
+    padding: 4px 8px;
+    margin: 0px 10px 5px 10px;
+    border-radius: 10px;
+    border: none;
+}
+
+.thunar notebook > header > tabs {
+    background-color: transparent;
+}
+
+.thunar notebook > header > tabs > tab {
+    padding: 6px 16px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.05);
+    margin: 0px 4px;
+    color: rgba(255, 255, 255, 0.6);
+    border: none;
+    transition: all 150ms ease;
+}
+
+.thunar notebook > header > tabs > tab:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+}
+
+.thunar notebook > header > tabs > tab:checked {
+    background-color: @accent_color;
+    color: #000000;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.thunar notebook > header > tabs > tab button {
+    padding: 2px;
+    padding-left: 6px;
+    background-color: transparent;
+    border-radius: 4px;
+    border: none;
+    color: inherit;
+}
+
+.thunar notebook > header > tabs > tab button:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+
+.thunar paned,
+.thunar paned separator,
+.thunar separator,
+.thunar notebook,
+.thunar notebook stack {
+    border-style: none;
+    border-width: 0px;
+    box-shadow: none;
+    outline-style: none;
+    background-image: none;
+    background-color: transparent;
+}
+
+
+/* ==========================================
+   MENU CONFIGURATION (Right Click Menu)
+   ========================================== */
+
+menu, .popup {
+    background-color: rgba(22, 22, 22, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+menu menuitem {
+    border-radius: 8px;
+    color: #ffffff;
+    transition: background-color 100ms ease;
+}
+
+menu menuitem:hover {
+    background-color: @accent_color;
+    color: #000000;
+}
+
+menu separator {
+    background-color: rgba(255, 255, 255, 0.1);
+    margin: 6px 10px;
+    min-height: 1px;
+}
+
+
+/* ==========================================
+   DIALOG CONFIGURATION
+   ========================================== */
+
+dialog {
+    background-color: rgba(30, 30, 30, 0.7);
+    border-radius: 16px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+    padding: 6px;
+}
+
+dialog headerbar {
+    background-color: transparent;
+    background-image: none;
+    border-style: none;
+    box-shadow: none;
+    padding: 8px;
+}
+
+dialog headerbar button {
+    border-radius: 8px;
+    padding: 4px 12px;
+}
+
+dialog stacksidebar {
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+    margin: 10px;
+    padding: 6px;
+}
+
+dialog stacksidebar row {
+    padding: 8px 14px;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 120ms ease;
+}
+
+dialog stacksidebar row:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+}
+
+dialog stacksidebar row:selected {
+    background-color: @accent_color;
+    color: #000000;
+}
+
+
+dialog stack {
+    background-color: transparent;
+    padding: 12px 20px;
+}
+
+dialog combobox,
+dialog entry {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    border-style: none;
+    padding: 6px 10px;
+    color: #ffffff;
+    box-shadow: none;
+}
+
+dialog combobox button {
+    background-color: transparent;
+    border-style: none;
+}
+
+
+/* ====================================
+   FILE CHOOSER POPUP
+   ==================================== */
+filechooser placessidebar row {
+    min-height: 38px;
+    padding: 0px 8px;
+    margin: 2px 4px;
+    border-radius: 8px;
+}
+
+filechooser treeview row {
+    min-height: 34px;
+}
+
+filechooser scrolledwindow {
+    margin: 8px;
+}
+
+filechooser headerbar button {
+    padding: 6px 16px;
+    margin: 0px 4px;
+    border-radius: 12px;
+}
+
+filechooser paned {
+    margin: 12px 16px;
+    border-radius: 8px;
+}
+
+filechooser actionbar {
+    margin: 0px 16px 12px 16px;
 }
