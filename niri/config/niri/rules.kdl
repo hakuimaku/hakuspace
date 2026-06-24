@@ -27,7 +27,7 @@ window-rule {
 
 // Opacity and background effect for specific applications
 window-rule {
-    match app-id=r#"nemo"#
+    match app-id=r#"thunar"#
     match app-id=r#"kitty"#
     match app-id=r#"code"#
     opacity 0.8
@@ -56,6 +56,11 @@ window-rule {
     match app-id=r#"zen"#
     match app-id=r#"code"#
     open-maximized true
+}
+
+window-rule {
+    match app-id=r#"thunar"#
+    default-column-width { proportion 0.65; }
 }
 
 
@@ -99,3 +104,11 @@ layer-rule {
     }
 }
 
+window-rule {
+    match app-id=r#"xdg-desktop-portal-gtk"#
+
+    open-floating true
+    default-floating-position x=0 y=0
+    min-width 400
+    min-height 600
+}
