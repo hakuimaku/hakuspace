@@ -68,6 +68,10 @@ cd niri
 ### 4. Complete the Installation
 After running the installation script, restart your computer and log in to either **Hyprland** or **Niri** to experience the new setup.
 
+### 5. Change GTK theme
+- Go to `GTK Settings` in Rofi App Menu.
+- Change the theme, icons, and mouse cursor for a better aesthetic.
+
 ---
 
 ## Plugin Configuration (Hyprland Only)
