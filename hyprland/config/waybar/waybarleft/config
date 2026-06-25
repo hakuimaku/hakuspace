@@ -11,7 +11,8 @@
 
     "modules-left": [
         "custom/haku",
-        "hyprland/workspaces"
+        "hyprland/workspaces",
+        "niri/workspaces"
     ],
     "modules-center": [
         "clock"
@@ -19,6 +20,7 @@
     "modules-right": [
         "custom/recorder",
         "group/hardware",
+        "battery",
         "group/backlight",
         "group/pulseaudio",
         "custom/notification"
@@ -54,14 +56,13 @@
     "group/hardware": {
         "orientation": "vertical",
         "drawer": {
-            "transition-duration": 500,
+            "transition-duration": 1000,
             "children-class": "not-power",
             "transition-left-to-right": false
         },
         "modules": [
             "tray",
             "power-profiles-daemon",
-            "battery",
             "network"
         ]
     },
@@ -69,7 +70,7 @@
     "group/backlight": {
         "orientation": "vertical",
         "drawer": {
-            "transition-duration": 500,
+            "transition-duration": 1000,
             "children-class": "not-power",
             "transition-left-to-right": false
         },
@@ -82,7 +83,7 @@
     "group/pulseaudio": {
         "orientation": "vertical",
         "drawer": {
-            "transition-duration": 500,
+            "transition-duration": 1000,
             "children-class": "not-power",
             "transition-left-to-right": false
         },
@@ -97,7 +98,7 @@
         "format-icons": ["", "", "", "", "", "", "", "", ""],
         "on-scroll-up": "brightnessctl set 1%+",
         "on-scroll-down": "brightnessctl set 1%-",
-        "on-click": "hyprsunset --temperature 3000",
+        "on-click": "hyprsunset --temperature 3500",
         "on-click-right": "pkill hyprsunset",
         "tooltip-format": "Brightness: {percent}%"
     },
@@ -181,6 +182,12 @@
         "format-window-separator": "\n",
         "window-rewrite-default": "",
         "window-rewrite": {
+            "class<seyclock>": "k",
+            "class<seymatrix>": "h",
+            "class<seycava>": "h",
+            "class<seycmd>": "u",
+            "class<seypipes>": "u",
+            "class<seylavat>": "a",
             "title<.*youtube.*>": "",
             "class<firefox>": "󰈹",
             "class<zen>":"",
@@ -189,17 +196,11 @@
             "thunar": "󰝰",
             "nemo": "󰝰",
             "code": "󰨞",
-            "cavaunderbar": "",
+            "cavaunderbar": "󰝚",
             "title<.* - (.*) - VSCodium>": "codium $1",
             "Prism Launcher .*": "󰍳",
             "CurseForge": "󰍳",
             "Minecraft": "󰍳",
-            "class<seyclock>": "k",
-            "class<seymatrix>": "h",
-            "class<seycava>": "h",
-            "class<seycmd>": "u",
-            "class<seypipes>": "u",
-            "class<seylavat>": "a",
             "Steam": "",
             "spotify": "",
             "Star Rail": "",
@@ -227,7 +228,7 @@
     "custom/haku": {
         "format": "{icon}",
         "format-icons": {
-            "default": ""
+            "default": "󰣇"
         },
         "on-click": "~/.local/bin/hakumenu.sh",
         "tooltip-format": "Have a nice day!",
