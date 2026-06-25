@@ -1,5 +1,8 @@
 | <img width="1920" height="1080" alt="screenshot_2026-06-23_15-38-16" src="https://github.com/user-attachments/assets/8393b504-9932-4325-80c2-3b8307f1ab57" /> | <img width="1920" height="1080" alt="20260618_074132" src="https://github.com/user-attachments/assets/5cb478b4-51b4-4db2-af11-5fb0b07fec58" /> |
 |---|---|
+| <img width="1920" height="1080" alt="screenshot_2026-06-25_07-47-03" src="https://github.com/user-attachments/assets/62b0470f-6a5f-4ad3-abe5-391e7a5bed0d" /> | <img width="1920" height="1080" alt="screenshot_2026-06-25_07-55-46" src="https://github.com/user-attachments/assets/6cea11a9-af14-4ac5-8729-c161be4578e0" /> |
+
+
 
 # 🌆 HakuSpace - Dotfiles for Hyprland and Niri
 
@@ -17,7 +20,8 @@
 * **Smart Accent Colors:** Automatically generates the accent color palette based on your current wallpaper.
 * **Flexible Waybar Layouts:** Supports two standard layouts: **Left** and **Top**. *(Note: Niri currently only supports the Top layout).*
 * **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
-* **Unified Aesthetic:** Handcrafted and polished configurations for Waybar, Rofi, and Swaync *100% beautiful for real. :)*
+* **Wallpaper Automation** Wallpapers change automatically every 5 minutes (customizable in the `random_wallpaper.sh` script).
+* **Unified Aesthetic:** Handcrafted and polished configurations for Waybar, Rofi, Swaync and Thunar theme *100% beautiful for real. :)*
 
 ---
 
@@ -26,10 +30,10 @@
 > **Prerequisites:** You need a pre-installed Arch Linux or an Arch-based Linux Distro (A fresh install is highly recommended). If you already have an existing WM or DE configuration, it is best to only reference the configs in HakuSpace rather than running the installation script directly over your system.
 
 ### 1. Clone the Stable Release (Recommended)
-Run the following commands to clone the stable release version `v2.0.0`:
+Run the following commands to clone the stable release version `v2.0.1`:
 ```bash
 cd ~
-git clone --depth 1 --branch v2.0.0 https://github.com/hakuimaku/hakuspace.git
+git clone --depth 1 --branch v2.0.1 https://github.com/hakuimaku/hakuspace.git
 
 ```
 
@@ -38,6 +42,10 @@ If you prefer to experience the latest changes (Latest Git), you can clone the d
 cd ~
 git clone https://github.com/hakuimaku/hakuspace.git
 
+```
+
+Swith to the `hakuspace` directory:
+```bash
 cd hakuspace
 ```
 
@@ -103,6 +111,7 @@ Read Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 
 
 # 🐞 Troubleshooting
+- Currently, my custom `gtk.css` is only compatible with **GTK 3** and only supports **Dark Mode**. If you are using Light Mode, you may encounter some issues with the appearance of GTK applications **(Thunar)**.
 - **Waybar clock**: You should set your timezone and locale manually in waybar configuration to ensure the clock displays correctly.
 - If you encounter any issues during installation or configuration, just ask me in some video on my [Tiktok](https://www.tiktok.com/@hakuimaku2372) or open an issue on GitHub. I will do my best to help you out.
 
@@ -114,16 +123,15 @@ Read Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 
 ---
 *Themes, Icons and Wallpapers used in Haku Space:*
-- Theme: [BlackAndWhite](https://www.gnome-look.org/p/2010116)
-- Theme: [Magnetic-Dark](https://www.gnome-look.org/p/2093088)
 - Theme: [Midnight-Gray](https://www.gnome-look.org/p/1273208)
 - Icons: [Tela-circle-black](https://www.gnome-look.org/p/1359276)
-- Mouse Cursor: [lliurex-cursors](https://www.gnome-look.org/p/999908)
+- Mouse Cursor: [Bibata-Modern-Ice](https://www.gnome-look.org/p/1197198)
 - Wallpapers Artists:
   - [zrxrevolutionz](https://www.deviantart.com/zrxrevolutionz)
   - [かづいせ](https://www.pixiv.net/en/users/1031168)
-  - [airfish](https://www.pixiv.net/en/users/67512705)
-- Fastfetch logo (Old, I was used it before) - I couldn't find the artist, I found it on [Internet](https://store.line.me/stickershop/product/5198750/en)
+  - [airfish 空气鱼](https://www.pixiv.net/en/users/67512705)
+  - [Android/アンドロイド](https://www.pixiv.net/en/users/67750556)
+  - [Roby0174](https://www.deviantart.com/roby0174)
 
 
 ## 🎨 Happy Ricing!
