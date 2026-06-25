@@ -27,9 +27,9 @@ hl.bind(mainMod .. " + P", hl.dsp.exec_cmd([[grim -g "$(slurp)" - | tee ~/Pictur
 hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd([[grim - | tee ~/Pictures/Screenshots/$(date +'%Y%m%d_%H%M%S').png | wl-copy && swappy -f -]]))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
 hl.bind(mainMod .. " + SLASH", hl.dsp.exec_cmd("rofi -modi emoji -show emoji"))
-hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ toggle = true }))
-hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ toggle = false }))
-hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("hyprsunset --temperature 3000"))
+hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))
+hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
+hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("hyprsunset --temperature 3500"))
 hl.bind(mainMod .. " + SHIFT + L", hl.dsp.exec_cmd("pkill hyprsunset"))
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("swaync-client -t -sw"))
 

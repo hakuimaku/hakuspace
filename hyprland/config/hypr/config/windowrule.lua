@@ -79,9 +79,9 @@ codeSpecialWorkspace:set_enabled(true) -- Disable this rule for now, as it can b
 
 hl.workspace_rule({ workspace = "1", persistent = true, layout = "master" })
 hl.workspace_rule({ workspace = "2", persistent = true })
---hl.workspace_rule({ workspace = "3", persistent = true })
---hl.workspace_rule({ workspace = "4", persistent = true })
---hl.workspace_rule({ workspace = "5", persistent = true })
+hl.workspace_rule({ workspace = "3", persistent = true })
+hl.workspace_rule({ workspace = "4", persistent = true })
+hl.workspace_rule({ workspace = "5", persistent = true })
 
 -- Set border color to red if window is fullscreen
 hl.window_rule({
@@ -95,7 +95,7 @@ hl.window_rule({
 --------------------------------
 hl.window_rule({
     name  = "opacity-for-certain-apps",
-    match = { class = "(?i)nemo|kitty|code|jetbrains.*" },
+    match = { class = "thunar|kitty|code|jetbrains.*" },
 
     opacity = 0.8,
 })
@@ -115,6 +115,7 @@ hl.window_rule({
 hl.layer_rule({
     name = "rofi-slide",
     match = { namespace = "rofi" },
+
     animation = "slide top",
     blur = true,
 })
