@@ -8,12 +8,11 @@ if [[ $# -eq 0 ]]; then
   [[ "$WALL_STATUS" == "1" ]] && WALL_TEXT="ON"
 
   cat <<EOF
-  Cava Underbar
 󰸉  Change Wallpaper
   Change Lively Wallpaper
 󰃾  Kill Lively Wallpaper
 󰁪  Auto Random Wallpaper ($WALL_TEXT)
-󰑓  Waybar Reset
+  Waybar Left & Top Toggle
   Change Theme
 EOF
   exit 0
@@ -25,7 +24,7 @@ case "$chosen" in
   *"Change Wallpaper"*) spawn ~/.local/bin/wallselect.sh ;;
   *"Change Lively Wallpaper"*) spawn ~/.local/bin/wallmpvselect.sh ;;
   *"Kill Lively Wallpaper"*) spawn ~/.local/bin/wallmpvselect.sh --exit ;;
-  *"Waybar Reset"*) spawn ~/.local/bin/waybar_toggle.sh ;;
+  *"Waybar Left & Top Toggle"*) spawn ~/.local/bin/waybar_toggle.sh ;;
   *"Auto Random Wallpaper"*) spawn ~/.local/bin/random_wallpaper.sh --toggle ;;
   *"Change Theme"*) spawn ~/.local/bin/changetheme.sh ;;
 esac
