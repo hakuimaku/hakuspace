@@ -23,7 +23,7 @@ case "$chosen" in
   *"Browser"*) spawn zen-browser ;;
   *"Screen Record"*) spawn ~/.local/bin/record.sh ;;
   *"Local Send"*) spawn localsend ;;
-  *"File Manager"*) spawn nemo ;;
+  *"File Manager"*) spawn thunar ;;
   *"Quit"*) spawn ~/.local/bin/shutdown.sh ;;
 esac
 
