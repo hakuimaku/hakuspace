@@ -1,0 +1,262 @@
+{
+    "layer": "top",
+    "position": "top",
+    "margin-top": 3,
+    "margin-bottom": 0,
+    "margin-left": 3,
+    "margin-right": 3,
+    "spacing": 0,
+    "tooltip": true,
+    "reload_style_on_change": true,
+
+    "modules-left": [
+        "custom/haku",
+        "hyprland/workspaces",
+        "niri/workspaces"
+    ],
+    "modules-center": [
+        "clock"
+    ],
+    "modules-right": [
+        "custom/recorder",
+        "group/backlight",
+        "group/pulseaudio",
+        "battery",
+        "group/hardware",
+        "custom/notification"
+    ],
+
+    "clock": {
+        "format": " {:%A, %d/%m/%Y [ %H:%M:%S ]} ", 
+        "format-alt": "   Have a nice day! {:%H:%M} 󰋑 ",
+        "interval": 1,
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+        "calendar": {
+                    "mode"          : "month",
+                    "mode-mon-col"  : 3,
+                    "weeks-pos"     : "right",
+                    "on-scroll"     : 1,
+                    "format": {
+                              "months":     "<span color='#ffead3'><b>{}</b></span>",
+                              "days":       "<span color='#ecc6d9'><b>{}</b></span>",
+                              "weeks":      "<span color='#99ffdd'><b>W{}</b></span>",
+                              "weekdays":   "<span color='#ffcc66'><b>{}</b></span>",
+                              "today":      "<span color='#ff6699'><b><u>{}</u></b></span>"
+                              }
+                    },
+        "actions":  {
+                    "on-click-right": "mode",
+                    "on-scroll-up": "tz_up",
+                    "on-scroll-down": "tz_down",
+                    "on-scroll-up": "shift_up",
+                    "on-scroll-down": "shift_down"
+                    }
+    },
+
+    "group/hardware": {
+        "orientation": "horizontal",
+        "drawer": {
+            "transition-duration": 1000,
+            "children-class": "not-power",
+            "transition-left-to-right": false
+        },
+        "modules": [
+            "tray",
+            "power-profiles-daemon",
+            "network"
+        ]
+    },
+
+    "group/backlight": {
+        "orientation": "horizontal",
+        "drawer": {
+            "transition-duration": 1000,
+            "children-class": "not-power",
+            "transition-left-to-right": true
+        },
+        "modules": [
+            "backlight",
+            "backlight/slider"
+        ]
+    },
+
+    "group/pulseaudio": {
+        "orientation": "horizontal",
+        "drawer": {
+            "transition-duration": 1000,
+            "children-class": "not-power",
+            "transition-left-to-right": true
+        },
+        "modules": [
+            "pulseaudio",
+            "pulseaudio/slider"
+        ]
+    },
+
+    "backlight": {
+        "format": "{icon} {percent}%",
+        "format-icons": ["", "", "", "", "", "", "", "", ""],
+        "on-scroll-up": "brightnessctl set 1%+",
+        "on-scroll-down": "brightnessctl set 1%-",
+        "on-click": "hyprsunset --temperature 3500",
+        "on-click-right": "pkill hyprsunset",
+        "tooltip-format": "Brightness: {percent}%"
+    },
+
+    "backlight/slider": {
+        "min": 10,
+        "max": 100,
+        "orientation": "horizontal"
+    },
+
+    "battery": {
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon}",
+        "format-icons": {
+            "default": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+            "charging": ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"]
+        },
+        "tooltip-format": "Battery: {capacity}%\nPower: {power}W\n{timeTo}",
+        "tooltip": true
+    },
+
+    "power-profiles-daemon": {
+        "format": "{icon}",
+        "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
+        "tooltip": true,
+        "format-icons": {
+            "default": "",
+            "performance": "",
+            "balanced": "",
+            "power-saver": ""
+        }
+    },
+
+
+    "network": {
+        "format": "{ifname}",
+        "format-wifi": "{essid}   ",
+        "format-ethernet": "{ipaddr}/{cidr} 󰊗  ",
+        "format-disconnected": "",
+        "tooltip-format": "{ifname} via {gwaddr} 󰊗  ",
+        "tooltip-format-wifi": "{essid} ({signalStrength}%)   ",
+        "tooltip-format-ethernet": "{ifname}   ",
+        "tooltip-format-disconnected": "Disconnected"
+    },
+
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-muted": "󰝟 ",
+        "format-icons": {
+            "headphone": "󰋋",
+            "default": ["", "", ""]
+        },
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click-right": "pavucontrol",
+        "tooltip-format": "Volume: {volume}%"
+    },
+
+    "pulseaudio/slider": {
+        "min": 0,
+        "max": 100,
+        "orientation": "horizontal"
+    },
+
+    "tray": {
+        "icon-size": 18,
+        "spacing": 10,
+        "show-passive-items": true
+    },
+
+    "niri/workspaces": {
+        "format": "{index}"
+    },
+
+    "hyprland/workspaces": {
+        "all-outputs": true,
+        "sort-by-number": true,
+        "show-special": true,
+        "format": "{icon} {windows}",
+        "format-icons": {
+            "magic": ""
+	    },
+        "format-window-separator": " ",
+        "window-rewrite-default": "",
+        "window-rewrite": {
+            "class<seyclock>": "k",
+            "class<seymatrix>": "h",
+            "class<seycava>": "h",
+            "class<seycmd>": "u",
+            "class<seypipes>": "u",
+            "class<seylavat>": "a",
+            "title<.*youtube.*>": "",
+            "class<firefox>": "󰈹",
+            "class<zen>":"",
+            "class<firefox> title<.*github.*>": "",
+            "kitty": "",
+            "thunar": "󰝰",
+            "nemo": "󰝰",
+            "code": "󰨞",
+            "cavaunderbar": "󰝚",
+            "title<.* - (.*) - VSCodium>": "codium $1",
+            "Prism Launcher .*": "󰍳",
+            "CurseForge": "󰍳",
+            "Minecraft": "󰍳",
+            "Steam": "",
+            "spotify": "",
+            "Star Rail": "",
+            "Send": "",
+            "brave": "",
+            "rider": "",
+            "datagrip": "",
+            "libreoffice": "",
+            "Zalo": "󰭹",
+            "WPS": "",
+            "Gear lever": "󰣆"
+        }
+    },
+
+
+    "custom/recorder": {
+        "exec": "if [ -f /tmp/recording_time ]; then cat /tmp/recording_time; fi",
+        "interval": 1,
+        "format": "󰑋",
+        "tooltip": false,
+        "return-type": "plain",
+        "if-file-exists": "/tmp/recording_pid"
+    },
+
+    "custom/haku": {
+        "format": "{icon}",
+        "format-icons": {
+            "default": "󰣇"
+        },
+        "on-click": "~/.local/bin/hakumenu.sh",
+        "tooltip-format": "Have a nice day!",
+        "tooltip": true
+    },
+
+    "custom/notification": {
+        "tooltip": true,
+        "format": "{icon}",
+        "format-icons": {
+            "notification": "󰂚<span foreground='red'><sup></sup></span>",
+            "none": "󰂚",
+            "dnd-notification": "<span foreground='red'><sup></sup></span>",
+            "dnd-none": "",
+            "inhibited-notification": "󰂚<span foreground='red'><sup></sup></span>",
+            "inhibited-none": "󰂚",
+            "dnd-inhibited-notification": "󰂛<span foreground='red'><sup></sup></span>",
+            "dnd-inhibited-none": ""
+        },
+        "return-type": "json",
+        "exec-if": "which swaync-client",
+        "exec": "swaync-client -swb",
+        "on-click": "swaync-client -t -sw",
+        "on-click-right": "swaync-client -d -sw",
+        "escape": true
+    }
+}
