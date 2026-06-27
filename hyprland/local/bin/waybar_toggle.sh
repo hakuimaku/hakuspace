@@ -5,7 +5,7 @@ DIR_TOP="$HOME/.config/waybar/waybartop"
 STATE_FILE="/tmp/waybar_current_mode"
 
 if [ $1 == "--reset" ]; then
-    sudo rm "$STATE_FILE"
+    rm "$STATE_FILE"
 fi
 
 if [ ! -f "$STATE_FILE" ]; then
