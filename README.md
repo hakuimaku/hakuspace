@@ -19,7 +19,7 @@
 
 * **Smart Accent Colors:** Automatically generates the accent color palette based on your current wallpaper.
 * **Flexible Waybar Layouts:** Supports two standard layouts: **Left** and **Top**.
-* **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar. *(Note: Niri does not support this feature.*
+* **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar. *(Note: Niri does not support this feature.*)
 * **Wallpaper Automation** Wallpapers change automatically every 5 minutes (customizable in the `random_wallpaper.sh` script).
 * **Unified Aesthetic:** Handcrafted and polished configurations for Waybar, Rofi, Swaync and Thunar theme *100% beautiful for real. :)*
 
@@ -73,7 +73,7 @@ After running the installation script, restart your computer and log in to eithe
 - Go to `GTK Settings` in Rofi App Menu.
 - Change the theme, icons, and mouse cursor for a better aesthetic.
 
-### 🔽 Update Haku Space to lastet version
+### 🔽 Update Haku Space to lastest version
 
 - First, you need to clone the latest version (or the latest git)
 - To update hakuspace, simply re-run the `install.sh` script, as it will automatically back up your existing files and apply the latest changes.
