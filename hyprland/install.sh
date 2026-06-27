@@ -79,7 +79,8 @@ echo "--- Everything is ready to install Config! ---"
 # ============= BLOCK 2: INSTALL PACKAGES FROM pkg-hyprland.txt ==============
 # ============================================================================
 
-PKG_FILE="$HYPRLAND_DIR/pkg-hyprland.txt"
+PKG_HYPR="$HYPRLAND_DIR/pkg-hyprland.txt"
+PKG_COMMON="$COMMON_DIR/pkg-common.txt"
 
 echo ""
 echo "--- 2. Ready to install packages from pkg-hyprland.txt ---"
@@ -87,11 +88,8 @@ echo "--- 2. Ready to install packages from pkg-hyprland.txt ---"
 echo ":: Ready to install packages..."
 read -p "===> Do you want to install packages from pkg-hyprland.txt now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
-    if [[ ! -f "$PKG_FILE" ]]; then
-        echo "XXX [ERROR] Not found file $PKG_FILE"
-        exit 1
-    fi
-    yay -S --noconfirm - < "$PKG_FILE"
+    yay -S --noconfirm - < "$PKG_HYPR"
+    yay -S --noconfirm - < "$PKG_COMMON"
     
     echo "-------------------------------------------"
     echo ":: All packages from the list have been processed!"
