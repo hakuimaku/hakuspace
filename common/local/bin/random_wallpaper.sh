@@ -57,12 +57,4 @@ toggle_wallpaper() {
     fi
 }
 
-if [[ "$1" == "--toggle" ]]; then
-    toggle_wallpaper
-    exit 0
-fi
-
-# Automatically restore wallpaper on boot
-if [[ "$(cat "$STATE_FILE")" == "1" ]]; then
-    run_wallpaper &
-fi
+toggle_wallpaper
