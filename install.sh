@@ -19,7 +19,7 @@ EOF
 
 echo ""
 echo "================================================================================================"
-echo "--- WELCOME TO HAKUSPACE - NIRI CONFIG INSTALLER ---"
+echo "--- WELCOME TO HAKUSPACE - CONFIG INSTALLER ---"
 echo "This script will help you set up your HakuSpace configuration"
 echo "It will install necessary packages, copying config files and setting up Oh My Zsh with plugins."
 echo "Please follow the prompts to complete the installation process."
@@ -27,8 +27,37 @@ echo "==========================================================================
 echo ""
 
 HAKU_DIR="$HOME/hakuspace"
-NIRI_DIR="$HAKU_DIR/niri"
 COMMON_DIR="$HAKU_DIR/common"
+PKG_COMMON="$COMMON_DIR/pkg-common.txt"
+
+echo "Current directory: $PWD"
+echo ""
+echo "[1]. HYPRLAND"
+echo "[2]. NIRI"
+echo ""
+read -p ">>> Which Window Manager do you want to install?: " wm_choice
+if [[ $wm_choice == "1" ]]; then
+    echo "You have chosen to install Hyprland - HakuSpace Config."
+    WM_DIR="$HAKU_DIR/hyprland"
+    PKG_WM="$WM_DIR/pkg-hyprland.txt"
+    WM="hyprland"
+elif [[ $wm_choice == "2" ]]; then
+    echo "You have chosen to install Niri - HakuSpace Config."
+    WM_DIR="$HAKU_DIR/niri"
+    PKG_WM="$WM_DIR/pkg-niri.txt"
+    WM="niri"
+else
+    echo "Invalid choice. Please run the script again and choose either 1 or 2."
+    exit 1
+fi
+
+# Check HAKU_DIR == $PWD
+if [[ "$PWD" != "$HAKU_DIR" ]]; then
+    echo ""
+    echo "!!! Please run this script from the HakuSpace directory: $HAKU_DIR"
+    echo "Current directory: $PWD"
+    exit 1
+fi
 
 # ============================================================================
 # ========= BLOCK 1: CHECK AND INSTALL DEPENDENCIES (yay, git, curl) =========
@@ -62,7 +91,7 @@ for pkg in "${DEPENDENCIES[@]}"; do
         if [[ $confirm == [yY] ]]; then
             yay -S --noconfirm "$pkg"
         else
-            echo "You need to install $pkg to install packages from pkg-niri.txt"
+            echo "You need to install $pkg to install packages from $PKG_WM"
         fi
     fi
 done
@@ -76,19 +105,16 @@ echo "--- Everything is ready to install Config! ---"
 
 
 # ============================================================================
-# ============= BLOCK 2: INSTALL PACKAGES FROM pkg-niri.txt ==============
+# ============= BLOCK 2: INSTALL PACKAGES FROM pkg-hyprland.txt ==============
 # ============================================================================
 
-PKG_NIRI="$NIRI_DIR/pkg-niri.txt"
-PKG_COMMON="$COMMON_DIR/pkg-common.txt"
-
 echo ""
-echo "--- 2. Ready to install packages from pkg-niri.txt ---"
+echo "--- 2. Ready to install packages from $PKG_WM ---"
 
 echo ":: Ready to install packages..."
-read -p "===> Do you want to install packages from pkg-niri.txt now? (y/n): " confirm
+read -p "===> Do you want to install packages from $PKG_WM now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
-    yay -S --noconfirm - < "$PKG_NIRI"
+    yay -S --noconfirm - < "$PKG_WM"
     yay -S --noconfirm - < "$PKG_COMMON"
     
     echo "-------------------------------------------"
@@ -131,7 +157,7 @@ done
 # ================= BLOCK 4: BACKUP AND COPY CONFIG FILE =====================
 # ============================================================================
 
-SOURCE_NIRI_CONFIG="$NIRI_DIR/config"
+SOURCE_WM_CONFIG="$WM_DIR/config"
 SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
 DEST_CONFIG="$HOME/.config"
 
@@ -171,8 +197,8 @@ if [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]]; then
     deploy_config "$SOURCE_COMMON_CONFIG" "$DEST_CONFIG"
     
     echo ""
-    echo ">>> Deploying Niri configs..."
-    deploy_config "$SOURCE_NIRI_CONFIG" "$DEST_CONFIG"
+    echo ">>> Deploying $WM configs..."
+    deploy_config "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
 
     echo ""
     echo ">>> Deploying mimeapps.list..."
@@ -193,7 +219,7 @@ fi
 # ================= BLOCK 5: BACKUP AND COPY LOCAL FILES (BIN / SCRIPTS) =====================
 # ============================================================================================
 
-SOURCE_BIN="$NIRI_DIR/local/bin"
+SOURCE_BIN="$COMMON_DIR/local/bin"
 DEST_BIN="$HOME/.local/bin"
 
 echo ""
@@ -437,6 +463,9 @@ sudo systemctl enable ly@tty1.service
 sudo systemctl disable getty@tty1.service
 
 xdg-mime default thunar.desktop inode/directory
+
+if [[ $WM == "hyprland" ]]; then
+    systemctl --user enable hypridle.service
 
 $HOME/.local/bin/gen-style.sh
 
