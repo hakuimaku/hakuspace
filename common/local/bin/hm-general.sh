@@ -13,7 +13,7 @@ if [[ $# -eq 0 ]]; then
   File Manager
 󰈆  Quit
 EOF
-  exit 0
+    exit 0
 fi
 
 chosen="$*"

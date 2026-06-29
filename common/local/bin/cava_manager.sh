@@ -1,13 +1,10 @@
 #!/bin/bash
 
-
 APP_CLASS="cavaunderbar"
 STATE_FILE="/tmp/cava_underbar_status"
 SOCKET_PATH="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
 
 [[ ! -f "$STATE_FILE" ]] && echo "0" > "$STATE_FILE"
-
-
 
 run_cava() {
     kitty --class="$APP_CLASS" \
@@ -18,6 +15,10 @@ run_cava() {
           -o window_padding_width=0 \
           -o hide_window_decorations=yes \
           -e cava -p ~/.config/cava/config_underbar &
+
+    if pgrep -x "niri" > /dev/null; then
+        niri-float-sticky -ipc set_sticky -app-id "cavaunderbar"
+    fi
 }
 
 toggle_cava() {
@@ -30,7 +31,13 @@ toggle_cava() {
     fi
 }
 
+if [[ "$1" == "--toggle" ]]; then
+    toggle_cava
+    exit 0
+fi
 
+# Check fullscreen, work around for Hyprland's fullscreen behavior
+# Hyprland use pin cava_underbar window -> fullscreen window still shows it up
 check_fullscreen() {
     local active_win=$(hyprctl activewindow -j)
     local fs_mode=$(echo "$active_win" | jq -r '.fullscreen')
@@ -48,13 +55,6 @@ check_fullscreen() {
         fi
     fi
 }
-
-
-if [[ "$1" == "--toggle" ]]; then
-    toggle_cava
-    exit 0
-fi
-
 
 check_fullscreen
 

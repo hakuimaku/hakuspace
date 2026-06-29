@@ -27,7 +27,7 @@ fi
 hyprctl reload >/dev/null 2>&1 || true
 
 # Waybar reload
-# Oh we don't need it anymore, it uses reload_style_on_change
+# Oh we don't need it anymore, waybar config uses reload_style_on_change
 
 # Swaync reload
 pkill swaync >/dev/null 2>&1 || true

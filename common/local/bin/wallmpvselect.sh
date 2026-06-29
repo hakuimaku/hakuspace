@@ -2,7 +2,7 @@
 
 WALL_DIR="$HOME/Videos/Wallpapers"
 PREVIEW_DIR="$WALL_DIR/Preview"
-MONITOR="eDP-1"
+MONITOR="eDP-1" #Custom your monitor name
 
 if [[ $1 == "--exit" ]]; then
     if ! pgrep -x "mpvpaper" > /dev/null; then
@@ -68,18 +68,18 @@ if [ -n "$CHOICE" ]; then
     # 2. Pick accent from PREVIEW image
     if [[ -n "$PREVIEW" ]]; then
         ACCENT=$(python3 -c '
-                from colorthief import ColorThief
-                import sys
-                def brightness(c): return sum(v*v for v in c)
-                colors = ColorThief(sys.argv[1]).get_palette(color_count=5)
-                brightest = max(colors,key=brightness)
-                print("#%02x%02x%02x" % brightest)
-            ' "$PREVIEW")
+            from colorthief import ColorThief
+            import sys
+            def brightness(c): return sum(v*v for v in c)
+            colors = ColorThief(sys.argv[1]).get_palette(color_count=5)
+            brightest = max(colors,key=brightness)
+            print("#%02x%02x%02x" % brightest)
+        ' "$PREVIEW")
     else
         ACCENT="#ffffff"
     fi
 
-        # 3. If accent too dark -> fallback
+    # 3. If accent too dark -> fallback
     r=$(printf "%d" 0x${ACCENT:1:2})
     g=$(printf "%d" 0x${ACCENT:3:2})
     b=$(printf "%d" 0x${ACCENT:5:2})
@@ -92,9 +92,6 @@ if [ -n "$CHOICE" ]; then
 
     sleep 0.5
     ~/.local/bin/apply-style.sh
-
-    sleep 0.5
-    notify-send "Wallpaper + Accent updated!" "$CHOICE, Accent: $ACCENT"
 fi
 
 exit 1

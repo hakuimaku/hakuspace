@@ -62,11 +62,7 @@ if [[ "$1" == "--toggle" ]]; then
     exit 0
 fi
 
-# Automatically restore wallpaper on boot (for auto start in hyprland.lua)
+# Automatically restore wallpaper on boot
 if [[ "$(cat "$STATE_FILE")" == "1" ]]; then
-    # Count the number of running script instances to avoid creating duplicate processes when reloading Hyprland
-    PROCS=$(pgrep -f "random_wallpaper.sh" | wc -w)
-    if [ "$PROCS" -le 2 ]; then
-        (sleep 2 && run_wallpaper) &
-    fi
+    run_wallpaper &
 fi
