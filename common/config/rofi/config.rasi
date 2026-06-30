@@ -13,4 +13,4 @@ configuration {
     cycle: false;
 }
 
-@theme "mytheme"
+@theme "hakutheme"
