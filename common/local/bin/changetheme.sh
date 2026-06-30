@@ -62,7 +62,7 @@ case "$choice" in
         ;;
 
     "  Change font size")
-        new_size="$(printf '%s\n' "$FONT_SIZE" | rofi -dmenu -p "  Current: ${FONT_SIZE}px" -i)"
+        new_size="$(printf '%s\n' "$FONT_SIZE" | rofi -dmenu -p "  Current: ${FONT_SIZE}px" -theme-str 'entry { placeholder: "Type font size here"; }' -i)"
         [[ -z "${new_size:-}" ]] && exit 0
         [[ "$new_size" =~ ^[0-9]+$ ]] || exit 0
         FONT_SIZE="$new_size"
