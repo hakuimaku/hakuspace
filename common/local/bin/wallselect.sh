@@ -10,6 +10,20 @@ list_walls() {
     done
 }
 
+set_wallpaper() {
+    local wall="$1"
+    awww img "$wall" \
+        --transition-type random \
+        --transition-step 90 \
+        --transition-fps 60
+
+    if pgrep -x "niri" > /dev/null; then
+        mkdir -p "$WALL_DIR/temp"
+        magick "$wall" -blur 0x15 "$WALL_DIR/temp/backdrop.jpg"
+        awww img -n "awww-daemon-backdrop" "$WALL_DIR/temp/backdrop.jpg"
+    fi
+}
+
 CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" \
 -theme-str "
     window { width: 65%; height: 80%; }
@@ -27,10 +41,7 @@ if [ -n "$CHOICE" ]; then
     fi
     
     # 1. Set awww
-    awww img "$WALL" \
-        --transition-type random \
-        --transition-step 90 \
-        --transition-fps 60
+    set_wallpaper "$WALL"
     
     # 2. Get accent color from wallpaper using colorthief, fallback to a default if too dark
     ACCENT=$(python3 -c '
