@@ -1,6 +1,7 @@
 #!/bin/bash
 
 WALL_DIR="$HOME/Videos/Wallpapers"
+BACKDROP_DIR="$HOME/Pictures/Wallpapers/temp"
 PREVIEW_DIR="$WALL_DIR/Preview"
 MONITOR="eDP-1" #Custom your monitor name
 
@@ -16,6 +17,19 @@ if [[ $1 == "--exit" ]]; then
     notify-send "Lively Wallpaper exited"
     exit 1
 fi
+
+set_wallpaper() {
+    local wall="$1"
+    pkill mpvpaper
+    sleep 0.2
+    mpvpaper -v -s -o "no-audio loop" "$MONITOR" "$wall" > /dev/null 2>&1 &
+    if pgrep -x "niri" > /dev/null; then
+        BACKDROP_DIR="$HOME/Pictures/Wallpapers/temp"
+        mkdir -p "$BACKDROP_DIR"
+        magick -size 1x1 xc:#1e1e1e $BACKDROP_DIR/backdrop.jpg
+        awww img -n "awww-daemon-backdrop" $BACKDROP_DIR/backdrop.jpg
+    fi
+}
 
 list_walls() {
     cd "$WALL_DIR" || exit
@@ -60,10 +74,7 @@ if [ -n "$CHOICE" ]; then
         PREVIEW=""
     fi
 
-    # 1. Set mpvpaper
-    pkill mpvpaper
-    sleep 0.2
-    mpvpaper -v -s -o "no-audio loop" "$MONITOR" "$WALL" > /dev/null 2>&1 &
+    set_wallpaper "$WALL"
 
     # 2. Pick accent from PREVIEW image
     if [[ -n "$PREVIEW" ]]; then
