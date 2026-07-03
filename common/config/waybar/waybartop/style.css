@@ -28,7 +28,7 @@ window#waybar {
 /* COMMON MODULE STYLES                               */
 /* ============================================================================== */
 #custom-monitor,
-#custom-haku,
+#custom-bar,
 #window,
 #custom-recorder,
 #custom-notification,
@@ -47,7 +47,7 @@ window#waybar {
 }
 
 #custom-monitor,
-#custom-haku {
+#custom-bar {
     border-top: 2px solid @accent_color;
     border-radius: 0 0 20px 20px;
     margin: 0 4px 0 4px;
@@ -134,7 +134,7 @@ window#waybar {
 
 #workspaces button.empty {
     background-color: rgba(255, 255, 255, 0.04);
-    color: rgba(255, 255, 255, 0.35);
+    color: #000000;
 }
 
 
@@ -172,12 +172,12 @@ window#waybar {
 /* HOVER EFFECTS                                   */
 /* ============================================================================== */
 #custom-monitor:hover,
+#custom-bar:hover,
 #cpu:hover,
 #memory:hover,
 #temperature:hover,
 #pulseaudio:hover,
 #backlight:hover,
-#custom-haku:hover,
 #power-profiles-daemon:hover,
 #battery:hover,
 #custom-notification:hover {
