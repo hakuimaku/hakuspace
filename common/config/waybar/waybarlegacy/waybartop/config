@@ -1,25 +1,34 @@
 {
     "layer": "top",
     "position": "top",
+    "margin-top": 3,
     "margin-bottom": 0,
-    "margin-left": 0,
-    "margin-right": 0,
+    "margin-left": 3,
+    "margin-right": 3,
     "spacing": 0,
     "tooltip": true,
     "reload_style_on_change": true,
 
-    "modules-center": [
-        "clock",
-        "custom/notification",
+    "modules-left": [
+        "custom/haku",
         "hyprland/workspaces",
-        "niri/workspaces",
+        "niri/workspaces"
+    ],
+    "modules-center": [
+        "clock"
+    ],
+    "modules-right": [
         "custom/recorder",
-        "group/monitor",
-        "group/bar"
+        "group/backlight",
+        "group/pulseaudio",
+        "battery",
+        "group/hardware",
+        "custom/notification"
     ],
 
     "clock": {
-        "format": " {:%H:%M} ",
+        "format": " {:%A, %d/%m/%Y [ %H:%M:%S ]} ", 
+        "format-alt": "   Have a nice day! {:%H:%M} 󰋑 ",
         "interval": 1,
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
         "calendar": {
@@ -44,40 +53,46 @@
                     }
     },
 
-    "group/bar": {
+    "group/hardware": {
         "orientation": "horizontal",
         "drawer": {
             "transition-duration": 1000,
-            "transition-left-to-right": true,
-            "click-to-reveal": true
+            "children-class": "not-power",
+            "transition-left-to-right": false
         },
         "modules": [
-            "custom/haku",
-            "backlight",
-            "backlight/slider",
-            "pulseaudio",
-            "pulseaudio/slider",
-            "battery",
+            "tray",
             "power-profiles-daemon",
-            "tray"
+            "network"
         ]
     },
 
-    "group/monitor": {
+    "group/backlight": {
         "orientation": "horizontal",
         "drawer": {
             "transition-duration": 1000,
-            "transition-left-to-right": true,
-            "click-to-reveal": true
+            "children-class": "not-power",
+            "transition-left-to-right": true
         },
         "modules": [
-            "custom/monitor",
-            "cpu",
-            "memory",
-            "temperature"
+            "backlight",
+            "backlight/slider"
         ]
     },
-    
+
+    "group/pulseaudio": {
+        "orientation": "horizontal",
+        "drawer": {
+            "transition-duration": 1000,
+            "children-class": "not-power",
+            "transition-left-to-right": true
+        },
+        "modules": [
+            "pulseaudio",
+            "pulseaudio/slider"
+        ]
+    },
+
     "backlight": {
         "format": "{icon} {percent}%",
         "format-icons": ["", "", "", "", "", "", "", "", ""],
@@ -120,6 +135,18 @@
         }
     },
 
+
+    "network": {
+        "format": "{ifname}",
+        "format-wifi": "{essid}   ",
+        "format-ethernet": "{ipaddr}/{cidr} 󰊗  ",
+        "format-disconnected": "",
+        "tooltip-format": "{ifname} via {gwaddr} 󰊗  ",
+        "tooltip-format-wifi": "{essid} ({signalStrength}%)   ",
+        "tooltip-format-ethernet": "{ifname}   ",
+        "tooltip-format-disconnected": "Disconnected"
+    },
+
     "pulseaudio": {
         "format": "{icon} {volume}%",
         "format-muted": "󰝟 ",
@@ -145,24 +172,53 @@
     },
 
     "niri/workspaces": {
-        "format": "{icon}",
-        "format-icons": {
-            "active": "",
-            "default": ""
-        }
+        "format": "{index}"
     },
 
     "hyprland/workspaces": {
         "all-outputs": true,
         "sort-by-number": true,
         "show-special": true,
-        "format": "{icon}",
+        "format": "{icon} {windows}",
         "format-icons": {
-            "magic": "",
-            "active": "",
-            "default": ""
-	    }
+            "magic": ""
+	    },
+        "format-window-separator": " ",
+        "window-rewrite-default": "",
+        "window-rewrite": {
+            "class<seyclock>": "k",
+            "class<seymatrix>": "h",
+            "class<seycava>": "h",
+            "class<seycmd>": "u",
+            "class<seypipes>": "u",
+            "class<seylavat>": "a",
+            "title<.*youtube.*>": "",
+            "class<firefox>": "󰈹",
+            "class<zen>":"",
+            "class<firefox> title<.*github.*>": "",
+            "kitty": "",
+            "thunar": "󰝰",
+            "nemo": "󰝰",
+            "code": "󰨞",
+            "cavaunderbar": "󰝚",
+            "title<.* - (.*) - VSCodium>": "codium $1",
+            "Prism Launcher .*": "󰍳",
+            "CurseForge": "󰍳",
+            "Minecraft": "󰍳",
+            "Steam": "",
+            "spotify": "",
+            "Star Rail": "",
+            "Send": "",
+            "brave": "",
+            "rider": "",
+            "datagrip": "",
+            "libreoffice": "",
+            "Zalo": "󰭹",
+            "WPS": "",
+            "Gear lever": "󰣆"
+        }
     },
+
 
     "custom/recorder": {
         "exec": "if [ -f /tmp/recording_time ]; then cat /tmp/recording_time; fi",
@@ -171,6 +227,16 @@
         "tooltip": false,
         "return-type": "plain",
         "if-file-exists": "/tmp/recording_pid"
+    },
+
+    "custom/haku": {
+        "format": "{icon}",
+        "format-icons": {
+            "default": "󰣇"
+        },
+        "on-click": "~/.local/bin/hakumenu.sh",
+        "tooltip-format": "Have a nice day!",
+        "tooltip": true
     },
 
     "custom/notification": {
@@ -192,32 +258,5 @@
         "on-click": "swaync-client -t -sw",
         "on-click-right": "swaync-client -d -sw",
         "escape": true
-    },
-
-    "custom/haku": {
-        "format": "󰣇 ",
-        "tooltip-format": "Have a nice day!",
-        "tooltip": true
-    },
-
-    "custom/monitor": {
-        "format": " ",
-        "tooltip-format": "Click to show monitor",
-        "tooltip": true
-    },
-
-    "cpu": {
-        "interval": 2,
-        "format": "{usage}% "
-    },
-
-    "memory": {
-        "interval": 2,
-        "format": "{}% "
-    },
-
-     "temperature": {
-        "interval": 2,
-        "format": "{temperatureC}°C "
     }
 }
