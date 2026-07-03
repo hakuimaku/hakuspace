@@ -46,3 +46,10 @@ else
     waybar & 
     echo "top" > "$STATE_FILE"
 fi
+
+# In Niri, kill cava underbar when changing waybar mode
+if pgrep -x "niri" > /dev/null; then
+    if cat /tmp/cava_underbar_status 2>/dev/null | grep -q "1"; then
+        ~/.local/bin/cava_manager.sh --toggle
+    fi
+fi
