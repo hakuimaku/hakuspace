@@ -464,6 +464,8 @@ sudo systemctl disable getty@tty1.service
 
 xdg-mime default thunar.desktop inode/directory
 
+xhost +si:localuser:root
+
 $HOME/.local/bin/gen-style.sh
 
 echo "✅ All services have been processed!"
