@@ -19,10 +19,11 @@
     ],
     "modules-right": [
         "custom/recorder",
-        "group/hardware",
+        "tray",
+        "power-profiles-daemon",
         "battery",
-        "group/backlight",
-        "group/pulseaudio",
+        "backlight",
+        "pulseaudio",
         "custom/notification"
     ],
 
@@ -53,48 +54,9 @@
                     }
     },
 
-    "group/hardware": {
-        "orientation": "vertical",
-        "drawer": {
-            "transition-duration": 1000,
-            "children-class": "not-power",
-            "transition-left-to-right": false
-        },
-        "modules": [
-            "tray",
-            "power-profiles-daemon",
-            "network"
-        ]
-    },
-
-    "group/backlight": {
-        "orientation": "vertical",
-        "drawer": {
-            "transition-duration": 1000,
-            "children-class": "not-power",
-            "transition-left-to-right": false
-        },
-        "modules": [
-            "backlight",
-            "backlight/slider"
-        ]
-    },
-
-    "group/pulseaudio": {
-        "orientation": "vertical",
-        "drawer": {
-            "transition-duration": 1000,
-            "children-class": "not-power",
-            "transition-left-to-right": false
-        },
-        "modules": [
-            "pulseaudio",
-            "pulseaudio/slider"
-        ]
-    },
-
     "backlight": {
-        "format": "{icon}",
+        "format": "{icon} {percent}%",
+        "rotate": 90,
         "format-icons": ["", "", "", "", "", "", "", "", ""],
         "on-scroll-up": "brightnessctl set 1%+",
         "on-scroll-down": "brightnessctl set 1%-",
@@ -103,10 +65,17 @@
         "tooltip-format": "Brightness: {percent}%"
     },
 
-    "backlight/slider": {
-        "min": 10,
-        "max": 100,
-        "orientation": "vertical"
+    "pulseaudio": {
+        "format": " {icon} {volume}%",
+        "rotate": 90,
+        "format-muted": "󰝟 ",
+        "format-icons": {
+            "headphone": "󰋋",
+            "default": ["", "", ""]
+        },
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click-right": "pavucontrol",
+        "tooltip-format": "Volume: {volume}%"
     },
 
     "battery": {
@@ -147,74 +116,30 @@
         "tooltip-format-disconnected": "Disconnected"
     },
 
-    "pulseaudio": {
-        "format": "{icon}",
-        "format-muted": "󰝟 ",
-        "format-icons": {
-            "headphone": "󰋋",
-            "default": ["", "", ""]
-        },
-        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
-        "on-click-right": "pavucontrol",
-        "tooltip-format": "Volume: {volume}%"
-    },
-
-    "pulseaudio/slider": {
-        "min": 0,
-        "max": 100,
-        "orientation": "vertical"
-    },
-
     "tray": {
         "icon-size": 18,
         "spacing": 10,
         "show-passive-items": true
     },
 
+    "niri/workspaces": {
+        "format": "{icon}",
+        "format-icons": {
+            "active": "",
+            "default": ""
+        }
+    },
+
     "hyprland/workspaces": {
         "all-outputs": true,
         "sort-by-number": true,
         "show-special": true,
-        "format": "{icon}\n{windows}",
+        "format": "{icon}",
         "format-icons": {
-            "magic": ""
-	    },
-        "format-window-separator": "\n",
-        "window-rewrite-default": "",
-        "window-rewrite": {
-            "class<seyclock>": "k",
-            "class<seymatrix>": "h",
-            "class<seycava>": "h",
-            "class<seycmd>": "u",
-            "class<seypipes>": "u",
-            "class<seylavat>": "a",
-            "title<.*youtube.*>": "",
-            "class<firefox>": "󰈹",
-            "class<zen>":"",
-            "class<firefox> title<.*github.*>": "",
-            "kitty": "",
-            "thunar": "󰝰",
-            "nemo": "󰝰",
-            "code": "󰨞",
-            "cavaunderbar": "󰝚",
-            "title<.* - (.*) - VSCodium>": "codium $1",
-            "Prism Launcher .*": "󰍳",
-            "CurseForge": "󰍳",
-            "Minecraft": "󰍳",
-            "Steam": "",
-            "spotify": "",
-            "Star Rail": "",
-            "Send": "",
-            "brave": "",
-            "rider": "",
-            "datagrip": "",
-            "libreoffice": "",
-            "Zalo": "󰭹",
-            "WPS": "",
-            "Gear lever": "󰣆"
-        }
+            "active": "",
+            "default": ""
+	    }
     },
-
 
     "custom/recorder": {
         "exec": "if [ -f /tmp/recording_time ]; then cat /tmp/recording_time; fi",
