@@ -1,0 +1,23 @@
+[general]
+bars = 12
+autosens = 1
+sensitivity = 16
+
+[input]
+method = pipewire
+source = auto
+
+[output]
+channels = stereo
+reverse = 0
+
+[smoothing]
+noise_reduction = 77
+
+
+[eq]
+1 = 1 # bass
+2 = 0.8
+3 = 1 # midtone
+4 = 0.8
+5 = 0.7 # treble
