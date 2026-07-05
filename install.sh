@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# Copy config, bin, .zshrc and .nanorc files will backup current config
-# The backup will be created in the same location with a timestamp suffix (e.g., .config_backup_20240601_123456).
-# This way, you can easily restore your previous configuration if needed.
 cat << 'EOF'
+
 
  _   _       _          _____                      
 | | | |     | |        /  ___|                     
@@ -21,15 +19,24 @@ echo ""
 echo "================================================================================================"
 echo "--- WELCOME TO HAKUSPACE - CONFIG INSTALLER ---"
 echo "This script will help you set up your HakuSpace configuration"
-echo "It will install necessary packages, copying config files and setting up Oh My Zsh with plugins."
+echo "It will install necessary packages, deploy symlink-based configs and setup Oh My Zsh with plugins."
 echo "Please follow the prompts to complete the installation process."
 echo "================================================================================================"
 echo ""
 
 HAKU_DIR="$HOME/hakuspace"
+INSTALL_DIR="$HAKU_DIR/install"
 COMMON_DIR="$HAKU_DIR/common"
+
 PKG_COMMON="$COMMON_DIR/pkg-common.txt"
 
+BACKUP_TIME_STAMP=$(date +%Y-%m-%d_%H-%M-%S)
+BACKUP_DIR="$HOME/Backup_$BACKUP_TIME_STAMP"
+
+# Make backup directory
+mkdir -p "$BACKUP_DIR"
+
+# Choose Window Manager interface
 echo "Current directory: $PWD"
 echo ""
 echo "[1]. HYPRLAND"
@@ -58,6 +65,66 @@ if [[ "$PWD" != "$HAKU_DIR" ]]; then
     echo "Current directory: $PWD"
     exit 1
 fi
+
+# ============================================================================
+# ========================= HELPER FUNCTIONS (NEW) ===========================
+# ============================================================================
+
+log_backup() { echo "[BACKUP] $1"; }
+log_link()   { echo "[LINK]   $1"; }
+log_copy()   { echo "[COPY]   $1"; }
+log_skip()   { echo "[SKIP]   $1"; }
+
+ensure_parent_dir() {
+    local target="$1"
+    mkdir -p "$(dirname "$target")"
+}
+
+backup_path() {
+    local target="$1"
+    local rel="${target#$HOME/}"
+    local backup_target="$BACKUP_DIR/$rel"
+
+    mkdir -p "$(dirname "$backup_target")"
+    mv "$target" "$backup_target"
+    log_backup "$target -> $backup_target"
+}
+
+ensure_symlink() {
+    local src="$1"
+    local dst="$2"
+
+    if [[ ! -e "$src" && ! -L "$src" ]]; then
+        echo "!!! Source not found for symlink: $src"
+        return 1
+    fi
+
+    ensure_parent_dir "$dst"
+
+    if [[ -L "$dst" ]]; then
+        local current_target
+        current_target="$(readlink -f "$dst")"
+        local desired_target
+        desired_target="$(readlink -f "$src")"
+
+        if [[ "$current_target" == "$desired_target" ]]; then
+            log_skip "Already correct symlink: $dst -> $src"
+            return 0
+        else
+            backup_path "$dst"
+            ln -sfn "$src" "$dst"
+            log_link "$dst -> $src (relinked from wrong symlink)"
+            return 0
+        fi
+    fi
+
+    if [[ -e "$dst" ]]; then
+        backup_path "$dst"
+    fi
+
+    ln -sfn "$src" "$dst"
+    log_link "$dst -> $src"
+}
 
 # ============================================================================
 # ========= BLOCK 1: CHECK AND INSTALL DEPENDENCIES (yay, git, curl) =========
@@ -101,9 +168,6 @@ echo ""
 echo "================================================================================================"
 echo "--- Everything is ready to install Config! ---"
 
-
-
-
 # ============================================================================
 # ============= BLOCK 2: INSTALL PACKAGES FROM pkg-hyprland.txt ==============
 # ============================================================================
@@ -122,7 +186,6 @@ if [[ $confirm == [yY] ]]; then
 else
     echo "Skipping package installation."
 fi
-
 
 # ============================================================================
 # ========= BLOCK 3: CREATE NECESSARY DIRECTORIES (IF NOT EXIST) =============
@@ -151,10 +214,8 @@ for folder in "${FOLDERS[@]}"; do
     fi
 done
 
-
-
 # ============================================================================
-# ================= BLOCK 4: BACKUP AND COPY CONFIG FILE =====================
+# ================= BLOCK 4: BACKUP AND SYMLINK CONFIG FILE ==================
 # ============================================================================
 
 SOURCE_WM_CONFIG="$WM_DIR/config"
@@ -162,51 +223,44 @@ SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
 DEST_CONFIG="$HOME/.config"
 
 echo ""
-echo "--- 4. Ready to deploy config to ~/.config ---"
+echo "--- 4. Ready to deploy config to ~/.config (symlink mode) ---"
 
-deploy_config() {
-    local source_dir=$1
-    local dest_dir=$2
-    local timestamp=$(date +%Y%m%d_%H%M%S)
+link_config_folders() {
+    local source_dir="$1"
+    local dest_dir="$2"
 
     if [[ -d "$source_dir" ]]; then
-        for folder in "$source_dir"/*/; do
-            [ -d "$folder" ] || continue 
-            
-            local folder_name=$(basename "$folder")
+        for folder in "$source_dir"/*; do
+            [ -d "$folder" ] || continue
+
+            local folder_name
+            folder_name="$(basename "$folder")"
             local target_path="$dest_dir/$folder_name"
 
-            if [[ -d "$target_path" ]] || [[ -L "$target_path" ]]; then
-                echo "[-] Found existing $folder_name in $dest_dir. Backing up..."
-                mv "$target_path" "${target_path}_backup_${timestamp}"
-            fi
-
-            echo "[+] Copying $folder_name to $dest_dir..."
-            cp -r "$folder" "$dest_dir/"
+            ensure_symlink "$folder" "$target_path"
         done
     else
         echo "[!] Source directory $source_dir does not exist. Skipping."
     fi
 }
 
-read -p "===> Do you want to backup and copy your current config now? (y/n): " confirm
+read -p "===> Do you want to backup and link your current config now? (y/n): " confirm
 if [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]]; then
     
     echo ""
-    echo ">>> Deploying Common configs..."
-    deploy_config "$SOURCE_COMMON_CONFIG" "$DEST_CONFIG"
+    echo ">>> Linking Common configs..."
+    link_config_folders "$SOURCE_COMMON_CONFIG" "$DEST_CONFIG"
     
     echo ""
-    echo ">>> Deploying $WM configs..."
-    deploy_config "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
+    echo ">>> Linking $WM configs..."
+    link_config_folders "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
 
     echo ""
-    echo ">>> Deploying mimeapps.list..."
+    echo ">>> Linking mimeapps.list..."
     if [[ -f "$SOURCE_COMMON_CONFIG/mimeapps.list" ]]; then
-        cp -f "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/"
-        echo ":: Copied mimeapps.list to $HOME/.config/"
+        ensure_symlink "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/mimeapps.list"
     else
-        echo "!!! mimeapps.list not found in $SOURCE_COMMON_CONFIG. Please copy it manually to $HOME/.config/"
+        echo "!!! mimeapps.list not found in $SOURCE_COMMON_CONFIG. Please link it manually to $HOME/.config/"
     fi
     
     echo "===> Done! Configurations deployed successfully."
@@ -214,46 +268,33 @@ else
     echo "Skipping config backup and deployment."
 fi
 
-
 # ============================================================================================
-# ================= BLOCK 5: BACKUP AND COPY LOCAL FILES (BIN / SCRIPTS) =====================
+# ================= BLOCK 5: BACKUP AND SYMLINK LOCAL FILES (BIN / SCRIPTS) =================
 # ============================================================================================
 
 SOURCE_BIN="$COMMON_DIR/local/bin"
 DEST_BIN="$HOME/.local/bin"
 
 echo ""
-echo "--- 5. Ready to deploy local/bin files to ~/.local ---"
+echo "--- 5. Ready to deploy local/bin files to ~/.local/bin (symlink mode) ---"
 
-read -p "===> Do you want to backup and copy your current local/bin files now? (y/n): " confirm
+read -p "===> Do you want to backup and link your current local/bin now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
     if [ -d "$SOURCE_BIN" ]; then
-        echo ":: Ready to copy local/bin files..."
-        # Make backup if destination local already exists
-        if [ -d "$DEST_BIN" ]; then
-            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-            echo ":: Ready to create backup for current local/bin files..."
-            mv "$DEST_BIN" "${DEST_BIN}_backup_$TIMESTAMP"
-            mkdir -p "$DEST_BIN"
-        fi
-
-        # Proceed with copying local files
-        cp -rf "$SOURCE_BIN"/. "$DEST_BIN/"
-        
-        echo ":: Copy (local/bin files) completed to $DEST_BIN"
+        ensure_symlink "$SOURCE_BIN" "$DEST_BIN"
+        echo ":: Symlink local/bin completed: $DEST_BIN -> $SOURCE_BIN"
     else
         echo "XXX [ERROR] Not found directory $SOURCE_BIN"
-        echo "Please copy it manually (local/bin files) to $DEST_BIN"
+        echo "Please link it manually (local/bin) to $DEST_BIN"
     fi
 else
-    echo "Skipping local files backup."
+    echo "Skipping local/bin deployment."
 fi
 
 # ===========================================================================================
 # ================= BLOCK 6: INSTALL OH MY ZSH AND PLUGINS (IF USER CONFIRM) ================
 # ===========================================================================================
 
-# Install Oh My Zsh and plugins
 echo ""
 echo "--- 6. Setup Oh My Zsh and Plugins ---"
 
@@ -291,15 +332,14 @@ if [[ $confirm == [yY] ]]; then
     # Change default shell to Zsh (Need to enter sudo password)
     if [ "$SHELL" != "/usr/bin/zsh" ]; then
         echo "Changing default shell to Zsh..."
-        sudo chsh -s /usr/bin/zsh $USER
+        sudo chsh -s /usr/bin/zsh "$USER"
     fi
 else
     echo "Skipping Oh My Zsh installation."
 fi
 
-
 # =======================================================================================
-# ========= BLOCK 7: BACKUP AND COPY OTHER FILES (.zshrc, .nanorc, wallpapers) ==========
+# ========= BLOCK 7: BACKUP AND SYMLINK OTHER FILES (.zshrc, .nanorc, wallpapers) ======
 # =======================================================================================
 
 SOURCE_OTHER="$COMMON_DIR"
@@ -308,45 +348,38 @@ SOURCE_WALLPAPER="$COMMON_DIR/Wallpapers"
 DEST_OTHER="$HOME"
 DEST_WALLPAPER="$HOME/Pictures/Wallpapers"
 
-
 echo ""
-echo "--- 7. Ready to deploy other files (like .nanorc and .zshrc) to home directory and wallpapers ---"
+echo "--- 7. Ready to deploy other files (like .nanorc and .zshrc) + wallpapers ---"
 
-read -p "===> Do you want to backup and copy your other files now? (y/n): " confirm
+read -p "===> Do you want to backup and deploy your other files now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
-    FILES_TO_COPY=(".nanorc" ".zshrc")
+    FILES_TO_LINK=(".nanorc" ".zshrc")
 
-    for file in "${FILES_TO_COPY[@]}"; do
+    for file in "${FILES_TO_LINK[@]}"; do
         if [ -f "$SOURCE_OTHER/$file" ]; then
-            # Make backup if destination file already exists
-            if [ -f "$DEST_OTHER/$file" ]; then
-                mv "$DEST_OTHER/$file" "$DEST_OTHER/${file}.bak"
-                echo ":: Did create backup for $file"
-            fi
-            
-            # Copy file from source to destination
-            cp -f "$SOURCE_OTHER/$file" "$DEST_OTHER/"
-            echo ":: Did copy $file to $DEST_OTHER"
+            ensure_symlink "$SOURCE_OTHER/$file" "$DEST_OTHER/$file"
         else
             echo "!!! File not found: $file in $SOURCE_OTHER, skipping."
-            echo "Please copy it manually ($file) to $DEST_OTHER"
+            echo "Please link it manually ($file) to $DEST_OTHER"
         fi
     done
-    # Copy wallpapers
-    cp -rf "$SOURCE_WALLPAPER"/. "$DEST_WALLPAPER/"
-    echo ":: Did copy wallpapers to $DEST_WALLPAPER"
+
+    # Copy wallpapers (keep copy mode for static assets)
+    if [ -d "$SOURCE_WALLPAPER" ]; then
+        log_copy "Wallpapers: $SOURCE_WALLPAPER -> $DEST_WALLPAPER"
+        cp -rf "$SOURCE_WALLPAPER"/. "$DEST_WALLPAPER/"
+        echo ":: Did copy wallpapers to $DEST_WALLPAPER"
+    else
+        echo "!!! Wallpapers directory not found in $SOURCE_WALLPAPER, skipping."
+    fi
 else
-    echo "Skipping other files backup."
+    echo "Skipping other files deployment."
 fi
-
-
 
 # =========================================================================
 # ==================== BLOCK 8: BACKUP AND COPY ICONS =====================
 # =========================================================================
 
-
-# Define source and destination paths for icons
 SOURCE_ICON="$COMMON_DIR/icons"
 DEST_ICON="$HOME/.icons"
 
@@ -369,7 +402,7 @@ if [[ $confirm == [yY] ]]; then
                 cp -f "$archive" "$DEST_ICON/"
 
                 if [ -d "$DEST_ICON/$base_name" ]; then
-                    echo ":: Skip extract $archive_name (already exists: $DEST_ICON/$base_name)"
+                    log_skip "Skip extract $archive_name (already exists: $DEST_ICON/$base_name)"
                     rm -f "$dest_archive"
                     continue
                 fi
@@ -378,7 +411,7 @@ if [[ $confirm == [yY] ]]; then
                 if [ $? -ne 0 ]; then
                     echo "XXX [ERROR] Failed to extract $archive_name"
                 else
-                    echo ":: Extracted $archive_name to $DEST_ICON"
+                    log_copy "Extracted $archive_name to $DEST_ICON"
                 fi
 
                 rm -f "$dest_archive"
@@ -394,13 +427,10 @@ else
     echo "Skipping icons backup."
 fi
 
-
-
 # ==========================================================================
-# ==================== BLOCK 9: BACKUP AND COPY THEMES ====================
+# ==================== BLOCK 9: BACKUP AND COPY THEMES =====================
 # ==========================================================================
 
-# Define source and destination paths for themes
 SOURCE_THEME="$COMMON_DIR/themes"
 DEST_THEME="$HOME/.themes"
 
@@ -423,7 +453,7 @@ if [[ $confirm == [yY] ]]; then
                 cp -f "$archive" "$DEST_THEME/"
 
                 if [ -d "$DEST_THEME/$base_name" ]; then
-                    echo ":: Skip extract $archive_name (already exists: $DEST_THEME/$base_name)"
+                    log_skip "Skip extract $archive_name (already exists: $DEST_THEME/$base_name)"
                     rm -f "$dest_archive"
                     continue
                 fi
@@ -432,7 +462,7 @@ if [[ $confirm == [yY] ]]; then
                 if [ $? -ne 0 ]; then
                     echo "XXX [ERROR] Failed to extract $archive_name"
                 else
-                    echo ":: Extracted $archive_name to $DEST_THEME"
+                    log_copy "Extracted $archive_name to $DEST_THEME"
                 fi
 
                 rm -f "$dest_archive"
@@ -448,12 +478,10 @@ else
     echo "Skipping themes backup."
 fi
 
-
 # ==========================================================================
 # ==================== BLOCK 10: ENABLE SYSTEM SERVICES ====================
 # ==========================================================================
 
-# Enable service
 echo ""
 echo "--- 10. Enabling system services ---"
 
@@ -464,11 +492,12 @@ sudo systemctl disable getty@tty1.service
 
 xdg-mime default thunar.desktop inode/directory
 
-$HOME/.local/bin/gen-style.sh
+"$HOME/.local/bin/gen-style.sh"
 
-echo "✅ All services have been processed!"
+echo ">>> All services have been processed!"
 
 # Final message
 echo ""
 echo ""
 echo ">>>>>>>>>> All done! Please restart your pc to apply changes!"
+echo "Backup directory for this run: $BACKUP_DIR"
