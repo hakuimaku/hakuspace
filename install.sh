@@ -53,7 +53,6 @@ fi
 # --------------------------------
 HAKU_DIR="$HOME/hakuspace"
 COMMON_DIR="$HAKU_DIR/common"
-PKG_COMMON="$COMMON_DIR/pkg-common.txt"
 
 BACKUP_TS="$(date +%Y-%m-%d_%H-%M-%S)"
 BACKUP_DIR="$HOME/Backup_$BACKUP_TS"
@@ -61,6 +60,10 @@ BACKUP_DIR="$HOME/Backup_$BACKUP_TS"
 WM=""
 WM_DIR=""
 PKG_WM=""
+
+PKG_SERVICE="$COMMON_DIR/pkg-service.txt"
+PKG_CORE="$COMMON_DIR/pkg-core.txt"
+PKG_OPTIONAL="$COMMON_DIR/pkg-optional.txt"
 
 # --------------------------------
 # Logging helpers
@@ -220,6 +223,24 @@ extract_archives_if_needed() {
     done
 }
 
+install_pkg_file() {
+    local label="$1"
+    local file="$2"
+
+    if [[ ! -f "$file" ]]; then
+        log_warn "[$label] File not found: $file (skip)"
+        return 1
+    fi
+
+    if sed 's/[[:space:]]*#.*$//' "$file" | grep -E '^[a-zA-Z0-9@._+-]+$' | yay -S --needed --noconfirm -; then
+        log_ok "[$label] Installed successfully."
+        return 0
+    else
+        log_error "[$label] Installation failed."
+        return 1
+    fi
+}
+
 print_header() {
     echo ""
     echo -e "${C_BOLD}================================================================================================${C_RESET}"
@@ -322,22 +343,56 @@ echo -e "${C_GREEN}--- Everything is ready to install Config! ---${C_RESET}"
 # ============================================================================
 step_title "2 - INSTALL PACKAGES FROM LIST"
 
-echo ":: Ready to install packages from:"
-echo "   - $PKG_WM"
-echo "   - $PKG_COMMON"
+PKG_LABELS=("$WM" "CORE" "SERVICE" "OPTIONAL")
+PKG_FILES=("$PKG_WM" "$PKG_CORE" "$PKG_SERVICE" "$PKG_OPTIONAL")
+INSTALL_FLAGS=(0 0 0 0)   # 1=install, 0=skip
+
+echo ":: Package lists:"
+echo "   [0] $WM      : $PKG_WM"
+echo "   [1] CORE     : $PKG_CORE"
+echo "   [2] SERVICE  : $PKG_SERVICE"
+echo "   [3] OPTIONAL : $PKG_OPTIONAL"
+echo ""
+
+# Ask all choices first
+for i in "${!PKG_LABELS[@]}"; do
+    if ask_yes_no "===> Mark ${PKG_LABELS[$i]} for installation?"; then
+        INSTALL_FLAGS[$i]=1
+    else
+        INSTALL_FLAGS[$i]=0
+    fi
+done
+
+echo ""
+echo ":: Install plan (1=install, 0=skip): [${INSTALL_FLAGS[*]}]"
+echo "   ${WM}=${INSTALL_FLAGS[0]} CORE=${INSTALL_FLAGS[1]} SERVICE=${INSTALL_FLAGS[2]} OPTIONAL=${INSTALL_FLAGS[3]}"
+echo ""
 
 if command -v yay >/dev/null 2>&1; then
-    if ask_yes_no "===> Do you want to install packages now?"; then
-        yay -S --noconfirm - < "$PKG_COMMON"
-        yay -S --noconfirm - < "$PKG_WM"
-        log_ok "Package installation completed."
+    selected_count=0
+
+    for i in "${!PKG_LABELS[@]}"; do
+        if [[ "${INSTALL_FLAGS[$i]}" -eq 1 ]]; then
+            ((selected_count++))
+        fi
+    done
+
+    if [[ "$selected_count" -eq 0 ]]; then
+        log_skip "No package group selected. Skipping Block 2."
     else
-        log_skip "Skipping package installation."
+        for i in "${!PKG_LABELS[@]}"; do
+            if [[ "${INSTALL_FLAGS[$i]}" -eq 1 ]]; then
+                install_pkg_file "${PKG_LABELS[$i]}" "${PKG_FILES[$i]}"
+            else
+                log_skip "[${PKG_LABELS[$i]}] Not selected."
+            fi
+        done
+        log_ok "Block 2 package processing finished."
     fi
 else
-    log_error "yay is not installed. Please install yay first to run this step. If you're using another Distro, please install the packages manually."
+    log_error "yay is not installed. Please install yay first to run this step."
+    log_error "If you're using another distro, install packages manually."
 fi
-
 # ============================================================================
 # BLOCK 3: CREATE NECESSARY DIRECTORIES
 # ============================================================================
@@ -455,16 +510,16 @@ else
 fi
 
 # ============================================================================
-# BLOCK 7: BACKUP AND COPY DOTFILES + WALLPAPERS
+# BLOCK 7: BACKUP AND COPY OTHER FILES (.zshrc & .nanorc) + WALLPAPERS
 # ============================================================================
-step_title "7 - BACKUP AND COPY DOTFILES + WALLPAPERS"
+step_title "7 - BACKUP AND COPY OTHER FILES (.zshrc & .nanorc) + WALLPAPERS"
 
 SOURCE_OTHER="$COMMON_DIR"
 SOURCE_WALLPAPER="$COMMON_DIR/Wallpapers"
 DEST_OTHER="$HOME"
 DEST_WALLPAPER="$HOME/Pictures/Wallpapers"
 
-if ask_yes_no "===> Do you want to backup and copy dotfiles + wallpapers now?"; then
+if ask_yes_no "===> Do you want to backup and copy other files + wallpapers now?"; then
     FILES_TO_COPY=(".nanorc" ".zshrc")
 
     for file in "${FILES_TO_COPY[@]}"; do
@@ -531,7 +586,7 @@ else
 fi
 
 echo ""
-echo -e "${C_GREEN}✅ All services have been processed!${C_RESET}"
+echo -e "${C_GREEN}All services have been processed!${C_RESET}"
 echo ""
 echo -e "${C_BOLD}${C_CYAN}>>>>>>>>>> All done! Please restart your pc to apply changes!${C_RESET}"
 echo -e "${C_MAGENTA}Backup folder for this run: $BACKUP_DIR${C_RESET}"
