@@ -287,9 +287,6 @@ preflight_checks() {
         log_error "Current directory: $PWD"
         exit 1
     fi
-
-    mkdir -p "$BACKUP_DIR"
-    log_ok "Backup directory initialized: $BACKUP_DIR"
 }
 
 # ======================================================================================
@@ -348,10 +345,10 @@ PKG_FILES=("$PKG_WM" "$PKG_CORE" "$PKG_SERVICE" "$PKG_OPTIONAL")
 INSTALL_FLAGS=(0 0 0 0)   # 1=install, 0=skip
 
 echo ":: Package lists:"
-echo "   [0] $WM      : $PKG_WM"
-echo "   [1] CORE     : $PKG_CORE"
-echo "   [2] SERVICE  : $PKG_SERVICE"
-echo "   [3] OPTIONAL : $PKG_OPTIONAL"
+echo "   [0] WM         : $WM needs to install first to work properly."
+echo "   [1] CORE       : Core packages needed for the hakuspace to function properly. (Waybar, Rofi, Kitty, etc.)"
+echo "   [2] SERVICE    : System service packages. If you currently have DE, you can skip this. (NetworkManager, Bluetooth, ly, etc.)"
+echo "   [3] OPTIONAL   : Optional packages for customization. (Browser, Cava, etc.)"
 echo ""
 
 # Ask all choices first
