@@ -41,7 +41,7 @@
 /* =============================== CONTROL CENTER =============================== */
 /* ============================================================================== */
 .control-center {
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.7);
     border-radius: 15px;
     box-shadow: 10px 10px 10px #000000;
     margin: 3px;
@@ -119,6 +119,10 @@
     color: #000000;
 }
 
+.widget-menubar > .menu-button-bar > .widget-menubar-container button {
+    padding: 6px 36px;
+}
+
 .widget-menubar > box > .menu-button-bar > .widget-menubar-container > button:hover,
 .widget-menubar > revealer button:hover {
     background: shade(@accent_color, 1.08);
@@ -181,6 +185,16 @@
     color: @accent_color;
 }
 
+.widget-buttons-grid flowboxchild > button {
+    padding: 4px 25px;
+    background: rgba(0, 0, 0, 0.4);
+    margin: 0 4px 0 4px;
+    box-shadow: 4px 4px 4px #000000;
+}
+
+.widget-buttons-grid flowboxchild > button.toggle:checked {
+    border-top: 3px solid @accent_color;
+}
 
 
 /* ============================================================================== */
