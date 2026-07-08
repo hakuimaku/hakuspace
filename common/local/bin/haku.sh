@@ -17,7 +17,7 @@ if [[ $1 == "--clear" ]]; then
     exit 0
 fi
 
-if pgrep -x "Hyprland" > /dev/null; then
+if [[ $XDG_CURRENT_DESKTOP == "Hyprland" ]]; then
     hyprctl eval 'hl.dispatch(hl.dsp.focus({ workspace = "1" }))'
 
     MY_INFO=$(hyprctl activewindow -j)
@@ -43,7 +43,7 @@ if pgrep -x "Hyprland" > /dev/null; then
     kill -9 "$MY_ADDR"
 fi
 
-if pgrep -x "niri" > /dev/null; then
+if [[ $XDG_CURRENT_DESKTOP == "niri" ]]; then
     MY_INFO=$(niri msg focused-window)
     MY_ADDR=$(echo "$MY_INFO" | grep "PID:" | awk '{print $2}')
 
