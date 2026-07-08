@@ -422,8 +422,14 @@ if ask_yes_no "===> Do you want to backup and copy your current config now?"; th
     echo ">>> Deploying Common configs..."
     copy_config_folders_with_backup "$SOURCE_COMMON_CONFIG" "$DEST_CONFIG"
 
-    echo ">>> Deploying $WM configs..."
-    copy_config_folders_with_backup "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
+    if [[ $WM == "hyprland" ]]; then
+        echo ">>> Deploying Hyprland configs..."
+        copy_config_folders_with_backup "$SOURCE_WM_CONFIG/hypr" "$DEST_CONFIG/hypr"
+        copy_file_with_backup "$SOURCE_WM_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
+    elif [[ $WM == "niri" ]]; then
+        echo ">>> Deploying Niri configs..."
+        copy_config_folders_with_backup "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
+    fi
 
     echo ">>> Deploying mimeapps.list..."
     copy_file_with_backup "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/mimeapps.list"
