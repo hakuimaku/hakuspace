@@ -26,12 +26,8 @@ fi
 # hyprctl reload
 hyprctl reload >/dev/null 2>&1 || true
 
-# Waybar reload
-# Oh we don't need it anymore, waybar config uses reload_style_on_change
-
 # Swaync reload
-pkill swaync >/dev/null 2>&1 || true
-swaync >/dev/null 2>&1 & disown || true
+swaync-client --reload-config --reload-css >/dev/null 2>&1 || true
 
 # Kitty reload
 for s in /tmp/kitty-*; do
