@@ -9,11 +9,12 @@
     "reload_style_on_change": true,
 
     "modules-left": [
-        "cava",
+        "cava", /* Need to install waybar-cava to use */
         "mpris"
     ],
     "modules-center": [
         "clock",
+        "custom/menu",
         "hyprland/workspaces",
         "niri/workspaces",
         "custom/recorder",
@@ -52,8 +53,7 @@
                     "on-scroll-down": "tz_down",
                     "on-scroll-up": "shift_up",
                     "on-scroll-down": "shift_down"
-                    },
-        "on-click-right": "~/.local/bin/hakumenu.sh"
+                    }
     },
 
     "group/bar": {
@@ -209,8 +209,15 @@
 
     "custom/monitor": {
         "format": " ",
-        "tooltip-format": "Click to show monitor",
+        "tooltip-format": "Click to show monitor stats",
         "tooltip": true
+    },
+
+    "custom/menu": {
+        "format": "󰍜 ",
+        "tooltip-format": "Click to show menu",
+        "tooltip": true,
+        "on-click": "~/.local/bin/hakumenu.sh"
     },
 
     "cpu": {
