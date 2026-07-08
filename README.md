@@ -1,6 +1,6 @@
-| <img width="1920" height="1080" alt="screenshot_2026-07-04_16-41-24" src="https://github.com/user-attachments/assets/d6ae6da9-6bb7-4aae-826b-54864f3b34d1" /> | <img width="1920" height="1080" alt="screenshot_2026-07-04_16-42-34" src="https://github.com/user-attachments/assets/66c4f28c-5241-498a-9b0e-6ad784e1bb9f" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-07-08_20-03-33" src="https://github.com/user-attachments/assets/5b3e7f6e-a8a3-4b25-b636-243e437d876d" /> | <img width="1920" height="1080" alt="screenshot_2026-07-08_20-05-06" src="https://github.com/user-attachments/assets/e3424fee-c096-495c-b67c-0c7f8eb14802" /> |
 |--|--|
-| <img width="1920" height="1080" alt="screenshot_2026-07-04_16-45-54" src="https://github.com/user-attachments/assets/9fdbfc73-6ba8-4682-aa56-2b82f4611cd5" /> | <img width="1920" height="1080" alt="screenshot_2026-07-04_16-43-36" src="https://github.com/user-attachments/assets/bf1a419f-1462-4d03-88fd-e9842a2e6169" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-07-08_20-02-13" src="https://github.com/user-attachments/assets/d5d8171c-88c1-4073-9dae-a4d0b4e0bcd0" /> | <img width="1920" height="1080" alt="screenshot_2026-07-08_20-00-14" src="https://github.com/user-attachments/assets/f3e86070-14a3-4abd-8b99-c3c68ffb71dc" /> |
 
 
 
@@ -13,7 +13,7 @@
 **Welcome to Haku Space! Simple — Clean — Beautiful**
 
 - **HakuSpace** is an optimized dotfiles collection supporting both **Hyprland** and **Niri** on Arch Linux.
-- These dotfiles rely solely on **Rofi** and **Waybar** for primary user interaction, while the core functionality is driven by **custom scripts** (listed in `hakuspace/common/local/bin`).
+- These dotfiles rely solely on **Rofi**, **Waybar** and **Swaync** for primary user interaction, while the core functionality is driven by **custom scripts** (listed in `hakuspace/common/local/bin`).
 - My dotfiles have evolved into a full DE, though it's still a work in progress.
 - **Easy to extend and customize to fit your needs!**
 
@@ -34,10 +34,10 @@
 > **Prerequisites:** You need a pre-installed Arch Linux or an Arch-based Linux Distro (A fresh install is highly recommended). If you already have an existing WM or DE configuration, it is best to only reference the configs in HakuSpace rather than running the installation script directly over your system.
 
 ### 1. Clone the Stable Release (Recommended)
-Run the following commands to clone the stable release version `v2.0.5`:
+Run the following commands to clone the stable release version `v2.0.6`:
 ```bash
 cd ~
-git clone --depth 1 --branch v2.0.5 https://github.com/hakuimaku/hakuspace.git
+git clone --depth 1 --branch v2.0.6 https://github.com/hakuimaku/hakuspace.git
 
 ```
 
@@ -141,7 +141,7 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 - State files for random wallpaper, waybar current mode, and cava underbar: `/tmp/random_wallpaper_status`, `/tmp/waybar_current_mode`, `/tmp/cava_underbar_status`
 
 ## 🎶 Just chill
-- Open your terminal on Workspace 1 and type `haku.sh` for a little surprise. To close them, just append the '--clear' argument (e.g., `haku.sh --clear`).
+- Open your terminal on Workspace 1 and type `haku` for a little surprise. To close them, just append the '--clear' argument (e.g., `haku --clear`).
 - Cava Underbar: To toggle a Cava visualizer right below Waybar, select Cava Underbar from the Haku Menu. It automatically hides during fullscreen and reappears when you exit. To disable it completely, just toggle it again in the Haku Menu.
 
 
