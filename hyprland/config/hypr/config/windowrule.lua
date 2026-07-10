@@ -77,7 +77,7 @@ local codeSpecialWorkspace = hl.window_rule({
 })
 codeSpecialWorkspace:set_enabled(true) -- Disable this rule for now, as it can be annoying if you don't know how to use the special workspace
 
-hl.workspace_rule({ workspace = "1", persistent = true, layout = "master" })
+hl.workspace_rule({ workspace = "1", persistent = true })
 hl.workspace_rule({ workspace = "2", persistent = true })
 hl.workspace_rule({ workspace = "3", persistent = true })
 hl.workspace_rule({ workspace = "4", persistent = true })
@@ -89,6 +89,24 @@ hl.window_rule({
   border_color = "rgb(FF0000) rgb(880808)",
 })
 
+
+--------------------------------
+------- SCROLLING LAYOUT -------
+--------------------------------
+
+hl.window_rule({
+    name = "full_width_scrolling",
+    match = { class = "code|zen" },
+
+    scrolling_width = 1.0
+})
+
+hl.window_rule({
+    name = "specific_width_scrolling",
+    match = { class = "thunar" },
+
+    scrolling_width = 0.6
+})
 
 --------------------------------
 ----------- OPACITY ------------
@@ -174,8 +192,9 @@ hl.window_rule({
 })
 
 ---------------------------------
---------- Cava Underbar ---------
+------- Haku Space Rules --------
 ---------------------------------
+-- Rules for cava-underbar
 hl.window_rule({
     name = "cava-underbar",
     match = { class = "cavaunderbar" },
@@ -189,5 +208,18 @@ hl.window_rule({
     opacity = 0.5,
     size = "1920 60",
     move = "0 0",
+})
+
+-- Rules for haku.sh | scrolling layout
+hl.window_rule({
+    name = "haku-left",
+    match = { class = "seycmd" },
+    scrolling_width = 0.6,
+})
+
+hl.window_rule({
+    name = "haku-right",
+    match = { class = "seyclock|seylavat|seycava" },
+    scrolling_width = 0.4,
 })
 
