@@ -1,43 +1,22 @@
 
--- Ref https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/
--- "Smart gaps" / "No gaps when only"
--- uncomment all if you wish to use that.
--- hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0, gaps_in = 0 })
--- hl.workspace_rule({ workspace = "f[1]",   gaps_out = 0, gaps_in = 0 })
--- hl.window_rule({
---     name  = "no-gaps-wtv1",
---     match = { float = false, workspace = "w[tv1]" },
---     border_size = 0,
---     rounding    = 0,
--- })
--- hl.window_rule({
---     name  = "no-gaps-f1",
---     match = { float = false, workspace = "f[1]" },
---     border_size = 0,
---     rounding    = 0,
--- })
-
-
----------------------------------------------
----------- WINDOWS AND WORKSPACES -----------
----------------------------------------------
-
 -- See https://wiki.hypr.land/Configuring/Basics/Window-Rules/
 -- and https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/
 
--- Example window rules that are useful
+-- Set workspaces to be persistent, they are not destroyed when empty
+hl.workspace_rule({ workspace = "1", persistent = true })
+hl.workspace_rule({ workspace = "2", persistent = true })
+hl.workspace_rule({ workspace = "3", persistent = true })
+hl.workspace_rule({ workspace = "4", persistent = true })
+hl.workspace_rule({ workspace = "5", persistent = true })
 
 local suppressMaximizeRule = hl.window_rule({
-    -- Ignore maximize requests from all apps. You'll probably like this.
     name  = "suppress-maximize-events",
     match = { class = ".*" },
 
     suppress_event = "maximize",
 })
--- suppressMaximizeRule:set_enabled(false)
 
-hl.window_rule({
-    -- Fix some dragging issues with XWayland
+local fixXwaylandDrags = hl.window_rule({
     name  = "fix-xwayland-drags",
     match = {
         class      = "^$",
@@ -51,16 +30,8 @@ hl.window_rule({
     no_focus = true,
 })
 
--- Layer rules also return a handle.
--- local overlayLayerRule = hl.layer_rule({
---     name  = "no-anim-overlay",
---     match = { namespace = "^my-overlay$" },
---     no_anim = true,
--- })
--- overlayLayerRule:set_enabled(false)
-
 -- Hyprland-run windowrule
-hl.window_rule({
+local hyprlandRunRule = hl.window_rule({
     name  = "move-hyprland-run",
     match = { class = "hyprland-run" },
 
@@ -68,25 +39,20 @@ hl.window_rule({
     float = true,
 })
 
-
+-- VS Code in special workspace
 local codeSpecialWorkspace = hl.window_rule({
     name  = "code-scratchpad",
     match = { class = "code" },
 
     workspace = "special:magic",
 })
-codeSpecialWorkspace:set_enabled(true) -- Disable this rule for now, as it can be annoying if you don't know how to use the special workspace
-
-hl.workspace_rule({ workspace = "1", persistent = true })
-hl.workspace_rule({ workspace = "2", persistent = true })
-hl.workspace_rule({ workspace = "3", persistent = true })
-hl.workspace_rule({ workspace = "4", persistent = true })
-hl.workspace_rule({ workspace = "5", persistent = true })
 
 -- Set border color to red if window is fullscreen
-hl.window_rule({
-  match        = { fullscreen = true },
-  border_color = "rgb(FF0000) rgb(880808)",
+local fullscreenBorder = hl.window_rule({
+    name  = "fullscreen-border-color",
+    match        = { fullscreen = true },
+
+    border_color = "rgb(FF0000) rgb(880808)",
 })
 
 
@@ -94,14 +60,14 @@ hl.window_rule({
 ------- SCROLLING LAYOUT -------
 --------------------------------
 
-hl.window_rule({
+local fullWidth_ScrollingLayout = hl.window_rule({
     name = "full_width_scrolling",
     match = { class = "code|zen" },
 
     scrolling_width = 1.0
 })
 
-hl.window_rule({
+local specificWidth_ScrollingLayout = hl.window_rule({
     name = "specific_width_scrolling",
     match = { class = "thunar" },
 
@@ -111,15 +77,15 @@ hl.window_rule({
 --------------------------------
 ----------- OPACITY ------------
 --------------------------------
-hl.window_rule({
+local opacityCertainApps = hl.window_rule({
     name  = "opacity-for-certain-apps",
     match = { class = "thunar|kitty|code|jetbrains.*" },
 
     opacity = 0.8,
 })
 
--- Haku
-hl.window_rule({
+-- Rules for haku.sh
+local hakuSpaceOpacityRule = hl.window_rule({
     name  = "opacity-haku",
     match = { class = "seycmd|seyclock|seylavat|seycava" },
 
@@ -130,7 +96,7 @@ hl.window_rule({
 ----------- ANIMATIONS -----------
 ----------------------------------
 -- Animation for Rofi
-hl.layer_rule({
+local rofiAnimation = hl.layer_rule({
     name = "rofi-slide",
     match = { namespace = "rofi" },
 
@@ -138,13 +104,14 @@ hl.layer_rule({
     blur = true,
 })
 -- Animation for Waybar
-hl.layer_rule({
+local waybarAnimation = hl.layer_rule({
+    name = "waybar-fade",
     match = { namespace = "waybar" },
-    
-    animations = fade
+
+    animation = "fade",
 })
 -- Slide for Swaync
-hl.layer_rule({
+local swayncAnimation = hl.layer_rule({
     name = "swaync-control-center",
     match = { namespace = "swaync-control-center" },
 
@@ -154,35 +121,17 @@ hl.layer_rule({
 -------------------------------------------------
 ----------- Floating window for apps ------------
 -------------------------------------------------
-hl.window_rule({
-    name  = "floating-imv",
-    match = { class = "imv" },
+local floatingApps = hl.window_rule({
+    name  = "floating-apps",
+    match = { class = "imv|mpv|org.gnome.Calculator" },
 
     float = true,
     center = true,
     size  = "1280 720",
-})
-
-hl.window_rule({
-    name  = "floating-mpv",
-    match = { class = "mpv" },
-
-    float = true,
-    center = true,
-    size  = "1280 720",
-})
-
-hl.window_rule({
-    name = "float-calculator",
-    match = { class = "org.gnome.Calculator" },
-
-    float = true,
-    move = "10 55",
-    size = "600 800",
 })
 
 -- Browser popups like save, etc. should usually be floating
-hl.window_rule({
+local floatingXdgPortal = hl.window_rule({
     name  = "xdg-desktop-portal-gtk",
     match = { class = "xdg-desktop-portal-gtk" },
 
@@ -223,3 +172,32 @@ hl.window_rule({
     scrolling_width = 0.4,
 })
 
+
+
+---------------------------------------
+---------- Turn on/off rules ----------
+---------------------------------------
+-- Hyprland useful rules, why not?
+suppressMaximizeRule:set_enabled(true)
+hyprlandRunRule:set_enabled(true)
+fixXwaylandDrags:set_enabled(true)
+
+codeSpecialWorkspace:set_enabled(true) -- VS Code in special workspace (SUPER + `)
+fullscreenBorder:set_enabled(true) -- Red border for fullscreen windows
+
+-- Scrolling layout rules
+fullWidth_ScrollingLayout:set_enabled(true) -- Set width 100% for certain apps
+specificWidth_ScrollingLayout:set_enabled(true) -- Set width 60% for certain apps
+
+-- Opacity rules
+opacityCertainApps:set_enabled(true) -- Specific apps opacity
+hakuSpaceOpacityRule:set_enabled(true) -- haku.sh kitty opacity
+
+-- Animation rules
+rofiAnimation:set_enabled(true)
+waybarAnimation:set_enabled(true)
+swayncAnimation:set_enabled(true)
+
+-- Floating window rules
+floatingApps:set_enabled(true) -- Floating certain apps (mpv, imv, calculator)
+floatingXdgPortal:set_enabled(true) -- Floating xdg-desktop-portal-gtk (save, open, etc.)
