@@ -32,14 +32,3 @@ hl.define_submap("hyprexpo", function()
     hl.bind("escape", function() hl.plugin.hyprexpo.expo("cancel") end)
 end)
 
--- hyprfocus
-hl.animation({ leaf = "hyprfocusIn", enabled = true, duration = 1, speed = 10, bezier = "default" })
-hl.animation({ leaf = "hyprfocusOut", enabled = true, duration = 1, speed = 30, bezier = "default" })
-
-hl.config({
-    plugin = {
-        hyprfocus = {
-        },
-    },
-})
-
