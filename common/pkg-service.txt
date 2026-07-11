@@ -16,6 +16,7 @@ xdg-desktop-portal-gtk        # GTK portal backend
 xdg-utils                     # xdg-open, xdg-mime, and related desktop helpers
 xorg-xhost                    # X server access control utility (compat use-cases)
 polkit-gnome                  # PolicyKit authentication agent
+gnome-keyring                 # GNOME keyring manager (for secrets portal)
 
 # === Qt / Wayland integration ===
 qt6ct                         # Qt6 theme/configuration tool
