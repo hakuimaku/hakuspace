@@ -257,6 +257,7 @@ select_window_manager() {
     echo ""
     echo -e "${C_BOLD}[1]${C_RESET} HYPRLAND"
     echo -e "${C_BOLD}[2]${C_RESET} NIRI"
+    echo -e "${C_BOLD}[3]${C_RESET} MANGOWM"
     echo ""
     read -r -p ">>> Which Window Manager do you want to install?: " wm_choice
 
