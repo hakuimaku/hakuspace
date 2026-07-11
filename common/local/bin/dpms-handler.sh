@@ -10,4 +10,10 @@ elif [ "$WM" = "niri" ]; then
     else
         niri msg action power-off-monitors
     fi
+elif [ "$WM" = "mango" ]; then
+    if [ "$1" = "on" ]; then
+        mmsg dispatch wakeup_monitor
+    else
+        mmsg dispatch sleep_monitor
+    fi
 fi

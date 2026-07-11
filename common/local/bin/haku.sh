@@ -1,5 +1,27 @@
 #!/bin/bash
 
+# Check dependencies
+if ! command -v kitty &> /dev/null; then
+    echo "kitty is not installed. Please install it to run this script."
+    exit 1
+fi
+
+if ! command -v cava &> /dev/null; then
+    echo "cava is not installed. Please install it to run this script."
+    exit 1
+fi
+
+if ! command -v tty-clock &> /dev/null; then
+    echo "tty-clock is not installed. Please install it to run this script."
+    exit 1
+fi
+
+if ! command -v lavat &> /dev/null; then
+    echo "lavat is not installed. Please install it to run this script."
+    exit 1
+fi
+
+# Main
 FONT_CLOCK=10
 FONT_GENERAL=12
 FONT_TERMINAL=15
@@ -87,6 +109,56 @@ if [[ $XDG_CURRENT_DESKTOP == "niri" ]]; then
     niri msg action consume-window-into-column
 
     niri msg action focus-column-left
+
+    kill -9 "$MY_ADDR"
+fi
+
+if [[ $XDG_CURRENT_DESKTOP == "mango" ]]; then
+    MY_INFO=$(mmsg get focusing-client)
+    MY_ADDR=$(echo "$MY_INFO" | jq -r '.pid // empty')
+
+    clear
+    sleep 0.05
+
+    get_client_id_by_appid() {
+        local appid="$1"
+        mmsg get all-clients | jq -r --arg a "$appid" '
+          (.clients // []) | map(select(.appid == $a)) | last | (.id // empty)
+        '
+    }
+
+    wait_client_id_by_appid() {
+        local appid="$1"
+        local i id
+        for ((i=0; i<50; i++)); do
+            id="$(get_client_id_by_appid "$appid")"
+            [[ -n "$id" && "$id" != "null" ]] && { echo "$id"; return 0; }
+            sleep 0.02
+        done
+        return 1
+    }
+
+    stack_id() {
+        local id="$1"
+        local dir="${2:-right}"
+        [[ -n "$id" ]] && mmsg dispatch scroller_stack,"$dir" client,"$id" >/dev/null 2>&1
+    }
+
+    cmd
+    cmd_id="$(wait_client_id_by_appid "seycmd")"
+
+    clock
+    clock_id="$(wait_client_id_by_appid "seyclock")"
+
+    lavat
+    lavat_id="$(wait_client_id_by_appid "seylavat")"
+    stack_id "$lavat_id" "left"
+    sleep 0.2
+
+    cava
+    cava_id="$(wait_client_id_by_appid "seycava")"
+    stack_id "$cava_id" "left"
+    sleep 0.2
 
     kill -9 "$MY_ADDR"
 fi
