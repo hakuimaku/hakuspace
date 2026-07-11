@@ -273,8 +273,14 @@ select_window_manager() {
             PKG_WM="$WM_DIR/pkg-niri.txt"
             log_info "Selected: Niri"
             ;;
+        3)
+            WM="mango"
+            WM_DIR="$HAKU_DIR/mango"
+            PKG_WM="$WM_DIR/pkg-mango.txt"
+            log_info "Selected: Mango"
+            ;;
         *)
-            log_error "Invalid choice. Please run again and choose 1 or 2."
+            log_error "Invalid choice. Please run again and choose 1, 2 or 3."
             exit 1
             ;;
     esac
@@ -429,6 +435,11 @@ if ask_yes_no "===> Do you want to backup and copy your current config now?"; th
     elif [[ $WM == "niri" ]]; then
         echo ">>> Deploying Niri configs..."
         copy_config_folders_with_backup "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
+    elif [[ $WM == "mango" ]]; then
+        echo ">>> Deploying Mango configs..."
+        copy_config_folders_with_backup "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
+    else
+        log_warn "Unknown WM: $WM. Skipping WM config deployment."
     fi
 
     echo ">>> Deploying mimeapps.list..."
