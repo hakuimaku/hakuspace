@@ -1,29 +1,30 @@
-# === Core UI / desktop essentials ===
-nano                          # Minimal terminal text editor
+# === Core packages for Hakuspace ===
 waybar                        # Wayland status bar
 rofi                          # App launcher and dmenu replacement
 swaync                        # Notification daemon + notification center
 kitty                         # GPU-accelerated terminal emulator
-awww                          # Wallpaper utility
-mpvpaper                      # Video wallpaper renderer for Wayland
-hyprlock                      # Screen locker
-hypridle                      # Idle management and screen blanking
-grim                          # Screenshot utility for Wayland
-slurp                         # Select a region of the screen for screenshots
-swappy                        # Screenshot editor for Wayland
-
-# === Core CLI/system utilities ===
-socat                         # Multipurpose relay/socket utility
 fastfetch                     # Fast system information display
-nwg-look                      # GTK theme and appearance configurator
-brightnessctl                 # Brightness control utility
+awww                          # Wallpaper
+mpvpaper                      # Video wallpaper
+hyprlock                      # Screen locker
+hypridle                      # Idle management
 
-# === Clipboard / scripting helpers ===
+# === Hakuspace scripts needed ===
+socat                         # Multipurpose relay/socket utility
+jq                            # Command-line JSON processor
+imagemagick                   # Image processing toolkit (For Niri, generating backdrop blur)
+python-colorthief             # Extract dominant color palette from images (Function wallpaper color picker)
+
+# ==== Utility tools ===
 wl-clipboard                  # Wayland clipboard tools (wl-copy/wl-paste)
 cliphist                      # Clipboard history manager
-jq                            # Command-line JSON processor
+grim                          # Screenshot utility for Wayland
+slurp                         # Select a region of the screen for screenshots
+mpv                           # Media player (video/audio)
+imv                           # Lightweight image viewer (picture)
+sway-audio-idle-inhibit-git   # Inhibit idle/suspend while audio is playing (AUR)
 
-# === File manager stack ===
+# === File management / archive tools ===
 thunar                        # File manager
 thunar-archive-plugin         # Archive integration for Thunar
 thunar-volman                 # Auto-mount and removable media handling
@@ -32,24 +33,13 @@ gvfs                          # Virtual filesystem backend
 gvfs-mtp                      # MTP device support (Android phones)
 tumbler                       # Thumbnailing service
 ffmpegthumbnailer             # Video thumbnail generator
-
-# === Archives / media viewers ===
 7zip                          # 7z archive toolset
 unrar                         # RAR extraction support
 unzip                         # ZIP extraction support
 zip                           # ZIP creation utility
-mpv                           # Media player
-imv                           # Lightweight image viewer
 
-# === Wayland media behavior ===
-sway-audio-idle-inhibit-git   # Inhibit idle/suspend while audio is playing (AUR)
-
-# === Fonts / theming ===
+# === Fonts ===
 noto-fonts                    # General Unicode font family
 noto-fonts-cjk                # CJK font coverage
 noto-fonts-emoji              # Emoji font set
-ttf-jetbrains-mono-nerd       # Nerd Font for terminal/status bar glyphs
-rofi-emoji                    # Emoji picker integration for rofi
-imagemagick                   # Image processing toolkit
-python-colorthief             # Extract dominant color palette from images
-python-pywal16                # Generate terminal/UI color schemes from wallpapers
+ttf-jetbrains-mono-nerd       # Nerd Font for terminal/status bar glyphs (Use Nerd Font icons)
