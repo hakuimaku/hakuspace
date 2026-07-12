@@ -7,19 +7,42 @@
 
 hl.env("XCURSOR_SIZE", "32")
 
-hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_TYPE", "wayland")
+hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
+hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 
--- Toolkit backend
+-- Wayland Platform Settings
+hl.env("QT_QPA_PLATFORM", "wayland")
+hl.env("QT_QPA_PLATFORMTHEME", "gtk3")
+hl.env("QT_QPA_PLATFORMTHEME_QT6", "gtk3")
+hl.env("QT_WAYLAND_DISABLE_WINDOWDECORATION", "1")
+hl.env("QT_AUTO_SCREEN_SCALE_FACTOR", "1")
+
+-- GTK Settings
 hl.env("GDK_BACKEND", "wayland,x11,*")
-hl.env("QT_QPA_PLATFORM", "wayland;xcb")
+
+-- Firefox
+hl.env("MOZ_ENABLE_WAYLAND", "1")
+hl.env("MOZ_DBUS_REMOTE", "1")
+
+-- Java Applications
+hl.env("_JAVA_AWT_WM_NONREPARENTING", "1")
+
+-- SDL Applications
 hl.env("SDL_VIDEODRIVER", "wayland")
+
+-- Clutter Applications
 hl.env("CLUTTER_BACKEND", "wayland")
 
--- Scale factor
-hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
-hl.env("QT_AUTO_SCREEN_SCALE_FACTOR", "1")
---hl.env("QT_SCALE_FACTOR", "1.25")
+-- Performance
+hl.env("VDPAU_DRIVER", "va_gl")
+hl.env("LIBVA_DRIVER_NAME", "iHD")
+
+-- Input method
+hl.env("GTK_IM_MODULE", "fcitx")
+hl.env("QT_IM_MODULE", "fcitx")
+hl.env("XMODIFIERS", "@im=fcitx")
+hl.env("SDL_IM_MODULE", "fcitx")
 
 
