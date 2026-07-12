@@ -21,7 +21,7 @@ Arch Linux dotfiles for Hyprland / Niri / MangoWM
 |--|--|
 | <img width="1920" height="1080" alt="screenshot_2026-07-08_20-02-13" src="https://github.com/user-attachments/assets/d5d8171c-88c1-4073-9dae-a4d0b4e0bcd0" /> | <img width="1920" height="1080" alt="screenshot_2026-07-08_20-00-14" src="https://github.com/user-attachments/assets/f3e86070-14a3-4abd-8b99-c3c68ffb71dc" /> |
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&duration=50&pause=6000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Welcome+to+Haku+Space" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Welcome+to+Haku+Space" alt="Typing SVG" />
 
 - **HakuSpace** is a dotfiles project for **Arch Linux**, supporting **Hyprland**, **Niri**, and **MangoWM**.  
 - The main user interaction layer is built around **Rofi**, **Waybar**, and **SwayNC**, while most core behavior is powered by custom scripts in `hakuspace/common/local/bin`.  
@@ -30,7 +30,7 @@ Arch Linux dotfiles for Hyprland / Niri / MangoWM
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&duration=50&pause=6000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Programs" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Programs" alt="Typing SVG" />
 
 <div align="center">
   
@@ -54,7 +54,7 @@ See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&duration=50&pause=6000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Key+Features" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Key+Features" alt="Typing SVG" />
 
 * **Smart Accent Colors:** Automatically generates the accent color palette based on your current wallpaper.
 * **Flexible Waybar Layouts:** Supports two standard layouts: **Left** and **Top**.
@@ -64,7 +64,7 @@ See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&duration=50&pause=6000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Installation+Guide" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Installation+Guide" alt="Typing SVG" />
 
 > [!Important]
 > **Prerequisites:** You need a pre-installed Arch Linux or an Arch-based Linux Distro (A fresh install is highly recommended). If you already have an existing WM or DE configuration, it is best to only reference the configs in HakuSpace rather than running the installation script directly over your system.
@@ -112,7 +112,14 @@ yay -S waybar-cava
 ```
 `waybar-cava` is a plugin for Waybar that provides a visualizer for audio output. My waybar top needs this to work properly (cava module).
 
-3) Allow Local Root User to Access X/Xwayland Display (For Niri; if Hyprland does not work, you can also try this)
+Or
+
+```bash
+yay -S waybar-git
+```
+`waybar-git` is a lastest git version of Waybar, which is supporting **mango/workspaces** module if you're using MangoWM.
+
+3) Allow Local Root User to Access X/Xwayland Display
 ```bash
 xhost +si:localuser:root
 ```
@@ -129,18 +136,18 @@ Grants the local root user permission to connect to and launch graphical (GUI) a
 > Well, if you want to update the whole dotfiles. just run the `install.sh` script again without skipping any steps. It will automatically back up your existing files and apply the latest changes.
 
 ### 🗑 Uninstall Haku Space
-> (WM: The Window Manager you are currently using, e.g., hyprland, niri).
+> (WM: The Window Manager you are currently using, e.g., hyprland, niri, mango).
 
 My dotfiles are very clean. You just need to check the config folders that were copied from common and specific WM in `~/hakuspace`, then delete them from `~/.config` (During installation, the `install.sh` script automatically created a backup of your existing configuration files so you can backup your old config).
 - Remove all scripts located in `~/.local/bin`.
 - Delete the auto-generated files in `~/.local/state/haku_theme`, as well as the following files in `/tmp`: `cava_underbar_status`, `random_wallpaper_status`, and `waybar_current_mode`.
 - If necessary, you can also remove the icons and themes inside `~/.icons` and `~/.themes`.
-- Review `pkg-core.txt`, `pkg-service.txt`, `pkg-optional.txt` and `pkg-WM.txt` to uninstall any unnecessary packages.
+- Review `pkg-core.txt`, `pkg-service.txt`, `pkg-optional.txt` (in hakuspace/common) and `pkg-WM.txt` (in hakuspace/WM) to uninstall any unnecessary packages.
 - Finally, you can completely delete the `~/hakuspace` directory.
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&duration=50&pause=6000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Plugin+Configuration+(Hyprland+Only)" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Plugin+Configuration+(Hyprland+Only)" alt="Typing SVG" />
 
 You can immediately use the plugins that I have pre-configured. Simply install and enable them using the commands below (or tweak them as you like in `plugin.lua`).
 
@@ -167,7 +174,7 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&duration=50&pause=6000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Assets+located" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Assets+located" alt="Typing SVG" />
 
 - Icons: `~/.icons`
 - Themes: `~/.themes`
@@ -181,14 +188,14 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&duration=50&pause=6000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Just+chill" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Just+chill" alt="Typing SVG" />
 
 - Open your terminal on Workspace 1 and type `haku` for a little surprise. To close them, just append the '--clear' argument (e.g., `haku --clear`).
 - Cava Underbar: To toggle a Cava visualizer right below Waybar, select Cava Underbar from the Haku Menu. It automatically hides during fullscreen and reappears when you exit. To disable it completely, just toggle it again in the Haku Menu.
 
 ---
 
-# <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&duration=50&pause=6000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Troubleshooting" alt="Typing SVG" />
+# <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Troubleshooting" alt="Typing SVG" />
 
 Waybar bugs:
 - **Waybar clock**: You should set your timezone and locale manually in waybar configuration to ensure the clock displays correctly.
@@ -206,7 +213,7 @@ My dotfiles bugs:
 
 ---
 
-# <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&duration=50&pause=6000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Contributing" alt="Typing SVG" />
+# <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Contributing" alt="Typing SVG" />
 
 - This is a personal dotfiles configuration. Feel free to fork and adapt it to your needs!
 - tiktok / See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372)
