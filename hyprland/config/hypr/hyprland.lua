@@ -56,10 +56,10 @@ require("config/autostart")
 require("config/environment")
 require("config/animation")
 require("config/keybinding")
-require("config/windowrule")
+require("config/rule")
 require("config/layout")
 
 -- uncomment this line to load the plugin config file.
 -- disable this by default to avoid errors if you don't have any plugins installed.
 
---require("config/plugin")
+require("config/plugin")
