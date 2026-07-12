@@ -477,19 +477,6 @@ fi
 # ============================================================================
 step_title "6 - SETUP OH MY ZSH AND PLUGINS"
 
-if command -v yay >/dev/null 2>&1; then
-    if ! command -v zsh >/dev/null 2>&1; then
-        if ask_yes_no ":: Zsh is missing. Install zsh now?"; then
-            yay -S --noconfirm zsh
-        fi
-    fi
-else
-    log_warn "yay is not installed. Please install zsh manually if you want to use Oh My Zsh."
-    log_warn "If you're using another Distro, please install zsh manually."
-fi
-
-
-
 if ask_yes_no "===> Do you want to install Oh My Zsh now?"; then
     if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
         log_info "Installing Oh My Zsh..."
