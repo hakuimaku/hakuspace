@@ -1,10 +1,10 @@
-// Reference: Caelestia's fastfetch config
 {
     "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
     "logo": {
         "source": "~/.config/fastfetch/hakufetch.txt",
         "type": "auto",
-        "padding": { "top": 1, "left": 2, "right": 2 },
+        "position": "top",
+        "padding": { "top": 2, "left": 2 },
         "color": { "1": "blue" }
     },
     "display": {
@@ -16,47 +16,43 @@
         "break",
         {
             "type": "custom",
-            "key": "╭───HakuSpace───────────────────────╮"
+            "key": "  ╭─HakuSpace──╮"
         },
         {
             "type": "command",
-            "key": "│ {$2}{$1}  user  ",
-            "text": "echo $USER",
-            "format": "{$2}{>22}{$1} │"
+            "key": "  │ {$2}{$1}  user    │",
+            "text": "echo $USER"
         },
         {
             "type": "kernel",
-            "key": "│ {$2}󰌽{$1}  kernel",
-            "format": "{$2}{release>22}{$1} │"
+            "key": "  │ {$2}󰌽{$1}  kernel  │"
         },
         {
             "type": "os",
-            "key": "│ {$2}{$1}  os    ",
-            "format": "{$2}{name>22}{$1} │"
+            "key": "  │ {$2}{$1}  os      │"
         },
         {
             "type": "wm",
-            "key": "│ {$2}{$1}  wm    ",
-            "format": "{$2}{>22}{$1} │"
-        },
-        {
-            "type": "packages",
-            "key": "│   pkgs  ",
-            "format": "{all>22} │"
+            "key": "  │ {$2}{$1}  wm      │"
         },
         {
             "type": "disk",
-            "key": "│ {$2}{$1}  disk  ",
-            "folders": "/",
-            "format": "{$2}{>22}{$1} │"
+            "key": "  │ {$2}{$1}  disk    │",
+            "folder": "/",
+            "format": "{<12}{$1}"
+        },
+        {
+            "type": "packages",
+            "key": "  │   pkgs    │"
         },
         {
             "type": "custom",
-            "key": "╰───────────────────────────────────╯"
+            "key": "  ╰────────────╯"
         },
         {
             "type": "colors",
-            "symbol": "circle",
+            "key": "  ",
+            "symbol": "circle"
         }
     ]
 }
