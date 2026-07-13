@@ -58,6 +58,8 @@ alias reload="source ~/.zshrc"
 alias haku="~/.local/bin/haku.sh"
 alias menu="~/.local/bin/hakumenu.sh"
 alias openconfig="~/.local/bin/open_config.sh"
+alias pacsize='expac -H M "%m\t%n" $(\pacman -Qeq) | sort -h -r'
+alias pacsizefull='expac -H M "%m\t%n" | sort -h -r'
 
 # History quality-of-life
 HISTFILE="$HOME/.zsh_history"
