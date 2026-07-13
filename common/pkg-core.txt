@@ -11,7 +11,6 @@ hypridle                      # Idle management
 zsh                           # Shell
 
 # === Hakuspace scripts needed ===
-socat                         # Multipurpose relay/socket utility
 jq                            # Command-line JSON processor
 imagemagick                   # Image processing toolkit (For Niri, generating backdrop blur)
 python-colorthief             # Extract dominant color palette from images (Function wallpaper color picker)
