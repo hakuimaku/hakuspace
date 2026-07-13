@@ -7,54 +7,79 @@ if [[ $XDG_CURRENT_DESKTOP == "mango" ]]; then
     exit 1
 fi
 
-# Check dependencies
-if ! command -v kitty >/dev/null 2>&1; then
-    echo "kitty terminal is required to run Cava Underbar." >&2
-    notify-send "kitty terminal is required to run Cava Underbar."
-    exit 1
-fi
-
-if ! command -v cava >/dev/null 2>&1; then
-    echo "cava is required to run Cava Underbar." >&2
-    notify-send "cava is required to run Cava Underbar."
-    exit 1
-fi
-
-if ! command -v socat >/dev/null 2>&1; then
-    echo "socat is required to run Cava Underbar." >&2
-    notify-send "socat is required to run Cava Underbar."
-    exit 1
-fi
-
-# Main
 APP_CLASS="cavaunderbar"
-STATE_FILE="/tmp/cava_underbar_status"
-SOCKET_PATH="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
+STATE_FILE="/tmp/cava_underbar_status" # 1 = user wants ON, 0 = user wants OFF
+HIDDEN_FILE="/tmp/cava_underbar_hidden_by_fs" # 1 = daemon hid it due to fullscreen
+LOCK_FILE="/tmp/cava_underbar.lock" # make sure only one daemon is running
+
+need() { command -v "$1" >/dev/null 2>&1 || { echo "$1 is required"; exit 1; }; }
+
+need kitty
+need cava
+need jq
 
 [[ ! -f "$STATE_FILE" ]] && echo "0" > "$STATE_FILE"
+[[ ! -f "$HIDDEN_FILE" ]] && echo "0" > "$HIDDEN_FILE"
 
 run_cava() {
-    kitty --class="$APP_CLASS" \
-          --config NONE \
-          -o background_opacity=0 \
-          -o background=#000000 \
-          -o font_size=5 \
-          -o window_padding_width=0 \
-          -o hide_window_decorations=yes \
-          -e cava -p ~/.config/cava/config_underbar &
+    pgrep -f "$APP_CLASS" >/dev/null && return 0
 
-    if pgrep -x "niri" > /dev/null; then
-        niri-float-sticky -ipc set_sticky -app-id "cavaunderbar"
-    fi
+    kitty --class="$APP_CLASS" \
+            --config NONE \
+            -o background_opacity=0 \
+            -o background=#000000 \
+            -o font_size=5 \
+            -o window_padding_width=0 \
+            -o hide_window_decorations=yes \
+            -e cava -p ~/.config/cava/config_underbar &
+}
+
+stop_cava() {
+    pkill -f "$APP_CLASS" 2>/dev/null
 }
 
 toggle_cava() {
-    if pgrep -f "$APP_CLASS" > /dev/null; then
-        pkill -f "$APP_CLASS" 
+    if pgrep -f "$APP_CLASS" >/dev/null; then
+        stop_cava
         echo "0" > "$STATE_FILE"
+        echo "0" > "$HIDDEN_FILE"
     else
-        echo "1" > "$STATE_FILE"
         run_cava
+        echo "1" > "$STATE_FILE"
+        echo "0" > "$HIDDEN_FILE"
+    fi
+}
+
+
+# Check fullscreen, work around for Hyprland's fullscreen behavior
+# Hyprland use pin cava_underbar window -> fullscreen window still shows it up
+get_fs() {
+    hyprctl activewindow -j 2>/dev/null | jq -r '.fullscreen // 0' 2>/dev/null
+}
+
+daemon_tick() {
+    local want_on fs hidden
+    want_on="$(cat "$STATE_FILE" 2>/dev/null || echo 0)"
+    hidden="$(cat "$HIDDEN_FILE" 2>/dev/null || echo 0)"
+    fs="$(get_fs)"
+    [[ -z "$fs" ]] && fs=0
+
+    # user wants OFF -> daemon never starts cava
+    [[ "$want_on" != "1" ]] && return 0
+
+    # fullscreen (mode 1 or 2) => hide if running
+    if [[ "$fs" != "0" ]]; then
+        if pgrep -f "$APP_CLASS" >/dev/null; then
+        stop_cava
+        echo "1" > "$HIDDEN_FILE"
+        fi
+        return 0
+    fi
+
+    # not fullscreen => only restore if daemon had hidden it
+    if [[ "$hidden" == "1" ]]; then
+        run_cava
+        echo "0" > "$HIDDEN_FILE"
     fi
 }
 
@@ -63,31 +88,11 @@ if [[ "$1" == "--toggle" ]]; then
     exit 0
 fi
 
-# Check fullscreen, work around for Hyprland's fullscreen behavior
-# Hyprland use pin cava_underbar window -> fullscreen window still shows it up
-check_fullscreen() {
-    local active_win=$(hyprctl activewindow -j)
-    local fs_mode=$(echo "$active_win" | jq -r '.fullscreen')
-    local is_manual_on=$(cat "$STATE_FILE")
-    
-    if [[ "$is_manual_on" == "1" ]]; then
-        if [[ "$fs_mode" == "2" ]]; then
-            if pgrep -f "$APP_CLASS" > /dev/null; then
-                pkill -f "$APP_CLASS"
-            fi
-        else
-            if ! pgrep -f "$APP_CLASS" > /dev/null; then
-                run_cava
-            fi
-        fi
-    fi
-}
+# no --toggle => daemon only
+exec 9>"$LOCK_FILE"
+flock -n 9 || exit 0
 
-check_fullscreen
-
-socat -U - "UNIX-CONNECT:$SOCKET_PATH" | while read -r line; do
-    if [[ "$line" == "fullscreen>>"* ]] || [[ "$line" == "activewindow>>"* ]]; then
-        sleep 0.5
-        check_fullscreen 
-    fi
+while true; do
+    daemon_tick
+    sleep 1
 done
