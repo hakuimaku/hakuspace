@@ -443,6 +443,12 @@ if ask_yes_no "===> Do you want to backup and copy your current config now?"; th
     echo ">>> Deploying mimeapps.list..."
     copy_file_with_backup "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/mimeapps.list"
 
+    echo ">>> Deploying .zshrc (zsh configuration)..."
+    copy_file_with_backup "$COMMON_DIR/.zshrc" "$HOME/.zshrc"
+
+    echo ">>> Deploying .nanorc (nano configuration)..."
+    copy_file_with_backup "$COMMON_DIR/.nanorc" "$HOME/.nanorc"
+
     log_ok "Configurations deployed successfully."
 else
     log_skip "Skipping config deployment."
