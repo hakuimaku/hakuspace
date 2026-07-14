@@ -12,6 +12,7 @@ Arch Linux dotfiles for Hyprland / Niri / MangoWM
     <a href="https://archlinux.org/"><img alt="Arch Linux" src="https://img.shields.io/badge/Arch%20Linux-%231f1f1f?style=for-the-badge&logo=archlinux&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
     <a href="https://github.com/hakuimaku/hakuspace/commits/main"><img alt="Last Commit" src="https://img.shields.io/github/last-commit/hakuimaku/hakuspace?style=for-the-badge&label=Last%20Commit&labelColor=%2368818f&color=%231f1f1f&logo=git&logoColor=%231f1f1f"></a>&nbsp;
     <a href="https://github.com/hakuimaku/hakuspace/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/hakuimaku/hakuspace?style=for-the-badge&label=Stars&labelColor=%2368818f&color=%231f1f1f&logo=github&logoColor=%231f1f1f"></a>&nbsp;
+    <a href="https://github.com/hakuimaku/hakuspace"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/hakuimaku/hakuspace?style=for-the-badge&label=Repo%20Size&labelColor=%2368818f&color=%231f1f1f&logo=github&logoColor=%231f1f1f">
 </p>
 
 
@@ -71,10 +72,10 @@ See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/
 > **Prerequisites:** You need a pre-installed Arch Linux or an Arch-based Linux Distro (A fresh install is highly recommended). If you already have an existing WM or DE configuration, it is best to only reference the configs in HakuSpace rather than running the installation script directly over your system.
 
 ### 1. Clone the Stable Release
-Run the following commands to clone the stable release version `v2.1.0`:
+Run the following commands to clone the stable release version `v2.1.1`:
 ```bash
 cd ~
-git clone --depth 1 --branch v2.1.0 https://github.com/hakuimaku/hakuspace.git
+git clone --depth 1 --branch v2.1.1 https://github.com/hakuimaku/hakuspace.git
 
 ```
 
