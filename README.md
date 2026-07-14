@@ -220,9 +220,12 @@ My dotfiles bugs:
 - tiktok / See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372)
 
 ---
+
+See hakuspace-archive for the assets used in this project: [hakuspace-archive](https://github.com/hakuimaku/hakuspace-archive)
+
 *Themes, Icons and Wallpapers used in Haku Space:*
 - Theme: [Midnight-Gray](https://www.gnome-look.org/p/1273208)
-- Icons: [Tela-circle-black](https://www.gnome-look.org/p/1359276)
+- Icons: [Tela-black](https://www.gnome-look.org/p/1279924)
 - Mouse Cursor: [Bibata-Modern-Ice](https://www.gnome-look.org/p/1197198)
 - Wallpapers Artists:
   - [zrxrevolutionz](https://www.deviantart.com/zrxrevolutionz)
