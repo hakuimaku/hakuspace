@@ -16,7 +16,7 @@ set_wallpaper() {
 
     if [[ $XDG_CURRENT_DESKTOP == "niri" ]]; then
         mkdir -p "$BACKDROP_DIR"
-        magick "$wall" -blur 0x15 "$BACKDROP_DIR/backdrop.jpg"
+        magick "${wall}[0]" -background black -alpha remove -set option:filter:blur 1.0 -blur 0x15 "$BACKDROP_DIR/backdrop.jpg"
         awww img -n "awww-daemon-backdrop" "$BACKDROP_DIR/backdrop.jpg"
     fi
 }

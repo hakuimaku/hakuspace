@@ -26,7 +26,7 @@ set_wallpaper() {
     if pgrep -x "niri" > /dev/null; then
         BACKDROP_DIR="$HOME/Pictures/Wallpapers/temp"
         mkdir -p "$BACKDROP_DIR"
-        magick -size 1x1 xc:#1e1e1e $BACKDROP_DIR/backdrop.jpg
+        magick "${wall}[0]" -background black -alpha remove -set option:filter:blur 1.0 -blur 0x15 "$BACKDROP_DIR/backdrop.jpg"
         awww img -n "awww-daemon-backdrop" $BACKDROP_DIR/backdrop.jpg
     fi
 }
