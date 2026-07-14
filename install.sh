@@ -13,7 +13,7 @@ cat << 'EOF'
 | |_| | __ _| | ___   _\ `--. _ __   __ _  ___ ___ 
 |  _  |/ _` | |/ / | | |`--. \ '_ \ / _` |/ __/ _ \
 | | | | (_| |   <| |_| /\__/ / |_) | (_| | (_|  __/
-\_| |_/\__,_|_|\_\\__,_\____/| .__/ \__,_|\___\___|
+\_| |_|\__,_|_|\_\\__,_\____/| .__/ \__,_|\___\___|
                              | |                   
                              |_|                       
 
@@ -64,6 +64,9 @@ PKG_WM=""
 PKG_SERVICE="$COMMON_DIR/pkg-service.txt"
 PKG_CORE="$COMMON_DIR/pkg-core.txt"
 PKG_OPTIONAL="$COMMON_DIR/pkg-optional.txt"
+
+ARCHIVE_REPO_URL="https://github.com/hakuimaku/hakuspace-archive.git"
+ARCHIVE_DIR="$HOME/hakuspace-archive"
 
 # --------------------------------
 # Logging helpers
@@ -178,51 +181,6 @@ copy_config_folders_with_backup() {
     done
 }
 
-extract_archives_if_needed() {
-    local source_dir="$1"
-    local dest_dir="$2"
-    local kind="$3"
-
-    if [[ ! -d "$source_dir" ]]; then
-        log_error "Not found directory $source_dir"
-        return 1
-    fi
-
-    ensure_dir "$dest_dir"
-
-    shopt -s nullglob
-    local archives=("$source_dir"/*.tar.gz)
-    shopt -u nullglob
-
-    if [[ ${#archives[@]} -eq 0 ]]; then
-        log_warn "No .tar.gz $kind found in $source_dir"
-        return 0
-    fi
-
-    for archive in "${archives[@]}"; do
-        local archive_name base_name temp_archive
-        archive_name="$(basename "$archive")"
-        base_name="${archive_name%.tar.gz}"
-        temp_archive="$dest_dir/$archive_name"
-
-        cp -f "$archive" "$temp_archive"
-
-        if [[ -d "$dest_dir/$base_name" ]]; then
-            log_skip "Skip extract $archive_name (already exists: $dest_dir/$base_name)"
-            rm -f "$temp_archive"
-            continue
-        fi
-
-        if tar -xzf "$temp_archive" -C "$dest_dir"; then
-            log_copy "Extracted $archive_name to $dest_dir"
-        else
-            log_error "Failed to extract $archive_name"
-        fi
-
-        rm -f "$temp_archive"
-    done
-}
-
 install_pkg_file() {
     local label="$1"
     local file="$2"
@@ -296,6 +254,46 @@ preflight_checks() {
     fi
 }
 
+deploy_assets_from_archive_repo() {
+    if ! command -v git >/dev/null 2>&1; then
+        log_error "git is required to clone $ARCHIVE_REPO_URL"
+        return 1
+    fi
+
+    if [[ -d "$ARCHIVE_DIR/.git" ]]; then
+        log_info "Archive repo already exists. Pulling latest changes..."
+        if ! git -C "$ARCHIVE_DIR" pull --ff-only; then
+            log_error "Failed to update $ARCHIVE_DIR"
+            return 1
+        fi
+    else
+        if [[ -d "$ARCHIVE_DIR" ]]; then
+            log_warn "$ARCHIVE_DIR exists but is not a git repo."
+            if ask_yes_no "===> Remove and re-clone hakuspace-archive?"; then
+                rm -rf "$ARCHIVE_DIR"
+            else
+                log_warn "Cannot continue archive deployment without a valid repo."
+                return 1
+            fi
+        fi
+
+        log_info "Cloning archive repo..."
+        if ! git clone "$ARCHIVE_REPO_URL" "$ARCHIVE_DIR"; then
+            log_error "Failed to clone $ARCHIVE_REPO_URL"
+            return 1
+        fi
+    fi
+
+    if [[ ! -f "$ARCHIVE_DIR/setup.sh" ]]; then
+        log_error "setup.sh not found in $ARCHIVE_DIR"
+        return 1
+    fi
+
+    chmod +x "$ARCHIVE_DIR/setup.sh"
+    log_info "Running archive setup script..."
+    (cd "$ARCHIVE_DIR" && ./setup.sh)
+}
+
 # ======================================================================================
 # MAIN
 # ======================================================================================
@@ -358,7 +356,6 @@ echo "   [2] SERVICE    : System service packages. If you currently have DE, you
 echo "   [3] OPTIONAL   : Optional packages for customization. (Browser, Cava, etc.)"
 echo ""
 
-# Ask all choices first
 for i in "${!PKG_LABELS[@]}"; do
     if ask_yes_no "===> Mark ${PKG_LABELS[$i]} for installation?"; then
         INSTALL_FLAGS[$i]=1
@@ -374,7 +371,6 @@ echo ""
 
 if command -v yay >/dev/null 2>&1; then
     selected_count=0
-
     for i in "${!PKG_LABELS[@]}"; do
         if [[ "${INSTALL_FLAGS[$i]}" -eq 1 ]]; then
             ((selected_count++))
@@ -397,6 +393,7 @@ else
     log_error "yay is not installed. Please install yay first to run this step."
     log_error "If you're using another distro, install packages manually."
 fi
+
 # ============================================================================
 # BLOCK 3: CREATE NECESSARY DIRECTORIES
 # ============================================================================
@@ -512,69 +509,25 @@ else
 fi
 
 # ============================================================================
-# BLOCK 7: BACKUP AND COPY OTHER FILES (.zshrc & .nanorc) + WALLPAPERS
+# BLOCK 7: CLONE HAKUSPACE-ARCHIVE AND RUN setup.sh
 # ============================================================================
-step_title "7 - BACKUP AND COPY OTHER FILES (.zshrc & .nanorc) + WALLPAPERS"
+step_title "7 - DEPLOY EXTRA ASSETS FROM hakuspace-archive"
 
-SOURCE_OTHER="$COMMON_DIR"
-SOURCE_WALLPAPER="$COMMON_DIR/Wallpapers"
-DEST_OTHER="$HOME"
-DEST_WALLPAPER="$HOME/Pictures/Wallpapers"
-
-if ask_yes_no "===> Do you want to backup and copy other files + wallpapers now?"; then
-    FILES_TO_COPY=(".nanorc" ".zshrc")
-
-    for file in "${FILES_TO_COPY[@]}"; do
-        copy_file_with_backup "$SOURCE_OTHER/$file" "$DEST_OTHER/$file"
-    done
-
-    if [[ -d "$SOURCE_WALLPAPER" ]]; then
-        copy_dir_content "$SOURCE_WALLPAPER" "$DEST_WALLPAPER"
-        log_ok "Wallpapers copied."
+if ask_yes_no "===> Do you want to clone/update hakuspace-archive and run setup.sh now?"; then
+    if deploy_assets_from_archive_repo; then
+        log_ok "hakuspace-archive setup completed."
     else
-        log_warn "Wallpapers folder not found: $SOURCE_WALLPAPER"
+        log_error "hakuspace-archive setup failed."
     fi
 else
-    log_skip "Skipping dotfiles/wallpapers deployment."
+    log_skip "Skipping hakuspace-archive assets setup."
 fi
 
 # ============================================================================
-# BLOCK 8: COPY ICONS
+# BLOCK 8: ENABLE SERVICES
 # ============================================================================
-step_title "8 - DEPLOY ICONS TO ~/.icons"
+step_title "8 - ENABLE SYSTEM SERVICES"
 
-SOURCE_ICON="$COMMON_DIR/icons"
-DEST_ICON="$HOME/.icons"
-
-if ask_yes_no "===> Do you want to deploy icons now?"; then
-    extract_archives_if_needed "$SOURCE_ICON" "$DEST_ICON" "icons"
-    log_ok "Icons process completed."
-else
-    log_skip "Skipping icons deployment."
-fi
-
-# ============================================================================
-# BLOCK 9: COPY THEMES
-# ============================================================================
-step_title "9 - DEPLOY THEMES TO ~/.themes"
-
-SOURCE_THEME="$COMMON_DIR/themes"
-DEST_THEME="$HOME/.themes"
-
-if ask_yes_no "===> Do you want to deploy themes now?"; then
-    extract_archives_if_needed "$SOURCE_THEME" "$DEST_THEME" "themes"
-    log_ok "Themes process completed."
-else
-    log_skip "Skipping themes deployment."
-fi
-
-# ============================================================================
-# BLOCK 10: ENABLE SERVICES
-# ============================================================================
-step_title "10 - ENABLE SYSTEM SERVICES"
-
-sudo systemctl enable --now NetworkManager
-sudo systemctl enable --now bluetooth
 sudo systemctl enable ly@tty1.service
 sudo systemctl disable getty@tty1.service
 
