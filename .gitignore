@@ -1,0 +1,9 @@
+*.log
+*.cache
+.cache/
+node_modules/
+dist/
+build/
+*.tar
+*.zip
+*.iso
