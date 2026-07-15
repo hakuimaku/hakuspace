@@ -10,7 +10,8 @@
     "reload_style_on_change": true,
 
     "modules-left": [
-        "custom/bar",
+        "custom/recorder",
+        "custom/logo",
         "hyprland/workspaces",
         "niri/workspaces",
         "mango/workspaces"
@@ -19,10 +20,7 @@
         "clock"
     ],
     "modules-right": [
-        "custom/recorder",
-        "tray",
-        "power-profiles-daemon",
-        "battery",
+        "group/bar",
         "backlight",
         "pulseaudio",
         "custom/notification"
@@ -30,8 +28,6 @@
 
     "clock": {
         "format": "{:%H\n%M\n--\n%d\n%m\n%y}",
-        "interval": 1,
-        "rotate": 0,
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
         "calendar": {
                     "mode"          : "month",
@@ -53,6 +49,21 @@
                     "on-scroll-up": "shift_up",
                     "on-scroll-down": "shift_down"
                     }
+    },
+
+    "group/bar": {
+        "orientation": "vertical",
+        "drawer": {
+            "transition-duration": 1000,
+            "transition-left-to-right": false,
+            "click-to-reveal": true
+        },
+        "modules": [
+            "custom/bar",
+            "tray",
+            "battery",
+            "power-profiles-daemon"
+        ]
     },
 
     "backlight": {
@@ -105,18 +116,6 @@
         }
     },
 
-    "network": {
-        "rotate": 90,
-        "format": "{ifname}",
-        "format-wifi": "{essid}   ",
-        "format-ethernet": "{ipaddr}/{cidr} 󰊗  ",
-        "format-disconnected": "",
-        "tooltip-format": "{ifname} via {gwaddr} 󰊗  ",
-        "tooltip-format-wifi": "{essid} ({signalStrength}%)   ",
-        "tooltip-format-ethernet": "{ifname}   ",
-        "tooltip-format-disconnected": "Disconnected"
-    },
-
     "tray": {
         "icon-size": 18,
         "spacing": 10,
@@ -165,14 +164,15 @@
         "if-file-exists": "/tmp/recording_pid"
     },
 
-    "custom/bar": {
-        "format": "{icon}",
-        "format-icons": {
-            "default": "󰣇"
-        },
+    "custom/logo": {
+        "format": " 󰣇 ",
         "on-click": "~/.local/bin/hakumenu.sh",
         "tooltip-format": "Have a nice day!",
         "tooltip": true
+    },
+
+    "custom/bar": {
+        "format": "\n"
     },
 
     "custom/notification": {
