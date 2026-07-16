@@ -138,6 +138,11 @@ git checkout $LATEST_TAG
 ```
 
 - Run `update.sh` script in hakuspace folder.
+``` bash
+cd ~/hakuspace
+chmod +x update.sh
+./update.sh
+```
 
 ### 🗑 Uninstall Haku Space
 > (WM: The Window Manager you are currently using, e.g., hyprland, niri, mango).
