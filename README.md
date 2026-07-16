@@ -16,9 +16,9 @@ Arch Linux dotfiles for Hyprland / Niri / MangoWM
 </p>
 
 
-| <img width="1920" height="1080" alt="screenshot_2026-07-08_20-03-33" src="https://github.com/user-attachments/assets/5b3e7f6e-a8a3-4b25-b636-243e437d876d" /> | <img width="1920" height="1080" alt="screenshot_2026-07-08_20-05-06" src="https://github.com/user-attachments/assets/e3424fee-c096-495c-b67c-0c7f8eb14802" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-07-16_10-54-36" src="https://github.com/user-attachments/assets/50b76a8d-c18b-481e-9c00-8f0c4058a3b3" /> | <img width="1920" height="1080" alt="screenshot_2026-07-16_10-55-31" src="https://github.com/user-attachments/assets/5ff87ffb-89bd-458e-9b0d-8ed959aa4e26" /> |
 |--|--|
-| <img width="1920" height="1080" alt="screenshot_2026-07-08_20-02-13" src="https://github.com/user-attachments/assets/d5d8171c-88c1-4073-9dae-a4d0b4e0bcd0" /> | <img width="1920" height="1080" alt="screenshot_2026-07-08_20-00-14" src="https://github.com/user-attachments/assets/f3e86070-14a3-4abd-8b99-c3c68ffb71dc" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-07-16_10-57-36" src="https://github.com/user-attachments/assets/02050014-7041-4a92-aa94-cef9a00c0592" /> | <img width="1920" height="1080" alt="screenshot_2026-07-08_20-00-14" src="https://github.com/user-attachments/assets/f3e86070-14a3-4abd-8b99-c3c68ffb71dc" /> |
 
 ## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Welcome+to+Haku+Space" alt="Typing SVG" />
 
@@ -51,6 +51,8 @@ See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/
 | Login Menu | [Ly](https://github.com/fairyglade/ly) |
 | Editor | [VS Code](https://code.visualstudio.com/) |
 | Browser | [Zen](https://zen-browser.app/) |
+| Screen Recording | [Wl-screenrec](https://github.com/russelltg/wl-screenrec) |
+| Display Manager | [Ly](https://codeberg.org/fairyglade/ly#systemd) |
 
 > XDG Desktop Portal: GTK by default, but each WM will use its specific, recommended portal according to its official wiki (hyprland uses hyprland, niri uses gnome, and mangowm uses wlr).
 
@@ -79,10 +81,10 @@ git clone https://github.com/hakuimaku/hakuspace.git
 
 ```
 
-If you prefer the version I've tested, clone the **stable** release version `v2.1.1` (lastest):
+If you prefer the version I've tested, clone the **stable** release version `v2.1.2` (lastest):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.1.1 https://github.com/hakuimaku/hakuspace.git
+git clone --depth 1 --branch v2.1.2 https://github.com/hakuimaku/hakuspace.git
 
 ```
 
@@ -123,13 +125,16 @@ Grants the local root user permission to connect to and launch graphical (GUI) a
 
 ### 🔽 Update Haku Space to lastest version
 
-- Git pull the lastest version.
+> Script `update.sh` available in version v2.1.2 or newer & main branch.
+
+1. Get the lastest version
+- Git pull for the lastest git.
 ``` bash
 cd ~/hakuspace
 git pull origin main
 ```
 
-- Git fetch the lastest stable release.
+- Git fetch for the lastest stable release.
 ``` bash
 cd ~/hakuspace
 git fetch --tags
@@ -137,6 +142,7 @@ LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
 git checkout $LATEST_TAG
 ```
 
+2. Update
 - Run `update.sh` script in hakuspace folder.
 ``` bash
 cd ~/hakuspace
@@ -147,9 +153,9 @@ chmod +x update.sh
 ### 🗑 Uninstall Haku Space
 > (WM: The Window Manager you are currently using, e.g., hyprland, niri, mango).
 
-My dotfiles are very clean. You just need to check the config folders that were copied from common and specific WM in `~/hakuspace`, then delete them from `~/.config` (During installation, the `install.sh` script automatically created a backup of your existing configuration files so you can backup your old config).
+My dotfiles are very clean. You just need to check the config folders that were copied from common and specific WM in `~/hakuspace`, then delete them from `~/.config` (During installation, the `install.sh` script automatically created a **backup** of your existing configuration files so you can backup your old config).
 - Remove all scripts located in `~/.local/bin`.
-- Delete the auto-generated files in `~/.local/state/haku_theme`, as well as the following files in `/tmp`: `cava_underbar_status`, `random_wallpaper_status`, and `waybar_current_mode`.
+- Delete the auto-generated files in `~/.local/state/haku_theme`.
 - If necessary, you can also remove the icons and themes inside `~/.icons` and `~/.themes`.
 - Review `pkg-core.txt`, `pkg-service.txt`, `pkg-optional.txt` (in hakuspace/common) and `pkg-WM.txt` (in hakuspace/WM) to uninstall any unnecessary packages.
 - Finally, you can completely delete the `~/hakuspace` directory.
@@ -229,18 +235,7 @@ My dotfiles bugs:
 
 ---
 
+## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Credits" alt="Typing SVG" />
+
 See **hakuspace-archive** for the assets used in this project: [hakuspace-archive](https://github.com/hakuimaku/hakuspace-archive)
 
-*Themes, Icons and Wallpapers used in Haku Space:*
-- Theme: [Midnight-Gray](https://www.gnome-look.org/p/1273208)
-- Icons: [Tela-black](https://www.gnome-look.org/p/1279924)
-- Mouse Cursor: [Bibata-Modern-Ice](https://www.gnome-look.org/p/1197198)
-- Wallpapers Artists:
-  - [zrxrevolutionz](https://www.deviantart.com/zrxrevolutionz)
-  - [かづいせ](https://www.pixiv.net/en/users/1031168)
-  - [airfish 空气鱼](https://www.pixiv.net/en/users/67512705)
-  - [Android/アンドロイド](https://www.pixiv.net/en/users/67750556)
-  - [Roby0174](https://www.deviantart.com/roby0174)
-  - [越前蟹参号](https://www.pixiv.net/en/users/98660769)
-  - [mmAir](https://www.pixiv.net/en/users/39363802)
-  - [ゲン助](https://www.pixiv.net/en/users/32008)
