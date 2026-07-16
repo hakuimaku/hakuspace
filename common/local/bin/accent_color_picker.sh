@@ -7,6 +7,8 @@ if ! command -v hyprpicker >/dev/null 2>&1; then
     exit 1
 fi
 
+sleep 0.2
+
 # Main
 COLOR="$(hyprpicker)"
 
