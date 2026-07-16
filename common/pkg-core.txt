@@ -8,6 +8,7 @@ awww                          # Wallpaper
 mpvpaper                      # Video wallpaper
 hyprlock                      # Screen locker
 hypridle                      # Idle management
+hyprpicker                    # Color picker
 zsh                           # Shell
 
 # === Hakuspace scripts needed ===
