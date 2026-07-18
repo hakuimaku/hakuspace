@@ -121,7 +121,12 @@ copy_dir_content() {
         return 1
     fi
 
+    if [[ -e "$dst" || -L "$dst" ]]; then
+        backup_item "$dst"
+    fi
+
     ensure_dir "$dst"
+    
     cp -rf "$src"/. "$dst"/
     log_copy "$src/. -> $dst/"
     return 0
@@ -197,6 +202,7 @@ print_header() {
     echo -e "${C_BOLD}================================================================================================${C_RESET}"
     echo -e "${C_BOLD}${C_CYAN}--- HAKUSPACE - DOTFILES UPDATER ---${C_RESET}"
     echo "This script will update your dotfiles from the repository and apply them to your system."
+    echo "Prefer to check release notes | commit history before updating."
     echo -e "${C_BOLD}================================================================================================${C_RESET}"
     echo ""
 }
@@ -312,26 +318,87 @@ SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
 DEST_CONFIG="$HOME/.config"
 
 if ask_yes_no "===> Do you want to backup and apply new configs now?"; then
-    echo ">>> Deploying Common configs..."
-    copy_config_folders_with_backup "$SOURCE_COMMON_CONFIG" "$DEST_CONFIG"
 
-    if [[ $WM == "hyprland" ]]; then
-        echo ">>> Deploying Hyprland configs..."
-        copy_config_folders_with_backup "$SOURCE_WM_CONFIG/hypr" "$DEST_CONFIG/hypr"
-        copy_file_with_backup "$SOURCE_WM_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
-    elif [[ $WM == "niri" || $WM == "mango" ]]; then
-        echo ">>> Deploying $WM configs..."
-        copy_config_folders_with_backup "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
+    if ask_yes_no "===> Do you want to FULL copy everything (WM, Common, Zsh)?"; then
+        echo ">>> Deploying Common configs..."
+        copy_config_folders_with_backup "$SOURCE_COMMON_CONFIG" "$DEST_CONFIG"
+
+        if [[ $WM == "hyprland" ]]; then
+            echo ">>> Deploying Hyprland configs..."
+            copy_config_folders_with_backup "$SOURCE_WM_CONFIG/hypr" "$DEST_CONFIG/hypr"
+            copy_file_with_backup "$SOURCE_WM_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
+        elif [[ $WM == "niri" ]]; then
+            echo ">>> Deploying Niri configs..."
+            copy_config_folders_with_backup "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
+        elif [[ $WM == "mango" ]]; then
+            echo ">>> Deploying Mango configs..."
+            copy_config_folders_with_backup "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
+        else
+            log_warn "Unknown WM: $WM. Skipping WM config deployment."
+        fi
+
+        echo ">>> Deploying mimeapps.list..."
+        copy_file_with_backup "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/mimeapps.list"
+
+        echo ">>> Deploying .zshrc (zsh configuration)..."
+        copy_file_with_backup "$COMMON_DIR/.zshrc" "$HOME/.zshrc"
+
+        echo ">>> Deploying .nanorc (nano configuration)..."
+        copy_file_with_backup "$COMMON_DIR/.nanorc" "$HOME/.nanorc"
+
+        log_ok "Configurations deployed successfully."
+
+    else
+        # ------------------------------------------------------------------
+        # Copy SELECTIVE
+        # ------------------------------------------------------------------
+        echo ">>> Entering Selective Mode..."
+        
+        # 1. Common configs (Waybar, Rofi, Fastfetch, Cava, Kitty, Swaync...)
+        COMMON_APPS=("waybar" "rofi" "fastfetch" "cava" "kitty" "swaync")
+
+        for app in "${COMMON_APPS[@]}"; do
+            if ask_yes_no "   -> Do you want to deploy $app configs?"; then
+                echo "   >>> Deployed $app configs."
+                copy_dir_content "$SOURCE_COMMON_CONFIG/$app" "$DEST_CONFIG/$app"
+                copy_config_folders_with_backup "$SOURCE_COMMON_CONFIG/$app" "$DEST_CONFIG/$app"
+            fi
+        done
+
+        # 2. Hyprlock & Hypridle
+        if ask_yes_no "   -> Deploy hyprlock, hypridle configs?"; then
+            echo "   >>> Deploying Hypr configs..."
+            copy_file_with_backup "$SOURCE_COMMON_CONFIG/hypr/hyprlock.conf" "$DEST_CONFIG/hypr/hyprlock.conf"
+            copy_file_with_backup "$SOURCE_COMMON_CONFIG/hypr/hyprlock_tiny.conf" "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
+            copy_file_with_backup "$SOURCE_COMMON_CONFIG/hypr/hypridle.conf" "$DEST_CONFIG/hypr/hypridle.conf"
+        fi
+
+        # 3. .zshrc
+        if ask_yes_no "   -> Deploy .zshrc (Zsh configuration)?"; then
+            echo "   >>> Deploying Zshrc..."
+            copy_file_with_backup "$COMMON_DIR/.zshrc" "$HOME/.zshrc"
+        fi
+        
+        # 4. WM configs
+        if [[ $WM == "hyprland" ]]; then
+            if ask_yes_no "   -> [Detected: Hyprland] Deploy Hyprland configs?"; then
+                echo "   >>> Deploying Hyprland configs..."
+                copy_dir_content "$SOURCE_WM_CONFIG/hyprland" "$DEST_CONFIG/hyprland"
+            fi
+            
+        elif [[ $WM == "niri" ]]; then
+            if ask_yes_no "   -> [Detected: Niri] Deploy Niri configs?"; then
+                echo "   >>> Deploying Niri configs..."
+                copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
+            fi
+            
+        elif [[ $WM == "mango" ]]; then
+            if ask_yes_no "   -> [Detected: Mango] Deploy Mango configs?"; then
+                echo "   >>> Deploying Mango configs..."
+                copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
+            fi
+        fi
     fi
-
-    echo ">>> Deploying mimeapps.list..."
-    copy_file_with_backup "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/mimeapps.list"
-
-    echo ">>> Deploying .zshrc (zsh configuration)..."
-    copy_file_with_backup "$COMMON_DIR/.zshrc" "$HOME/.zshrc"
-
-    echo ">>> Deploying .nanorc (nano configuration)..."
-    copy_file_with_backup "$COMMON_DIR/.nanorc" "$HOME/.nanorc"
 
     log_ok "Configurations updated successfully."
 else
@@ -348,8 +415,6 @@ DEST_BIN="$HOME/.local/bin"
 
 if ask_yes_no "===> Do you want to update your local/bin scripts now?"; then
     if [[ -d "$SOURCE_BIN" ]]; then
-        backup_item "$DEST_BIN"
-        ensure_dir "$DEST_BIN"
         copy_dir_content "$SOURCE_BIN" "$DEST_BIN"
         log_ok "local/bin update completed."
     else

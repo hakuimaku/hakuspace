@@ -119,6 +119,7 @@ backup_item() {
     log_backup "$target -> $backup_target"
 }
 
+
 copy_dir_content() {
     local src="$1"
     local dst="$2"
@@ -128,7 +129,12 @@ copy_dir_content() {
         return 1
     fi
 
+    if [[ -e "$dst" || -L "$dst" ]]; then
+        backup_item "$dst"
+    fi
+
     ensure_dir "$dst"
+    
     cp -rf "$src"/. "$dst"/
     log_copy "$src/. -> $dst/"
     return 0
@@ -352,7 +358,7 @@ INSTALL_FLAGS=(0 0 0 0)   # 1=install, 0=skip
 echo ":: Package lists:"
 echo "   [0] WM         : $WM needs to install first to work properly."
 echo "   [1] CORE       : Core packages needed for the hakuspace to function properly. (Waybar, Rofi, Kitty, etc.)"
-echo "   [2] SERVICE    : System service packages. If you currently have DE, you can skip this. (NetworkManager, Bluetooth, ly, etc.)"
+echo "   [2] SERVICE    : System service packages. If you currently have DE, you can skip this. (ly, xdg-desktop-portal, etc.)"
 echo "   [3] OPTIONAL   : Optional packages for customization. (Browser, Cava, etc.)"
 echo ""
 
@@ -426,6 +432,7 @@ if ask_yes_no "===> Do you want to backup and copy your current config now?"; th
     echo ">>> Deploying Common configs..."
     copy_config_folders_with_backup "$SOURCE_COMMON_CONFIG" "$DEST_CONFIG"
 
+    # Not using copy_dir_content here to avoid overwriting existing the whole ~/.config
     if [[ $WM == "hyprland" ]]; then
         echo ">>> Deploying Hyprland configs..."
         copy_config_folders_with_backup "$SOURCE_WM_CONFIG/hypr" "$DEST_CONFIG/hypr"
@@ -440,6 +447,8 @@ if ask_yes_no "===> Do you want to backup and copy your current config now?"; th
         log_warn "Unknown WM: $WM. Skipping WM config deployment."
     fi
 
+    # copy_config_folders_with_backup is not copy file
+    # Copy specific files like mimeapps.list, .zshrc, .nanorc
     echo ">>> Deploying mimeapps.list..."
     copy_file_with_backup "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/mimeapps.list"
 
@@ -464,8 +473,6 @@ DEST_BIN="$HOME/.local/bin"
 
 if ask_yes_no "===> Do you want to backup and copy your local/bin now?"; then
     if [[ -d "$SOURCE_BIN" ]]; then
-        backup_item "$DEST_BIN"
-        ensure_dir "$DEST_BIN"
         copy_dir_content "$SOURCE_BIN" "$DEST_BIN"
         log_ok "local/bin deployment completed."
     else
@@ -483,7 +490,7 @@ step_title "6 - SETUP OH MY ZSH AND PLUGINS"
 if ask_yes_no "===> Do you want to install Oh My Zsh now?"; then
     if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
         log_info "Installing Oh My Zsh..."
-        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+        KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
     else
         log_skip "Oh My Zsh already installed."
     fi
