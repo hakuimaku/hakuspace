@@ -30,7 +30,7 @@ hl.config({
         resize_on_border = true,
 
         -- Please see https://wiki.hypr.land/Configuring/Advanced-and-Cool/Tearing/ before you turn this on
-        allow_tearing = true,
+        allow_tearing = false,
     },
 
     decoration = {
