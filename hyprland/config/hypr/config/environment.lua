@@ -5,12 +5,14 @@
 
 -- See https://wiki.hypr.land/Configuring/Advanced-and-Cool/Environment-variables/
 
-hl.env("XCURSOR_SIZE", "32")
-
 hl.env("XDG_SESSION_TYPE", "wayland")
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
+
+-- Theme
+hl.env("XCURSOR_THEME", "Bibata-Modern-Ice")
+hl.env("XCURSOR_SIZE", "24")
 
 -- Wayland Platform Settings
 hl.env("QT_QPA_PLATFORM", "wayland")
@@ -40,9 +42,7 @@ hl.env("VDPAU_DRIVER", "va_gl")
 hl.env("LIBVA_DRIVER_NAME", "iHD")
 
 -- Input method
-hl.env("GTK_IM_MODULE", "fcitx")
-hl.env("QT_IM_MODULE", "fcitx")
-hl.env("XMODIFIERS", "@im=fcitx")
-hl.env("SDL_IM_MODULE", "fcitx")
-
-
+--hl.env("GTK_IM_MODULE", "fcitx")
+--hl.env("QT_IM_MODULE", "fcitx")
+--hl.env("XMODIFIERS", "@im=fcitx")
+--hl.env("SDL_IM_MODULE", "fcitx")
