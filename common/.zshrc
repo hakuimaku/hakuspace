@@ -1,13 +1,6 @@
-export ZSH="$HOME/.oh-my-zsh"
+# Zsh Wiki: https://github.com/ohmyzsh/ohmyzsh/wiki
 
-# Override color for theme agnoster (oh-my-zsh)
-export AGNOSTER_DIR_BG="white"
-export AGNOSTER_GIT_DIRTY_BG="black"
-export AGNOSTER_GIT_DIRTY_FG="white"
-export AGNOSTER_CONTEXT_BG="#010101"
-export AGNOSTER_CONTEXT_FG="blue"
-export AGNOSTER_DIR_FG="#010101"
-export AGNOSTER_DIR_BG="blue"
+export ZSH="$HOME/.oh-my-zsh"
 
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
 ZSH_THEME="agnoster"
@@ -51,6 +44,7 @@ export MOZ_ENABLE_WAYLAND=1
 export QT_QPA_PLATFORMTHEME=qt6ct
 export DOTNET_ROOT=$HOME/.dotnet
 export PATH=$PATH:$HOME/.dotnet:$HOME/.dotnet/tools
+export PATH=$PATH:$HOME/go/bin
 
 # Set alias for common commands
 alias zshconfig="nano ~/.zshrc"
@@ -67,6 +61,15 @@ HISTSIZE=100000
 SAVEHIST=100000
 
 source $ZSH/oh-my-zsh.sh
+
+# Override color for theme agnoster (oh-my-zsh)
+export AGNOSTER_DIR_BG="white"
+export AGNOSTER_GIT_DIRTY_BG="black"
+export AGNOSTER_GIT_DIRTY_FG="white"
+export AGNOSTER_CONTEXT_BG="#010101"
+export AGNOSTER_CONTEXT_FG="blue"
+export AGNOSTER_DIR_FG="#010101"
+export AGNOSTER_DIR_BG="blue"
 
 setopt APPEND_HISTORY
 setopt INC_APPEND_HISTORY
