@@ -181,6 +181,7 @@ print_header() {
     echo "This script will help you set up your HakuSpace configuration"
     echo "It will install packages, copy configs with backup, and setup environment."
     echo "Please follow the prompts to complete the installation process."
+    echo "Press CTRL+C to cancel at any time."
     echo -e "${C_BOLD}================================================================================================${C_RESET}"
     echo ""
 }
@@ -328,7 +329,7 @@ INSTALL_FLAGS=(0 0 0 0)   # 1=install, 0=skip
 
 echo ":: Package lists:"
 echo "   [0] WM         : $wm_upper needs to install first to work properly."
-echo "   [1] CORE       : Core packages needed for the hakuspace to function properly. (Waybar, Rofi, Kitty, etc.)"
+echo "   [1] CORE       : Core packages needed for the hakuspace to function properly. (Waybar, Rofi, Kitty, Thunar, etc.)"
 echo "   [2] SERVICE    : System service packages. If you currently have DE, you can skip this. (ly, xdg-desktop-portal, etc.)"
 echo "   [3] OPTIONAL   : Optional packages for customization. (Browser, Cava, etc.)"
 echo ""
@@ -498,7 +499,7 @@ fi
 # ============================================================================
 step_title "7 - DEPLOY EXTRA ASSETS FROM hakuspace-archive"
 
-if ask_yes_no "===> Do you want to clone/update hakuspace-archive and run setup.sh now?"; then
+if ask_yes_no "===> Do you want to setup hakuspace assets: Icons, Themes and Wallpapers?"; then
     if deploy_assets_from_archive_repo; then
         log_ok "hakuspace-archive setup completed."
     else
