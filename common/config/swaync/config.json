@@ -10,16 +10,16 @@
     "notification-body-image-height": 200,
     "notification-body-image-width": 200,
 
-    "timeout": 6,
+    "timeout": 8,
     "timeout-low": 4,
     "timeout-critical": 0,
 
     "fit-to-screen": true,
     "control-center-width": 450,
-    "notification-window-width": 450,
+    "notification-window-width": 600,
     "keyboard-shortcuts": true,
     "image-visibility": "when-available",
-    "transition-time": 100,
+    "transition-time": 300,
 
     "hide-on-clear": false,
     "hide-on-action": true,
@@ -44,13 +44,15 @@
             "text": "Do Not Disturb"
         },
         "mpris": {
-            "image-size": 67
+            "autohide": true
         },
         "volume": {
             "label": ""
         },
         "backlight": {
             "label": "󰖨"
+        },
+        "notifications": {
         },
         "buttons-grid": {
             "actions": [
@@ -74,6 +76,20 @@
                     "active": true,
                     "command": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
                     "update-command": "wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q 'muted' && echo true || echo false"
+                },
+                {
+                    "label": "󰒳",
+                    "type": "toggle",
+                    "active": true,
+                    "command": "~/.local/bin/hypridle_toggle.sh",
+                    "update-command": "pgrep -x hypridle >/dev/null 2>&1 && echo false || echo true"
+                },
+                {
+                    "label": "",
+                    "type": "toggle",
+                    "active": true,
+                    "command": "~/.local/bin/warp_toggle.sh",
+                    "update-command": "warp-cli status | grep -q 'Connected' && echo true || echo false"
                 },
                 {
                     "label": "",

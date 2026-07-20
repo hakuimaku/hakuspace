@@ -2,14 +2,14 @@
 @import url("../../.local/state/haku_theme/fonts.css");
 
 .notification-row {
-    transition: all 100ms ease;
+    transition: all 300ms ease;
     outline: none;
     margin-bottom: 1px;
     border-radius: 20px;
 }
 
 .notification {
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.85);
     border-radius: 20px;
     padding: 10px;
     box-shadow: 5px 5px 5px #000000;
@@ -22,14 +22,12 @@
 
 .notification-content .summary {
     color: @accent_color;
-    font-size: 16px;
     font-weight: bold;
     text-shadow: 0 0 2px @accent_color;
 }
 
 .notification-content .body {
     color: @accent_color;
-    font-size: 14px;
 }
 
 .notification-content .time {
@@ -99,15 +97,6 @@
     margin: 20px;
     color: @accent_color;
     box-shadow: 8px 8px 8px #000000;
-}
-
-.widget-menubar > box > .menu-button-bar {
-    align-items: center;
-}
-
-.widget-menubar > box > .menu-button-bar > .start,
-.widget-menubar > box > .menu-button-bar > .end {
-    gap: 6px;
 }
 
 .widget-menubar > box > .menu-button-bar > .widget-menubar-container > button,
@@ -188,12 +177,18 @@
 .widget-buttons-grid flowboxchild > button {
     padding: 4px 25px;
     background: rgba(0, 0, 0, 0.4);
-    margin: 0 4px 0 4px;
+    margin: 4px;
     box-shadow: 4px 4px 4px #000000;
 }
 
 .widget-buttons-grid flowboxchild > button.toggle:checked {
     border-top: 3px solid @accent_color;
+}
+
+/* Override the font size for buttons in the widget-buttons-grid */
+.widget-buttons-grid flowboxchild > button label,
+.widget-buttons-grid flowboxchild > button * {
+    font-size: 18px;
 }
 
 
