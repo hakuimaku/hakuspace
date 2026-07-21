@@ -5,9 +5,6 @@
 
 -- See https://wiki.hypr.land/Configuring/Basics/Autostart/
 
--- Autostart necessary processes (like notifications daemons, status bars, etc.)
--- Or execute your favorite apps at launch like this:
-
 hl.on("hyprland.start", function () 
     --hl.exec_cmd("hyprpm reload -n")
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
@@ -23,8 +20,8 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("blueman-applet")
     hl.exec_cmd("hypridle")
     hl.exec_cmd("sway-audio-idle-inhibit")
-    hl.exec_cmd("~/.local/bin/waybar_toggle.sh")
-    hl.exec_cmd("~/.local/bin/cava_manager.sh")
-    hl.exec_cmd("~/.local/bin/welcome.sh")
+    hl.exec_cmd("$HOME/.local/bin/waybar_manager.sh")
+    hl.exec_cmd("$HOME/.local/bin/cava_manager.sh") -- Run cava underbar daemon
+    hl.exec_cmd("$HOME/.local/bin/welcome.sh")
 end)
 
