@@ -88,10 +88,10 @@ git clone https://github.com/hakuimaku/hakuspace.git
 
 ```
 
-If you prefer the version I've tested, clone the **stable** release version `v2.1.4` (lastest):
+If you prefer the version I've tested, clone the **stable** release version `v2.1.5` (lastest):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.1.4 https://github.com/hakuimaku/hakuspace.git
+git clone --depth 1 --branch v2.1.5 https://github.com/hakuimaku/hakuspace.git
 
 ```
 
@@ -203,7 +203,11 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 | SUPER + Q | Open Kitty Terminal |
 | SUPER + C | Kill Focus Window |
 | SUPER + TAB | Open Menu |
+| SUPER + R | App Menu |
 | SUPER + P | Screenshot |
+| SUPER + A/S | Focus Left/Right Window |
+| SUPER + Y | Wallpaper Select |
+| SUPPER + SHIFT + Y | Lively Wallpaper Select |
 
 ---
 
@@ -217,7 +221,7 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 - Lively wallpapers: `~/Videos/Wallpapers`
 - Lively wallpaper thumbnail: in folder Preview `~/Videos/Wallpapers/Preview` and add image .jpg/.png (same name with video) to make the thumbnail appear in rofi select menu if you want to use lively wallpaper
 - Haku Theme for waybar, rofi,... (includes accent_color, font, font size): `~/.local/state/haku_theme`
-- State files for random wallpaper, waybar current mode, and cava underbar: `/tmp/random_wallpaper_status`, `/tmp/waybar_current_mode`, `/tmp/cava_underbar_status`
+- State files for  waybar current mode: `~/.local/state/haku_theme`
 
 ---
 
