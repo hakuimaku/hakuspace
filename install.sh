@@ -526,11 +526,11 @@ fi
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 xdg-mime default thunar.desktop inode/directory
 
-if [[ -x "$HOME/.local/bin/gen-style.sh" ]]; then
-    "$HOME/.local/bin/gen-style.sh"
-    log_ok "Executed gen-style.sh"
+if [[ -x "$HOME/.local/bin/gen_style.sh" ]]; then
+    "$HOME/.local/bin/gen_style.sh"
+    log_ok "Executed gen_style.sh"
 else
-    log_warn "Not executable or missing: $HOME/.local/bin/gen-style.sh"
+    log_warn "Not executable or missing: $HOME/.local/bin/gen_style.sh"
 fi
 
 echo ""
