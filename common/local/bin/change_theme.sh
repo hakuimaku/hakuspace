@@ -2,8 +2,8 @@
 set -euo pipefail
 
 STATE_DIR="$HOME/.local/state/haku_theme"
-GEN="$HOME/.local/bin/gen-style.sh"
-APPLY="$HOME/.local/bin/apply-style.sh"
+GEN="$HOME/.local/bin/gen_style.sh"
+APPLY="$HOME/.local/bin/apply_style.sh"
 
 mkdir -p "$STATE_DIR"
 

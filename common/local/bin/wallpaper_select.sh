@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 WALL_DIR="$HOME/Pictures/Wallpapers"
-BACKDROP_DIR="$WALL_DIR/temp"
+BACKDROP_DIR="/tmp"
 
 list_walls() {
     cd "$WALL_DIR" || exit
@@ -19,7 +19,6 @@ set_wallpaper() {
         --transition-fps 60
 
     if [[ $XDG_CURRENT_DESKTOP == "niri" ]]; then
-        mkdir -p "$WALL_DIR/temp"
         magick "${wall}[0]" -background black -alpha remove -set option:filter:blur 1.0 -blur 0x15 "$BACKDROP_DIR/backdrop.jpg"
         awww img -n "awww-daemon-backdrop" "$BACKDROP_DIR/backdrop.jpg"
     fi
@@ -63,8 +62,8 @@ if [ -n "$CHOICE" ]; then
     fi
 
     # 4. Generate theme files with the new accent color
-    ~/.local/bin/gen-style.sh "$ACCENT"
+    ~/.local/bin/gen_style.sh "$ACCENT"
 
     sleep 0.1
-    ~/.local/bin/apply-style.sh
+    ~/.local/bin/apply_style.sh
 fi

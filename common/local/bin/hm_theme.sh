@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+
 spawn() { ( "$@" & ) >/dev/null 2>&1; disown; }
 
 if [[ $# -eq 0 ]]; then
@@ -11,7 +11,7 @@ if [[ $# -eq 0 ]]; then
     CAVA_TEXT="OFF"
     [[ "$CAVA_STATUS" == "1" ]] && CAVA_TEXT="ON"
 
-  cat <<EOF
+    cat <<EOF
   Cava Underbar ($CAVA_TEXT)
 󰁪  Auto Random Wallpaper ($WALL_TEXT)
 󰸉  Change Wallpaper
@@ -25,13 +25,13 @@ fi
 
 chosen="$*"
 case "$chosen" in
-    *"Cava Underbar"*) spawn ~/.local/bin/cava_manager.sh --toggle ;;
-    *"Auto Random Wallpaper"*) spawn ~/.local/bin/random_wallpaper.sh --toggle ;;
-    *"Change Wallpaper"*) spawn ~/.local/bin/wallselect.sh ;;
-    *"Change Lively Wallpaper"*) spawn ~/.local/bin/wallmpvselect.sh ;;
-    *"Kill Lively Wallpaper"*) spawn ~/.local/bin/wallmpvselect.sh --exit ;;
-    *"Waybar Left & Top Toggle"*) spawn ~/.local/bin/waybar_toggle.sh ;;
-    *"Change Theme"*) spawn ~/.local/bin/changetheme.sh ;;
+    *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh --toggle ;;
+    *"Auto Random Wallpaper"*) spawn $HOME/.local/bin/random_wallpaper.sh --toggle ;;
+    *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
+    *"Change Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh ;;
+    *"Kill Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh --exit ;;
+    *"Waybar Left & Top Toggle"*) spawn $HOME/.local/bin/waybar_manager.sh ;;
+    *"Change Theme"*) spawn $HOME/.local/bin/change_theme.sh ;;
 esac
 
 exit 0

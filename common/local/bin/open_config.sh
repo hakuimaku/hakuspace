@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# This script opens various configuration files in VS Code, depending on the current window manager.
+
 # Use one VS Code-compatible command
 if command -v code >/dev/null 2>&1; then
     EDITOR_CMD="code"
