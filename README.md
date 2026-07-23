@@ -239,19 +239,25 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 
 # <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Troubleshooting" alt="Typing SVG" />
 
-Waybar bugs:
+**Waybar bugs**:
 - **Waybar clock**: You should set your timezone and locale manually in waybar configuration to ensure the clock displays correctly.
 - **Waybar cava module**: If you encounter issues with the Cava module in Waybar, ensure that you have installed `waybar-cava` and that it is properly configured in your Waybar config file.
 - If clicking on **workspaces in Waybar** on Hyprland doesn't switch them, please install `waybar-git`. This bug has already been fixed by the author in the latest upstream version.
 - The **MangoWM workspaces** module for waybar is still under active development. if you want to use it, you'll need to install `waybar-git` (though please note it still has a few bugs).
 
-My dotfiles bugs:
+**My dotfiles bugs**:
 - Currently, my custom `gtk.css` is only compatible with **GTK 3** and only supports **Dark Mode**. If you are using Light Mode, you may encounter some issues with the appearance of GTK applications **(Thunar)**. If you don't want to use my thunar theme, remove `gtk.css` in `~/.config/gtk-3.0/`.
 - **Cava Underbar in Niri** does not support the no-focus rule. As a result, you might accidentally move it from its original position or close it by mistake.
 - Some features might still be missing since I only tested this setup for **my personal use**. If you need more than what's provided, you'll need to install and configure those parts manually.
 - If you don't want to use certain apps (like `wl-screenrec`, `thunar`, `ly` etc.), you can easily remove and replace them with alternatives. However, some apps are deeply integrated into my scripts or configs, so removing them may break functionality or cause those scripts/configs to stop working.
 - If you find that **the script isn't working**, run it directly in the terminal to see what the error is.
 - If you encounter any issues during installation or configuration, just ask me in some video on my [Tiktok](https://www.tiktok.com/@hakuimaku2372) or open an issue on GitHub. I will do my best to help you out.
+
+If you're using **Fedora**:
+- Swaync service may automatically start on Fedora. Which can **cause issues when startup**. To fix this, you can disable the Swaync service by running the following command:
+```bash
+systemctl --user disable swaync.service
+```
 
 ---
 
