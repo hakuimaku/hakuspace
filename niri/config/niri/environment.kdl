@@ -13,10 +13,6 @@ environment {
     XDG_SESSION_TYPE "wayland"
     XDG_CURRENT_DESKTOP "niri"
 
-    // Theme
-    XCURSOR_THEME "Bibata-Modern-Ice"
-    XCURSOR_SIZE "24"
-
     // Wayland Platform Settings
     QT_QPA_PLATFORM "wayland"
     QT_QPA_PLATFORMTHEME "gtk3"
