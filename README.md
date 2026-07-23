@@ -3,7 +3,7 @@
 # Haku Space
 Arch Linux dotfiles for Hyprland / Niri / MangoWM
 
-Fedora now supports Haku Space too (Niri)! See [Fedora Guide](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md)
+Fedora now supports Haku Space too! See [Fedora Guide](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md)
 
 </div>
 
