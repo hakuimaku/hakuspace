@@ -3,6 +3,8 @@
 # Haku Space
 Arch Linux dotfiles for Hyprland / Niri / MangoWM
 
+Fedora now supports Haku Space too (Niri)! See [Fedora Guide](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md)
+
 </div>
 
 <p align="center">
@@ -25,7 +27,6 @@ Arch Linux dotfiles for Hyprland / Niri / MangoWM
 - Update: [here](https://github.com/hakuimaku/hakuspace#-update-haku-space-to-lastest-version)
 - Packages: [here](https://github.com/hakuimaku/hakuspace#-2)
 - Keybinding: [here](https://github.com/hakuimaku/hakuspace#-5)
-- Fedora Installation: [here](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md)
 
 Overview:
 - **HakuSpace** is a dotfiles project for **Arch Linux**, supporting **Hyprland**, **Niri**, and **MangoWM**.  
@@ -80,6 +81,9 @@ See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/
 
 > [!Important]
 > **Prerequisites:** You need a pre-installed Arch Linux or an Arch-based Linux Distro (A fresh install is highly recommended). If you already have an existing WM or DE configuration, it is best to only reference the configs in HakuSpace rather than running the installation script directly over your system.
+
+> [!tip]
+> For Fedora users, you can follow the [Fedora Guide](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md)
 
 ### 1. Clone the Dotfiles
 If you prefer to experience the **lastest changes** (Lastest Git), you can clone the main branch:
