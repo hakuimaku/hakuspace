@@ -89,7 +89,7 @@ pip install colorthief
 sudo dnf install wl-clipboard cliphist cliphist slurp mpv imv
 
 sudo dnf copr enable tofik/sway
-sudo dnf install sway-audio-idle-inhibity
+sudo dnf install sway-audio-idle-inhibit
 ```
 
 - **Install file manager & tools**:
@@ -107,6 +107,7 @@ sudo dnf install google-noto-sans-cjk-fonts google-noto-emoji-fonts google-noto-
 > Download **jetbrains nerd font** here: https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip
 
 ```bash
+unzip ~/Downloads/JetBrainsMono.zip -d ~/Downloads/JetBrainsMono
 mkdir -p ~/.local/share/fonts
 sudo cp -r ~/Downloads/JetBrainsMono ~/.local/share/fonts
 ```
