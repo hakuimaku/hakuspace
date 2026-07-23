@@ -8,6 +8,20 @@
 
 ---
 
+## Before Installation
+If you're not want to install weak dependency packages:
+```bash
+sudo nano /etc/dnf/dnf.conf
+```
+And add this to `[main]`:
+```bash
+install_weak_deps=False
+```
+
+> See more information: [here](https://docs.fedoraproject.org/en-US/packaging-guidelines/WeakDependencies/#_weak_dependencies)
+
+---
+
 # Installation Steps
 
 ## 1. **Update your system**:
