@@ -216,7 +216,7 @@
     },
 
     "custom/bar": {
-        "format": "󰣇 ",
+        "format": "󰮯 ",
         "tooltip-format": "Have a nice day!",
         "tooltip": true
     },
@@ -231,7 +231,7 @@
         "format": "󰍜 ",
         "tooltip-format": "Click to show menu",
         "tooltip": true,
-        "on-click": "~/.local/bin/hakumenu.sh"
+        "on-click": "$HOME/.local/bin/hakumenu.sh"
     },
 
     "cpu": {
