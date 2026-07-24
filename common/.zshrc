@@ -45,6 +45,7 @@ export QT_QPA_PLATFORMTHEME=qt6ct
 export DOTNET_ROOT=$HOME/.dotnet
 export PATH=$PATH:$HOME/.dotnet:$HOME/.dotnet/tools
 export PATH=$PATH:$HOME/go/bin
+export PATH=$PATH:$HOME/.cargo/bin
 
 # Set alias for common commands
 alias zshconfig="nano ~/.zshrc"
