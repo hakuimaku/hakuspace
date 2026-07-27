@@ -37,6 +37,10 @@ hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("hyprsunset --temperature 3500"))
 hl.bind(mainMod .. " + SHIFT + L", hl.dsp.exec_cmd("pkill hyprsunset"))
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("swaync-client -t -sw"))
 
+-- Column resize keybindings (Scroller layout)
+hl.bind(mainMod .. " + D", hl.dsp.layout("colresize +0.1"))
+hl.bind(mainMod .. " + SHIFT + D", hl.dsp.layout("colresize -0.1"))
+
 -- Script keybindings
 hl.bind(mainMod .. " + V",    hl.dsp.exec_cmd("$HOME/.local/bin/clipboard_menu.sh"))
 hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("$HOME/.local/bin/clipboard_menu.sh --wipe"))
