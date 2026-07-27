@@ -169,6 +169,7 @@
         "tooltip-format": "{title} {app_id}",
         "on-click": "activate",
         "on-click-middle": "close",
+        "on-click-right": "minimize",
         "homogeneous": true,
         "justify": "center",
         "ignore-list": [
