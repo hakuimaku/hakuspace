@@ -17,9 +17,9 @@ window#waybar {
 
 .modules-center {
     background-color: rgba(0, 0, 0, 0.7);
-    border-radius: 0 0 40px 40px;
-    padding: 6px 14px 6px 14px;
-    margin: 0 0 4px 0;
+    border-radius: 0 0 30px 30px;
+    padding: 2px 20px 6px 20px;
+    margin: 0 0 5px 0;
     box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.4);
 }
 
@@ -101,6 +101,10 @@ window#waybar {
     border-top: 2px solid @accent_color;
     border-radius: 0 0 20px 20px;
     margin: 0 4px 0 4px;
+}
+
+#custom-bar {
+    margin: 0 10px 0 4px;
 }
 
 #cpu,
