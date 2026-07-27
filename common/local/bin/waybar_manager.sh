@@ -1,69 +1,70 @@
 #!/usr/bin/env bash
 
-# This script toggles the Waybar mode between top and left, and handles auto-starting Waybar if it's not running.
-# Using a state file & linking method to switch between top and left configurations.
+# Manage Waybar modes via symlinks and Rofi selection.
 
-DIR_LEFT="$HOME/.config/waybar/waybarleft"
-DIR_TOP="$HOME/.config/waybar/waybartop"
+WAYBAR_DIR="$HOME/.config/waybar"
 STATE_FILE="$HOME/.local/state/haku_theme/waybar_current_mode"
-CURRENT_STATE=$(cat "$STATE_FILE")
+CURRENT_STATE="top"
+MODES=("top" "left" "coredge" "minimal")
 
-link_top() {
-    ln -sf "$DIR_TOP/config" "$HOME/.config/waybar/config"
-    ln -sf "$DIR_TOP/style.css" "$HOME/.config/waybar/style.css"
-}
+# Init state file if missing
+if [[ -f "$STATE_FILE" ]]; then
+    CURRENT_STATE=$(cat "$STATE_FILE")
+else
+    mkdir -p "$(dirname "$STATE_FILE")"
+    echo "top" > "$STATE_FILE"
+fi
 
-link_left() {
-    ln -sf "$DIR_LEFT/config" "$HOME/.config/waybar/config"
-    ln -sf "$DIR_LEFT/style.css" "$HOME/.config/waybar/style.css"
-}
+# Link selected mode files to main config directory
+link_mode() {
+    local mode="$1"
+    local target_dir="$WAYBAR_DIR/$mode"
 
-run_waybar() {
-    if [ "$CURRENT_STATE" == "top" ]; then
-        link_top
-    elif [ "$CURRENT_STATE" == "left" ]; then
-        link_left
-    else
-        notify-send "Waybar Toggle" "Error: Invalid state in $STATE_FILE"
+    if [[ ! -d "$target_dir" ]]; then
+        notify-send "Waybar Error" "Mode directory not found: $target_dir"
         exit 1
     fi
+
+    ln -sf "$target_dir/config" "$WAYBAR_DIR/config"
+    ln -sf "$target_dir/style.css" "$WAYBAR_DIR/style.css"
+    echo "$mode" > "$STATE_FILE"
+    CURRENT_STATE="$mode"
+}
+
+# Start or restart Waybar
+restart_waybar() {
+    if [[ "$XDG_CURRENT_DESKTOP" == "niri" ]]; then
+        if grep -q "1" /tmp/cava_underbar_status 2>/dev/null; then
+            $HOME/.local/bin/cava_manager.sh --toggle
+        fi
+    fi
+
+    if pgrep -x waybar >/dev/null; then
+        pkill -x waybar
+        sleep 0.2
+    fi
+
     waybar &
 }
 
-# Create the state file if it doesn't exist and set the default mode to top
-if [ ! -f "$STATE_FILE" ]; then
-    echo "top" > "$STATE_FILE"
-    CURRENT_STATE="top"
-fi
+# Handle --select argument via Rofi
+if [[ "$1" == "--select" ]]; then
+    choice=$(printf "%s\n" "${MODES[@]}" | rofi -dmenu -p "Waybar" -i -theme-str 'window {width: 25%; height: 40%;} entry { placeholder: " Select Mode"; }')
+    [[ -z "$choice" ]] && exit 0
 
-# Check if there is no config or style file in the root
-if [ ! -f "$HOME/.config/waybar/config" ] || [ ! -f "$HOME/.config/waybar/style.css" ]; then
-    link_top
-fi
-
-# Check if Waybar is not running (for auto start)
-if ! pgrep -x waybar >/dev/null; then
-    run_waybar
+    if [[ "$choice" != "$CURRENT_STATE" ]]; then
+        link_mode "$choice"
+        restart_waybar
+    fi
     exit 0
 fi
 
-
-# Main logic to toggle Waybar mode between top and left
-killall waybar
-
-if [ "$CURRENT_STATE" == "top" ]; then
-    echo "left" > "$STATE_FILE"
-    CURRENT_STATE="left"
-    run_waybar
-else
-    echo "top" > "$STATE_FILE"
-    CURRENT_STATE="top"
-    run_waybar
+# Ensure symlinks exist
+if [[ ! -f "$WAYBAR_DIR/config" ]] || [[ ! -f "$WAYBAR_DIR/style.css" ]]; then
+    link_mode "$CURRENT_STATE"
 fi
 
-# In Niri, kill cava underbar when changing waybar mode
-if [[ $XDG_CURRENT_DESKTOP == "niri" ]]; then
-    if cat /tmp/cava_underbar_status 2>/dev/null | grep -q "1"; then
-        ~/.local/bin/cava_manager.sh --toggle
-    fi
+# Auto-start Waybar if not running
+if ! pgrep -x waybar >/dev/null; then
+    waybar &
 fi
