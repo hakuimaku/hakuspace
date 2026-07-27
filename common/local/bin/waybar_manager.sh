@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Manage Waybar modes via symlinks and Rofi selection.
+# Manage Waybar modes via symlinks, Rofi selection, and mode cycling.
 
 WAYBAR_DIR="$HOME/.config/waybar"
 STATE_FILE="$HOME/.local/state/haku_theme/waybar_current_mode"
@@ -46,6 +46,27 @@ restart_waybar() {
 
     waybar &
 }
+
+# Handle --cycle argument to toggle through the MODES array
+if [[ "$1" == "--cycle" ]]; then
+    current_idx=-1
+    for i in "${!MODES[@]}"; do
+        if [[ "${MODES[$i]}" == "$CURRENT_STATE" ]]; then
+            current_idx=$i
+            break
+        fi
+    done
+
+    # Calculate next mode index (if current not found, fallback to 0 which is "top")
+    next_idx=$(( (current_idx + 1) % ${#MODES[@]} ))
+    next_mode="${MODES[$next_idx]}"
+
+    if [[ "$next_mode" != "$CURRENT_STATE" ]]; then
+        link_mode "$next_mode"
+        restart_waybar
+    fi
+    exit 0
+fi
 
 # Handle --select argument via Rofi
 if [[ "$1" == "--select" ]]; then
