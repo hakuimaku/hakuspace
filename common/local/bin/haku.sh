@@ -1,30 +1,18 @@
 #!/usr/bin/env bash
 
+need() { command -v "$1" >/dev/null 2>&1 || { echo "$1 is required"; exit 1; }; }
+
 # Check dependencies
-if ! command -v kitty &> /dev/null; then
-    echo "kitty is not installed. Please install it to run this script."
-    exit 1
-fi
-
-if ! command -v cava &> /dev/null; then
-    echo "cava is not installed. Please install it to run this script."
-    exit 1
-fi
-
-if ! command -v tty-clock &> /dev/null; then
-    echo "tty-clock is not installed. Please install it to run this script."
-    exit 1
-fi
-
-if ! command -v lavat &> /dev/null; then
-    echo "lavat is not installed. Please install it to run this script."
-    exit 1
-fi
+need kitty
+need cava
+need tty-clock
+need lavat
+need jq
 
 # Main
 FONT_CLOCK=10
-FONT_GENERAL=12
-FONT_TERMINAL=15
+FONT_GENERAL=11
+FONT_TERMINAL=16
 
 spawn() { ( setsid "$@" & ) >/dev/null 2>&1; }
 
@@ -67,25 +55,47 @@ fi
 if [[ $XDG_CURRENT_DESKTOP == "Hyprland" ]]; then
     MY_INFO=$(hyprctl activewindow -j)
     MY_ADDR=$(echo "$MY_INFO" | jq -r '.pid')
+
+    LAYOUT=$(hyprctl activeworkspace -j | jq -r '.tiledLayout')
     
     clear
     sleep 0.1
 
-    cmd
+        
+    hyprctl eval "hl.dispatch(hl.dsp.window.float({ window = 'pid:${MY_ADDR}' }))"
+    hyprctl eval "hl.dispatch(hl.dsp.window.resize({ x = 600, y = 300, window = 'pid:${MY_ADDR}' }))"
 
-    clock
-    hyprctl eval 'hl.dispatch(hl.dsp.focus({ window = "class:seyclock" }))'
+    if [[ $LAYOUT == "scrolling" ]]; then
+        cmd
+        clock
+        hyprctl eval 'hl.dispatch(hl.dsp.focus({ window = "class:seyclock" }))'
+        lavat
+        hyprctl eval 'hl.dispatch(hl.dsp.focus({ window = "class:seyclock" }))'
+        hyprctl eval 'hl.dispatch(hl.dsp.layout("consume"))'
+        cava
+        hyprctl eval 'hl.dispatch(hl.dsp.focus({ window = "class:seyclock" }))'
+        hyprctl eval 'hl.dispatch(hl.dsp.layout("consume"))'
+        hyprctl eval 'hl.dispatch(hl.dsp.focus({ window = "class:seycmd" }))'
+    elif [[ $LAYOUT == "dwindle" ]]; then
+        clock
+        cmd
+        hyprctl eval 'hl.dispatch(hl.dsp.focus({ window = "class:seyclock" }))'
+        lavat
+        hyprctl eval 'hl.dispatch(hl.dsp.window.move({ direction = "right", window = "class:seylavat" }))'
+        hyprctl eval 'hl.dispatch(hl.dsp.focus({ window = "class:seylavat" }))'
+        cava
+        hyprctl eval 'hl.dispatch(hl.dsp.window.move({ direction = "right", window = "class:seycava" }))'
+        hyprctl eval 'hl.dispatch(hl.dsp.window.move({ direction = "up", window = "class:seylavat" }))'
+        hyprctl eval 'hl.dispatch(hl.dsp.focus({ window = "class:seycmd" }))'
+    elif [[ $LAYOUT == "master" ]]; then
+        cava
+        lavat
+        clock
+        cmd
+        hyprctl eval 'hl.dispatch(hl.dsp.focus({ window = "class:seycmd" }))'
+    fi
 
-    lavat
-    hyprctl eval 'hl.dispatch(hl.dsp.focus({ window = "class:seyclock" }))'
-    hyprctl eval 'hl.dispatch(hl.dsp.layout("consume"))'
-
-    cava
-    hyprctl eval 'hl.dispatch(hl.dsp.focus({ window = "class:seyclock" }))'
-    hyprctl eval 'hl.dispatch(hl.dsp.layout("consume"))'
-
-    hyprctl eval 'hl.dispatch(hl.dsp.focus({ window = "class:seycmd" }))'
-
+    hyprctl eval "hl.dsp.exec_cmd('hyprctl keyword input:follow_mouse 1')"
     kill -9 "$MY_ADDR"
 fi
 
