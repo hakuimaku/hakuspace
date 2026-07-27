@@ -1,0 +1,201 @@
+{
+    "layer": "top",
+    "position": "left",
+    "margin-top": 0,
+    "margin-bottom": 0,
+    "margin-left": 0,
+    "margin-right": 0,
+    "spacing": 0,
+    "tooltip": true,
+    "reload_style_on_change": true,
+
+    "modules-left": [
+        "custom/recorder",
+        "custom/logo",
+        "hyprland/workspaces",
+        "niri/workspaces",
+        "mango/workspaces"
+    ],
+    "modules-center": [
+        "clock"
+    ],
+    "modules-right": [
+        "group/bar",
+        "backlight",
+        "pulseaudio",
+        "custom/notification"
+    ],
+
+    "clock": {
+        "format": "{:%H\n%M\n--\n%d\n%m\n%y}",
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+        "calendar": {
+                    "mode"          : "month",
+                    "mode-mon-col"  : 4,
+                    "weeks-pos"     : "right",
+                    "on-scroll"     : 1,
+                    "format": {
+                              "months":     "<span color='#ffead3'><b>{}</b></span>",
+                              "days":       "<span color='#ecc6d9'><b>{}</b></span>",
+                              "weeks":      "<span color='#99ffdd'><b>W{}</b></span>",
+                              "weekdays":   "<span color='#ffcc66'><b>{}</b></span>",
+                              "today":      "<span color='#ff6699'><b><u>{}</u></b></span>"
+                              }
+                    },
+        "actions":  {
+                    "on-click-right": "mode",
+                    "on-scroll-up": "tz_up",
+                    "on-scroll-down": "tz_down",
+                    "on-scroll-up": "shift_up",
+                    "on-scroll-down": "shift_down"
+                    }
+    },
+
+    "group/bar": {
+        "orientation": "vertical",
+        "drawer": {
+            "transition-duration": 1000,
+            "transition-left-to-right": false,
+            "click-to-reveal": true
+        },
+        "modules": [
+            "custom/bar",
+            "tray",
+            "battery",
+            "power-profiles-daemon"
+        ]
+    },
+
+    "backlight": {
+        "format": "{icon} {percent}%",
+        "rotate": 90,
+        "format-icons": ["", "", "", "", "", "", "", "", ""],
+        "on-scroll-up": "brightnessctl set 1%+",
+        "on-scroll-down": "brightnessctl set 1%-",
+        "on-click": "hyprsunset --temperature 3500",
+        "on-click-right": "pkill hyprsunset",
+        "tooltip-format": "Brightness: {percent}%"
+    },
+
+    "pulseaudio": {
+        "format": " {icon} {volume}%",
+        "rotate": 90,
+        "format-muted": "󰝟 ",
+        "format-icons": {
+            "headphone": "󰋋",
+            "default": ["", "", ""]
+        },
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click-right": "pavucontrol",
+        "tooltip-format": "Volume: {volume}%"
+    },
+
+    "battery": {
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon}",
+        "format-icons": {
+            "default": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+            "charging": ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"],
+            "plugged": [""]
+        },
+        "tooltip-format": "Battery: {capacity}%\nPower: {power}W\n{timeTo}",
+        "tooltip": true
+    },
+
+    "power-profiles-daemon": {
+        "format": "{icon}",
+        "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
+        "tooltip": true,
+        "format-icons": {
+            "default": "",
+            "performance": "",
+            "balanced": "󰗑",
+            "power-saver": ""
+        }
+    },
+
+    "tray": {
+        "icon-size": 18,
+        "spacing": 10,
+        "show-passive-items": true
+    },
+
+    "niri/workspaces": {
+        "format": "{icon}",
+        "format-icons": {
+            "active": "",
+            "default": ""
+        }
+    },
+
+    "hyprland/workspaces": {
+        "all-outputs": true,
+        "sort-by-number": true,
+        "show-special": true,
+        "format": "{icon}",
+        "format-icons": {
+            "active": "",
+            "default": ""
+	    }
+    },
+
+    "mango/workspaces": {
+        "format": "{icon}",
+        "format-icons": {
+            "active": "",
+            "default": "",
+            "urgent": "",
+            "empty": ""
+        },
+        "on-click": "activate",
+        "on-click-right": "toggle",
+        "overview-label": "    ",
+        "hide-empty": true
+    },
+
+    "custom/recorder": {
+        "exec": "if [ -f /tmp/recording_time ]; then cat /tmp/recording_time; fi",
+        "interval": 1,
+        "format": "",
+        "return-type": "plain",
+        "if-file-exists": "/tmp/recording_pid",
+        "on-click": "$HOME/.local/bin/record.sh",
+        "tooltip": true,
+        "tooltip-format": "Stop recording"
+    },
+
+    "custom/logo": {
+        "format": "󰮯",
+        "on-click": "$HOME/.local/bin/hakumenu.sh",
+        "tooltip-format": "Have a nice day!",
+        "tooltip": true
+    },
+
+    "custom/bar": {
+        "format": "\n"
+    },
+
+    "custom/notification": {
+        "tooltip": true,
+        "format": "{icon}",
+        "format-icons": {
+            "notification": "󰂚<span foreground='red'><sup></sup></span>",
+            "none": "󰂚",
+            "dnd-notification": "<span foreground='red'><sup></sup></span>",
+            "dnd-none": "",
+            "inhibited-notification": "󰂚<span foreground='red'><sup></sup></span>",
+            "inhibited-none": "󰂚",
+            "dnd-inhibited-notification": "󰂛<span foreground='red'><sup></sup></span>",
+            "dnd-inhibited-none": ""
+        },
+        "return-type": "json",
+        "exec-if": "which swaync-client",
+        "exec": "swaync-client -swb",
+        "on-click": "swaync-client -t -sw",
+        "on-click-right": "swaync-client -d -sw",
+        "escape": true
+    }
+}

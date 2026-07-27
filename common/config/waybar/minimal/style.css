@@ -1,0 +1,184 @@
+/* ============================================================================== */
+/* GLOBAL STYLES                                  */
+/* ============================================================================== */
+@import url("../../.local/state/haku_theme/colors.css");
+@import url("../../.local/state/haku_theme/fonts.css");
+
+* {
+    font-weight: bold;
+    border-radius: 20px;
+}
+
+window#waybar {
+    background-color: transparent;
+    color: @accent_color;
+    transition: background-color 0.3s ease;
+}
+
+.modules-center {
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 0 0 40px 40px;
+    padding: 6px 14px 6px 14px;
+    margin: 0 0 4px 0;
+    box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.4);
+}
+
+
+/* ============================================================================== */
+/* COMMON MODULE STYLES                               */
+/* ============================================================================== */
+#custom-monitor,
+#custom-bar,
+#custom-menu,
+#window,
+#custom-recorder,
+#pulseaudio,
+#backlight,
+#battery,
+#tray,
+#clock,
+#power-profiles-daemon {
+    margin: 1px;
+    padding: 0 10px;
+    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 20px;
+}
+
+/* ============================================================================== */
+/* WORKSPACES                                    */
+/* ============================================================================== */
+#workspaces {
+    border-radius: 999px;
+    padding: 2px 8px;
+    margin: 0 4px;
+}
+
+#workspaces button {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    padding: 0 10px;
+    margin: 0 3px;
+    min-width: 0;
+    min-height: 0;
+    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+}
+
+#workspaces button.active {
+    background-color: @accent_color;
+    min-width: 30px;
+    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+}
+
+#workspaces button.empty {
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+#workspaces button.empty.active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+#workspaces button.overview {
+    background-color: @accent_color;
+    min-width: 30px;
+    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+}
+
+/* ============================================================================== */
+/* SPECIFIC MODULES                                 */
+/* ============================================================================== */
+#clock {
+    margin: 0 8px 0 8px;
+}
+
+#custom-recorder {
+    color: @accent_color;
+    border: 1px solid @accent_color;
+    animation: blink 1s infinite; 
+}
+
+#custom-monitor,
+#custom-bar {
+    border-top: 2px solid @accent_color;
+    border-radius: 0 0 20px 20px;
+    margin: 0 4px 0 4px;
+}
+
+#cpu,
+#memory,
+#temperature {
+    background-color: rgba(32, 32, 32, 0.6);
+    margin: 1px;
+    padding: 0 12px;
+    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 20px;
+}
+
+#tray {
+    margin: 4px;
+}
+
+/* ============================================================================== */
+/* HOVER EFFECTS                                   */
+/* ============================================================================== */
+#custom-recorder:hover,
+#custom-monitor:hover,
+#custom-bar:hover,
+#custom-menu:hover,
+#cpu:hover,
+#memory:hover,
+#temperature:hover,
+#pulseaudio:hover,
+#backlight:hover,
+#power-profiles-daemon:hover,
+#battery:hover,
+#custom-notification:hover {
+    color: #000000;
+    background-color: @accent_color;
+    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 100px;
+}
+
+#custom-monitor:hover,
+#custom-bar:hover {
+    border-radius: 20px;
+}
+
+#workspaces button:hover {
+    background-color: @accent_color;
+    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 20px;
+}
+
+#workspaces button.active:hover {
+    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 60px;
+}
+
+#clock:hover {
+    color: #000000;
+    background-color: @accent_color;
+    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 100px;
+}
+
+/* ============================================================================== */
+/* TOOLTIPS                                     */
+/* ============================================================================== */
+tooltip {
+    background: rgba(0, 0, 0, 1);
+    border-radius: 12px;
+    padding: 10px;
+}
+
+tooltip label {
+    color: @accent_color;
+}
+
+/* ============================================================================== */
+/* ANIMATIONS                                    */
+/* ============================================================================== */
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
