@@ -4,29 +4,31 @@
     "margin-bottom": 0,
     "margin-left": 0,
     "margin-right": 0,
-    "spacing": 2,
+    "spacing": 0,
     "tooltip": true,
     "reload_style_on_change": true,
 
     "modules-left": [
-        "custom/logo",
         "hyprland/workspaces",
         "niri/workspaces",
-        "mango/workspaces"
+        "mango/workspaces",
+        "cava",
+        "mpris"
+    ],
+    "modules-center": [
+        "custom/recorder",
+        "clock",
+        "custom/logo"
     ],
     "modules-right": [
-        "custom/recorder",
         "group/monitor",
         "group/settings",
-        "tray",
-        "clock",
         "custom/notification"
     ],
 
     "clock": {
         "format": " {:%H:%M, %d %B %Y} ",
-        "format-alt": " {:%A, %H:%M:%S} ",
-        "interval": 1,
+        "format-alt": " {:%A, %d %B %Y} ",
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
         "calendar": {
                     "mode"          : "month",
@@ -50,15 +52,17 @@
                     }
     },
 
-    "group/bar": {
+    "group/settings": {
         "orientation": "horizontal",
         "drawer": {
             "transition-duration": 1000,
-            "transition-left-to-right": true,
+            "transition-left-to-right": false,
             "click-to-reveal": true
         },
         "modules": [
-            "custom/bar",
+            "custom/settings",
+            "backlight",
+            "pulseaudio",
             "battery",
             "power-profiles-daemon",
             "tray"
@@ -79,24 +83,6 @@
             "temperature"
         ]
     },
-
-    "group/settings": {
-        "orientation": "horizontal",
-        "drawer": {
-            "transition-duration": 1000,
-            "transition-left-to-right": false,
-            "click-to-reveal": true
-        },
-        "modules": [
-            "custom/settings",
-            "battery",
-            "power-profiles-daemon",
-            "backlight",
-            "backlight/slider",
-            "pulseaudio",
-            "pulseaudio/slider"
-        ]
-    },
     
     "backlight": {
         "format": "{icon} {percent}%",
@@ -106,12 +92,6 @@
         "on-click": "hyprsunset --temperature 3500",
         "on-click-right": "pkill hyprsunset",
         "tooltip-format": "Brightness: {percent}%"
-    },
-
-    "backlight/slider": {
-        "min": 10,
-        "max": 100,
-        "orientation": "horizontal"
     },
 
     "battery": {
@@ -151,12 +131,6 @@
         "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
         "on-click-right": "pavucontrol",
         "tooltip-format": "Volume: {volume}%"
-    },
-
-    "pulseaudio/slider": {
-        "min": 0,
-        "max": 100,
-        "orientation": "horizontal"
     },
 
     "tray": {
@@ -231,11 +205,10 @@
         "escape": true
     },
 
-    "custom/logo": {
-        "format": "󰮯",
-        "tooltip-format": "Have a nice day!",
-        "tooltip": true,
-        "on-click": "$HOME/.local/bin/hakumenu.sh"
+    "custom/settings": {
+        "format": "",
+        "tooltip-format": "Click to show settings",
+        "tooltip": true
     },
 
     "custom/monitor": {
@@ -244,10 +217,11 @@
         "tooltip": true
     },
 
-    "custom/settings": {
-        "format": "",
-        "tooltip-format": "Click to show settings",
-        "tooltip": true
+    "custom/logo": {
+        "format": "󰮯",
+        "tooltip-format": "Have a nice day!",
+        "tooltip": true,
+        "on-click": "$HOME/.local/bin/hakumenu.sh"
     },
 
     "cpu": {
@@ -260,7 +234,7 @@
         "format": "{}% "
     },
 
-    "temperature": {
+     "temperature": {
         "interval": 2,
         "format": "{temperatureC}°C "
     },
@@ -268,7 +242,7 @@
     "mpris": {
         "format": "  / {title} ",
         "format-paused": "  / <i>{title}</i> ",
-        "title-len": 20
+        "title-len": 25
     },
 
     "cava": {
