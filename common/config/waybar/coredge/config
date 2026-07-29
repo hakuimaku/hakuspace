@@ -10,9 +10,7 @@
 
     "modules-left": [
         "custom/logo",
-        "hyprland/workspaces",
-        "niri/workspaces",
-        "mango/workspaces"
+        "group/gworkspaces"
     ],
     "modules-right": [
         "custom/recorder",
@@ -50,7 +48,7 @@
                     }
     },
 
-    "group/bar": {
+    "group/gworkspaces": {
         "orientation": "horizontal",
         "drawer": {
             "transition-duration": 1000,
@@ -58,10 +56,9 @@
             "click-to-reveal": true
         },
         "modules": [
-            "custom/bar",
-            "battery",
-            "power-profiles-daemon",
-            "tray"
+            "hyprland/workspaces",
+            "niri/workspaces",
+            "mango/workspaces"
         ]
     },
 
