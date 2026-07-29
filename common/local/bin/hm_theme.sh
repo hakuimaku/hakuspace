@@ -11,11 +11,15 @@ if [[ $# -eq 0 ]]; then
     CAVA_TEXT="OFF"
     [[ "$CAVA_STATUS" == "1" ]] && CAVA_TEXT="ON"
 
+    DOCKBAR_STATUS=$(pgrep -x "dockbar" >/dev/null && echo "1" || echo "0")
+    DOCKBAR_TEXT="OFF"
+    [[ "$DOCKBAR_STATUS" == "1" ]] && DOCKBAR_TEXT="ON"
+
     cat <<EOF
   Cava Underbar ($CAVA_TEXT)
 󰁪  Auto Random Wallpaper ($WALL_TEXT)
+󱂩  Toggle Dockbar ($DOCKBAR_TEXT)
   Waybar Mode Select
-󱂩  Toggle Dockbar
 󰸉  Change Wallpaper
   Change Lively Wallpaper
 󰃾  Kill Lively Wallpaper
@@ -28,8 +32,8 @@ chosen="$*"
 case "$chosen" in
     *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh --toggle ;;
     *"Auto Random Wallpaper"*) spawn $HOME/.local/bin/random_wallpaper.sh --toggle ;;
-    *"Waybar Mode Select"*) spawn $HOME/.local/bin/waybar_manager.sh --select ;;
     *"Toggle Dockbar"*) spawn $HOME/.local/bin/dockbar_manager.sh --toggle ;;
+    *"Waybar Mode Select"*) spawn $HOME/.local/bin/waybar_manager.sh --select ;;
     *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
     *"Change Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh ;;
     *"Kill Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh --exit ;;
