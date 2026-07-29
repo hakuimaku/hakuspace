@@ -1,0 +1,34 @@
+{
+    "name": "dockbar",
+    "layer": "top",
+    "position": "bottom",
+    "margin-bottom": 0,
+    "margin-left": 0,
+    "margin-right": 0,
+    "spacing": 2,
+    "tooltip": true,
+    "reload_style_on_change": true,
+    "exclusive": true,
+
+    "modules-center": [
+        "wlr/taskbar"
+    ],
+
+    "wlr/taskbar": {
+        "format": "{icon}",
+        "tooltip-format": "{title} {app_id}",
+        "icon-size": 52,
+        "on-click": "activate",
+        "on-click-middle": "close",
+        "on-click-right": "minimize",
+        "all-outputs": true,
+        "homogeneous": true,
+        "justify": "center",
+        "ignore-list": [
+            "cavaunderbar",
+            "seycava",
+            "seylavat",
+            "seyclock"
+        ]
+    }
+}

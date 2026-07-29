@@ -1,0 +1,56 @@
+/* ============================================================================== */
+/* DOCKBAR STYLES                                  */
+/* ============================================================================== */
+
+* {
+    font-weight: bold;
+    border-radius: 20px;
+}
+
+window#waybar {
+    background-color: transparent;
+    color: @accent_color;
+    transition: background-color 0.3s ease;
+}
+
+.modules-center {
+    background-color: rgba(0, 0, 0, 0.5);
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.3));
+    border-radius: 30px;
+    padding: 2px;
+    margin: 8px;
+}
+
+#taskbar {
+    padding: 8px;
+    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
+    background-color: transparent;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+#taskbar button {
+    border-radius: 999px;
+    padding: 2px 12px;
+    margin: 0;
+    min-width: 0;
+    min-height: 0;
+    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+}
+
+#taskbar button.active {
+    background-color: rgba(50, 50, 50, 0.7);
+    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+#taskbar button.minimized {
+    background-color: rgba(97, 97, 97, 0.3);
+    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+}
+
+#taskbar button:hover {
+    background-color: transparent;
+    padding: 2px 30px;
+    border: 1px solid transparent;
+    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+}
