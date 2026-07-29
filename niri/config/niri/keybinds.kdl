@@ -17,7 +17,8 @@ binds {
     Mod+Tab hotkey-overlay-title="Haku Menu" { spawn "sh" "-c" "$HOME/.local/bin/hakumenu.sh"; }
     Mod+Y hotkey-overlay-title="Wallpaper Select" { spawn "sh" "-c" "$HOME/.local/bin/wallpaper_select.sh"; }
     Mod+Shift+Y hotkey-overlay-title="Lively Wallpaper Select" { spawn "sh" "-c" "$HOME/.local/bin/wallpaper_video_select.sh"; }
-    Mod+Shift+C hotkey-overlay-title="Cycle Waybar Mode" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --cycle"; }
+    Mod+Shift+W hotkey-overlay-title="Cycle Waybar Mode" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --cycle"; }
+    Mod+W hotkey-overlay-title="Toggle Dockbar" { spawn "sh" "-c" "$HOME/.local/bin/dockbar_manager.sh --toggle"; }
 
     // Application Launchers
     Mod+Q hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
@@ -81,15 +82,15 @@ binds {
     Mod+Ctrl+Shift+R { switch-preset-window-height; }
     Mod+Ctrl+R { reset-window-height; }
 
-    Mod+W hotkey-overlay-title="Center Column (Remapped)" { center-column; }
-    Mod+Ctrl+C { center-visible-columns; }
+    Mod+T hotkey-overlay-title="Center Column (Remapped)" { center-column; }
+    Mod+Shift+T { center-visible-columns; }
 
     Mod+Minus { set-column-width "-10%"; }
     Mod+Equal { set-column-width "+10%"; }
     Mod+Shift+Minus { set-window-height "-10%"; }
     Mod+Shift+Equal { set-window-height "+10%"; }
 
-    Mod+Shift+W { toggle-column-tabbed-display; }
+    Mod+Shift+X { toggle-column-tabbed-display; }
     Mod+X { switch-focus-between-floating-and-tiling; }
 
     // Mouse & Touchpad Wheels
