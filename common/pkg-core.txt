@@ -15,6 +15,8 @@ zsh                           # Shell
 jq                            # Command-line JSON processor
 imagemagick                   # Image processing toolkit (For Niri, generating backdrop blur)
 python-colorthief             # Extract dominant color palette from images (Function wallpaper color picker)
+python-gobject                # Python bindings for GObject (Needed for Dockbar autohide-dock.py)
+gtk-layer-shell               # GTK library for layer shell protocol (Needed for Dockbar autohide-dock.py)
 
 # ==== Utility tools ===
 wl-clipboard                  # Wayland clipboard tools (wl-copy/wl-paste)
