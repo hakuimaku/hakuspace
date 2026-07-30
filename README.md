@@ -43,7 +43,8 @@ Overview:
 
 * **Accent Color Sync:** Waybar, Rofi, Kitty, Swaync,...
 * **Smart Accent Color:** Automatically generates the accent color palette based on your current wallpaper.
-* **Flexible Waybar Layouts:** Support layouts: `top`, `left`, `coredge`, `minimal` (Will be extended more).
+* **Flexible Waybar Layouts:** Support layouts: `top`, `left`, `coredge`, `minimal`, `full` (Will be extended more).
+* **Dockbar:** Another Waybar with only a `wlr/taskbar` module, looking like a Taskbar or Dock.
 * **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
 * **Wallpaper Automation:** Wallpapers change automatically every 5 minutes (customizable in the `random_wallpaper.sh` script).
 
@@ -98,10 +99,10 @@ git clone https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 
-If you prefer the version I've tested, clone the **stable** release version `v2.1.7` (lastest):
+If you prefer the version I've tested (a little honestly), clone the **stable** release version `v2.1.8` (lastest):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.1.7 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
+git clone --depth 1 --branch v2.1.8 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 
@@ -214,14 +215,15 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 | SUPER + C | Kill Focus Window |
 | SUPER + TAB | Open Menu |
 | SUPER + R | App Menu |
+| SUPER + W | Toggle Dockbar |
 | SUPER + P | Screenshot |
+| SUPER + Z | Toggle Floating |
 | SUPER + A/S | Focus Left/Right Window |
 | SUPER + Y | Wallpaper Select |
 | SUPPER + SHIFT + Y | Lively Wallpaper Select |
-| SUPER + SHIFT + C | Cycle Waybar Mode |
-| SUPER + Z | Cycle Hyprland Layout (Only Hyprland ofc) |
-| SUPER + W | Hyprland Toggle Floating |
-| SUPER + Z | Other WM Toggle Floating |
+| SUPER + SHIFT + W | Cycle Waybar Mode |
+| SUPER + X | Cycle Hyprland Layout (Hyprland Only) |
+| SUPER + ` | Open Special Workspace - For VS Code (Hyprland Only) |
 
 ---
 
