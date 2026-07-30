@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 import gi
 import subprocess
+import os
+import time
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('GtkLayerShell', '0.1')
 from gi.repository import Gtk, Gdk, GtkLayerShell
 
-# Variables for Dockbar dimensions and positioning
-DOCK_HEIGHT = 200 # Dockbar zone (px)
-DOCK_WIDTH_PCT = 0.8 # Width of the safe area (% of screen width)
-TOP_BARRIER_HEIGHT = 150 # Height of the top barrier (px)
+DOCK_HEIGHT = 200 # Height of the dock in pixels
+DOCK_WIDTH_PCT = 0.8 # Percentage of the screen width that the dock occupies (0.0 to 1.0)
+TOP_BARRIER_HEIGHT = 150 # Height of the top barrier in pixels
+
+MANAGER_SCRIPT = os.path.expanduser("~/.local/bin/dockbar_manager.sh") # Path to the script that manages the dock's visibility
 
 class TriggerWindow(Gtk.Window):
-    """invisible window that acts as a trigger for showing or hiding the Dockbar"""
-    def __init__(self, name, anchor_edges, width, height, margin_bottom=0):
+    def __init__(self, name: str, anchor_edges: dict, width: int, height: int, margin_bottom: int = 0):
         super().__init__()
         GtkLayerShell.init_for_window(self)
         GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
@@ -31,10 +33,11 @@ class TriggerWindow(Gtk.Window):
             self.set_visual(visual)
         self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(0, 0, 0, 0))
 
-
 class DockManager:
     def __init__(self):
         self.is_dock_open = False
+        self.last_toggle_time = 0.0
+        self.lock_duration = 0.25
 
         display = Gdk.Display.get_default()
         monitor = display.get_primary_monitor() or (display.get_monitor(0) if display.get_n_monitors() > 0 else None)
@@ -76,29 +79,33 @@ class DockManager:
         self.win_show.show_all()
 
     def toggle_dock(self, open_dock: bool):
-        """Controls the visibility of the Dockbar based on the open_dock parameter"""
+        current_time = time.time()
+        
+        if current_time - self.last_toggle_time < self.lock_duration:
+            return
+
         if self.is_dock_open == open_dock:
             return
 
         self.is_dock_open = open_dock
+        self.last_toggle_time = current_time
 
         if open_dock:
             self.win_show.hide()
             for win in self.hide_barriers:
                 win.show_all()
+            subprocess.Popen([MANAGER_SCRIPT, "--trigger-show"])
         else:
             for win in self.hide_barriers:
                 win.hide()
             self.win_show.show_all()
-
-        subprocess.run(["pkill", "-USR1", "-x", "dockbar"])
+            subprocess.Popen([MANAGER_SCRIPT, "--trigger-hide"])
 
     def on_show_enter(self, widget, event):
         self.toggle_dock(open_dock=True)
 
     def on_hide_enter(self, widget, event):
         self.toggle_dock(open_dock=False)
-
 
 if __name__ == "__main__":
     manager = DockManager()

@@ -178,6 +178,14 @@ hl.window_rule({
     scrolling_width = 0.4,
 })
 
+-- Dockbar style
+hl.layer_rule({
+    name = "haku-dockbar",
+    match = { namespace = "dock.*" },
+
+    blur = false,
+    animation = "slide bottom",
+})
 
 
 ---------------------------------------
