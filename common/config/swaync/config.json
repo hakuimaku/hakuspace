@@ -71,18 +71,18 @@
                     "update-command": "bluetoothctl show | grep -q 'Powered: yes' && echo true || echo false"
                 },
                 {
-                    "label": "󰝟",
-                    "type": "toggle",
-                    "active": true,
-                    "command": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle >/dev/null 2>&1",
-                    "update-command": "wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q 'MUTED' && echo true || echo false"
-                },
-                {
                     "label": "󰒲",
                     "type": "toggle",
                     "active": true,
                     "command": "$HOME/.local/bin/hypridle_toggle.sh >/dev/null 2>&1",
                     "update-command": "pgrep -x hypridle >/dev/null 2>&1 && echo true || echo false"
+                },
+                {
+                    "label": "󰝟",
+                    "type": "toggle",
+                    "active": true,
+                    "command": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle >/dev/null 2>&1",
+                    "update-command": "wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q 'MUTED' && echo true || echo false"
                 },
                 {
                     "label": "",
@@ -92,7 +92,7 @@
                     "update-command": "warp-cli status | grep -q 'Connected' && echo true || echo false"
                 },
                 {
-                    "label": "",
+                    "label": "󰝚",
                     "type": "toggle",
                     "active": true,
                     "command": "$HOME/.local/bin/cava_manager.sh --toggle >/dev/null 2>&1",
@@ -106,23 +106,25 @@
                     "update-command": "cat /tmp/random_wallpaper_status | grep -q '1' && echo true || echo false"
                 },
                 {
-                    "label": "󰄀",
-                    "type": "normal",
-                    "command": "swaync-client -cp && $HOME/.local/bin/screenshot.sh --fullscreen >/dev/null 2>&1"
+                    "label": "󱂩",
+                    "type": "toggle",
+                    "active": true,
+                    "command": "$HOME/.local/bin/dockbar_manager.sh --toggle >/dev/null 2>&1",
+                    "update-command": "cat $HOME/.local/state/haku_theme/dockbar_manual_state | grep -q '1' && echo true || echo false"
                 }
             ]
         },
         "menubar": {
             "menu#power-buttons": {
-                "label": "",
+                "label": "󰤆",
                 "position": "left",
                 "actions": [
                     {
-                        "label": "   Reboot",
+                        "label": "󰑓   Reboot",
                         "command": "systemctl reboot"
                     },
                     {
-                        "label": "   Lock",
+                        "label": "   Lock",
                         "command": "$HOME/.local/bin/lock.sh"
                     },
                     {
@@ -130,7 +132,7 @@
                         "command": "$HOME/.local/bin/exit.sh"
                     },
                     {
-                        "label": "   Shut down",
+                        "label": "󰤆   Shut down",
                         "command": "systemctl poweroff"
                     }
                 ]
