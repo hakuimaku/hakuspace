@@ -11,7 +11,7 @@ if [[ $# -eq 0 ]]; then
     CAVA_TEXT="OFF"
     [[ "$CAVA_STATUS" == "1" ]] && CAVA_TEXT="ON"
 
-    DOCKBAR_STATUS=$(pgrep -x "dockbar" >/dev/null && echo "1" || echo "0")
+    DOCKBAR_STATUS=$(cat "$HOME/.local/state/haku_theme/dockbar_manual_state" 2>/dev/null || echo "0")
     DOCKBAR_TEXT="OFF"
     [[ "$DOCKBAR_STATUS" == "1" ]] && DOCKBAR_TEXT="ON"
 
