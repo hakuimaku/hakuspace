@@ -4,13 +4,13 @@ spawn() { ( "$@" & ) >/dev/null 2>&1; disown; }
 
 if [[ $# -eq 0 ]]; then
     cat <<'EOF'
-󰍜  App Menu
+  App Menu
 󰨞  Visual Studio Code
-󰇧  Browser
-󰑋  Screen Record
+  Browser
+  Screen Record
   Local Send
-  File Manager
-󰈆  Quit
+  File Manager
+  Quit
 EOF
     exit 0
 fi
