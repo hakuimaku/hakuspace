@@ -32,6 +32,8 @@ Fedora now supports Haku Space too! See [Fedora Guide](https://github.com/hakuim
 
 See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372).
 
+**Join my Discord channel to get more help!** [Discord btw](https://discord.gg/g5RsNKRHn).
+
 Overview:
 - **HakuSpace** is a dotfiles project for **Arch Linux**, supporting **Hyprland**, **Niri**, and **MangoWM**.  
 - The main user interaction layer is built around **Rofi**, **Waybar**, and **SwayNC**, while most core behavior is powered by [custom scripts](https://github.com/hakuimaku/hakuspace/tree/main/common/local/bin).
@@ -278,6 +280,7 @@ systemctl --user disable swaync.service
 
 - This is a personal dotfiles configuration. Feel free to fork and adapt it to your needs!
 - Tiktok / See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372)
+- Discord: [hakuspace-dots](https://discord.gg/g5RsNKRHn)
 
 ---
 
