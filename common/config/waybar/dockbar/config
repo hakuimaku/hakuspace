@@ -11,8 +11,15 @@
     "exclusive": false,
 
     "modules-center": [
+        "group/pin",
+        "custom/separator",
         "wlr/taskbar"
     ],
+
+    "custom/separator": {
+        "format": " ",
+        "tooltip": false
+    },
 
     "wlr/taskbar": {
         "format": "{icon}",
@@ -33,5 +40,35 @@
         "app_ids-mapping": {
             "seycmd": "kitty"
         }
+    },
+
+    "group/pin": {
+        "orientation": "horizontal",
+        "modules": [
+            "image#menu",
+            "image#kitty",
+            "image#thunar"
+        ]
+    },
+
+    "image#kitty": {
+        "exec": "$HOME/.local/bin/dockbar_geticon.sh kitty",
+        "size": 52,
+        "interval": "once",
+        "on-click": "kitty"
+    },
+
+    "image#thunar": {
+        "exec": "$HOME/.local/bin/dockbar_geticon.sh thunar",
+        "size": 52,
+        "interval": "once",
+        "on-click": "thunar"
+    },
+
+    "image#menu": {
+        "exec": "$HOME/.local/bin/dockbar_geticon.sh menu",
+        "size": 52,
+        "interval": "once",
+        "on-click": "$HOME/.local/bin/hakumenu.sh"
     }
 }
