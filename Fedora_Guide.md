@@ -4,12 +4,12 @@
 - Who wants to use Haku Space on Fedora :)
 - A computer with Fedora installed.
 - This installation guide assumes you have basic knowledge of using the terminal and installing software on Fedora.
-- I'm using Fedora Workstation 44, this guide I written for this version.
+- I'm using Fedora Workstation 44, this guide was written for this version.
 
 ---
 
 ## Before Installation
-If you're not want to install weak dependency packages:
+If you don't want to install weak dependency packages:
 ```bash
 sudo nano /etc/dnf/dnf.conf
 ```
@@ -19,6 +19,7 @@ install_weak_deps=False
 ```
 
 > See more information: [here](https://docs.fedoraproject.org/en-US/packaging-guidelines/WeakDependencies/#_weak_dependencies)
+> After installation, you can remove this line from `/etc/dnf/dnf.conf` to install weak dependency packages again.
 
 ---
 
@@ -90,6 +91,10 @@ sudo dnf install xdg-desktop-portal-wlr
 ---
 
 ### C. Install ly (Display Manager):
+
+> [!tip]
+> I see KDE Plasma can change WM/DE from the login screen, you can skip this step if you are using KDE Plasma.
+
 ```bash
 sudo dnf install ly
 ```
@@ -195,6 +200,6 @@ chmod +x install.sh
 > [!tip]
 > Follow the prompts to complete the installation process.
 > Skip step 1, 2.
-> In step 8, you can skip `enable ly service and disable getty` if **you already active ly service [above](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md#c-install-ly-display-manager)**.
+> In step 8, you can **skip** `enable ly service and disable getty` if **you already activated the ly service [above](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md#c-install-ly-display-manager)**.
 
 Restart your computer to apply the changes and start using Haku Space on Fedora!
