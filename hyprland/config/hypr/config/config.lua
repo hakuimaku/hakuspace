@@ -31,6 +31,14 @@ hl.config({
 
         -- Please see https://wiki.hypr.land/Configuring/Advanced-and-Cool/Tearing/ before you turn this on
         allow_tearing = false,
+
+        snap = {
+            enabled = true,
+            window_gap = 10,
+            monitor_gap = 10,
+            border_overlap = false,
+            respect_gaps = false,
+        },
     },
 
     decoration = {
@@ -56,7 +64,7 @@ hl.config({
             vibrancy  = 2,
             contrast  = 1.2,
             noise     = 0.05,
-            special   = true,
+            special   = false,
             input_methods = true,
         },
     },
@@ -73,8 +81,12 @@ hl.config({
 
 hl.config({
     misc = {
+        middle_click_paste = true,
         force_default_wallpaper = -1,    -- Set to 0 or 1 to disable the anime mascot wallpapers
-        disable_hyprland_logo   = true, -- If true disables the random hyprland logo
+        disable_hyprland_logo   = false, -- If true disables the random hyprland logo
+        font_family = font_family,
+        animate_manual_resizes = true,
+        animate_mouse_windowdragging = true,
     },
 })
 
@@ -99,6 +111,10 @@ hl.config({
             natural_scroll = false,
         },
     },
+    cursor = {
+        no_warps = true,
+        hide_on_key_press = true,
+    }
 })
 
 hl.gesture({

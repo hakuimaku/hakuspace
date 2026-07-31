@@ -137,6 +137,28 @@ hl.bind(mainMod .. " + F1", function ()
     })
 end)
 
+-- Maximize mode keybinding: no shadow, no gap, no border radius
+hl.bind(mainMod .. " + F2", function ()
+    local maximize_mode = (hl.get_config("decoration.rounding") == 0)
+
+    if maximize_mode then
+        hl.exec_cmd("hyprctl reload")
+        return
+    end
+
+    hl.config({
+        general = {
+            gaps_in = 0, gaps_out = 0, -- Disable gaps  
+            border_size = 0,
+        },
+
+        decoration = {
+            shadow = { enabled = false },
+            rounding = 0,
+        }
+    })
+end)
+
 -- Cycle layouts
 hl.bind(mainMod .. " + X", function ()
     local layouts     = { "scrolling", "dwindle", "master" }
