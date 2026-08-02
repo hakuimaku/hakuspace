@@ -187,7 +187,8 @@ select_window_manager() {
     echo -e "${C_BOLD}[1]${C_RESET} HYPRLAND"
     echo -e "${C_BOLD}[2]${C_RESET} NIRI"
     echo -e "${C_BOLD}[3]${C_RESET} MANGOWM"
-    echo -e "${C_BOLD}[4]${C_RESET} ALL (Niri, Mango, Hyprland)"
+    echo -e "${C_BOLD}[4]${C_RESET} LABWC"
+    echo -e "${C_BOLD}[5]${C_RESET} ALL (Niri, Mango, Hyprland, Labwc)"
     echo ""
     read -r -p ">>> Which Window Manager config do you want to update?: " wm_choice
 
@@ -211,10 +212,15 @@ select_window_manager() {
             log_info "Selected: Mango" 
             ;;
         4)
-            # Niri > Mango > Hyprland
-            SELECTED_WMS=("niri" "mango" "hyprland")
-            SELECTED_WM_DIRS=("$HAKU_DIR/niri" "$HAKU_DIR/mango" "$HAKU_DIR/hyprland")
-            SELECTED_PKG_WMS=("$HAKU_DIR/niri/pkg-niri.txt" "$HAKU_DIR/mango/pkg-mango.txt" "$HAKU_DIR/hyprland/pkg-hyprland.txt")
+            SELECTED_WMS=("labwc")
+            SELECTED_WM_DIRS=("$HAKU_DIR/labwc")
+            SELECTED_PKG_WMS=("$HAKU_DIR/labwc/pkg-labwc.txt")
+            log_info "Selected: Labwc"
+            ;;
+        5)
+            SELECTED_WMS=("niri" "mango" "labwc" "hyprland")
+            SELECTED_WM_DIRS=("$HAKU_DIR/niri" "$HAKU_DIR/mango" "$HAKU_DIR/labwc" "$HAKU_DIR/hyprland")
+            SELECTED_PKG_WMS=("$HAKU_DIR/niri/pkg-niri.txt" "$HAKU_DIR/mango/pkg-mango.txt" "$HAKU_DIR/labwc/pkg-labwc.txt" "$HAKU_DIR/hyprland/pkg-hyprland.txt")
             log_info "Selected: All Window Managers"
             ;;
         *) 
@@ -377,13 +383,13 @@ if [[ "$config_mode" == "1" ]]; then
         elif [[ $WM_NAME == "mango" ]]; then
             echo ">>> Deploying Mango configs..."
             copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
+        elif [[ $WM_NAME == "labwc" ]]; then
+            echo ">>> Deploying Labwc configs..."
+            copy_dir_content "$SOURCE_WM_CONFIG/labwc" "$DEST_CONFIG/labwc"
         else
             log_warn "Unknown WM: $WM_NAME. Skipping WM config deployment."
         fi
     done
-
-    echo ">>> Deploying mimeapps.list..."
-    copy_file "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/mimeapps.list"
 
     echo ">>> Deploying .zshrc (zsh configuration)..."
     copy_file "$COMMON_DIR/.zshrc" "$HOME/.zshrc"
@@ -397,7 +403,7 @@ elif [[ "$config_mode" == "2" ]]; then
     echo ">>> Entering Selective Mode..."
         
     # 1. Common configs (Waybar, Rofi, Fastfetch, Cava, Kitty, Swaync...)
-    COMMON_APPS=("waybar" "rofi" "fastfetch" "cava" "kitty" "swaync")
+    COMMON_APPS=("waybar" "rofi" "fastfetch" "cava" "kitty" "swaync" "xdg-desktop-portal" "gtk-3.0")
 
     for app in "${COMMON_APPS[@]}"; do
         if [[ -d "$SOURCE_COMMON_CONFIG/$app" ]]; then
@@ -444,6 +450,11 @@ elif [[ "$config_mode" == "2" ]]; then
             if ask_yes_no "   -> Do you want to deploy Mango configs?"; then
                 echo "   >>> Deploying Mango configs..."
                 copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
+            fi
+        elif [[ $WM_NAME == "labwc" ]]; then
+            if ask_yes_no "   -> Do you want to deploy Labwc configs?"; then
+                echo "   >>> Deploying Labwc configs..."
+                copy_dir_content "$SOURCE_WM_CONFIG/labwc" "$DEST_CONFIG/labwc"
             fi
         fi
     done
