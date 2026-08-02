@@ -10,6 +10,7 @@ if [[ $# -eq 0 ]]; then
   Screen Record
   Local Send
   File Manager
+  Show Desktop Icons
   Quit
 EOF
     exit 0
@@ -23,6 +24,7 @@ case "$chosen" in
     *"Screen Record"*) spawn $HOME/.local/bin/record.sh ;;
     *"Local Send"*) spawn localsend ;;
     *"File Manager"*) spawn thunar ;;
+    *"Show Desktop Icons"*) spawn $HOME/.local/bin/desktop_icons_manager.sh --toggle ;;
     *"Quit"*) spawn $HOME/.local/bin/shutdown.sh ;;
 esac
 

@@ -173,3 +173,12 @@ if [[ $XDG_CURRENT_DESKTOP == "mango" ]]; then
 
     kill -9 "$MY_ADDR"
 fi
+
+if [[ $XDG_CURRENT_DESKTOP == "labwc" ]]; then
+    clear
+    sleep 0.1
+
+    cava
+    clock
+    cmd
+fi

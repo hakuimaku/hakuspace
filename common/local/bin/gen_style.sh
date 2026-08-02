@@ -5,6 +5,12 @@ STATE_DIR="$HOME/.local/state/haku_theme"
 BTOP_THEME_DIR="$HOME/.config/btop/themes"
 mkdir -p "$STATE_DIR"
 
+# Labwc
+LABWC_RC="$HOME/.config/labwc/rc.xml"
+LABWC_OVERRIDE="$HOME/.config/labwc/themerc-override"
+mkdir -p "$(dirname "$LABWC_OVERRIDE")"
+touch "$LABWC_OVERRIDE"
+
 # Defaults
 DEFAULT_ACCENT="#ffffff"
 DEFAULT_FONT="monospace"
@@ -180,6 +186,89 @@ cat > "$STATE_DIR/newtab.css" <<EOF
     --font_family: "${FONT_FAMILY}";
 }
 EOF
+
+
+# Labwc theme
+if pgrep -x labwc >/dev/null; then
+    # Labwc theme override
+    GEN_BLOCK="# BEGIN GENERATED THEME
+window.active.border.color: ${ACCENT_COLOR}
+window.inactive.border.color: #000000
+window.active.label.text.color: ${ACCENT_COLOR}
+window.inactive.label.text.color: ${ACCENT_COLOR}
+window.active.button.unpressed.image.color: ${ACCENT_COLOR}
+window.inactive.button.unpressed.image.color: ${ACCENT_COLOR}
+menu.items.active.bg: ${ACCENT_COLOR}
+menu.items.text.color: ${ACCENT_COLOR}
+menu.items.active.bg.color: ${ACCENT_COLOR}
+menu.title.bg.color: ${ACCENT_COLOR}
+osd.border.color: ${ACCENT_COLOR}
+osd.label.text.color: ${ACCENT_COLOR}
+osd.window-switcher.style-classic.item.active.border.color: ${ACCENT_COLOR}
+osd.window-switcher.style-thumbnail.item.active.border.color: ${ACCENT_COLOR}
+# END GENERATED THEME"
+
+    if grep -q "# BEGIN GENERATED THEME" "$LABWC_OVERRIDE"; then
+        awk -v block="$GEN_BLOCK" '
+            /# BEGIN GENERATED THEME/ { print block; skip=1; next }
+            /# END GENERATED THEME/ { skip=0; next }
+            !skip { print }
+        ' "$LABWC_OVERRIDE" > "$LABWC_OVERRIDE.tmp" && mv "$LABWC_OVERRIDE.tmp" "$LABWC_OVERRIDE"
+    else
+        echo -e "\n$GEN_BLOCK" >> "$LABWC_OVERRIDE"
+    fi
+
+    # Labwc rc.xml (font)
+    if [[ -f "$LABWC_RC" ]]; then
+        LABWC_FONT_SIZE=$(( FONT_SIZE - 2 ))
+        if [ "$LABWC_FONT_SIZE" -lt 8 ]; then
+            LABWC_FONT_SIZE=8  # Limit minimum font size to 8
+        fi
+        export GEN_FONT_BLOCK="        <!-- BEGIN GENERATED FONTS -->
+        <font place=\"ActiveWindow\">
+            <name>${FONT_FAMILY}</name>
+            <size>${LABWC_FONT_SIZE}</size>
+            <slant>normal</slant>
+            <weight>normal</weight>
+        </font>
+        <font place=\"InactiveWindow\">
+            <name>${FONT_FAMILY}</name>
+            <size>${LABWC_FONT_SIZE}</size>
+            <slant>normal</slant>
+            <weight>normal</weight>
+        </font>
+        <font place=\"MenuHeader\">
+            <name>${FONT_FAMILY}</name>
+            <size>${LABWC_FONT_SIZE}</size>
+            <slant>normal</slant>
+            <weight>normal</weight>
+        </font>
+        <font place=\"MenuItem\">
+            <name>${FONT_FAMILY}</name>
+            <size>${LABWC_FONT_SIZE}</size>
+            <slant>normal</slant>
+            <weight>normal</weight>
+        </font>
+        <font place=\"OnScreenDisplay\">
+            <name>${FONT_FAMILY}</name>
+            <size>${LABWC_FONT_SIZE}</size>
+            <slant>normal</slant>
+            <weight>normal</weight>
+        </font>
+        <!-- END GENERATED FONTS -->"
+
+        if grep -q "<!-- BEGIN GENERATED FONTS -->" "$LABWC_RC"; then
+            awk '
+                /<!-- BEGIN GENERATED FONTS -->/ { print ENVIRON["GEN_FONT_BLOCK"]; skip=1; next }
+                /<!-- END GENERATED FONTS -->/ { skip=0; next }
+                !skip { print }
+            ' "$LABWC_RC" > "${LABWC_RC}.tmp" && mv "${LABWC_RC}.tmp" "$LABWC_RC"
+        else
+            echo "[ERROR] NOT FOUND <!-- BEGIN GENERATED FONTS --> in $LABWC_RC"
+            notify-send "[ERROR] NOT FOUND <!-- BEGIN GENERATED FONTS --> in $LABWC_RC" "Labwc rc.xml update failed"
+        fi
+    fi
+fi
 
 
 # Output summary
