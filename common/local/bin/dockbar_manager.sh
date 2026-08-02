@@ -6,7 +6,7 @@ MANUAL_STATE="$STATE_DIR/dockbar_manual_state"
 
 DOCKBAR_BIN="$HOME/.local/bin/dockbar"
 DOCKBAR_DIR="$HOME/.config/waybar/dockbar"
-AUTOHIDE_SCRIPT="$HOME/.local/bin/autohide-dock.py"
+AUTOHIDE_SCRIPT="$HOME/.local/bin/dockbar_autohide.py"
 
 mkdir -p "$STATE_DIR"
 
