@@ -187,6 +187,16 @@ hl.layer_rule({
     animation = "slide bottom",
 })
 
+-- Desktop icons style - Rename
+hl.window_rule({
+    name = "haku-desktop-icons",
+    match = { namespace = "desktop_icons.py" },
+    match = { title = "Rename" },
+
+    float = true,
+    size = "300 100",
+})
+
 
 ---------------------------------------
 ---------- Turn on/off rules ----------

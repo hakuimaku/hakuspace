@@ -154,3 +154,13 @@ window-rule {
         off
     }
 }
+
+// Rules for desktop icons
+window-rule {
+    match app-id="desktop_icons.py"
+    match title="Rename"
+
+    open-floating true
+    min-width 300
+    min-height 100
+}

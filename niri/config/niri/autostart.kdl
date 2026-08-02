@@ -21,6 +21,7 @@ spawn-at-startup "awww-daemon"
 spawn-at-startup "awww-daemon" "-n" "awww-daemon-backdrop"
 spawn-at-startup "sh" "-c" "$HOME/.local/bin/waybar_manager.sh"
 spawn-at-startup "sh" "-c" "sleep 1 && $HOME/.local/bin/dockbar_manager.sh --startup"
+spawn-at-startup "sh" "-c" "$HOME/.local/bin/desktop_icons_manager.sh --startup"
 
 
 // Optional
