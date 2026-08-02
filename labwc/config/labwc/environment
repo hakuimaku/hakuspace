@@ -1,0 +1,58 @@
+# Labwc Environment Variables
+
+# Theme
+XCURSOR_THEME=Bibata-Modern-Ice
+XCURSOR_SIZE=24
+
+XDG_SESSION_TYPE=wayland
+XDG_CURRENT_DESKTOP=labwc
+XDG_SESSION_DESKTOP=labwc
+ELECTRON_OZONE_PLATFORM_HINT=auto
+
+# Wayland Platform Settings
+QT_QPA_PLATFORM=wayland
+QT_QPA_PLATFORMTHEME=gtk3
+QT_QPA_PLATFORMTHEME_QT6=gtk3
+QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+QT_AUTO_SCREEN_SCALE_FACTOR=1
+
+# GTK Settings
+GDK_BACKEND=wayland,x11,*
+
+# Firefox
+MOZ_ENABLE_WAYLAND=1
+MOZ_DBUS_REMOTE=1
+
+# Java Applications
+_JAVA_AWT_WM_NONREPARENTING=1
+
+# SDL Applications
+SDL_VIDEODRIVER=wayland
+
+# Clutter Applications
+CLUTTER_BACKEND=wayland
+
+# Performance
+VDPAU_DRIVER=va_gl
+LIBVA_DRIVER_NAME=iHD
+
+# Input method
+#GTK_IM_MODULE=fcitx
+#QT_IM_MODULE=fcitx
+#XMODIFIERS=@im=fcitx
+#SDL_IM_MODULE=fcitx
+
+##
+## This causes a virtual output to be created automatically whenever there
+## are no outputs around. This helps for cases like wayvnc so there is always
+## an output available to connect to. The name can be chosen freely but there
+## must be no duplicate output names, for this reason using VIRTUAL-x or a
+## physical connector name like HDMI-A-1 is not recommended as wlroots may
+## want to create outputs with those names later on which would then fail.
+##
+## Using an output name that starts with NOOP- has the additional benefit
+## that wayvnc will detect it being a virtual output and allow clients to
+## resize the output to match the client resolution.
+##
+
+# LABWC_FALLBACK_OUTPUT=NOOP-fallback

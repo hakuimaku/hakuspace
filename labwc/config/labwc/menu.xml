@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<openbox_menu>
+<menu id="root-menu" label="">
+    <item label="Reconfigure"><action name="Reconfigure"/></item>
+    <item label="Web browser"><action name="Execute" command="zen-browser"/></item>
+    <item label="Terminal"><action name="Execute" command="kitty"/></item>
+    <item label="Haku Menu"><action name="Execute" command="~/.local/bin/hakumenu.sh"/></item>
+</menu>
+</openbox_menu>

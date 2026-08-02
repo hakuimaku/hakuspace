@@ -1,0 +1,156 @@
+# general
+border.width: 3
+
+#
+# The global padding.{width,height} of openbox are not supported because
+# the default labwc button geometry deviates from that of openbox
+#
+window.titlebar.padding.width: 4
+window.titlebar.padding.height: 4
+
+# window border, do not set this, I use auto-gen, see at the bottom of this file
+#window.active.border.color: #aaaaaa
+#window.inactive.border.color: #aaaaaa
+
+# ToggleKeybinds status indicator
+window.active.indicator.toggled-keybind.color: #ff0000
+
+# window titlebar background
+window.active.title.bg.color: #000000
+window.inactive.title.bg.color: #000000
+window.*.title.bg: Solid
+
+# Vertical and SplitVertical gradients are supported for window.*.title.bg
+# with the following additional color fields. See labwc-theme(5) for examples.
+#
+#     window.*.title.bg.colorTo:
+#     window.*.title.bg.color.splitTo:
+#     window.*.title.bg.colorTo.splitTo:
+
+# window titlebar text, do not set this, I use auto-gen, see at the bottom of this file
+#window.active.label.text.color: #000000
+#window.inactive.label.text.color: #000000
+window.label.text.justify: center
+
+# window button width and spacing
+window.button.width: 32
+window.button.height: 32
+window.button.spacing: 4
+
+# window button hover overlay
+window.button.hover.bg.color: #ffffff33
+window.button.hover.bg.corner-radius: 4
+
+# window buttons, do not set this, I use auto-gen, see at the bottom of this file
+#window.active.button.unpressed.image.color: #000000
+#window.inactive.button.unpressed.image.color: #000000
+
+# window drop-shadows
+window.active.shadow.size: 60
+window.inactive.shadow.size: 40
+window.active.shadow.color: #00000060
+window.inactive.shadow.color: #00000040
+
+# Note that "menu", "iconify", "max", "close" buttons colors can be defined
+# individually by inserting the type after the button node, for example:
+#
+#     window.active.button.iconify.unpressed.image.color: #333333
+
+# menu, if see #line, do not set these line, I use auto-gen, see at the bottom of this file
+menu.overlap.x: 0
+menu.overlap.y: 0
+menu.width.min: 20
+menu.width.max: 400
+menu.border.width: 4
+menu.border.color: #000000
+menu.items.bg.color: #000000
+#menu.items.text.color: #000000
+#menu.items.active.bg.color: #e1dedb
+menu.items.active.text.color: #000000
+menu.items.padding.x: 7
+menu.items.padding.y: 4
+menu.separator.width: 1
+menu.separator.padding.width: 6
+menu.separator.padding.height: 3
+menu.separator.color: #888888
+#menu.title.bg.color: #589bda
+menu.title.text.color: #000000
+menu.title.text.justify: Center
+
+# on screen display (window-cycle dialog), if see #line, do not set these, I use auto-gen, see at the bottom of this file
+osd.bg.color: #000000
+#osd.border.color: #000000
+osd.border.width: 2
+#osd.label.text.color: #000000
+
+# width can be set as percent (of screen width)
+# example 50% or 75% instead of 600, max 100%
+osd.window-switcher.style-classic.width: 50%
+
+osd.window-switcher.style-classic.padding: 8
+osd.window-switcher.style-classic.item.padding.x: 10
+osd.window-switcher.style-classic.item.padding.y: 1
+osd.window-switcher.style-classic.item.active.border.width: 2
+#osd.window-switcher.style-classic.item.active.border.color: #706f6d
+osd.window-switcher.style-classic.item.active.bg.color: #252525
+# The icon size the same as the font size by default
+# osd.window-switcher.style-classic.item.icon.size: 50
+
+osd.window-switcher.style-thumbnail.width.max: 80%
+osd.window-switcher.style-thumbnail.padding: 8
+osd.window-switcher.style-thumbnail.item.width: 300
+osd.window-switcher.style-thumbnail.item.height: 250
+osd.window-switcher.style-thumbnail.item.padding: 10
+osd.window-switcher.style-thumbnail.item.active.border.width: 2
+#osd.window-switcher.style-thumbnail.item.active.border.color: #706f6d
+osd.window-switcher.style-thumbnail.item.active.bg.color: #252525
+osd.window-switcher.style-thumbnail.item.icon.size: 60
+
+osd.window-switcher.preview.border.width: 1
+osd.window-switcher.preview.border.color: #424242,#000000,#424242
+
+osd.workspace-switcher.boxes.width: 20
+osd.workspace-switcher.boxes.height: 20
+osd.workspace-switcher.boxes.border.width: 2
+
+# Default values for following options change depending on the rendering
+# backend. For software-based renderers, *.bg.enabled is "no" and
+# *.border.enabled is "yes" if not set. For hardware-based renderers,
+# *.bg.enabled is "yes" and *.border.enabled is "no" if not set.
+# Setting *.bg.enabled to "yes" for software-based renderer with translucent
+# background color may severely impact performance.
+#
+# snapping.overlay.region.bg.enabled:
+# snapping.overlay.edge.bg.enabled:
+# snapping.overlay.region.border.enabled:
+# snapping.overlay.edge.border.enabled:
+
+snapping.overlay.region.bg.color: #1e1e1e80
+snapping.overlay.edge.bg.color: #1e1e1e80
+snapping.overlay.region.border.width: 4
+snapping.overlay.edge.border.width: 4
+snapping.overlay.region.border.color: #424242,#000000,#424242
+snapping.overlay.edge.border.color: #424242,#000000,#424242
+
+# =================================================================
+# ===================== Auto-generated theme ======================
+# =================================================================
+
+# Please do not edit the following lines, they are auto-generated by ~/.local/bin/gen_style.sh
+
+# BEGIN GENERATED THEME
+window.active.border.color: #ffffff
+window.inactive.border.color: #000000
+window.active.label.text.color: #ffffff
+window.inactive.label.text.color: #ffffff
+window.active.button.unpressed.image.color: #ffffff
+window.inactive.button.unpressed.image.color: #ffffff
+menu.items.active.bg: #ffffff
+menu.items.text.color: #ffffff
+menu.items.active.bg.color: #ffffff
+menu.title.bg.color: #ffffff
+osd.border.color: #ffffff
+osd.label.text.color: #ffffff
+osd.window-switcher.style-classic.item.active.border.color: #ffffff
+osd.window-switcher.style-thumbnail.item.active.border.color: #ffffff
+# END GENERATED THEME
