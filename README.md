@@ -1,9 +1,9 @@
 <div align="center">
 
 # Haku Space
-Arch Linux dotfiles for Hyprland / Niri / MangoWM
+Arch Linux dotfiles for Hyprland / Niri / MangoWM / Labwc
 
-Fedora now supports Haku Space too! See [Fedora Guide](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md)
+Haku Space now supporting Fedora too! See [Fedora Guide](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md)
 
 </div>
 
@@ -11,6 +11,7 @@ Fedora now supports Haku Space too! See [Fedora Guide](https://github.com/hakuim
     <a href="https://github.com/hyprwm/Hyprland"><img alt="Hyprland" src="https://img.shields.io/badge/Hyprland-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
     <a href="https://github.com/YaLTeR/niri"><img alt="Niri" src="https://img.shields.io/badge/Niri-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
     <a href="https://github.com/mangowm/mango"><img alt="MangoWM" src="https://img.shields.io/badge/MangoWM-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
+    <a href="https://github.com/labwc/labwc"><img alt="Labwc" src="https://img.shields.io/badge/Labwc-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
     <a href="https://archlinux.org/"><img alt="Arch Linux" src="https://img.shields.io/badge/Arch%20Linux-%231f1f1f?style=for-the-badge&logo=archlinux&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
     <a href="https://fedoraproject.org/"><img alt="Fedora" src="https://img.shields.io/badge/Fedora-%231f1f1f?style=for-the-badge&logo=fedora&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
     <a href="https://github.com/hakuimaku/hakuspace/commits/main"><img alt="Last Commit" src="https://img.shields.io/github/last-commit/hakuimaku/hakuspace?style=for-the-badge&label=Last%20Commit&labelColor=%2368818f&color=%231f1f1f&logo=git&logoColor=%231f1f1f"></a>&nbsp;
@@ -34,8 +35,8 @@ See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372).
 
 **Join my Discord channel to get more help!** [Discord btw](https://discord.gg/g5RsNKRHn).
 
-Overview:
-- **HakuSpace** is a dotfiles project for **Arch Linux**, supporting **Hyprland**, **Niri**, and **MangoWM**.  
+- **HakuSpace** is a dotfiles project for **Arch Linux**, supporting **Hyprland**, **Niri**, **MangoWM** and **Labwc**.
+- My dotfiles support *Multi-WM**, which means you can easily switch to a new wm whenever you get bored!
 - The main user interaction layer is built around **Rofi**, **Waybar**, and **SwayNC**, while most core behavior is powered by [custom scripts](https://github.com/hakuimaku/hakuspace/tree/main/common/local/bin).
 - Haku Space can run on **any distro** as long as you install all the **core packages**
 - It has grown into a DE-like experience, though it is still actively evolving.  
@@ -45,12 +46,16 @@ Overview:
 
 ## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Key+Features" alt="Typing SVG" />
 
-* **Accent Color Sync:** Waybar, Rofi, Kitty, Swaync,...
+* **Accent Colors**: Synced across **Waybar**, **Rofi**, **Kitty**, **Swaync**,... giving your setup a **Super Clean** and **Cohesive Vibe**!
 * **Smart Accent Color:** Automatically generates the accent color palette based on your current wallpaper.
-* **Flexible Waybar Layouts:** Support layouts: `top`, `left`, `coredge`, `minimal`, `full` (Will be extended more).
-* **Dockbar:** Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
+* **Flexible Waybar Layouts:** Support layouts: `top`, `left`, `coredge`, `minimal`, `full`, `neon` (Will be extended more).
 * **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
 * **Wallpaper Automation:** Wallpapers change automatically every 5 minutes (customizable in the `random_wallpaper.sh` script).
+* **Dockbar:** Built-in, Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
+* **Desktop Icons** `(experimental)`: Built-in, Items in folder `~/Desktop` will be shown on Desktop.
+
+> [!note]
+> My dotfiles are powered by scripts; if you're not using them, there's no impact on your performance!
 
 ---
 
@@ -60,7 +65,7 @@ Overview:
   
 See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/main/common/pkg-core.txt) | [pkg-service](https://github.com/hakuimaku/hakuspace/blob/main/common/pkg-service.txt) | [pkg-optional](https://github.com/hakuimaku/hakuspace/blob/main/common/pkg-optional.txt)
 
-Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakuspace/blob/main/hyprland/pkg-hyprland.txt) | [pkg-niri](https://github.com/hakuimaku/hakuspace/blob/main/niri/pkg-niri.txt) | [pkg-mango](https://github.com/hakuimaku/hakuspace/blob/main/mango/pkg-mango.txt)
+Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakuspace/blob/main/hyprland/pkg-hyprland.txt) | [pkg-niri](https://github.com/hakuimaku/hakuspace/blob/main/niri/pkg-niri.txt) | [pkg-mango](https://github.com/hakuimaku/hakuspace/blob/main/mango/pkg-mango.txt) | [pkg-labwc](https://github.com/hakuimaku/hakuspace/blob/main/labwc/pkg-labwc.txt)
 
 </div>
 
@@ -81,7 +86,7 @@ Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakus
 | Screen Recording | [Wl-screenrec](https://github.com/russelltg/wl-screenrec) |
 | Display Manager | [Ly](https://codeberg.org/fairyglade/ly#systemd) |
 
-> XDG Desktop Portal: GTK by default, but each WM will use its specific, recommended portal according to its official wiki (hyprland uses hyprland, niri uses gnome, and mangowm uses wlr).
+> XDG Desktop Portal: GTK by default, but each WM will use its specific, recommended portal according to its official wiki (hyprland uses hyprland, niri uses gnome, and mangowm/labwc uses wlr).
 
 > Accent Color based on wallpaper using [python-colorthief](https://github.com/fengsp/color-thief-py)
 
@@ -123,7 +128,7 @@ chmod +x install.sh
 ```
 
 ### 3. Complete the Installation
-After running the installation script, restart your computer and log in to either **Hyprland**, **Niri** or **Mango** to experience the new setup.
+After running the installation script, restart your computer and log in to either **Hyprland**, **Niri**, **Mango** or **Labwc** to experience the new setup.
 
 ---
 
@@ -134,9 +139,11 @@ After running the installation script, restart your computer and log in to eithe
 
 2) **Install additional packages**:
 
-| waybar-git | waybar-cava |
-|------------|-------------|
-| `waybar-git` is a lastest git version of Waybar, which is supporting `mango/workspaces` module if you're using MangoWM. And fix `hyprland/workspaces` switching if you're using Hyprland. |  `waybar-cava` is a plugin for Waybar that provides a visualizer for audio output. My waybar top needs this to work properly (cava module). |
+`waybar-cava` is a plugin for Waybar that provides a visualizer for audio output. My waybar top needs this to work properly (cava module).
+
+```bash
+yay -S waybar-cava
+```
 
 3) Allow Local Root User to Access X/Xwayland Display
 ```bash
@@ -210,7 +217,7 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 
 ## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Keybinding" alt="Typing SVG" />
 
-- See more keybinding in: [Hyprland](https://github.com/hakuimaku/hakuspace/blob/main/hyprland/config/hypr/config/keybinding.lua) | [Niri](https://github.com/hakuimaku/hakuspace/blob/main/niri/config/niri/keybinds.kdl) | [MangoWM](https://github.com/hakuimaku/hakuspace/blob/main/mango/config/mango/bind.conf)
+- See more keybinding in: [Hyprland](https://github.com/hakuimaku/hakuspace/blob/main/hyprland/config/hypr/config/keybinding.lua) | [Niri](https://github.com/hakuimaku/hakuspace/blob/main/niri/config/niri/keybinds.kdl) | [MangoWM](https://github.com/hakuimaku/hakuspace/blob/main/mango/config/mango/bind.conf) | [Labwc](https://github.com/hakuimaku/hakuspace/blob/main/labwc/config/labwc/rc.xml) 
 - Hotkeys:
 
 | Bind | Function |
@@ -225,10 +232,23 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 | SUPER + V | Open Clipboard History |
 | SUPER + A/S | Focus Left/Right Window |
 | SUPER + Y | Wallpaper Select |
-| SUPPER + SHIFT + Y | Lively Wallpaper Select |
+| SUPER + SHIFT + Y | Lively Wallpaper Select |
 | SUPER + SHIFT + W | Cycle Waybar Mode |
 | SUPER + X | Cycle Hyprland Layout (Hyprland Only) |
 | SUPER + ` | Open Special Workspace - For VS Code (Hyprland Only) |
+
+- Labwc:
+
+| Bind | Function |
+|------|----------|
+| SUPER + Space | Open Root Menu |
+| SUPER + ` | Open Client Menu |
+| ALT + ` | Open Combined Client Menu |
+| SUPER + A | Maximize |
+| SUPER + S | Iconify |
+| SUPER + D | Show Desktop |
+| SUPER + Z | Shrink Size Window (-10%) |
+| SUPER + X | Resize By Mouse |
 
 ---
 
@@ -257,8 +277,7 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 **Waybar bugs**:
 - **Waybar clock**: You should set your timezone and locale manually in waybar configuration to ensure the clock displays correctly.
 - **Waybar cava module**: If you encounter issues with the Cava module in Waybar, ensure that you have installed `waybar-cava` and that it is properly configured in your Waybar config file.
-- If clicking on **workspaces in Waybar** on Hyprland doesn't switch them, please install `waybar-git`. This bug has already been fixed by the author in the latest upstream version.
-- The **MangoWM workspaces** module for waybar is still under active development. if you want to use it, you'll need to install `waybar-git` (though please note it still has a few bugs).
+- Waybar use `ext/workspaces` for **Multi-WMs** setup.
 
 **My dotfiles bugs**:
 - Currently, my custom `gtk.css` is only compatible with **GTK 3** and only supports **Dark Mode**. If you are using Light Mode, you may encounter some issues with the appearance of GTK applications **(Thunar)**. If you don't want to use my thunar theme, remove `gtk.css` in `~/.config/gtk-3.0/`.
@@ -266,7 +285,7 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 - Some features might still be missing since I only tested this setup for **my personal use**. If you need more than what's provided, you'll need to install and configure those parts manually.
 - If you don't want to use certain apps (like `wl-screenrec`, `thunar`, `ly` etc.), you can easily remove and replace them with alternatives. However, some apps are deeply integrated into my scripts or configs, so removing them may break functionality or cause those scripts/configs to stop working.
 - If you find that **the script isn't working**, run it directly in the terminal to see what the error is.
-- If you encounter any issues during installation or configuration, just ask me in some video on my [Tiktok](https://www.tiktok.com/@hakuimaku2372) or open an issue on GitHub. I will do my best to help you out.
+- If you encounter any **issues** during installation or configuration, just ask me in some video on my [Tiktok](https://www.tiktok.com/@hakuimaku2372), open an issue on GitHub or Join my [Discord](https://discord.gg/g5RsNKRHn) to get more help!. I will do my best to help you out.
 
 If you're using **Fedora**:
 - Swaync service may automatically start on Fedora. Which can **cause issues when startup**. To fix this, you can disable the Swaync service by running the following command:
