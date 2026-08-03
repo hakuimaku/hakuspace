@@ -1,0 +1,208 @@
+/* ============================================================================== */
+/* GLOBAL STYLES                                                                  */
+/* ============================================================================== */
+@import url("../../.local/state/haku_theme/colors.css");
+@import url("../../.local/state/haku_theme/fonts.css");
+
+* {
+    font-weight: bold;
+    transition: all 0.5s cubic-bezier(0, 0.5, 0.35, 1);
+}
+
+window#waybar {
+    background-color: transparent;
+    border-radius: 0;
+}
+
+.modules-left,
+.modules-center,
+.modules-right {
+    padding: 6px 10px;
+    margin: 0;
+}
+
+/* ============================================================================== */
+/* SOLID BLACK BLOCKS WITH GLOWING ACCENT TEXT                                    */
+/* ============================================================================== */
+#workspaces,
+#clock,
+#custom-logo,
+#custom-recorder,
+#custom-notification,
+#monitor,
+#settings,
+#media {
+    background-color: #000000; 
+    border-radius: 10px;
+    padding: 2px 12px;
+    margin: 2px 6px;
+    color: @accent_color;
+    text-shadow: 0px 0px 6px @accent_color; 
+    box-shadow: 0 0 4px #000000;
+}
+
+#custom-logo {
+    padding: 2px 20px;
+}
+
+/* ============================================================================== */
+/* WORKSPACES                                                                     */
+/* ============================================================================== */
+#gworkspaces {
+    margin: 0;
+    padding: 0;
+    background-color: transparent;
+}
+
+#workspaces {
+    padding: 6px;
+}
+
+#workspaces button {
+    background-color: @accent_color;
+    border-radius: 8px; 
+    padding: 0 8px;
+    margin: 0 3px;
+    min-width: 15px;
+    min-height: 0;
+}
+
+#workspaces button.active {
+    background-color: @accent_color; 
+    min-width: 40px;
+}
+
+#workspaces button.empty {
+    background-color: @accent_color;
+    opacity: 0.2; 
+    min-width: 15px;
+}
+
+#workspaces button.empty.active {
+    background-color: @accent_color;
+    opacity: 1;
+    min-width: 40px;
+}
+
+#workspaces button.overview {
+    background-color: rgba(255, 255, 255, 0.1);
+    min-width: 40px;
+}
+
+/* ============================================================================== */
+/* MODULES INSIDE GROUPS                                                          */
+/* ============================================================================== */
+#custom-monitor,
+#custom-settings,
+#cpu,
+#memory,
+#temperature,
+#battery,
+#power-profiles-daemon,
+#tray,
+#pulseaudio,
+#backlight {
+    background-color: transparent;
+    /* Text is accent color */
+    color: @accent_color;
+    margin: 0;
+    padding: 0 10px;
+    min-width: 20px;
+    /* Apply glow to all group modules */
+    text-shadow: 0px 0px 6px @accent_color;
+}
+
+#custom-recorder {
+    animation: blink 1s infinite;
+}
+
+/* ============================================================================== */
+/* SLIDERS                                                                        */
+/* ============================================================================== */
+#backlight-slider slider,
+#pulseaudio-slider slider {
+    opacity: 0;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    background: none;
+}
+
+#backlight-slider trough,
+#pulseaudio-slider trough {
+    min-width: 55px;
+    min-height: 8px;
+    border-radius: 4px;
+    /* Dimmed trough to contrast with the highlight */
+    background: rgba(255, 255, 255, 0.2);
+    margin: 0 4px;
+}
+
+#backlight-slider highlight,
+#pulseaudio-slider highlight {
+    min-width: 8px;
+    border-radius: 4px;
+    background: @accent_color;
+    /* Make slider highlight glow too */
+    box-shadow: 0 0 8px @accent_color;
+}
+
+/* ============================================================================== */
+/* HOVER EFFECTS (EXPANDING)                                                      */
+/* ============================================================================== */
+#clock:hover,
+#custom-logo:hover,
+#custom-recorder:hover,
+#custom-notification:hover {
+    min-width: 80px;
+    padding: 2px 20px;
+}
+
+#workspaces button:hover {
+    min-width: 35px;
+}
+
+/* Expand modules inside groups on hover */
+#power-profiles-daemon:hover,
+#cpu:hover,
+#memory:hover,
+#temperature:hover,
+#battery:hover,
+#pulseaudio:hover,
+#backlight:hover {
+    border-radius: 6px;
+    min-width: 60px;
+    padding: 0 16px;
+}
+
+#custom-monitor:hover,
+#custom-settings:hover {
+    border-radius: 8px;
+    min-width: 40px;
+    padding: 0 16px;
+}
+
+/* ============================================================================== */
+/* TOOLTIPS                                                                       */
+/* ============================================================================== */
+tooltip {
+    /* Dark tooltip background */
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid @accent_color;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+tooltip label {
+    color: @accent_color;
+    text-shadow: 0px 0px 4px @accent_color;
+}
+
+/* ============================================================================== */
+/* ANIMATIONS                                                                     */
+/* ============================================================================== */
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
