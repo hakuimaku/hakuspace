@@ -14,7 +14,7 @@ touch "$LABWC_OVERRIDE"
 # Defaults
 DEFAULT_ACCENT="#ffffff"
 DEFAULT_FONT="monospace"
-DEFAULT_SIZE="16"
+DEFAULT_SIZE="14"
 
 # Allow env overrides
 ACCENT_COLOR="${ACCENT_COLOR:-$DEFAULT_ACCENT}"
