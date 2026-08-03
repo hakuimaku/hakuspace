@@ -1,6 +1,6 @@
 #!/bin/bash
 APP="$1"
-CACHE_FILE="/tmp/waybar_icon_cache.txt"
+CACHE_FILE="/tmp/dockbar_icon_cache.txt"
 
 # This script retrieves the icon path for a given application using GTK's icon theme
 # It caches the result to avoid repeated lookups (enhance performance).
@@ -20,9 +20,9 @@ case "$APP" in
         SEARCH_NAMES="['code', 'visual-studio-code', 'vscode']"
         ;;
     "menu")
-        SEARCH_NAMES="['view-app-grid', 'gnome-applications', 'application-x-executable', 'start-here', 'launcher-program']"
+        SEARCH_NAMES="['view-app-grid', 'start-here', 'gnome-applications', 'application-x-executable']"
         ;;
-        *)
+    *)
         SEARCH_NAMES="['$APP', '$APP-desktop', 'org.$APP.$APP', 'com.$APP.$APP']"
         ;;
 esac
