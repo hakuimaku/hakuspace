@@ -402,28 +402,28 @@
 
         <!-- Window Resize Alt + WASD -->
         <keybind key="A-w">
-        <action name="ResizeRelative" top="10%"/>
+        <action name="ResizeRelative" top="20%"/>
         </keybind>
         <keybind key="A-s">
-        <action name="ResizeRelative" bottom="10%" />
+        <action name="ResizeRelative" bottom="20%" />
         </keybind>
         <keybind key="A-a">
-        <action name="ResizeRelative" left="10%" />
+        <action name="ResizeRelative" left="20%" />
         </keybind>
         <keybind key="A-d">
-        <action name="ResizeRelative" right="10%" />
+        <action name="ResizeRelative" right="20%" />
         </keybind>
         <keybind key="A-S-s">
-        <action name="ResizeRelative" top="-10%"/>
+        <action name="ResizeRelative" top="-20%"/>
         </keybind>
         <keybind key="A-S-w">
-        <action name="ResizeRelative" bottom="-10%" />
+        <action name="ResizeRelative" bottom="-20%" />
         </keybind>
         <keybind key="A-S-d">
-        <action name="ResizeRelative" left="-10%" />
+        <action name="ResizeRelative" left="-20%" />
         </keybind>
         <keybind key="A-S-a">
-        <action name="ResizeRelative" right="-10%" />
+        <action name="ResizeRelative" right="-20%" />
         </keybind>
 
         <!-- Window snapping -->
