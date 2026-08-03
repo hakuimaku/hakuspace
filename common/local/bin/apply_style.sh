@@ -28,13 +28,23 @@ if pgrep -x Hyprland >/dev/null; then
     hyprctl reload >/dev/null 2>&1 || true
 fi
 
-# Swaync reload
-swaync-client --reload-config --reload-css >/dev/null 2>&1 || true
-
 # Labwc reload
 if pgrep -x labwc >/dev/null; then
     labwc --reconfigure
 fi
+
+# Desktop icons reload
+if [[ -f "$HOME/.local/bin/desktop_icons_manager.sh" ]]; then
+    "$HOME/.local/bin/desktop_icons_manager.sh" --reload >/dev/null 2>&1 || true
+fi
+
+# Dockbar reload
+if [[ -f "$HOME/.local/bin/dockbar_manager.sh" ]]; then
+    "$HOME/.local/bin/dockbar_manager.sh" --reload >/dev/null 2>&1 || true
+fi
+
+# Swaync reload
+swaync-client --reload-config --reload-css >/dev/null 2>&1 || true
 
 # Kitty reload
 for s in /tmp/kitty-*; do

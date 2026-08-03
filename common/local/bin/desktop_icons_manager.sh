@@ -19,6 +19,7 @@ Usage: desktop_manager.sh [OPTION]
 Options:
     --startup         Restore previous state at boot (add to your autostart)
     --toggle          Toggle desktop icons on/off
+    --reload          Reload desktop icons
     --help            Display this help message
 EOF
     exit 0
@@ -34,6 +35,18 @@ if [[ $1 == "--toggle" ]]; then
         echo "1" > "$DESKTOP_ICONS_STATE"
         "$DESKTOP_MANAGER_BIN" &
         echo "Desktop icons enabled"
+    fi
+    exit 0
+fi
+
+# Reload desktop icons if running
+if [[ $1 == "--reload" ]]; then
+    if pgrep -f "$DESKTOP_MANAGER_BIN" >/dev/null; then
+        pkill -f "$DESKTOP_MANAGER_BIN"
+        "$DESKTOP_MANAGER_BIN" &
+        echo "Desktop icons reloaded"
+    else
+        echo "Desktop icons are not running. Use --toggle to enable them."
     fi
     exit 0
 fi
