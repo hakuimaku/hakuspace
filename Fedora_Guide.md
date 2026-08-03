@@ -19,6 +19,7 @@ install_weak_deps=False
 ```
 
 > See more information: [here](https://docs.fedoraproject.org/en-US/packaging-guidelines/WeakDependencies/#_weak_dependencies)
+> 
 > After installation, you can remove this line from `/etc/dnf/dnf.conf` to install weak dependency packages again.
 
 ---
@@ -89,7 +90,7 @@ sudo dnf install xdg-desktop-portal-gnome
 sudo dnf install xdg-desktop-portal-hyprland
 ```
 
-- For **Mango**:
+- For **Mango** & **Labwc**:
 ```bash
 sudo dnf install xdg-desktop-portal-wlr
 ```
