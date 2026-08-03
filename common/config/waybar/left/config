@@ -16,15 +16,13 @@
     "modules-left": [
         "custom/recorder",
         "custom/logo",
-        "hyprland/workspaces",
-        "niri/workspaces",
-        "mango/workspaces"
+        "group/vworkspaces"
     ],
     "modules-center": [
         "clock"
     ],
     "modules-right": [
-        "group/bar",
+        "group/settings",
         "backlight",
         "pulseaudio",
         "custom/notification"
@@ -55,7 +53,7 @@
                     }
     },
 
-    "group/bar": {
+    "group/settings": {
         "orientation": "vertical",
         "drawer": {
             "transition-duration": 1000,
@@ -63,7 +61,7 @@
             "click-to-reveal": true
         },
         "modules": [
-            "custom/bar",
+            "custom/settings",
             "tray",
             "battery",
             "power-profiles-daemon"
@@ -145,7 +143,9 @@
         "tooltip": true
     },
 
-    "custom/bar": {
-        "format": "\n"
+    "custom/settings": {
+        "format": "\n",
+        "tooltip-format": "Settings",
+        "tooltip": true
     }
 }

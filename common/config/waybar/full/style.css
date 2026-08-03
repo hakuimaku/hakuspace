@@ -7,10 +7,11 @@
 * {
     font-weight: bold;
     border-radius: 20px;
+    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
 window#waybar {
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.9);
     color: @accent_color;
     transition: background-color 0.3s ease;
     border-radius: 0;
@@ -18,20 +19,20 @@ window#waybar {
 
 .modules-center {
     background-color: transparent;
-    padding: 6px;
+    padding: 4px;
     margin: 0;
 }
 
 .modules-left {
     background-color: transparent;
-    padding: 6px;
+    padding: 4px;
     margin: 0;
 
 }
 
 .modules-right {
     background-color: transparent;
-    padding: 6px;
+    padding: 4px;
     margin:0;
 }
 
@@ -57,47 +58,51 @@ window#waybar {
 #power-profiles-daemon {
     margin: 1px;
     padding: 0 10px;
-    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
     min-width: 20px;
 }
 
 /* ============================================================================== */
 /* WORKSPACES                                    */
 /* ============================================================================== */
-#workspaces {
-    border-radius: 999px;
-    padding: 1px 6px;
+#hworkspaces {
     margin: 0;
+    padding: 0;
+    background-color: transparent;
+}
+
+#workspaces {
+    padding: 2px 6px;
 }
 
 #workspaces button {
-    background-color: rgba(255, 255, 255, 0.2);
-    border-radius: 999px;
-    padding: 0 10px;
+    background-color: @accent_color;
+    border-radius: 999px; 
+    padding: 0 6px;
     margin: 0 3px;
-    min-width: 0;
+    min-width: 10px;
     min-height: 0;
-    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+    opacity: 0.6;
 }
 
 #workspaces button.active {
-    background-color: @accent_color;
-    min-width: 30px;
-    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+    background-color: @accent_color; 
+    min-width: 40px;
+    opacity: 1;
 }
 
 #workspaces button.empty {
-    background-color: rgba(255, 255, 255, 0.04);
+    background-color: @accent_color;
+    opacity: 0.2; 
 }
 
 #workspaces button.empty.active {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: @accent_color;
+    opacity: 0.6;
 }
 
 #workspaces button.overview {
-    background-color: @accent_color;
-    min-width: 30px;
-    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+    background-color: rgba(255, 255, 255, 0.1);
+    min-width: 40px;
 }
 
 /* ============================================================================== */
@@ -107,10 +112,6 @@ window#waybar {
     color: @accent_color;
     border: 1px solid @accent_color;
     animation: blink 1s infinite; 
-}
-
-#clock {
-    min-width: 200px;
 }
 
 #custom-monitor,
@@ -126,7 +127,6 @@ window#waybar {
     background-color: rgba(32, 32, 32, 0.6);
     margin: 1px;
     padding: 0 12px;
-    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
     min-width: 20px;
 }
 
@@ -153,7 +153,6 @@ window#waybar {
 #custom-notification:hover {
     color: #000000;
     background-color: @accent_color;
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
     min-width: 100px;
 }
 
@@ -163,21 +162,14 @@ window#waybar {
 }
 
 #workspaces button:hover {
-    background-color: @accent_color;
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 20px;
+    min-width: 35px;
 }
 
-#workspaces button.active:hover {
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 60px;
-}
 
 #clock:hover {
     color: #000000;
     background-color: @accent_color;
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 270px;
+    min-width: 100px;
 }
 
 /* ============================================================================== */

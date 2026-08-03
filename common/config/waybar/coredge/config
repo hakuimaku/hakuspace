@@ -15,7 +15,7 @@
 
     "modules-left": [
         "custom/logo",
-        "group/gworkspaces"
+        "group/hworkspaces"
     ],
     "modules-right": [
         "custom/recorder",
@@ -51,20 +51,6 @@
                     "on-scroll-up": "shift_up",
                     "on-scroll-down": "shift_down"
                     }
-    },
-
-    "group/gworkspaces": {
-        "orientation": "horizontal",
-        "drawer": {
-            "transition-duration": 1000,
-            "transition-left-to-right": true,
-            "click-to-reveal": true
-        },
-        "modules": [
-            "hyprland/workspaces",
-            "niri/workspaces",
-            "mango/workspaces"
-        ]
     },
 
     "group/monitor": {

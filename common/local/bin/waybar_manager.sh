@@ -5,7 +5,7 @@
 WAYBAR_DIR="$HOME/.config/waybar"
 STATE_FILE="$HOME/.local/state/haku_theme/waybar_current_mode"
 CURRENT_STATE="top"
-MODES=("top" "block" "coredge" "full" "minimal" "left")
+MODES=("top" "neon" "coredge" "full" "minimal" "left")
 
 # Init state file if missing
 if [[ -f "$STATE_FILE" ]]; then
