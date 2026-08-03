@@ -52,10 +52,9 @@ if [[ $1 == "--clear" ]]; then
 fi
 
 # Main
-if [[ $XDG_CURRENT_DESKTOP == "Hyprland" ]]; then
-    MY_INFO=$(hyprctl activewindow -j)
-    MY_ADDR=$(echo "$MY_INFO" | jq -r '.pid')
 
+# Exec for Hyprland
+if [[ $XDG_CURRENT_DESKTOP == "Hyprland" ]]; then
     LAYOUT=$(hyprctl activeworkspace -j | jq -r '.tiledLayout')
     
     clear
@@ -97,13 +96,12 @@ if [[ $XDG_CURRENT_DESKTOP == "Hyprland" ]]; then
     fi
 
     hyprctl eval "hl.dsp.exec_cmd('hyprctl keyword input:follow_mouse 1')"
-    kill -9 "$MY_ADDR"
+    
+    kill -9 $PPID
 fi
 
+# Exec for Niri
 if [[ $XDG_CURRENT_DESKTOP == "niri" ]]; then
-    MY_INFO=$(niri msg focused-window)
-    MY_ADDR=$(echo "$MY_INFO" | grep "PID:" | awk '{print $2}')
-
     clear
     sleep 0.1
 
@@ -121,13 +119,11 @@ if [[ $XDG_CURRENT_DESKTOP == "niri" ]]; then
 
     niri msg action focus-column-left
 
-    kill -9 "$MY_ADDR"
+    kill -9 $PPID
 fi
 
+# Exec for Mango
 if [[ $XDG_CURRENT_DESKTOP == "mango" ]]; then
-    MY_INFO=$(mmsg get focusing-client)
-    MY_ADDR=$(echo "$MY_INFO" | jq -r '.pid // empty')
-
     clear
     sleep 0.05
 
@@ -171,9 +167,10 @@ if [[ $XDG_CURRENT_DESKTOP == "mango" ]]; then
     stack_id "$cava_id" "left"
     sleep 0.2
 
-    kill -9 "$MY_ADDR"
+    kill -9 $PPID
 fi
 
+# Exec for Labwc
 if [[ $XDG_CURRENT_DESKTOP == "labwc" ]]; then
     clear
     sleep 0.1
@@ -181,4 +178,8 @@ if [[ $XDG_CURRENT_DESKTOP == "labwc" ]]; then
     cava
     clock
     cmd
+
+    kill -9 $PPID
 fi
+
+echo "No supported window manager detected. Exiting."
