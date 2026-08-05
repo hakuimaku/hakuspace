@@ -1,10 +1,6 @@
 #!/bin/bash
 set -u
 
-# ======================================================================================
-# HAKUSPACE UPDATER (LATEST/STABLE & COPY MODE) - REFIXED BY TENSEY
-# ======================================================================================
-
 cat << 'EOF'
 
  _   _       _          _____                      
@@ -50,7 +46,7 @@ fi
 # --------------------------------
 # Global paths / variables
 # --------------------------------
-HAKU_DIR="$HOME/hakuspace"
+HAKU_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 COMMON_DIR="$HAKU_DIR/common"
 
 BACKUP_TS="$(date +%Y-%m-%d_%H-%M-%S)"
@@ -230,20 +226,11 @@ select_window_manager() {
     esac
 }
 
-preflight_checks() {
-    if [[ "$PWD" != "$HAKU_DIR" ]]; then
-        echo ""
-        log_error "Please run this script from: $HAKU_DIR"
-        exit 1
-    fi
-}
-
 # ======================================================================================
 # MAIN FLOW
 # ======================================================================================
 
 print_header
-preflight_checks
 
 # ============================================================================
 # BLOCK 0: UPDATE REPOSITORY (LATEST vs STABLE)
@@ -256,8 +243,8 @@ BACKUP_SCRIPT="/tmp/${SCRIPT_NAME}.bak"
 cp "$0" "$BACKUP_SCRIPT"
 
 echo "Select update mode:"
-echo -e "${C_BOLD}[1]${C_RESET} LATEST (Pull from main branch - Experimental)"
-echo -e "${C_BOLD}[2]${C_RESET} STABLE (Checkout latest release tag - Recommended)"
+echo -e "${C_BOLD}[1]${C_RESET} LATEST (Pull from main branch - Try the lastest changes)"
+echo -e "${C_BOLD}[2]${C_RESET} STABLE (Checkout latest release tag - Recommended for stability)"
 echo -e "${C_BOLD}[0]${C_RESET} SKIP (Do not update repository)"
 echo ""
 read -r -p ">>> Choose mode (1/2/0): " update_mode
@@ -266,21 +253,21 @@ REPO_CHANGED=0
 
 if [[ "$update_mode" == "1" ]]; then
     log_info "Switching to main branch and pulling latest changes..."
-    git checkout main
-    git pull origin main
+    git -C "$HAKU_DIR" checkout main
+    git -C "$HAKU_DIR" pull origin main
     log_ok "Repository updated to LATEST."
     REPO_CHANGED=1
 elif [[ "$update_mode" == "2" ]]; then
     log_info "Fetching tags from remote..."
-    git fetch --tags
-    LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1) 2>/dev/null)
+    git -C "$HAKU_DIR" fetch --tags
+    LATEST_TAG=$(git -C "$HAKU_DIR" describe --tags $(git -C "$HAKU_DIR" rev-list --tags --max-count=1) 2>/dev/null)
     if [[ -z "$LATEST_TAG" ]]; then
         log_warn "No tags found in repository. Falling back to main branch."
-        git checkout main
-        git pull origin main
+        git -C "$HAKU_DIR" checkout main
+        git -C "$HAKU_DIR" pull origin main
     else
         log_info "Latest stable tag found: $LATEST_TAG"
-        git checkout "$LATEST_TAG"
+        git -C "$HAKU_DIR" checkout "$LATEST_TAG"
         log_ok "Repository updated to STABLE ($LATEST_TAG)."
     fi
     REPO_CHANGED=1
@@ -294,9 +281,9 @@ if [[ "$REPO_CHANGED" -eq 1 && -f "$BACKUP_SCRIPT" ]]; then
     if ! cmp -s "$BACKUP_SCRIPT" "$0"; then
         echo ""
         log_warn "Detecting that '$SCRIPT_NAME' has new updates in repository!"
-        log_error "Please re-run the script to execute with new logic: ./${SCRIPT_NAME}"
+        log_info "Re-executing script with updated logic..."
         rm -f "$BACKUP_SCRIPT"
-        exit 0
+        exec "$0" "$@"
     fi
     rm -f "$BACKUP_SCRIPT"
 fi
@@ -353,7 +340,7 @@ SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
 DEST_CONFIG="$HOME/.config"
 
 echo ""
-echo "[1]. FULL COPY, copy entire the config folder (if you lazy or unsure)"
+echo "[1]. FULL COPY, copy entire the config folder (if you lazy or unsure - Recommended)"
 echo "[2]. SELECTIVE COPY, choose which configs to update (if you know what's changed)"
 echo "[0]. SKIP config update"
 echo ""

@@ -51,7 +51,7 @@ fi
 # --------------------------------
 # Global paths / variables
 # --------------------------------
-HAKU_DIR="$HOME/hakuspace"
+HAKU_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 COMMON_DIR="$HAKU_DIR/common"
 
 BACKUP_TS="$(date +%Y-%m-%d_%H-%M-%S)"
@@ -236,15 +236,6 @@ select_window_manager() {
     esac
 }
 
-preflight_checks() {
-    if [[ "$PWD" != "$HAKU_DIR" ]]; then
-        echo ""
-        log_error "Please run this script from: $HAKU_DIR"
-        log_error "Current directory: $PWD"
-        exit 1
-    fi
-}
-
 deploy_assets_from_archive_repo() {
     if ! command -v git >/dev/null 2>&1; then
         log_error "git is required to clone $ARCHIVE_REPO_URL"
@@ -291,7 +282,6 @@ deploy_assets_from_archive_repo() {
 
 print_header
 select_window_manager
-preflight_checks
 
 # ============================================================================
 # BLOCK 1: CHECK AND INSTALL DEPENDENCIES
@@ -585,8 +575,8 @@ done
 
 if [ $FOUND -eq 1 ]; then
     if ask_yes_no "===> Do you want to enable ly service and disable getty now?"; then
-        read -r -p "===> Please choose what number of tty (default: 1): " tty_choice
         log_warn "Do NOT choose tty1 if you are using a display manager (SDDM, LightDM, etc.) in tty1."
+        read -r -p "===> Please choose what number of tty (default: 1): " tty_choice
         tty_choice="${tty_choice:-1}"
         if [[ "$tty_choice" =~ ^[1-6]$ ]]; then
             sudo systemctl enable ly@tty${tty_choice}.service
