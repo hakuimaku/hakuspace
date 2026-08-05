@@ -300,14 +300,18 @@ step_title "1 - CHECK AND INSTALL DEPENDENCIES (yay, git, curl)"
 
 # Check if pacman is available (Arch Linux or Arch-based distros)
 if command -v pacman >/dev/null 2>&1; then
-    if ask_yes_no "===> Do you want to install yay now?"; then
-        git clone https://aur.archlinux.org/yay-bin.git /tmp/yay
-        (cd /tmp/yay && makepkg -si --noconfirm)
-        cd "$HOME" || exit 1
-        rm -rf /tmp/yay
-        log_ok "yay has been installed successfully."
+    if command -v yay >/dev/null 2>&1; then
+        log_ok "yay is installed."
     else
-        log_warn "You need yay to proceed with package installation automatically."
+        if ask_yes_no "===> Do you want to install yay now?"; then
+            git clone https://aur.archlinux.org/yay-bin.git /tmp/yay
+            (cd /tmp/yay && makepkg -si --noconfirm)
+            cd "$HOME" || exit 1
+            rm -rf /tmp/yay
+            log_ok "yay has been installed successfully."
+        else
+            log_warn "You need yay to proceed with package installation automatically."
+        fi
     fi
 else
     log_error "You're not on an Arch-based distro."
@@ -344,6 +348,9 @@ step_title "2 - INSTALL PACKAGES FROM LIST"
 
 PKG_LABELS=()
 PKG_FILES=()
+
+log_info "You need to install pkg-core.txt & pkg-<WM_NAME>.txt for hakuspace to work properly"
+log_info "You can CTRL+C to cancel installing & nano ~/hakuspace/common/pkg-core.txt to edit package list"
 
 # Dynamically build lists for all selected WMs
 for i in "${!SELECTED_WMS[@]}"; do
@@ -408,7 +415,7 @@ fi
 # ============================================================================
 # BLOCK 3: CREATE NECESSARY DIRECTORIES
 # ============================================================================
-step_title "3 - INITIALIZE SYSTEM DIRECTORIES"
+step_title "3 - CREATE NECESSARY DIRECTORIES"
 
 FOLDERS=(
     "$HOME/.config"
@@ -423,15 +430,20 @@ for folder in "${FOLDERS[@]}"; do
     ensure_dir "$folder"
 done
 
+log_ok "All necessary directories have been created."
+
 # ============================================================================
 # BLOCK 4: BACKUP AND COPY CONFIG
 # ============================================================================
-step_title "4 - BACKUP AND COPY CONFIG TO ~/.config"
+step_title "4 - SETUP HAKUSPACE CONFIG"
+
+log_info "Backing up existing configs in ~/.config and copying new configs from hakuspace/common/config"
+log_warn "Do NOT skip this step in the first time installation hakuspace"
 
 SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
 DEST_CONFIG="$HOME/.config"
 
-if ask_yes_no "===> Do you want to backup and copy your config now?"; then
+if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
     echo ">>> Deploying Common configs..."
     for folder in "$SOURCE_COMMON_CONFIG"/*/; do
         [[ -d "$folder" ]] || continue
@@ -480,12 +492,15 @@ fi
 # ============================================================================
 # BLOCK 5: BACKUP AND COPY LOCAL BIN
 # ============================================================================
-step_title "5 - BACKUP AND COPY ~/.local/bin"
+step_title "5 - SETUP LOCAL BIN SCRIPTS"
+
+log_info "Backing up existing ~/.local/bin and copying new scripts from hakuspace/common/local/bin"
+log_warn "Do NOT skip this step in the first time installation hakuspace"
 
 SOURCE_BIN="$COMMON_DIR/local/bin"
 DEST_BIN="$HOME/.local/bin"
 
-if ask_yes_no "===> Do you want to backup and copy your local/bin now?"; then
+if ask_yes_no "===> Do you want to setup hakuspace scripts now?"; then
     if [[ -d "$SOURCE_BIN" ]]; then
         copy_dir_content "$SOURCE_BIN" "$DEST_BIN"
         log_ok "local/bin deployment completed."
@@ -500,6 +515,8 @@ fi
 # BLOCK 6: INSTALL OH MY ZSH + PLUGINS
 # ============================================================================
 step_title "6 - SETUP OH MY ZSH AND PLUGINS"
+
+log_info "This step will install Oh My Zsh and its plugins (zsh-autosuggestions, zsh-syntax-highlighting) if not already installed."
 
 if ask_yes_no "===> Do you want to install Oh My Zsh now?"; then
     if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
@@ -540,6 +557,8 @@ fi
 # ============================================================================
 step_title "7 - DEPLOY EXTRA ASSETS FROM hakuspace-archive"
 
+log_info "Clone hakuspace-archive to setup icons, themes, and wallpapers. You can skip this step if you don't want to install them."
+
 if ask_yes_no "===> Do you want to setup hakuspace assets: Icons, Themes and Wallpapers?"; then
     if deploy_assets_from_archive_repo; then
         log_ok "hakuspace-archive setup completed."
@@ -555,27 +574,52 @@ fi
 # ============================================================================
 step_title "8 - ENABLE SYSTEM SERVICES"
 
-log_warn "Do NOT run this step if you are using a display manager (SDDM, LightDM, etc.) in tty1."
-if ask_yes_no "===> Do you want to enable ly service and disable getty in tty1 now?"; then
-    sudo systemctl enable ly@tty1.service
-    sudo systemctl disable getty@tty1.service
-    log_ok "ly service enabled and getty disabled."
+# Check if ly is installed
+FOUND=0
+for path in /usr/bin/ly /usr/local/bin/ly /usr/sbin/ly /usr/bin/ly-dm; do
+    if [ -f "$path" ]; then
+        FOUND=1
+        break
+    fi
+done
+
+if [ $FOUND -eq 1 ]; then
+    if ask_yes_no "===> Do you want to enable ly service and disable getty now?"; then
+        read -r -p "===> Please choose what number of tty (default: 1): " tty_choice
+        log_warn "Do NOT choose tty1 if you are using a display manager (SDDM, LightDM, etc.) in tty1."
+        tty_choice="${tty_choice:-1}"
+        if [[ "$tty_choice" =~ ^[1-6]$ ]]; then
+            sudo systemctl enable ly@tty${tty_choice}.service
+            sudo systemctl disable "getty@tty${tty_choice}.service"
+            log_ok "ly service enabled and getty disabled at tty${tty_choice}."
+        else
+            log_error "Invalid tty choice. Please choose a number between 1 and 6. Skipping..."
+        fi
+    else
+        log_skip "Skipping service enable/disable."
+    fi
 else
-    log_skip "Skipping service enable/disable."
+    log_warn "ly service not found. Skipping service enable/disable."
 fi
 
 # Set GNOME color scheme to dark and set Thunar as default file manager
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 log_ok "Set GNOME color scheme to dark."
 
-xdg-mime default thunar.desktop inode/directory
-log_ok "Set Thunar as default file manager."
+# Set Thunar as default file manager if installed
+if command -v thunar >/dev/null 2>&1; then
+    xdg-mime default thunar.desktop inode/directory
+    log_ok "Set Thunar as default file manager."
+else
+    log_warn "Thunar is not installed. Skipping setting default file manager."
+fi
 
 if [[ -x "$HOME/.local/bin/gen_style.sh" ]]; then
     "$HOME/.local/bin/gen_style.sh"
     log_ok "Executed gen_style.sh"
 else
     log_warn "Not executable or missing: $HOME/.local/bin/gen_style.sh"
+    log_warn "Check if the script exists and has execute permissions in ~/.local/bin/"
 fi
 
 echo ""
