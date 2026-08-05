@@ -25,22 +25,20 @@ Haku Space now supporting Fedora too! See [Fedora Guide](https://github.com/haku
 
 ## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Welcome+to+Haku+Space" alt="Typing SVG" />
 
-- 🛠️ Installation: [here](https://github.com/hakuimaku/hakuspace#-3)
-- 🔄 Update: [here](https://github.com/hakuimaku/hakuspace#-update-haku-space-to-lastest-version)
-- 📦 Packages: [here](https://github.com/hakuimaku/hakuspace#-2)
-- 🕹️ Keybinding: [here](https://github.com/hakuimaku/hakuspace#-5)
-- 🐞 Troubleshooting: [here](https://github.com/hakuimaku/hakuspace#-8)
+<div align="center">
 
-See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372).
+🛠️ [Installation](https://github.com/hakuimaku/hakuspace#-3) |  🔄 [Update](https://github.com/hakuimaku/hakuspace#-update-haku-space-to-lastest-version) | 📦 [Packages](https://github.com/hakuimaku/hakuspace#-2) | 🕹️ [Keybinding](https://github.com/hakuimaku/hakuspace#-5) | 🐞 [Troubleshooting](https://github.com/hakuimaku/hakuspace#-8)
 
-**Join my Discord channel to get more help!** [Discord btw](https://discord.gg/Juuun8sXsN).
+*Need help or want to chat? Join our Discord server or follow us on TikTok for showcase videos!*
 
-- **HakuSpace** is a dotfiles project for **Arch Linux**, supporting **Hyprland**, **Niri**, **MangoWM** and **Labwc**.
-- My dotfiles support **Multi-WM**, which means you can easily switch to a new wm whenever you get bored!
-- The main user interaction layer is built around **Rofi**, **Waybar**, and **SwayNC**, while most core behavior is powered by [custom scripts](https://github.com/hakuimaku/hakuspace/tree/main/common/local/bin).
-- Haku Space can run on **any distro** as long as you install all the **core packages**
-- It has grown into a DE-like experience, though it is still actively evolving.  
-- Designed to be easy to **extend and customize** for your own workflow.
+[![Discord](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/https://discord.gg/Juuun8sXsN) [![TikTok](https://img.shields.io/badge/TikTok-000000?style=for-the-badge&logo=tiktok&logoColor=white)](https://www.tiktok.com/@hakuimaku2372)
+
+</div>
+
+- Multi-WM Support: Designed for Arch Linux (supports Hyprland, Niri, MangoWM, Labwc) with seamless switching between window managers.
+- Distro Agnostic: Compatible with any Linux distribution given the core dependencies are installed.
+- DE-like Experience: Modular UI powered by Rofi, Waybar, SwayNC, and custom scripts.
+- Extensible: Highly customizable and easy to adapt to your own workflow.
 
 ---
 
