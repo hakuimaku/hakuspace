@@ -13,6 +13,8 @@
 
 -- After changes, please reload Hyprland by `hyprctl reload` on terminal
 
+-- See more in the Wiki: https://wiki.hypr.land/
+
 -- Example Keybinding:
 hl.bind("SUPER + Return", hl.dsp.exec_cmd("kitty"))
 
@@ -26,3 +28,19 @@ local thunar_rule = hl.window_rule({
     size  = "600 600",
 })
 thunar_rule:set_enabled(false)
+
+-- On/off rules. See more in ~/.config/hypr/config/rule.lua
+fullWidth_ScrollingLayout:set_enabled(true) -- Set width 100% for certain apps
+specificWidth_ScrollingLayout:set_enabled(true) -- Set width 60% for certain apps
+
+-- Use my plugin config: (require enable hyprexpo)
+hl.permission("/usr/(bin|local/bin)/hyprpm", "plugin", "allow")
+
+hl.on("hyprland.start", function () 
+    hl.exec_cmd("hyprpm reload -n")
+end)
+
+hl.bind("SUPER + G", function() hl.plugin.hyprexpo.expo("toggle") end)
+
+-- Make sure you install & enable hyprexpo plugin to use this, uncomment the line below.
+--require("config/plugin")

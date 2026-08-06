@@ -5,18 +5,15 @@
 -- Set workspaces to be persistent, they are not destroyed when empty
 hl.workspace_rule({ workspace = "1", persistent = true })
 hl.workspace_rule({ workspace = "2", persistent = true })
-hl.workspace_rule({ workspace = "3", persistent = true })
-hl.workspace_rule({ workspace = "4", persistent = true })
-hl.workspace_rule({ workspace = "5", persistent = true })
 
-local suppressMaximizeRule = hl.window_rule({
+suppressMaximizeRule = hl.window_rule({
     name  = "suppress-maximize-events",
     match = { class = ".*" },
 
     suppress_event = "maximize",
 })
 
-local fixXwaylandDrags = hl.window_rule({
+fixXwaylandDrags = hl.window_rule({
     name  = "fix-xwayland-drags",
     match = {
         class      = "^$",
@@ -31,7 +28,7 @@ local fixXwaylandDrags = hl.window_rule({
 })
 
 -- Hyprland-run windowrule
-local hyprlandRunRule = hl.window_rule({
+hyprlandRunRule = hl.window_rule({
     name  = "move-hyprland-run",
     match = { class = "hyprland-run" },
 
@@ -40,7 +37,7 @@ local hyprlandRunRule = hl.window_rule({
 })
 
 -- VS Code in special workspace
-local codeSpecialWorkspace = hl.window_rule({
+codeSpecialWorkspace = hl.window_rule({
     name  = "code-scratchpad",
     match = { class = "code" },
 
@@ -48,7 +45,7 @@ local codeSpecialWorkspace = hl.window_rule({
 })
 
 -- Set border color to red if window is fullscreen
-local fullscreenBorder = hl.window_rule({
+fullscreenBorder = hl.window_rule({
     name  = "fullscreen-border-color",
     match        = { fullscreen = true },
 
@@ -60,14 +57,14 @@ local fullscreenBorder = hl.window_rule({
 ------- SCROLLING LAYOUT -------
 --------------------------------
 
-local fullWidth_ScrollingLayout = hl.window_rule({
+fullWidth_ScrollingLayout = hl.window_rule({
     name = "full_width_scrolling",
-    match = { class = "code|zen" },
+    match = { class = "code|zen|discord" },
 
     scrolling_width = 1.0
 })
 
-local specificWidth_ScrollingLayout = hl.window_rule({
+specificWidth_ScrollingLayout = hl.window_rule({
     name = "specific_width_scrolling",
     match = { class = "thunar" },
 
@@ -77,7 +74,7 @@ local specificWidth_ScrollingLayout = hl.window_rule({
 --------------------------------
 ----------- OPACITY ------------
 --------------------------------
-local opacityCertainApps = hl.window_rule({
+opacityCertainApps = hl.window_rule({
     name  = "opacity-for-certain-apps",
     match = { class = "thunar|kitty|code|jetbrains.*" },
 
@@ -85,7 +82,7 @@ local opacityCertainApps = hl.window_rule({
 })
 
 -- Rules for haku.sh
-local hakuSpaceOpacityRule = hl.window_rule({
+hakuSpaceOpacityRule = hl.window_rule({
     name  = "opacity-haku",
     match = { class = "seycmd|seyclock|seylavat|seycava" },
 
@@ -96,7 +93,7 @@ local hakuSpaceOpacityRule = hl.window_rule({
 ----------- ANIMATIONS -----------
 ----------------------------------
 -- Animation for Rofi
-local rofiAnimation = hl.layer_rule({
+rofiAnimation = hl.layer_rule({
     name = "rofi-slide",
     match = { namespace = "rofi" },
 
@@ -104,14 +101,14 @@ local rofiAnimation = hl.layer_rule({
     blur = true,
 })
 -- Animation for Waybar
-local waybarAnimation = hl.layer_rule({
+waybarAnimation = hl.layer_rule({
     name = "waybar-fade",
     match = { namespace = "waybar" },
 
     animation = "fade",
 })
 -- Slide for Swaync
-local swayncAnimation = hl.layer_rule({
+swayncAnimation = hl.layer_rule({
     name = "swaync-control-center",
     match = { namespace = "swaync-control-center" },
 
@@ -121,7 +118,7 @@ local swayncAnimation = hl.layer_rule({
 -------------------------------------------------
 ----------- Floating window for apps ------------
 -------------------------------------------------
-local floatingCenter = hl.window_rule({
+floatingCenter = hl.window_rule({
     name  = "floating-center",
     match = { class = "imv|mpv|org.gnome.Calculator" },
 
@@ -129,7 +126,7 @@ local floatingCenter = hl.window_rule({
     size  = "1280 720",
 })
 
-local floatingApps = hl.window_rule({
+floatingApps = hl.window_rule({
     name  = "floating-apps",
     match = { title = "Picture-in-Picture" },
 
@@ -137,7 +134,7 @@ local floatingApps = hl.window_rule({
 })
 
 -- Browser popups like save, etc. should usually be floating
-local floatingXdgPortal = hl.window_rule({
+floatingXdgPortal = hl.window_rule({
     name  = "xdg-desktop-portal-gtk",
     match = { class = "xdg-desktop-portal-gtk" },
 
