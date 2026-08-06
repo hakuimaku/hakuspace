@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
-# Inclue Defaults variables
-source "$HOME/hakuspace-control/main_setting.sh"
+# This script generates theme files for:
+# waybar, swaync, hyprland, rofi, kitty, btop, labwc, and a newtab page for Zen browser.
 
-# Fallback Defaults variables if not set
-DEFAULT_ACCENT=${DEFAULT_ACCENT:-"#ffffff"}
-DEFAULT_FONT=${DEFAULT_FONT:-"monospace"}
-DEFAULT_SIZE=${DEFAULT_SIZE:-"14"}
+# Default values
+DEFAULT_ACCENT="#ffffff"
+DEFAULT_FONT="monospace"
+DEFAULT_SIZE="14"
 
 STATE_DIR="$HOME/.local/state/haku_theme"
 BTOP_THEME_DIR="$HOME/.config/btop/themes"
