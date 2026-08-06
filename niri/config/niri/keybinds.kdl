@@ -11,44 +11,47 @@ binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
     // Custom Script Launchers
-    Mod+V hotkey-overlay-title="Clipboard Menu" { spawn "sh" "-c" "$HOME/.local/bin/clipboard_menu.sh"; }
-    Mod+Shift+V hotkey-overlay-title="Wipe Clipboard" { spawn "sh" "-c" "$HOME/.local/bin/clipboard_menu.sh --wipe"; }
-    Mod+F11 hotkey-overlay-title="Record Screen" { spawn "sh" "-c" "$HOME/.local/bin/record.sh"; }
-    Mod+Tab hotkey-overlay-title="Haku Menu" { spawn "sh" "-c" "$HOME/.local/bin/hakumenu.sh"; }
-    Mod+Y hotkey-overlay-title="Wallpaper Select" { spawn "sh" "-c" "$HOME/.local/bin/wallpaper_select.sh"; }
-    Mod+Shift+Y hotkey-overlay-title="Lively Wallpaper Select" { spawn "sh" "-c" "$HOME/.local/bin/wallpaper_video_select.sh"; }
-    Mod+Shift+W hotkey-overlay-title="Cycle Waybar Mode" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --cycle"; }
-    Mod+W hotkey-overlay-title="Toggle Dockbar" { spawn "sh" "-c" "$HOME/.local/bin/dockbar_manager.sh --toggle"; }
-    Mod+L hotkey-overlay-title="Toggle Night Light" { spawn "sh" "-c" "$HOME/.local/bin/nightlight_toggle.sh"; }
+    Mod+V            hotkey-overlay-title="Clipboard Menu" { spawn "sh" "-c" "$HOME/.local/bin/clipboard_menu.sh"; }
+    Mod+Shift+V      hotkey-overlay-title="Wipe Clipboard" { spawn "sh" "-c" "$HOME/.local/bin/clipboard_menu.sh --wipe"; }
+    Mod+F11          hotkey-overlay-title="Record Screen" { spawn "sh" "-c" "$HOME/.local/bin/record.sh"; }
+    Mod+Tab          hotkey-overlay-title="Haku Menu" { spawn "sh" "-c" "$HOME/.local/bin/hakumenu.sh"; }
+    Mod+Y            hotkey-overlay-title="Wallpaper Select" { spawn "sh" "-c" "$HOME/.local/bin/wallpaper_select.sh"; }
+    Mod+Shift+Y      hotkey-overlay-title="Lively Wallpaper Select" { spawn "sh" "-c" "$HOME/.local/bin/wallpaper_video_select.sh"; }
+    Mod+Shift+W      hotkey-overlay-title="Cycle Waybar Mode" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --cycle"; }
+    Mod+W            hotkey-overlay-title="Toggle Dockbar" { spawn "sh" "-c" "$HOME/.local/bin/dockbar_manager.sh --toggle"; }
+    Mod+L            hotkey-overlay-title="Adjust Brightness" { spawn "sh" "-c" "$HOME/.local/bin/nightlight_toggle.sh"; }
 
     // Application Launchers
-    Mod+Q hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
-    Mod+R hotkey-overlay-title="Run Application Menu: rofi" { spawn "rofi" "-show" "drun"; }
-    Mod+E hotkey-overlay-title="Open File Manager: thunar" { spawn "thunar"; }
-    Mod+B hotkey-overlay-title="Open Browser: zen-browser" { spawn "zen-browser"; }
-    Mod+Slash hotkey-overlay-title="Open Emoji Menu" { spawn "rofi" "-modi" "emoji" "-show" "emoji"; }
-    Mod+N hotkey-overlay-title="Open Notification Center" { spawn "swaync-client" "-t" "-sw"; }
+    Mod+Q            hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
+    Mod+R            hotkey-overlay-title="Run Application Menu: rofi" { spawn "rofi" "-show" "drun"; }
+    Mod+E            hotkey-overlay-title="Open File Manager: thunar" { spawn "thunar"; }
+    Mod+B            hotkey-overlay-title="Open Browser: zen-browser" { spawn "zen-browser"; }
+    Mod+Slash        hotkey-overlay-title="Open Emoji Menu" { spawn "rofi" "-modi" "emoji" "-show" "emoji"; }
+    Mod+N            hotkey-overlay-title="Open Notification Center" { spawn "swaync-client" "-t" "-sw"; }
 
     // Screenshots
-    Print { screenshot; }
-    Ctrl+Print { screenshot-screen; }
-    Alt+Print { screenshot-window; }
+    Print           { screenshot; }
+    Ctrl+Print      { screenshot-screen; }
+    Alt+Print       { screenshot-window; }
 
-    Mod+P { screenshot; }
-    Mod+Shift+P { screenshot-screen; }
-    Mod+Alt+P { screenshot-window; }
-    
+    Mod+P           { screenshot; }
+    Mod+Shift+P     { screenshot-screen; }
+    Mod+Alt+P       { screenshot-window; }
+
+    // Misc actions
+    Mod+Shift+E     { quit; }
+    Ctrl+Alt+Delete { quit; }
 
     // Window Management
-    Mod+C repeat=false { close-window; }
-    Mod+Z { toggle-window-floating; }
-    Mod+Grave repeat=false { toggle-overview; }
-    Mod+D { switch-preset-column-width; }
-    Mod+F { maximize-column; }
-    Mod+Shift+F { fullscreen-window; }
-    Mod+Alt+F { maximize-window-to-edges; }
-    Mod+Ctrl+F { expand-column-to-available-width; }
-    Mod+M { maximize-window-to-edges; }
+    Mod+C            repeat=false { close-window; }
+    Mod+Z            { toggle-window-floating; }
+    Mod+Grave        repeat=false { toggle-overview; }
+    Mod+D            { switch-preset-column-width; }
+    Mod+F            { maximize-column; }
+    Mod+Shift+F      { fullscreen-window; }
+    Mod+Alt+F        { maximize-window-to-edges; }
+    Mod+Ctrl+F       { expand-column-to-available-width; }
+    Mod+M            { maximize-window-to-edges; }
 
     Mod+Left  { focus-column-left; }
     Mod+A     { focus-column-left; }
@@ -64,34 +67,34 @@ binds {
     Mod+Shift+Up    { move-window-up; }
     Mod+Shift+Right { move-column-right; }
 
-    Mod+Ctrl+Left  { consume-or-expel-window-left; }
-    Mod+Ctrl+Right { consume-or-expel-window-right; }
-    Mod+Ctrl+A     { consume-or-expel-window-left; }
-    Mod+Ctrl+S     { consume-or-expel-window-right; }
+    Mod+Ctrl+Left    { consume-or-expel-window-left; }
+    Mod+Ctrl+Right   { consume-or-expel-window-right; }
+    Mod+Ctrl+A       { consume-or-expel-window-left; }
+    Mod+Ctrl+S       { consume-or-expel-window-right; }
     Mod+BracketLeft  { consume-or-expel-window-left; }
     Mod+BracketRight { consume-or-expel-window-right; }
-    Mod+period  { consume-window-into-column; }
-    Mod+comma { expel-window-from-column; }
+    Mod+period       { consume-window-into-column; }
+    Mod+comma        { expel-window-from-column; }
 
-    Mod+Home { focus-column-first; }
-    Mod+End  { focus-column-last; }
-    Mod+Ctrl+Home { move-column-to-first; }
-    Mod+Ctrl+End  { move-column-to-last; }
+    Mod+Home        { focus-column-first; }
+    Mod+End         { focus-column-last; }
+    Mod+Ctrl+Home   { move-column-to-first; }
+    Mod+Ctrl+End    { move-column-to-last; }
 
-    Mod+Shift+R { switch-preset-column-width-back; }
+    Mod+Shift+R      { switch-preset-column-width-back; }
     Mod+Ctrl+Shift+R { switch-preset-window-height; }
-    Mod+Ctrl+R { reset-window-height; }
+    Mod+Ctrl+R       { reset-window-height; }
 
-    Mod+T hotkey-overlay-title="Center Column (Remapped)" { center-column; }
-    Mod+Shift+T { center-visible-columns; }
+    Mod+T            { center-column; }
+    Mod+Shift+T      { center-visible-columns; }
 
-    Mod+Minus { set-column-width "-10%"; }
-    Mod+Equal { set-column-width "+10%"; }
+    Mod+Minus       { set-column-width "-10%"; }
+    Mod+Equal       { set-column-width "+10%"; }
     Mod+Shift+Minus { set-window-height "-10%"; }
     Mod+Shift+Equal { set-window-height "+10%"; }
 
     Mod+Shift+X { toggle-column-tabbed-display; }
-    Mod+X { switch-focus-between-floating-and-tiling; }
+    Mod+X       { switch-focus-between-floating-and-tiling; }
 
     // Mouse & Touchpad Wheels
     Mod+WheelScrollDown      cooldown-ms=150 { focus-workspace-down; }
@@ -128,11 +131,6 @@ binds {
     Mod+Ctrl+7 { move-column-to-workspace 7; }
     Mod+Ctrl+8 { move-column-to-workspace 8; }
     Mod+Ctrl+9 { move-column-to-workspace 9; }
-
-    // Misc actions
-    Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
-    Mod+Shift+E { quit; }
-    Ctrl+Alt+Delete { quit; }
 
     // Audio - Media Controls
     XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 2%+"; }
