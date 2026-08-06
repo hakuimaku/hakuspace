@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
 
-# Customize the save directory for recordings
-SAVE_DIR="$HOME/Videos" 
+# Include SCREENREC_SAVE_DIR & REC_COMMAND & REC_OPTS settings
+source "$HOME/hakuspace-control/main_setting.sh"
+
+# Fallback values if not set in main_setting.sh
+SCREENREC_SAVE_DIR=${SCREENREC_SAVE_DIR:-"$HOME/Videos"}
+REC_COMMAND=${REC_COMMAND:-"wl-screenrec"}
+REC_OPTS=${REC_OPTS:-"--max-fps 60 --codec avc --encode-pixfmt nv12"}
+
 PID_FILE="/tmp/recording_pid"
 TIME_FILE="/tmp/recording_time"
-
-# If you install wl-screenrec by cargo, uncomment the following line and comment the next one
-#REC_COMMAND="$HOME/.cargo/bin/wl-screenrec"
-REC_COMMAND="wl-screenrec"
-
-# wl-screenrec options, you can customize them as needed
-REC_OPTS="--max-fps 60 --codec avc --encode-pixfmt nv12"
-
 
 # Check dependency
 if ! command -v "$REC_COMMAND" &> /dev/null; then
@@ -20,7 +18,7 @@ if ! command -v "$REC_COMMAND" &> /dev/null; then
     exit 1
 fi
 
-mkdir -p "$SAVE_DIR"
+mkdir -p "$SCREENREC_SAVE_DIR"
 
 stop_recording() {
     if [ -f "$PID_FILE" ]; then
@@ -47,7 +45,7 @@ start_recording() {
     fi
 
     FILENAME="recording_$(date +%Y%m%d_%H%M%S).mp4"
-    FILEPATH="$SAVE_DIR/$FILENAME"
+    FILEPATH="$SCREENREC_SAVE_DIR/$FILENAME"
     
     case "$chosen" in
         *"Only Sound")

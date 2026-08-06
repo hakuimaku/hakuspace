@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Inclue Defaults variables
+source "$HOME/hakuspace-control/main_setting.sh"
+
+# Fallback Defaults variables if not set
+DEFAULT_ACCENT=${DEFAULT_ACCENT:-"#ffffff"}
+DEFAULT_FONT=${DEFAULT_FONT:-"monospace"}
+DEFAULT_SIZE=${DEFAULT_SIZE:-"14"}
+
 STATE_DIR="$HOME/.local/state/haku_theme"
 BTOP_THEME_DIR="$HOME/.config/btop/themes"
 mkdir -p "$STATE_DIR"
@@ -8,11 +16,6 @@ mkdir -p "$STATE_DIR"
 # Labwc
 LABWC_RC="$HOME/.config/labwc/rc.xml"
 LABWC_OVERRIDE="$HOME/.config/labwc/themerc-override"
-
-# Defaults
-DEFAULT_ACCENT="#ffffff"
-DEFAULT_FONT="monospace"
-DEFAULT_SIZE="14"
 
 # Allow env overrides
 ACCENT_COLOR="${ACCENT_COLOR:-$DEFAULT_ACCENT}"

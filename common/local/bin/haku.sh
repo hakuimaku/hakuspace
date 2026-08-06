@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Include Font Size Settings
+source "$HOME/hakuspace-control/main_setting.sh"
+
 need() { command -v "$1" >/dev/null 2>&1 || { echo "$1 is required"; exit 1; }; }
 
 # Check dependencies
@@ -10,9 +13,9 @@ need lavat
 need jq
 
 # Main
-FONT_CLOCK=10
-FONT_GENERAL=11
-FONT_TERMINAL=16
+HAKU_CLOCK_FONT_SIZE=${HAKU_CLOCK_FONT_SIZE:-10}
+HAKU_GENERAL_FONT_SIZE=${HAKU_GENERAL_FONT_SIZE:-11}
+HAKU_TERMINAL_FONT_SIZE=${HAKU_TERMINAL_FONT_SIZE:-14}
 
 spawn() { ( setsid "$@" & ) >/dev/null 2>&1; }
 
@@ -26,22 +29,22 @@ clear() {
 }
 
 cava() {
-    spawn kitty --title "hakucava" --class "seycava" -o font_size=$FONT_GENERAL sh -c "cava"
+    spawn kitty --title "hakucava" --class "seycava" -o font_size=$HAKU_GENERAL_FONT_SIZE sh -c "cava"
     sleep 0.2
 }
 
 lavat() {
-    spawn kitty --title "hakulavat" --class "seylavat" -o font_size=$FONT_GENERAL sh -c "lavat -c blue -k blue -r1"
+    spawn kitty --title "hakulavat" --class "seylavat" -o font_size=$HAKU_GENERAL_FONT_SIZE sh -c "lavat -c blue -k blue -r1"
     sleep 0.2
 }
 
 clock() {
-    spawn kitty --title "hakuclock" --class "seyclock" -o font_size=$FONT_CLOCK sh -c "tty-clock -c -C 4 -r -b"
+    spawn kitty --title "hakuclock" --class "seyclock" -o font_size=$HAKU_CLOCK_FONT_SIZE sh -c "tty-clock -c -C 4 -r -b"
     sleep 0.2
 }
 
 cmd() {
-    spawn kitty --title "hakucmd" --class "seycmd" -o font_size=$FONT_TERMINAL --hold fastfetch
+    spawn kitty --title "hakucmd" --class "seycmd" -o font_size=$HAKU_TERMINAL_FONT_SIZE --hold fastfetch
     sleep 0.2
 }
 

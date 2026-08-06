@@ -2,10 +2,16 @@
 
 # Manage Waybar modes via symlinks, Rofi selection, and mode cycling.
 
+# Include WAYBAR_MODE_USER
+source "$HOME/hakuspace-control/main_setting.sh"
+
 WAYBAR_DIR="$HOME/.config/waybar"
 STATE_FILE="$HOME/.local/state/haku_theme/waybar_current_mode"
 CURRENT_STATE="top"
-MODES=("top" "neon" "coredge" "full" "minimal" "left")
+WAYBAR_MODES_DEAULT=("top" "neon" "coredge" "full" "minimal" "left")
+
+# WAYBAR_MODES_DEAULT + WAYBAR_MODE_USER
+WAYBAR_MODES=("${WAYBAR_MODES_DEAULT[@]}" "${WAYBAR_MODE_USER[@]}")
 
 # Init state file if missing
 if [[ -f "$STATE_FILE" ]]; then
@@ -50,16 +56,16 @@ restart_waybar() {
 # Handle --cycle argument to toggle through the MODES array
 if [[ "$1" == "--cycle" ]]; then
     current_idx=-1
-    for i in "${!MODES[@]}"; do
-        if [[ "${MODES[$i]}" == "$CURRENT_STATE" ]]; then
+    for i in "${!WAYBAR_MODES[@]}"; do
+        if [[ "${WAYBAR_MODES[$i]}" == "$CURRENT_STATE" ]]; then
             current_idx=$i
             break
         fi
     done
 
     # Calculate next mode index (if current not found, fallback to 0 which is "top")
-    next_idx=$(( (current_idx + 1) % ${#MODES[@]} ))
-    next_mode="${MODES[$next_idx]}"
+    next_idx=$(( (current_idx + 1) % ${#WAYBAR_MODES[@]} ))
+    next_mode="${WAYBAR_MODES[$next_idx]}"
 
     if [[ "$next_mode" != "$CURRENT_STATE" ]]; then
         link_mode "$next_mode"
@@ -70,7 +76,7 @@ fi
 
 # Handle --select argument via Rofi
 if [[ "$1" == "--select" ]]; then
-    choice=$(printf "%s\n" "${MODES[@]}" | rofi -dmenu -p "Waybar" -i -theme-str 'window {width: 25%; height: 40%;} entry { placeholder: " Select Mode"; }')
+    choice=$(printf "%s\n" "${WAYBAR_MODES[@]}" | rofi -dmenu -p "Waybar" -i -theme-str 'window {width: 25%; height: 40%;} entry { placeholder: " Select Mode"; }')
     [[ -z "$choice" ]] && exit 0
 
     if [[ "$choice" != "$CURRENT_STATE" ]]; then

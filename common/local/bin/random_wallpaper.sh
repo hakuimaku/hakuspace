@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
-WALL_DIR="$HOME/Pictures/Wallpapers"
-INTERVAL=300
+# Include WALL_DIR & WALL_INTERVAL
+source "$HOME/hakuspace-control/main_setting.sh"
+
+# Fallback WALL_DIR and WALL_INTERVAL if not set
+WALL_DIR=${WALL_DIR:-$HOME/Pictures/Wallpapers}
+WALL_INTERVAL=${WALL_INTERVAL:-300}
 
 SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
@@ -12,7 +16,7 @@ STATE_FILE="/tmp/random_wallpaper_status"
 
 run_wallpaper() {
     while true; do
-        for ((i=0; i<INTERVAL; i++)); do
+        for ((i=0; i<WALL_INTERVAL; i++)); do
             [[ "$(cat "$STATE_FILE" 2>/dev/null)" == "0" ]] && exit 0
             echo "$((i))"
             sleep 1
