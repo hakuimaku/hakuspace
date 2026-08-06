@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-# Include WALL_MPV_DIR & PREVIEW_DIR
+# Include WALL_MPV_DIR & PREVIEW_DIR & ACCENT_COLOR_BASED_ON_WALLPAPER
 [ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
 
-# Fallback WALL_MPV_DIR & PREVIEW_DIR if not set
 WALL_MPV_DIR=${WALL_MPV_DIR:-$HOME/Videos/Wallpapers}
 PREVIEW_DIR=${PREVIEW_DIR:-$WALL_MPV_DIR/Preview}
+ACCENT_COLOR_BASED_ON_WALLPAPER=${ACCENT_COLOR_BASED_ON_WALLPAPER:-true}
 
 SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
@@ -16,8 +16,6 @@ if [[ $1 == "--exit" ]]; then
         exit 1
     fi
     pkill mpvpaper
-    "$HOME/.local/bin/gen_style.sh" "#ffffff"
-    "$HOME/.local/bin/apply_style.sh"
     notify-send "Lively Wallpaper exited"
     exit 1
 fi
@@ -67,24 +65,24 @@ if [ -n "$CHOICE" ]; then
 
     "$SET_WALLPAPER_SCRIPT" "$WALL"
 
-    # 2. Pick accent from PREVIEW image
-    if [[ -n "$PREVIEW" ]]; then
-        ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$PREVIEW")
-        [[ -z "$ACCENT" ]] && ACCENT="#ffffff"
-    else
-        ACCENT="#ffffff"
-    fi
+     # Check if accent color should be based on wallpaper
+    if [ "$ACCENT_COLOR_BASED_ON_WALLPAPER" = true ]; then
+        if [[ -n "$PREVIEW" ]]; then
+            ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$PREVIEW")
+            [[ -z "$ACCENT" ]] && ACCENT="#ffffff"
+        else
+            ACCENT="#ffffff"
+        fi
 
-    # 3. If accent too dark -> fallback
-    r=$(printf "%d" 0x${ACCENT:1:2})
-    g=$(printf "%d" 0x${ACCENT:3:2})
-    b=$(printf "%d" 0x${ACCENT:5:2})
-    if [ $((r + g + b)) -lt 180 ]; then
-        ACCENT="#ffffff"
-    fi
+        r=$(printf "%d" 0x${ACCENT:1:2})
+        g=$(printf "%d" 0x${ACCENT:3:2})
+        b=$(printf "%d" 0x${ACCENT:5:2})
+        if [ $((r + g + b)) -lt 180 ]; then
+            ACCENT="#ffffff"
+        fi
 
-    # 4. Generate theme files with the new accent color
-    "$HOME/.local/bin/gen_style.sh" "$ACCENT"
-    sleep 0.2
-    "$HOME/.local/bin/apply_style.sh"
+        "$HOME/.local/bin/gen_style.sh" "$ACCENT"
+        sleep 0.2
+        "$HOME/.local/bin/apply_style.sh"
+    fi
 fi
