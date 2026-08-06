@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 # Include SCREENSHOT_DIR
-source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
+
 SCREENSHOT_DIR=${SCREENSHOT_DIR:-"$HOME/Pictures/Screenshots"}
 mkdir -p "$SCREENSHOT_DIR"
 

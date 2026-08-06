@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Include WALL_MPV_DIR & PREVIEW_DIR
-source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
 
 # Fallback WALL_MPV_DIR & PREVIEW_DIR if not set
 WALL_MPV_DIR=${WALL_MPV_DIR:-$HOME/Videos/Wallpapers}

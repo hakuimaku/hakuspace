@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 # Include SCREENREC_SAVE_DIR & REC_COMMAND & REC_OPTS settings
-source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
 
 # Fallback values if not set in main_setting.sh
 SCREENREC_SAVE_DIR=${SCREENREC_SAVE_DIR:-"$HOME/Videos"}
 REC_COMMAND=${REC_COMMAND:-"wl-screenrec"}
-REC_OPTS=${REC_OPTS:-"--max-fps 60 --codec avc --encode-pixfmt nv12"}
+REC_OPTS=${REC_OPTS:-"--max-fps 60"}
 
 PID_FILE="/tmp/recording_pid"
 TIME_FILE="/tmp/recording_time"

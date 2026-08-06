@@ -3,7 +3,7 @@
 # Manage Waybar modes via symlinks, Rofi selection, and mode cycling.
 
 # Include WAYBAR_MODE_USER
-source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
 
 WAYBAR_DIR="$HOME/.config/waybar"
 USER_WAYBAR_DIR="$HOME/hakuspace-control/waybar"

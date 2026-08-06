@@ -1,10 +1,11 @@
 #!/bin/bash
-APP="$1"
-CACHE_FILE="/tmp/dockbar_icon_cache.txt"
 
 # This script retrieves the icon path for a given application using GTK's icon theme
 # It caches the result to avoid repeated lookups (enhance performance).
 # For Dockbar pin apps
+
+APP="$1"
+CACHE_FILE="/tmp/dockbar_icon_cache.txt"
 
 if [ -f "$CACHE_FILE" ]; then
     PATH_FOUND=$(grep "^${APP}:" "$CACHE_FILE" | cut -d':' -f2-)

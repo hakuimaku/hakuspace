@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
 STATE_DIR="$HOME/.local/state/haku_theme"
 

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# This script manages the clipboard history using cliphist and rofi.
+
 # Clear clipboard by adding argument "wipe"
 if [ "$1" = "--wipe" ]; then
     cliphist wipe

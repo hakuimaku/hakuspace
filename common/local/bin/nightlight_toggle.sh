@@ -4,7 +4,7 @@
 # hyprsunset (hyprland) or gammastep (other WM)
 
 # Include NIGHT_LIGHT_TEMPERATURE variable from main_setting.sh
-source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
 
 # Fallback temperature if NIGHT_LIGHT_TEMPERATURE is not set
 NIGHT_LIGHT_TEMPERATURE=${NIGHT_LIGHT_TEMPERATURE:-4000}

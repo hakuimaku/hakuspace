@@ -3,7 +3,7 @@
 # This script is designed to safely exit the current window manager
 
 # Include EXIT_APP_LIST_USER and RAM_THRESHOLD_MB
-source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
 
 # Targeted apps for graceful and force kill sequence
 EXIT_APP_LIST_DEFAULT=(
