@@ -19,6 +19,7 @@ if [[ $# -eq 0 ]]; then
 󱂩  Dockbar Auto-hide Toggle ($DOCK_TEXT)
 󱂩  Dockbar Exclusive Toggle ($DOCK_EXCLUSIVE_TEXT)
 󱂩  Dockbar Icon Size Change ($DOCK_ICON_SIZE_TEXT)
+󱁤  Open Haku Space Settings Folder
 󱁤  Open Overall Configuration
 󰖩  Wifi
 󰂯  Bluetooth
@@ -37,11 +38,12 @@ case "$chosen" in
     *"Dockbar Auto-hide Toggle"*) spawn $HOME/.local/bin/dockbar_manager.sh --auto-hide ;;
     *"Dockbar Exclusive Toggle"*) spawn $HOME/.local/bin/dockbar_manager.sh --exclusive ;;
     *"Dockbar Icon Size Change"*) spawn $HOME/.local/bin/dockbar_manager.sh --icon-size ;;
+    *"Open Haku Space Settings Folder"*) spawn thunar "$HOME/hakuspace-control" ;;
     *"Open Overall Configuration"*) spawn $HOME/.local/bin/open_config.sh ;;
     *"Wifi"*) spawn nm-connection-editor ;;
     *"Bluetooth"*) spawn blueman-manager ;;
     *"Disk Manager"*) spawn gparted ;;
-    *"Storage Manager"*) spawn kitty --class ncdu -e sudo ncdu / ;;
+    *"Storage Manager"*) spawn code --class ncdu -e sudo ncdu / ;;
     *"Audio Control"*) spawn pavucontrol ;;
     *"Menu General Tab"*) spawn code $HOME/.local/bin/hm_general.sh ;;
     *"Menu Theme Tab"*) spawn code $HOME/.local/bin/hm_theme.sh ;;
