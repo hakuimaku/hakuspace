@@ -1,0 +1,18 @@
+//          _   ___      _ 
+//         / | / (_)____(_)
+//        /  |/ / / ___/ / 
+//       / /|  / / /  / /  
+//      /_/ |_/_/_/  /_/   
+//                         
+
+// This is a niri custom configuration file (small config.kdl actually :p)
+// You can add keybindings, rules, and other configurations here.
+
+// Why you should custom your config in there?
+// Because for each update, my dotfiles will override your all custom configurations.
+
+// After changes, please reload Niri by `niri msg action load-config-file` on terminal
+
+binds {
+    Mod+Return { spawn "kitty"; }
+}
