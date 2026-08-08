@@ -230,10 +230,6 @@ select_window_manager() {
 }
 
 # Check ~/hakuspace-control directory:
-# main_setting.sh is existing
-# mango-custom.conf is existing
-# niri-custom.conf is existing
-# hyprland-custom.conf is existing
 check_control_dir() {
     if [[ ! -d "$HAKUSPACE_CONTROL_DIR" ]]; then
         log_warn "hakuspace-control directory not found. Creating..."
@@ -245,6 +241,8 @@ check_control_dir() {
         "mango-custom.conf"
         "niri-custom.kdl"
         "hyprland-custom.lua"
+        "dockbar_pin_apps"
+        "hakumenu-general-custom.sh"
     )
     for file in "${required_files[@]}"; do
         if [[ ! -f "$DEST_CONTROL_DIR/$file" ]]; then
@@ -255,6 +253,32 @@ check_control_dir() {
 
     mkdir -p "$DEST_CONTROL_DIR/waybar"
     mkdir -p "$DEST_CONTROL_DIR/rofi"
+    chmod +x "$DEST_CONTROL_DIR/main_setting.sh"
+
+    # Check HakuSpace Control version
+    if [[ -f "$DEST_CONTROL_DIR/main_setting.sh" ]]; then
+        local current_version
+        local source_version
+        chmod +x "$HAKUSPACE_CONTROL_DIR/main_setting.sh"
+
+        source_version=$("$HAKUSPACE_CONTROL_DIR/main_setting.sh" | grep -oP 'Hakuspace Control Settings Version: \K[0-9]+\.[0-9]+\.[0-9]+')
+        current_version=$("$DEST_CONTROL_DIR/main_setting.sh" | grep -oP 'Hakuspace Control Settings Version: \K[0-9]+\.[0-9]+\.[0-9]+')
+        if [[ "$current_version" != "$source_version" ]]; then
+            log_warn "Hakuspace Control version mismatch: $current_version (current) vs $source_version (expected). Updating..."
+            log_warn "If you choose update, your custom settings in main_setting.sh will be overwritten."
+            if ask_yes_no "===> Do you want to update hakuspace-control to the latest version?"; then
+                copy_file "$HAKUSPACE_CONTROL_DIR/main_setting.sh" "$DEST_CONTROL_DIR/main_setting.sh"
+                log_ok "Hakuspace Control updated to version $source_version."
+            else
+                log_warn "You chose not to update hakuspace-control. Some features may not work as expected."
+            fi
+        else
+            log_ok "Hakuspace Control version is up-to-date: $current_version"
+        fi
+    else
+        log_warn "main_setting.sh not found in hakuspace-control. Creating default..."
+        copy_file "$HAKUSPACE_CONTROL_DIR/main_setting.sh" "$DEST_CONTROL_DIR/main_setting.sh"
+    fi
 }
 
 # ======================================================================================
@@ -324,7 +348,7 @@ select_window_manager
 # ============================================================================
 # BLOCK 1: UPDATE PACKAGES
 # ============================================================================
-step_title "1 - UPDATE PACKAGES FROM LIST (AUTO)"
+step_title "1 - UPDATE PACKAGES FROM LISTS"
 
 PKG_LABELS=()
 PKG_FILES=()
@@ -348,7 +372,7 @@ done
 echo ""
 
 if command -v yay >/dev/null 2>&1; then
-    if ask_yes_no "===> Do you want to install/update packages now?"; then
+    if ask_yes_no "===> Do you want to install/update all packages now?"; then
         for i in "${!PKG_LABELS[@]}"; do
             label="${PKG_LABELS[$i]}"
             file="${PKG_FILES[$i]}"
@@ -370,14 +394,7 @@ step_title "2 - BACKUP AND UPDATE CONFIG IN ~/.config"
 SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
 DEST_CONFIG="$HOME/.config"
 
-echo ""
-echo "[1]. FULL COPY, copy entire the config folder (if you lazy or unsure - Recommended)"
-echo "[2]. SELECTIVE COPY, choose which configs to update (if you know what's changed)"
-echo "[0]. SKIP config update"
-echo ""
-
-read -r -p ">>> Choose config update mode (1/2/0): " config_mode
-if [[ "$config_mode" == "1" ]]; then
+if ask_yes_no "===> Do you want to update hakuspace configs now?"; then
     echo ">>> Deploying Common configs..."
     for folder in "$SOURCE_COMMON_CONFIG"/*/; do
         [[ -d "$folder" ]] || continue
@@ -409,75 +426,16 @@ if [[ "$config_mode" == "1" ]]; then
         fi
     done
 
+    echo ">>> Deploying Thunar gtk.css theme..."
+    copy_file "$SOURCE_COMMON_CONFIG/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css"
+
     echo ">>> Deploying .zshrc (zsh configuration)..."
-    copy_file "$COMMON_DIR/.zshrc" "$HOME/.zshrc"
+    copy_file "$SOURCE_COMMON_CONFIG/.zshrc" "$HOME/.zshrc"
 
     echo ">>> Deploying .nanorc (nano configuration)..."
-    copy_file "$COMMON_DIR/.nanorc" "$HOME/.nanorc"
+    copy_file "$SOURCE_COMMON_CONFIG/.nanorc" "$HOME/.nanorc"
 
     log_ok "Configurations deployed successfully."
-
-elif [[ "$config_mode" == "2" ]]; then
-    echo ">>> Entering Selective Mode..."
-        
-    # 1. Common configs (Waybar, Rofi, Fastfetch, Cava, Kitty, Swaync...)
-    COMMON_APPS=("waybar" "rofi" "fastfetch" "cava" "kitty" "swaync" "xdg-desktop-portal" "gtk-3.0")
-
-    for app in "${COMMON_APPS[@]}"; do
-        if [[ -d "$SOURCE_COMMON_CONFIG/$app" ]]; then
-            if ask_yes_no "   -> Do you want to deploy $app configs?"; then
-                copy_dir_content "$SOURCE_COMMON_CONFIG/$app" "$DEST_CONFIG/$app"
-            fi
-        else
-            log_warn "Source app folder not found: $app. Skipping..."
-        fi
-    done
-
-    # 2. Hyprlock & Hypridle
-    if ask_yes_no "   -> Do you want to deploy hyprlock, hypridle configs?"; then
-        echo "   >>> Deploying Hypr configs..."
-        copy_file "$SOURCE_COMMON_CONFIG/hypr/hyprlock.conf" "$DEST_CONFIG/hypr/hyprlock.conf"
-        copy_file "$SOURCE_COMMON_CONFIG/hypr/hyprlock_tiny.conf" "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
-        copy_file "$SOURCE_COMMON_CONFIG/hypr/hypridle.conf" "$DEST_CONFIG/hypr/hypridle.conf"
-    fi
-
-    # 3. .zshrc
-    if ask_yes_no "   -> Do you want to deploy .zshrc (Zsh configuration)?"; then
-        echo "   >>> Deploying Zshrc..."
-        copy_file "$COMMON_DIR/.zshrc" "$HOME/.zshrc"
-    fi
-        
-    # 4. WM configs
-    for i in "${!SELECTED_WMS[@]}"; do
-        WM_NAME="${SELECTED_WMS[$i]}"
-        WM_DIR_PATH="${SELECTED_WM_DIRS[$i]}"
-        SOURCE_WM_CONFIG="$WM_DIR_PATH/config"
-
-        if [[ $WM_NAME == "hyprland" ]]; then
-            if ask_yes_no "   -> Do you want to deploy Hyprland configs?"; then
-                echo "   >>> Deploying Hyprland configs..."
-                copy_dir_content "$SOURCE_WM_CONFIG/hypr/config" "$DEST_CONFIG/hypr/config"
-                copy_file "$SOURCE_WM_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
-            fi   
-        elif [[ $WM_NAME == "niri" ]]; then
-            if ask_yes_no "   -> Do you want to deploy Niri configs?"; then
-                echo "   >>> Deploying Niri configs..."
-                copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
-            fi   
-        elif [[ $WM_NAME == "mango" ]]; then
-            if ask_yes_no "   -> Do you want to deploy Mango configs?"; then
-                echo "   >>> Deploying Mango configs..."
-                copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
-            fi
-        elif [[ $WM_NAME == "labwc" ]]; then
-            if ask_yes_no "   -> Do you want to deploy Labwc configs?"; then
-                echo "   >>> Deploying Labwc configs..."
-                copy_dir_content "$SOURCE_WM_CONFIG/labwc" "$DEST_CONFIG/labwc"
-            fi
-        fi
-    done
-
-    log_ok "Configurations updated successfully."
 else
     log_skip "Skipping config deployment."
 fi
@@ -490,7 +448,7 @@ step_title "3 - BACKUP AND UPDATE ~/.local/bin"
 SOURCE_BIN="$COMMON_DIR/local/bin"
 DEST_BIN="$HOME/.local/bin"
 
-if ask_yes_no "===> Do you want to update your local/bin scripts now?"; then
+if ask_yes_no "===> Do you want to update hakuspace local/bin scripts now?"; then
     if [[ -d "$SOURCE_BIN" ]]; then
         copy_dir_content "$SOURCE_BIN" "$DEST_BIN"
         log_ok "local/bin update completed."
@@ -508,8 +466,3 @@ check_control_dir
 echo ""
 echo -e "${C_BOLD}${C_CYAN}>>>>>>>>>> Update complete! You may need to restart your session or reload WM to apply changes!${C_RESET}"
 echo -e "${C_MAGENTA}Backup folder for this update: $BACKUP_DIR${C_RESET}"
-
-echo ""
-if [[ "$config_mode" == "1" ]]; then
-    log_warn "Note: You chose FULL COPY. If your Thunar bookmarks are missing and some your personal configs, restore them from $BACKUP_DIR/.config"
-fi

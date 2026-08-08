@@ -276,10 +276,6 @@ deploy_assets_from_archive_repo() {
 }
 
 # Check ~/hakuspace-control directory:
-# main_setting.sh is existing
-# mango-custom.conf is existing
-# niri-custom.kdl is existing
-# hyprland-custom.lua is existing
 check_control_dir() {
     if [[ ! -d "$HAKUSPACE_CONTROL_DIR" ]]; then
         log_warn "hakuspace-control directory not found. Creating..."
@@ -291,6 +287,8 @@ check_control_dir() {
         "mango-custom.conf"
         "niri-custom.kdl"
         "hyprland-custom.lua"
+        "dockbar_pin_apps"
+        "hakumenu-general-custom.sh"
     )
     for file in "${required_files[@]}"; do
         if [[ ! -f "$DEST_CONTROL_DIR/$file" ]]; then
@@ -301,6 +299,32 @@ check_control_dir() {
 
     mkdir -p "$DEST_CONTROL_DIR/waybar"
     mkdir -p "$DEST_CONTROL_DIR/rofi"
+    chmod +x "$DEST_CONTROL_DIR/main_setting.sh"
+
+    # Check HakuSpace Control version
+    if [[ -f "$DEST_CONTROL_DIR/main_setting.sh" ]]; then
+        local current_version
+        local source_version
+        chmod +x "$HAKUSPACE_CONTROL_DIR/main_setting.sh"
+
+        source_version=$("$HAKUSPACE_CONTROL_DIR/main_setting.sh" | grep -oP 'Hakuspace Control Settings Version: \K[0-9]+\.[0-9]+\.[0-9]+')
+        current_version=$("$DEST_CONTROL_DIR/main_setting.sh" | grep -oP 'Hakuspace Control Settings Version: \K[0-9]+\.[0-9]+\.[0-9]+')
+        if [[ "$current_version" != "$source_version" ]]; then
+            log_warn "Hakuspace Control version mismatch: $current_version (current) vs $source_version (expected). Updating..."
+            log_warn "If you choose update, your custom settings in main_setting.sh will be overwritten."
+            if ask_yes_no "===> Do you want to update hakuspace-control to the latest version?"; then
+                copy_file "$HAKUSPACE_CONTROL_DIR/main_setting.sh" "$DEST_CONTROL_DIR/main_setting.sh"
+                log_ok "Hakuspace Control updated to version $source_version."
+            else
+                log_warn "You chose not to update hakuspace-control. Some features may not work as expected."
+            fi
+        else
+            log_ok "Hakuspace Control version is up-to-date: $current_version"
+        fi
+    else
+        log_warn "main_setting.sh not found in hakuspace-control. Creating default..."
+        copy_file "$HAKUSPACE_CONTROL_DIR/main_setting.sh" "$DEST_CONTROL_DIR/main_setting.sh"
+    fi
 }
 
 # ======================================================================================
@@ -458,6 +482,7 @@ log_info "Backing up existing configs in ~/.config and copying new configs from 
 log_warn "Do NOT skip this step in the first time installation hakuspace"
 
 SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
+SOURCE_ONCE_CONFIG="$COMMON_DIR/once-config"
 DEST_CONFIG="$HOME/.config"
 
 if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
@@ -466,6 +491,13 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
         [[ -d "$folder" ]] || continue
         folder_name="$(basename "$folder")"
         copy_dir_content "$SOURCE_COMMON_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
+    done
+
+    echo ">>> Deploying Once configs..."
+    for folder in "$SOURCE_ONCE_CONFIG"/*/; do
+        [[ -d "$folder" ]] || continue
+        folder_name="$(basename "$folder")"
+        copy_dir_content "$SOURCE_ONCE_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
     done
 
     # Loop through selected WMs (hyprland will always be last if "ALL" was chosen)
@@ -492,14 +524,17 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
         fi
     done
 
+    echo ">>> Deploying Thunar gtk.css theme..."
+    copy_file "$SOURCE_COMMON_CONFIG/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css"
+
     echo ">>> Deploying mimeapps.list..."
-    copy_file "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/mimeapps.list"
+    copy_file "$SOURCE_ONCE_CONFIG/mimeapps.list" "$DEST_CONFIG/mimeapps.list"
 
     echo ">>> Deploying .zshrc (zsh configuration)..."
-    copy_file "$COMMON_DIR/.zshrc" "$HOME/.zshrc"
+    copy_file "$SOURCE_COMMON_CONFIG/.zshrc" "$HOME/.zshrc"
 
     echo ">>> Deploying .nanorc (nano configuration)..."
-    copy_file "$COMMON_DIR/.nanorc" "$HOME/.nanorc"
+    copy_file "$SOURCE_COMMON_CONFIG/.nanorc" "$HOME/.nanorc"
 
     log_ok "Configurations deployed successfully."
 else
