@@ -9,6 +9,7 @@ MANUAL_STATE="$STATE_DIR/dockbar_manual_state"
 
 DOCKBAR_BIN="$HOME/.local/bin/dockbar"
 DOCKBAR_DIR="$HOME/.config/waybar/dockbar"
+DOCKBAR_PIN_APPS="$HOME/hakuspace-control/dockbar_pin_apps"
 AUTOHIDE_SCRIPT="$HOME/.local/bin/dockbar_autohide.py"
 
 mkdir -p "$STATE_DIR"
@@ -150,8 +151,10 @@ if [[ $1 == "--icon-size" ]]; then
         sed -i -E "s/\"icon-size\": *[0-9]+/\"icon-size\": $new_size/g" "$DOCKBAR_DIR/config"
         echo "Icon size updated to $new_size."
         
-        sed -i -E "s/\"size\": *[0-9]+/\"size\": $new_size/g" "$DOCKBAR_DIR/config"
-        echo "Pinned app icon sizes updated to $new_size."
+        if [[ -f "$DOCKBAR_PIN_APPS" ]]; then
+            sed -i -E "s/\"size\": *[0-9]+/\"size\": $new_size/g" "$DOCKBAR_PIN_APPS"
+            echo "Pinned app icon sizes updated to $new_size."
+        fi
         
         "$HOME/.local/bin/dockbar_manager.sh" --reload
     fi
