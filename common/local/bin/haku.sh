@@ -58,6 +58,8 @@ fi
 
 # Exec for Hyprland
 if [[ $XDG_CURRENT_DESKTOP == "Hyprland" ]]; then
+    MY_INFO=$(hyprctl activewindow -j)
+    MY_ADDR=$(echo "$MY_INFO" | jq -r '.pid')
     LAYOUT=$(hyprctl activeworkspace -j | jq -r '.tiledLayout')
     
     clear
