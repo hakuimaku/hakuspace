@@ -82,7 +82,7 @@ hl.config({
     },
 
     decoration = {
-        rounding       = 20,
+        rounding       = 16,
         rounding_power = 8,
 
         -- Change transparency of focused and unfocused windows
@@ -91,7 +91,7 @@ hl.config({
 
         shadow = {
             enabled      = true,
-            range        = 16,
+            range        = 24,
             render_power = 8,
             offset       = { 6, 6 },
             color        = "rgba(000000aa)",
@@ -99,13 +99,17 @@ hl.config({
 
         blur = {
             enabled   = true,
-            size      = 6,
+            size      = 8,
             passes    = 3,
-            vibrancy  = 2,
-            contrast  = 1.2,
+            vibrancy  = 0,
+            contrast  = 1.4,
             noise     = 0.05,
-            special   = false,
+            special   = true,
             input_methods = true,
+        },
+
+        motion_blur = {
+            enabled = true,
         },
     },
 
@@ -121,12 +125,13 @@ hl.config({
 
 hl.config({
     misc = {
+        disable_autoreload = true, -- Save battery for me :(
         middle_click_paste = true,
         force_default_wallpaper = -1,    -- Set to 0 or 1 to disable the anime mascot wallpapers
         disable_hyprland_logo   = false, -- If true disables the random hyprland logo
         font_family = font_family,
-        animate_manual_resizes = true,
-        animate_mouse_windowdragging = true,
+        animate_manual_resizes = false,
+        animate_mouse_windowdragging = false,
     },
 })
 
