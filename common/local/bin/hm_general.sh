@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 CUSTOM_SCRIPT="$HOME/hakuspace-control/hakumenu-general-custom.sh"
 
@@ -40,7 +40,7 @@ chosen="$*"
 case "$chosen" in
     *"App Menu"*) spawn rofi -show drun ;;
     *"Code Editor"*) spawn code ;;
-    *"Browser"*) spawn zen-browser ;;
+    *"Browser"*) spawn firefox ;;
     *"Screen Record"*) spawn $HOME/.local/bin/record.sh ;;
     *"Local Send"*) spawn localsend ;;
     *"File Manager"*) spawn thunar ;;

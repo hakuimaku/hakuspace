@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 echo "Cleaning cache and logs..."
 echo "This will remove all files in ~/.cache and clear journal logs older than 2 weeks."

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 spawn() { ( "$@" & ) >/dev/null 2>&1; disown; }
 

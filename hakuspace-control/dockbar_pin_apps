@@ -6,7 +6,7 @@
             "image#menu",
             "image#kitty",
             "image#thunar",
-            "image#zen"
+            "image#firefox"
         ]
     },
 
@@ -31,10 +31,10 @@
         "interval": "once",
         "on-click": "thunar"
     },
-    "image#zen": {
-        "exec": "$HOME/.local/bin/dockbar_geticon.sh zen-browser",
+    "image#firefox": {
+        "exec": "$HOME/.local/bin/dockbar_geticon.sh firefox",
         "size": 40,
         "interval": "once",
-        "on-click": "zen-browser"
+        "on-click": "firefox"
     }
 }
