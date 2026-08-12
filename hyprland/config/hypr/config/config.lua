@@ -104,12 +104,8 @@ hl.config({
             vibrancy  = 0,
             contrast  = 1.4,
             noise     = 0.05,
-            special   = true,
+            special   = false,
             input_methods = true,
-        },
-
-        motion_blur = {
-            enabled = true,
         },
     },
 

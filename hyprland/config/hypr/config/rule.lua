@@ -67,7 +67,7 @@ fullscreenBorder = hl.window_rule({
 
 fullWidth_ScrollingLayout = hl.window_rule({
     name = "full_width_scrolling",
-    match = { class = "code|zen|discord" },
+    match = { class = "code|zen|discord|firefox" },
 
     scrolling_width = 1.0
 })
@@ -94,7 +94,7 @@ hakuSpaceOpacityRule = hl.window_rule({
     name  = "opacity-haku",
     match = { class = "seycmd|seyclock|seylavat|seycava" },
 
-    opacity = 0.7,
+    opacity = 0.8,
 })
 
 ----------------------------------

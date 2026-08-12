@@ -15,7 +15,7 @@
 local terminal    = "kitty"
 local fileManager = "thunar"
 local menu        = "rofi -show drun"
-local browser = "zen-browser"
+local browser = "firefox"
 
 ---------------------
 ---- KEYBINDINGS ----
