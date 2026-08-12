@@ -7,6 +7,6 @@ lavat-git                     # Lava-lamp terminal animation (AUR)
 cava                          # Audio spectrum visualizer
 pipes.sh                      # Animated pipes in terminal
 tty-clock                     # Terminal clock
+firefox                       # Web browser
 cloudflare-warp-bin           # Cloudflare WARP (warp-cli) prebuilt binary package (AUR)
-zen-browser-bin               # Zen Browser prebuilt binary package (AUR)
 visual-studio-code-bin        # VS Code prebuilt binary package (AUR)
