@@ -19,6 +19,7 @@ in
             default = true;
             description = "Enable Hakuspace NixOS base configuration";
         };
+    };
 
     config = lib.mkIf cfg.enable {
         # Experimental features
