@@ -49,6 +49,7 @@ fi
 # --------------------------------
 HAKU_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 COMMON_DIR="$HAKU_DIR/common"
+WM_DIR="$HAKU_DIR/wm"
 
 NIX_DIR="$HAKU_DIR/nix"
 
@@ -224,32 +225,32 @@ select_window_manager() {
     case "$wm_choice" in
         1)
             SELECTED_WMS=("hyprland")
-            SELECTED_WM_DIRS=("$HAKU_DIR/hyprland")
-            SELECTED_PKG_WMS=("$HAKU_DIR/hyprland/pkg-hyprland.txt")
+            SELECTED_WM_DIRS=("$WM_DIR/hyprland")
+            SELECTED_PKG_WMS=("$WM_DIR/pkg-hyprland.txt")
             log_info "Selected: Hyprland"
             ;;
         2)
             SELECTED_WMS=("niri")
-            SELECTED_WM_DIRS=("$HAKU_DIR/niri")
-            SELECTED_PKG_WMS=("$HAKU_DIR/niri/pkg-niri.txt")
+            SELECTED_WM_DIRS=("$WM_DIR/niri")
+            SELECTED_PKG_WMS=("$WM_DIR/pkg-niri.txt")
             log_info "Selected: Niri"
             ;;
         3)
             SELECTED_WMS=("mango")
-            SELECTED_WM_DIRS=("$HAKU_DIR/mango")
-            SELECTED_PKG_WMS=("$HAKU_DIR/mango/pkg-mango.txt")
+            SELECTED_WM_DIRS=("$WM_DIR/mango")
+            SELECTED_PKG_WMS=("$WM_DIR/pkg-mango.txt")
             log_info "Selected: Mango"
             ;;
         4)
             SELECTED_WMS=("labwc")
-            SELECTED_WM_DIRS=("$HAKU_DIR/labwc")
-            SELECTED_PKG_WMS=("$HAKU_DIR/labwc/pkg-labwc.txt")
+            SELECTED_WM_DIRS=("$WM_DIR/labwc")
+            SELECTED_PKG_WMS=("$WM_DIR/pkg-labwc.txt")
             log_info "Selected: Labwc"
             ;;
         5)
             SELECTED_WMS=("niri" "mango" "labwc" "hyprland")
-            SELECTED_WM_DIRS=("$HAKU_DIR/niri" "$HAKU_DIR/mango" "$HAKU_DIR/labwc" "$HAKU_DIR/hyprland")
-            SELECTED_PKG_WMS=("$HAKU_DIR/niri/pkg-niri.txt" "$HAKU_DIR/mango/pkg-mango.txt" "$HAKU_DIR/labwc/pkg-labwc.txt" "$HAKU_DIR/hyprland/pkg-hyprland.txt")
+            SELECTED_WM_DIRS=("$WM_DIR/niri" "$WM_DIR/mango" "$WM_DIR/labwc" "$WM_DIR/hyprland")
+            SELECTED_PKG_WMS=("$WM_DIR/pkg-niri.txt" "$WM_DIR/pkg-mango.txt" "$WM_DIR/pkg-labwc.txt" "$WM_DIR/pkg-hyprland.txt")
             log_info "Selected: All Window Managers"
             ;;
         *)
@@ -417,42 +418,41 @@ PKG_FILES=()
 log_info "You need to install pkg-core.txt & pkg-<WM_NAME>.txt for hakuspace to work properly"
 log_info "You can CTRL+C to cancel installing & nano ~/hakuspace/common/pkg-core.txt to edit package list"
 
-# Dynamically build lists for all selected WMs
-for i in "${!SELECTED_WMS[@]}"; do
-    wm_name="${SELECTED_WMS[$i]}"
-    wm_upper=$(echo "$wm_name" | tr '[:lower:]' '[:upper:]')
-    PKG_LABELS+=("$wm_upper")
-    PKG_FILES+=("${SELECTED_PKG_WMS[$i]}")
-done
-
-# Add common core, service, optional packages
-PKG_LABELS+=("CORE" "SERVICE" "OPTIONAL")
-PKG_FILES+=("$PKG_CORE" "$PKG_SERVICE" "$PKG_OPTIONAL")
-
-INSTALL_FLAGS=()
-for i in "${!PKG_LABELS[@]}"; do
-    INSTALL_FLAGS+=(0)
-done
-
-echo ":: Package lists:"
-for i in "${!PKG_LABELS[@]}"; do
-    echo "   [$i] ${PKG_LABELS[$i]} : Package list from ${PKG_FILES[$i]}"
-done
-echo ""
-
-for i in "${!PKG_LABELS[@]}"; do
-    if ask_yes_no "===> Mark ${PKG_LABELS[$i]} for installation?"; then
-        INSTALL_FLAGS[$i]=1
-    else
-        INSTALL_FLAGS[$i]=0
-    fi
-done
-
-echo ""
-echo ":: Install plan (1=install, 0=skip): [${INSTALL_FLAGS[*]}]"
-echo ""
-
 if command -v yay >/dev/null 2>&1; then
+    for i in "${!SELECTED_WMS[@]}"; do
+        wm_name="${SELECTED_WMS[$i]}"
+        wm_upper=$(echo "$wm_name" | tr '[:lower:]' '[:upper:]')
+        PKG_LABELS+=("$wm_upper")
+        PKG_FILES+=("${SELECTED_PKG_WMS[$i]}")
+    done
+
+    # Add common core, service, optional packages
+    PKG_LABELS+=("CORE" "SERVICE" "OPTIONAL")
+    PKG_FILES+=("$PKG_CORE" "$PKG_SERVICE" "$PKG_OPTIONAL")
+
+    INSTALL_FLAGS=()
+    for i in "${!PKG_LABELS[@]}"; do
+        INSTALL_FLAGS+=(0)
+    done
+
+    echo ":: Package lists:"
+    for i in "${!PKG_LABELS[@]}"; do
+        echo "   [$i] ${PKG_LABELS[$i]} : Package list from ${PKG_FILES[$i]}"
+    done
+    echo ""
+
+    for i in "${!PKG_LABELS[@]}"; do
+        if ask_yes_no "===> Mark ${PKG_LABELS[$i]} for installation?"; then
+            INSTALL_FLAGS[$i]=1
+        else
+            INSTALL_FLAGS[$i]=0
+        fi
+    done
+
+    echo ""
+    echo ":: Install plan (1=install, 0=skip): [${INSTALL_FLAGS[*]}]"
+    echo ""
+
     selected_count=0
     for i in "${!PKG_LABELS[@]}"; do
         if [[ "${INSTALL_FLAGS[$i]}" -eq 1 ]]; then
@@ -497,6 +497,63 @@ done
 
 log_ok "All necessary directories have been created."
 
+# BLOCK 3.1: NixOS Setup
+# =======================================================
+# NixOS specific deployment (Online Remote / Offline)
+# =======================================================
+if command -v nixos-rebuild >/dev/null 2>&1; then
+    echo ""
+    log_info "NixOS detected. Choose configuration mode for HakuSpace Dotfiles:"
+    echo -e "  ${C_BOLD}[1]${C_RESET} Offline (Copy hakuspace-config.nix and edit configuration.nix)"
+    echo -e "  ${C_BOLD}[2]${C_RESET} Online Remote (Deploy flake.nix from template)"
+    echo -e "  ${C_BOLD}[0]${C_RESET} Skip NixOS deployment"
+    read -r -p ">>> Choose mode (1/2/0): " nixos_mode
+
+    NIXOS_ETC="/etc/nixos"
+    SOURCE_HAKU_NIX="$NIX_DIR/hakuspace-config.nix"
+    SOURCE_FLAKE_EXAMPLE="$NIX_DIR/flake.nix.example"
+
+    if [[ "$nixos_mode" == "1" ]]; then
+        log_info "Deploying NixOS Offline Config..."
+        copy_file "$SOURCE_HAKU_NIX" "$NIXOS_ETC/hakuspace-config.nix"
+            
+        CONFIG_NIX="$NIXOS_ETC/configuration.nix"
+        if [[ -f "$CONFIG_NIX" ]]; then
+            # Check if hakuspace-config.nix is already imported
+            if grep -q "./hakuspace-config.nix" "$CONFIG_NIX"; then
+                log_skip "./hakuspace-config.nix is already imported in $CONFIG_NIX."
+            else
+                log_info "Injecting ./hakuspace-config.nix into imports of configuration.nix..."
+                sudo sed -i -E 's|(imports\s*=\s*\[)|\1\n        ./hakuspace-config.nix|' "$CONFIG_NIX"
+                log_ok "Updated imports in $CONFIG_NIX."
+            fi
+        else
+            log_warn "$CONFIG_NIX not found! Please import hakuspace-config.nix manually."
+        fi
+
+    elif [[ "$nixos_mode" == "2" ]]; then
+        log_info "Deploying NixOS Online Remote Config (Flake)..."
+        DEST_FLAKE="$NIXOS_ETC/flake.nix"
+            
+        if [[ -f "$DEST_FLAKE" ]]; then
+            log_warn "$DEST_FLAKE already exists."
+            log_warn "Hakuspace flake.nix will overwrite your existing flake.nix (backup your own first)."
+            log_warn "Hakuspace flake.nix is a template and may not include your custom configurations."
+            if ask_yes_no "===> Do you want to use hakuspace flake.nix?"; then
+                copy_file "$SOURCE_FLAKE_EXAMPLE" "$DEST_FLAKE"
+                log_ok "flake.nix overwritten successfully."
+            else
+                log_skip "Kept existing flake.nix."
+            fi
+        else
+            copy_file "$SOURCE_FLAKE_EXAMPLE" "$DEST_FLAKE"
+            log_ok "flake.nix deployed successfully."
+        fi
+    else
+        log_skip "Skipping NixOS specific deployment."
+    fi
+fi
+
 # ============================================================================
 # BLOCK 4: BACKUP AND COPY CONFIG
 # ============================================================================
@@ -510,12 +567,19 @@ SOURCE_ONCE_CONFIG="$COMMON_DIR/once-config"
 DEST_CONFIG="$HOME/.config"
 
 if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
+
     echo ">>> Deploying Common configs..."
     for folder in "$SOURCE_COMMON_CONFIG"/*/; do
         [[ -d "$folder" ]] || continue
         folder_name="$(basename "$folder")"
+        if [[ "$folder_name" == "hypr" ]]; then
+            continue
+        fi
         copy_dir_content "$SOURCE_COMMON_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
     done
+    copy_file "$SOURCE_COMMON_CONFIG/hypr/hypridle.conf" "$DEST_CONFIG/hypr/hypridle.conf"
+    copy_file "$SOURCE_COMMON_CONFIG/hypr/hyprlock.conf" "$DEST_CONFIG/hypr/hyprlock.conf"
+    copy_file "$SOURCE_COMMON_CONFIG/hypr/hyprlock_tiny.conf" "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
 
     echo ">>> Deploying Once configs..."
     for folder in "$SOURCE_ONCE_CONFIG"/*/; do
@@ -528,12 +592,12 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
     for i in "${!SELECTED_WMS[@]}"; do
         WM_NAME="${SELECTED_WMS[$i]}"
         WM_DIR_PATH="${SELECTED_WM_DIRS[$i]}"
-        SOURCE_WM_CONFIG="$WM_DIR_PATH/config"
+        SOURCE_WM_CONFIG="$WM_DIR_PATH"
 
         if [[ $WM_NAME == "hyprland" ]]; then
             echo ">>> Deploying Hyprland configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG/hypr/config" "$DEST_CONFIG/hypr/config"
-            copy_file "$SOURCE_WM_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
+            copy_dir_content "$SOURCE_WM_CONFIG/config" "$DEST_CONFIG/config"
+            copy_file "$SOURCE_WM_CONFIG/hyprland.lua" "$DEST_CONFIG/hyprland.lua"
         elif [[ $WM_NAME == "niri" ]]; then
             echo ">>> Deploying Niri configs..."
             copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
@@ -559,62 +623,6 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
 
     echo ">>> Deploying .nanorc (nano configuration)..."
     copy_file "$SOURCE_COMMON_CONFIG/.nanorc" "$HOME/.nanorc"
-
-    # =======================================================
-    # NixOS specific deployment (Online Remote / Offline)
-    # =======================================================
-    if command -v nixos-rebuild >/dev/null 2>&1; then
-        echo ""
-        log_info "NixOS detected. Choose configuration mode for HakuSpace Dotfiles:"
-        echo -e "  ${C_BOLD}[1]${C_RESET} Offline (Copy hakuspace-config.nix and edit configuration.nix)"
-        echo -e "  ${C_BOLD}[2]${C_RESET} Online Remote (Deploy flake.nix from template)"
-        echo -e "  ${C_BOLD}[0]${C_RESET} Skip NixOS deployment"
-        read -r -p ">>> Choose mode (1/2/0): " nixos_mode
-
-        NIXOS_ETC="/etc/nixos"
-        SOURCE_HAKU_NIX="$NIX_DIR/hakuspace-config.nix"
-        SOURCE_FLAKE_EXAMPLE="$NIX_DIR/flake.nix.example"
-
-        if [[ "$nixos_mode" == "1" ]]; then
-            log_info "Deploying NixOS Offline Config..."
-            # Note: We assume the user runs this script with proper permissions 
-            # to write to /etc/nixos, or copy_file will use standard cp. 
-            copy_file "$SOURCE_HAKU_NIX" "$NIXOS_ETC/hakuspace-config.nix"
-            
-            CONFIG_NIX="$NIXOS_ETC/configuration.nix"
-            if [[ -f "$CONFIG_NIX" ]]; then
-                # Check if hakuspace-config.nix is already imported
-                if grep -q "./hakuspace-config.nix" "$CONFIG_NIX"; then
-                    log_skip "./hakuspace-config.nix is already imported in $CONFIG_NIX."
-                else
-                    log_info "Injecting ./hakuspace-config.nix into imports of configuration.nix..."
-                    sudo sed -i -E 's|(imports\s*=\s*\[)|\1\n        ./hakuspace-config.nix|' "$CONFIG_NIX"
-                    log_ok "Updated imports in $CONFIG_NIX."
-                fi
-            else
-                log_warn "$CONFIG_NIX not found! Please import hakuspace-config.nix manually."
-            fi
-
-        elif [[ "$nixos_mode" == "2" ]]; then
-            log_info "Deploying NixOS Online Remote Config (Flake)..."
-            DEST_FLAKE="$NIXOS_ETC/flake.nix"
-            
-            if [[ -f "$DEST_FLAKE" ]]; then
-                if ask_yes_no "===> $DEST_FLAKE already exists. Do you want to backup and override it?"; then
-                    copy_file "$SOURCE_FLAKE_EXAMPLE" "$DEST_FLAKE"
-                    log_ok "flake.nix overwritten successfully."
-                else
-                    log_skip "Kept existing flake.nix."
-                fi
-            else
-                copy_file "$SOURCE_FLAKE_EXAMPLE" "$DEST_FLAKE"
-                log_ok "flake.nix deployed successfully."
-            fi
-        else
-            log_skip "Skipping NixOS specific deployment."
-        fi
-    fi
-    # =======================================================
 
     log_ok "Configurations deployed finished."
 else
@@ -757,6 +765,15 @@ fi
 
 # Init HakuSpace Control
 check_control_dir
+
+# NixOS configuration update
+if [[ command -v nixos-rebuild >/dev/null 2>&1 ]]; then
+    if ask_yes_no "===> NixOS configuration updated. Do you want to rebuild NixOS system now?"; then
+        sudo nixos-rebuild switch
+    else
+        log_warn "You chose not to rebuild NixOS system. Please remember to run 'sudo nixos-rebuild switch' later."
+    fi
+fi
 
 echo ""
 echo -e "${C_GREEN}All services have been processed!${C_RESET}"
