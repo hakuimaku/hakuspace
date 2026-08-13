@@ -19,6 +19,12 @@ in
             default = true;
             description = "Enable Hakuspace NixOS base configuration";
         };
+
+        enableDefaultShell = lib.mkOption {
+            type = lib.types.bool;
+            default = true;
+            description = "Set Zsh as default user shell";
+        };
     };
 
     config = lib.mkIf cfg.enable {
@@ -35,6 +41,7 @@ in
         # Zsh Shell
         programs.zsh.enable = lib.mkDefault true;
         environment.shells = with pkgs; [ zsh ];
+        users.defaultUserShell = lib.mkIf cfg.enableDefaultShell (lib.mkForce pkgs.zsh);
 
         # Thunar File Manager
         programs.xfconf.enable = lib.mkDefault true;
