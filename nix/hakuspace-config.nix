@@ -64,6 +64,7 @@ in
 
             # Desktop Environment / Window Manager
             programs.hyprland.enable = lib.mkDefault true;
+            programs.niri.enable = lib.mkDefault true;
 
             # Packages ================================================
             environment.systemPackages = with pkgs; [
