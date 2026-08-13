@@ -112,18 +112,10 @@ backup_item() {
     [[ -e "$target" || -L "$target" ]] || return 0
 
     local rel="${target#$HOME/}"
-    rel="${rel#/}"
     local backup_target="$BACKUP_DIR/$rel"
-    
     mkdir -p "$(dirname "$backup_target")"
 
-    if [[ "$target" == /etc/* || ! -w "$(dirname "$target")" ]]; then
-        sudo cp -a "$target" "$backup_target" && sudo rm -rf "$target"
-        sudo chown -R "$USER":"$USER" "$backup_target"
-    else
-        cp -a "$target" "$backup_target" && rm -rf "$target"
-    fi
-
+    mv "$target" "$backup_target"
     log_backup "$target -> $backup_target"
 }
 
@@ -136,27 +128,13 @@ copy_file() {
         return 1
     fi
 
-    local need_sudo=0
-    if [[ "$dst" == /etc/* || ( -e "$dst" && ! -w "$dst" ) || ( ! -e "$dst" && ! -w "$(dirname "$dst")" ) ]]; then
-        need_sudo=1
-    fi
-
-    if [[ $need_sudo -eq 1 ]]; then
-        sudo mkdir -p "$(dirname "$dst")"
-    else
-        ensure_dir "$(dirname "$dst")"
-    fi
+    ensure_dir "$(dirname "$dst")"
 
     if [[ -e "$dst" || -L "$dst" ]]; then
         backup_item "$dst"
     fi
 
-    if [[ $need_sudo -eq 1 ]]; then
-        sudo cp -f "$src" "$dst"
-    else
-        cp -f "$src" "$dst"
-    fi
-
+    cp -f "$src" "$dst"
     log_copy "$src -> $dst"
     return 0
 }
@@ -643,6 +621,7 @@ DEST_BIN="$HOME/.local/bin"
 if ask_yes_no "===> Do you want to setup hakuspace scripts now?"; then
     if [[ -d "$SOURCE_BIN" ]]; then
         copy_dir_content "$SOURCE_BIN" "$DEST_BIN"
+        chmod +x ~/.local/bin/*
         log_ok "local/bin deployment completed."
     else
         log_error "Not found directory: $SOURCE_BIN"
@@ -768,7 +747,7 @@ check_control_dir
 
 # NixOS configuration update
 if command -v nixos-rebuild >/dev/null 2>&1; then
-    if ask_yes_no "===> NixOS configuration updated. Do you want to rebuild NixOS system now?"; then
+    if ask_yes_no "===> NixOS configuration updated. Do you want to rebuild NixOS system now? (maybe have some conflicts)"; then
         sudo nixos-rebuild switch
     else
         log_warn "You chose not to rebuild NixOS system. Please remember to run 'sudo nixos-rebuild switch' later."
