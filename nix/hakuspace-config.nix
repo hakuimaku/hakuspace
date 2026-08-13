@@ -39,7 +39,7 @@ in
 
         # Zsh Shell
         programs.zsh.enable = lib.mkDefault true;
-        users.defaultUserShell = lib.mkIf cfg.enableDefaultShell (lib.mkDefault pkgs.zsh);
+        users.defaultUserShell = lib.mkDefault (if cfg.enableDefaultShell then pkgs.zsh else pkgs.bash);
 
         # Thunar File Manager
         programs.xfconf.enable = lib.mkDefault true;
