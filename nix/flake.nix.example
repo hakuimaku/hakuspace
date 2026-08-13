@@ -8,23 +8,23 @@
     inputs = {
         nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
         hakuspace = {
-            url = "github:hakuspace/nix";
+            url = "github:hakuimaku/hakuspace?dir=nix";
             inputs.nixpkgs.follows = "nixpkgs";
         };
     };
 
     outputs = { self, nixpkgs, hakuspace, ... }@inputs: {
         nixosConfigurations = {
-
-		# Change "nixos" to your hostname, or leave it as is if you want to use the default hostname.
-        nixos = nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-            modules = [
-                ./hardware-configuration.nix
-                ./configuration.nix
-                hakuspace.nixosModules.default
-            ];
-        };
+            
+            # Change "nixos" to your hostname or leave it for default
+            nixos = nixpkgs.lib.nixosSystem {
+                system = "x86_64-linux";
+                modules = [
+                    ./hardware-configuration.nix
+                    ./configuration.nix
+                    hakuspace.nixosModules.default
+                ];
+            };
         };
     };
 }
