@@ -1,7 +1,7 @@
 [general]
 bars = 12
 autosens = 1
-sensitivity = 16
+sensitivity = 100
 
 [input]
 method = pipewire
@@ -10,6 +10,9 @@ source = auto
 [output]
 channels = stereo
 reverse = 0
+method = raw
+raw_target = /dev/stdout
+data_format = ascii
 
 [smoothing]
 noise_reduction = 77
@@ -17,7 +20,7 @@ noise_reduction = 77
 
 [eq]
 1 = 1 # bass
-2 = 0.8
+2 = 1
 3 = 1 # midtone
-4 = 0.8
-5 = 0.7 # treble
+4 = 1
+5 = 1 # treble
