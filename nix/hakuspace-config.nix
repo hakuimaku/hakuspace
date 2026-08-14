@@ -83,6 +83,7 @@ in
             gtk-layer-shell
             glib
             libnotify
+            networkmanagerapplet
             playerctl
             file
             git
