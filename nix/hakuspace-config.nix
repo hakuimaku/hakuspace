@@ -29,137 +29,154 @@ in
 
     config = lib.mkIf cfg.enable (lib.mkMerge [
         {
-            # Experimental features
-            nix.settings.experimental-features = lib.mkDefault [ "nix-command" "flakes" ];
+        # Experimental features
+        nix.settings.experimental-features = lib.mkDefault [ "nix-command" "flakes" ];
             
-            # Hardware Graphics for Wayland Compositors
-            hardware.graphics.enable = lib.mkDefault true;
+        # Hardware Graphics for Wayland Compositors
+        hardware.graphics.enable = lib.mkDefault true;
 
-            # Programs ================================================
-            nixpkgs.config.allowUnfree = lib.mkDefault true;
-            programs.firefox.enable = lib.mkDefault true;
-            services.power-profiles-daemon.enable = lib.mkDefault true;
-            services.displayManager.ly.enable = lib.mkDefault true;
+        # Programs ================================================
+        nixpkgs.config.allowUnfree = lib.mkDefault true;
+        programs.firefox.enable = lib.mkDefault true;
+        services.power-profiles-daemon.enable = lib.mkDefault true;
+        services.displayManager.ly.enable = lib.mkDefault true;
 
-            # Thunar File Manager
-            programs.xfconf.enable = lib.mkDefault true;
-            programs.thunar.enable = lib.mkDefault true;
-            programs.thunar.plugins = with pkgs; [
-                thunar-archive-plugin
-                thunar-volman
-            ];
-            services.udisks2.enable = lib.mkDefault true;
-            services.gvfs.enable = lib.mkDefault true;
-            services.tumbler.enable = lib.mkDefault true;
-            security.polkit.enable = lib.mkDefault true;
+        # Thunar File Manager
+        programs.xfconf.enable = lib.mkDefault true;
+        programs.thunar.enable = lib.mkDefault true;
+        programs.thunar.plugins = with pkgs; [
+            thunar-archive-plugin
+            thunar-volman
+        ];
+        services.udisks2.enable = lib.mkDefault true;
+        services.gvfs.enable = lib.mkDefault true;
+        services.tumbler.enable = lib.mkDefault true;
+        security.polkit.enable = lib.mkDefault true;
 
-            # Nano Editor
-            programs.nano = {
-                enable = lib.mkDefault true;
-                syntaxHighlight = true;
-                nanorc = ''
-                    set tabsize 2
-                    set tabstospaces
-                    set mouse
-                '';
+        # Nano Editor
+        programs.nano = {
+            enable = lib.mkDefault true;
+            syntaxHighlight = true;
+            nanorc = ''
+                set tabsize 2
+                set tabstospaces
+                set mouse
+            '';
+        };
+
+        # Desktop Environment / Window Manager
+        programs.hyprland.enable = lib.mkDefault true;
+        programs.niri.enable = lib.mkDefault true;
+        programs.mango.enable = lib.mkDefault true;
+        programs.labwc.enable = lib.mkDefault true;
+
+        # Waybar
+        programs.waybar.enable = lib.mkDefault true;
+
+        # Polkit Authentication Agent
+        security.polkit.enable = lib.mkDefault true;
+
+        systemd.user.services.polkit-mate-authentication-agent = {
+            description = "mate-polkit authentication agent";
+            wantedBy = [ "graphical-session.target" ];
+            wants = [ "graphical-session.target" ];
+            after = [ "graphical-session.target" ];
+            serviceConfig = {
+            Type = "simple";
+            ExecStart = "${pkgs.mate.mate-polkit}/libexec/polkit-mate-authentication-agent-1";
+            Restart = "on-failure";
+            RestartSec = 1;
+            TimeoutStopSec = 10;
             };
+        };
 
-            # Desktop Environment / Window Manager
-            programs.hyprland.enable = lib.mkDefault true;
-            programs.niri.enable = lib.mkDefault true;
-            programs.mango.enable = lib.mkDefault true;
-            programs.labwc.enable = lib.mkDefault true;
+        # Packages ================================================
+        environment.systemPackages = with pkgs; [
+            (python3.withPackages (ps: with ps; [
+                colorthief
+                pygobject3
+            ]))
+            gtk3
+            pango
+            gobject-introspection
+            gtk-layer-shell
+            glib
+            libnotify
+            playerctl
+            file
+            git
+            rofi
+            kitty
+            swaynotificationcenter
+            fastfetch
+            awww
+            mpvpaper
+            hyprlock
+            hypridle
+            hyprpicker
+            hyprsunset
+            gammastep
+            jq
+            imagemagick
+            wlr-randr
+            wl-clipboard
+            cliphist
+            grim
+            slurp
+            mpv
+            imv
+            nwg-look
+            xdg-utils
+            mate-polkit
+            xhost
+            xwayland-satellite
+            file-roller
+            p7zip
+            unrar
+            unzip
+            zip
+            rofi-emoji
+            wl-screenrec
+            sway-audio-idle-inhibit
+            wget
+            cava
+            tty-clock
+            lavat
+            chafa
+            pipes
+            cmatrix
+            brightnessctl
+            ncdu
+            gparted
+            btop
+            pavucontrol
+            vscode
+        ];
 
-            # Waybar
-            programs.waybar.enable = lib.mkDefault true;
+        fonts = {
+            fontconfig.enable = lib.mkDefault true;
+            packages = with pkgs; [
+                noto-fonts
+                noto-fonts-cjk-sans
+                noto-fonts-color-emoji
+                nerd-fonts.jetbrains-mono
+            ];
+        };
 
-            # Packages ================================================
-            environment.systemPackages = with pkgs; [
-                (python3.withPackages (ps: with ps; [
-                    colorthief
-                    pygobject3
-                ]))
-                gtk3
-                pango
-                gobject-introspection
-                gtk-layer-shell
-                glib
-                libnotify
-                playerctl
-                file
-                git
-                rofi
-                kitty
-                swaynotificationcenter
-                fastfetch
-                awww
-                mpvpaper
-                hyprlock
-                hypridle
-                hyprpicker
-                hyprsunset
-                gammastep
-                jq
-                imagemagick
-                wlr-randr
-                wl-clipboard
-                cliphist
-                grim
-                slurp
-                mpv
-                imv
-                nwg-look
-                xdg-utils
-                mate-polkit
-                xhost
-                xwayland-satellite
-                file-roller
-                p7zip
-                unrar
-                unzip
-                zip
-                rofi-emoji
-                wl-screenrec
-                sway-audio-idle-inhibit
-                wget
-                cava
-                tty-clock
-                lavat
-                chafa
-                pipes
-                cmatrix
-                brightnessctl
-                ncdu
-                gparted
-                btop
-                pavucontrol
-                vscode
+        xdg.portal = {
+            enable = lib.mkDefault true;
+            extraPortals = [
+                pkgs.xdg-desktop-portal-gtk
+                pkgs.xdg-desktop-portal-wlr 
+                pkgs.xdg-desktop-portal-gnome
             ];
 
-            fonts = {
-                fontconfig.enable = lib.mkDefault true;
-                packages = with pkgs; [
-                    noto-fonts
-                    noto-fonts-cjk-sans
-                    noto-fonts-color-emoji
-                    nerd-fonts.jetbrains-mono
-                ];
+            config = lib.mkDefault {
+                hyprland.default = [ "hyprland" "gtk" ];
+                niri.default = [ "gnome" "gtk" ];
+                mango.default = [ "wlr" "gtk" ];
+                labwc.default = [ "wlr" "gtk" ];
             };
-
-            xdg.portal = {
-                enable = lib.mkDefault true;
-                extraPortals = [
-                    pkgs.xdg-desktop-portal-gtk
-                    pkgs.xdg-desktop-portal-wlr 
-                    pkgs.xdg-desktop-portal-gnome
-                ];
-
-                config = lib.mkDefault {
-                    hyprland.default = [ "hyprland" "gtk" ];
-                    niri.default = [ "gnome" "gtk" ];
-                    mango.default = [ "wlr" "gtk" ];
-                    labwc.default = [ "wlr" "gtk" ];
-                };
             };
         }
 
