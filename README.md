@@ -24,11 +24,11 @@ Arch / Fedora / NixOS dotfiles for Hyprland / Niri / MangoWM / Labwc
 
 <div align="center">
 
-🛠️ [Installation](https://github.com/hakuimaku/hakuspace#-3) |  🔄 [Update](https://github.com/hakuimaku/hakuspace#-update-haku-space-to-lastest-version) | 📦 [Packages](https://github.com/hakuimaku/hakuspace#-2) | 🕹️ [Keybinding](https://github.com/hakuimaku/hakuspace#-5) | 🐞 [Troubleshooting](https://github.com/hakuimaku/hakuspace#-8)
+🛠️ [Installation](https://github.com/hakuimaku/hakuspace#-3) |  🔄 [Update](https://github.com/hakuimaku/hakuspace#-update-haku-space-to-lastest-version) | 📦 [Packages](https://github.com/hakuimaku/hakuspace#-2) | 🕹️ [Keybinding](https://github.com/hakuimaku/hakuspace#-6) | 🐞 [Troubleshooting](https://github.com/hakuimaku/hakuspace#-9)
 
 *Need help or want to chat? Join our Discord server or follow us on TikTok for showcase videos!*
 
-[![Discord](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/https://discord.gg/Juuun8sXsN) [![TikTok](https://img.shields.io/badge/TikTok-000000?style=for-the-badge&logo=tiktok&logoColor=white)](https://www.tiktok.com/@hakuimaku2372)
+[![Discord](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/Juuun8sXsN) [![TikTok](https://img.shields.io/badge/TikTok-000000?style=for-the-badge&logo=tiktok&logoColor=white)](https://www.tiktok.com/@hakuimaku2372)
 
 </div>
 
@@ -36,6 +36,7 @@ Arch / Fedora / NixOS dotfiles for Hyprland / Niri / MangoWM / Labwc
 - Multi-Distro Support: Arch, Fedora, Nixos currently.
 - DE-like Experience: Modular UI powered by Rofi, Waybar, SwayNC, and custom scripts.
 - Extensible: Highly customizable and easy to adapt to your own workflow.
+- See Guide for: [Arch Linux](https://github.com/hakuimaku/hakuspace#-3) | [NixOS](https://github.com/hakuimaku/hakuspace#-5) | [Fedora](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md)
 
 ---
 
@@ -97,7 +98,7 @@ Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakus
 
 ### 0. Prerequisites:
 
-- You have completed the installation of Arch, Fedora, and NixOS (for derivative distros, please report any issues to me via: [Discord](https://discord.gg/https://discord.gg/Juuun8sXsN)).
+- You have completed the installation of Arch, Fedora, and NixOS (for derivative distros, please report any issues to me via: [Discord](https://discord.gg/Juuun8sXsN)).
 - You have installed and configured essential utilities such as Wi-Fi, Bluetooth, and necessary hardware drivers.
 - You are familiar with configuring the system via code, as my dotfiles do not feature a central graphical settings GUI.
 
@@ -213,11 +214,11 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=94A797&center=false&vCenter=false&repeat=true&width=900&lines=NixOS Configuration" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=94A797&center=false&vCenter=false&repeat=true&width=900&lines=NixOS+Configuration" alt="Typing SVG" />
 
 See the main configuration file at [hakuspace-config.nix](https://github.com/hakuimaku/hakuspace/blob/main/nix/hakuspace-config.nix)
 
-* Simply clone this repository and run the `install.sh` script exactly as outlined above.
+* Simply clone this repository and run the `install.sh` script exactly as outlined [above](https://github.com/hakuimaku/hakuspace#-3).
 * You can use either method: online remote via [flake.nix](https://github.com/hakuimaku/hakuspace/blob/main/nix/flake.nix.example) or offline by directly importing `hakuspace-config.nix` into your `configuration.nix`.
 * `hakuspace-config.nix` does not set a display manager by default, as it may conflict with your existing display manager.
 * Two current options in `hakuspace-config.nix` that you can enable/disable in your `configuration.nix`:
