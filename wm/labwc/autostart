@@ -11,6 +11,7 @@ nm-applet --indicator >/dev/null 2>&1 &
 blueman-applet >/dev/null 2>&1 &
 hypridle >/dev/null 2>&1 &
 sway-audio-idle-inhibit >/dev/null 2>&1 &
+fcitx5 -d >/dev/null 2>&1 &
 
 (sleep 0.2; ~/.local/bin/waybar_manager.sh >/dev/null 2>&1 &)
 (sleep 0.2; ~/.local/bin/dockbar_manager.sh --startup >/dev/null 2>&1 &)
