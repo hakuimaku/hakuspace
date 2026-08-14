@@ -51,7 +51,6 @@ in
         services.udisks2.enable = lib.mkDefault true;
         services.gvfs.enable = lib.mkDefault true;
         services.tumbler.enable = lib.mkDefault true;
-        security.polkit.enable = lib.mkDefault true;
 
         # Nano Editor
         programs.nano = {
