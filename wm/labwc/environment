@@ -37,10 +37,10 @@ VDPAU_DRIVER=va_gl
 LIBVA_DRIVER_NAME=iHD
 
 # Input method
-#GTK_IM_MODULE=fcitx
-#QT_IM_MODULE=fcitx
-#XMODIFIERS=@im=fcitx
-#SDL_IM_MODULE=fcitx
+GTK_IM_MODULE=fcitx
+QT_IM_MODULE=fcitx
+XMODIFIERS=@im=fcitx
+SDL_IM_MODULE=fcitx
 
 ##
 ## This causes a virtual output to be created automatically whenever there
