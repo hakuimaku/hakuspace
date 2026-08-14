@@ -6,21 +6,21 @@ Arch / Fedora / NixOS dotfiles for Hyprland / Niri / MangoWM / Labwc
 </div>
 
 <p align="center">
-    <a href="https://github.com/hyprwm/Hyprland"><img alt="Hyprland" src="https://img.shields.io/badge/Hyprland-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
-    <a href="https://github.com/YaLTeR/niri"><img alt="Niri" src="https://img.shields.io/badge/Niri-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
-    <a href="https://github.com/mangowm/mango"><img alt="MangoWM" src="https://img.shields.io/badge/MangoWM-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
-    <a href="https://github.com/labwc/labwc"><img alt="Labwc" src="https://img.shields.io/badge/Labwc-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
+    <a href="https://github.com/hyprwm/Hyprland"><img alt="Hyprland" src="https://img.shields.io/badge/Hyprland-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2394A797&color=%231f1f1f"></a>&nbsp;
+    <a href="https://github.com/YaLTeR/niri"><img alt="Niri" src="https://img.shields.io/badge/Niri-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2394A797&color=%231f1f1f"></a>&nbsp;
+    <a href="https://github.com/mangowm/mango"><img alt="MangoWM" src="https://img.shields.io/badge/MangoWM-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2394A797&color=%231f1f1f"></a>&nbsp;
+    <a href="https://github.com/labwc/labwc"><img alt="Labwc" src="https://img.shields.io/badge/Labwc-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2394A797&color=%231f1f1f"></a>&nbsp;
     <br />
-    <a href="https://github.com/hakuimaku/hakuspace/commits/main"><img alt="Last Commit" src="https://img.shields.io/github/last-commit/hakuimaku/hakuspace?style=for-the-badge&label=Last%20Commit&labelColor=%2368818f&color=%231f1f1f&logo=git&logoColor=%231f1f1f"></a>&nbsp;
-    <a href="https://github.com/hakuimaku/hakuspace/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/hakuimaku/hakuspace?style=for-the-badge&label=Stars&labelColor=%2368818f&color=%231f1f1f&logo=github&logoColor=%231f1f1f"></a>&nbsp;
-    <a href="https://github.com/hakuimaku/hakuspace"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/hakuimaku/hakuspace?style=for-the-badge&label=Repo%20Size&labelColor=%2368818f&color=%231f1f1f&logo=github&logoColor=%231f1f1f">
+    <a href="https://github.com/hakuimaku/hakuspace/commits/main"><img alt="Last Commit" src="https://img.shields.io/github/last-commit/hakuimaku/hakuspace?style=for-the-badge&label=Last%20Commit&labelColor=%2394A797&color=%231f1f1f&logo=git&logoColor=%231f1f1f"></a>&nbsp;
+    <a href="https://github.com/hakuimaku/hakuspace/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/hakuimaku/hakuspace?style=for-the-badge&label=Stars&labelColor=%2394A797&color=%231f1f1f&logo=github&logoColor=%231f1f1f"></a>&nbsp;
+    <a href="https://github.com/hakuimaku/hakuspace"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/hakuimaku/hakuspace?style=for-the-badge&label=Repo%20Size&labelColor=%2394A797&color=%231f1f1f&logo=github&logoColor=%231f1f1f">
 </p>
 
 | <img width="1920" height="1080" alt="screenshot_2026-08-03_17-50-02" src="https://github.com/user-attachments/assets/8cc12f0f-d03f-47e7-9b09-85e16e40f3e2" /> | <img width="1920" height="1080" alt="screenshot_2026-08-03_17-59-18" src="https://github.com/user-attachments/assets/259dfd36-f46c-4366-ab8e-fa9ab6fc90bd" /> |
 |--|--|
 | <img width="1920" height="1080" alt="screenshot_2026-07-16_10-57-36" src="https://github.com/user-attachments/assets/02050014-7041-4a92-aa94-cef9a00c0592" /> | <img width="1920" height="1080" alt="screenshot_2026-08-03_17-53-03" src="https://github.com/user-attachments/assets/2ffee716-eaa0-471f-bbbf-e6c341adf75f" /> |
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Welcome+to+Haku+Space" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=94A797&center=false&vCenter=false&repeat=true&width=900&lines=Welcome+to+Haku+Space" alt="Typing SVG" />
 
 <div align="center">
 
@@ -39,7 +39,7 @@ Arch / Fedora / NixOS dotfiles for Hyprland / Niri / MangoWM / Labwc
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Key+Features" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=94A797&center=false&vCenter=false&repeat=true&width=900&lines=Key+Features" alt="Typing SVG" />
 
 * **Control Center**: `~/hakuspace-control` this directory stores your custom configs so you don't have to touch the main ones, giving you much more freedom to customize.
 * **Accent Colors**: Synced across **Waybar**, **Rofi**, **Kitty**, **Swaync**,... giving your setup a **Super Clean** and **Cohesive Vibe**!
@@ -53,11 +53,11 @@ Arch / Fedora / NixOS dotfiles for Hyprland / Niri / MangoWM / Labwc
 > [!note]
 > My dotfiles are powered by scripts; if you're not using them, there's no impact on your performance!
 >
-> If you have any questions about **how to use** my dotfiles or want some tips, don't hesitate to reach out on [Discord](https://discord.gg/https://discord.gg/Juuun8sXsN)
+> If you have any questions about **how to use** my dotfiles or want some tips, don't hesitate to reach out on [Discord](https://discord.gg/Juuun8sXsN)
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Programs" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=94A797&center=false&vCenter=false&repeat=true&width=900&lines=Programs" alt="Typing SVG" />
 
 <div align="center">
   
@@ -90,7 +90,7 @@ Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakus
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Installation+Guide" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=94A797&center=false&vCenter=false&repeat=true&width=900&lines=Installation+Guide" alt="Typing SVG" />
 
 > [!tip]
 > For Fedora users, you should follow the [Fedora Guide](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md)
@@ -189,7 +189,7 @@ My dotfiles are very clean. You just need to check the config folders that were 
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Plugin+Configuration+(Hyprland+Only)" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=94A797&center=false&vCenter=false&repeat=true&width=900&lines=Plugin+Configuration+(Hyprland+Only)" alt="Typing SVG" />
 
 You can immediately use the plugins that I have pre-configured. Simply install and enable them using the commands below (or tweak them as you like in `plugin.lua`).
 
@@ -213,7 +213,31 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Keybinding" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=94A797&center=false&vCenter=false&repeat=true&width=900&lines=NixOS Configuration" alt="Typing SVG" />
+
+See the main configuration file at [hakuspace-config.nix](https://github.com/hakuimaku/hakuspace/blob/main/nix/hakuspace-config.nix)
+
+* Simply clone this repository and run the `install.sh` script exactly as outlined above.
+* You can use either method: online remote via [flake.nix](https://github.com/hakuimaku/hakuspace/blob/main/nix/flake.nix.example) or offline by directly importing `hakuspace-config.nix` into your `configuration.nix`.
+* `hakuspace-config.nix` does not set a display manager by default, as it may conflict with your existing display manager.
+* Two current options in `hakuspace-config.nix` that you can enable/disable in your `configuration.nix`:
+
+```nix
+{
+  hakuspace = {
+    enable = true; # Enable the full hakuspace config
+    enableZshShell = true; # Enable Zsh shell, if you want to use it
+  };
+}
+
+```
+
+> [!important]
+> If you encounter any issues while applying my `hakuspace-config.nix`, please open an issue or reach out via [Discord](https://discord.gg/Juuun8sXsN).
+
+---
+
+## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=94A797&center=false&vCenter=false&repeat=true&width=900&lines=Keybinding" alt="Typing SVG" />
 
 - See more keybinding in: [Hyprland](https://github.com/hakuimaku/hakuspace/blob/main/hyprland/config/hypr/config/keybinding.lua) | [Niri](https://github.com/hakuimaku/hakuspace/blob/main/niri/config/niri/keybinds.kdl) | [MangoWM](https://github.com/hakuimaku/hakuspace/blob/main/mango/config/mango/bind.conf) | [Labwc](https://github.com/hakuimaku/hakuspace/blob/main/labwc/config/labwc/rc.xml) 
 - Hotkeys:
@@ -250,7 +274,7 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Assets+located" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=94A797&center=false&vCenter=false&repeat=true&width=900&lines=Assets+located" alt="Typing SVG" />
 
 - Custom config (your personal changes): `~/hakuspace-control`
 - Icons: `~/.icons`
@@ -264,14 +288,14 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Just+chill" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=94A797&center=false&vCenter=false&repeat=true&width=900&lines=Just+chill" alt="Typing SVG" />
 
 - Open your terminal on Workspace 1 and type `haku` for a little surprise. To close them, just append the '--clear' argument (e.g., `haku --clear`).
 - Cava Underbar: To toggle a Cava visualizer right below Waybar, select Cava Underbar from the Haku Menu. It automatically hides during fullscreen and reappears when you exit. To disable it completely, just toggle it again in the Haku Menu.
 
 ---
 
-# <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Troubleshooting" alt="Typing SVG" />
+# <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=94A797&center=false&vCenter=false&repeat=true&width=900&lines=Troubleshooting" alt="Typing SVG" />
 
 **Waybar issues**:
 - **Waybar clock**: You should set your timezone and locale manually in waybar configuration to ensure the clock displays correctly.
@@ -283,7 +307,7 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 - Some features might still be missing since I only tested this setup for **my personal use**. If you need more than what's provided, you'll need to install and configure those parts manually.
 - If you don't want to use certain apps (like `wl-screenrec`, `thunar`, `ly` etc.), you can easily remove and replace them with alternatives. However, some apps are deeply integrated into my scripts or configs, so removing them may break functionality or cause those scripts/configs to stop working.
 - If you find that **the script isn't working**, run it directly in the terminal to see what the error is.
-- If you encounter any **issues** during installation or configuration, just ask me in some video on my [Tiktok](https://www.tiktok.com/@hakuimaku2372), open an issue on GitHub or Join my [Discord](https://discord.gg/https://discord.gg/Juuun8sXsN) to get more help!. I will do my best to help you out.
+- If you encounter any **issues** during installation or configuration, just ask me in some video on my [Tiktok](https://www.tiktok.com/@hakuimaku2372), open an issue on GitHub or Join my [Discord](https://discord.gg/Juuun8sXsN) to get more help!. I will do my best to help you out.
 
 If you're using **Fedora**:
 - Swaync service may automatically start on Fedora. Which can **cause issues when startup**. To fix this, you can disable the Swaync service by running the following command:
@@ -293,15 +317,15 @@ systemctl --user disable swaync.service
 
 ---
 
-# <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Contributing" alt="Typing SVG" />
+# <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=94A797&center=false&vCenter=false&repeat=true&width=900&lines=Contributing" alt="Typing SVG" />
 
 - This is a personal dotfiles configuration. Feel free to fork and adapt it to your needs!
 - Tiktok / See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372)
-- Discord: [hakuspace-dots](https://discord.gg/https://discord.gg/Juuun8sXsN)
+- Discord: [haku-shell](https://discord.gg/Juuun8sXsN)
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Credits" alt="Typing SVG" />
+## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=94A797&center=false&vCenter=false&repeat=true&width=900&lines=Credits" alt="Typing SVG" />
 
 See **hakuspace-archive** for the assets used in this project: [hakuspace-archive](https://github.com/hakuimaku/hakuspace-archive)
 
