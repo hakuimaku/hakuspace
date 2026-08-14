@@ -55,6 +55,7 @@ window-rule {
 // Rules for specific applications
 window-rule {
     match app-id=r#"zen$"# title="^Picture-in-Picture$"
+    match app-id=r#"app.zen_browser.zen$"# title="^Picture-in-Picture$"
     match app-id=r#"firefox$"# title="^Picture-in-Picture$"
     
     open-floating true
@@ -62,6 +63,7 @@ window-rule {
 
 window-rule {
     match app-id=r#"zen"#
+    match app-id=r#"app.zen_browser.zen"#
     match app-id=r#"firefox"#
     match app-id=r#"code"#
     open-maximized true

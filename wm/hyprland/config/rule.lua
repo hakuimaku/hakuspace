@@ -67,7 +67,7 @@ fullscreenBorder = hl.window_rule({
 
 fullWidth_ScrollingLayout = hl.window_rule({
     name = "full_width_scrolling",
-    match = { class = "code|zen|discord|firefox" },
+    match = { class = "code|app.zen_browser.zen|zen|discord|firefox" },
 
     scrolling_width = 1.0
 })
