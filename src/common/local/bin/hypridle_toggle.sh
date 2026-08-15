@@ -3,7 +3,7 @@
 # This script toggles the hypridle process on or off, which is responsible for managing idle states.
 
 if pgrep -x hypridle >/dev/null 2>&1; then
-    killall hypridle
+    pkill -x hypridle
     notify-send "Hypridle" "Disabled"
 else
     hypridle &

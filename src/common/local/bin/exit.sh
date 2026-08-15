@@ -14,6 +14,8 @@ EXIT_APP_LIST_DEFAULT=(
 APP_LIST=("${EXIT_APP_LIST_DEFAULT[@]}" "${EXIT_APP_LIST_USER[@]}" )
 APP_PATTERN=$(IFS="|" ; echo "${APP_LIST[*]}")
 
+PORTAL_PATTERN="xdg-desktop-portal|xdg-desktop-portal-hyprland|xdg-desktop-portal-wlr|xdg-desktop-portal-gtk|xdg-desktop-portal-gnome"
+
 # Fallback RAM threshold if not set in main_setting.sh
 RAM_THRESHOLD_MB=${RAM_THRESHOLD_MB:-300}
 
@@ -60,9 +62,9 @@ fi
 # Main Exit Sequence
 # Graceful kill
 pkill -SIGTERM -u "$USER" -f "$APP_PATTERN" 2>/dev/null
-killall -q xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-wlr xdg-desktop-portal-gtk xdg-desktop-portal-gnome 2>/dev/null
+pkill -SIGTERM -u "$USER" -f "$PORTAL_PATTERN" 2>/dev/null
 
-sleep 1.5
+sleep 2
 
 # Force kill stubborn background processes
 pkill -9 -u "$USER" -f "$APP_PATTERN" 2>/dev/null
@@ -86,6 +88,7 @@ elif [[ $XDG_CURRENT_DESKTOP == "niri" ]]; then
     niri msg action quit --skip-confirmation
 elif [[ $XDG_CURRENT_DESKTOP == "mango" ]]; then
     mmsg dispatch quit
+    mmsg -s -q
 elif [[ $XDG_CURRENT_DESKTOP == "labwc" ]]; then
     labwc --exit
 fi
