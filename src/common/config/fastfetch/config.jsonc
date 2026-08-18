@@ -5,12 +5,12 @@
         "type": "auto",
         "position": "top",
         "padding": { "left": 2 },
-        "color": { "1": "blue" }
+        "color": { "1": "white" }
     },
     "display": {
         "separator": "  ",
-        "color": { "keys": "blue", "output": "blue", "title": "blue" },
-        "constants": ["\u001b[34m", "\u001b[34m"]
+        "color": { "keys": "white", "output": "white", "title": "white" },
+        "constants": ["\u001b[37m", "\u001b[37m"]
     },
     "modules": [
         {

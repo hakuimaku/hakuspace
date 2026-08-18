@@ -157,8 +157,8 @@ cat > "$STATE_DIR/kitty-style.conf" <<EOF
 font_family      family="${FONT_FAMILY}"
 font_size        ${FONT_SIZE}
 foreground ${ACCENT_COLOR}
-color4 ${ACCENT_COLOR}
-color12 ${ACCENT_COLOR}
+color7 ${ACCENT_COLOR}
+color15 ${ACCENT_COLOR}
 EOF
 
 # Btop theme
