@@ -1,0 +1,38 @@
+add_newline = true
+
+format = """
+[╭─](white) $time $directory $git_branch $git_status $cmd_duration
+[╰─](white)$character """
+
+[character]
+success_symbol = "[●](bold white)"
+error_symbol = "[○](bold white)"
+
+[time]
+disabled = false
+time_format = "%H:%M"
+style = "white"
+format = "[󱑎 $time]($style) "
+
+[directory]
+style = "bold white"
+format = "[| 󰝰  $path]($style)"
+truncation_length = 4
+
+[git_branch]
+symbol = "󰊢"
+style = "white"
+format = " [$symbol $branch]($style)"
+
+[git_status]
+style = "white"
+format = " [$all_status$ahead_behind]($style)"
+
+[cmd_duration]
+min_time = 2000
+style = "white"
+format = "[󱎫 $duration]($style) "
+
+[nix_shell]
+style = "bold white"
+symbol = " "
