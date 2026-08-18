@@ -54,6 +54,6 @@
             "active": "",
             "default": ""
         },
-        "sort-by-id": true
+        "sort-by-direction": "true"
     }
 }
