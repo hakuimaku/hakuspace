@@ -9,6 +9,17 @@ if status is-interactive
     # Better ls
     command -v eza &> /dev/null && alias ls='eza --icons --group-directories-first -1'
 
+    # Path
+    fish_add_path ~/.local/bin
+    fish_add_path ~/.cargo/bin
+    fish_add_path ~/go/bin
+
+    # Env
+    set -gx GTK_USE_PORTAL 1
+    set -gx MOZ_ENABLE_WAYLAND 1
+    set -gx QT_QPA_PLATFORMTHEME qt6ct
+    set -gx DOTNET_ROOT $HOME/.dotnet
+
     # Abbrs
     abbr lg 'lazygit'
     abbr gd 'git diff'
