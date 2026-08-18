@@ -1,38 +1,57 @@
 add_newline = true
 
-format = """
-[╭─](white) $time $directory $git_branch $git_status $cmd_duration
-[╰─](white)$character """
+format = '''
+[╭─▶︎](white)  $username@$hostname $directory $git_branch$git_status$git_state ◀︎$fill$character $cmd_duration $time
+[╰─](white)$character$nix_shell '''
+
+[fill]
+symbol = '─'
 
 [character]
-success_symbol = "[●](bold white)"
-error_symbol = "[○](bold white)"
+success_symbol = '[●](bold white)'
+error_symbol = '[○](bold white)'
 
 [time]
 disabled = false
-time_format = "%H:%M"
-style = "white"
-format = "[󱑎 $time]($style) "
+time_format = '%H:%M'
+style = 'white'
+format = '[󱑎 $time]($style)'
+
+[username]
+format = '[$user]($style)'
+style_root = 'bold red'
+style_user = 'bold white'
+show_always = true
+
+[hostname]
+format = '[$ssh_symbol$hostname]($style)'
+ssh_symbol = '󰌾 '
+ssh_only = false
+style = 'bold white'
 
 [directory]
-style = "bold white"
-format = "[| 󰝰  $path]($style)"
+style = 'bold white'
+format = '[| 󰝰  $path]($style)'
 truncation_length = 4
 
 [git_branch]
-symbol = "󰊢"
-style = "white"
-format = " [$symbol $branch]($style)"
+symbol = '󰊢'
+style = 'blue'
+format = ' [$symbol $branch]($style)'
 
 [git_status]
-style = "white"
-format = " [$all_status$ahead_behind]($style)"
+style = 'yellow'
+format = ' ([\[$all_status$ahead_behind\]]($style) )'
+
+[git_state]
+style = 'green'
 
 [cmd_duration]
 min_time = 2000
-style = "white"
-format = "[󱎫 $duration]($style) "
+style = 'white'
+format = '[󱎫 $duration]($style) 󰧄'
 
 [nix_shell]
-style = "bold white"
-symbol = " "
+style = 'bold white'
+symbol = ' '
+format = 'via [$symbol$state( \($name\))]($style)  '
