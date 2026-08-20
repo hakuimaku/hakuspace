@@ -83,6 +83,7 @@ in
                 colorthief
                 pygobject3
             ]))
+            pulseaudio
             gtk3
             pango
             gobject-introspection
