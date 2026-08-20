@@ -2,7 +2,6 @@
 ly                            # TUI display/login manager (like sddm, gdm,...)
 
 # === Service tools / Useful utilities tools ===
-sway-audio-idle-inhibit-git   # Inhibit idle/suspend while audio is playing (AUR)
 brightnessctl                 # Brightness control utility
 ncdu                          # Disk usage analyzer (interactive TUI)
 btop                          # Resource monitor (CPU/RAM/disk/network)
