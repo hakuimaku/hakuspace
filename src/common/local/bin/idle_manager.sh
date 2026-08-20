@@ -63,7 +63,7 @@ run_daemon() {
     log_msg "INFO: Idle manager daemon started successfully (PID: $$)."
     
     while true; do
-        HYPRIDLE_PID=$(pgrep -x hypridle | head -n 1)
+        HYPRIDLE_PID=$(pgrep -x -u "$USER" hypridle | head -n 1)
 
         if [ -n "$HYPRIDLE_PID" ]; then
             if is_audio_playing; then
@@ -103,8 +103,8 @@ toggle_service() {
         kill -TERM "$DAEMON_PID" 2>/dev/null
         rm -f "$PID_FILE" 2>/dev/null
         
-        killall -CONT hypridle 2>/dev/null
-        killall hypridle 2>/dev/null
+        pkill -CONT -x -u "$USER" hypridle 2>/dev/null
+        pkill -TERM -x -u "$USER" hypridle 2>/dev/null
         sleep 0.2
         
         log_msg "TOGGLE: All services stopped."
@@ -112,8 +112,8 @@ toggle_service() {
         log_msg "TOGGLE: Starting hypridle and daemon..."
         notify-send "Idle Manager" "Starting hypridle and daemon..."
         
-        killall -CONT hypridle 2>/dev/null
-        killall hypridle 2>/dev/null
+        pkill -CONT -x -u "$USER" hypridle 2>/dev/null
+        pkill -TERM -x -u "$USER" hypridle 2>/dev/null
         sleep 0.2
         
         hypridle 201>&- &
