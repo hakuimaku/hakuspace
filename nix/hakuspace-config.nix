@@ -126,7 +126,6 @@ in
             zip
             rofi-emoji
             wl-screenrec
-            sway-audio-idle-inhibit
             wget
             cava
             tty-clock
