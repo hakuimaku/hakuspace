@@ -44,6 +44,14 @@ in
         # Clean temporary files on boot
         boot.tmp.cleanOnBoot = lib.mkDefault true;
 
+        environment.sessionVariables = {
+            GI_TYPELIB_PATH = pkgs.lib.makeSearchPath "lib/girepository-1.0" [
+                "/run/current-system/sw"
+                pkgs.pango.dev
+                pkgs.harfbuzz.dev
+            ];
+        };
+
         # Programs ================================================
         nixpkgs.config.allowUnfree = lib.mkDefault true;
         programs.firefox.enable = lib.mkDefault true;
@@ -90,7 +98,7 @@ in
             gobject-introspection
             gtk3
             gtk-layer-shell
-            pango
+            pango.dev
             harfbuzz
             gdk-pixbuf
             atk
