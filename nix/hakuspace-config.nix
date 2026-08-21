@@ -189,6 +189,10 @@ in
             vscode
         ];
 
+        environment.variables.GSETTINGS_SCHEMA_DIR =
+            "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/"
+            + "${pkgs.gsettings-desktop-schemas.name}/glib-2.0/schemas";
+
         fonts = {
             fontconfig.enable = lib.mkDefault true;
             packages = with pkgs; [
