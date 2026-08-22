@@ -71,11 +71,11 @@
                     "update-command": "bluetoothctl show | grep -q 'Powered: yes' && echo true || echo false"
                 },
                 {
-                    "label": "󰒲",
+                    "label": "󰖔",
                     "type": "toggle",
                     "active": true,
-                    "command": "$HOME/.local/bin/idle_manager.sh --toggle >/dev/null 2>&1",
-                    "update-command": "$HOME/.local/bin/idle_manager.sh --check >/dev/null 2>&1 && echo true || echo false"
+                    "command": "$HOME/.local/bin/nightlight_toggle.sh >/dev/null 2>&1",
+                    "update-command": "$HOME/.local/bin/nightlight_toggle.sh --check >/dev/null 2>&1 && echo true || echo false"
                 },
                 {
                     "label": "󰝟",
@@ -85,11 +85,8 @@
                     "update-command": "wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q 'MUTED' && echo true || echo false"
                 },
                 {
-                    "label": "󰖔",
-                    "type": "toggle",
-                    "active": true,
-                    "command": "$HOME/.local/bin/nightlight_toggle.sh >/dev/null 2>&1",
-                    "update-command": "$HOME/.local/bin/nightlight_toggle.sh --check >/dev/null 2>&1 && echo true || echo false"
+                    "label": "󰄀",
+                    "command": "swaync-client -cp && sleep 0.5 && $HOME/.local/bin/screenshot.sh --fullscreen >/dev/null 2>&1"
                 },
                 {
                     "label": "󰝚",
