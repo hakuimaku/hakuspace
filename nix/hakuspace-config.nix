@@ -6,7 +6,7 @@
 #                              /_/                      
 #   NixOS configuration file for hakuspace
 
-{ config, pkgs, lib, unstable ... }:
+{ config, pkgs, lib, unstable, ... }:
 
 let
     cfg = config.hakuspace;
