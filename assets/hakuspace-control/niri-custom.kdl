@@ -23,16 +23,15 @@ binds {
 
 // Rules for cava underbar, if you want to tweak it
 window-rule {
-    match app-id=r#"cavaunderbar"#
+    match app-id="cavaunderbar"
 
     open-floating true
     open-focused false
     
-    default-floating-position x=0 y=-52 relative-to="top-left"
+    default-floating-position x=0 y=-56 relative-to="top-left"
     min-width 1920
     min-height 70
     max-height 70
-    opacity 0.7
 
     background-effect {
         xray false
@@ -43,5 +42,23 @@ window-rule {
 
     shadow {
         off
+    }
+
+    focus-ring {
+        off
+    }
+}
+
+// More rounded corner
+/-window-rule {
+    geometry-corner-radius 12
+    clip-to-geometry true
+}
+
+// focus ring width
+layout {
+    focus-ring {
+        on
+        width 3
     }
 }

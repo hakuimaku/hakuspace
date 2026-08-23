@@ -31,14 +31,20 @@ fullWidth_ScrollingLayout:set_enabled(true) -- Set width 100% for certain apps
 specificWidth_ScrollingLayout:set_enabled(true) -- Set width 60% for certain apps
 
 -- Use my plugin config: (require hyprexpo | Make sure you have hyprexpo installed & enabled)
---hl.permission("/usr/(bin|local/bin)/hyprpm", "plugin", "allow")
---hl.on("hyprland.start", function () hl.exec_cmd("hyprpm reload -n") end)
---hl.bind("SUPER + G", function() hl.plugin.hyprexpo.expo("toggle") end)
---require("config/plugin")
+-- hl.permission("/usr/(bin|local/bin)/hyprpm", "plugin", "allow")
+-- hl.on("hyprland.start", function () hl.exec_cmd("hyprpm reload -n") end)
+-- hl.bind("SUPER + G", function() hl.plugin.hyprexpo.expo("toggle") end)
+-- require("config/plugin")
 
 -- Example change keybind for SUPER + E
 -- hl.unbind("SUPER + E") -- Unbind SUPER + E: Thunar open (Based on my default config)
 -- hl.bind("SUPER + E", hl.dsp.exec_cmd("discord")) -- Bind SUPER + E: Discord open (Bind new command)
+
+-- Use this mouse wheel to switch workspace if there is reverse scrolling issue
+-- hl.unbind("SUPER + mouse_down")
+-- hl.unbind("SUPER + mouse_up")
+-- hl.bind("SUPER + mouse_down", hl.dsp.focus({ workspace = "r-1" }))
+-- hl.bind("SUPER + mouse_up",   hl.dsp.focus({ workspace = "r+1" }))
 
 -- Hyprland bring back my old rounding and shadow
 -- hl.config({
