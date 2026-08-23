@@ -18,9 +18,19 @@ if command -v gsettings >/dev/null 2>&1 && [[ -f "$STATE_DIR/fonts.css" ]]; then
 fi
 
 # Reload apps
-# hyprland reload
+# Hyprland reload
 if [[ $XDG_CURRENT_DESKTOP == "Hyprland" ]]; then
     hyprctl reload
+fi
+
+# Niri reload
+if [[ $XDG_CURRENT_DESKTOP == "niri" ]]; then
+    niri msg action load-config-file
+fi
+
+# MangoWM reload
+if [[ $XDG_CURRENT_DESKTOP == "mango" ]]; then
+    mmsg -d reload_config
 fi
 
 # Labwc reload
