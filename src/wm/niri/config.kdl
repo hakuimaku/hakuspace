@@ -15,6 +15,7 @@ include "animations.kdl"
 include "settings.kdl"
 include "environment.kdl"
 include "rules.kdl"
+include optional=true "~/.local/state/haku_theme/niri-style.kdl"
 
 screenshot-path "~/Pictures/Screenshots/screenshot_%Y-%m-%d_%H-%M-%S.png"
 
