@@ -6,7 +6,7 @@
 #                              /_/                      
 #   NixOS configuration file for hakuspace
 
-{ config, pkgs, lib, unstable, ... }:
+{ config, pkgs, lib, ... }:
 
 let
     cfg = config.hakuspace;
@@ -150,7 +150,7 @@ in
             awww
             mpvpaper
             hyprlock
-            unstable.hypridle
+            hypridle
             hyprpicker
             hyprsunset
             gammastep
