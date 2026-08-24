@@ -31,6 +31,7 @@ fi
 # MangoWM reload
 if [[ $XDG_CURRENT_DESKTOP == "mango" ]]; then
     mmsg -d reload_config
+    mmsg dispatch reload_config
 fi
 
 # Labwc reload
