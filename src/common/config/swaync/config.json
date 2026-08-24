@@ -85,8 +85,11 @@
                     "update-command": "wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q 'MUTED' && echo true || echo false"
                 },
                 {
-                    "label": "󰄀",
-                    "command": "swaync-client -cp && sleep 0.5 && $HOME/.local/bin/screenshot.sh --fullscreen >/dev/null 2>&1"
+                    "label": "󰒳",
+                    "type": "toggle",
+                    "active": true,
+                    "command": "$HOME/.local/bin/idle_inhibit.sh --toggle >/dev/null 2>&1",
+                    "update-command": "$HOME/.local/bin/idle_inhibit.sh --check >/dev/null 2>&1 && echo true || echo false"
                 },
                 {
                     "label": "󰝚",
