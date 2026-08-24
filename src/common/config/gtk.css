@@ -6,15 +6,16 @@
 
 * {
     border: none;
+    font-size: small;
 }
 
 .thunar {
     background-color: rgba(0, 0, 0, 0.9);
-    font-size: small;
 }
 
 .thunar .view {
     background-color: transparent;
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .thunar .view .cell {
@@ -33,11 +34,13 @@
     background-color: transparent;
     padding: 10px 0 0 10px;
     border-radius: 4px;
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .thunar menubar > menuitem {
     border-radius: 4px;
     padding: 4px 12px;
+    box-shadow: none;
 }
 
 .thunar menubar > menuitem:hover {
@@ -53,8 +56,8 @@
 }
 
 .thunar toolbar button {
-    border-radius: 4px;
     padding: 2px 10px;
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .thunar toolbar button:hover {
@@ -81,13 +84,14 @@
 
 .thunar .sidebar .cell:selected {
     background-color: @accent_color;
+    border-radius: 4px;
 }
 
 .thunar .sidebar treeview row {
     padding: 6px 1px;
 }
 
-.thunar .sidebar treeview row:selected: {
+.thunar .sidebar treeview row:selected {
     background-color: @accent_color;
     color: rgba(0, 0, 0, 0.8);
 }
@@ -110,7 +114,7 @@
 .thunar iconview:selected {
     background-color: @accent_color;
     color: rgba(0, 0, 0, 0.8);
-    border-radius: 4px;
+    border-radius: none;
 }
 
 .thunar statusbar {
@@ -176,7 +180,7 @@
 .thunar notebook,
 .thunar notebook stack {
     border-style: none;
-    border-width: 0px;
+    border-width: none;
     box-shadow: none;
     outline-style: none;
     background-image: none;
@@ -185,18 +189,40 @@
 
 .thunar .path-bar button {
     background-color: transparent;
+    background: none;
+    box-shadow: none;
+    border: 2px solid transparent;
+    color: rgba(255, 255, 255, 0.6);
+    border-radius: 4px;
+    padding: 3px 6px;
+}
+
+.thunar .path-bar button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .thunar .path-bar button:checked {
     background-color: @accent_color;
-    border-radius: 4px;
+    color: rgba(0, 0, 0, 0.8);
+}
+
+.thunar toolbar entry {
+    background-color: @accent_color;
+    color: rgba(0, 0, 0, 0.8);
+    box-shadow: none;
+    padding: 1px;
+}
+
+.thunar toolbar entry selection {
+    background: rgba(0, 0, 0, 0.9);
+    color: @accent_color;
 }
 
 .thunar treeview header button {
     background-color: transparent;
     padding: 6px 10px;
     font-weight: bold;
-    border-radius: 4px;
 }
 
 .thunar treeview header button:hover {
