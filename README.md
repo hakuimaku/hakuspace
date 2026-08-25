@@ -24,7 +24,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 
 <div align="center">
 
-🛠️ [Installation](https://github.com/hakuimaku/hakuspace#-3) |  🔄 [Update](https://github.com/hakuimaku/hakuspace#-update-haku-space-to-lastest-version) | 📦 [Packages](https://github.com/hakuimaku/hakuspace#-2) | 🕹️ [Keybinding](https://github.com/hakuimaku/hakuspace#-6) | 🐞 [Troubleshooting](https://github.com/hakuimaku/hakuspace#-9)
+[Installation](#installation-guide) ─ [Update](#update-haku-space) ─ [Packages](#programs) ─ [Keybinding](#keybinding) ─ [Troubleshooting](#troubleshooting)
 
 *Need help or want to chat? Join our Discord server or follow us on TikTok for showcase videos!*
 
@@ -36,7 +36,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 - Multi-Distro Support: Have been tested on Arch, Fedora, Nixos.
 - DE-like Experience: Modular UI powered by Rofi, Waybar, SwayNC, and custom scripts.
 - Extensible: Highly customizable and easy to adapt to your own workflow.
-- See Guide for: [Arch Linux](https://github.com/hakuimaku/hakuspace#-3) | [NixOS](https://github.com/hakuimaku/hakuspace#-5) | [Fedora](https://github.com/hakuimaku/hakuspace/blob/main/docs/Fedora_Guide.md)
+- See Guide for: [Arch Linux](#installation-guide) | [NixOS](#nixos-configuration) | [Fedora](docs/Fedora_Guide.md)
 
 ---
 
@@ -60,9 +60,9 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 
 <div align="center">
   
-See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/main/src/packages/pkg-core.txt) | [pkg-service](https://github.com/hakuimaku/hakuspace/blob/main/src/packages/pkg-service.txt) | [pkg-optional](https://github.com/hakuimaku/hakuspace/blob/main/src/packages/pkg-optional.txt)
+See more information in: [pkg-core](src/packages/pkg-core.txt) | [pkg-service](src/packages/pkg-service.txt) | [pkg-optional](src/packages/pkg-optional.txt)
 
-Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakuspace/blob/main/src/packages/pkg-hyprland.txt) | [pkg-niri](https://github.com/hakuimaku/hakuspace/blob/main/src/packages/pkg-niri.txt) | [pkg-mango](https://github.com/hakuimaku/hakuspace/blob/main/src/packages/pkg-mango.txt) | [pkg-labwc](https://github.com/hakuimaku/hakuspace/blob/main/src/packages/pkg-labwc.txt)
+Specific packages for each WM: [pkg-hyprland](src/packages/pkg-hyprland.txt) | [pkg-niri](src/packages/pkg-niri.txt) | [pkg-mango](src/packages/pkg-mango.txt) | [pkg-labwc](src/packages/pkg-labwc.txt)
 
 </div>
 
@@ -91,7 +91,7 @@ Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakus
 ## Installation Guide
 
 > [!tip]
-> For Fedora users, you should follow the [Fedora Guide](https://github.com/hakuimaku/hakuspace/blob/main/docs/Fedora_Guide.md)
+> For Fedora users, you should follow the [Fedora Guide](docs/Fedora_Guide.md)
 
 ### 0. Prerequisites:
 
@@ -164,10 +164,10 @@ chmod +x update.sh
 
 ## NixOS Configuration
 
-See the main configuration file at [hakuspace-config.nix](https://github.com/hakuimaku/hakuspace/blob/main/nix/hakuspace-config.nix)
+See the main configuration file at [hakuspace-config.nix](nix/hakuspace-config.nix)
 
-* Simply clone this repository and run the `install.sh` script exactly as outlined [above](https://github.com/hakuimaku/hakuspace#-3).
-* You can use either method: online remote via [flake.nix](https://github.com/hakuimaku/hakuspace/blob/main/nix/flake.nix.example) or offline by directly importing `hakuspace-config.nix` into your `configuration.nix` (2 modes already have install flow in script `install.sh`).
+* Simply clone this repository and run the `install.sh` script exactly as outlined [above](#installation-guide).
+* You can use either method: online remote via [flake.nix](nix/flake.nix.example) or offline by directly importing `hakuspace-config.nix` into your `configuration.nix` (2 modes already have install flow in script `install.sh`).
 * `hakuspace-config.nix` does not set a display manager by default, as it may conflict with your existing display manager.
 * 3 current options in `hakuspace-config.nix` that you can enable/disable in your `configuration.nix`:
 
@@ -181,6 +181,10 @@ See the main configuration file at [hakuspace-config.nix](https://github.com/hak
 }
 
 ```
+
+> [!important]
+> Nixpkgs I use is stable, which still install **hypridle** v0.1.7.
+> Please install **hyprilde** unstable nixpkgs for v0.1.8 (to use my [idle_inhibit.sh](src/common/local/bin/idle_inhibit.sh) script).
 
 ---
 
@@ -210,7 +214,7 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 
 ## Keybinding
 
-- See more keybinding in: [Hyprland](https://github.com/hakuimaku/hakuspace/blob/main/src/wm/hyprland/config/keybinding.lua) | [Niri](https://github.com/hakuimaku/hakuspace/blob/main/src/wm/niri/keybinds.kdl) | [MangoWM](https://github.com/hakuimaku/hakuspace/blob/main/src/wm/mango/bind.conf) | [Labwc](https://github.com/hakuimaku/hakuspace/blob/main/src/wm/labwc/rc.xml) 
+- See more keybinding in: [Hyprland](src/wm/hyprland/config/keybinding.lua) | [Niri](src/wm/niri/keybinds.kdl) | [MangoWM](src/wm/mango/bind.conf) | [Labwc](src/wm/labwc/rc.xml#L263) 
 - Hotkeys:
 
 | Bind | Function |
@@ -248,6 +252,7 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 ## Assets Located
 
 - Custom config (your personal changes): `~/hakuspace-control`
+- State file & Haku Theme for waybar, rofi,... (includes accent_color, font, font size): `~/.local/state/haku_theme`
 - Icons: `~/.icons`
 - Themes: `~/.themes`
 - All hakuspace scripts: `~/.local/bin`
@@ -255,7 +260,6 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 - Wallpapers: `~/Pictures/Wallpapers`
 - Lively wallpapers: `~/Videos/Wallpapers`
 - Lively wallpaper thumbnail: in folder Preview `~/Videos/Wallpapers/Preview` and add image .jpg/.png (same name with video) to make the thumbnail appear in rofi select menu if you want to use lively wallpaper
-- State file & Haku Theme for waybar, rofi,... (includes accent_color, font, font size): `~/.local/state/haku_theme`
 
 ---
 
