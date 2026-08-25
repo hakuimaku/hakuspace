@@ -6,14 +6,14 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 </div>
 
 <p align="center">
-    <a href="https://github.com/hyprwm/Hyprland"><img alt="Hyprland" src="https://img.shields.io/badge/Hyprland-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%236f8fa0&color=%231f1f1f"></a>&nbsp;
-    <a href="https://github.com/YaLTeR/niri"><img alt="Niri" src="https://img.shields.io/badge/Niri-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%236f8fa0&color=%231f1f1f"></a>&nbsp;
-    <a href="https://github.com/mangowm/mango"><img alt="MangoWM" src="https://img.shields.io/badge/MangoWM-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%236f8fa0&color=%231f1f1f"></a>&nbsp;
-    <a href="https://github.com/labwc/labwc"><img alt="Labwc" src="https://img.shields.io/badge/Labwc-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%236f8fa0&color=%231f1f1f"></a>&nbsp;
+    <a href="https://github.com/hyprwm/Hyprland"><img alt="Hyprland" src="https://img.shields.io/badge/-Hyprland-%23212121?style=for-the-badge&logo=wayland&logoColor=%23FFFFFF&labelColor=%23000000"></a>&nbsp;
+    <a href="https://github.com/YaLTeR/niri"><img alt="Niri" src="https://img.shields.io/badge/-Niri-%23212121?style=for-the-badge&logo=wayland&logoColor=%23FFFFFF&labelColor=%23000000"></a>&nbsp;
+    <a href="https://github.com/mangowm/mango"><img alt="MangoWM" src="https://img.shields.io/badge/-MangoWM-%23212121?style=for-the-badge&logo=wayland&logoColor=%23FFFFFF&labelColor=%23000000"></a>&nbsp;
+    <a href="https://github.com/labwc/labwc"><img alt="Labwc" src="https://img.shields.io/badge/-Labwc-%23212121?style=for-the-badge&logo=wayland&logoColor=%23FFFFFF&labelColor=%23000000"></a>&nbsp;
     <br />
-    <a href="https://github.com/hakuimaku/hakuspace/commits/main"><img alt="Last Commit" src="https://img.shields.io/github/last-commit/hakuimaku/hakuspace?style=for-the-badge&label=Last%20Commit&labelColor=%236f8fa0&color=%231f1f1f&logo=git&logoColor=%231f1f1f"></a>&nbsp;
-    <a href="https://github.com/hakuimaku/hakuspace/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/hakuimaku/hakuspace?style=for-the-badge&label=Stars&labelColor=%236f8fa0&color=%231f1f1f&logo=github&logoColor=%231f1f1f"></a>&nbsp;
-    <a href="https://github.com/hakuimaku/hakuspace"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/hakuimaku/hakuspace?style=for-the-badge&label=Repo%20Size&labelColor=%236f8fa0&color=%231f1f1f&logo=github&logoColor=%231f1f1f">
+    <a href="https://github.com/hakuimaku/hakuspace/commits/main"><img alt="Last Commit" src="https://img.shields.io/github/last-commit/hakuimaku/hakuspace?style=for-the-badge&label=Last%20Commit&labelColor=%23000000&color=%23212121&logo=git&logoColor=%23FFFFFF"></a>&nbsp;
+    <a href="https://github.com/hakuimaku/hakuspace/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/hakuimaku/hakuspace?style=for-the-badge&label=Stars&labelColor=%23000000&color=%23212121&logo=github&logoColor=%23FFFFFF"></a>&nbsp;
+    <a href="https://github.com/hakuimaku/hakuspace"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/hakuimaku/hakuspace?style=for-the-badge&label=Repo%20Size&labelColor=%23000000&color=%23212121&logo=github&logoColor=%23FFFFFF"></a>
 </p>
 
 | <img width="1920" height="1080" alt="screenshot_2026-08-25_06-56-05" src="https://github.com/user-attachments/assets/126ee140-a1a8-4f34-a07b-6bc84699631c" /> | <img width="1920" height="1080" alt="screenshot_2026-08-25_06-52-48" src="https://github.com/user-attachments/assets/c3ca125c-12f5-49d8-afd3-1aa68b64c8fe" /> |
