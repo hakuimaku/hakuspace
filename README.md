@@ -20,7 +20,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 |--|--|
 | <img width="1920" height="1080" alt="screenshot_2026-08-25_07-03-04" src="https://github.com/user-attachments/assets/8c599b1a-6947-4ce3-a511-37645a0eda5b" /> | <img width="1920" height="1080" alt="screenshot_2026-08-25_07-04-51" src="https://github.com/user-attachments/assets/dd0abd39-a7e7-41dd-aaff-4f8422894622" /> |
 
-## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=6f8fa0&center=false&vCenter=false&repeat=true&width=900&lines=Welcome+to+Haku+Space" alt="Typing SVG" />
+## Welcome to Haku Space
 
 <div align="center">
 
@@ -40,7 +40,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=6f8fa0&center=false&vCenter=false&repeat=true&width=900&lines=Key+Features" alt="Typing SVG" />
+## Key Features
 
 * **Control Center**: `~/hakuspace-control` this directory stores your custom configs so you don't have to touch the main ones, giving you much more freedom to customize.
 * **Accent Colors**: Synced across **Waybar**, **Rofi**, **Kitty**, **Swaync**,... giving your setup a **Super Clean** and **Cohesive Vibe**!
@@ -53,12 +53,10 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 
 > [!note]
 > My dotfiles are powered by scripts; if you're not using them, there's no impact on your performance!
->
-> If you have any questions about **how to use** my dotfiles or want some tips, don't hesitate to reach out on [Discord](https://discord.gg/Juuun8sXsN)
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=6f8fa0&center=false&vCenter=false&repeat=true&width=900&lines=Programs" alt="Typing SVG" />
+## Programs
 
 <div align="center">
   
@@ -90,7 +88,7 @@ Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakus
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=6f8fa0&center=false&vCenter=false&repeat=true&width=900&lines=Installation+Guide" alt="Typing SVG" />
+## Installation Guide
 
 > [!tip]
 > For Fedora users, you should follow the [Fedora Guide](https://github.com/hakuimaku/hakuspace/blob/main/docs/Fedora_Guide.md)
@@ -146,7 +144,7 @@ xhost +si:localuser:root
 Grants the local root user permission to connect to and launch graphical (GUI) applications (like `GParted`) within the current user's active X server or Xwayland session.
 
 
-### 🔽 Update Haku Space to lastest version
+### Update Haku Space
 Simply run `update.sh` script in hakuspace folder.
 ``` bash
 cd ~/hakuspace
@@ -154,19 +152,39 @@ chmod +x update.sh
 ./update.sh
 ```
 
-### 🗑 Uninstall Haku Space
+### Uninstall Haku Space
 > (WM: The Window Manager you are currently using, e.g., hyprland, niri, mango).
 
-My dotfiles are very clean. You just need to check the config folders that were copied from common and specific WM in `~/hakuspace`, then delete them from `~/.config` (During installation, the `install.sh` script automatically created a **backup** of your existing configuration files so you can backup your old config).
 - Remove all scripts located in `~/.local/bin`.
 - Delete the auto-generated files in `~/.local/state/haku_theme`.
 - If necessary, you can also remove the icons and themes inside `~/.icons` and `~/.themes`.
 - Review `pkg-core.txt`, `pkg-service.txt`, `pkg-optional.txt` (in hakuspace/common) and `pkg-WM.txt` (in hakuspace/WM) to uninstall any unnecessary packages.
-- Finally, you can completely delete the `~/hakuspace` directory.
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=6f8fa0&center=false&vCenter=false&repeat=true&width=900&lines=Plugin+Configuration+(Hyprland+Only)" alt="Typing SVG" />
+## NixOS Configuration
+
+See the main configuration file at [hakuspace-config.nix](https://github.com/hakuimaku/hakuspace/blob/main/nix/hakuspace-config.nix)
+
+* Simply clone this repository and run the `install.sh` script exactly as outlined [above](https://github.com/hakuimaku/hakuspace#-3).
+* You can use either method: online remote via [flake.nix](https://github.com/hakuimaku/hakuspace/blob/main/nix/flake.nix.example) or offline by directly importing `hakuspace-config.nix` into your `configuration.nix` (2 modes already have install flow in script `install.sh`).
+* `hakuspace-config.nix` does not set a display manager by default, as it may conflict with your existing display manager.
+* 3 current options in `hakuspace-config.nix` that you can enable/disable in your `configuration.nix`:
+
+```nix
+{
+  hakuspace = {
+    enable = true; # Enable the full hakuspace config
+    enableZshShell = false; # Enable Zsh shell, legacy I don't use it anymore
+    enableFishShell = true; # Enable Fish shell
+  };
+}
+
+```
+
+---
+
+## Plugin Configuration (Hyprland Only)
 
 You can immediately use the plugins that I have pre-configured. Simply install and enable them using the commands below (or tweak them as you like in `plugin.lua`).
 
@@ -190,29 +208,7 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=6f8fa0&center=false&vCenter=false&repeat=true&width=900&lines=NixOS+Configuration" alt="Typing SVG" />
-
-See the main configuration file at [hakuspace-config.nix](https://github.com/hakuimaku/hakuspace/blob/main/nix/hakuspace-config.nix)
-
-* Simply clone this repository and run the `install.sh` script exactly as outlined [above](https://github.com/hakuimaku/hakuspace#-3).
-* You can use either method: online remote via [flake.nix](https://github.com/hakuimaku/hakuspace/blob/main/nix/flake.nix.example) or offline by directly importing `hakuspace-config.nix` into your `configuration.nix` (2 modes already have install flow in script `install.sh`).
-* `hakuspace-config.nix` does not set a display manager by default, as it may conflict with your existing display manager.
-* 3 current options in `hakuspace-config.nix` that you can enable/disable in your `configuration.nix`:
-
-```nix
-{
-  hakuspace = {
-    enable = true; # Enable the full hakuspace config
-    enableZshShell = false; # Enable Zsh shell, legacy I don't use it anymore
-    enableFishShell = true; # Enable Fish shell
-  };
-}
-
-```
-
----
-
-## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=6f8fa0&center=false&vCenter=false&repeat=true&width=900&lines=Keybinding" alt="Typing SVG" />
+## Keybinding
 
 - See more keybinding in: [Hyprland](https://github.com/hakuimaku/hakuspace/blob/main/src/wm/hyprland/config/keybinding.lua) | [Niri](https://github.com/hakuimaku/hakuspace/blob/main/src/wm/niri/keybinds.kdl) | [MangoWM](https://github.com/hakuimaku/hakuspace/blob/main/src/wm/mango/bind.conf) | [Labwc](https://github.com/hakuimaku/hakuspace/blob/main/src/wm/labwc/rc.xml) 
 - Hotkeys:
@@ -249,7 +245,7 @@ See the main configuration file at [hakuspace-config.nix](https://github.com/hak
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=6f8fa0&center=false&vCenter=false&repeat=true&width=900&lines=Assets+located" alt="Typing SVG" />
+## Assets Located
 
 - Custom config (your personal changes): `~/hakuspace-control`
 - Icons: `~/.icons`
@@ -263,14 +259,7 @@ See the main configuration file at [hakuspace-config.nix](https://github.com/hak
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=6f8fa0&center=false&vCenter=false&repeat=true&width=900&lines=Just+chill" alt="Typing SVG" />
-
-- Open your terminal on Workspace 1 and type `haku` for a little surprise. To close them, just append the '--clear' argument (e.g., `haku --clear`).
-- Cava Underbar: To toggle a Cava visualizer right below Waybar, select Cava Underbar from the Haku Menu. It automatically hides during fullscreen and reappears when you exit. To disable it completely, just toggle it again in the Haku Menu.
-
----
-
-# <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=6f8fa0&center=false&vCenter=false&repeat=true&width=900&lines=Troubleshooting" alt="Typing SVG" />
+# Troubleshooting
 
 **Waybar issues**:
 - **Waybar clock**: You should set your timezone and locale manually in waybar configuration to ensure the clock displays correctly.
@@ -292,7 +281,7 @@ systemctl --user disable swaync.service
 
 ---
 
-# <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=6f8fa0&center=false&vCenter=false&repeat=true&width=900&lines=Contributing" alt="Typing SVG" />
+# Contributing
 
 - This is a personal dotfiles configuration. Feel free to fork and adapt it to your needs!
 - Tiktok / See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372)
@@ -300,6 +289,6 @@ systemctl --user disable swaync.service
 
 ---
 
-## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=6f8fa0&center=false&vCenter=false&repeat=true&width=900&lines=Credits" alt="Typing SVG" />
+# Credits
 
 See **hakuspace-archive** for the assets used in this project: [hakuspace-archive](https://github.com/hakuimaku/hakuspace-archive)
