@@ -19,12 +19,6 @@ overview {
     }
 }
 
-cursor {
-    xcursor-theme "Bibata-Modern-Ice"
-    xcursor-size 24
-}
-
-
 // https://niri-wm.github.io/niri/Configuration:-Layout
 layout {
     gaps 16
