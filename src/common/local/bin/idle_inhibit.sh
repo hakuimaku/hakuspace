@@ -9,6 +9,7 @@ MIN_VERSION="0.1.8"
 
 if [[ $(printf '%s\n%s' "$MIN_VERSION" "$HYPRIDLE_VERSION" | sort -V | head -n1) != "$MIN_VERSION" ]]; then
     echo "Error: hypridle version is too old to use this script. Please update to v0.1.8 or higher."
+    notify-send "Hypridle" "Error: hypridle version is too old to use this script. Please update to v0.1.8 or higher."
     exit 1
 fi
 
