@@ -103,7 +103,7 @@ Specific packages for each WM: [pkg-hyprland](src/packages/pkg-hyprland.txt) | [
 - Stable Release (Recommended):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.2.4 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
+git clone --depth 1 --branch v2.2.5 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 - If you prefer to experience the **lastest changes**:
