@@ -868,13 +868,6 @@
 
     <!-- Haku Space Rules-->
     <windowRules>
-        <windowRule identifier="cavaunderbar">
-            <action name="ResizeTo" width="1920" height="70" />
-            <action name="MoveTo" x="0" y="0" />
-            <skipTaskbar>yes</skipTaskbar>
-            <skipWindowSwitcher>yes</skipWindowSwitcher>
-            <fixedPosition>yes</fixedPosition>
-        </windowRule>
         <windowRule identifier="seycmd">
             <action name="SnapToEdge" direction="left" />
         </windowRule>

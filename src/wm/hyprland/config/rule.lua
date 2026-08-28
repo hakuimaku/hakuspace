@@ -154,21 +154,6 @@ floatingXdgPortal = hl.window_rule({
 ---------------------------------
 ------- Haku Space Rules --------
 ---------------------------------
--- Rules for cava-underbar
-hl.window_rule({
-    name = "cava-underbar",
-    match = { class = "cavaunderbar" },
-
-    float = true,
-    pin = true,
-    border_size = 0,
-    no_blur = true,
-    no_focus = true,
-    no_shadow = true,
-    opacity = 0.5,
-    size = "1920 60",
-    move = "0 -4",
-})
 
 -- Rules for haku.sh | scrolling layout
 hl.window_rule({

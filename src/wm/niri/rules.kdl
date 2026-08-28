@@ -120,34 +120,6 @@ window-rule {
     default-column-width { proportion 0.6; }
 }
 
-// Rules for cava underbar
-window-rule {
-    match app-id="cavaunderbar"
-
-    open-floating true
-    open-focused false
-    
-    default-floating-position x=0 y=-56 relative-to="top-left"
-    min-width 1920
-    min-height 70
-    max-height 70
-
-    background-effect {
-        xray false
-        blur false
-        noise 0
-        saturation 1
-    }
-
-    shadow {
-        off
-    }
-
-    focus-ring {
-        off
-    }
-}
-
 // Rules for desktop icons
 window-rule {
     match app-id="desktop_icons.py"
