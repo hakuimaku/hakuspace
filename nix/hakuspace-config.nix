@@ -144,8 +144,8 @@ in
           nativeBuildInputs = [ pkgs.makeWrapper ];
           postBuild = ''
             wrapProgram $out/bin/python3 \
-              --prefix GI_TYPELIB_PATH : "${lib.makeSearchPath "lib/girepository-1.0" [ pango.out harfbuzz gtk3 gtk-layer-shell gdk-pixbuf librsvg atk cairo glib gobject-introspection ]}" \
-              --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ pango harfbuzz gtk3 gdk-pixbuf librsvg atk cairo glib ]}"
+              --prefix GI_TYPELIB_PATH : "${lib.makeSearchPath "lib/girepository-1.0" [ pango.out harfbuzz gtk3 gtk-layer-shell gdk-pixbuf librsvg atk cairo glib gobject-introspection vte ]}" \
+              --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ pango harfbuzz gtk3 gdk-pixbuf librsvg atk cairo glib vte ]}"
           '';
         })
         gobject-introspection
@@ -157,6 +157,7 @@ in
         gdk-pixbuf
         atk
         cairo
+        vte
       ];
 
       environment.variables.GSETTINGS_SCHEMA_DIR =
