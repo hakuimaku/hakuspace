@@ -4,6 +4,7 @@ import sys
 import signal
 import argparse
 import gi
+import shutil
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('GtkLayerShell', '0.1')
@@ -120,14 +121,34 @@ class CavaLayerApp:
     def start_cava(self):
         ensure_config_exists(self.config_path)
 
-        argv = ['cava', '-p', self.config_path]
+        cava = shutil.which("cava")
+
+        if not cava:
+            print(
+                "[cava-layer] ERROR: 'cava' was not found in PATH.",
+                file=sys.stderr,
+            )
+            print(
+                "[cava-layer] Check with: which cava",
+                file=sys.stderr,
+            )
+            return
+
+        argv = [cava, '-p', self.config_path]
 
         def on_spawn(terminal, pid, error, user_data):
             if error:
-                print(f"[cava-layer] Failed to launch cava: {error}", file=sys.stderr)
+                print(
+                    f"[cava-layer] Failed to launch cava: {error}",
+                    file=sys.stderr
+                )
                 return
+
             self.cava_pid = pid
-            print(f"[cava-layer] Launched 'cava -p {self.config_path}' (pid={pid})")
+            print(
+                f"[cava-layer] Launched '{cava} -p {self.config_path}' "
+                f"(pid={pid})"
+            )
 
         self.terminal.spawn_async(
             Vte.PtyFlags.DEFAULT,
@@ -135,12 +156,14 @@ class CavaLayerApp:
             argv,
             None,
             GLib.SpawnFlags.DEFAULT,
-            None, None,
+            None,
+            None,
             -1,
             None,
             on_spawn,
             None,
         )
+
         self.terminal.connect("child-exited", self.on_cava_exited)
 
     def on_cava_exited(self, terminal, status):
