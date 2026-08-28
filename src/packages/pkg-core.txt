@@ -18,6 +18,7 @@ python-colorthief             # Extract dominant color palette from images (Func
 python-gobject                # Python bindings for GObject
 gtk-layer-shell               # GTK library for layer shell protocol
 wlr-randr                     # Wayland output management utility
+vte3                          # Terminal widget library for GTK
 
 # === Fish Shell and related tools ===
 starship                      # Cross-shell prompt
