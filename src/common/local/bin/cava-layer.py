@@ -22,9 +22,7 @@ method = ncurses
 orientation = top
 
 [color]
-# Uncomment & comment one of the following lines to change the bar color
 foreground = black
-#foreground = white # based on wallpaper, best with dark wallpaper
 """
 
 
@@ -47,10 +45,11 @@ class CavaLayerApp:
     script only positions and hosts it.
     """
 
-    def __init__(self, config_path, window_height=80, font_size=5):
+    def __init__(self, config_path, window_height=80, font_size=5, app_name="cava-layer"):
         self.config_path = os.path.expanduser(config_path)
         self.window_height = window_height
         self.font_size = font_size
+        self.app_name = app_name
         self.cava_pid = None
 
         self.setup_window()
@@ -65,7 +64,8 @@ class CavaLayerApp:
 
     def setup_window(self):
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-        self.window.set_title("Cava Layer")
+        self.window.set_title(self.app_name)
+        self.window.set_wmclass(self.app_name, self.app_name)
         self.window.set_decorated(False)
         self.window.set_resizable(False)
         self.window.set_border_width(0)
@@ -77,6 +77,7 @@ class CavaLayerApp:
         self.window.set_app_paintable(True)
 
         GtkLayerShell.init_for_window(self.window)
+        GtkLayerShell.set_namespace(self.window, self.app_name)
         GtkLayerShell.set_layer(self.window, GtkLayerShell.Layer.BOTTOM)
         GtkLayerShell.set_anchor(self.window, GtkLayerShell.Edge.TOP, True)
         GtkLayerShell.set_anchor(self.window, GtkLayerShell.Edge.LEFT, True)
@@ -203,6 +204,12 @@ def parse_args():
         default=5,
         help="Terminal font size in points (default: 5). Lower this further (e.g. 3-4) for a thinner look, or raise it for bigger bars."
     )
+    parser.add_argument(
+        '-n', '--app-name',
+        dest='app_name',
+        default='cava-layer',
+        help="Layer shell namespace / WM class name (default: cava-layer)."
+    )
     return parser.parse_args()
 
 
@@ -212,6 +219,7 @@ def main():
         config_path=args.config_path,
         window_height=args.window_height,
         font_size=args.font_size,
+        app_name=args.app_name,
     )
 
     def signal_handler(sig, frame):
