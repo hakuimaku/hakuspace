@@ -111,7 +111,7 @@ sudo dnf install starship
 
 - **Install core packages for my scripts**:
 ```bash
-sudo dnf install jq ImageMagick python3-gobject gtk-layer-shell vte
+sudo dnf install jq ImageMagick python3-gobject gtk-layer-shell vte291
 
 sudo dnf install python3-pip
 pip install colorthief
