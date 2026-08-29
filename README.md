@@ -103,7 +103,7 @@ Specific packages for each WM: [pkg-hyprland](src/packages/pkg-hyprland.txt) | [
 - Stable Release (Recommended):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.2.5 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
+git clone --depth 1 --branch v2.2.6 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 - If you prefer to experience the **lastest changes**:
@@ -175,7 +175,6 @@ See the main configuration file at [hakuspace-config.nix](nix/hakuspace-config.n
 {
   hakuspace = {
     enable = true; # Enable the full hakuspace config
-    enableZshShell = false; # Enable Zsh shell, legacy I don't use it anymore
     enableFishShell = true; # Enable Fish shell
   };
 }
@@ -233,6 +232,7 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 | SUPER + SHIFT + W | Cycle Waybar Mode |
 | SUPER + X | Cycle Hyprland Layout (Hyprland Only) |
 | SUPER + ` | Open Special Workspace - For VS Code (Hyprland Only) |
+| SUPER + ` | Open Niri Overview |
 
 - Labwc:
 
@@ -259,7 +259,6 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 - Fastfetch logo: `~/.config/fastfetch`
 - Wallpapers: `~/Pictures/Wallpapers`
 - Lively wallpapers: `~/Videos/Wallpapers`
-- Lively wallpaper thumbnail: in folder Preview `~/Videos/Wallpapers/Preview` and add image .jpg/.png (same name with video) to make the thumbnail appear in rofi select menu if you want to use lively wallpaper
 
 ---
 
@@ -271,7 +270,6 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 - Waybar use `ext/workspaces` for **Multi-WMs** setup.
 
 **My dotfiles issues**:
-- **Cava Underbar in Niri** does not support the no-focus rule. As a result, you might accidentally move it from its original position or close it by mistake.
 - Some features might still be missing since I only tested this setup for **my personal use**. If you need more than what's provided, you'll need to install and configure those parts manually.
 - If you don't want to use certain apps (like `wl-screenrec`, `thunar`, `ly` etc.), you can easily remove and replace them with alternatives. However, some apps are deeply integrated into my scripts or configs, so removing them may break functionality or cause those scripts/configs to stop working.
 - If you find that **the script isn't working**, run it directly in the terminal to see what the error is.
