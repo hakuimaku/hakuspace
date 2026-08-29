@@ -73,6 +73,7 @@ pkill -9 -u "$USER" -f "$APP_PATTERN" 2>/dev/null
 rm -f /tmp/.X11-unix/X* 2>/dev/null
 rm -f /tmp/.X*-lock 2>/dev/null
 rm -rf /tmp/hypr /tmp/niri* /tmp/sway* /tmp/waybar* 2>/dev/null
+rm -rf /tmp/cava-layer.log /tmp/cava-layer.pid 2>/dev/null
 
 # Unset environment variables
 systemctl --user unset-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP 2>/dev/null
