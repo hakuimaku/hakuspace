@@ -28,7 +28,6 @@
   environment.systemPackages = with pkgs; [
     localsend
     onlyoffice-desktopeditors
-    gcc
   ];
 
   fonts = {
@@ -66,6 +65,17 @@
       qt6Packages.fcitx5-unikey
     ];
   };
+
+  # ==========================================================
+  # Disk
+  # ==========================================================
+  boot.supportedFilesystems = [ "ntfs" ];
+  fileSystems."/mnt/Data" =
+    {
+      device = "/dev/disk/by-uuid/524697E34697C5DF";
+      fsType = "ntfs-3g";
+      options = [ "defaults" "nofail" ];
+    };
 
   # ==========================================================
   # System configuration
