@@ -2,7 +2,7 @@
 
 # This script is a simple wrapper around cava-layer.py to manage its lifecycle (start/stop/toggle)
  
-SCRIPT_PATH="${CAVA_LAYER_PATH:-$HOME/.local/bin/cava-layer.py}"
+SCRIPT_PATH="${CAVA_LAYER_PATH:-$HOME/.local/bin/cava_layer.py}"
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 PIDFILE="/tmp/cava-layer.pid"
 LOGFILE="/tmp/cava-layer.log"
