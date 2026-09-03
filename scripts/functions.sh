@@ -182,31 +182,31 @@ select_window_manager() {
     case "$wm_choice" in
         1)
             SELECTED_WMS=("hyprland")
-            SELECTED_WM_DIRS=("$WM_DIR/hyprland")
+            SELECTED_WM_DIRS=("$SOURCE_CONFIG/hypr")
             SELECTED_PKG_WMS=("$PKG_HYPRLAND")
             log_info "Selected: Hyprland"
             ;;
         2)
             SELECTED_WMS=("niri")
-            SELECTED_WM_DIRS=("$WM_DIR/niri")
+            SELECTED_WM_DIRS=("$SOURCE_CONFIG/niri")
             SELECTED_PKG_WMS=("$PKG_NIRI")
             log_info "Selected: Niri"
             ;;
         3)
             SELECTED_WMS=("mango")
-            SELECTED_WM_DIRS=("$WM_DIR/mango")
+            SELECTED_WM_DIRS=("$SOURCE_CONFIG/mango")
             SELECTED_PKG_WMS=("$PKG_MANGO")
             log_info "Selected: Mango"
             ;;
         4)
             SELECTED_WMS=("labwc")
-            SELECTED_WM_DIRS=("$WM_DIR/labwc")
+            SELECTED_WM_DIRS=("$SOURCE_CONFIG/labwc")
             SELECTED_PKG_WMS=("$PKG_LABWC")
             log_info "Selected: Labwc"
             ;;
         5)
             SELECTED_WMS=("niri" "mango" "labwc" "hyprland")
-            SELECTED_WM_DIRS=("$WM_DIR/niri" "$WM_DIR/mango" "$WM_DIR/labwc" "$WM_DIR/hyprland")
+            SELECTED_WM_DIRS=("$SOURCE_CONFIG/niri" "$SOURCE_CONFIG/mango" "$SOURCE_CONFIG/labwc" "$SOURCE_CONFIG/hypr")
             SELECTED_PKG_WMS=("$PKG_NIRI" "$PKG_MANGO" "$PKG_LABWC" "$PKG_HYPRLAND")
             log_info "Selected: All Window Managers"
             ;;

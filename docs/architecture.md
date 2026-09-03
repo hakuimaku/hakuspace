@@ -5,17 +5,19 @@ This document provides a detailed breakdown of the `hakuspace` repository layout
 ```text
 hakuspace (root)
 ├── assets/
-│   ├── browser/             # Custom userChrome.css & newtab.html for Firefox
-│   └── hakuspace-control/   # Templates for hakuspace-control
+│   └── browser/                # Custom userChrome.css & newtab.html for Firefox
 │
-├── docs/                    # Documentation for my dots
-├── nix/                     # Declarative Nix configuration
-├── scripts/                 # Helper libraries for install.sh and update.sh
+├── docs/                       # Documentation for my dots
+├── nix/                        # Declarative Nix configuration
+├── scripts/                    # Helper libraries for install.sh and update.sh
 │
-└── src/                     # Core configuration modules, searching for my dotfiles here
-    ├── common/              # Common configurations shared across all environments
-    ├── wm/                  # Window manager configurations (Hyprland, Niri, Mangowc, Labwc)
-    └── packages/            # Package lists to install
+└── src/                        # Core configuration modules, searching for my dotfiles here
+    ├── home/                   # Simulation of the home directory structure for dotfiles
+    │   ├── hakuspace-control/  # Templates for hakuspace-control
+    │   ├── .config/            # hakuspace configuration files (dotfiles)
+    │   └── .local/             # hakuspace local files (bin)
+    │
+    └── packages/               # Package lists to install
 ```
 
 ---
@@ -24,7 +26,7 @@ hakuspace (root)
 
 ### Root Execution Scripts (`/`)
 
-* **`install.sh`**: The primary installation script, use this for first-time setup. Handles environment detection, package installation, setup configuration from `src/`, and deploying initial control templates from `assets/`.
+* **`install.sh`**: The primary installation script, use this for first-time setup. Handles environment detection, package installation, setup configuration from `src/`.
 * **`update.sh`**: The update script. Pulls the latest repository changes, updates configurations and ensures hakuspace-control templates are current.
 
 ### 1. `scripts/` (Core Helper Libraries)
@@ -38,8 +40,10 @@ This directory acts strictly as an internal backend for `install.sh` and `update
 
 The primary search target and storage location for all managed user configurations.
 
-* **`src/common/`**: Houses all application dotfiles that remain uniform regardless of the chosen Window Manager (e.g., Zsh, Kitty, Waybar, Hypridle, Hyprlock, etc.).
-* **`src/wm/`**: Holds isolated configuration profiles dedicated to specific Wayland compositors and Window Managers (`hyprland/`, `niri/`, `mangowc/`, `labwc/`).
+* **`src/home/`**: Simulates the home directory structure for dotfiles. Contains:
+    * **`hakuspace-control/`**: Template files for the Hakuspace Control Center.
+    * **`.config/`**: Configuration files for various applications.
+    * **`.local/`**: Local binaries and scripts.
 * **`src/packages/`**: Contains package lists for installation:
     * `pkg-core.txt`: Core packages required for my setup.
     * `pkg-service.txt`: Service packages: brightnessctl, bluetooth, btop, etc.
@@ -52,7 +56,6 @@ The primary search target and storage location for all managed user configuratio
 Stores static assets, browser modifications, and central state templates.
 
 * **`assets/browser/`**: Custom web assets including `userChrome.css` for Firefox UI mods and `newtab.html` for clock homepages (put it in the `~/Documents/` directory).
-* **`assets/hakuspace-control/`**: Template files for the Hakuspace Control Center. These serve as the baseline configuration state deployed to the runtime environment.
 
 ### 4. `docs/` (Documentation)
 

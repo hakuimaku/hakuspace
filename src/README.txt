@@ -1,5 +1,7 @@
 Looking for my dotfiles configuration here!
 
-- common/: Contains common configuration files (waybar, rofi, kitty, zshrc, nanorc, etc.) and all my function scripts (local/bin).
-- wm/: Contains window manager specific configuration files (hyprland, niri, etc.).
+- home/: Simulated home directory with all configuration files (.config, .local/bin, etc.).
+    - .config/: Contains all configuration files.
+    - .local/bin/: Contains local binaries and scripts.
+    - hakuspace-control/: Contains hakuspace's control-center.
 - packages/: Contains package lists that will be installed (pkg-core, pkg-service, etc.).
