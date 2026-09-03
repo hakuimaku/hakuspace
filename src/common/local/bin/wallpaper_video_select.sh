@@ -11,7 +11,7 @@ SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
 
 if [[ $1 == "--exit" ]]; then
-    if ! pgrep -x "mpvpaper" > /dev/null; then
+    if ! pgrep "mpvpaper" > /dev/null; then
         notify-send "Lively Wallpaper is not running"
         exit 1
     fi
@@ -19,6 +19,26 @@ if [[ $1 == "--exit" ]]; then
     notify-send "Lively Wallpaper exited"
     exit 1
 fi
+
+generate_thumbnails() {
+    mkdir -p "$PREVIEW_DIR"
+    cd "$WALL_MPV_DIR" || exit
+    
+    for file in *.mp4; do
+        [[ -e "$file" ]] || continue
+        filename="${file%.*}"
+        
+        # Check if any preview format already exists
+        if [[ ! -f "$PREVIEW_DIR/$filename.gif" && ! -f "$PREVIEW_DIR/$filename.jpg" && ! -f "$PREVIEW_DIR/$filename.png" ]]; then
+            # Extract the first frame [0] using ImageMagick
+            if command -v magick >/dev/null 2>&1; then
+                magick "$file[0]" "$PREVIEW_DIR/$filename.jpg" 2>/dev/null
+            elif command -v convert >/dev/null 2>&1; then
+                convert "$file[0]" "$PREVIEW_DIR/$filename.jpg" 2>/dev/null
+            fi
+        fi
+    done
+}
 
 list_walls() {
     cd "$WALL_MPV_DIR" || exit
@@ -37,9 +57,11 @@ list_walls() {
             thumb="video-x-generic"
         fi
 
-        echo -en "$file\0icon\x1f$thumb\n"
+        echo -e "$file\0icon\x1f$thumb"
     done
 }
+
+generate_thumbnails
 
 CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" -theme-str "
     window { width: 65%; height: 80%; }

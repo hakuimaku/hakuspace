@@ -1,19 +1,29 @@
 @import url("../../.local/state/haku_theme/colors.css");
 
-@define-color foreground_color rgba(255, 255, 255, 0.8);
-
 /* ==========================================
    THUNAR WINDOW CONFIGURATION
    ========================================== */
 
+* {
+    border: none;
+    font-size: small;
+}
+
 .thunar {
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.9);
 }
 
 .thunar .view {
-    background-color: rgba(0, 0, 0, 0.3);
-    border-radius: 12px;
-    color: @foreground_color;
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.thunar .view .cell {
+    background-color: transparent;
+}
+
+.thunar .view:selected {
+    background-color: @accent_color;
 }
 
 .thunar headerbar {
@@ -23,55 +33,58 @@
 .thunar menubar {
     background-color: transparent;
     padding: 10px 0 0 10px;
-    border-radius: 12px;
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .thunar menubar > menuitem {
-    border-radius: 8px;
+    border-radius: 4px;
     padding: 4px 12px;
-    color: @foreground_color;
+    box-shadow: none;
 }
 
 .thunar menubar > menuitem:hover {
     background-color: @accent_color;
-    color: #000000;
+    color: rgba(0, 0, 0, 0.8);
 }
 
 .thunar toolbar {
-    border-radius: 12px;
+    border-radius: 4px;
     margin: 10px 10px 5px 10px;
     padding: 10px;
-    background-color: rgba(0, 0, 0, 0.5);
-    box-shadow: 6px 6px 6px rgba(0, 0, 0, 0.3);
+    background-color: transparent;
 }
 
 .thunar toolbar button {
-    border-radius: 8px;
     padding: 2px 10px;
-    color: @foreground_color;
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .thunar toolbar button:hover {
     background-color: @accent_color;
-    color: #000000;
+    color: rgba(0, 0, 0, 0.8);
 }
 
 .thunar toolbar button:checked,
 .thunar toolbar button:active {
     background-color: @accent_color;
-    color: #000000;
+    color: rgba(0, 0, 0, 0.8);
 }
 
 .thunar .sidebar {
-    background-color: rgba(0, 0, 0, 1);
+    background-color: transparent;
     margin: 10px;
     padding: 10px;
-    box-shadow: 6px 6px 6px rgba(0, 0, 0, 0.3);
-    border-radius: 12px;
+    border-radius: 4px;
+}
+
+.thunar .sidebar .cell:hover {
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
 .thunar .sidebar .cell:selected {
-    border-radius: 12px;
+    background-color: @accent_color;
+    border-radius: 4px;
 }
 
 .thunar .sidebar treeview row {
@@ -80,45 +93,47 @@
 
 .thunar .sidebar treeview row:selected {
     background-color: @accent_color;
-    color: #000000;
+    color: rgba(0, 0, 0, 0.8);
+}
+
+.thunar .sidebar scrollbar {
+    background-color: transparent;
+}
+
+.thunar .sidebar scrollbar, 
+.thunar .sidebar scrollbar slider {
+    min-width: 6px;
+    min-height: 6px;
 }
 
 .thunar progressbar progress {
     background-color: @accent_color;
 }
 
-.thunar treeview.view row {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-    border-radius: 6px;
-}
-
 .thunar .view:selected,
 .thunar iconview:selected {
     background-color: @accent_color;
-    color: #000000;
-    border-radius: 8px;
-    box-shadow: 6px 6px 6px rgba(0, 0, 0, 0.15);
+    color: rgba(0, 0, 0, 0.8);
+    border-radius: none;
 }
 
 .thunar statusbar {
     background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 12px;
+    border-radius: 4px;
     margin: 2px 0 2px 0;
     padding: 2px;
-    box-shadow: 6px 6px 6px rgba(0, 0, 0, 0.3);
-    color: @foreground_color;
 }
 
 .thunar menu {
     background-color: rgba(20, 20, 20, 0.95);
-    border-radius: 12px;
+    border-radius: 4px;
 }
 
 .thunar notebook > header {
     background-color: rgba(0, 0, 0, 0.25);
     padding: 4px 8px;
     margin: 0px 10px 5px 10px;
-    border-radius: 10px;
+    border-radius: 4px;
     border: none;
 }
 
@@ -128,7 +143,7 @@
 
 .thunar notebook > header > tabs > tab {
     padding: 6px 16px;
-    border-radius: 8px;
+    border-radius: 4px;
     background-color: rgba(255, 255, 255, 0.05);
     margin: 0px 4px;
     color: rgba(255, 255, 255, 0.6);
@@ -144,7 +159,6 @@
 .thunar notebook > header > tabs > tab:checked {
     background-color: @accent_color;
     color: #000000;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .thunar notebook > header > tabs > tab button {
@@ -160,20 +174,61 @@
     background-color: rgba(0, 0, 0, 0.2);
 }
 
-
 .thunar paned,
 .thunar paned separator,
 .thunar separator,
 .thunar notebook,
 .thunar notebook stack {
     border-style: none;
-    border-width: 0px;
+    border-width: none;
     box-shadow: none;
     outline-style: none;
     background-image: none;
     background-color: transparent;
 }
 
+.thunar .path-bar button {
+    background-color: transparent;
+    background: none;
+    box-shadow: none;
+    border: 2px solid transparent;
+    color: rgba(255, 255, 255, 0.6);
+    border-radius: 4px;
+    padding: 3px 6px;
+}
+
+.thunar .path-bar button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.thunar .path-bar button:checked {
+    background-color: @accent_color;
+    color: rgba(0, 0, 0, 0.8);
+}
+
+.thunar toolbar entry {
+    background-color: @accent_color;
+    color: rgba(0, 0, 0, 0.8);
+    box-shadow: none;
+    padding: 1px;
+}
+
+.thunar toolbar entry selection {
+    background: rgba(0, 0, 0, 0.9);
+    color: @accent_color;
+}
+
+.thunar treeview header button {
+    background-color: transparent;
+    padding: 6px 10px;
+    font-weight: bold;
+}
+
+.thunar treeview header button:hover {
+    background-color: @accent_color;
+    color: rgba(0, 0, 0, 0.8);
+}
 
 /* ==========================================
    MENU CONFIGURATION (Right Click Menu)
@@ -189,8 +244,7 @@ menu menuitem {
 }
 
 menu menuitem:hover {
-    background-color: @accent_color;
-    color: #000000;
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 menu separator {

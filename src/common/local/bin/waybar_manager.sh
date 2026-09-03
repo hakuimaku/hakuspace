@@ -9,7 +9,7 @@ WAYBAR_DIR="$HOME/.config/waybar"
 USER_WAYBAR_DIR="$HOME/hakuspace-control/waybar"
 STATE_FILE="$HOME/.local/state/haku_theme/waybar_current_mode"
 CURRENT_STATE="top"
-WAYBAR_MODES_DEAULT=("top" "neon" "coredge" "full" "minimal" "left")
+WAYBAR_MODES_DEAULT=("top" "neon" "island" "coredge" "full" "minimal" "left")
 
 # WAYBAR_MODES_DEAULT + WAYBAR_MODE_USER
 WAYBAR_MODES=("${WAYBAR_MODES_DEAULT[@]}" "${WAYBAR_MODE_USER[@]}")

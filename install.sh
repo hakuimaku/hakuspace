@@ -287,16 +287,11 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
     echo ">>> Deploying mimeapps.list..."
     copy_file "$SOURCE_ONCE_CONFIG/mimeapps.list" "$DEST_CONFIG/mimeapps.list"
 
+    echo ">>> Deploying starship.toml (starship configuration)..."
+    copy_file "$SOURCE_COMMON_CONFIG/starship.toml" "$DEST_CONFIG/starship.toml"
+
     echo ">>> Deploying .nanorc (nano configuration)..."
     copy_file "$SOURCE_COMMON_CONFIG/.nanorc" "$HOME/.nanorc"
-
-    if ! command -v nixos-rebuild >/dev/null 2>&1; then
-        echo ">>> Deploying .zshrc (zsh configuration)..."
-        copy_file "$SOURCE_COMMON_CONFIG/.zshrc" "$HOME/.zshrc"
-    else
-        touch "$HOME/.zshrc"
-        log_warn "NixOS detected. Skipping .zshrc deployment. Manage these files via NixOS configuration."
-    fi
 
     log_ok "Configurations deployed finished."
 else
@@ -327,55 +322,9 @@ else
 fi
 
 # ============================================================================
-# BLOCK 6: INSTALL OH MY ZSH + PLUGINS
+# BLOCK 6: CLONE HAKUSPACE-ARCHIVE AND RUN setup.sh
 # ============================================================================
-step_title "6 - SETUP OH MY ZSH AND PLUGINS"
-
-log_info "This step will install Oh My Zsh and its plugins (zsh-autosuggestions, zsh-syntax-highlighting) if not already installed."
-
-if command -v nixos-rebuild >/dev/null 2>&1; then
-    log_warn "NixOS detected. This step is not required on NixOS."
-    log_skip "Skipping Oh My Zsh installation."
-else
-    if ask_yes_no "===> Do you want to install Oh My Zsh now?"; then
-        if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
-            log_info "Installing Oh My Zsh..."
-            KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-        else
-            log_skip "Oh My Zsh already installed."
-        fi
-
-        ZSH_CUSTOM="$HOME/.oh-my-zsh/custom/plugins"
-
-        if [[ ! -d "$ZSH_CUSTOM/zsh-autosuggestions" ]]; then
-            log_info "Installing zsh-autosuggestions..."
-            git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/zsh-autosuggestions"
-        else
-            log_skip "zsh-autosuggestions already installed."
-        fi
-
-        if [[ ! -d "$ZSH_CUSTOM/zsh-syntax-highlighting" ]]; then
-            log_info "Installing zsh-syntax-highlighting..."
-            git clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/zsh-syntax-highlighting"
-        else
-            log_skip "zsh-syntax-highlighting already installed."
-        fi
-
-        if [[ "$SHELL" != "/usr/bin/zsh" ]]; then
-            log_info "Changing default shell to zsh..."
-            sudo chsh -s /usr/bin/zsh "$USER"
-        else
-            log_skip "Default shell is already zsh."
-        fi
-    else
-        log_skip "Skipping Oh My Zsh installation."
-    fi
-fi
-
-# ============================================================================
-# BLOCK 7: CLONE HAKUSPACE-ARCHIVE AND RUN setup.sh
-# ============================================================================
-step_title "7 - DEPLOY EXTRA ASSETS FROM hakuspace-archive"
+step_title "6 - DEPLOY EXTRA ASSETS FROM hakuspace-archive"
 
 log_info "Clone hakuspace-archive to setup icons, themes, and wallpapers. You can skip this step if you don't want to install them."
 
@@ -390,9 +339,9 @@ else
 fi
 
 # ============================================================================
-# BLOCK 8: ENABLE SERVICES
+# BLOCK 7: FINAL SETUP: MAKE SOMETHING WORK
 # ============================================================================
-step_title "8 - ENABLE SYSTEM SERVICES"
+step_title "7 - FINAL SETUP: MAKE SOMETHING WORK"
 
 # Gen style first time
 if [[ -x "$HOME/.local/bin/gen_style.sh" ]]; then
@@ -401,6 +350,24 @@ if [[ -x "$HOME/.local/bin/gen_style.sh" ]]; then
 else
     log_warn "Not executable or missing: $HOME/.local/bin/gen_style.sh"
     log_warn "Check if the script exists and has execute permissions in ~/.local/bin/"
+fi
+
+# Change default shell to fish
+if command -v fish >/dev/null 2>&1; then
+    FISH_PATH="$(command -v fish)"
+    
+    if ! grep -q "$FISH_PATH" /etc/shells; then
+        echo "$FISH_PATH" | sudo tee -a /etc/shells >/dev/null
+    fi
+    
+    if [[ "$SHELL" != "$FISH_PATH" ]]; then
+        chsh -s "$FISH_PATH" "$USER"
+        log_ok "Changed default shell to fish ($FISH_PATH)."
+    else
+        log_skip "Fish is already your default shell."
+    fi
+else
+    log_warn "Fish shell is not installed. Skipping shell change."
 fi
 
 # Init HakuSpace Control

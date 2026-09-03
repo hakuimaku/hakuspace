@@ -53,12 +53,8 @@ if found_path:
     print(found_path)
 "
 
-if command -v nix-shell >/dev/null 2>&1; then
-    # NixOS
-    PATH_FOUND=$(nix-shell -p gobject-introspection gtk3 pango "python3.withPackages (ps: with ps; [ pygobject3 ])" --run "python3 -c \"$PYTHON_CODE\"" 2>/dev/null)
-else
-    PATH_FOUND=$(python3 -c "$PYTHON_CODE" 2>/dev/null)
-fi
+export GI_TYPELIB_PATH="/run/current-system/sw/lib/girepository-1.0:$GI_TYPELIB_PATH"
+PATH_FOUND=$(python3 -c "$PYTHON_CODE")
 
 if [ -n "$PATH_FOUND" ]; then
     echo "${APP}:${PATH_FOUND}" >> "$CACHE_FILE"

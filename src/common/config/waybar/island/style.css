@@ -1,0 +1,173 @@
+/* ============================================================================== */
+/* GLOBAL STYLES                                  */
+/* ============================================================================== */
+@import url("../../.local/state/haku_theme/colors.css");
+@import url("../../.local/state/haku_theme/fonts.css");
+
+* {
+    font-weight: bold;
+    border-radius: 4px;
+    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
+}
+
+window#waybar {
+    background-color: transparent;
+    color: @accent_color;
+    transition: background-color 0.3s ease;
+}
+
+.modules-center,
+.modules-left,
+.modules-right {
+    background-color: transparent;
+}
+
+/* ============================================================================== */
+/* COMMON MODULE STYLES                               */
+/* ============================================================================== */
+#custom-cpuhistory,
+#custom-cavaunderbar,
+#cava,
+#mpris,
+#tray,
+#pulseaudio,
+#backlight,
+#battery,
+#cpu,
+#memory,
+#temperature,
+#custom-monitor,
+#power-profiles-daemon,
+#custom-recordertime,
+#custom-recorder,
+#custom-search,
+#custom-setting,
+#custom-power,
+#custom-notification {
+    margin: 1px;
+    padding: 0 10px;
+    min-width: 20px;
+}
+
+/* ============================================================================== */
+/* WORKSPACES                                    */
+/* ============================================================================== */
+#hworkspaces {
+    margin: 8px;
+    padding: 8px;
+    background-color: rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+#workspaces {
+    padding: 2px;
+}
+
+#workspaces button {
+    background-color: @accent_color;
+    border-radius: 4px; 
+    padding: 0 6px;
+    margin: 0 3px;
+    min-width: 10px;
+    min-height: 0;
+    opacity: 0.5;
+}
+
+#workspaces button.active {
+    background-color: @accent_color; 
+    min-width: 40px;
+    opacity: 1;
+}
+
+#workspaces button.empty {
+    background-color: @accent_color;
+    opacity: 0.2; 
+}
+
+#workspaces button.empty.active {
+    background-color: @accent_color;
+    opacity: 0.5;
+}
+
+#workspaces button.overview {
+    background-color: rgba(255, 255, 255, 0.1);
+    min-width: 40px;
+}
+
+/* ============================================================================== */
+/* SPECIFIC MODULES                                 */
+/* ============================================================================== */
+#musics,
+#clocks,
+#utilities,
+#tools,
+#trays,
+#adjusters,
+#monitor {
+    margin: 8px;
+    padding: 8px;
+    background-color: rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+#custom-recordertime {
+    animation: blink 1s infinite;
+}
+
+/* ============================================================================== */
+/* HOVER EFFECTS                                   */
+/* ============================================================================== */
+#custom-cavaunderbar:hover,
+#cava:hover,
+#mpris:hover,
+#pulseaudio:hover,
+#backlight:hover,
+#battery:hover,
+#cpu:hover,
+#memory:hover,
+#temperature:hover,
+#custom-monitor:hover,
+#power-profiles-daemon:hover,
+#custom-recorder:hover,
+#custom-recordertime:hover,
+#custom-search:hover,
+#custom-setting:hover,
+#custom-power:hover,
+#custom-notification:hover {
+    color: #000000;
+    background-color: @accent_color;
+    padding: 0 20px;
+}
+
+#workspaces button:hover {
+    padding: 0 20px;
+}
+
+
+#clock:hover {
+    color: #000000;
+    background-color: @accent_color;
+    padding: 0 20px;
+}
+
+/* ============================================================================== */
+/* TOOLTIPS                                     */
+/* ============================================================================== */
+tooltip {
+    background: rgba(0, 0, 0, 1);
+    border-radius: 12px;
+    padding: 10px;
+}
+
+tooltip label {
+    color: @accent_color;
+}
+
+/* ============================================================================== */
+/* ANIMATIONS                                    */
+/* ============================================================================== */
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}

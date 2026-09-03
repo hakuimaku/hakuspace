@@ -9,11 +9,12 @@
 }
 
 .notification {
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.9);
     border-radius: 16px;
     padding: 12px;
     color: @accent_color;
     border-bottom: 3px solid @accent_color;
+    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.5);
 }
 
 .notification * {
@@ -39,8 +40,8 @@
 /* =============================== CONTROL CENTER =============================== */
 /* ============================================================================== */
 .control-center {
-    background: rgba(0, 0, 0, 0.8);
-    border-radius: 15px;
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 12px;
     box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.5);
     margin: 3px;
     padding: 6px;

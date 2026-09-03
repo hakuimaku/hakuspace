@@ -1,3 +1,0 @@
-labwc
-gammastep
-xdg-desktop-portal-wlr

@@ -67,7 +67,7 @@ fullscreenBorder = hl.window_rule({
 
 fullWidth_ScrollingLayout = hl.window_rule({
     name = "full_width_scrolling",
-    match = { class = "code|app.zen_browser.zen|zen|discord|firefox" },
+    match = { class = "code|app.zen_browser.zen|zen.*|discord|firefox" },
 
     scrolling_width = 1.0
 })
@@ -86,7 +86,7 @@ opacityCertainApps = hl.window_rule({
     name  = "opacity-for-certain-apps",
     match = { class = "thunar|kitty|code|jetbrains.*" },
 
-    opacity = 0.8,
+    opacity = 0.9,
 })
 
 -- Rules for haku.sh
@@ -94,7 +94,7 @@ hakuSpaceOpacityRule = hl.window_rule({
     name  = "opacity-haku",
     match = { class = "seycmd|seyclock|seylavat|seycava" },
 
-    opacity = 0.8,
+    opacity = 0.9,
 })
 
 ----------------------------------
@@ -105,7 +105,7 @@ rofiAnimation = hl.layer_rule({
     name = "rofi-slide",
     match = { namespace = "rofi" },
 
-    animation = "slide top",
+    animation = "popin 60%",
     blur = true,
 })
 -- Animation for Waybar
@@ -154,21 +154,6 @@ floatingXdgPortal = hl.window_rule({
 ---------------------------------
 ------- Haku Space Rules --------
 ---------------------------------
--- Rules for cava-underbar
-hl.window_rule({
-    name = "cava-underbar",
-    match = { class = "cavaunderbar" },
-
-    float = true,
-    pin = true,
-    border_size = 0,
-    no_blur = true,
-    no_focus = true,
-    no_shadow = true,
-    opacity = 0.5,
-    size = "1920 60",
-    move = "0 -4",
-})
 
 -- Rules for haku.sh | scrolling layout
 hl.window_rule({

@@ -1,9 +1,5 @@
 # Labwc Environment Variables
 
-# Theme
-XCURSOR_THEME=Bibata-Modern-Ice
-XCURSOR_SIZE=24
-
 XDG_SESSION_TYPE=wayland
 XDG_CURRENT_DESKTOP=labwc
 XDG_SESSION_DESKTOP=labwc

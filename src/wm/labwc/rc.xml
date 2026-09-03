@@ -347,7 +347,7 @@
         <action name="Execute" command="~/.local/bin/record.sh" />
         </keybind>
         <keybind key="W-t">
-        <action name="Execute" command="~/.local/bin/cava_manager.sh --toggle" />
+        <action name="Execute" command="~/.local/bin/cava_manager.sh" />
         </keybind>
         <keybind key="W-p">
         <action name="Execute" command="~/.local/bin/screenshot.sh" />
@@ -868,13 +868,6 @@
 
     <!-- Haku Space Rules-->
     <windowRules>
-        <windowRule identifier="cavaunderbar">
-            <action name="ResizeTo" width="1920" height="70" />
-            <action name="MoveTo" x="0" y="0" />
-            <skipTaskbar>yes</skipTaskbar>
-            <skipWindowSwitcher>yes</skipWindowSwitcher>
-            <fixedPosition>yes</fixedPosition>
-        </windowRule>
         <windowRule identifier="seycmd">
             <action name="SnapToEdge" direction="left" />
         </windowRule>
