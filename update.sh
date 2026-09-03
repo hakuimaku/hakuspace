@@ -198,9 +198,6 @@ fi
 # ============================================================================
 step_title "3 - BACKUP AND UPDATE ~/.local/bin"
 
-SOURCE_BIN="$COMMON_DIR/local/bin"
-DEST_BIN="$HOME/.local/bin"
-
 if ask_yes_no "===> Do you want to update hakuspace local/bin scripts now?"; then
     if [[ -d "$SOURCE_BIN" ]]; then
         copy_dir_content "$SOURCE_BIN" "$DEST_BIN"
