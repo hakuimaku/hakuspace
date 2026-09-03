@@ -2,9 +2,8 @@
 
 # Directories
 SOURCE_DIR="$HAKU_DIR/src"
+HOME_SRC_DIR="$SOURCE_DIR/home"
 ASSETS_DIR="$HAKU_DIR/assets"
-COMMON_DIR="$SOURCE_DIR/common"
-WM_DIR="$SOURCE_DIR/wm"
 NIX_DIR="$HAKU_DIR/nix"
 
 # Backup directory with timestamp
@@ -30,5 +29,32 @@ ARCHIVE_REPO_URL="https://github.com/hakuimaku/hakuspace-archive.git"
 ARCHIVE_DIR="$HOME/hakuspace-archive"
 
 # hakuspace-control directory
-HAKUSPACE_CONTROL_DIR="$ASSETS_DIR/hakuspace-control"
+HAKUSPACE_CONTROL_DIR="$HOME_SRC_DIR/hakuspace-control"
 DEST_CONTROL_DIR="$HOME/hakuspace-control"
+
+# Config Directories
+SOURCE_CONFIG="$HOME_SRC_DIR/.config"
+DEST_CONFIG="$HOME/.config"
+
+# Once configs (to be deployed only once)
+# update.sh will skip these configs, for not overwriting user changes
+ONCE_CONFIGS=(
+    "$SOURCE_CONFIG/Thunar"
+    "$SOURCE_CONFIG/xfce4"
+    "$SOURCE_CONFIG/mpv"
+    "$SOURCE_CONFIG/btop"
+)
+
+# Skip configs (to be skipped during install.sh and update.sh)
+# Not deloyed together with the rest of the configs in $SOURCE_CONFIG
+SKIP_CONFIGS=(
+    "$SOURCE_CONFIG/hypr"
+    "$SOURCE_CONFIG/niri"
+    "$SOURCE_CONFIG/mango"
+    "$SOURCE_CONFIG/labwc"
+    "$SOURCE_CONFIG/gtk-3.0"
+)
+    
+# Bin Directories
+SOURCE_BIN="$HOME_SRC_DIR/.local/bin"
+DEST_BIN="$HOME/.local/bin"
