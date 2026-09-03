@@ -21,7 +21,8 @@ mkdir -p "$STATE_DIR"
 
 # Audio checking logic
 is_audio_playing() {
-    pactl list sink-inputs 2>/dev/null | awk '
+    local check_audio
+    check_audio=$(pactl list sink-inputs 2>/dev/null | awk '
         /Sink Input/ { is_target=1; corked=0; muted=0 }
         is_target && /Corked: yes/ { corked=1 }
         is_target && /Mute: yes/ { muted=1 }
@@ -30,9 +31,26 @@ is_audio_playing() {
                 found=1
             }
         }
-        END { exit !found }
-    '
-    return $?
+        END { print (found == 1 ? "1" : "0") }
+    ')
+
+    local timestamp_file="/tmp/haku_audio_timestamp"
+    local current_time=$(date +%s)
+    local grace_period=5
+
+    if [[ "$check_audio" == "1" ]]; then
+        echo "$current_time" > "$timestamp_file"
+        return 0
+    fi
+
+    if [[ -f "$timestamp_file" ]]; then
+        local last_played=$(cat "$timestamp_file")
+        if (( current_time - last_played < grace_period )); then
+            return 0
+        fi
+    fi
+
+    return 1
 }
 
 # Handle help argument

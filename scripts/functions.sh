@@ -272,6 +272,7 @@ check_control_dir() {
         "hyprland-custom.lua"
         "dockbar_pin_apps"
         "hakumenu-general-custom.sh"
+        "hypridle.conf"
     )
     for file in "${required_files[@]}"; do
         if [[ ! -f "$DEST_CONTROL_DIR/$file" ]]; then
@@ -283,6 +284,7 @@ check_control_dir() {
     mkdir -p "$DEST_CONTROL_DIR/waybar"
     mkdir -p "$DEST_CONTROL_DIR/rofi"
     chmod +x "$DEST_CONTROL_DIR/main_setting.sh"
+    chmod +x "$DEST_CONTROL_DIR/hakumenu-general-custom.sh"
 
     # Check HakuSpace Control version
     if [[ -f "$DEST_CONTROL_DIR/main_setting.sh" ]]; then
