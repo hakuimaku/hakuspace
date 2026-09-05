@@ -8,6 +8,8 @@ source "$HAKU_DIR/scripts/functions.sh"
 BACKUP_PREFIX="Backup_"
 BACKUP_GLOB="$HOME/.backup/${BACKUP_PREFIX}"*
 
+# Rollback only considers backups created by HakuSpace, not unrelated folders
+# that may also exist under ~/.backup.
 print_rollback_header() {
     echo ""
     echo -e "${C_BOLD}${C_CYAN}--- HAKUSPACE ROLLBACK ---${C_RESET}"
@@ -67,6 +69,8 @@ build_managed_destinations() {
     local source_item
     local item_name
 
+    # Keep this list in sync with the paths managed by the installer. Items
+    # outside this list are left untouched during rollback.
     while IFS= read -r -d '' source_item; do
         item_name="$(basename "$source_item")"
 
@@ -98,6 +102,8 @@ build_managed_destinations() {
 clear_managed_destinations() {
     local destination
 
+    # Move current files into a rollback backup before restoring old files so
+    # the rollback itself can be undone if the selected backup is unsuitable.
     for destination in "${MANAGED_DESTINATIONS[@]}"; do
         if [[ -e "$destination" || -L "$destination" ]]; then
             backup_item "$destination"
@@ -124,6 +130,8 @@ restore_item() {
 }
 
 restore_backup() {
+    # This safety backup is created by backup_item while existing destinations
+    # are cleared, and is intentionally kept separate from the source backup.
     local BACKUP_DIR="$HOME/.backup/Rollback_Backup_$(date +%Y-%m-%d_%H-%M-%S)"
     local source_item
     local child_item
@@ -136,6 +144,9 @@ restore_backup() {
     while IFS= read -r -d '' source_item; do
         relative_path="${source_item#$SELECTED_BACKUP/}"
 
+        # Config and local backups contain multiple managed entries. Restore
+        # their children so unrelated files in those directories are not
+        # copied back over the user's current state.
         if [[ "$relative_path" == ".config" || "$relative_path" == ".local" ]]; then
             while IFS= read -r -d '' child_item; do
                 restore_item "$child_item"
