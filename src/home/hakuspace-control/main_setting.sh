@@ -2,7 +2,7 @@
 
 # This script is used to set up the main settings for all hakuspace's scripts.
 # DO NOT EDIT THIS LINE :v, used for check main_setting.sh up-to-date when run update.sh
-SETTING_VERSION="2.2.7"
+SETTING_VERSION="2.3.0"
 echo "Hakuspace Control Settings Version: $SETTING_VERSION"
 
 # General Settings
