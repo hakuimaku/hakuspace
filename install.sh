@@ -287,7 +287,8 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
     done
 
     echo ">>> Deploying Thunar gtk.css theme..."
-    copy_file "$SOURCE_CONFIG/gtk-3.0/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css"
+    backup_dir "$DEST_CONFIG/gtk-3.0"
+    copy_file "$SOURCE_CONFIG/gtk-3.0/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css" 1
 
     echo ">>> Deploying starship.toml (starship configuration)..."
     copy_file "$SOURCE_CONFIG/starship.toml" "$DEST_CONFIG/starship.toml"
