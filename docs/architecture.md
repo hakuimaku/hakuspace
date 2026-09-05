@@ -14,11 +14,11 @@ hakuspace (root)
 ├── docs/                      # Architecture, setup, and dotfiles documentation
 ├── nix/                       # NixOS configurations and flake templates
 ├── scripts/                   # Shared shell variables and helper functions
-├── install.sh                # First-time setup and configuration deployment
-├── update.sh                 # Repository, package, and configuration updates
-├── rollback.sh              # Restore a selected configuration backup
+├── install.sh                 # First-time setup and configuration deployment
+├── update.sh                  # Repository, package, and configuration updates
+├── rollback.sh                # Restore a selected configuration backup
 └── src/
-    ├── home/                 # Versioned home-directory configuration templates
+    ├── home/                  # Versioned home-directory configuration templates
     │   ├── .config/           # Application and window-manager defaults
     │   ├── .local/bin/        # Managed user scripts
     │   ├── hakuspace-control/ # Default custom-control templates
