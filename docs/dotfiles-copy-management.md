@@ -1,6 +1,6 @@
 # HakuSpace Dotfiles Copy Management
 
-See Vietnamese translation: [Quản lý sao chép dotfiles](../vietnamese/VN_dotfiles-copy-management.md)
+See Vietnamese translation: [VN_dotfiles-copy-management.md](./vietnamese/VN_dotfiles-copy-management.md)
 
 This document explains how HakuSpace installs, updates, and rolls back user configuration files. HakuSpace uses a **copy-based deployment model**. It does not use GNU Stow, symbolic links, Git worktrees, or a live synchronization process.
 
