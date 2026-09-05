@@ -37,7 +37,6 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 - DE-like Experience: Modular UI powered by Rofi, Waybar, SwayNC, and custom scripts.
 - Extensible: Highly customizable and easy to adapt to your own workflow.
 - See Guide for: [Arch Linux](#installation-guide) | [NixOS](#nixos-configuration) | [Fedora](docs/Fedora_Guide.md)
-- See Documentation for: [Architecture](docs/architecture.md)
 
 ---
 
@@ -104,7 +103,7 @@ Specific packages for each WM: [pkg-hyprland](src/packages/pkg-hyprland.txt) | [
 - Stable Release (Recommended):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.2.6 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
+git clone --depth 1 --branch v2.3.0 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 - If you prefer to experience the **lastest changes**:
@@ -302,6 +301,7 @@ systemctl --user disable swaync.service
 # Contributing
 
 - This is a personal dotfiles configuration. Feel free to fork and adapt it to your needs!
+- See Documentation for more knowledge of my setup: [Architecture](docs/architecture.md)
 - Tiktok / See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372)
 - Discord: [haku-shell](https://discord.gg/Juuun8sXsN)
 
