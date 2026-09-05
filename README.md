@@ -37,6 +37,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 - DE-like Experience: Modular UI powered by Rofi, Waybar, SwayNC, and custom scripts.
 - Extensible: Highly customizable and easy to adapt to your own workflow.
 - See Guide for: [Arch Linux](#installation-guide) | [NixOS](#nixos-configuration) | [Fedora](docs/Fedora_Guide.md)
+- See Documentation for: [Architecture](docs/architecture.md)
 
 ---
 
