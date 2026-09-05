@@ -65,6 +65,22 @@ add_managed_destination() {
     MANAGED_DESTINATIONS+=("$1")
 }
 
+is_once_config() {
+    local config_path
+    local config_name
+
+    config_path="$1"
+    config_name="$(basename "$config_path")"
+
+    for config_path in "${ONCE_CONFIGS[@]}"; do
+        if [[ "$(basename "$config_path")" == "$config_name" ]]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 build_managed_destinations() {
     local source_item
     local item_name
@@ -82,6 +98,7 @@ build_managed_destinations() {
                 add_managed_destination "$DEST_CONFIG/gtk-3.0"
                 ;;
             *)
+                is_once_config "$source_item" && continue
                 add_managed_destination "$DEST_CONFIG/$item_name"
                 ;;
         esac
@@ -149,9 +166,15 @@ restore_backup() {
         # copied back over the user's current state.
         if [[ "$relative_path" == ".config" || "$relative_path" == ".local" ]]; then
             while IFS= read -r -d '' child_item; do
+                if [[ "$relative_path" == ".config" ]] && is_once_config "$child_item"; then
+                    continue
+                fi
                 restore_item "$child_item"
             done < <(find "$source_item" -mindepth 1 -maxdepth 1 -print0)
         else
+            if [[ "$relative_path" == .config/* ]] && is_once_config "$source_item"; then
+                continue
+            fi
             restore_item "$source_item"
         fi
     done < <(find "$SELECTED_BACKUP" -mindepth 1 -maxdepth 1 -print0)
