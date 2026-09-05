@@ -8,7 +8,7 @@ NIX_DIR="$HAKU_DIR/nix"
 
 # Backup directory with timestamp
 BACKUP_TS="$(date +%Y-%m-%d_%H-%M-%S)"
-BACKUP_DIR="$HOME/Backup_$BACKUP_TS"
+BACKUP_DIR="$HOME/.backup/Backup_$BACKUP_TS"
 
 # Arrays to handle multiple WMs
 SELECTED_WMS=()

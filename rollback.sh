@@ -2,10 +2,11 @@
 set -u
 
 HAKU_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+source "$HAKU_DIR/scripts/variables.sh"
 source "$HAKU_DIR/scripts/functions.sh"
 
 BACKUP_PREFIX="Backup_"
-BACKUP_GLOB="$HOME/${BACKUP_PREFIX}"*
+BACKUP_GLOB="$HOME/.backup/${BACKUP_PREFIX}"*
 
 print_rollback_header() {
     echo ""
@@ -37,7 +38,7 @@ select_backup_dir() {
     fi
 
     if [[ "${#backup_names[@]}" -eq 1 ]]; then
-        SELECTED_BACKUP="$HOME/${backup_names[0]}"
+        SELECTED_BACKUP="$HOME/.backup/${backup_names[0]}"
         log_info "Using the only available backup: ${backup_names[0]}"
         return 0
     fi
@@ -55,7 +56,53 @@ select_backup_dir() {
         exit 1
     fi
 
-    SELECTED_BACKUP="$HOME/${backup_names[$((choice - 1))]}"
+    SELECTED_BACKUP="$HOME/.backup/${backup_names[$((choice - 1))]}"
+}
+
+add_managed_destination() {
+    MANAGED_DESTINATIONS+=("$1")
+}
+
+build_managed_destinations() {
+    local source_item
+    local item_name
+
+    while IFS= read -r -d '' source_item; do
+        item_name="$(basename "$source_item")"
+
+        case "$item_name" in
+            hypr|niri|mango|labwc)
+                continue
+                ;;
+            gtk-3.0)
+                add_managed_destination "$DEST_CONFIG/gtk-3.0"
+                ;;
+            *)
+                add_managed_destination "$DEST_CONFIG/$item_name"
+                ;;
+        esac
+    done < <(find "$SOURCE_CONFIG" -mindepth 1 -maxdepth 1 -print0)
+
+    add_managed_destination "$DEST_CONFIG/hypr/config"
+    add_managed_destination "$DEST_CONFIG/hypr/hyprland.lua"
+    add_managed_destination "$DEST_CONFIG/hypr/hypridle.conf"
+    add_managed_destination "$DEST_CONFIG/hypr/hyprlock.conf"
+    add_managed_destination "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
+    add_managed_destination "$DEST_CONFIG/niri"
+    add_managed_destination "$DEST_CONFIG/mango"
+    add_managed_destination "$DEST_CONFIG/labwc"
+    add_managed_destination "$DEST_BIN"
+    add_managed_destination "$HOME/.nanorc"
+}
+
+clear_managed_destinations() {
+    local destination
+
+    for destination in "${MANAGED_DESTINATIONS[@]}"; do
+        if [[ -e "$destination" || -L "$destination" ]]; then
+            backup_item "$destination"
+        fi
+    done
 }
 
 restore_item() {
@@ -67,10 +114,6 @@ restore_item() {
     relative_path="${source_item#$SELECTED_BACKUP/}"
     destination="$HOME/$relative_path"
 
-    if [[ -e "$destination" || -L "$destination" ]]; then
-        backup_item "$destination"
-    fi
-
     if [[ -d "$source_item" && ! -L "$source_item" ]]; then
         copy_dir_content "$source_item" "$destination" 1
     else
@@ -81,11 +124,14 @@ restore_item() {
 }
 
 restore_backup() {
-    local BACKUP_DIR="$HOME/Rollback_Backup_$(date +%Y-%m-%d_%H-%M-%S)"
+    local BACKUP_DIR="$HOME/.backup/Rollback_Backup_$(date +%Y-%m-%d_%H-%M-%S)"
     local source_item
     local child_item
     local relative_path
     local restored_count=0
+
+    build_managed_destinations
+    clear_managed_destinations
 
     while IFS= read -r -d '' source_item; do
         relative_path="${source_item#$SELECTED_BACKUP/}"
@@ -100,7 +146,7 @@ restore_backup() {
     done < <(find "$SELECTED_BACKUP" -mindepth 1 -maxdepth 1 -print0)
 
     if [[ "$restored_count" -gt 0 && -d "$BACKUP_DIR" ]]; then
-        rm -rf "$BACKUP_DIR"
+        log_backup "Current files saved to $BACKUP_DIR"
     fi
 }
 
