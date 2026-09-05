@@ -152,9 +152,19 @@ chmod +x update.sh
 ./update.sh
 ```
 
+### Rollback Haku Space
+Restore files from a backup created by `install.sh` or `update.sh`.
+``` bash
+cd ~/hakuspace
+chmod +x rollback.sh
+./rollback.sh
+```
+If multiple backups are available, the newest one is selected by pressing Enter.
+
 ### Uninstall Haku Space
 > (WM: The Window Manager you are currently using, e.g., hyprland, niri, mango).
 
+- Run `rollback.sh` to restore your previous configuration.
 - Remove all scripts located in `~/.local/bin`.
 - Delete the auto-generated files in `~/.local/state/haku_theme`.
 - If necessary, you can also remove the icons and themes inside `~/.icons` and `~/.themes`.
@@ -166,10 +176,15 @@ chmod +x update.sh
 
 See the main configuration file at [hakuspace-config.nix](nix/hakuspace-config.nix)
 
+> [!note]
+> My dotfiles do not use `home-manager` feature (because my dots are not only for symlink-based dotfiles managers).
+>
+> Manage dotfiles by run `install.sh` and `update.sh` script. `hakuspace-config.nix` just a basic setup packages and programs.
+
 * Simply clone this repository and run the `install.sh` script exactly as outlined [above](#installation-guide).
 * You can use either method: online remote via [flake.nix](nix/flake.nix.example) or offline by directly importing `hakuspace-config.nix` into your `configuration.nix` (2 modes already have install flow in script `install.sh`).
 * `hakuspace-config.nix` does not set a display manager by default, as it may conflict with your existing display manager.
-* 3 current options in `hakuspace-config.nix` that you can enable/disable in your `configuration.nix`:
+* 2 current options in `hakuspace-config.nix` that you can enable/disable in your `configuration.nix`:
 
 ```nix
 {
