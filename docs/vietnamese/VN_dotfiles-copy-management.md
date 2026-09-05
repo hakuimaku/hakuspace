@@ -1,5 +1,7 @@
 # Quản lý dotfiles bằng cách sao chép
 
+> Đây là nội dung do AI tạo ra. Có thể không chính xác hoặc chưa đầy đủ. Nhưng tôi đã xem xét và đảm bảo rằng nó chính xác.
+
 Tài liệu này giải thích cách HakuSpace cài đặt, cập nhật và rollback các file cấu hình của bạn. HakuSpace dùng **mô hình triển khai bằng cách sao chép**: các file được chép từ repository vào thư mục home, không dùng GNU Stow, symbolic link, Git worktree hay cơ chế đồng bộ trực tiếp.
 
 Đây là tài liệu chi tiết bổ sung cho [tài liệu tổng quan về HakuSpace](VN_architecture.md).
@@ -193,6 +195,8 @@ Rollback không chép mù lên toàn bộ thư mục home hiện tại. Mục đ
 
 Sau khi xác nhận, rollback xây dựng danh sách các đích mà installer và updater có thể quản lý. Danh sách bao gồm các mục cấu hình trong repository, đường dẫn WM đặc biệt, `~/.local/bin` và `~/.nanorc`.
 
+Các thư mục nằm trong `ONCE_CONFIGS` là một ngoại lệ đặc biệt. Chúng được `install.sh` khởi tạo trong lần cài đặt đầu tiên, sau đó cố ý được bỏ qua ở các lần update thông thường. Rollback cũng bỏ qua chúng: script không chuyển bản hiện tại vào thư mục sao lưu an toàn của rollback và không khôi phục bản tương ứng từ bản sao lưu đã chọn. Cách này giữ lại các thay đổi của người dùng sau lần cài đầu tiên. Ví dụ, rollback không được thay thế `~/.config/Thunar` hiện tại bằng cấu hình Thunar cũ hơn.
+
 Mỗi đích hiện có được chuyển vào một thư mục an toàn mới:
 
 ```text
@@ -251,7 +255,7 @@ Bạn nên làm theo các quy tắc sau để tránh mất thiết lập cá nh�
 - Xem `src/home/` là nguồn cấu hình nền được quản lý bằng phiên bản, không phải thư mục cấu hình đang hoạt động.
 - Đặt các override cá nhân được hỗ trợ trong `~/hakuspace-control`.
 - Lường trước việc các chỉnh sửa trực tiếp vào file được quản lý trong `~/.config` và `~/.local/bin` sẽ bị thay thế bởi install hoặc update.
-- Kiểm tra hành vi của `ONCE_CONFIGS`. Chúng được khởi tạo khi cài đặt nhưng bị bỏ qua trong các lần cập nhật thông thường.
+- Kiểm tra hành vi của `ONCE_CONFIGS`. Chúng được khởi tạo trong lần cài đặt đầu tiên và bị bỏ qua trong cả update thông thường lẫn rollback. Trạng thái hiện tại do người dùng sở hữu sẽ được giữ nguyên.
 - Giữ các bản sao lưu quan trọng trong `~/.backup/` cho đến khi xác minh xong lần cập nhật tương ứng.
 - Không tự đổi tên thư mục sao lưu nếu bạn dựa vào việc sắp xếp theo timestamp.
 - Sau khi khôi phục cấu hình WM, hãy reload window manager tương ứng hoặc khởi động lại các ứng dụng bị ảnh hưởng.

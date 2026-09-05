@@ -1,6 +1,7 @@
 # Fedora - Cài đặt HakuSpace
 
 ## Điều kiện tiên quyết
+- Ai muốn dùng HakuSpace trên Fedora :)
 - Một máy tính đã cài Fedora Workstation.
 - Bạn biết những thao tác terminal cơ bản và cách cài phần mềm trên Fedora.
 - Hướng dẫn này được viết và kiểm thử trên Fedora Workstation 44. Các phiên bản khác có thể có tên package hoặc cách cài hơi khác.
