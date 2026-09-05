@@ -198,7 +198,7 @@ See the main configuration file at [hakuspace-config.nix](nix/hakuspace-config.n
 
 > [!important]
 > Nixpkgs I use is stable, which still install **hypridle** v0.1.7.
-> Please install **hyprilde** unstable nixpkgs for v0.1.8 (to use my [idle_inhibit.sh](src/common/local/bin/idle_inhibit.sh) script).
+> Please install **hyprilde** unstable nixpkgs for v0.1.8 (to use my [idle_inhibit.sh](src/home/.local/bin/idle_inhibit.sh) script).
 
 ---
 
@@ -228,7 +228,7 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 
 ## Keybinding
 
-- See more keybinding in: [Hyprland](src/wm/hyprland/config/keybinding.lua) | [Niri](src/wm/niri/keybinds.kdl) | [MangoWM](src/wm/mango/bind.conf) | [Labwc](src/wm/labwc/rc.xml#L263) 
+- See more keybinding in: [Hyprland](src/home/.config/hypr/config/keybinding.lua) | [Niri](src/home/.config/niri/keybinds.kdl) | [MangoWM](src/home/.config/mango/bind.conf) | [Labwc](src/home/.config/labwc/rc.xml#L263)
 - Hotkeys:
 
 | Bind | Function |
