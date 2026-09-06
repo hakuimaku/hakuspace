@@ -8,6 +8,7 @@ ACCENT_COLOR_BASED_ON_WALLPAPER=${ACCENT_COLOR_BASED_ON_WALLPAPER:-true}
 
 SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
+source "$HOME/.local/bin/accent_color.sh"
 
 list_walls() {
     cd "$WALL_DIR" || exit
@@ -34,17 +35,9 @@ if [ -n "$CHOICE" ]; then
     # Check if accent color should be based on wallpaper
     if [ "$ACCENT_COLOR_BASED_ON_WALLPAPER" = true ]; then
         ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$WALL")
-        [[ -z "$ACCENT" ]] && ACCENT="#ffffff"
+        ACCENT="$(accent_color_or_fallback "$ACCENT")"
 
-        r=$(printf "%d" 0x${ACCENT:1:2})
-        g=$(printf "%d" 0x${ACCENT:3:2})
-        b=$(printf "%d" 0x${ACCENT:5:2})
-        if [ $((r + g + b)) -lt 180 ]; then
-            ACCENT="#ffffff"
-        fi
-
-        "$HOME/.local/bin/gen_style.sh" "$ACCENT"
-        sleep 0.2
-        "$HOME/.local/bin/apply_style.sh"
+        "$HOME/.local/bin/gen_style.sh" "$ACCENT" && \
+            "$HOME/.local/bin/apply_style.sh"
     fi
 fi

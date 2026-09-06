@@ -9,6 +9,7 @@ ACCENT_COLOR_BASED_ON_WALLPAPER=${ACCENT_COLOR_BASED_ON_WALLPAPER:-true}
 PREVIEW_DIR="$WALL_MPV_DIR/.thumbnails"
 SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
+source "$HOME/.local/bin/accent_color.sh"
 
 if [[ $1 == "--exit" ]]; then
     if ! pgrep "mpvpaper" > /dev/null; then
@@ -91,20 +92,13 @@ if [ -n "$CHOICE" ]; then
     if [ "$ACCENT_COLOR_BASED_ON_WALLPAPER" = true ]; then
         if [[ -n "$PREVIEW" ]]; then
             ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$PREVIEW")
-            [[ -z "$ACCENT" ]] && ACCENT="#ffffff"
         else
             ACCENT="#ffffff"
         fi
 
-        r=$(printf "%d" 0x${ACCENT:1:2})
-        g=$(printf "%d" 0x${ACCENT:3:2})
-        b=$(printf "%d" 0x${ACCENT:5:2})
-        if [ $((r + g + b)) -lt 180 ]; then
-            ACCENT="#ffffff"
-        fi
+        ACCENT="$(accent_color_or_fallback "$ACCENT")"
 
-        "$HOME/.local/bin/gen_style.sh" "$ACCENT"
-        sleep 0.2
-        "$HOME/.local/bin/apply_style.sh"
+        "$HOME/.local/bin/gen_style.sh" "$ACCENT" && \
+            "$HOME/.local/bin/apply_style.sh"
     fi
 fi

@@ -7,10 +7,8 @@ if ! command -v hyprpicker >/dev/null 2>&1; then
     exit 1
 fi
 
-sleep 0.2
-
 # Main
 COLOR="$(hyprpicker)"
 
-$HOME/.local/bin/gen_style.sh "$COLOR"
-$HOME/.local/bin/apply_style.sh
+$HOME/.local/bin/gen_style.sh "$COLOR" && \
+    $HOME/.local/bin/apply_style.sh
