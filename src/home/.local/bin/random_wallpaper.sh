@@ -7,6 +7,7 @@
 WALL_DIR=${WALL_DIR:-$HOME/Pictures/Wallpapers}
 WALL_INTERVAL=${WALL_INTERVAL:-300}
 ACCENT_COLOR_BASED_ON_WALLPAPER=${ACCENT_COLOR_BASED_ON_WALLPAPER:-true}
+ACCENT_COLOR_MODE=${ACCENT_COLOR_MODE:-vivid}
 
 SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
@@ -35,7 +36,7 @@ run_wallpaper() {
             "$SET_WALLPAPER_SCRIPT" "$WALL"
 
             if [ "$ACCENT_COLOR_BASED_ON_WALLPAPER" = true ]; then
-                ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$WALL")
+                ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$WALL" "$ACCENT_COLOR_MODE")
                 ACCENT="$(accent_color_or_fallback "$ACCENT")"
 
                 "$HOME/.local/bin/gen_style.sh" "$ACCENT" && \
