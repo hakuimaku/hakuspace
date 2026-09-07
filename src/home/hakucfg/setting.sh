@@ -44,15 +44,15 @@ REC_OPTS="--max-fps 60" # wl-screenrec options, you can customize them as needed
 
 # ====== Waybar Theme Settings ======
 # Add your custom Waybar modes here, e.g., ("custom1" "custom2")
-# You just add your waybar config to ~/hakucfg/waybar with `config` and `style.css` files.
+# You just add your waybar config to ~/hakucfg/config/waybar with `config` and `style.css` files.
 # If name between WAYBAR_MODES_DEAULT and WAYBAR_MODE_USER is the same, WAYBAR_MODE_DEAULT (my theme) will be used.
-# Example: WAYBAR_MODE_USER=("custom1"), have ~/hakucfg/waybar/custom1/config and ~/hakucfg/waybar/custom1/style.css
+# Example: WAYBAR_MODE_USER=("custom1"), have ~/hakucfg/config/waybar/custom1/config and ~/hakucfg/config/waybar/custom1/style.css
 WAYBAR_MODE_USER=()
 
 
 
 # ====== Rofi Theme Settings ======
-# You just add your theme "name.rasi" to the ~/hakucfg/rofi folder, and switch to it in Haku Menu (Theme tab)
+# You just add your theme "name.rasi" to the ~/hakucfg/config/rofi folder, and switch to it in Haku Menu (Theme tab)
 
 
 

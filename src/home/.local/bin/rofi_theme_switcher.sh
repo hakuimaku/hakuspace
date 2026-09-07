@@ -2,7 +2,7 @@
 
 CONFIG_DIR="$HOME/.config/rofi"
 CONFIG_FILE="$CONFIG_DIR/config.rasi"
-USER_THEME_DIR="$HOME/hakucfg/rofi"
+USER_THEME_DIR="$HOME/hakucfg/config/rofi"
 
 # Check and build available theme list
 themes_default=""
