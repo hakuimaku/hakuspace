@@ -16,7 +16,8 @@ This wiki explains how to use the features included in HakuSpace. It is written 
 | [Haku Menu](haku-menu.md) | The General, Theme, and Setting menus. |
 | [Keybindings](keybindings.md) | Common shortcuts and window-manager-specific guides. |
 | [Wallpapers and themes](wallpaper-and-themes.md) | Static wallpapers, video wallpapers, accent colors, and themes. |
-| [Waybar](waybar.md) | Status bar layouts and Cava Underbar. |
+| [Waybar](waybar.md) | Status bar layouts and Waybar modules. |
+| [Cava Underbar](cava-underbar.md) | A standalone audio visualizer bar layered below the desktop UI. |
 | [Dockbar](dockbar.md) | The application dock, pinned applications, and auto-hide. |
 | [Screenshots, recording, and clipboard](capture-and-clipboard.md) | Saving screenshots, recording video, and clipboard history. |
 | [Notifications and quick settings](notifications-and-quick-settings.md) | Volume, Wi-Fi, Bluetooth, and notifications. |

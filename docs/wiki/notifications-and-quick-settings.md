@@ -15,7 +15,7 @@ The `buttons-grid` in SwayNC currently provides these toggle buttons:
 | Night light | Toggle the HakuSpace night-light script. |
 | Audio mute | Mute or unmute the default audio output. |
 | Idle inhibit | Prevent or allow idle actions such as automatic locking while active. |
-| Cava Underbar | Start or stop the Cava visualizer under Waybar. |
+| Cava Underbar | Start or stop the standalone Cava visualizer layer. |
 | Random wallpaper | Enable or disable automatic wallpaper changes. |
 | Dockbar | Show or hide Dockbar. |
 
