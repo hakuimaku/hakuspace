@@ -20,8 +20,8 @@ Repository                         User home
 src/home/.config/*       --copy--> ~/.config/*
 src/home/.local/bin/*    --copy--> ~/.local/bin/*
 src/home/.nanorc         --copy--> ~/.nanorc
-src/home/hakuspace-control/*
-                           --copy--> ~/hakuspace-control/*
+src/home/hakucfg/*
+                           --copy--> ~/hakucfg/*
 ```
 
 A copied file has its own inode and can be edited independently from the repository source. Editing a deployed file does not edit the Git checkout. Likewise, editing a repository file does not change the active desktop configuration until an install or update operation copies it again.
@@ -29,9 +29,9 @@ A copied file has its own inode and can be edited independently from the reposit
 The model has two important ownership areas:
 
 - **Base configuration**: versioned defaults in `src/home/`. These are maintained by the repository and may be replaced by a later install or update.
-- **Custom configuration**: user-specific settings in `~/hakuspace-control/`. The base configuration is designed to load or refer to this directory so personal settings can survive changes to the base configuration.
+- **Custom configuration**: user-specific settings in `~/hakucfg/`. The base configuration is designed to load or refer to this directory so personal settings can survive changes to the base configuration.
 
-This is a deliberate boundary. A configuration should be customized in `~/hakuspace-control/` when the corresponding base file supports that override. Direct edits to a deployed base file under `~/.config` or `~/.local/bin` can be overwritten by a later deployment.
+This is a deliberate boundary. A configuration should be customized in `~/hakucfg/` when the corresponding base file supports that override. Direct edits to a deployed base file under `~/.config` or `~/.local/bin` can be overwritten by a later deployment.
 
 ## 2. What Counts as a Managed Destination
 
@@ -130,7 +130,7 @@ Backup names are timestamped to make them sortable. `rollback.sh` lists them in 
 
 ## 5. `install.sh`: First-Time Deployment
 
-`install.sh` is the broad setup entry point. In addition to configuration deployment, it can install packages, create directories, deploy assets, initialize `hakuspace-control`, and perform system-specific setup.
+`install.sh` is the broad setup entry point. In addition to configuration deployment, it can install packages, create directories, deploy assets, initialize `hakucfg`, and perform system-specific setup.
 
 The dotfiles-related flow is:
 
@@ -142,7 +142,7 @@ The dotfiles-related flow is:
 6. **Deploy once-only configuration directories** such as Thunar, XFCE, MPV, and btop. These are intended to be initialized once and protected from later updater overwrites.
 7. **Deploy individual files**, including the GTK stylesheet, Starship configuration, `.nanorc`, and `mimeapps.list`.
 8. **Deploy local scripts** from `src/home/.local/bin/` to `~/.local/bin/`.
-9. **Run later setup steps**, such as initializing `~/hakuspace-control` and optional system services.
+9. **Run later setup steps**, such as initializing `~/hakucfg` and optional system services.
 
 For normal destinations, the copy helpers back up an existing target before copying. The result is an independent deployed copy in the home directory and a recovery copy in `~/.backup/`.
 
@@ -175,7 +175,7 @@ The updater then:
 7. Copies the managed local scripts to `~/.local/bin/`.
 8. Optionally performs NixOS configuration updates and rebuilds.
 
-A normal update can overwrite direct edits to managed base files because those files are intentionally controlled by the repository. Custom settings should be moved to `~/hakuspace-control` or another supported user-owned location before updating.
+A normal update can overwrite direct edits to managed base files because those files are intentionally controlled by the repository. Custom settings should be moved to `~/hakucfg` or another supported user-owned location before updating.
 
 Each update creates a separate timestamped backup under `~/.backup/`. This allows a later rollback to select the state that existed before a particular update.
 
@@ -255,7 +255,7 @@ The repository remains unchanged throughout this process. Rollback changes only 
 Use these rules to avoid losing personal changes:
 
 - Treat `src/home/` as versioned base input, not as the live configuration directory.
-- Put supported personal overrides in `~/hakuspace-control`.
+- Put supported personal overrides in `~/hakucfg`.
 - Expect direct edits to managed files under `~/.config` and `~/.local/bin` to be replaced by install or update.
 - Review `ONCE_CONFIGS` behavior. They are initialized by the first installation and skipped by both normal updates and rollback. Their current user-owned state is intentionally preserved.
 - Keep important backups under `~/.backup/` until the corresponding update has been verified.
@@ -282,4 +282,4 @@ Use these rules to avoid losing personal changes:
 - A backup is operation-specific, not automatically a full-home snapshot.
 - The deployment rules must be kept in sync with rollback's managed-destination list when new managed paths are added.
 
-The central design principle is simple: `src/home/` is the reproducible source of base configuration, the home directory contains deployed copies, `~/hakuspace-control` contains user-owned customization, and `~/.backup/` provides recovery points around copy operations.
+The central design principle is simple: `src/home/` is the reproducible source of base configuration, the home directory contains deployed copies, `~/hakucfg` contains user-owned customization, and `~/.backup/` provides recovery points around copy operations.

@@ -25,14 +25,16 @@ kill_desktop_icons() {
 }
 
 # Display help message
-if [[ $1 == "--help" ]]; then
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     cat <<'EOF'
-Usage: desktop_manager.sh [OPTION]
+Usage: desktop_icons_manager.sh [OPTION]
+Manage desktop icons.
+
 Options:
-    --startup         Restore previous state at boot (add to your autostart)
-    --toggle          Toggle desktop icons on/off
-    --reload          Reload desktop icons
-    --help            Display this help message
+    --startup           Restore previous state at boot
+    --toggle            Toggle desktop icons on/off
+    --reload            Reload desktop icons
+    -h, --help          Show this help message
 EOF
     exit 0
 fi

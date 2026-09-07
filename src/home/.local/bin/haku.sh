@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
 
 # Include Font Size Settings
-[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakucfg/setting.sh" ] && source "$HOME/hakucfg/setting.sh"
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+        cat <<'EOF'
+Usage: haku.sh [OPTION]
+Open or clear the Haku desktop widgets.
+
+Options:
+    --clear             Close all Haku windows
+    -h, --help          Show this help message
+EOF
+        exit 0
+fi
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "$1 is required"; exit 1; }; }
 

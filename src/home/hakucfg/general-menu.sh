@@ -7,6 +7,8 @@ spawn() { ( "$@" & ) >/dev/null 2>&1; disown; }
 
 if [[ $# -eq 0 ]]; then
     # Menu items displayed
+    # You can customize the menu items and their corresponding actions below.
+    # The format is: "Menu Item" followed by the action to be performed when selected.
     cat <<'EOF'
   App Menu
   Code Editor
@@ -20,6 +22,7 @@ EOF
 fi
 
 # Handle menu actions based on the selected item
+# Make sure to match the "Menu Item" text exactly as it appears in the menu.
 chosen="$*"
 case "$chosen" in
     *"App Menu"*) spawn rofi -show drun ;;

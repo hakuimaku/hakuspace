@@ -18,7 +18,7 @@ require("config/rule")
 require("config/layout")
 
 -- User custom config file.
-local custom_dir = os.getenv("HOME") .. "/hakuspace-control/"
+local custom_dir = os.getenv("HOME") .. "/hakucfg/"
 local ok, custom = pcall(dofile, custom_dir .. "hyprland-custom.lua")
 if not ok then
     hl.dispatch(hl.dsp.exec_cmd("notify-send 'Hyprland' 'Load custom config failed' -t 5000"))

@@ -18,8 +18,8 @@ Repository                         Thư mục home của bạn
 src/home/.config/*       --copy--> ~/.config/*
 src/home/.local/bin/*    --copy--> ~/.local/bin/*
 src/home/.nanorc         --copy--> ~/.nanorc
-src/home/hakuspace-control/*
-                           --copy--> ~/hakuspace-control/*
+src/home/hakucfg/*
+                           --copy--> ~/hakucfg/*
 ```
 
 Mỗi file được sao chép có inode riêng nên bạn có thể sửa nó độc lập với file nguồn trong repository. Sửa bản đã cài không làm thay đổi Git checkout. Ngược lại, sửa file trong repository cũng chưa thay đổi desktop đang chạy cho đến khi bạn chạy install hoặc update để chép file đó lần nữa.
@@ -27,9 +27,9 @@ Mỗi file được sao chép có inode riêng nên bạn có thể sửa nó đ
 Mô hình này có hai khu vực sở hữu quan trọng:
 
 - **Cấu hình nền**: các mặc định được quản lý bằng phiên bản trong `src/home/`. Repository duy trì các file này, vì vậy lần cài đặt hoặc cập nhật sau có thể thay thế bản đã cài.
-- **Cấu hình tùy chỉnh**: các thiết lập riêng của bạn trong `~/hakuspace-control/`. Cấu hình nền được thiết kế để nạp hoặc tham chiếu đến thư mục này, nhờ đó thiết lập cá nhân có thể tồn tại qua những thay đổi của cấu hình nền.
+- **Cấu hình tùy chỉnh**: các thiết lập riêng của bạn trong `~/hakucfg/`. Cấu hình nền được thiết kế để nạp hoặc tham chiếu đến thư mục này, nhờ đó thiết lập cá nhân có thể tồn tại qua những thay đổi của cấu hình nền.
 
-Đây là ranh giới được đặt ra có chủ ý. Khi file nền hỗ trợ override, bạn nên đặt phần tùy chỉnh trong `~/hakuspace-control/`. Nếu sửa trực tiếp file nền đã cài trong `~/.config` hoặc `~/.local/bin`, thay đổi đó có thể bị ghi đè ở lần triển khai sau.
+Đây là ranh giới được đặt ra có chủ ý. Khi file nền hỗ trợ override, bạn nên đặt phần tùy chỉnh trong `~/hakucfg/`. Nếu sửa trực tiếp file nền đã cài trong `~/.config` hoặc `~/.local/bin`, thay đổi đó có thể bị ghi đè ở lần triển khai sau.
 
 ## 2. HakuSpace quản lý những đường dẫn nào?
 
@@ -128,7 +128,7 @@ Tên bản sao lưu có dấu thời gian để dễ sắp xếp. `rollback.sh` 
 
 ## 5. `install.sh`: cài đặt lần đầu
 
-`install.sh` là điểm bắt đầu cho việc thiết lập. Ngoài chép cấu hình, script có thể cài package, tạo thư mục, chép tài nguyên, khởi tạo `hakuspace-control` và thực hiện một số thiết lập hệ thống tùy chọn.
+`install.sh` là điểm bắt đầu cho việc thiết lập. Ngoài chép cấu hình, script có thể cài package, tạo thư mục, chép tài nguyên, khởi tạo `hakucfg` và thực hiện một số thiết lập hệ thống tùy chọn.
 
 Luồng liên quan đến dotfiles là:
 
@@ -140,7 +140,7 @@ Luồng liên quan đến dotfiles là:
 6. **Triển khai các thư mục cấu hình chỉ cài một lần** như Thunar, XFCE, MPV và btop. Các thư mục này được khởi tạo một lần và được bảo vệ khỏi việc updater ghi đè về sau.
 7. **Triển khai các file riêng lẻ**, bao gồm stylesheet GTK, cấu hình Starship, `.nanorc` và `mimeapps.list`.
 8. **Triển khai các script cục bộ** từ `src/home/.local/bin/` sang `~/.local/bin/`.
-9. **Chạy các bước thiết lập tiếp theo**, như khởi tạo `~/hakuspace-control` và các service hệ thống tùy chọn.
+9. **Chạy các bước thiết lập tiếp theo**, như khởi tạo `~/hakucfg` và các service hệ thống tùy chọn.
 
 Với các đích thông thường, helper sao chép sẽ sao lưu target hiện có trước khi sao chép. Kết quả là một bản sao độc lập được triển khai trong thư mục home và một bản sao khôi phục trong `~/.backup/`.
 
@@ -173,7 +173,7 @@ Updater sau đó sẽ:
 7. Sao chép các script cục bộ được quản lý sang `~/.local/bin/`.
 8. Tùy chọn thực hiện cập nhật cấu hình NixOS và rebuild.
 
-Một lần update thông thường có thể ghi đè các chỉnh sửa trực tiếp vào file nền, vì repository cố ý kiểm soát những file này. Trước khi update, bạn nên chuyển thiết lập riêng sang `~/hakuspace-control` hoặc một vị trí được hỗ trợ khác thuộc quyền sở hữu của bạn.
+Một lần update thông thường có thể ghi đè các chỉnh sửa trực tiếp vào file nền, vì repository cố ý kiểm soát những file này. Trước khi update, bạn nên chuyển thiết lập riêng sang `~/hakucfg` hoặc một vị trí được hỗ trợ khác thuộc quyền sở hữu của bạn.
 
 Mỗi lần cập nhật tạo một bản sao lưu có timestamp riêng trong `~/.backup/`. Nhờ đó, rollback sau này có thể chọn trạng thái tồn tại trước một lần cập nhật cụ thể.
 
@@ -253,7 +253,7 @@ Repository vẫn không thay đổi trong suốt quá trình. Rollback chỉ tha
 Bạn nên làm theo các quy tắc sau để tránh mất thiết lập cá nhân:
 
 - Xem `src/home/` là nguồn cấu hình nền được quản lý bằng phiên bản, không phải thư mục cấu hình đang hoạt động.
-- Đặt các override cá nhân được hỗ trợ trong `~/hakuspace-control`.
+- Đặt các override cá nhân được hỗ trợ trong `~/hakucfg`.
 - Lường trước việc các chỉnh sửa trực tiếp vào file được quản lý trong `~/.config` và `~/.local/bin` sẽ bị thay thế bởi install hoặc update.
 - Kiểm tra hành vi của `ONCE_CONFIGS`. Chúng được khởi tạo trong lần cài đặt đầu tiên và bị bỏ qua trong cả update thông thường lẫn rollback. Trạng thái hiện tại do người dùng sở hữu sẽ được giữ nguyên.
 - Giữ các bản sao lưu quan trọng trong `~/.backup/` cho đến khi xác minh xong lần cập nhật tương ứng.
@@ -280,4 +280,4 @@ Bạn nên làm theo các quy tắc sau để tránh mất thiết lập cá nh�
 - Một bản sao lưu gắn với một thao tác cụ thể, không tự động là snapshot toàn bộ home.
 - Quy tắc triển khai phải được giữ đồng bộ với danh sách đích được quản lý của rollback khi thêm đường dẫn được quản lý mới.
 
-Nguyên tắc thiết kế trung tâm rất đơn giản: `src/home/` là nguồn cấu hình nền có thể tái lập, thư mục home chứa các bản sao đã triển khai, `~/hakuspace-control` chứa tùy chỉnh do người dùng sở hữu, và `~/.backup/` cung cấp các điểm khôi phục quanh các thao tác sao chép.
+Nguyên tắc thiết kế trung tâm rất đơn giản: `src/home/` là nguồn cấu hình nền có thể tái lập, thư mục home chứa các bản sao đã triển khai, `~/hakucfg` chứa tùy chỉnh do người dùng sở hữu, và `~/.backup/` cung cấp các điểm khôi phục quanh các thao tác sao chép.

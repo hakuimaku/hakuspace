@@ -21,7 +21,7 @@ hakuspace (root)
     ├── home/                  # Template cấu hình thư mục home được quản lý bằng phiên bản
     │   ├── .config/           # Mặc định cho ứng dụng và window manager
     │   ├── .local/bin/        # Các script trong home được quản lý
-    │   ├── hakuspace-control/ # Template điều khiển tùy chỉnh mặc định
+    │   ├── hakucfg/ # Template điều khiển tùy chỉnh mặc định
     │   └── .nanorc            # Cấu hình Nano
     └── packages/              # Danh sách package được nhóm theo mục đích và WM
 ```
@@ -36,12 +36,12 @@ Nguồn trong repository                Cấu hình đã chép vào máy
 src/home/.config/*        --copy-->   ~/.config/*
 src/home/.local/bin/*     --copy-->   ~/.local/bin/*
 src/home/.nanorc          --copy-->   ~/.nanorc
-src/home/hakuspace-control/*
-                           --copy-->   ~/hakuspace-control/*
+src/home/hakucfg/*
+                           --copy-->   ~/hakucfg/*
 ```
 
 - `src/home/` chứa các cấu hình nền được quản lý bằng phiên bản. Các bản sao đã cài vào máy có thể bị thay thế trong những lần cài đặt hoặc cập nhật sau.
-- `~/hakuspace-control/` là nơi bạn đặt các thiết lập riêng, nếu template cấu hình tương ứng có hỗ trợ.
+- `~/hakucfg/` là nơi bạn đặt các thiết lập riêng, nếu template cấu hình tương ứng có hỗ trợ.
 - `~/.config` và `~/.local` có thể còn chứa file của bạn hoặc của ứng dụng khác. HakuSpace chỉ quản lý những đường dẫn mà script triển khai.
 - Sửa bản sao đã triển khai không làm thay đổi repository. Ngược lại, sửa file trong repository cũng chưa ảnh hưởng đến phiên hiện tại cho đến khi bạn chạy install hoặc update.
 
@@ -51,7 +51,7 @@ Xem [Quản lý dotfiles bằng cách sao chép](VN_dotfiles-copy-management.md)
 
 ### `install.sh`
 
-Đây là script bạn chạy khi thiết lập lần đầu. Script có thể cài dependency và package, tạo thư mục cần thiết, chép cấu hình nền cùng file của window manager bạn chọn, tạo cấu hình chỉ cài một lần, chép các script và khởi tạo `~/hakuspace-control`. Script cũng có thể thực hiện một số thiết lập hệ thống tùy chọn.
+Đây là script bạn chạy khi thiết lập lần đầu. Script có thể cài dependency và package, tạo thư mục cần thiết, chép cấu hình nền cùng file của window manager bạn chọn, tạo cấu hình chỉ cài một lần, chép các script và khởi tạo `~/hakucfg`. Script cũng có thể thực hiện một số thiết lập hệ thống tùy chọn.
 
 Các đường dẫn đang được HakuSpace quản lý sẽ được sao lưu vào `~/.backup/` trước khi bị ghi đè.
 

@@ -3,7 +3,7 @@
 # This script is designed to safely exit the current window manager
 
 # Include EXIT_APP_LIST_USER and RAM_THRESHOLD_MB
-[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakucfg/setting.sh" ] && source "$HOME/hakucfg/setting.sh"
 
 # Targeted apps for graceful and force kill sequence
 EXIT_APP_LIST_DEFAULT=(
@@ -16,7 +16,7 @@ APP_PATTERN=$(IFS="|" ; echo "${APP_LIST[*]}")
 
 PORTAL_PATTERN="xdg-desktop-portal|xdg-desktop-portal-hyprland|xdg-desktop-portal-wlr|xdg-desktop-portal-gtk|xdg-desktop-portal-gnome"
 
-# Fallback RAM threshold if not set in main_setting.sh
+# Fallback RAM threshold if not set in setting.sh
 RAM_THRESHOLD_MB=${RAM_THRESHOLD_MB:-300}
 
 get_process_list() {

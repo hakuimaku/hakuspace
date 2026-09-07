@@ -283,56 +283,57 @@ deploy_assets_from_archive_repo() {
     (cd "$ARCHIVE_DIR" && ./setup.sh)
 }
 
-# Check ~/hakuspace-control directory:
+# Check ~/hakucfg directory:
 check_control_dir() {
-    if [[ ! -d "$HAKUSPACE_CONTROL_DIR" ]]; then
-        log_warn "hakuspace-control directory not found. Creating..."
-        mkdir -p "$HAKUSPACE_CONTROL_DIR"
+    if [[ ! -d "$HAKUSPACE_CUSTOM_DIR" ]]; then
+        log_warn "hakucfg directory not found. Creating..."
+        mkdir -p "$HAKUSPACE_CUSTOM_DIR"
     fi
 
     local required_files=(
-        "main_setting.sh"
-        "mango-custom.conf"
-        "niri-custom.kdl"
-        "hyprland-custom.lua"
-        "dockbar_pin_apps"
-        "hakumenu-general-custom.sh"
-        "hypridle.conf"
+        "setting.sh"
+        "wm/mango-custom.conf"
+        "wm/niri-custom.kdl"
+        "wm/hyprland-custom.lua"
+        "config/dockbar_pin_apps"
+        "config/hypridle.conf"
+        "config/kitty.conf"
+        "general-menu.sh"
     )
     for file in "${required_files[@]}"; do
-        if [[ ! -f "$DEST_CONTROL_DIR/$file" ]]; then
-            log_warn "$file not found in hakuspace-control. Creating default..."
-            copy_file "$HAKUSPACE_CONTROL_DIR/$file" "$DEST_CONTROL_DIR/$file"
+        if [[ ! -f "$DEST_CUSTOM_DIR/$file" ]]; then
+            log_warn "$file not found in hakucfg. Creating default..."
+            copy_file "$HAKUSPACE_CUSTOM_DIR/$file" "$DEST_CUSTOM_DIR/$file"
         fi
     done
 
-    mkdir -p "$DEST_CONTROL_DIR/waybar"
-    mkdir -p "$DEST_CONTROL_DIR/rofi"
-    chmod +x "$DEST_CONTROL_DIR/main_setting.sh"
-    chmod +x "$DEST_CONTROL_DIR/hakumenu-general-custom.sh"
+    mkdir -p "$DEST_CUSTOM_DIR/waybar"
+    mkdir -p "$DEST_CUSTOM_DIR/rofi"
+    chmod +x "$DEST_CUSTOM_DIR/setting.sh"
+    chmod +x "$DEST_CUSTOM_DIR/general-menu.sh"
 
-    # Check HakuSpace Control version
-    if [[ -f "$DEST_CONTROL_DIR/main_setting.sh" ]]; then
+    # Check HakuSpace custom settings version
+    if [[ -f "$DEST_CUSTOM_DIR/setting.sh" ]]; then
         local current_version
         local source_version
-        chmod +x "$HAKUSPACE_CONTROL_DIR/main_setting.sh"
+        chmod +x "$HAKUSPACE_CUSTOM_DIR/setting.sh"
 
-        source_version=$("$HAKUSPACE_CONTROL_DIR/main_setting.sh" | grep -oP 'Hakuspace Control Settings Version: \K.*')
-        current_version=$("$DEST_CONTROL_DIR/main_setting.sh" | grep -oP 'Hakuspace Control Settings Version: \K.*')
+        source_version=$("$HAKUSPACE_CUSTOM_DIR/setting.sh" --version)
+        current_version=$("$DEST_CUSTOM_DIR/setting.sh" --version)
         if [[ "$current_version" != "$source_version" ]]; then
-            log_warn "Hakuspace Control version mismatch: $current_version (current) vs $source_version (expected). Updating..."
-            log_warn "If you choose update, your custom settings in main_setting.sh will be overwritten."
-            if ask_yes_no "===> Do you want to update hakuspace-control to the latest version?"; then
-                copy_file "$HAKUSPACE_CONTROL_DIR/main_setting.sh" "$DEST_CONTROL_DIR/main_setting.sh"
-                log_ok "Hakuspace Control updated to version $source_version."
+            log_warn "Hakuspace custom settings version mismatch: $current_version (current) vs $source_version (expected). Updating..."
+            log_warn "If you choose update, your custom settings in setting.sh will be overwritten."
+            if ask_yes_no "===> Do you want to update hakucfg to the latest version?"; then
+                copy_file "$HAKUSPACE_CUSTOM_DIR/setting.sh" "$DEST_CUSTOM_DIR/setting.sh"
+                log_ok "Hakucfg updated to version $source_version."
             else
-                log_warn "You chose not to update hakuspace-control. Some features may not work as expected."
+                log_warn "You chose not to update hakucfg. Some features may not work as expected."
             fi
         else
             log_ok "Hakuspace Control version is up-to-date: $current_version"
         fi
     else
-        log_warn "main_setting.sh not found in hakuspace-control. Creating default..."
-        copy_file "$HAKUSPACE_CONTROL_DIR/main_setting.sh" "$DEST_CONTROL_DIR/main_setting.sh"
+        log_warn "setting.sh not found in hakucfg. Creating default..."
+        copy_file "$HAKUSPACE_CUSTOM_DIR/setting.sh" "$DEST_CUSTOM_DIR/setting.sh"
     fi
 }

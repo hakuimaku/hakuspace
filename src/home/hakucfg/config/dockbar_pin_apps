@@ -4,9 +4,11 @@
         "orientation": "horizontal",
         "modules": [
             "image#menu",
+            "image#localsend",
+            "image#steam",
             "image#kitty",
             "image#thunar",
-            "image#firefox"
+            "image#zen"
         ]
     },
 
@@ -31,10 +33,22 @@
         "interval": "once",
         "on-click": "thunar"
     },
-    "image#firefox": {
-        "exec": "$HOME/.local/bin/dockbar_geticon.sh firefox",
+    "image#zen": {
+        "exec": "$HOME/.local/bin/dockbar_geticon.sh zen-browser",
         "size": 40,
         "interval": "once",
-        "on-click": "firefox"
+        "on-click": "zen-browser"
+    },
+    "image#localsend": {
+        "exec": "$HOME/.local/bin/dockbar_geticon.sh localsend",
+        "size": 40,
+        "interval": "once",
+        "on-click": "localsend"
+    },
+    "image#steam": {
+        "exec": "$HOME/.local/bin/dockbar_geticon.sh steam",
+        "size": 40,
+        "interval": "once",
+        "on-click": "steam"
     }
 }

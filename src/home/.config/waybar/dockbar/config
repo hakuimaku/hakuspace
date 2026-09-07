@@ -1,5 +1,5 @@
 {
-    "include": [ "$HOME/hakuspace-control/dockbar_pin_apps"],
+    "include": [ "$HOME/hakucfg/config/dockbar_pin_apps"],
     "name": "dockbar",
     "layer": "top",
     "position": "bottom",

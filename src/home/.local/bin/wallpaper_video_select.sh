@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Include WALL_MPV_DIR & ACCENT_COLOR_BASED_ON_WALLPAPER
-[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakucfg/setting.sh" ] && source "$HOME/hakucfg/setting.sh"
 
 WALL_MPV_DIR=${WALL_MPV_DIR:-$HOME/Videos/Wallpapers}
 ACCENT_COLOR_BASED_ON_WALLPAPER=${ACCENT_COLOR_BASED_ON_WALLPAPER:-true}
@@ -11,6 +11,18 @@ PREVIEW_DIR="$WALL_MPV_DIR/.thumbnails"
 SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
 source "$HOME/.local/bin/accent_color.sh"
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+        cat <<'EOF'
+Usage: wallpaper_video_select.sh [OPTION]
+Select and manage a lively video wallpaper.
+
+Options:
+    --exit              Stop the running video wallpaper
+    -h, --help          Show this help message
+EOF
+        exit 0
+fi
 
 if [[ $1 == "--exit" ]]; then
     if ! pgrep "mpvpaper" > /dev/null; then

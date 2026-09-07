@@ -200,7 +200,7 @@
     "custom/setting": {
         "format": "",
         "tooltip-format": "Setting folder",
-        "on-click": "exec xdg-open $HOME/hakuspace-control/"
+        "on-click": "exec xdg-open $HOME/hakucfg/"
     },
 
     "custom/power": {

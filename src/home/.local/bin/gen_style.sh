@@ -3,6 +3,25 @@
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/accent_color.sh"
 
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+        cat <<'EOF'
+Usage: gen_style.sh [ACCENT] [FONT] [SIZE]
+Generate theme files for the desktop environment.
+
+Arguments:
+    ACCENT              Hex accent color, for example #d65d0e
+    FONT                Font family
+    SIZE                Font size in pixels
+
+Options:
+    -a, --accent HEX    Set the accent color
+    -f, --font NAME     Set the font family
+    -s, --size N        Set the font size
+    -h, --help          Show this help message
+EOF
+        exit 0
+fi
+
 # This script generates theme files for:
 # waybar, swaync, hyprland, rofi, kitty, btop, labwc, and a newtab page for Zen browser.
 

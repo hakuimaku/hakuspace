@@ -32,13 +32,16 @@ specificWidth_ScrollingLayout:set_enabled(true) -- Set width 60% for certain app
 
 -- Use my plugin config: (require hyprexpo | Make sure you have hyprexpo installed & enabled)
 -- hl.permission("/usr/(bin|local/bin)/hyprpm", "plugin", "allow")
--- hl.on("hyprland.start", function () hl.exec_cmd("hyprpm reload -n") end)
+-- hl.on("hyprland.start", function () hl.exec_cmd("hyprpm reload -n && hyprctl reload") end)
 -- hl.bind("SUPER + G", function() hl.plugin.hyprexpo.expo("toggle") end)
 -- require("config/plugin")
 
 -- Example change keybind for SUPER + E
 -- hl.unbind("SUPER + E") -- Unbind SUPER + E: Thunar open (Based on my default config)
 -- hl.bind("SUPER + E", hl.dsp.exec_cmd("discord")) -- Bind SUPER + E: Discord open (Bind new command)
+
+-- hl.unbind("SUPER + B")
+-- hl.bind("SUPER + B", hl.dsp.exec_cmd("zen-browser"))
 
 -- Use this mouse wheel to switch workspace if there is reverse scrolling issue
 -- hl.unbind("SUPER + mouse_down")
@@ -61,4 +64,11 @@ specificWidth_ScrollingLayout:set_enabled(true) -- Set width 60% for certain app
 --             color        = "rgba(000000cc)",
 --         },
 --     },
+-- })
+
+-- hl.monitor({
+--     output   = "",
+--     mode     = "1280x720@60",
+--     position = "auto",
+--     scale    = "1",
 -- })
