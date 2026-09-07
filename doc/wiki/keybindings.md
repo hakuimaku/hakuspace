@@ -23,11 +23,11 @@
 | `SUPER + T` | Toggle Cava Underbar |
 | `SUPER + L` | Toggle night light |
 
-## Window-manager-specific shortcuts
+## Window-manager-specific guides
 
-- Hyprland: `SUPER + X` cycles layouts; `SUPER + \\`` opens the special VS Code workspace.
-- Niri: `Mod + \\`` opens the overview; `Print`, `CTRL + Print`, and `ALT + Print` capture different screen scopes.
-- Labwc: `SUPER + SPACE` opens the root menu, `SUPER + \\`` opens the client menu, and `ALT + \\`` opens the combined menu.
-- MangoWM: provides additional shortcuts for overview, scratchpad, floating, maximize, and fullscreen.
+- [Hyprland keybindings](keybindings/hyprland.md)
+- [Niri keybindings](keybindings/niri.md)
+- [MangoWM keybindings](keybindings/mangowm.md)
+- [Labwc keybindings](keybindings/labwc.md)
 
-Window-management shortcuts such as moving, focusing, and resizing can differ between window managers.
+Window-management shortcuts such as moving, focusing, and resizing differ between window managers.

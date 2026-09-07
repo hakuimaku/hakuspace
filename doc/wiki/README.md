@@ -8,12 +8,11 @@ This wiki explains how to use the features included in HakuSpace. It is written 
 - Open the application launcher with `SUPER + R`.
 - Open the notification center with `SUPER + N`.
 - Open the terminal with `SUPER + Q`.
-- Lock the screen with `SUPER + L` when needed.
 
 ## Topics
 
 - [Haku Menu](haku-menu.md): the General, Theme, and Setting menus.
-- [Keybindings](keybindings.md): common shortcuts and window-manager differences.
+- [Keybindings](keybindings.md): common shortcuts and window-manager-specific guides.
 - [Wallpapers and themes](wallpaper-and-themes.md): static wallpapers, video wallpapers, accent colors, and themes.
 - [Waybar](waybar.md): status bar layouts and Cava Underbar.
 - [Dockbar](dockbar.md): the application dock, pinned applications, and auto-hide.
