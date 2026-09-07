@@ -2,7 +2,7 @@
 
 # This script is used to set up the main settings for all hakuspace's scripts.
 # DO NOT EDIT THIS LINE :v, used for check main_setting.sh up-to-date when run update.sh
-SETTING_VERSION="2.3.0-rc.1"
+SETTING_VERSION="2.3.1-rc.1"
 echo "Hakuspace Control Settings Version: $SETTING_VERSION"
 
 # ====== General Settings ======
@@ -21,12 +21,11 @@ WALL_INTERVAL=300 # Interval in seconds for random wallpaper changes
 ACCENT_COLOR_BASED_ON_WALLPAPER=true
 AWWW_OPTS="--transition-type random --transition-step 90 --transition-fps 60" # Options for awww transition
 
-# Accent extraction: vivid, dominant, brightest, saturated, or legacy.
+# Accent extraction: vivid, dominant, brightest, or saturated.
 # - vivid: Most vivid color
 # - dominant: Dominant color
 # - brightest: Brightest color
 # - saturated: Most saturated color
-# - legacy: get color by the largest r^2 + g^2 + b^2 value
 ACCENT_COLOR_MODE="vivid"
 
 
