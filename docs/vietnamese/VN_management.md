@@ -19,7 +19,7 @@ src/home/.local/bin/*    --copy--> ~/.local/bin/*
 src/home/hakucfg/*       --copy--> ~/hakucfg/*
 ```
 
-Mọi file cấu hình trong home của bạn là của bạn, bạn có thể tuỳ ý sửa nó mà không làm thay đổi repository. Đây là điều tôi rất thích của cơ chế copy config thay vì symbolic link, bạn không cần hiểu rõ về git và không lo bị conflict khi pull repository để cập nhật dotfiles. Nhưng là 1 user, bạn muốn phải có nhiều tuỳ biến hơn, vì vậy tôi đã tạo ra một thư mục `~/hakucfg/` để bạn đặt các file cấu hình cá nhân.
+Mọi file cấu hình trong home của bạn là của bạn, bạn có thể tuỳ ý sửa nó mà không làm thay đổi repository. Đây là điều tôi rất thích của cơ chế copy config thay vì symbolic link, bạn không cần hiểu rõ về git và không lo bị conflict khi pull repository để cập nhật dotfiles. Nhưng vì bạn có thể muốn nhiều tuỳ biến hơn, tôi đã tạo ra một thư mục `~/hakucfg/` để bạn đặt các file cấu hình cá nhân.
 
 - **BASE**: tất cả nhũng file cấu hình, script có trong hakuspace, đây là những file được thay đổi bởi tôi, bạn có thể tuỳ biến chúng nhưng sẽ bị ghi đè khi update. Giải pháp là một thư mục cấu hình cá nhân của chính bạn, tôi đặt nó là `~/hakucfg/`.
 - **CUSTOM**: các thiết lập riêng của bạn trong `~/hakucfg/`. Cấu hình độc nhất của bạn, sẽ không thể bị ghi đè, được `install.sh` và `update.sh` triển khai để pull mới về các config bị thiếu đảm bảo bạn có thể dùng nó ngay.
@@ -31,7 +31,7 @@ Cho nên, đừng sửa trực tiếp các file trong `~/.config` (của hakuspa
 Ba script có vai trò khác nhau:
 
 - `install.sh` là luồng cài đặt ban đầu: chọn window manager, cài package, tạo thư mục cần thiết, triển khai cấu hình, script trong `~/.local/bin`, asset tùy chọn và các thiết lập hệ thống.
-- `update.sh` cập nhật repository trước khi triển khai. Có thể chọn `LATEST` để pull nhánh `main`, `STABLE` để checkout tag mới nhất, hoặc `SKIP` để giữ nguyên repository hiện tại. Sau đó script cập nhật package, cấu hình và `~/.local/bin` theo lựa chọn của người dùng.
+- `update.sh` cập nhật repository trước khi triển khai. Có thể chọn `LATEST` để pull nhánh `main`, `STABLE` để checkout tag mới nhất, hoặc `SKIP` để giữ nguyên repository hiện tại. Sau đó script cập nhật package, cấu hình và `~/.local/bin` theo lựa chọn của bạn.
 - `rollback.sh` không cài lại package hay chạy lại cài đặt hệ thống; nó chỉ khôi phục những file và thư mục dotfile được HakuSpace quản lý từ một backup đã chọn.
 
 ### Cấu hình 1 lần ONCE_CONFIGS
@@ -49,12 +49,12 @@ Ba script có vai trò khác nhau:
 
 ### Triển khai cấu hình chung
 
-Đây là các file và thư mục trong `src/home/.config` không thuộc `ONCE_CONFIGS`, `SKIP_CONFIGS` hoặc luồng xử lý riêng. Khi người dùng xác nhận triển khai:
+Đây là các file và thư mục trong `src/home/.config` không thuộc `ONCE_CONFIGS`, `SKIP_CONFIGS` hoặc luồng xử lý riêng. Khi bạn xác nhận triển khai:
 
 - `install.sh` và `update.sh` copy nội dung cấu hình nền vào `~/.config`.
 - Nếu đích đã tồn tại, script backup mục hiện tại trước rồi mới copy cấu hình mới.
-- `update.sh` không tự cập nhật nếu người dùng bỏ qua bước cập nhật config.
-- Các cấu hình chung được quản lý theo từng thư mục hoặc file; file riêng của người dùng nằm ngoài danh sách nguồn sẽ không bị script xoá.
+- `update.sh` không tự cập nhật nếu bạn bỏ qua bước cập nhật config.
+- Các cấu hình chung được quản lý theo từng thư mục hoặc file; file riêng của bạn nằm ngoài danh sách nguồn sẽ không bị script xoá.
 
 Ngoài `~/.config`, hai script còn xử lý `src/home/.local/bin` vào `~/.local/bin`. Các script sau khi copy được cấp quyền thực thi. Đây là phần cập nhật trực tiếp từ BASE, vì vậy không nên sửa bản đã triển khai nếu muốn giữ thay đổi qua lần update.
 
@@ -62,12 +62,12 @@ Ngoài `~/.config`, hai script còn xử lý `src/home/.local/bin` vào `~/.loca
 
 Một số cấu hình không đi qua vòng lặp cấu hình chung:
 
-- **Window manager**: người dùng chọn Hyprland, Niri, Mango hoặc Labwc (hoặc tất cả). `install.sh` và `update.sh` chỉ triển khai WM đã chọn. Hyprland copy `config/` vào `~/.config/hypr/config` và copy riêng `hyprland.lua`; các WM còn lại copy vào thư mục tương ứng.
+- **Window manager**: bạn chọn Hyprland, Niri, Mango hoặc Labwc (hoặc tất cả). `install.sh` và `update.sh` chỉ triển khai WM đã chọn. Hyprland copy `config/` vào `~/.config/hypr/config` và copy riêng `hyprland.lua`; các WM còn lại copy vào thư mục tương ứng.
 - **Các file Hyprland dùng chung**: `hypridle.conf`, `hyprlock.conf` và `hyprlock_tiny.conf` được copy riêng vào `~/.config/hypr`, được dùng chung bởi tất cả WM thay vì chỉ Hyprland, phải xử lý đặt biệt vì chúng có đường dẫn mặc định trong `~/.config/hypr`. Nếu tôi cứ thể copy chúng thì 1 là config hyprland mất hết và 2 là nếu bạn dùng WM khác mà có các file cấu hình cho hyprland thì bạn sẽ nghĩ nó là bloat nên tôi đơn giản là không muốn:)
 - **GTK**: `gtk-3.0/gtk.css` được copy riêng, đây là file theme cho gtk3 app và file manager Thunar. Được xử lý đặc biệt bởi vì tôi không muốn bạn bị mất bookmark trong file manager.
 - **Các file đơn**: `starship.toml`, `.nanorc` được copy thủ công vào `~/.config` và `~/.nanorc`. Vì chỉ copy_file mới có thể giải quyết chúng.
 - **`mimeapps.list`**: chỉ được triển khai trong `install.sh`, không được `update.sh` ghi đè (là 1 dạng ONCE_CONFIGS nhưng nó là file nên tôi không để nó vào danh sách ONCE_CONFIGS).
-- **`~/hakucfg`**: cuối `install.sh` và `update.sh`, `check_control_dir` tạo thư mục cùng các file custom còn thiếu từ `src/home/hakucfg`. `setting.sh` chỉ được cập nhật khi phiên bản khác nhau và người dùng đồng ý; việc này có thể ghi đè tùy chỉnh trong file đó. Các file custom hiện có khác không bị thay thế tự động.
+- **`~/hakucfg`**: cuối `install.sh` và `update.sh`, `check_control_dir` tạo thư mục cùng các file custom còn thiếu từ `src/home/hakucfg`. `setting.sh` chỉ được cập nhật khi phiên bản khác nhau và bạn đồng ý; việc này có thể ghi đè tùy chỉnh trong file đó. Các file custom hiện có khác không bị thay thế tự động.
 - **NixOS và dịch vụ hệ thống**: `install.sh` có thể triển khai cấu hình NixOS, đổi shell mặc định sang fish, bật dịch vụ `ly` và đặt Thunar làm file manager mặc định. `update.sh` có thể cập nhật/rebuild NixOS. Đây là thay đổi cấp hệ thống, không phải bản copy dotfile thông thường.
 
 ## 3. Lưu trữ bản sao lưu
@@ -97,4 +97,4 @@ Không nên xoá backup ngay sau khi update hoặc rollback. Hãy kiểm tra c�
 
 ## 4. Kết luận
 
-Nguyên tắc thiết kế trung tâm rất đơn giản: `src/home/` là nguồn cấu hình BASE có thể tái lập, thư mục home chứa các bản sao đã triển khai, `~/hakucfg` chứa tùy chỉnh do người dùng sở hữu - là CUSTOM, và `~/.backup/` cung cấp các điểm khôi phục quanh các thao tác sao chép.
+Nguyên tắc thiết kế trung tâm rất đơn giản: `src/home/` là nguồn cấu hình BASE có thể tái lập, thư mục home chứa các bản sao đã triển khai, `~/hakucfg` chứa tùy chỉnh do bạn sở hữu - là CUSTOM, và `~/.backup/` cung cấp các điểm khôi phục quanh các thao tác sao chép.
