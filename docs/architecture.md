@@ -1,6 +1,6 @@
 # How Does HakuSpace Work?
 
-See the Vietnamese version: [VN_architecture](vietnamese/VN_architecture.md).
+See the Vietnamese version: [VN_architecture](./vietnamese/VN_architecture.md).
 
 This is an overview for *you* and *AI* to understand what my dotfiles contain and how they are deployed onto your machine.
 

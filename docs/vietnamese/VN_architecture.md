@@ -1,6 +1,6 @@
 # HakuSpace hoạt động như thế nào?
 
-Xem bản tiếng Anh [Architecture](../architecture.md).
+Xem bản tiếng Anh: [Architecture](../architecture.md).
 
 Đây là tài liệu tổng quan để *bạn* và *AI* hiểu dotfiles của tôi có gì và cách chúng được triển khai vô máy bạn.
 

@@ -1,5 +1,7 @@
 # Fedora - Cài đặt HakuSpace
 
+Xem bản tiếng Anh: [Fedora Guide](../fedora_guide.md)
+
 ## Điều kiện tiên quyết
 - Ai muốn dùng HakuSpace trên Fedora :)
 - Một máy tính đã cài Fedora Workstation.
