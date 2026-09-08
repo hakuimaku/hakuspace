@@ -20,6 +20,7 @@ binds {
     Mod+Shift+W      hotkey-overlay-title="Cycle Waybar Mode" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --cycle"; }
     Mod+W            hotkey-overlay-title="Toggle Dockbar" { spawn "sh" "-c" "$HOME/.local/bin/dockbar_manager.sh --toggle"; }
     Mod+L            hotkey-overlay-title="Adjust Brightness" { spawn "sh" "-c" "$HOME/.local/bin/nightlight_toggle.sh"; }
+    Mod+T            hotkey-overlay-title="Cava Underbar" { spawn "sh" "-c" "$HOME/.local/bin/cava_manager.sh"; }
 
     // Application Launchers
     Mod+Q            hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
@@ -85,8 +86,8 @@ binds {
     Mod+Ctrl+Shift+R { switch-preset-window-height; }
     Mod+Ctrl+R       { reset-window-height; }
 
-    Mod+T            { center-column; }
-    Mod+Shift+T      { center-visible-columns; }
+    Mod+G            { center-column; }
+    Mod+H            { center-visible-columns; }
 
     Mod+Minus       { set-column-width "-10%"; }
     Mod+Equal       { set-column-width "+10%"; }

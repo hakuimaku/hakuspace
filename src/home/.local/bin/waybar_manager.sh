@@ -22,6 +22,8 @@ Select and manage the active Waybar mode.
 Options:
     --cycle             Switch to the next Waybar mode
     --select            Select a Waybar mode with Rofi
+    --reload            Reload Waybar
+    --toggle            Toggle Waybar on or off
     -h, --help          Show this help message
 EOF
         exit 0
@@ -69,6 +71,27 @@ restart_waybar() {
 
     waybar &
 }
+
+# Toggle Waybar on or off.
+toggle_waybar() {
+    if pgrep -x waybar >/dev/null; then
+        pkill -x waybar
+    else
+        waybar &
+    fi
+}
+
+# Handle --reload argument.
+if [[ "$1" == "--reload" ]]; then
+    restart_waybar
+    exit 0
+fi
+
+# Handle --toggle argument.
+if [[ "$1" == "--toggle" ]]; then
+    toggle_waybar
+    exit 0
+fi
 
 # Handle --cycle argument to toggle through the MODES array
 if [[ "$1" == "--cycle" ]]; then

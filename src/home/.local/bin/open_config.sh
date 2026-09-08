@@ -3,6 +3,12 @@ set -euo pipefail
 
 # This script opens various configuration files in VS Code, depending on the current window manager.
 
+# Check dependency
+if ! command -v code &> /dev/null; then
+    echo "VS Code (code) is not installed. Please install it to use this script." >&2
+    exit 1
+fi
+
 paths=(
     "$HOME/.config/waybar"
     "$HOME/.config/rofi"
