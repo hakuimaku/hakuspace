@@ -36,7 +36,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 - Multi-Distro Support: Have been tested on Arch, Fedora, Nixos.
 - DE-like Experience: Modular UI powered by Rofi, Waybar, SwayNC, and custom scripts.
 - Extensible: Highly customizable and easy to adapt to your own workflow.
-- See Guide for: [Arch Linux](#installation-guide) | [NixOS](#nixos-configuration) | [Fedora](docs/Fedora_Guide.md)
+- See Guide for: [Arch Linux](#installation-guide) | [NixOS](#nixos-configuration) | [Fedora](docs/fedora_guide.md)
 
 ---
 
@@ -91,7 +91,7 @@ Specific packages for each WM: [pkg-hyprland](src/packages/pkg-hyprland.txt) | [
 ## Installation Guide
 
 > [!tip]
-> For Fedora users, you should follow the [Fedora Guide](docs/Fedora_Guide.md)
+> For Fedora users, you should follow the [Fedora Guide](docs/fedora_guide.md)
 
 ### 0. Prerequisites:
 

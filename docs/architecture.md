@@ -1,104 +1,68 @@
-# HakuSpace Architecture
+# How Does HakuSpace Work?
 
-> AI generated content. Maybe inaccurate or incomplete. But I've reviewed it & ensured it is accurate.
+See the Vietnamese version: [VN_architecture](vietnamese/VN_architecture.md).
 
-See Vietnamese translation: [VN_architecture.md](./vietnamese/VN_architecture.md)
-
-This document is the high-level entry point for the HakuSpace repository. It describes the repository layout, ownership boundaries, and the responsibilities of the main scripts.
-
-For the complete explanation of copy-based deployment, backup helpers, managed destinations, and rollback behavior, see [Dotfiles Copy Management](dotfiles-copy-management.md).
+This is an overview for *you* and *AI* to understand what my dotfiles contain and how they are deployed onto your machine.
 
 ## Repository Layout
 
 ```text
 hakuspace (root)
-├── assets/                    # Static assets, including Firefox customizations
-├── docs/                      # Architecture, setup, and dotfiles documentation
-├── nix/                       # NixOS configurations and flake templates
-├── scripts/                   # Shared shell variables and helper functions
-├── install.sh                 # First-time setup and configuration deployment
-├── update.sh                  # Repository, package, and configuration updates
-├── rollback.sh                # Restore a selected configuration backup
+├── assets/                    # External assets; not copied to your machine
+├── docs/                      # Project documentation
+├── nix/                       # NixOS configuration and flake templates
+│
+├── scripts/                   # Helper scripts
+├── install.sh                 # First-time dotfiles installation script
+├── update.sh                  # Dotfiles update script
+├── rollback.sh                # Restore dotfiles from a backup
+│
 └── src/
-    ├── home/                  # Versioned home-directory configuration templates
-    │   ├── .config/           # Application and window-manager defaults
-    │   ├── .local/bin/        # Managed user scripts
-    │   ├── hakucfg/ # Default custom-control templates
-    │   └── .nanorc            # Nano configuration
-    └── packages/              # Package lists grouped by purpose and WM
+    ├── home/                  # Main directory containing dotfiles
+    │   ├── .config/           # Configuration files for ~/.config
+    │   ├── .local/bin/        # Scripts that make up HakuSpace in ~/.local/bin
+    │   └── hakucfg/           # Templates for HakuSpace's custom configuration
+    │
+    └── packages/              # Package lists grouped for installation
 ```
 
-## Configuration Ownership
+## How Are the Dotfiles Managed?
 
-HakuSpace uses ordinary copied files. It does not use Stow, symbolic links, Git worktrees, or live synchronization.
+HakuSpace uses ordinary copied files. It does not use Stow, symbolic links, Git worktrees, or a live synchronization mechanism.
 
-```text
-Repository source                  Deployed user configuration
------------------                  ---------------------------
-src/home/.config/*        --copy--> ~/.config/*
-src/home/.local/bin/*     --copy--> ~/.local/bin/*
-src/home/.nanorc          --copy--> ~/.nanorc
-src/home/hakucfg/*
-                           --copy--> ~/hakucfg/*
-```
+- `src/home/` recreates the layout of your home directory and contains the configurations and scripts. This is the BASE configuration.
+- `~/hakucfg/` is where you put your personal configuration files. In the repository, it is a template that can be deployed to your machine. This is the CUSTOM configuration.
+- Editing a deployed copy does not change the repository. Conversely, editing a repository file does not affect the current session until you run `install.sh` or `update.sh`.
 
-- `src/home/` contains versioned base defaults. Later installation or update operations may replace deployed copies of these files.
-- `~/hakucfg/` is the primary location for user-specific settings supported by the configuration templates.
-- `~/.config` and `~/.local` may contain unrelated user or application files. HakuSpace manages only the destinations deployed by its scripts.
-- Editing a deployed file does not update the repository. Editing a repository file does not affect the running session until it is deployed.
-
-See [Dotfiles Copy Management](dotfiles-copy-management.md) for copy semantics, backup structure, customization rules, and detailed script behavior.
-
-## Main Script Responsibilities
+## How Do I Use These Dotfiles?
 
 ### `install.sh`
 
-The first-time setup entry point. It can install dependencies and packages, create required directories, deploy base configuration and selected window-manager files, initialize once-only configurations, deploy scripts, initialize `~/hakucfg`, and perform optional system setup.
-
-Existing managed destinations are backed up under `~/.backup/` before they are copied over.
+- This is the script for the first dotfiles installation. You can run it again later, but doing so is not recommended.
+- What does it do?
+  - Installs the required packages.
+  - Creates the required directories.
+  - Copies configuration files and scripts from the repository to your machine.
+  - Initializes the once-only configurations, `ONCE_CONFIGS`.
+  - Initializes `~/hakucfg` if it does not already exist.
+  - Performs optional system setup steps for the first HakuSpace session.
+- The script also creates backups of files that will be overwritten during installation. You can find the timestamped backups under `~/.backup/`.
 
 ### `update.sh`
 
-The maintenance entry point. It can update the repository to the latest or stable revision, then redeploy managed configuration and scripts. It preserves configuration listed in `ONCE_CONFIGS` during normal updates, while direct edits to other managed base files may be overwritten.
-
-Each deployment creates a timestamped `~/.backup/Backup_*` recovery point for the destinations affected by that operation.
+- This is the script for updating the dotfiles.
+- What does it do?
+  - Updates the repository to the latest or stable version.
+  - Copies configuration files and scripts from the repository to your machine.
+  - Preserves configurations in `ONCE_CONFIGS`; other managed files may be overwritten.
+- The script also creates backups of files that will be overwritten during the update. You can find the timestamped backups under `~/.backup/`.
 
 ### `rollback.sh`
 
-The recovery entry point. It lets the user select a previous `~/.backup/Backup_*` directory, moves currently managed destinations into a `~/.backup/Rollback_Backup_*` safety directory, and restores the selected backup.
+- This is the script for restoring dotfiles from a backup.
+- What does it do?
+  - Moves current managed files into `~/.backup/Rollback_Backup_*`.
+  - Restores the selected files and directories from the chosen backup.
+- It restores only files and directories managed by `install.sh` and `update.sh`. Other files under `~/.config` and `~/.local` are preserved.
 
-Rollback clears only destinations known to the installer and updater. Unrelated files and directories in `~/.config` and `~/.local` are preserved.
-
-## Deployment Flow
-
-```text
-Repository defaults
-        │
-        ▼
-install.sh / update.sh
-        │
-        ├── backup existing managed destinations
-        └── copy selected configuration into $HOME
-                    │
-                    ▼
-              ~/.backup/Backup_*
-
-Selected backup
-        │
-        ▼
-rollback.sh
-        │
-        ├── move current managed destinations aside
-        └── restore selected files and directories
-                    │
-                    ▼
-          ~/.backup/Rollback_Backup_*
-```
-
-The repository remains unchanged during deployment and rollback. These scripts manage independent copies in the user's home directory.
-
-## Documentation Map
-
-- [Dotfiles Copy Management](dotfiles-copy-management.md): detailed copy semantics, helper functions, backup structure, install/update/rollback behavior, examples, and trade-offs.
-- [Fedora Guide](Fedora_Guide.md): Fedora-specific setup guidance.
-- [Project source](../src/): versioned configuration templates and package manifests.
+Continue reading: [Management](management.md) to understand how dotfiles are deployed and managed safely in your home directory.
