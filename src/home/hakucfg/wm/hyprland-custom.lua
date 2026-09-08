@@ -40,8 +40,10 @@ specificWidth_ScrollingLayout:set_enabled(true) -- Set width 60% for certain app
 -- hl.unbind("SUPER + E") -- Unbind SUPER + E: Thunar open (Based on my default config)
 -- hl.bind("SUPER + E", hl.dsp.exec_cmd("discord")) -- Bind SUPER + E: Discord open (Bind new command)
 
+-- If you have issues with open default web in browser
+-- Set your default browser:
 -- hl.unbind("SUPER + B")
--- hl.bind("SUPER + B", hl.dsp.exec_cmd("zen-browser"))
+-- hl.bind("SUPER + B", hl.dsp.exec_cmd("your browser"))
 
 -- Use this mouse wheel to switch workspace if there is reverse scrolling issue
 -- hl.unbind("SUPER + mouse_down")

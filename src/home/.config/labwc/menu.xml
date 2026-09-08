@@ -3,8 +3,8 @@
 <menu id="root-menu" label="">
     <item label="󱁤  Reconfigure"><action name="Reconfigure"/></item>
     <item label="  Terminal"><action name="Execute" command="kitty"/></item>
-    <item label="󰖟  Web browser"><action name="Execute" command="firefox"/></item>
-    <item label="  File Manager"><action name="Execute" command="thunar"/></item>
+    <item label="󰖟  Web browser"><action name="Execute" command="xdg-open https:"/></item>
+    <item label="  File Manager"><action name="Execute" command="sh -c 'xdg-open &quot;$HOME&quot;'"/></item>
     <item label="󰍜  Haku Menu"><action name="Execute" command="~/.local/bin/hakumenu.sh"/></item>
 </menu>
 </openbox_menu>

@@ -37,7 +37,7 @@ case "$chosen" in
     *"Dockbar Auto-hide Toggle"*) spawn $HOME/.local/bin/dockbar_manager.sh --auto-hide ;;
     *"Dockbar Exclusive Toggle"*) spawn $HOME/.local/bin/dockbar_manager.sh --exclusive ;;
     *"Dockbar Icon Size Change"*) spawn $HOME/.local/bin/dockbar_manager.sh --icon-size ;;
-    *"Settings Folder"*) spawn thunar "$HOME/hakucfg" ;;
+    *"Settings Folder"*) spawn xdg-open "$HOME/hakucfg" ;;
     *"HakuMenu General Tab"*) spawn code $HOME/hakucfg/general-menu.sh ;;
     *"Wifi"*) spawn nm-connection-editor ;;
     *"Bluetooth"*) spawn blueman-manager ;;
