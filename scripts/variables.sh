@@ -43,6 +43,7 @@ ONCE_CONFIGS=(
     "$SOURCE_CONFIG/xfce4"
     "$SOURCE_CONFIG/mpv"
     "$SOURCE_CONFIG/btop"
+    "$SOURCE_CONFIG/cava"
 )
 
 # Skip configs (to be skipped during install.sh and update.sh)
