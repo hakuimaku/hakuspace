@@ -251,6 +251,25 @@ fi
 # Init HakuSpace Control
 check_control_dir
 
+# Gen Style if not exist ~/.local/state/hakuspace
+echo ""
+if [[ ! -d "$HOME/.local/state/hakuspace" ]]; then
+    "$HOME/.local/bin/gen_style.sh" --font "JetBrainsMono Nerd Font"
+    log_ok "Executed gen_style.sh"
+else
+    log_skip "Skipping gen_style.sh execution as ~/.local/state/hakuspace already exists."
+fi
+
+# Reload Waybar
+echo ""
+if [[ -x "$HOME/.local/bin/waybar_manager.sh" ]]; then
+    sleep 1
+    "$HOME/.local/bin/waybar_manager.sh" --reload
+    log_ok "Waybar reloaded successfully."
+else
+    log_skip "Skipping Waybar reload."
+fi
+
 # Final message
 echo ""
 echo -e "${C_BOLD}${C_CYAN}>>>>>>>>>> Update complete! You may need to restart your session or reload WM to apply changes!${C_RESET}"

@@ -19,37 +19,36 @@ EOF
 
 [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]] && { usage; exit 0; }
 
-FONT_PROVIDED=false
+ACCENT_PROVIDED=false
 SIZE_PROVIDED=false
 
-if [[ "${1-}" != "" && "${1-}" != --* ]]; then ACCENT_COLOR="$1"; shift; fi
-if [[ "${1-}" != "" && "${1-}" != --* ]]; then FONT_FAMILY="$1"; FONT_PROVIDED=true; shift; fi
-if [[ "${1-}" != "" && "${1-}" != --* ]]; then FONT_SIZE="$1"; SIZE_PROVIDED=true; shift; fi
+if [[ "${1-}" != "" && "${1-}" != -* ]]; then ACCENT_COLOR="$1"; ACCENT_PROVIDED=true; shift; fi
+if [[ "${1-}" != "" && "${1-}" != -* ]]; then FONT_FAMILY="$1"; shift; fi
+if [[ "${1-}" != "" && "${1-}" != -* ]]; then FONT_SIZE="$1"; SIZE_PROVIDED=true; shift; fi
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --accent|-a) ACCENT_COLOR="${2:?missing value for --accent}"; shift 2 ;;
-        --font|-f) FONT_FAMILY="${2:?missing value for --font}"; FONT_PROVIDED=true; shift 2 ;;
+        --accent|-a) ACCENT_COLOR="${2:?missing value for --accent}"; ACCENT_PROVIDED=true; shift 2 ;;
+        --font|-f) FONT_FAMILY="${2:?missing value for --font}"; shift 2 ;;
         --size|-s) FONT_SIZE="${2:?missing value for --size}"; SIZE_PROVIDED=true; shift 2 ;;
         *) echo "Unknown arg: $1" >&2; exit 2 ;;
     esac
 done
 
-# Keep state values when a caller changes only the accent.
-[[ "$FONT_PROVIDED" == false ]] && FONT_FAMILY="${FONT_FAMILY:-$THEME_DEFAULT_FONT}"
-[[ "$SIZE_PROVIDED" == false ]] && FONT_SIZE="${FONT_SIZE:-$THEME_DEFAULT_SIZE}"
+if [[ "$ACCENT_PROVIDED" == true ]]; then
+    ACCENT_COLOR="$(printf '%s' "$ACCENT_COLOR" | tr -cd '#0-9a-fA-F')"
+    [[ "$ACCENT_COLOR" =~ ^#[0-9a-fA-F]{6}$ ]] || ACCENT_COLOR="$THEME_DEFAULT_ACCENT"
 
-ACCENT_COLOR="$(printf '%s' "$ACCENT_COLOR" | tr -cd '#0-9a-fA-F')"
-[[ "$ACCENT_COLOR" =~ ^#[0-9a-fA-F]{6}$ ]] || ACCENT_COLOR="$THEME_DEFAULT_ACCENT"
-[[ "$FONT_SIZE" =~ ^[0-9]+$ && "$FONT_SIZE" -gt 0 ]] || FONT_SIZE="$THEME_DEFAULT_SIZE"
-[[ -n "$FONT_FAMILY" ]] || FONT_FAMILY="$THEME_DEFAULT_FONT"
-
-validated_accent="$(accent_color_or_fallback "$ACCENT_COLOR")"
-if [[ "$validated_accent" == "$THEME_DEFAULT_ACCENT" && "${ACCENT_COLOR,,}" != "$THEME_DEFAULT_ACCENT" ]]; then
-    notify-send "Color ${ACCENT_COLOR} is too dark" "Generating color failed" 2>/dev/null || true
-    exit 1
+    validated_accent="$(accent_color_or_fallback "$ACCENT_COLOR")"
+    if [[ "$validated_accent" == "$THEME_DEFAULT_ACCENT" && "${ACCENT_COLOR,,}" != "$THEME_DEFAULT_ACCENT" ]]; then
+        notify-send "Color ${ACCENT_COLOR} is too dark" "Generating color failed" 2>/dev/null || true
+        exit 1
+    fi
+    ACCENT_COLOR="$validated_accent"
 fi
-ACCENT_COLOR="$validated_accent"
+
+[[ "$SIZE_PROVIDED" == false || ( "$FONT_SIZE" =~ ^[0-9]+$ && "$FONT_SIZE" -gt 0 ) ]] || FONT_SIZE="$THEME_DEFAULT_SIZE"
+[[ -n "$FONT_FAMILY" ]] || FONT_FAMILY="$THEME_DEFAULT_FONT"
 
 theme_save_state
 
