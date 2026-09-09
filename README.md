@@ -166,7 +166,7 @@ If multiple backups are available, the newest one is selected by pressing Enter.
 
 - Run `rollback.sh` to restore your previous configuration.
 - Remove all scripts located in `~/.local/bin`.
-- Delete the auto-generated files in `~/.local/state/haku_theme`.
+- Delete the auto-generated files in `~/.local/state/hakuspace`.
 - If necessary, you can also remove the icons and themes inside `~/.icons` and `~/.themes`.
 - Review `pkg-core.txt`, `pkg-service.txt`, `pkg-optional.txt` (in hakuspace/common) and `pkg-WM.txt` (in hakuspace/WM) to uninstall any unnecessary packages.
 
@@ -222,7 +222,7 @@ hyprpm reload
 ```
 Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 
-See more in `~/hakucfg/wm/hyprland-custom.lua` for guide.
+See more in `~/hakucfg/wm/hyprland-custom.lua` or [here](src/home/hakucfg/wm/hyprland-custom.lua#L33) for guide.
 
 ---
 
@@ -267,7 +267,7 @@ See more in `~/hakucfg/wm/hyprland-custom.lua` for guide.
 ## Assets Located
 
 - Custom config (your personal changes): `~/hakucfg`
-- State file & Haku Theme for waybar, rofi,... (includes accent_color, font, font size): `~/.local/state/haku_theme`
+- Theme files for waybar, rofi,...: `~/.local/state/hakuspace/theme`; canonical state: `~/.local/state/hakuspace/state/state.env`
 - Icons: `~/.icons`
 - Themes: `~/.themes`
 - All hakuspace scripts: `~/.local/bin`

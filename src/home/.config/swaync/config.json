@@ -110,7 +110,7 @@
                     "type": "toggle",
                     "active": true,
                     "command": "$HOME/.local/bin/dockbar_manager.sh --toggle >/dev/null 2>&1",
-                    "update-command": "cat $HOME/.local/state/haku_theme/dockbar_manual_state | grep -q '1' && echo true || echo false"
+                    "update-command": "cat $HOME/.local/state/hakuspace/state/dockbar_manual_state | grep -q '1' && echo true || echo false"
                 }
             ]
         },

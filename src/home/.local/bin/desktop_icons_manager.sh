@@ -3,7 +3,8 @@
 # This script manages the state of desktop icons
 # Toggle them on/off, reload them, or restore the previous state at startup.
 
-STATE_DIR="$HOME/.local/state/haku_theme"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/haku_theme.sh"
 DESKTOP_ICONS_STATE="$STATE_DIR/desktop_icons_state"
 
 DESKTOP_MANAGER_BIN="$HOME/.local/bin/desktop_icons.py"

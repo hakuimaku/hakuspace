@@ -13,7 +13,8 @@ if [[ $(printf '%s\n%s' "$MIN_VERSION" "$HYPRIDLE_VERSION" | sort -V | head -n1)
     exit 1
 fi
 
-STATE_DIR="$HOME/.local/state/haku_theme"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/haku_theme.sh"
 STATE_FILE="$STATE_DIR/idle_inhibit"
 
 # Ensure the directory exists
