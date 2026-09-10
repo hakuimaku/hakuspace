@@ -19,6 +19,7 @@ binds {
     Mod+Shift+Y      hotkey-overlay-title="Lively Wallpaper Select" { spawn "sh" "-c" "$HOME/.local/bin/wallpaper_video_select.sh"; }
     Mod+Shift+W      hotkey-overlay-title="Cycle Waybar Mode" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --cycle"; }
     Mod+W            hotkey-overlay-title="Toggle Dockbar" { spawn "sh" "-c" "$HOME/.local/bin/dockbar_manager.sh --toggle"; }
+    Mod+Ctrl+W       hotkey-overlay-title="Toggle Waybar" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --toggle"; }
     Mod+L            hotkey-overlay-title="Adjust Brightness" { spawn "sh" "-c" "$HOME/.local/bin/nightlight_toggle.sh"; }
     Mod+T            hotkey-overlay-title="Cava Underbar" { spawn "sh" "-c" "$HOME/.local/bin/cava_manager.sh"; }
 

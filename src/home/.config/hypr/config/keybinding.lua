@@ -50,7 +50,7 @@ hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh"))
 hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh --fullscreen"))
 hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("$HOME/.local/bin/waybar_manager.sh --cycle"))
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("$HOME/.local/bin/dockbar_manager.sh --toggle"))
-
+hl.bind(mainMod .. " + CTRL + W", hl.dsp.exec_cmd("$HOME/.local/bin/waybar_manager.sh --toggle"))
 
 -- Move focus with mainMod + arrow keys
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
