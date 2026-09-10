@@ -45,3 +45,7 @@ for s in /tmp/kitty-*; do
     kitty @ --to "unix:$s" ls >/dev/null 2>&1 || continue
     kitty @ --to "unix:$s" load-config >/dev/null 2>&1 || true
 done
+
+if [[ -f "$HOME/.local/bin/cava_manager.sh" ]]; then
+    "$HOME/.local/bin/cava_manager.sh" reload >/dev/null 2>&1 || true
+fi

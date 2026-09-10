@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import re
 import sys
 import signal
 import argparse
@@ -22,8 +23,14 @@ method = ncurses
 orientation = top
 
 [color]
+# Uncomment & comment one of the following lines to change the bar color
 foreground = black
+
+# based on wallpaper, best with dark wallpaper
+# foreground = white
 """
+
+KITTY_CONFIG_PATH = "~/.config/kitty/kitty.conf"
 
 
 def ensure_config_exists(config_path):
@@ -34,6 +41,132 @@ def ensure_config_exists(config_path):
     with open(config_path, 'w') as f:
         f.write(DEFAULT_CONFIG_TEMPLATE)
     print(f"[cava-layer] No config found at '{config_path}', created a default one.")
+
+
+_KITTY_COLOR_KEYS = ["foreground", "background", "cursor", "cursor_text_color",
+                     "selection_foreground", "selection_background"]
+_KITTY_PALETTE_KEYS = [f"color{i}" for i in range(16)]
+
+
+def _read_kitty_lines(path, visited=None):
+    """
+    Recursively expand a kitty config file, inlining any `include <path>`
+    directives in place -- matching kitty's own behaviour where later
+    directives (including ones pulled in via include) override earlier ones.
+    A relative include path is resolved against the directory of the file
+    that references it, same as kitty does. Missing/unreadable includes are
+    skipped rather than failing the whole parse. Circular includes are guarded
+    against via `visited`.
+    """
+    if visited is None:
+        visited = set()
+
+    real_path = os.path.realpath(os.path.expanduser(path))
+    if real_path in visited or not os.path.isfile(real_path):
+        return []
+    visited.add(real_path)
+
+    try:
+        with open(real_path, 'r') as f:
+            raw_lines = f.readlines()
+    except OSError as e:
+        print(f"[cava-layer] Could not read kitty config '{real_path}': {e}", file=sys.stderr)
+        return []
+
+    file_dir = os.path.dirname(real_path)
+    expanded = []
+    for raw_line in raw_lines:
+        stripped = raw_line.strip()
+        if stripped.startswith('include ') or stripped.startswith('include\t'):
+            inc_path = stripped.split(None, 1)[1].strip()
+            expanded_inc = os.path.expanduser(inc_path)
+            if not os.path.isabs(expanded_inc):
+                inc_path = os.path.join(file_dir, inc_path)
+            expanded.extend(_read_kitty_lines(inc_path, visited))
+        else:
+            expanded.append(raw_line)
+    return expanded
+
+
+def parse_kitty_config(config_path):
+    """
+    Minimal parser for kitty.conf and anything it `include`s. Returns a dict
+    with any of: font_family (str), font_size (float),
+    foreground/background/cursor (str hex), palette (list of up to 16 hex
+    strings, colorN -> palette[N]). Unsupported directives (map, etc.) are
+    ignored. Returns {} if the file (and its includes) can't be found/parsed.
+    """
+    result = {}
+    palette = [None] * 16
+
+    lines = _read_kitty_lines(config_path)
+    if not lines:
+        return result
+
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line or line.startswith('#'):
+            continue
+        parts = line.split(None, 1)
+        if len(parts) != 2:
+            continue
+        key, value = parts[0].strip(), parts[1].strip()
+
+        if key == "font_family":
+            result["font_family"] = value
+        elif key == "font_size":
+            try:
+                result["font_size"] = float(value)
+            except ValueError:
+                pass
+        elif key in _KITTY_COLOR_KEYS:
+            if re.match(r'^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$', value):
+                result[key] = value
+        elif key in _KITTY_PALETTE_KEYS:
+            if re.match(r'^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$', value):
+                idx = int(key[len("color"):])
+                if 0 <= idx < 16:
+                    palette[idx] = value
+
+    if any(c is not None for c in palette):
+        result["palette"] = palette
+
+    return result
+
+
+def apply_kitty_theme(terminal, kitty_config):
+    """Apply parsed kitty.conf colors onto a Vte.Terminal, best-effort."""
+    fg_hex = kitty_config.get("foreground")
+    bg_hex = None  # background stays transparent for the overlay bar regardless of kitty
+    cursor_hex = kitty_config.get("cursor")
+    palette_hex = kitty_config.get("palette")
+
+    def to_rgba(hex_str, alpha=1.0):
+        rgba = Gdk.RGBA()
+        rgba.parse(hex_str)
+        rgba.alpha = alpha
+        return rgba
+
+    fg = to_rgba(fg_hex) if fg_hex else None
+    cursor = to_rgba(cursor_hex) if cursor_hex else None
+    palette = None
+    if palette_hex:
+        palette = [to_rgba(c) if c else None for c in palette_hex]
+        # Vte requires a full 0/8/16/24/256-length palette without holes;
+        # fall back to None (skip custom palette) if any slot is missing.
+        if any(c is None for c in palette):
+            palette = None
+
+    try:
+        terminal.set_colors(fg, Gdk.RGBA(0, 0, 0, 0), palette or [])
+    except GLib.Error as e:
+        print(f"[cava-layer] Failed applying kitty colors: {e}", file=sys.stderr)
+
+    if cursor:
+        try:
+            terminal.set_color_cursor(cursor)
+        except Exception:
+            pass
 
 
 class CavaLayerApp:
@@ -51,6 +184,16 @@ class CavaLayerApp:
         self.font_size = font_size
         self.app_name = app_name
         self.cava_pid = None
+
+        # Bar colors always track ~/.config/kitty/kitty.conf (following its
+        # `include`s, e.g. kitty-style.conf) -- font size and window height
+        # are unaffected by kitty and stay at their own defaults/CLI values.
+        kitty_path = os.path.expanduser(KITTY_CONFIG_PATH)
+        self.kitty_theme = parse_kitty_config(kitty_path)
+        if self.kitty_theme:
+            print(f"[cava-layer] Loaded kitty colors from '{kitty_path}'.")
+        else:
+            print(f"[cava-layer] No usable kitty config found at '{kitty_path}', using default colors.")
 
         self.setup_window()
         self.start_cava()
@@ -99,6 +242,8 @@ class CavaLayerApp:
         self.terminal.set_vexpand(True)
 
         self.terminal.set_font(Pango.FontDescription(f"Monospace {self.font_size}"))
+        if self.kitty_theme:
+            apply_kitty_theme(self.terminal, self.kitty_theme)
         if hasattr(self.terminal, "set_cell_height_scale"):
             self.terminal.set_cell_height_scale(1.0)
         if hasattr(self.terminal, "set_cell_width_scale"):
@@ -170,6 +315,30 @@ class CavaLayerApp:
     def on_cava_exited(self, terminal, status):
         print(f"[cava-layer] cava exited with status {status}", file=sys.stderr)
 
+    def reload_kitty_theme(self):
+        """
+        Re-read ~/.config/kitty/kitty.conf (following any `include`s, e.g.
+        kitty-style.conf) and live-apply its colors to the embedded
+        terminal, without touching cava's own process, config file, font
+        size, or window height.
+
+        This works because cava's ncurses output draws using logical
+        terminal color slots (e.g. `foreground = white` means "ANSI slot
+        7/15"), redrawn continuously. Once VTE's palette for that slot
+        changes, the very next frame cava draws comes out in the new color --
+        no restart needed. Call this (e.g. via SIGUSR1) whenever the kitty
+        theme changes, such as at the end of your style-switching script.
+        """
+        kitty_path = os.path.expanduser(KITTY_CONFIG_PATH)
+        theme = parse_kitty_config(kitty_path)
+        if not theme:
+            print(f"[cava-layer] Reload: no usable kitty config at '{kitty_path}', keeping current colors.")
+            return
+
+        self.kitty_theme = theme
+        apply_kitty_theme(self.terminal, self.kitty_theme)
+        print(f"[cava-layer] Reloaded kitty colors from '{kitty_path}'.")
+
     def cleanup(self, *args):
         if self.cava_pid:
             try:
@@ -182,7 +351,9 @@ class CavaLayerApp:
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Run cava as a transparent Wayland layer-shell bar, "
-                     "the same as running `cava -p <config>` in a terminal."
+                     "the same as running `cava -p <config>` in a terminal. "
+                     "Send SIGUSR1 to this process to live-reload bar colors "
+                     "from the kitty config without restarting cava."
     )
     parser.add_argument(
         '-p', '--config',
@@ -227,6 +398,12 @@ def main():
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
+
+    def on_reload_signal():
+        app.reload_kitty_theme()
+        return GLib.SOURCE_CONTINUE  # keep listening for future reloads
+
+    GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGUSR1, on_reload_signal)
 
     Gtk.main()
 
