@@ -306,7 +306,7 @@
         <action name="Execute" command="sh -c 'xdg-open &quot;$HOME&quot;'" />
         </keybind>
         <keybind key="W-b">
-        <action name="Execute" command="$HOME/.local/bin/open_browser.sh" />
+        <action name="Execute" command="~/.local/bin/open_browser.sh" />
         </keybind>
         <keybind key="W-n">
         <action name="Execute" command="swaync-client -t -sw" />
