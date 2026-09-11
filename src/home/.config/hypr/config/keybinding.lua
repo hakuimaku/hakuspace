@@ -106,6 +106,13 @@ hl.bind(mainMod .. " + M", function ()
     end
 end)
 
+-- Move focus between tiled and floating windows
+hl.bind(mainMod .. " + space", function()
+    hl.dispatch(hl.dsp.window.cycle_next({
+        floating = not hl.get_active_window().floating
+    }))
+end, { description = "Switch focus between tiled and floating windows" })
+
 -- Performance mode keybinding: Press SUPER + F1 to toggle eye-candy
 hl.bind(mainMod .. " + F1", function ()
     local game_mode = (hl.get_config("animations.enabled") == false)
@@ -134,26 +141,29 @@ hl.bind(mainMod .. " + F1", function ()
     })
 end)
 
--- Maximize mode keybinding: no shadow, no gap, no border radius
+-- Maximize mode keybinding: no gap, no border radius
+local maximize_mode = false
 hl.bind(mainMod .. " + F2", function ()
-    local maximize_mode = (hl.get_config("decoration.rounding") == 0)
-
-    if maximize_mode then
+    if maximize_mode == true then
         hl.exec_cmd("hyprctl reload")
+        maximize_mode = false
         return
+    else
+        hl.config({
+            general = {
+                gaps_in = 0, gaps_out = 0,
+            },
+    
+            decoration = {
+                rounding = 0,
+
+                shadow = {
+                    offset = { 0, 0 },
+                },
+            }
+        })
+        maximize_mode = true
     end
-
-    hl.config({
-        general = {
-            gaps_in = 0, gaps_out = 0, -- Disable gaps  
-            border_size = 0,
-        },
-
-        decoration = {
-            shadow = { enabled = false },
-            rounding = 0,
-        }
-    })
 end)
 
 -- Cycle layouts
@@ -185,4 +195,33 @@ hl.bind(mainMod .. " + X", function ()
 	end
 
     hl.dispatch(hl.dsp.exec_cmd("notify-send 'Hyprland' 'Layout changed to " .. next_layout .. "' -t 1000"))
+end)
+
+-- Windows Magnifier-like cursor zoom 
+
+local MAX_ZOOM = 3
+local MIN_ZOOM = 1
+local ZOOM_TOGGLE_FACTOR = 1.5
+
+---@param offset number
+---@return nil
+local function zoom(offset)
+    local current = hl.get_config("cursor.zoom_factor")
+    if offset ~= nil then
+        current = current + offset
+    elseif current ~= MIN_ZOOM then
+        current = MIN_ZOOM
+    else
+        current = ZOOM_TOGGLE_FACTOR
+    end
+    current = math.max(MIN_ZOOM, math.min(MAX_ZOOM, current))
+    hl.config({ cursor = { zoom_factor = current } })
+end
+
+hl.bind(mainMod .. " + U", zoom)
+hl.bind(mainMod .. " + equal", function()
+    zoom(0.5)
+end)
+hl.bind(mainMod .. " + minus", function()
+    zoom(-0.5)
 end)
