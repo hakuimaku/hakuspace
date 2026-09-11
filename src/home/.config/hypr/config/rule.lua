@@ -197,7 +197,7 @@ hyprlandRunRule:set_enabled(true)
 fixXwaylandDrags:set_enabled(true)
 
 codeSpecialWorkspace:set_enabled(true) -- VS Code in special workspace (SUPER + `)
-fullscreenBorder:set_enabled(true) -- Red border for fullscreen windows
+fullscreenBorder:set_enabled(false) -- Red border for fullscreen windows
 
 -- Scrolling layout rules
 fullWidth_ScrollingLayout:set_enabled(true) -- Set width 100% for certain apps
