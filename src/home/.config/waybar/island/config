@@ -213,7 +213,7 @@
         "format": "",
         "on-click": "$HOME/.local/bin/record.sh",
         "tooltip": true,
-        "tooltip-format": "Stop recording"
+        "tooltip-format": "Start/Stop recording"
     },
 
     "custom/recordertime": {

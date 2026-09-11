@@ -15,18 +15,18 @@
     "reload_style_on_change": true,
 
     "modules-left": [
+        "custom/logo",
         "group/hworkspaces",
-        "cava",
-        "mpris"
+        "group/music"
     ],
     "modules-center": [
         "custom/recorder",
-        "clock",
-        "custom/logo"
+        "clock"
     ],
     "modules-right": [
         "group/monitor",
         "group/settings",
+        "tray",
         "custom/notification"
     ],
 
@@ -68,8 +68,7 @@
             "backlight",
             "pulseaudio",
             "battery",
-            "power-profiles-daemon",
-            "tray"
+            "power-profiles-daemon"
         ]
     },
 
@@ -85,6 +84,20 @@
             "cpu",
             "memory",
             "temperature"
+        ]
+    },
+
+    "group/music": {
+        "orientation": "horizontal",
+        "drawer": {
+            "transition-duration": 1000,
+            "transition-left-to-right": true,
+            "click-to-reveal": true
+        },
+        "modules": [
+            "custom/music",
+            "cava",
+            "mpris"
         ]
     },
     
@@ -171,5 +184,10 @@
         "tooltip-format": "Have a nice day!",
         "tooltip": true,
         "on-click": "$HOME/.local/bin/hakumenu.sh"
+    },
+
+    "custom/music": {
+        "format": "[ 󰝚 ]",
+        "tooltip-format": "Music Visualizer"
     }
 }
