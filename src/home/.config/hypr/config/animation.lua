@@ -13,9 +13,9 @@
 hl.curve( "smoothzz", { type = "bezier", points = { {0.2, 0.9}, {0.2, 1} } })
 
 -- Window
-hl.animation({ leaf = "windows", enabled = true, duration = 1, speed = 6, bezier = "smoothzz", style = "popin 80%" })
-hl.animation({ leaf = "windowsIn", enabled = true, duration = 1, speed = 6, bezier = "smoothzz", style = "popin 80%" })
-hl.animation({ leaf = "windowsOut", enabled = true, duration = 1, speed = 12, bezier = "smoothzz", style = "popin 80%" })
+hl.animation({ leaf = "windows", enabled = true, duration = 1, speed = 6, bezier = "smoothzz", style = "slide" })
+hl.animation({ leaf = "windowsIn", enabled = true, duration = 1, speed = 6, bezier = "smoothzz", style = "slide" })
+hl.animation({ leaf = "windowsOut", enabled = true, duration = 1, speed = 12, bezier = "smoothzz", style = "slide" })
 hl.animation({ leaf = "windowsMove", enabled = true, duration = 1, speed = 8, bezier = "smoothzz" })
 
 -- Layer

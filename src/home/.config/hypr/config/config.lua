@@ -17,7 +17,6 @@ local font_family = style.font_family
 local font_size = style.font_size
 local border_color = style.border_color
 
-
 ------------------
 ---- MONITORS ----
 ------------------
@@ -55,8 +54,8 @@ hl.monitor({
 -- Refer to https://wiki.hypr.land/Configuring/Basics/Variables/
 hl.config({
     general = {
-        gaps_in  = 10,
-        gaps_out = 80,
+        gaps_in  = 0,
+        gaps_out = 0,
 
         border_size = 2,
 
@@ -74,8 +73,8 @@ hl.config({
 
         snap = {
             enabled = true,
-            window_gap = 10,
-            monitor_gap = 10,
+            window_gap = 0,
+            monitor_gap = 0,
             border_overlap = false,
             respect_gaps = false,
         },
@@ -93,7 +92,7 @@ hl.config({
             enabled      = true,
             range        = 20,
             render_power = 6,
-            offset       = { 4, 4 },
+            offset       = { 0, 0 },
             color        = "rgba(000000cc)",
         },
 
@@ -160,8 +159,14 @@ hl.config({
 
 hl.gesture({
     fingers = 3,
-    direction = "horizontal",
+    direction = "vertical",
     action = "workspace"
+})
+
+hl.gesture({
+    fingers = 3,
+    direction = "horizontal",
+    action = "scroll_move"
 })
 
 -- Example per-device config
