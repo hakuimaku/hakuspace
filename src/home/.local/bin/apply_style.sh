@@ -13,22 +13,7 @@ if command -v gsettings >/dev/null 2>&1; then
 fi
 
 # Reload apps
-if [[ $XDG_CURRENT_DESKTOP == "Hyprland" ]]; then
-    hyprctl reload
-fi
-
-if [[ $XDG_CURRENT_DESKTOP == "niri" ]]; then
-    niri msg action load-config-file
-fi
-
-if [[ $XDG_CURRENT_DESKTOP == "mango" ]]; then
-    mmsg -d reload_config
-    mmsg dispatch reload_config
-fi
-
-if [[ $XDG_CURRENT_DESKTOP == "labwc" ]]; then
-    labwc --reconfigure
-fi
+"$HOME/.local/bin/reload_config.sh" >/dev/null 2>&1 || true
 
 if [[ -f "$HOME/.local/bin/desktop_icons_manager.sh" ]]; then
     "$HOME/.local/bin/desktop_icons_manager.sh" --reload >/dev/null 2>&1 || true
