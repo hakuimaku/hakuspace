@@ -53,4 +53,6 @@ if status is-interactive
     abbr nc 'sudo nix-env --profile /nix/var/nix/profiles/system --delete-generations +3 && sudo nix-store --gc'
     abbr nrb 'sudo nixos-rebuild switch'
     abbr nd 'cd /etc/nixos'
+
+    test -r ~/hakucfg/config/shell.fish; and source ~/hakucfg/config/shell.fish
 end

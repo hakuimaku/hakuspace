@@ -298,6 +298,7 @@ check_control_dir() {
         "config/dockbar_pin_apps"
         "config/hypridle.conf"
         "config/kitty.conf"
+        "config/shell.fish"
         "general-menu.sh"
     )
     for file in "${required_files[@]}"; do
