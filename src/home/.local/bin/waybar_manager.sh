@@ -11,7 +11,7 @@ WAYBAR_DIR="$HOME/.config/waybar"
 USER_WAYBAR_DIR="$HOME/hakucfg/config/waybar"
 STATE_FILE="$STATE_DIR/waybar_current_mode"
 CURRENT_STATE="top"
-WAYBAR_MODES_DEAULT=("top" "neon" "island" "coredge" "full" "minimal" "left")
+WAYBAR_MODES_DEAULT=("top" "left" "island" "neon" "coredge" "minimal" "legacy")
 
 # WAYBAR_MODES_DEAULT + WAYBAR_MODE_USER
 WAYBAR_MODES=("${WAYBAR_MODES_DEAULT[@]}" "${WAYBAR_MODE_USER[@]}")
@@ -123,7 +123,7 @@ fi
 
 # Handle --select argument via Rofi
 if [[ "$1" == "--select" ]]; then
-    choice=$(printf "%s\n" "${WAYBAR_MODES[@]}" | rofi -dmenu -p "Waybar" -i -theme-str 'window {width: 25%; height: 40%;} entry { placeholder: " Select Mode"; }')
+    choice=$(printf "%s\n" "${WAYBAR_MODES[@]}" | rofi -dmenu -p "Waybar" -i -theme-str 'mainbox { children: [ inputbar, content-area]; } window { width: 40%; height: 40%; } entry { placeholder: " Select Mode"; }')
     [[ -z "$choice" ]] && exit 0
 
     if [[ "$choice" != "$CURRENT_STATE" ]]; then

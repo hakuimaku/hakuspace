@@ -15,27 +15,23 @@
     "reload_style_on_change": true,
 
     "modules-left": [
-        "cava",
-        "mpris"
+        "custom/logo",
+        "group/hworkspaces",
+        "group/music"
     ],
     "modules-center": [
         "custom/recorder",
-        "clock",
-        "custom/logo",
-        "group/hworkspaces",
-        "group/monitor",
-        "group/settings"
+        "clock"
     ],
     "modules-right": [
-        "backlight",
-        "backlight/slider",
-        "pulseaudio",
-        "pulseaudio/slider",
+        "group/monitor",
+        "group/settings",
+        "tray",
         "custom/notification"
     ],
 
     "clock": {
-        "format": " {:%H:%M} ",
+        "format": " {:%H:%M, %d %B %Y} ",
         "format-alt": " {:%A, %d %B %Y} ",
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
         "calendar": {
@@ -64,14 +60,15 @@
         "orientation": "horizontal",
         "drawer": {
             "transition-duration": 1000,
-            "transition-left-to-right": true,
+            "transition-left-to-right": false,
             "click-to-reveal": true
         },
         "modules": [
             "custom/settings",
+            "backlight",
+            "pulseaudio",
             "battery",
-            "power-profiles-daemon",
-            "tray"
+            "power-profiles-daemon"
         ]
     },
 
@@ -79,7 +76,7 @@
         "orientation": "horizontal",
         "drawer": {
             "transition-duration": 1000,
-            "transition-left-to-right": true,
+            "transition-left-to-right": false,
             "click-to-reveal": true
         },
         "modules": [
@@ -87,6 +84,20 @@
             "cpu",
             "memory",
             "temperature"
+        ]
+    },
+
+    "group/music": {
+        "orientation": "horizontal",
+        "drawer": {
+            "transition-duration": 1000,
+            "transition-left-to-right": true,
+            "click-to-reveal": true
+        },
+        "modules": [
+            "custom/music",
+            "cava",
+            "mpris"
         ]
     },
     
@@ -97,12 +108,6 @@
         "on-scroll-down": "brightnessctl set 1%-",
         "on-click": "$HOME/.local/bin/nightlight_toggle.sh",
         "tooltip-format": "Brightness: {percent}%"
-    },
-
-    "backlight/slider": {
-        "min": 10,
-        "max": 100,
-        "orientation": "horizontal"
     },
 
     "battery": {
@@ -144,12 +149,6 @@
         "tooltip-format": "Volume: {volume}%"
     },
 
-    "pulseaudio/slider": {
-        "min": 0,
-        "max": 100,
-        "orientation": "horizontal"
-    },
-
     "tray": {
         "icon-size": 18,
         "spacing": 10,
@@ -169,21 +168,26 @@
     },
 
     "custom/settings": {
-        "format": " ",
+        "format": "",
         "tooltip-format": "Click to show settings",
         "tooltip": true
     },
 
     "custom/monitor": {
-        "format": " ",
+        "format": "",
         "tooltip-format": "Click to show monitor stats",
         "tooltip": true
     },
 
     "custom/logo": {
-        "format": "󰮯 ",
+        "format": "󰮯",
         "tooltip-format": "Have a nice day!",
         "tooltip": true,
         "on-click": "$HOME/.local/bin/hakumenu.sh"
+    },
+
+    "custom/music": {
+        "format": "[ 󰝚 ]",
+        "tooltip-format": "Music Visualizer"
     }
 }
