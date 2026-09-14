@@ -2,7 +2,7 @@
 
 # This script is used to set up the main settings for all hakuspace's scripts.
 # DO NOT EDIT THIS LINE :v, used for checking setting.sh is up-to-date when run update.sh
-SETTING_VERSION="2.3.1"
+SETTING_VERSION="2.3.2"
 
 if [[ "$1" == "--version" || "$1" == "-v" ]]; then
     echo "$SETTING_VERSION"
@@ -53,6 +53,14 @@ WAYBAR_MODE_USER=()
 
 # ====== Rofi Theme Settings ======
 # You just add your theme "name.rasi" to the ~/hakucfg/config/rofi folder, and switch to it in Haku Menu (Theme tab)
+
+# If you have issues with rofi wallpaper image (Too lowres, dupe images,...), you can try to change them.
+# What do they do? These are ImageMagick options, Generate wallpaper preview image for some Rofi themes
+# Works best with wallpapers that have the subject in the center.
+# Change the options below to your liking, or leave them as default.
+# You can see the results in ~/.cache/, change wallpaper to gen them
+GEN_HORI_OPTS="-resize 800x250^ -gravity Center -crop 800x250+0+0 +repage" # Impact Rofi theme: televison.rasi
+GEN_VERT_OPTS="-resize 600x800^ -gravity Center -crop 600x800+0+0 +repage" # Impact Rofi theme: tablet.rasi
 
 
 

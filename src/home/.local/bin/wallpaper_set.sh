@@ -12,13 +12,16 @@ EOF
         exit 0
 fi
 
-# Include AWWW_OPTS
+# Include AWWW_OPTS, GEN_HORI_OPTS, and GEN_VERT_OPTS from setting.sh if it exists
 [ -f "$HOME/hakucfg/setting.sh" ] && source "$HOME/hakucfg/setting.sh"
 
 AWWW_OPTS=${AWWW_OPTS:-"--transition-type random --transition-step 90 --transition-fps 60"}
 
 WALLPAPER="${1:-}"
-BACKDROP_DIR="$HOME/.cache"
+CACHE_DIR="$HOME/.cache"
+
+GEN_HORI_OPTS=${GEN_HORI_OPTS:-"-resize 800x250^ -gravity Center -crop 800x250+0+0 +repage"}
+GEN_VERT_OPTS=${GEN_VERT_OPTS:-"-resize 600x800^ -gravity Center -crop 600x800+0+0 +repage"}
 
 # Detect active monitor using wlr-randr
 get_active_monitor() {
@@ -38,16 +41,39 @@ get_active_monitor() {
     fi
 }
 
-# Generate blurred backdrop image for Niri compositor
-make_niri_backdrop() {
+# Generate blurred backdrop image for Niri overview and imagebox
+make_cache_img() {
+    local is_successfull=1
+
+    # Make Niri backdrop
     if [[ "${XDG_CURRENT_DESKTOP:-}" == "niri" ]] || pgrep -x "niri" >/dev/null 2>&1; then
-        mkdir -p "$BACKDROP_DIR"
-        if magick "${WALLPAPER}[0]" -background black -alpha remove -set option:filter:blur 1.0 -blur 0x15 "$BACKDROP_DIR/backdrop.jpg" 2>/dev/null; then
-            awww img -n "awww-daemon-backdrop" "$BACKDROP_DIR/backdrop.jpg"
+        mkdir -p "$CACHE_DIR"
+        if magick "${WALLPAPER}[0]" -background black -alpha remove -set option:filter:blur 1.0 -blur 0x15 "$CACHE_DIR/backdrop.jpg" 2>/dev/null; then
+            awww img -n "awww-daemon-backdrop" "$CACHE_DIR/backdrop.jpg"
+            echo "Niri is running. Backdrop generated at $CACHE_DIR/backdrop.jpg"
         else
-            echo "Warning: Failed to generate backdrop via ImageMagick." >&2
-            notify-send "Warning: Failed to generate backdrop via ImageMagick."
+            is_successfull=0
         fi
+    fi
+
+    # Make wallpaper current image file
+    # if magick "${WALLPAPER}[0]" "$CACHE_DIR/current_wallpaper.jpg" 2>/dev/null; then
+    #     echo "Current wallpaper image generated at $CACHE_DIR/current_wallpaper.jpg"
+    # else
+    #     is_successfull=0
+    # fi
+
+    # Make wallpaper preview image for Rofi
+    if magick "${WALLPAPER}[0]" $GEN_HORI_OPTS "$CACHE_DIR/walpaper_preview.jpg" 2>/dev/null && \
+        magick "${WALLPAPER}[0]" $GEN_VERT_OPTS "$CACHE_DIR/walpaper_preview_vertical.jpg" 2>/dev/null; then
+        echo "Wallpaper preview image generated at $CACHE_DIR/walpaper_preview.jpg and $CACHE_DIR/walpaper_preview_vertical.jpg"
+    else
+        is_successfull=0
+    fi
+
+    if [[ $is_successfull -eq 0 ]]; then
+        echo "Set Wallpaper" "Failed to generate cache images wallpaper via ImageMagick" >&2
+        notify-send "Set Wallpaper" "Failed to generate cache images wallpaper via ImageMagick"
     fi
 }
 
@@ -80,7 +106,7 @@ case "$MIME_TYPE" in
 
         # Set static/animated image background using awww
         if awww img "$WALLPAPER" $AWWW_OPTS; then
-            make_niri_backdrop
+            make_cache_img
         else
             echo "Error: Failed to set image wallpaper using awww." >&2
             exit 1
@@ -102,7 +128,7 @@ case "$MIME_TYPE" in
         # Verify whether mpvpaper process started successfully
         sleep 0.3
         if kill -0 "$MPV_PID" 2>/dev/null; then
-            make_niri_backdrop
+            make_cache_img
         else
             echo "Error: mpvpaper failed to render video '$WALLPAPER' on monitor '$MONITOR'." >&2
             exit 1

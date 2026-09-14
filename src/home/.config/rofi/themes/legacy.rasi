@@ -1,8 +1,14 @@
-/* =====================================
-        Rofi Theme: Haku Theme :>
- =======================================*/
+//     ____        _____ 
+//    / __ \____  / __(_)
+//   / /_/ / __ \/ /_/ / 
+//  / _, _/ /_/ / __/ /  
+// /_/ |_|\____/_/ /_/   
+//                      
 
-@import "../../.local/state/hakuspace/theme/rofi-style.rasi"
+// HakuSpace Rofi Theme
+// Theme: legacy.rasi
+
+@import "../../../.local/state/hakuspace/theme/rofi-style.rasi"
 
 /* ===== GLOBAL VARIABLES ===== */
 * {
@@ -20,15 +26,22 @@
 /* ===== MAIN WINDOW ===== */
 window {
     width:               40%;
-    height:              60%;
+    height:              55%;
     background-color:    @background;
     border-radius:       20px;
     padding:             20px;
 }
 
 mainbox {
-    spacing:             16px;
-    children:            [ inputbar, mode-switcher, listview ];
+    spacing:             12px;
+    children:            [ inputbar, content-area ];
+}
+
+/* ===== CONTENT AREA ===== */
+content-area {
+    orientation:         vertical;
+    spacing:             0;
+    children:            [ mode-switcher, listview ];
 }
 
 /* ===== INPUT BAR ===== */
@@ -57,7 +70,7 @@ entry {
 
 /* ===== MODE SWITCHER (Apps/Run/Window) ===== */
 mode-switcher {
-    margin:              0px 10px;
+    margin:              0 10px 10px 10px;
     padding:             6px;
     background-color:    @accent;
     border-radius:       12px;

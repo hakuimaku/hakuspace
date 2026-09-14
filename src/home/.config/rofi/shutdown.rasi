@@ -1,0 +1,63 @@
+//     ____        _____ 
+//    / __ \____  / __(_)
+//   / /_/ / __ \/ /_/ / 
+//  / _, _/ /_/ / __/ /  
+// /_/ |_|\____/_/ /_/   
+//                      
+
+// HakuSpace Rofi Theme
+// Theme: shutdown.rasi, use for shutdown menu
+
+@import "config.rasi"
+
+* {
+    font: "JetBrains Mono Nerd Font 40";
+
+    padding: 0;
+    margin: 0;
+}
+
+window {
+    width: 70%;
+    height: 140px;
+}
+
+mainbox {
+    children: [ content-area ];
+}
+
+content-area {
+    children: [ listview ];
+}
+
+listview {
+    columns: 6;
+    lines: 1;
+    layout: vertical;
+}
+
+element {
+    orientation: vertical;
+    padding: 10px;
+}
+
+element-text {
+    horizontal-align: 0.45;
+}
+
+element-icon {
+    size: 0;
+}
+
+element selected {
+    background-color: @accent;
+    border-radius: 10px;
+}
+
+element-text selected {
+    text-color: @background;
+}
+
+scrollbar {
+    handle-width: 0;
+}

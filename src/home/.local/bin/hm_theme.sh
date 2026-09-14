@@ -30,8 +30,6 @@ if [[ $# -eq 0 ]]; then
 󰏜  Change Wallpaper
 󱜏  Change Lively Wallpaper
 󱛹  Kill Lively Wallpaper
-  Switch Waybar Theme
-  Switch Rofi Theme
   Change Theme
 EOF
     exit 0
@@ -43,8 +41,6 @@ case "$chosen" in
     *"Auto Random Wallpaper"*) spawn $HOME/.local/bin/random_wallpaper.sh --toggle ;;
     *"Toggle Dockbar"*) spawn $HOME/.local/bin/dockbar_manager.sh --toggle ;;
     *"Show Desktop Icons"*) spawn $HOME/.local/bin/desktop_icons_manager.sh --toggle ;;
-    *"Switch Waybar Theme"*) spawn $HOME/.local/bin/waybar_manager.sh --select ;;
-    *"Switch Rofi Theme"*) spawn $HOME/.local/bin/rofi_theme_switcher.sh ;;
     *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
     *"Change Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh ;;
     *"Kill Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh --exit ;;

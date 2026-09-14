@@ -11,6 +11,8 @@ SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
 source "$HOME/.local/bin/accent_color.sh"
 
+ROFI_THEME="$HOME/.config/rofi/wallpaper-select.rasi"
+
 list_walls() {
     cd "$WALL_DIR" || exit
     for file in *.{jpg,jpeg,png,gif}; do
@@ -19,13 +21,7 @@ list_walls() {
     done
 }
 
-CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" \
--theme-str "
-    window { width: 65%; height: 80%; }
-    listview { columns: 4; lines: 2; spacing: 5px; padding: 5px;}
-    element { orientation: vertical; padding: 5px; border-radius: 15px; }
-    element-icon { size: 250px; horizontal-align: 0.5; }
-")
+CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" -config "$ROFI_THEME")
 
 if [ -n "$CHOICE" ]; then
     WALL="$WALL_DIR/$CHOICE"

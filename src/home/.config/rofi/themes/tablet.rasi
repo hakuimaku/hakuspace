@@ -1,17 +1,23 @@
-/* =====================================
-        Rofi Theme: Haku Theme :>
- =======================================*/
+//     ____        _____ 
+//    / __ \____  / __(_)
+//   / /_/ / __ \/ /_/ / 
+//  / _, _/ /_/ / __/ /  
+// /_/ |_|\____/_/ /_/   
+//                      
 
-@import "../../.local/state/hakuspace/theme/rofi-style.rasi"
+// HakuSpace Rofi Theme
+// Theme: tablet.rasi
+
+@import "../../../.local/state/hakuspace/theme/rofi-style.rasi"
 
 /* ===== GLOBAL VARIABLES ===== */
 * {
-    background:          rgba(0, 0, 0, 0.9);
+    background:          rgba(0, 0, 0, 0.7);
     foreground:          #dfdfdf;
-    modebar-bg:          rgba(27, 27, 27, 0.5);
     background-color:    transparent;
     text-color:          @foreground;
-    
+
+    border-radius:       0;
     margin:              0;
     padding:             0;
     spacing:             0;
@@ -20,29 +26,43 @@
 /* ===== MAIN WINDOW ===== */
 window {
     width:               50%;
-    height:              60%;
+    height:              50%;
     background-color:    @background;
+    padding:             24px;
     border-radius:       20px;
-    padding:             20px;
 }
 
 mainbox {
-    spacing:             16px;
-    children:            [ inputbar, content-area ];
+    orientation:         vertical;
+    spacing:             12px;
+    children:            [ inputbar, boxbar ];
+}
+
+/* ===== BOX BAR ===== */
+boxbar {
+    orientation:         horizontal;
+    spacing:             12px;
+    children:            [ imagebox, content-area ];
 }
 
 /* ===== CONTENT AREA ===== */
 content-area {
     orientation:         horizontal;
-    spacing:             16px;
+    spacing:             0;
     children:            [ mode-switcher, listview ];
+}
+
+/* ===== IMAGE BOX ===== */
+imagebox {
+    expand:                      false;
+    width:                       15%;
+    border-radius:               12px;
+    background-image:            url("../../.cache/walpaper_preview_vertical.jpg", height);
 }
 
 /* ===== INPUT BAR ===== */
 inputbar {
-    padding:             10px;
-    background-color:    rgba(0, 0, 0, 0.2);
-    border-radius:       20px;
+    orientation:         horizontal;
     children:            [ prompt, entry ];
 }
 
@@ -50,34 +70,33 @@ prompt {
     padding:             10px 15px;
     background-color:    @accent;
     text-color:          @background;
-    border-radius:       12px;
     font-weight:         bold;
+    border-radius:       12px 0 0 12px;
 }
 
 entry {
     padding:             10px;
-    margin:              0 10px 0 10px;
+    margin:              0 10px;
     text-color:          @accent;
     placeholder:         "Search...";
     placeholder-color:   rgba(223, 223, 223, 0.4);
+    background-color:    rgba(255, 255, 255, 0.1);
+    border-radius:       0 12px 12px 0;
 }
 
 /* ===== MODE SWITCHER ===== */
 mode-switcher {
     orientation:         vertical;
-    margin:              0px;
-    padding:             6px;
-    background-color:    transparent;
-    border-radius:       12px;
     spacing:             10px;
+    border:              0 3px 0 0;
+    border-color:        @accent;
+    border-radius:       0;
 }
 
 button {
     padding:             8px 14px;
-    margin:              8px;
-    border-radius:       12px;
-    background-color:    transparent;
     text-color:          @accent;
+    border-radius:       12px 0 0 12px;
 }
 
 button selected {
@@ -87,7 +106,6 @@ button selected {
 
 /* ===== LISTVIEW ===== */
 listview {
-    margin:              20px 20px 20px 0;
     scrollbar:           true;
     cycle:               true;
     dynamic:             true;
@@ -97,8 +115,6 @@ listview {
 /* ===== ELEMENTS ===== */
 element {
     padding:             10px;
-    margin:              2px 10px;
-    border-radius:       12px;
     orientation:         horizontal;
     vertical-align:      0.5; 
 }
@@ -117,14 +133,11 @@ element-text {
 /* ===== ELEMENT STATES ===== */
 element selected {
     background-color:    @accent;
+    border-radius:       0 12px 12px 0;
 }
 
 element-text selected {
     text-color:          @background;
-}
-
-element-icon selected {
-    background-color:    transparent; 
 }
 
 /* ===== SCROLLBAR ===== */
@@ -132,5 +145,5 @@ scrollbar {
     handle-width:           6px;
     handle-color:           @accent;
     handle-rounded-corners: true;
-    padding:                0px 0px 0px 6px;
+    padding:                0px 0px 0px 20px;
 }
