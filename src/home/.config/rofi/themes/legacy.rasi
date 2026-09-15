@@ -14,7 +14,6 @@
 * {
     background:          rgba(0, 0, 0, 0.9);
     foreground:          #dfdfdf;
-    modebar-bg:          rgba(27, 27, 27, 0.5);
     background-color:    transparent;
     text-color:          @foreground;
     
@@ -57,7 +56,6 @@ prompt {
     background-color:    @accent;
     text-color:          @background;
     border-radius:       12px;
-    font-weight:         bold;
 }
 
 entry {
@@ -134,6 +132,5 @@ element-icon selected {
 scrollbar {
     handle-width:           6px;
     handle-color:           @accent;
-    handle-rounded-corners: true;
     padding:                0px 0px 0px 6px;
 }

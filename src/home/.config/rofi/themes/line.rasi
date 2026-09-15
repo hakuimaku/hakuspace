@@ -56,7 +56,6 @@ prompt {
     padding:             6px 10px;
     background-color:    @accent;
     text-color:          @background;
-    font-weight:         bold;
     border-radius:       12px 12px 0 0;
 }
 
@@ -70,7 +69,7 @@ entry {
 
 /* ===== MODE SWITCHER (Apps/Run/Window) ===== */
 mode-switcher {
-    margin:              0 6px;
+    margin:              0 6px 6px 6px;
     padding:             0;
     background-color:    transparent;
     spacing:             6px;
@@ -132,6 +131,5 @@ element-text selected {
 scrollbar {
     handle-width:           6px;
     handle-color:           @accent;
-    handle-rounded-corners: false;
     padding:                0px 0px 0px 6px;
 }

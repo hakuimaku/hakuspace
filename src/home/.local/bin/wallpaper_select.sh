@@ -11,7 +11,7 @@ SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
 source "$HOME/.local/bin/accent_color.sh"
 
-ROFI_THEME="$HOME/.config/rofi/wallpaper-select.rasi"
+ROFI_THEME="wallpaper-select.rasi"
 
 list_walls() {
     cd "$WALL_DIR" || exit
@@ -21,7 +21,7 @@ list_walls() {
     done
 }
 
-CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" -config "$ROFI_THEME")
+CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" -theme "$ROFI_THEME")
 
 if [ -n "$CHOICE" ]; then
     WALL="$WALL_DIR/$CHOICE"

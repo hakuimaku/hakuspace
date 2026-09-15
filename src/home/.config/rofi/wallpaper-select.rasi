@@ -8,37 +8,84 @@
 // HakuSpace Rofi Theme
 // Theme: wallpaper-select.rasi, use for wallpaper selection
 
-@import "config.rasi"
+@import "../../.local/state/hakuspace/theme/rofi-style.rasi"
 
+
+/* ===== GLOBAL VARIABLES ===== */
+* {
+    background:          rgba(0, 0, 0, 0.7);
+    foreground:          #dfdfdf;
+    background-color:    transparent;
+    text-color:          @foreground;
+
+    border-radius:       0;
+    margin:              0;
+    padding:             0;
+    spacing:             0;
+}
+
+/* ===== MAIN WINDOW ===== */
 window {
     width: 90%;
-    height: 400px;
+    height: 380px;
+    background-color: @background;
     padding: 20px;
+    border-radius: 20px;
 }
 
 mainbox {
+    orientation: vertical;
+    spacing: 20px;
     children: [ inputbar, content-area ];
 }
 
+/* ===== CONTENT AREA ===== */
 content-area {
+    orientation: horizontal;
+    spacing: 0;
     children: [ listview ];
 }
 
+/* ===== INPUT BAR ===== */
+inputbar {
+    orientation: horizontal;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    padding:             10px 15px;
+    background-color:    @accent;
+    text-color:          @background;
+    border-radius:       12px 0 0 12px;
+}
+
+entry {
+    padding:             10px;
+    margin:              0 10px;
+    text-color:          @accent;
+    placeholder:         "Search...";
+    placeholder-color:   rgba(223, 223, 223, 0.4);
+    background-color:    rgba(255, 255, 255, 0.1);
+    border-radius:       0 12px 12px 0;
+}
+
+/* ===== LISTVIEW ===== */
 listview {
     columns: 6;
     lines: 1;
     spacing: 5px;
     padding: 5px;
     layout: vertical;
+    scrollbar: true;
+    cycle: true;
+    dynamic: true;
 }
 
+/* ===== ELEMENTS ===== */
 element {
     orientation: vertical;
     padding: 5px;
-}
-
-element-text {
-    horizontal-align: 0.5;
+    vertical-align: 0.5;
 }
 
 element-icon {
@@ -47,6 +94,12 @@ element-icon {
     horizontal-align: 0.7;
 }
 
+element-text {
+    text-color: @accent;
+    horizontal-align: 0.5;
+}
+
+/* ===== ELEMENT STATES ===== */
 element selected {
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
@@ -54,4 +107,11 @@ element selected {
 
 element-text selected {
     text-color: @accent;
+}
+
+/* ===== SCROLLBAR ===== */
+scrollbar {
+    handle-width: 6px;
+    handle-color: @accent;
+    padding: 0px 0px 0px 20px;
 }
