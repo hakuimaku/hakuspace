@@ -1,3 +1,0 @@
-mangowm-git
-gammastep
-xdg-desktop-portal-wlr
