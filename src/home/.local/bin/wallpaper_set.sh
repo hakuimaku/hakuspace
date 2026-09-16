@@ -19,6 +19,7 @@ AWWW_OPTS=${AWWW_OPTS:-"--transition-type random --transition-step 90 --transiti
 
 WALLPAPER="${1:-}"
 CACHE_DIR="$HOME/.cache"
+mkdir -p "$CACHE_DIR"
 
 GEN_HORI_OPTS=${GEN_HORI_OPTS:-"-resize 800x250^ -gravity Center -crop 800x250+0+0 +repage"}
 GEN_VERT_OPTS=${GEN_VERT_OPTS:-"-resize 600x800^ -gravity Center -crop 600x800+0+0 +repage"}
@@ -46,14 +47,10 @@ make_cache_img() {
     local is_successfull=1
 
     # Make Niri backdrop
-    if command -v "niri" >/dev/null 2>&1; then
-        mkdir -p "$CACHE_DIR"
+    if [[ "${XDG_CURRENT_DESKTOP:-}" == "niri" ]] || pgrep -x "niri" >/dev/null 2>&1; then
         if magick "${WALLPAPER}[0]" -background black -alpha remove -set option:filter:blur 1.0 -blur 0x15 "$CACHE_DIR/backdrop.jpg" 2>/dev/null; then
+            awww img -n "awww-daemon-backdrop" "$CACHE_DIR/backdrop.jpg"
             echo "Niri backdrop image generated at $CACHE_DIR/backdrop.jpg"
-            if pgrep -x "niri" >/dev/null 2>&1; then
-                awww img -n "awww-daemon-backdrop" "$CACHE_DIR/backdrop.jpg"
-                echo "Niri is running. applied backdrop image to Niri."
-            fi
         else
             is_successfull=0
         fi
