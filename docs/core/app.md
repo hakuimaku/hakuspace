@@ -21,12 +21,12 @@ This is the master script that controls the Dockbar's lifecycle and settings. It
 - **State Management:** It uses `~/.local/state/hakuspace/` to remember if you turned the Dockbar on or off (`dockbar_manual_state`) and whether Auto-hide is enabled (`dockbar_autohide_state`). When you reboot, passing `--startup` to this script ensures your Dockbar returns exactly as you left it.
 - **The Master Switch (`--toggle`):** This command completely enables or disables the Dockbar. If Auto-hide is currently enabled, turning off the master switch will automatically kill the background auto-hide tracker to save CPU.
 - **Exclusive Mode (`--exclusive`):** Toggles whether the Dockbar takes up physical screen space. When `exclusive` is ON, maximized windows will stop above the dock. When OFF, windows will maximize behind the dock (floating style). It achieves this by dynamically parsing and rewriting a JSON state file (`dockbar-theme`).
-- **Icon Sizing (`--icon-size`):** Dynamically cycles through different icon sizes by manipulating the Waybar configuration on the fly.
+- **Icon Sizing (`--icon-size`):** Prompts you via a Rofi text input to enter a custom pixel size, rather than cycling through fixed sizes, and updates the Waybar configuration on the fly.
 
 ### `dockbar_autohide.py` (The Smart Hider)
 Waybar doesn't natively support intelligent auto-hiding based on cursor proximity across all Window Managers. This Python script solves that problem!
-- **How it works:** When Auto-hide is enabled (via `--auto-hide` in the manager), this script runs in the background. It continuously monitors your mouse cursor's `Y` coordinate on the screen.
-- **The Trigger:** If you move your mouse to the absolute bottom edge of the screen, the Python script fires `dockbar_manager.sh --trigger-show` to instantly spawn the Waybar process. Once your mouse leaves the bottom area for a set amount of time, it fires `--trigger-hide` to kill the process and hide the dock.
+- **How it works:** When Auto-hide is enabled (via `--auto-hide` in the manager), this script runs in the background. Instead of polling coordinates, it uses GTK layer-shell to create invisible trigger windows—a thin strip at the bottom and larger blocking areas above.
+- **The Trigger:** It relies on native Wayland `enter-notify-event` signals. When your cursor enters the bottom trigger strip, it fires `dockbar_manager.sh --trigger-show` to instantly spawn the Waybar process. When the cursor enters the upper blocking areas, it fires `--trigger-hide` (with a short debounce) to hide the dock. This event-driven architecture is highly efficient.
 
 ### `dockbar_geticon.sh` (The Icon Fetcher)
 The Dockbar needs to display the correct icons for your pinned applications.
