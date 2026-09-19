@@ -65,7 +65,6 @@ if found_path:
     print(found_path)
 "
 
-export GI_TYPELIB_PATH="/run/current-system/sw/lib/girepository-1.0:$GI_TYPELIB_PATH"
 PATH_FOUND=$(python3 -c "$PYTHON_CODE")
 
 if [ -n "$PATH_FOUND" ]; then
