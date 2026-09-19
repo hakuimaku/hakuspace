@@ -74,7 +74,7 @@ fullWidth_ScrollingLayout = hl.window_rule({
 
 specificWidth_ScrollingLayout = hl.window_rule({
     name = "specific_width_scrolling",
-    match = { class = "thunar" },
+    match = { class = "thunar|Thunar" },
 
     scrolling_width = 0.6
 })
@@ -84,7 +84,7 @@ specificWidth_ScrollingLayout = hl.window_rule({
 --------------------------------
 opacityCertainApps = hl.window_rule({
     name  = "opacity-for-certain-apps",
-    match = { class = "thunar|kitty|code|jetbrains.*" },
+    match = { class = "thunar|Thunar|kitty|code|jetbrains.*" },
 
     opacity = 0.9,
 })
@@ -180,8 +180,8 @@ hl.layer_rule({
 -- Desktop icons style - Rename
 hl.window_rule({
     name = "haku-desktop-icons",
-    match = { namespace = "desktop_icons.py" },
-    match = { title = "Rename" },
+    match = { namespace = "desktop-icons" },
+    match = { title = "Rename.*|Create.*" },
 
     float = true,
     size = "300 100",

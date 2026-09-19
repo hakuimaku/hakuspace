@@ -59,6 +59,15 @@ window-rule {
     default-column-width { proportion 0.65; }
 }
 
+window-rule {
+    match app-id=r#"thunar"#
+    match title="^Properties$"
+    
+    open-floating true
+    min-width 300
+    min-height 100
+}
+
 // Rules for xdg-desktop-portal-gtk
 window-rule {
     match app-id=r#"xdg-desktop-portal-gtk"#
@@ -122,8 +131,9 @@ window-rule {
 
 // Rules for desktop icons
 window-rule {
-    match app-id="desktop_icons.py"
-    match title="Rename"
+    match app-id="desktop-icons"
+    match title=r#"Rename"#
+    match title=r#"Create"#
 
     open-floating true
     min-width 300
