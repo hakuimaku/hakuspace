@@ -38,7 +38,7 @@ log_error()  { echo -e "${C_RED}[ERROR]${C_RESET}  $1"; }
 log_backup() { echo -e "${C_MAGENTA}[BACKUP]${C_RESET} $1"; }
 log_copy()   { echo -e "${C_CYAN}[COPY]${C_RESET}   $1"; }
 log_skip()   { echo -e "${C_WHITE}[SKIP]${C_RESET}   $1"; }
-
+log_symlink(){ echo -e "${C_MAGENTA}[SYMLINK]${C_RESET} $1"; }
 step_title() {
     echo ""
     echo -e "${C_BOLD}${C_DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${C_RESET}"
@@ -56,8 +56,9 @@ ask_yes_no() {
 
 ensure_dir() {
     local dir="$1"
+    if [[ -L "$dir" ]]; then rm -f "$dir"; fi
     if [[ ! -d "$dir" ]]; then
-        mkdir -p "$dir"
+        mkdir -p "$dir" || return 1
         log_ok "Created directory: $dir"
     fi
 }
@@ -117,6 +118,10 @@ copy_file() {
         return 1
     fi
 
+    if [[ "$skip_backup" -eq 1 && -L "$dst" ]]; then
+        rm -f "$dst"
+    fi
+
     if [[ "$skip_backup" -ne 1 && ( -e "$dst" || -L "$dst" ) ]]; then
         backup_item "$dst"
     fi
@@ -131,10 +136,10 @@ copy_file() {
     fi
 
     if [[ -w "$dest_dir" ]]; then
-        cp -f "$src" "$dst"
+        cp -f "$src" "$dst" || return 1
         log_copy "$src -> $dst"
     else
-        sudo cp -f "$src" "$dst"
+        sudo cp -f "$src" "$dst" || return 1
         log_copy "$src -> $dst (sudo)"
     fi
     
@@ -155,11 +160,191 @@ copy_dir_content() {
         backup_item "$dst"
     fi
 
-    ensure_dir "$dst"
+    ensure_dir "$dst" || return 1
     
-    cp -rf "$src"/. "$dst"/
+    cp -rf "$src"/. "$dst"/ || return 1
     log_copy "$src/. -> $dst/"
     return 0
+}
+
+# Recursively deploy files as symlinks (deep symlink)
+deploy_symlink_recursive() {
+    local src="$1" dst="$2" skip_backup="${3:-0}"
+    [[ ! -e "$src" ]] && { log_warn "Source not found: $src"; return 1; }
+
+    if [[ -d "$src" ]]; then
+        ensure_dir "$dst"
+        (
+            shopt -s dotglob nullglob
+            for item in "$src"/*; do
+                deploy_symlink_recursive "$item" "$dst/${item##*/}" "$skip_backup" || exit 1
+            done
+        ) || return 1
+        return 0
+    fi
+
+    if [[ -L "$dst" ]]; then
+        [[ "$(readlink "$dst")" == "$(realpath "$src")" ]] && return 0
+        rm -f "$dst"
+    elif [[ -e "$dst" && "$skip_backup" -ne 1 ]]; then
+        backup_item "$dst"
+    fi
+
+    if [[ -e "$dst" || -L "$dst" ]]; then rm -rf "$dst"; fi
+
+    ln -sfn "$(realpath "$src")" "$dst" || return 1
+    log_symlink "$src => $dst"
+}
+
+determine_deploy_mode() {
+    if [[ -n "${HAKUSPACE_DEPLOY_MODE:-}" ]]; then
+        return 0
+    fi
+
+    local symlink_count=0
+    local copy_count=0
+    local total_checked=0
+    
+    local check_recursive
+    check_recursive() {
+        local src="$1"
+        local dst="$2"
+        if [[ -d "$src" ]]; then
+            local shopt_state
+            shopt_state="$(shopt -p dotglob nullglob)"
+            shopt -s dotglob nullglob
+            local i
+            for i in "$src"/*; do
+                check_recursive "$i" "$dst/${i##*/}"
+            done
+            eval "$shopt_state"
+        else
+            if [[ -e "$dst" || -L "$dst" ]]; then
+                total_checked=$((total_checked + 1))
+                if [[ -L "$dst" ]]; then
+                    symlink_count=$((symlink_count + 1))
+                else
+                    copy_count=$((copy_count + 1))
+                fi
+            fi
+        fi
+    }
+
+    # Check all configs that Hakuspace tracks
+    for item in "$SOURCE_CONFIG"/*; do
+        [[ -e "$item" ]] || continue
+        
+        local item_name="${item##*/}"
+        
+        local is_skipped=0
+        for once in "${ONCE_CONFIGS[@]}"; do
+            [[ "$once" == "$item" ]] && { is_skipped=1; break; }
+        done
+        for skip in "${SKIP_CONFIGS[@]}"; do
+            [[ "$skip" == "$item" ]] && { is_skipped=1; break; }
+        done
+        [[ $is_skipped -eq 1 ]] && continue
+        
+        local dst="$DEST_CONFIG/$item_name"
+        check_recursive "$item" "$dst"
+    done
+    
+    # Check a few scripts as well
+    for script in haku_theme.sh dockbar_manager.sh; do
+        local dst="$DEST_BIN/$script"
+        if [[ -e "$dst" ]]; then
+            total_checked=$((total_checked + 1))
+            if [[ -L "$dst" ]]; then
+                symlink_count=$((symlink_count + 1))
+            else
+                copy_count=$((copy_count + 1))
+            fi
+        fi
+    done
+    
+    if [[ $total_checked -eq 0 ]]; then
+        HAKUSPACE_DEPLOY_MODE="symlink"
+        return 0
+    fi
+    
+    if [[ $symlink_count -eq $total_checked ]]; then
+        HAKUSPACE_DEPLOY_MODE="symlink"
+    elif [[ $copy_count -eq $total_checked ]]; then
+        HAKUSPACE_DEPLOY_MODE="copy"
+    else
+        echo -e "\n${C_YELLOW}[WARN]${C_RESET} Mixed deployment state detected ($symlink_count symlinks, $copy_count copies)." >&2
+        local choice
+        while true; do
+            read -r -p ">>> Are you using [s]ymlink or [c]opy mode? (s/c): " choice </dev/tty >/dev/tty
+            case "${choice,,}" in
+                s|symlink)
+                    HAKUSPACE_DEPLOY_MODE="symlink"
+                    break
+                    ;;
+                c|copy)
+                    HAKUSPACE_DEPLOY_MODE="copy"
+                    break
+                    ;;
+                *)
+                    echo "Please answer 's' or 'c'." >&2
+                    ;;
+            esac
+        done
+    fi
+}
+
+# Wrapper for deployment: uses symlink or copy based on state
+deploy_config_item() {
+    local src="$1" dst="$2" skip_backup="${3:-0}"
+    determine_deploy_mode
+    
+    if [[ "$HAKUSPACE_DEPLOY_MODE" == "symlink" ]]; then
+        deploy_symlink_recursive "$src" "$dst" "$skip_backup"
+    else
+        if [[ -d "$src" ]]; then
+            copy_dir_content "$src" "$dst" "$skip_backup"
+        else
+            copy_file "$src" "$dst" "$skip_backup"
+        fi
+    fi
+}
+
+deploy_hakuspace_scripts() {
+    if [[ ! -d "$SOURCE_CORE" ]]; then
+        log_warn "Source directory not found: $SOURCE_CORE"
+        return 1
+    fi
+
+    # Make all .sh and .py scripts executable in the source
+    find "$SOURCE_CORE" -type f \( -name '*.sh' -o -name '*.py' \) -exec chmod +x {} +
+
+    echo ">>> Deploying scripts to $DEST_BIN..."
+    
+    determine_deploy_mode
+    if [[ "$HAKUSPACE_DEPLOY_MODE" == "copy" ]]; then
+        if [[ -d "$DEST_BIN" ]]; then
+            log_warn "Deployment mode is COPY. Backing up and clearing entire $DEST_BIN as requested..."
+            backup_item "$DEST_BIN"
+            rm -rf "$DEST_BIN"
+        fi
+    fi
+    
+    ensure_dir "$DEST_BIN" || return 1
+    
+    # We use deploy_config_item to deploy the files flatly into DEST_BIN
+    # It will respect the deploy_mode (symlink or copy)
+    local -A seen_scripts
+    while IFS= read -r -d '' file; do
+        local filename
+        filename="$(basename "$file")"
+        [[ "$filename" == "README.md" ]] && continue
+        if [[ -n "${seen_scripts[$filename]:-}" ]]; then
+            log_error "Script name collision: '$filename' found in both '${seen_scripts[$filename]}' and '$file'"
+            return 1
+        fi
+        seen_scripts[$filename]="$file"
+        deploy_config_item "$file" "$DEST_BIN/$filename" || return 1
+    done < <(find "$SOURCE_CORE" -type f -print0)
 }
 
 install_pkg_file() {
@@ -240,6 +425,25 @@ select_window_manager() {
             exit 1
             ;;
     esac
+}
+
+select_deploy_mode() {
+    echo ""
+    echo -e "${C_BOLD}--- DOTFILES DEPLOYMENT MODE ---${C_RESET}"
+    echo "HakuSpace can deploy your configuration files using two methods:"
+    echo -e "  ${C_BOLD}[1]${C_RESET} Symlink (Recommended) - Edits in ~/.config will directly update the repo."
+    echo -e "  ${C_BOLD}[2]${C_RESET} Copy - Copies files normally. Edits in ~/.config will NOT update the repo."
+    echo ""
+    read -r -p ">>> Choose deployment mode (default: 1): " deploy_choice
+    deploy_choice="${deploy_choice:-1}"
+    
+    if [[ "$deploy_choice" == "2" ]]; then
+        HAKUSPACE_DEPLOY_MODE="copy"
+        log_info "Selected deployment mode: COPY"
+    else
+        HAKUSPACE_DEPLOY_MODE="symlink"
+        log_info "Selected deployment mode: SYMLINK"
+    fi
 }
 
 # Deploy for hakuspace-archive repo (Wallpaper, icons, etc.)
@@ -337,4 +541,25 @@ check_control_dir() {
         log_warn "setting.sh not found in hakucfg. Creating default..."
         copy_file "$HAKUSPACE_CUSTOM_DIR/setting.sh" "$DEST_CUSTOM_DIR/setting.sh"
     fi
+}
+
+check_state_dir() {
+    local target_dir="$HOME/.local/state/hakuspace"
+    local source_dir="$HOME_SRC_DIR/.local/state/hakuspace"
+    
+    if [[ ! -d "$target_dir" ]]; then
+        log_info "Local state directory $target_dir does not exist. Creating..."
+        mkdir -p "$target_dir"
+    fi
+
+    local required_files=(
+        "dockbar-theme"
+        "rofi-theme.rasi"
+    )
+    for file in "${required_files[@]}"; do
+        if [[ ! -f "$target_dir/$file" ]]; then
+            log_warn "$file not found in state dir. Creating default..."
+            copy_file "$source_dir/$file" "$target_dir/$file"
+        fi
+    done
 }

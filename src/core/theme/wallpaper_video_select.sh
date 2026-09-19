@@ -8,9 +8,10 @@ ACCENT_COLOR_BASED_ON_WALLPAPER=${ACCENT_COLOR_BASED_ON_WALLPAPER:-true}
 ACCENT_COLOR_MODE=${ACCENT_COLOR_MODE:-vivid}
 
 PREVIEW_DIR="$WALL_MPV_DIR/.thumbnails"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
-source "$HOME/.local/bin/accent_color.sh"
+source "$SCRIPT_DIR/accent_color.sh"
 
 ROFI_THEME="wallpaper-select.rasi"
 

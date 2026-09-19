@@ -2,6 +2,10 @@
 
 CONFIG_DIR="$HOME/.config/rofi"
 CONFIG_FILE="$CONFIG_DIR/config.rasi"
+
+STATE_DIR="$HOME/.local/state/hakuspace"
+STATE_FILE="$STATE_DIR/rofi-theme.rasi"
+
 THEME_DIR="$CONFIG_DIR/themes"
 USER_THEME_DIR="$HOME/hakucfg/config/rofi"
 
@@ -38,8 +42,10 @@ if [ -n "$selected_theme" ]; then
 
     # Update @theme line in config.rasi
     if [ -f "$CONFIG_FILE" ]; then
-        sed -i -E "s|@theme \".*\"|@theme \"$selected_theme\"|" "$CONFIG_FILE"
+        cat > "$STATE_FILE" <<EOF
+@theme "$selected_theme"
+EOF
     else
-        notify-send "Rofi Theme Switcher" "Config file not found: $CONFIG_FILE"
+        notify-send "Rofi Theme Switcher" "Config file not found: $STATE_FILE"
     fi
 fi

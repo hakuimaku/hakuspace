@@ -136,18 +136,25 @@ step_title "2 - BACKUP AND UPDATE CONFIG IN ~/.config"
 if ask_yes_no "===> Do you want to update hakuspace configs now?"; then
 
     echo ">>> Deploying configs..."
-    for folder in "$SOURCE_CONFIG"/*/; do
-        [[ -d "$folder" ]] || continue
-        folder_name="$(basename "$folder")"
-        # Deloy config with skip config in the list of ONCE_CONFIGS and SKIP_CONFIGS
-        if [[ " ${ONCE_CONFIGS[*]} " == *"$folder_name"* || " ${SKIP_CONFIGS[*]} " == *"$folder_name"* ]]; then
-            continue
-        fi
-        copy_dir_content "$SOURCE_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
+    for item in "$SOURCE_CONFIG"/*; do
+        [[ -e "$item" ]] || continue
+        item_name="$(basename "$item")"
+        
+        is_skipped=0
+        for once in "${ONCE_CONFIGS[@]}"; do
+            [[ "$once" == "$item" ]] && { is_skipped=1; break; }
+        done
+        for skip in "${SKIP_CONFIGS[@]}"; do
+            [[ "$skip" == "$item" ]] && { is_skipped=1; break; }
+        done
+        [[ $is_skipped -eq 1 ]] && continue
+
+        deploy_config_item "$item" "$DEST_CONFIG/$item_name"
     done
-    copy_file "$SOURCE_CONFIG/hypr/hypridle.conf" "$DEST_CONFIG/hypr/hypridle.conf"
-    copy_file "$SOURCE_CONFIG/hypr/hyprlock.conf" "$DEST_CONFIG/hypr/hyprlock.conf"
-    copy_file "$SOURCE_CONFIG/hypr/hyprlock_tiny.conf" "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
+    
+    deploy_config_item "$SOURCE_CONFIG/hypr/hypridle.conf" "$DEST_CONFIG/hypr/hypridle.conf"
+    deploy_config_item "$SOURCE_CONFIG/hypr/hyprlock.conf" "$DEST_CONFIG/hypr/hyprlock.conf"
+    deploy_config_item "$SOURCE_CONFIG/hypr/hyprlock_tiny.conf" "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
 
     # Loop through selected WMs
     for i in "${!SELECTED_WMS[@]}"; do
@@ -157,21 +164,28 @@ if ask_yes_no "===> Do you want to update hakuspace configs now?"; then
         case "$WM_NAME" in
             "hyprland")
                 echo ">>> Deploying Hyprland configs..."
-                # Hyprland will copy content in hypr/ instead of hypr dir for not overriting hyprlock and hypridle configs
-                copy_dir_content "$WM_DIR_PATH/config" "$DEST_CONFIG/hypr/config"
-                copy_file "$WM_DIR_PATH/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
+                # Hyprland will symlink content in hypr/ instead of hypr dir for not overriting hyprlock and hypridle configs
+                deploy_config_item "$WM_DIR_PATH/config" "$DEST_CONFIG/hypr/config"
+                deploy_config_item "$WM_DIR_PATH/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
                 ;;
             "niri")
                 echo ">>> Deploying Niri configs..."
-                copy_dir_content "$WM_DIR_PATH" "$DEST_CONFIG/niri"
+                deploy_config_item "$WM_DIR_PATH" "$DEST_CONFIG/niri"
                 ;;
             "mango")
                 echo ">>> Deploying Mango configs..."
-                copy_dir_content "$WM_DIR_PATH" "$DEST_CONFIG/mango"
+                deploy_config_item "$WM_DIR_PATH" "$DEST_CONFIG/mango"
                 ;;
             "labwc")
                 echo ">>> Deploying Labwc configs..."
-                copy_dir_content "$WM_DIR_PATH" "$DEST_CONFIG/labwc"
+                deploy_config_item "$WM_DIR_PATH" "$DEST_CONFIG/labwc"
+
+                if [[ ! -d "$HOME/.themes/hakulab" ]]; then
+                    echo ">>> Deploying Hakulab theme for Labwc..."
+                    copy_dir_content "$HOME_SRC_DIR/.themes/hakulab" "$HOME/.themes/hakulab"
+                else
+                    log_warn "Hakulab theme directory not found. Skipping theme deployment."
+                fi
                 ;;
             *)
                 log_warn "Unknown WM: $WM_NAME. Skipping WM config deployment."
@@ -181,13 +195,13 @@ if ask_yes_no "===> Do you want to update hakuspace configs now?"; then
 
     echo ">>> Deploying Thunar gtk.css theme..."
     backup_dir "$DEST_CONFIG/gtk-3.0"
-    copy_file "$SOURCE_CONFIG/gtk-3.0/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css" 1
+    deploy_config_item "$SOURCE_CONFIG/gtk-3.0/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css" 1
 
     echo ">>> Deploying starship.toml (starship configuration)..."
-    copy_file "$SOURCE_CONFIG/starship.toml" "$DEST_CONFIG/starship.toml"
+    deploy_config_item "$SOURCE_CONFIG/starship.toml" "$DEST_CONFIG/starship.toml"
 
     echo ">>> Deploying .nanorc (nano configuration)..."
-    copy_file "$HOME_SRC_DIR/.nanorc" "$HOME/.nanorc"
+    deploy_config_item "$HOME_SRC_DIR/.nanorc" "$HOME/.nanorc"
 
     log_ok "Configurations deployed finished."
 else
@@ -197,18 +211,16 @@ fi
 # ============================================================================
 # BLOCK 3: BACKUP AND COPY LOCAL BIN
 # ============================================================================
-step_title "3 - BACKUP AND UPDATE ~/.local/bin"
+step_title "3 - BACKUP AND UPDATE HAKUSPACE SCRIPTS"
 
-if ask_yes_no "===> Do you want to update hakuspace local/bin scripts now?"; then
-    if [[ -d "$SOURCE_BIN" ]]; then
-        copy_dir_content "$SOURCE_BIN" "$DEST_BIN"
-        chmod +x ~/.local/bin/*
-        log_ok "local/bin update completed."
+if ask_yes_no "===> Do you want to update hakuspace scripts now?"; then
+    if deploy_hakuspace_scripts; then
+        log_ok "HakuSpace script update completed."
     else
-        log_warn "Directory not found: $SOURCE_BIN"
+        log_warn "HakuSpace script update failed."
     fi
 else
-    log_skip "Skipping local/bin update."
+    log_skip "Skipping HakuSpace script update."
 fi
 
 # ============================================================================
@@ -247,6 +259,9 @@ if command -v nixos-rebuild >/dev/null 2>&1; then
         log_warn "You chose not to rebuild the NixOS system. Please remember to rebuild later to apply system-level changes."
     fi
 fi
+
+# Check if local/state/hakuspace exists, if not, deploy it
+check_state_dir
 
 # Init HakuSpace Control
 check_control_dir

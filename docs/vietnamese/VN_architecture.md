@@ -2,67 +2,84 @@
 
 Xem bản tiếng Anh: [Architecture](../architecture.md).
 
-Đây là tài liệu tổng quan để *bạn* và *AI* hiểu dotfiles của tôi có gì và cách chúng được triển khai vô máy bạn.
+Đây là tổng quan nhanh để *bạn* nắm được repo này có gì và nó chui vào máy bạn kiểu gì.
 
-## Bố cục repository
+## Bố cục Repo
 
 ```text
 hakuspace (root)
-├── assets/                    # Chứa các assets ngoài, sẽ không copy vô máy bạn
-├── docs/                      # Chứa documents cho project
-├── nix/                       # Chứa cấu hình NixOS và các template flake
+├── assets/                    # Mấy thứ lặt vặt bên ngoài, không copy vào máy bạn
+├── docs/                      # Tài liệu hướng dẫn
+├── nix/                       # Cấu hình NixOS
 │
-├── scripts/                   # Chứa các script helper
-├── install.sh                 # Script cài đặt dotfiles lần đầu
-├── update.sh                  # Script cập nhật dotfiles
-├── rollback.sh                # Script khôi phục dotfiles từ bản sao lưu
+├── scripts/                   # Script hỗ trợ
+├── install.sh                 # Script cài đặt lần đầu
+├── update.sh                  # Script cập nhật
+├── rollback.sh                # Script khôi phục backup
+├── doctor.sh                  # Bác sĩ kiểm tra lỗi symlink
 │
 └── src/
-    ├── home/                  # Thư mục chính chứa các file dot
-    │   ├── .config/           # Các file cấu hình trong ~/.config
-    │   ├── .local/bin/        # Các script tạo nên hakuspace trong ~/.local/bin
-    │   └── hakucfg/           # Template cho thư mục custom hakuspace
+    ├── core/                  # Script của HakuSpace; sẽ được link/copy vào ~/.local/bin
+    ├── home/                  # Chứa toàn bộ file dot
+    │   ├── .config/           # Cấu hình cho ~/.config
+    │   ├── .local/            # Cấu hình và state cho ~/.local
+    │   ├── .themes/           # Chứa các theme tùy chỉnh cho ~/.themes
+    │   └── hakucfg/           # Template cho cấu hình cá nhân của bạn
     │   
-    └── packages/              # Danh sách package được nhóm để cài đặt
+    └── packages/              # Danh sách app cần cài
 ```
 
-## Dotfiles được quản lý kiểu gì?
+## Dotfiles được quản lý ra sao?
 
-HakuSpace sử dụng các file được sao chép thông thường. Nó không sử dụng Stow, symbolic link, Git worktree hay cơ chế đồng bộ trực tiếp.
+HakuSpace dùng cơ chế **Hybrid (Lai)**: bạn được chọn giữa **Deep Symlink** hoặc **Copy truyền thống**.
+(Hệ thống tự làm hết, không cần dùng Stow hay Git worktree).
 
-- `src/home/` là nơi giả lập lại thư mục home của bạn, xem các cấu hình và script trong đây. Đây là BASE config.
-- `~/hakucfg/` là nơi bạn đặt các file cấu hình cá nhân, ở trong repo nó là template để pull về máy bạn. Đây là CUSTOM config.
-- Sửa bản sao đã triển khai không làm thay đổi repository. Ngược lại, sửa file trong repository cũng chưa ảnh hưởng đến phiên hiện tại cho đến khi bạn chạy install hoặc update.
+- `src/home/` là bản giả lập thư mục home của bạn. Đây là BASE config.
+- `~/hakucfg/` là chỗ chứa config riêng của bạn. Đây là CUSTOM config.
+- Tùy vào lựa chọn lúc cài, file của bạn sẽ được symlink (sửa file là tự update vào repo) hoặc copy (sửa file thì giữ nguyên ở máy).
 
-## Dùng dotfiles của tôi như thế nào?
+## Dùng bộ Dotfiles này kiểu gì?
 
-### `install.sh`
+### `install.sh` (Cài đặt mới)
+- Kịch bản chạy lần đầu tiên. Dưới đây là luồng hoạt động chi tiết của nó:
+  - **Phase 1: Thu thập thông tin:** Nó sẽ hỏi bạn đang dùng distro nào (Arch/Fedora), muốn xài Window Manager nào (Hyprland, Niri, Mango, Labwc) và chốt luôn cơ chế deploy (Symlink hay Copy).
+  - **Phase 2: Backup:** Nó quét những file sắp bị ghi đè trong `~/.config` và `~/.local/bin`, gom gọn vào `~/.backup/Backup_<timestamp>`.
+  - **Phase 3: Cài package:** Đọc các file text trong `src/packages/` và gọi trình quản lý gói để cài.
+  - **Phase 4: Triển khai (Core Logic):**
+    - Rải các file cấu hình cơ bản từ `src/home/.config/` và `src/core/` ra máy bạn theo đúng chế độ Symlink/Copy đã chọn.
+    - Xử lý nhóm `ONCE_CONFIGS` (chỉ copy đứt đoạn 1 lần, không bao giờ symlink).
+    - Tạo thư mục cá nhân `~/hakucfg` từ template nếu bạn chưa có.
+  - **Phase 5: Hậu kỳ:** Set quyền thực thi cho script, đổi shell mặc định sang Fish, và dọn dẹp cache cũ.
 
-- Đây là script chạy lần đầu để cài đặt dotfiles. Các lần sau bạn chạy lại thì cũng được thôi nhưng không recommended.
-- Nó sẽ làm gì?
-  - Cài đặt các package cần thiết.
-  - Tạo các thư mục cần thiết.
-  - Chép các file cấu hình và script từ repository vào máy bạn.
-  - Khởi tạo các cấu hình chỉ chạy một lần, ONE_CONFIGS.
-  - Khởi tạo `~/hakucfg` nếu chưa có.
-  - Thực hiện các bước cài đặt hệ thống tùy chọn để setup hakuspace cho lần đầu tiên bạn vào.
-- Script cũng tạo backup cho các file bị ghi đè khi cài đặt nên bạn đừng lo mất cấu hình, chỉ cần vào `~/.backup/` là sẽ thấy các bản backup timestamped.
+### `update.sh` (Cập nhật hệ thống)
+- Chạy mỗi khi bạn kéo source mới từ GitHub về.
+  - **Phase 1: Nhận diện:** Nó tự động đọc file `~/.local/state/hakuspace/deploy_mode` để nhớ lại trước đây bạn cài bằng Symlink hay Copy.
+  - **Phase 2: Khởi tạo Backup:** Giống hệt cài đặt mới, nó luôn tạo lối thoát an toàn ở `~/.backup/`.
+  - **Phase 3: Cập nhật thông minh:**
+    - Deploy lại toàn bộ file theo đúng chế độ bạn đã chọn.
+    - Tự động **Bỏ qua (Skip)** nhóm `ONCE_CONFIGS` để không làm bay mất các tùy chỉnh giao diện (như màu mè của Thunar hay setting btop) mà bạn đã hì hục chỉnh tay.
+    - Mặc kệ và không đụng vào `~/hakucfg/` của bạn.
 
-### `update.sh`
+### `rollback.sh` (Quay xe khi lỗi)
+- Chạy khi bạn hối hận vì update hoặc lỡ tay phá hỏng gì đó.
+  - **Phase 1: Chọn Backup:** Hiện danh sách các bản backup trong `~/.backup/` để bạn chọn (mặc định lấy bản mới nhất).
+  - **Phase 2: Dọn dẹp an toàn:**
+    - Xóa cẩn thận các symlink của HakuSpace hiện tại để tránh bị lọt (dereference) xóa nhầm file gốc trong Repo.
+  - **Phase 3: Khôi phục:** Chép ngược lại toàn bộ file từ thư mục Backup bạn chọn về đúng vị trí cũ trong `~/.config` và `~/.local/bin`. 
 
-- Đây là script chạy để cập nhật dotfiles.
-- Nó sẽ làm gì?
-  - Cập nhật repository lên phiên bản mới nhất hoặc ổn định.
-  - Chép các file cấu hình và script từ repository vào máy bạn.
-  - Giữ nguyên các cấu hình trong ONE_CONFIGS, còn các file khác thì sẽ bị ghi đè.
-- Script cũng tạo backup cho các file bị ghi đè khi cập nhật nên bạn đừng lo mất cấu hình, chỉ cần vào `~/.backup/` là sẽ thấy các bản backup timestamped.
+### `doctor.sh` (Bác sĩ bắt bệnh)
+- Công cụ kiểm tra sức khỏe của dotfiles, cực kỳ xịn nếu bạn dùng chế độ Symlink.
+  - **Quét Symlink gãy:** Đi từng ngóc ngách trong `~/.config` và `~/.local/bin`, nếu thấy symlink nào trỏ vào hư không (do bạn xóa nhầm file gốc), nó sẽ in ra màu đỏ chót.
+  - **Quét File bị ghi đè (Overwritten):** Dò xem có file nào đáng lý phải là symlink nhưng lại biến thành file thật (thường do text editor của bạn tự động ngắt symlink khi bấm Lưu). Bác sĩ sẽ chỉ mặt điểm tên và khuyên bạn chạy `update.sh` để nối lại symlink.
 
-### `rollback.sh`
+## Mục Lục (Khám phá sâu hơn)
 
-- Đây là script chạy để khôi phục dotfiles từ bản backup.
-- Nó sẽ làm gì?
-  - Chuyển các file hiện tại sang ~/backup/Rollback_Backup_*.
-  - Khôi phục các file và thư mục đã chọn từ bản backup.
-- Chỉ khôi phục các file và thư mục được quản lý bởi install.sh và update.sh, các file khác trong ~/.config và ~/.local sẽ được giữ nguyên.
+Để hiểu rõ cặn kẽ cách HakuSpace vận hành "dưới gầm xe", bạn có thể đọc các tài liệu sau theo thứ tự:
 
-Xem tiếp: [Management](VN_management.md) để hiểu cách dotfiles được triển khai và quản lý trong thư mục home của bạn một cách an toàn nhất.
+1. **[Cơ chế Quản lý (Management)](VN_management.md)**: Hiểu cách hệ thống cài đặt an toàn (Symlink vs Copy).
+2. **[Thư viện Lõi (Core Libs)](../core/lib.md)**: Quản lý State tập trung và điều hướng đa Window Manager.
+3. **[Động cơ Theme (Theme Engine)](../core/theme.md)**: Cách hệ thống bóc tách màu từ hình nền và thay áo giao diện tức thì.
+4. **[Quản lý Hệ thống (System)](../core/sys.md)**: Các script khoá màn hình, chống tắt màn hình thông minh, và menu nguồn.
+5. **[Công cụ Tiện ích (Utilities)](../core/util.md)**: Các công cụ dùng hàng ngày (chụp màn hình, lọc ánh sáng xanh, clipboard).
+6. **[Haku Menu (Menu)](../core/menu.md)**: Giải phẫu menu đa tab tuỳ biến bằng Rofi.
+7. **[Ứng dụng Nhỏ (Mini-Apps)](../core/app.md)**: Các app xịn xò tự code (Dockbar, Desktop Icons, Cava Underbar).
