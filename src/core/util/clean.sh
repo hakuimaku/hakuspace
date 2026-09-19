@@ -10,6 +10,12 @@ if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
 fi
 
 rm -rf ~/.cache/*
-yay -Sc
+if command -v yay &> /dev/null; then
+    yay -Sc --noconfirm
+elif command -v dnf &> /dev/null; then
+    sudo dnf clean all
+elif command -v nix-collect-garbage &> /dev/null; then
+    nix-collect-garbage -d
+fi
 sudo journalctl --vacuum-time=2weeks
 notify-send "Cache and logs cleaned!"
