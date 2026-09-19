@@ -69,3 +69,6 @@ If things act weird, run `./doctor.sh`.
 If you're in Symlink mode, the doctor scans your configs to find:
 - **Broken symlinks:** Deleted files or changed paths.
 - **Overwritten files:** If you accidentally saved over a symlink (turning it into a real file), the doctor will warn you and tell you to run `update.sh` to fix it.
+
+---
+**Next:** [Core Libraries](core/lib.md) ➡️

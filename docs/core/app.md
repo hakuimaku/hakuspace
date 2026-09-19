@@ -2,7 +2,10 @@
 
 The `src/core/app/` directory houses custom mini-applications built specifically for HakuSpace. Instead of relying on heavy standalone applications, HakuSpace creates native-feeling desktop widgets by cleverly combining existing Linux tools with custom bash and Python scripts.
 
-The most prominent application in this directory is the **Dockbar**.
+Currently, the following mini-apps are available:
+- [**Dockbar**](#the-dockbar-srccoreappdockbar)
+- [**Desktop Icons**](#desktop-icons-srccoreappdesktop-icons)
+- [**Cava Underbar**](#cava-underbar-srccoreappcava-layer)
 
 ---
 
@@ -73,3 +76,6 @@ Because the Python script acts as a background daemon, it needs a manager to han
 - **Live Reloading:** When you change your system's accent color (via `gen_style.sh`), you don't want the audio visualizer to stutter, drop frames, or restart. Calling `cava_manager.sh reload` sends a specific UNIX signal (`SIGUSR1`) to the Python daemon. The script intercepts this signal, re-reads the Kitty configuration, and instantly updates the visualizer's colors on the fly without ever interrupting the live audio stream!
 
 
+
+---
+⬅️ **Previous:** [Haku Menu](menu.md) | **Home:** [Architecture Overview](../architecture.md) 🏠

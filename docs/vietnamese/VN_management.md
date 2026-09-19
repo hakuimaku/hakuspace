@@ -69,3 +69,6 @@ Nếu máy có vấn đề, hãy chạy `./doctor.sh`.
 Nếu bạn đang dùng Symlink, bác sĩ sẽ quét để tìm:
 - **Symlink gãy:** Mấy file gốc bị xóa mất.
 - **File bị ghi đè:** Lỡ bạn mở symlink bằng text editor rồi lưu đè thành file thật, bác sĩ sẽ báo liền và nhắc bạn chạy `update.sh` để sửa.
+
+---
+**Tiếp theo:** [Thư viện Lõi (Core Libraries)](../core/lib.md) ➡️

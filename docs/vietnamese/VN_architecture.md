@@ -72,4 +72,14 @@ HakuSpace dùng cơ chế **Hybrid (Lai)**: bạn được chọn giữa **Deep 
   - **Quét Symlink gãy:** Đi từng ngóc ngách trong `~/.config` và `~/.local/bin`, nếu thấy symlink nào trỏ vào hư không (do bạn xóa nhầm file gốc), nó sẽ in ra màu đỏ chót.
   - **Quét File bị ghi đè (Overwritten):** Dò xem có file nào đáng lý phải là symlink nhưng lại biến thành file thật (thường do text editor của bạn tự động ngắt symlink khi bấm Lưu). Bác sĩ sẽ chỉ mặt điểm tên và khuyên bạn chạy `update.sh` để nối lại symlink.
 
-Xem tiếp: [Management](VN_management.md) để hiểu sâu hơn về độ an toàn của hệ thống nhé!
+## Mục Lục (Khám phá sâu hơn)
+
+Để hiểu rõ cặn kẽ cách HakuSpace vận hành "dưới gầm xe", bạn có thể đọc các tài liệu sau theo thứ tự:
+
+1. **[Cơ chế Quản lý (Management)](VN_management.md)**: Hiểu cách hệ thống cài đặt an toàn (Symlink vs Copy).
+2. **[Thư viện Lõi (Core Libs)](../core/lib.md)**: Quản lý State tập trung và điều hướng đa Window Manager.
+3. **[Động cơ Theme (Theme Engine)](../core/theme.md)**: Cách hệ thống bóc tách màu từ hình nền và thay áo giao diện tức thì.
+4. **[Quản lý Hệ thống (System)](../core/sys.md)**: Các script khoá màn hình, chống tắt màn hình thông minh, và menu nguồn.
+5. **[Công cụ Tiện ích (Utilities)](../core/util.md)**: Các công cụ dùng hàng ngày (chụp màn hình, lọc ánh sáng xanh, clipboard).
+6. **[Haku Menu (Menu)](../core/menu.md)**: Giải phẫu menu đa tab tuỳ biến bằng Rofi.
+7. **[Ứng dụng Nhỏ (Mini-Apps)](../core/app.md)**: Các app xịn xò tự code (Dockbar, Desktop Icons, Cava Underbar).
