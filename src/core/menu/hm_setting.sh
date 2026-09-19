@@ -9,11 +9,11 @@ if [[ $# -eq 0 ]]; then
     DOCK_TEXT="OFF"
     [[ "$DOCK_STATUS" == "1" ]] && DOCK_TEXT="ON"
 
-    DOCK_EXCLUSIVE=$(grep -oP '"exclusive":\s*\K(true|false)' ~/.config/waybar/dockbar/config 2>/dev/null)
+    DOCK_EXCLUSIVE=$(grep -oP '"exclusive":\s*\K(true|false)' $HOME/.local/state/hakuspace/dockbar-theme 2>/dev/null)
     DOCK_EXCLUSIVE_TEXT="OFF"
     [[ "$DOCK_EXCLUSIVE" == "true" ]] && DOCK_EXCLUSIVE_TEXT="ON"
 
-    DOCK_ICON_SIZE=$(grep -oP '"icon-size":\s*\K\d+' ~/.config/waybar/dockbar/config 2>/dev/null)
+    DOCK_ICON_SIZE=$(grep -oP '"icon-size":\s*\K\d+' $HOME/.local/state/hakuspace/dockbar-theme 2>/dev/null)
     DOCK_ICON_SIZE_TEXT="$DOCK_ICON_SIZE"
     DOCK_ICON_SIZE_TEXT+="px"
 

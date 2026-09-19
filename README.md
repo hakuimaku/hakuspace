@@ -203,7 +203,7 @@ See the main configuration file at [hakuspace-config.nix](nix/hakuspace-config.n
 
 > [!important]
 > Nixpkgs I use is stable, which still install **hypridle** v0.1.7.
-> Please install **hyprilde** unstable nixpkgs for v0.1.8 (to use my [idle_inhibit.sh](src/home/.local/bin/idle_inhibit.sh) script).
+> Please install **hyprilde** unstable nixpkgs for v0.1.8 (to use my [idle_inhibit.sh](src/home/.local/share/hakuspace/sys/idle_inhibit.sh) script).
 
 ---
 

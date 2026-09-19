@@ -20,7 +20,8 @@ hakuspace (root)
 └── src/
     ├── home/                  # Main directory containing dotfiles
     │   ├── .config/           # Configuration files for ~/.config
-    │   ├── .local/bin/        # Scripts that make up HakuSpace in ~/.local/bin
+    │   ├── .local/share/      # Organized HakuSpace scripts
+    │   │   └── hakuspace/     # Source scripts; linked flat into ~/.local/bin
     │   └── hakucfg/           # Templates for HakuSpace's custom configuration
     │
     └── packages/              # Package lists grouped for installation

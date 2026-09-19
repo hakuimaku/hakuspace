@@ -20,7 +20,8 @@ hakuspace (root)
 └── src/
     ├── home/                  # Thư mục chính chứa các file dot
     │   ├── .config/           # Các file cấu hình trong ~/.config
-    │   ├── .local/bin/        # Các script tạo nên hakuspace trong ~/.local/bin
+    │   ├── .local/share/      # Các script HakuSpace được tổ chức theo nhóm
+    │   │   └── hakuspace/     # Source script; tạo symlink phẳng vào ~/.local/bin
     │   └── hakucfg/           # Template cho thư mục custom hakuspace
     │   
     └── packages/              # Danh sách package được nhóm để cài đặt

@@ -2,100 +2,70 @@
 
 See the Vietnamese version: [Management](./vietnamese/VN_management.md).
 
-This document supplements [Architecture](architecture.md) by explaining how dotfiles are deployed and managed safely in the home directory.
+This document explains how HakuSpace deploys and manages dotfiles safely in your home directory. We use a **Hybrid Deployment Mechanism** that gives you the best of both worlds.
 
-The repository is the source of versioned default configurations. The home directory contains independent copies, together with your files and application-generated data.
-
-## 1. Core Model
+## 1. Core Architecture
 
 The repository stores the BASE configuration layout under `src/home/`:
 
 ```text
 Repository                         Your home
 -----------                        ---------
-src/home/.config/*       --copy--> ~/.config/*
-src/home/.local/bin/*    --copy--> ~/.local/bin/*
-
-src/home/hakucfg/*       --copy--> ~/hakucfg/*
+src/home/.config/*       ------->  ~/.config/*
+src/core/*               ------->  ~/.local/bin/*
+src/home/hakucfg/*       --copy->  ~/hakucfg/*
 ```
 
-Every configuration file in the home directory is an independent copy and can be edited without changing the repository. This copy-based approach avoids symbolic-link conflicts and means you do not need detailed Git knowledge to pull repository updates safely. To provide more room for personal customization, HakuSpace uses `~/hakucfg/` for your personal settings.
+When you install HakuSpace, you get to choose between two deployment modes for `.config` and `core` scripts:
 
-- **BASE**: configuration files and scripts shipped by HakuSpace. They are maintained in the repository and may be overwritten during an update. Personal changes should go in `~/hakucfg/` instead.
-- **CUSTOM**: your settings in `~/hakucfg/`. These settings belong to you and are not normally overwritten. `install.sh` and `update.sh` create missing custom files so the control configuration is available immediately.
+### Mode 1: Symlink (Recommended)
+This mode uses **Deep Symlinking** (similar to GNU Stow).
+Instead of linking an entire directory (like `~/.config/hypr`), it creates real directories and only symlinks the individual files inside them.
 
-Do not edit HakuSpace-managed files directly under `~/.config` or `~/.local/bin` if you want changes to survive future updates. Put supported customizations in `~/hakucfg/` instead.
+- **Pros:** 
+  - When apps dump cache, state, or log files into their config directories, those junk files stay on your machine and don't pollute the Git repository.
+  - Edits you make to the symlinked files instantly reflect in the Git repository.
+- **Cons:** 
+  - If you create a brand new file in `~/.config`, you must manually move it to the repository and run `update.sh` to link it.
 
-## 2. Deployment and Management
+### Mode 2: Copy (Classic)
+This mode simply copies files directly from the repository to your home directory.
 
-The three scripts have different roles:
+- **Pros:** Dead simple.
+- **Cons:** Edits made in `~/.config` will NOT update the Git repository. You have to manually copy them back to save your changes.
 
-- `install.sh` is the initial installation flow. It selects a window manager, installs packages, creates required directories, deploys configuration and `~/.local/bin` scripts, optionally deploys assets, and performs system setup.
-- `update.sh` updates the repository before deployment. It can use `LATEST` to pull the `main` branch, `STABLE` to check out the newest tag, or `SKIP` to keep the current repository revision. It then updates packages, configuration, and `~/.local/bin` according to your choices.
-- `rollback.sh` does not reinstall packages or repeat system setup. It restores only HakuSpace-managed dotfiles from a selected backup.
+Your choice is saved in `~/.local/state/hakuspace/deploy_mode` so `update.sh` and `rollback.sh` remember what to do later.
 
-### Once-only Configuration: `ONCE_CONFIGS`
+## 2. Special Rules
 
-- These configurations are intended to be deployed only during the first installation.
-- They are intended for configurations that HakuSpace does not frequently change but that you may need to customize. Those changes are preserved across `update.sh` and `rollback.sh`.
-- Running `install.sh` again deploys these configurations again, so `install.sh` should normally be used once or only when these configurations genuinely need to be reinstalled.
-- They include:
-  - `~/.config/Thunar`
-  - `~/.config/xfce4`
-  - `~/.config/mpv`
-  - `~/.config/btop`
-  - `~/.config/cava`
+Not everything is symlinked. To prevent apps from destroying your repository, some configs follow strict rules:
 
-> `mimeapps.list` follows the same once-only behavior, but it is a file and is therefore not included in the `ONCE_CONFIGS` array.
+### `ONCE_CONFIGS` (Always Copied)
+Apps like Thunar, xfce4, mpv, and btop tend to aggressively overwrite their config files when you use their GUI.
+To prevent them from breaking symlinks or messing up the Git repository, these configs are **ALWAYS** copied as real files, regardless of your deployment mode. Furthermore, `update.sh` will **skip** updating them to protect your personal tweaks.
 
-### General Configuration Deployment
+### `hakucfg` (Your Custom Space)
+HakuSpace is designed to avoid overwriting your personal settings. The `~/hakucfg/` directory is meant for your own environment variables, auto-starts, and custom scripts. It is safely deployed using the Copy mechanism and left alone during updates.
 
-This includes files and directories under `src/home/.config` that are not part of `ONCE_CONFIGS`, `SKIP_CONFIGS`, or a special deployment path. When you confirm deployment:
+## 3. The Management Scripts
 
-- `install.sh` and `update.sh` copy the base configuration into `~/.config`.
-- If a destination already exists, the script backs it up before copying the new configuration.
-- `update.sh` does not deploy configuration when you skip the configuration-update step.
-- General configurations are managed per directory or file. Your files outside the repository source list are not removed by the scripts.
+We provide three main scripts to manage your setup:
 
-The two scripts also copy `src/home/.local/bin` into `~/.local/bin` and apply executable permissions after copying. This is a direct BASE deployment, so deployed files should not be edited directly when the changes need to survive an update.
+### `install.sh`
+The initial setup. It asks for your preferred Window Manager and deployment mode (Symlink or Copy), then deploys the configurations.
 
-### Special Configuration Deployment
+### `update.sh`
+When you pull new changes from GitHub, run `update.sh`. It automatically reads your deployment mode and syncs the changes to your home directory. It skips `ONCE_CONFIGS` to protect your local tweaks.
 
-Some configurations do not go through the general configuration loop:
+### `rollback.sh`
+Safety first! Before any file or directory is overwritten by HakuSpace, it gets backed up to `~/.backup/Backup_<timestamp>`.
+If an update breaks your system, run `rollback.sh`.
+- It intelligently scans your current `~/.config` and `~/.local/bin`.
+- It safely removes HakuSpace symlinks to prevent accidental dereferencing (which could wipe out files in the Git repo).
+- It restores your old files precisely where they belong.
 
-- **Window managers**: you can select Hyprland, Niri, Mango, Labwc, or all of them. `install.sh` and `update.sh` deploy only the selected window managers. Hyprland copies `config/` into `~/.config/hypr/config` and copies `hyprland.lua` separately; the other window managers copy into their corresponding directories.
-- **Shared Hyprland files**: `hypridle.conf`, `hyprlock.conf`, and `hyprlock_tiny.conf` are copied separately into `~/.config/hypr`. They are shared by all window-manager setups, but their default path is under `~/.config/hypr`. Copying the whole `hypr` directory would either overwrite the Hyprland configuration or leave unrelated Hyprland files looking like unnecessary bloat when you use another window manager, so these files are handled separately.
-- **GTK**: `gtk-3.0/gtk.css` is copied separately. It provides the GTK3 application and Thunar theme and is handled specially so the file manager's bookmarks are not lost.
-- **Individual files**: `starship.toml` and `.nanorc` are copied explicitly to their destinations. They require `copy_file` rather than the directory-copy path.
-- **`mimeapps.list`**: it is deployed only by `install.sh` and is not overwritten by `update.sh`. It behaves like an `ONCE_CONFIGS` entry, but it is a file and is not included in that array.
-- **`~/hakucfg`**: at the end of `install.sh` and `update.sh`, `check_control_dir` creates the directory and any missing custom files from `src/home/hakucfg`. `setting.sh` is updated only when its version differs and you agree; that update can overwrite custom changes in the file. Other existing custom files are not replaced automatically.
-- **NixOS**: `install.sh` deploys NixOS configuration files from `nix/`, specifically `hakuspace-control.nix`. This is a basic NixOS configuration file that contains only the programs and packages needed for HakuSpace. It does not deploy other NixOS configuration files, as HakuSpace does not want to interfere with your system. HakuSpace configuration files and scripts are still managed by copy rather than Home Manager, because dotfiles are not managed by symbolic links.
-
-## 3. Backup Storage
-
-The scripts store backups under `~/.backup/` using these forms:
-
-```text
-~/.backup/Backup_<YYYY-MM-DD_HH-MM-SS>/
-~/.backup/Rollback_Backup_<YYYY-MM-DD_HH-MM-SS>/
-```
-
-### During Install or Update
-
-- Each script run uses one `Backup_<timestamp>` directory for that run.
-- Before overwriting an existing file or directory, `backup_item` moves the current item into the backup while preserving its relative path from the home directory. A backup can therefore contain `.config/...`, `.local/bin/...`, or `.nanorc`.
-- Backups are created before changes are made, so `rollback.sh` can use them to restore an earlier state.
-
-### During Rollback
-
-- `rollback.sh` lists only directories whose names begin with `Backup_`, newest first. It does not use unrelated directories under `~/.backup`.
-- Before restoring, existing HakuSpace-managed files and directories are moved into `Rollback_Backup_<timestamp>`. This is a safety copy of the state before rollback; the script currently does not include `Rollback_Backup_*` in its automatic selection list.
-- The script restores only managed destinations such as general configuration, known window-manager paths, `~/.local/bin`, and `~/.nanorc`. Files outside that list are preserved.
-- When restoring `.config` or `.local`, the script processes managed children rather than replacing the container directory as a whole. `ONCE_CONFIGS` are always skipped.
-- Rollback does not restore packages, assets, the shell, system services, or NixOS configuration. Those changes must be handled separately.
-
-Do not delete backups immediately after an update or rollback. Check the configuration and applications first; once the new state is known to work, old backups can be removed manually to reclaim disk space.
-
-## 4. Conclusion
-
-The central design principle is simple: `src/home/` is the reproducible source of BASE configuration, the home directory contains deployed copies, `~/hakucfg` contains your CUSTOM settings, and `~/.backup/` provides recovery points around copy operations.
+### `doctor.sh`
+If things act weird, run `./doctor.sh`.
+If you chose Symlink mode, the doctor will scan your `~/.config` and `~/.local/bin` to find:
+- **Broken symlinks:** Files that were deleted or paths that changed.
+- **Overwritten files:** If you accidentally opened a symlinked config in a text editor and saved over it (turning it into a real file), the doctor will warn you and tell you to run `update.sh` to restore the symlink.
