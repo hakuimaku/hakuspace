@@ -66,10 +66,6 @@ from gi.repository import Vte
         for m in "${missing[@]}"; do
             err "  - $m"
         done
-        err ""
-        err "Install hints:"
-        err "  Arch/Hyprland: sudo pacman -S cava python-gobject gtk-layer-shell vte3"
-        err "  Debian/Ubuntu: sudo apt install cava python3-gi gir1.2-gtklayershell-0.1 gir1.2-vte-2.91"
         exit 1
     fi
 }

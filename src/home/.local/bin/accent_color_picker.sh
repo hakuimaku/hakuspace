@@ -8,6 +8,7 @@ if ! command -v hyprpicker >/dev/null 2>&1; then
 fi
 
 # Main
+sleep 0.5
 COLOR="$(hyprpicker)"
 
 $HOME/.local/bin/gen_style.sh "$COLOR" && \
