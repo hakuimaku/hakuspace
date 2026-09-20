@@ -5,9 +5,8 @@ set -u
 
 HAKU_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
-chmod +x ./scripts/*
-source "./scripts/variables.sh"
-source "./scripts/functions.sh"
+source "$HAKU_DIR/scripts/variables.sh"
+source "$HAKU_DIR/scripts/functions.sh"
 
 # ======================================================================================
 # MAIN FLOW
