@@ -429,10 +429,10 @@ print_header() {
 EOF
     
     if [[ -n "$title" ]]; then
-        echo -e $title
+        echo -e "$title"
     fi
     if [[ -n "$desc" ]]; then
-        echo -e $desc
+        echo -e "$desc"
     fi
 
     print_divider

@@ -144,7 +144,6 @@ fi
 
 check_module "$SOURCE_CONFIG/gtk-3.0/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css"
 total_broken=$((total_broken + $?))
-total_broken=$((total_broken + $?))
 check_module "$HOME_SRC_DIR/.nanorc" "$HOME/.nanorc" "$HOME/.nanorc"
 total_broken=$((total_broken + $?))
 
