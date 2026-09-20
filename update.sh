@@ -1,20 +1,7 @@
 #!/usr/bin/env bash
 set -u
 
-cat << 'EOF'
 
- _   _       _          _____                      
-| | | |     | |        /  ___|                     
-| |_| | __ _| | ___   _\ `--. _ __   __ _  ___ ___ 
-|  _  |/ _` | |/ / | | |`--. \ '_ \ / _` |/ __/ _ \
-| | | | (_| |   <| |_| /\__/ / |_) | (_| | (_|  __/
-\_| |_|\__,_|_|\_\\__,_\____/| .__/ \__,_|\___\___|
-                             | |                   
-                             |_|                       
-
-            >>> CONFIG UPDATER <<<
-
-EOF
 
 HAKU_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
@@ -26,7 +13,7 @@ source "./scripts/functions.sh"
 # MAIN FLOW
 # ======================================================================================
 
-print_header
+print_header ">>> CONFIG UPDATER <<<"
 
 # ============================================================================
 # BLOCK 0: UPDATE REPOSITORY (LATEST vs STABLE)
@@ -109,7 +96,7 @@ if command -v yay >/dev/null 2>&1; then
 
     echo ">>> Package lists to be updated automatically:"
     for i in "${!PKG_LABELS[@]}"; do
-        echo "  - ${PKG_LABELS[$i]}: ${PKG_FILES[$i]}"
+        echo "  - ${PKG_LABELS[$i]}: from $(shorten_path "${PKG_FILES[$i]}")"
     done
     echo ""
 
@@ -266,7 +253,6 @@ check_state_dir
 check_control_dir
 
 # Gen Style if not exist ~/.local/state/hakuspace
-echo ""
 if [[ ! -d "$HOME/.local/state/hakuspace" ]]; then
     "$HOME/.local/bin/gen_style.sh" --font "JetBrainsMono Nerd Font"
     log_ok "Executed gen_style.sh"
@@ -275,16 +261,17 @@ else
 fi
 
 # Reload Waybar
-echo ""
 if [[ -x "$HOME/.local/bin/waybar_manager.sh" ]]; then
     sleep 1
-    "$HOME/.local/bin/waybar_manager.sh" --reload
-    log_ok "Waybar reloaded successfully."
+    "$HOME/.local/bin/waybar_manager.sh" --reload >/dev/null 2>&1
+    log_ok "Waybar reloaded."
 else
     log_skip "Skipping Waybar reload."
 fi
 
 # Final message
 echo ""
-echo -e "${C_BOLD}${C_CYAN}>>>>>>>>>> Update complete! You may need to restart your session or reload WM to apply changes!${C_RESET}"
-echo -e "${C_MAGENTA}Backup folder for this update: $BACKUP_DIR${C_RESET}"
+print_divider
+echo -e "${C_BOLD}${C_GREEN}  Update complete! Restart session or reload WM to apply!${C_RESET}"
+echo -e "${C_MAGENTA}  Backup folder for this update: $BACKUP_DIR${C_RESET}"
+print_divider

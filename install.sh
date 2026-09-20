@@ -1,19 +1,7 @@
 #!/usr/bin/env bash
 set -u
 
-cat << 'EOF'
 
-
- _   _       _          _____                      
-| | | |     | |        /  ___|                     
-| |_| | __ _| | ___   _\ `--. _ __   __ _  ___ ___ 
-|  _  |/ _` | |/ / | | |`--. \ '_ \ / _` |/ __/ _ \
-| | | | (_| |   <| |_| /\__/ / |_) | (_| | (_|  __/
-\_| |_|\__,_|_|\_\\__,_\____/| .__/ \__,_|\___\___|
-                             | |                   
-                             |_|                       
-
-EOF
 
 HAKU_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
@@ -25,7 +13,7 @@ source "./scripts/functions.sh"
 # MAIN FLOW
 # ======================================================================================
 
-print_header
+print_header ">>> CONFIG INSTALLER <<<" "Press CTRL+C to cancel at any time."
 select_window_manager
 select_deploy_mode
 
@@ -74,7 +62,7 @@ for pkg in "${DEPENDENCIES[@]}"; do
 done
 
 echo ""
-echo -e "${C_BOLD}===================================================================${C_RESET}"
+print_divider
 echo -e "${C_GREEN}--- Everything is ready to install Config! ---${C_RESET}"
 
 # ============================================================================
@@ -85,8 +73,8 @@ step_title "2 - INSTALL PACKAGES FROM LIST"
 PKG_LABELS=()
 PKG_FILES=()
 
-log_info "You need to install pkg-core.txt & pkg-<WM_NAME>.txt for hakuspace to work properly"
-log_info "You can CTRL+C to cancel installing & nano ~/hakuspace/src/packages/pkg-core.txt to edit package list"
+log_info "Required: pkg-core.txt & pkg-<WM_NAME>.txt"
+log_info "CTRL+C to cancel. Edit lists in ~/hakuspace/src/packages/"
 
 if command -v yay >/dev/null 2>&1; then
     for i in "${!SELECTED_WMS[@]}"; do
@@ -107,7 +95,7 @@ if command -v yay >/dev/null 2>&1; then
 
     echo ":: Package lists:"
     for i in "${!PKG_LABELS[@]}"; do
-        echo "   [$i] ${PKG_LABELS[$i]} : Package list from ${PKG_FILES[$i]}"
+        echo "   [$i] ${PKG_LABELS[$i]} : from $(shorten_path "${PKG_FILES[$i]}")"
     done
     echo ""
 
@@ -172,7 +160,7 @@ log_ok "All necessary directories have been created."
 # =======================================================
 if command -v nixos-rebuild >/dev/null 2>&1; then
     echo ""
-    log_info "NixOS detected. Choose configuration mode for HakuSpace Dotfiles:"
+    log_info "NixOS detected. Choose config mode:"
     echo -e "  ${C_BOLD}[1]${C_RESET} Offline (Copy hakuspace-config.nix and edit configuration.nix)"
     echo -e "  ${C_BOLD}[2]${C_RESET} Online Remote (Deploy flake.nix from template)"
     echo -e "  ${C_BOLD}[0]${C_RESET} Skip NixOS deployment"
@@ -229,8 +217,8 @@ fi
 # ============================================================================
 step_title "4 - SETUP HAKUSPACE CONFIG"
 
-log_info "Backing up existing configs in ~/.config and copying new configs from hakuspace/src/home/.config"
-log_info "Do NOT skip this step in the first time installation hakuspace"
+log_info "Deploying configs to ~/.config"
+log_info "Do NOT skip this on first install"
 
 if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
 
@@ -325,8 +313,8 @@ fi
 # ============================================================================
 step_title "5 - SETUP HAKUSPACE SCRIPTS"
 
-log_info "Backing up existing HakuSpace scripts and deploying them to ~/.local/share/hakuspace"
-log_info "Do NOT skip this step in the first time installation hakuspace"
+log_info "Deploying HakuSpace scripts to ~/.local/bin"
+log_info "Do NOT skip this on first install"
 
 if ask_yes_no "===> Do you want to setup hakuspace scripts now?"; then
     if deploy_hakuspace_scripts; then
@@ -343,7 +331,7 @@ fi
 # ============================================================================
 step_title "6 - DEPLOY EXTRA ASSETS FROM hakuspace-archive"
 
-log_info "Clone hakuspace-archive to setup icons, themes, and wallpapers. You can skip this step if you don't want to install them."
+log_info "Clone hakuspace-archive for icons, themes, wallpapers"
 
 if ask_yes_no "===> Do you want to setup hakuspace assets: Icons, Themes and Wallpapers?"; then
     if deploy_assets_from_archive_repo; then
@@ -450,7 +438,7 @@ else
 fi
 
 echo ""
-echo -e "${C_GREEN}All services have been processed!${C_RESET}"
-echo ""
-echo -e "${C_BOLD}${C_CYAN}>>>>>>>>>> All done! Please restart your pc to apply changes!${C_RESET}"
-echo -e "${C_MAGENTA}Backup folder for this run: $BACKUP_DIR${C_RESET}"
+print_divider
+echo -e "${C_BOLD}${C_GREEN}  All done! Please restart your pc to apply changes!${C_RESET}"
+echo -e "${C_MAGENTA}  Backup folder for this run: $BACKUP_DIR${C_RESET}"
+print_divider
