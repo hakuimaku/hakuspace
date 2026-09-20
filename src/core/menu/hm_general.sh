@@ -21,7 +21,7 @@ fi
 
 # Base fallback, use my own default :)
 notify-send "Haku Menu" "Your custom Haku Menu failed or is not present. Using default menu instead."
-spawn() { ( "$@" & ) >/dev/null 2>&1; disown; }
+spawn() { ( "$@" & ) >/dev/null 2>&1; }
 
 if [[ $# -eq 0 ]]; then
     cat <<'EOF'
