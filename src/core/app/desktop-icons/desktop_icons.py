@@ -158,7 +158,7 @@ SHOW_TRASH = True
 SHOW_COMPUTER = True
 USER_DIRS_FIRST = True
 SHOW_HIDDEN = False
-
+AUTO_ARRANGE = False
 
 ################################################################################
 # CONFIGURATION & UTILITIES
@@ -190,7 +190,7 @@ def save_setting(key, value):
 def load_config():
     global ICON_SIZE, CELL_WIDTH, CELL_HEIGHT, ACTION_MODES, KEYBINDINGS
     global SORT_BY, SORT_REVERSE, FOLDERS_FIRST, SHOW_HOME, SHOW_TRASH, SHOW_COMPUTER
-    global SHOW_HIDDEN, USER_DIRS_FIRST
+    global SHOW_HIDDEN, USER_DIRS_FIRST, AUTO_ARRANGE
     
     os.makedirs(CONFIG_DIR, exist_ok=True)
     config = configparser.ConfigParser()
@@ -222,6 +222,9 @@ show_computer = {SHOW_COMPUTER}
 
 # Show hidden files starting with a dot (True/False)
 show_hidden = {SHOW_HIDDEN}
+
+# Auto arrange icons strictly according to sorting criteria, disabling manual positioning
+auto_arrange = {AUTO_ARRANGE}
 """
 
     if not os.path.exists(CONF_FILE):
@@ -258,6 +261,8 @@ show_hidden = {SHOW_HIDDEN}
                     SHOW_COMPUTER = config['Settings'].getboolean('show_computer')
                 if 'show_hidden' in config['Settings']:
                     SHOW_HIDDEN = config['Settings'].getboolean('show_hidden')
+                if 'auto_arrange' in config['Settings']:
+                    AUTO_ARRANGE = config['Settings'].getboolean('auto_arrange')
             else:
                 append_blocks.append(DEFAULT_SETTINGS_BLOCK)
 
@@ -1097,11 +1102,9 @@ class DesktopIcon(Gtk.EventBox):
             except Exception:
                 pass
 
-        if not is_virtual:
-            thunar_item = Gtk.MenuItem(label="Open in Thunar")
-            thunar_item.connect("activate", self.open_in_thunar)
-            menu.append(thunar_item)
+            menu.append(Gtk.SeparatorMenuItem())
 
+        if not is_virtual:
             file_path = self.gio_file.get_path()
             if file_path:
                 populate_thunar_actions_menu(menu, [file_path], is_directory_background=False, fallback_cwd=os.path.dirname(file_path))
@@ -1145,6 +1148,13 @@ class DesktopIcon(Gtk.EventBox):
             prop_item = Gtk.MenuItem(label="Properties")
             prop_item.connect("activate", self.show_properties)
             menu.append(prop_item)
+
+        def on_deactivate(m):
+            self.is_hovered = False
+            self.get_style_context().remove_class('hovered')
+
+        menu.connect("deactivate", on_deactivate)
+        self._context_menu = menu
 
         menu.show_all()
         menu.popup_at_pointer(event)
@@ -1515,16 +1525,20 @@ class DesktopLayout(Gtk.Fixed):
         self.cols = max(1, (self.last_alloc_width - PADDING) // (CELL_WIDTH + PADDING))
         self.rows = max(1, (self.last_alloc_height - PADDING) // (CELL_HEIGHT + PADDING))
         
-        positions = load_positions()
-        for index, item in enumerate(final_list):
-            c = index // self.rows
-            r = index % self.rows
-            c = min(c, self.cols - 1)
-            r = min(r, self.rows - 1)
-            positions[item['filename']] = {'col': c, 'row': r}
-            
-        save_positions(positions)
-        self.reposition_icons()
+        self._is_sorting = True
+        try:
+            positions = load_positions()
+            for index, item in enumerate(final_list):
+                c = index // self.rows
+                r = index % self.rows
+                c = min(c, self.cols - 1)
+                r = min(r, self.rows - 1)
+                positions[item['filename']] = {'col': c, 'row': r}
+                
+            save_positions(positions)
+            self.reposition_icons()
+        finally:
+            self._is_sorting = False
 
     def show_desktop_context_menu(self, event):
         menu = Gtk.Menu()
@@ -1591,6 +1605,19 @@ class DesktopLayout(Gtk.Fixed):
             self.sort_icons()
         user_dirs_first_item.connect("toggled", on_user_dirs_first_toggled)
         sort_menu.append(user_dirs_first_item)
+        
+        sort_menu.append(Gtk.SeparatorMenuItem())
+        
+        auto_arrange_item = Gtk.CheckMenuItem(label="Auto Arrange")
+        auto_arrange_item.set_active(AUTO_ARRANGE)
+        def on_auto_arrange_toggled(widget):
+            global AUTO_ARRANGE
+            AUTO_ARRANGE = widget.get_active()
+            save_setting('auto_arrange', AUTO_ARRANGE)
+            if AUTO_ARRANGE:
+                self.sort_icons()
+        auto_arrange_item.connect("toggled", on_auto_arrange_toggled)
+        sort_menu.append(auto_arrange_item)
 
         sort_item.set_submenu(sort_menu)
         menu.append(sort_item)
@@ -1880,6 +1907,12 @@ class DesktopLayout(Gtk.Fixed):
         if self.last_alloc_width < 200 or self.last_alloc_height < 200:
             return False
 
+        if getattr(self, '_is_sorting', False):
+            pass
+        elif AUTO_ARRANGE:
+            self.sort_icons()
+            return False
+
         self.cols = max(1, (self.last_alloc_width - PADDING) // (CELL_WIDTH + PADDING))
         self.rows = max(1, (self.last_alloc_height - PADDING) // (CELL_HEIGHT + PADDING))
         
@@ -2024,6 +2057,14 @@ class DesktopLayout(Gtk.Fixed):
         trash_item = Gtk.MenuItem(label=f"Move to Trash ({count} items)")
         trash_item.connect("activate", lambda w: self.trash_selected())
         menu.append(trash_item)
+
+        def on_deactivate(m):
+            for icon in self.selected_icons:
+                icon.is_hovered = False
+                icon.get_style_context().remove_class('hovered')
+
+        menu.connect("deactivate", on_deactivate)
+        self._context_menu = menu
 
         menu.show_all()
         menu.popup_at_pointer(event)
@@ -2217,6 +2258,11 @@ def on_drag_data_received(widget, drag_context, x, y, data, info, time):
 
     if multi_paths and multi_origin:
         widget._internal_drop_handled = True
+        
+        if AUTO_ARRANGE:
+            Gtk.drag_finish(drag_context, False, False, time)
+            return
+            
         positions = load_positions()
         origin_filename = os.path.basename(multi_origin)
         origin_pos = positions.get(origin_filename, {'col': 0, 'row': 0})
@@ -2248,6 +2294,11 @@ def on_drag_data_received(widget, drag_context, x, y, data, info, time):
         
         if source_file.get_parent() and source_file.get_parent().get_path() == desktop_file.get_path():
             widget._internal_drop_handled = True
+            
+            if AUTO_ARRANGE:
+                success = True
+                continue
+                
             filename = source_file.get_basename()
             positions = load_positions()
             
@@ -2275,11 +2326,12 @@ def on_drag_data_received(widget, drag_context, x, y, data, info, time):
         if ok:
             print(f"[{action_key}={mode}] {source_path} -> {dest_path}")
 
-            col, row = get_grid_pos(x, y)
-            filename = os.path.basename(dest_path)
-            positions = load_positions()
-            positions[filename] = {'col': col, 'row': row}
-            save_positions(positions)
+            if not AUTO_ARRANGE:
+                col, row = get_grid_pos(x, y)
+                filename = os.path.basename(dest_path)
+                positions = load_positions()
+                positions[filename] = {'col': col, 'row': row}
+                save_positions(positions)
 
             success = True
         elif mode == 'none':
