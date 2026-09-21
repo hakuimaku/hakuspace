@@ -44,4 +44,4 @@ We've designed this system to be highly customizable. If you want to tweak how i
 3. **Pick a Color Manually:** Sometimes you just want to choose the color yourself. You can run the `accent_color_picker.sh` script to open a graphical color picker. Whatever color you select there will immediately be pushed through `gen_style.sh` and applied to your entire system!
 
 ---
-⬅️ **Previous:** [Core Libraries](lib.md) | **Next:** [System Management](sys.md) ➡️
+**Previous:** [Core Libraries](lib.md) | **Next:** [System Management](sys.md)

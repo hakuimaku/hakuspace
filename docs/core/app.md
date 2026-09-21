@@ -32,6 +32,7 @@ Waybar doesn't natively support intelligent auto-hiding based on cursor proximit
 The Dockbar needs to display the correct icons for your pinned applications.
 - **What it does:** It reads your personal list of pinned apps from `~/hakucfg/config/dockbar_pin_apps`. 
 - **Icon Resolution:** Since Linux apps don't always have straightforward icon paths, this script hunts through your `/usr/share/icons/`, `~/.local/share/icons/`, and current GTK icon theme to find the highest resolution SVG or PNG that matches the app's desktop entry, ensuring your dock always looks crisp. 
+- **Caching & Theme Detection:** It intelligently caches the resolved icons and accurately detects your current GTK theme to speed up fetching times and provide better matching for dynamically changing themes.
 
 ---
 
@@ -42,10 +43,11 @@ One of the biggest sacrifices when moving from traditional Desktop Environments 
 ### `desktop_icons.py` (The Engine)
 This is a surprisingly powerful Python application built on top of `GtkLayerShell` and `Cairo`. Instead of being a normal window, it draws itself directly onto the background layer of your screen, sitting quietly beneath all your other windows.
 
-- **Full Interactivity:** It isn't just a static picture! It supports double-clicking to launch apps, dragging boxes to multi-select, holding `Ctrl` to select specific files, and even keyboard shortcuts like `Ctrl+C` (Copy) and `Ctrl+X` (Cut).
+- **Full Interactivity:** It isn't just a static picture! It supports double-clicking to launch apps, dragging boxes to multi-select, holding `Ctrl` to select specific files, and even keyboard shortcuts like `Ctrl+C` (Copy) and `Ctrl+X` (Cut). Added interactive options enhance how HakuSpace elements are managed.
 - **Drag & Drop:** It natively integrates with Wayland's Drag and Drop API. 
   - You can drag files from Thunar (or any file manager) straight onto your desktop. 
   - You can freely drag icons around to rearrange them. The grid positions are automatically saved to a `positions.json` file so they stay exactly where you left them after a reboot!
+- **Auto Arrange:** Tired of messy desktops? The application now features an Auto Arrange mode (enabled by default) that automatically snaps your icons into a neat grid, ensuring your desktop always looks organized.
 - **Customizable Actions:** By default, dragging a file *onto* the desktop copies it, while dragging a file *off* the desktop cuts it. You can change this behavior (e.g., creating symlinks instead of copying) in its configuration file.
 
 ### `desktop_icons_manager.sh` (The Launcher)
@@ -78,4 +80,4 @@ Because the Python script acts as a background daemon, it needs a manager to han
 
 
 ---
-⬅️ **Previous:** [Haku Menu](menu.md) | **Home:** [Architecture Overview](../architecture.md) 🏠
+**Previous:** [Haku Menu](menu.md) | **Home:** [Architecture Overview](../architecture.md)

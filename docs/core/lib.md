@@ -18,8 +18,8 @@ This is the single most important library for the HakuSpace theming engine. It d
 ### `accent_color.sh` (The Color Validator)
 A small but critical mathematical utility used during the wallpaper color extraction process.
 - **What it does:** It provides a single function: `accent_color_or_fallback`.
-- **The Math:** When you pass a Hex color code to this function (e.g., `#1a1a1a`), it converts the Hex values into raw Red, Green, and Blue (RGB) integers. It then calculates the total brightness (`red + green + blue`). 
-- **The Fallback:** If the total brightness is less than `180` (meaning the color is dangerously dark and would make your text unreadable against dark backgrounds), the script rejects the color and returns a safe fallback (usually solid white `#ffffff`).
+- **The Math:** When you pass a Hex color code to this function (e.g., `#1a1a1a`), it calculates the WCAG relative luminance to accurately determine the visual brightness of the color (accounting for how the human eye perceives different wavelengths).
+- **The Fallback:** If the perceived luminance is too low (meaning the color is dangerously dark and would make your text unreadable against dark backgrounds), the script rejects the color and returns a safe fallback (usually solid white `#ffffff`). This WCAG-based calculation is vastly superior to naive RGB addition!
 
 ## Window Manager Abstraction
 
@@ -35,4 +35,4 @@ HakuSpace supports four different Window Managers (Hyprland, Niri, MangoWM, and 
 
 
 ---
-⬅️ **Previous:** [Management](../management.md) | **Next:** [Theming Engine](theme.md) ➡️
+**Previous:** [Management](../management.md) | **Next:** [Theming Engine](theme.md)
