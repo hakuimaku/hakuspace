@@ -40,9 +40,8 @@ CELL_WIDTH = 100
 CELL_HEIGHT = 100
 PADDING = 6
 
-CONFIG_DIR = os.path.expanduser("~/hakucfg/config/desktop-icons")
-POSITIONS_FILE = os.path.join(CONFIG_DIR, "positions.json")
-CSS_FILE = os.path.join(CONFIG_DIR, "desktop-icons.css")
+CONFIG_DIR = os.path.expanduser("~/hakucfg/config")
+POSITIONS_FILE = os.path.expanduser("~/.cache/desktop-icons-positions.json")
 CONF_FILE = os.path.join(CONFIG_DIR, "desktop-icons.conf")
 
 DEFAULT_CSS = """
@@ -312,7 +311,7 @@ def load_positions():
         return {}
 
 def save_positions(positions):
-    os.makedirs(CONFIG_DIR, exist_ok=True)
+    os.makedirs(os.path.dirname(POSITIONS_FILE), exist_ok=True)
     with open(POSITIONS_FILE, "w") as positions_file:
         json.dump(positions, positions_file, indent=4)
 
@@ -2537,25 +2536,8 @@ def create_desktop_window(app, monitor):
 def on_activate(app):
     app.layouts = []
     
-    if not os.path.exists(CSS_FILE):
-        old_css_file = os.path.join(CONFIG_DIR, "style.css")
-        if os.path.exists(old_css_file):
-            try:
-                os.rename(old_css_file, CSS_FILE)
-            except Exception:
-                pass
-    if not os.path.exists(CSS_FILE):
-        try:
-            with open(CSS_FILE, 'w') as f:
-                f.write(DEFAULT_CSS.strip())
-        except Exception:
-            pass
-
     css_provider = Gtk.CssProvider()
-    try:
-        css_provider.load_from_path(CSS_FILE)
-    except Exception:
-        css_provider.load_from_data(DEFAULT_CSS.encode('utf-8'))
+    css_provider.load_from_data(DEFAULT_CSS.encode('utf-8'))
 
     Gtk.StyleContext.add_provider_for_screen(
         Gdk.Screen.get_default(),
