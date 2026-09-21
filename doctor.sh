@@ -176,3 +176,15 @@ else
     log_ok "All BASE configs are perfectly symlinked!"
     print_divider
 fi
+
+echo ""
+step_title "Checking for Missing Directories"
+
+# Check if local/state/hakuspace exists, if not, deploy it
+check_state_dir
+
+# Check ~/hakucfg directory
+check_control_dir
+
+echo ""
+echo "Doctor check completed!"

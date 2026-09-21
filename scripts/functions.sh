@@ -42,7 +42,7 @@ log_error()  { echo -e "${C_RED}[ERROR]${C_RESET}  $(shorten_path "${1:-}")"; }
 log_backup() { echo -e "${C_MAGENTA}[BACKUP]${C_RESET} $(shorten_path "${1:-}")"; }
 log_copy()   { echo -e "${C_CYAN}[COPY]${C_RESET}   $(shorten_path "${1:-}")"; }
 log_skip()   { echo -e "${C_WHITE}[SKIP]${C_RESET}   $(shorten_path "${1:-}")"; }
-log_symlink(){ echo -e "${C_MAGENTA}[SYMLINK]${C_RESET} $(shorten_path "${1:-}")"; }
+log_symlink(){ echo -e "${C_CYAN}[SYMLINK]${C_RESET} $(shorten_path "${1:-}")"; }
 # UI Helpers
 UI_WIDTH=60
 UI_LINE="────────────────────────────────────────────────────────────" # 60 chars
