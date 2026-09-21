@@ -54,8 +54,8 @@ hl.monitor({
 -- Refer to https://wiki.hypr.land/Configuring/Basics/Variables/
 hl.config({
     general = {
-        gaps_in  = 0,
-        gaps_out = 0,
+        gaps_in  = 10,
+        gaps_out = 16,
 
         border_size = 2,
 
@@ -81,8 +81,8 @@ hl.config({
     },
 
     decoration = {
-        rounding       = 0,
-        rounding_power = 0,
+        rounding       = 12,
+        rounding_power = 10,
 
         -- Change transparency of focused and unfocused windows
         active_opacity   = 1.0,
@@ -92,7 +92,7 @@ hl.config({
             enabled      = true,
             range        = 20,
             render_power = 6,
-            offset       = { 0, 0 },
+            offset       = { 2, 2 },
             color        = "rgba(000000cc)",
         },
 
