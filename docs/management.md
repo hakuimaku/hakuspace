@@ -34,7 +34,7 @@ Just straight up copies files from the repo to your home folder.
 - **Pros:** Super simple and safe.
 - **Cons:** Your edits in `~/.config` won't update the Git repo. You have to manually copy them back to save your changes.
 
-Your choice is saved in `~/.local/state/hakuspace/deploy_mode` so `update.sh` and `rollback.sh` know what to do next time.
+Your deployment mode isn't saved to a configuration file; instead, `update.sh` heuristically scans your `~/.config` to detect whether you are primarily using symlinks or copies, and automatically syncs new changes using the same method.
 
 ## 2. Special Rules
 

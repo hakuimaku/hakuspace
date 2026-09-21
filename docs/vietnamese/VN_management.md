@@ -34,7 +34,7 @@ Copy đứt đoạn toàn bộ file từ Repo ra máy bạn.
 - **Ưu điểm:** Cực kỳ đơn giản, an toàn.
 - **Nhược điểm:** Bạn sửa file ở `~/.config` sẽ không lưu vào Git repo. Bạn phải tự copy ngược lại nếu muốn lưu.
 
-Lựa chọn của bạn được lưu ở `~/.local/state/hakuspace/deploy_mode` để `update.sh` và `rollback.sh` nhớ và làm theo sau này.
+Chế độ bạn dùng không được lưu vào file trạng thái nào cả; thay vào đó, `update.sh` sẽ quét tự động (heuristically) cấu hình trong `~/.config` để nhận diện xem bạn đang dùng symlink hay copy, rồi tự động đồng bộ theo đúng phương pháp đó.
 
 ## 2. Luật đặc biệt
 

@@ -53,10 +53,10 @@ HakuSpace dùng cơ chế **Hybrid (Lai)**: bạn được chọn giữa **Deep 
 
 ### `update.sh` (Cập nhật hệ thống)
 - Chạy mỗi khi bạn kéo source mới từ GitHub về.
-  - **Phase 1: Nhận diện:** Nó tự động đọc file `~/.local/state/hakuspace/deploy_mode` để nhớ lại trước đây bạn cài bằng Symlink hay Copy.
-  - **Phase 2: Khởi tạo Backup:** Giống hệt cài đặt mới, nó luôn tạo lối thoát an toàn ở `~/.backup/`.
+  - **Phase 1: Cập nhật Repo:** Hỏi bạn muốn cập nhật repository theo nhánh LATEST (main) hay STABLE (tag mới nhất).
+  - **Phase 2: Backup & Nhận diện Mode:** Giống hệt cài đặt mới, nó luôn tạo lối thoát an toàn ở `~/.backup/`. Sau đó quét heuristically cấu hình hiện tại để nhận diện xem bạn đang dùng Symlink hay Copy.
   - **Phase 3: Cập nhật thông minh:**
-    - Deploy lại toàn bộ file theo đúng chế độ bạn đã chọn.
+    - Deploy lại toàn bộ file theo đúng chế độ tự nhận diện được.
     - Tự động **Bỏ qua (Skip)** nhóm `ONCE_CONFIGS` để không làm bay mất các tùy chỉnh giao diện (như màu mè của Thunar hay setting btop) mà bạn đã hì hục chỉnh tay.
     - Mặc kệ và không đụng vào `~/hakucfg/` của bạn.
 
