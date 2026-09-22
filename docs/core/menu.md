@@ -24,13 +24,13 @@ This tab is meant for your daily drivers and frequently used applications.
 
 ### `hm_theme.sh` (The Theme Tab)
 This is your control panel for aesthetics and desktop widgets.
-- **What it does:** It provides a list of interactive toggles for HakuSpace's unique visual features. You can change your wallpaper, toggle the Cava Underbar, enable Auto Random Wallpapers, toggle the Dockbar, or show/hide Desktop Icons.
+- **What it does:** It provides a list of interactive toggles for HakuSpace's unique visual features. You can change your wallpaper, toggle the Cava Underbar, enable Auto Random Wallpapers, toggle the Taskbar, or show/hide Desktop Icons.
 - **Dynamic State:** Notice how some options say `(ON)` or `(OFF)`? The script achieves this by reading local state files (like `/tmp/cava-layer.pid` or `/tmp/random_wallpaper_status`) before rendering the menu. When you click an option, it spawns the corresponding manager script in the background to execute your command.
 
 ### `hm_setting.sh` (The Setting Tab)
 This tab acts as a bridge to both your system hardware settings and HakuSpace's internal configurations.
 - **What it does:** It gives you quick access to essential GUI tools like `nm-connection-editor` (Wifi), `blueman-manager` (Bluetooth), `gparted` (Disk Manager), `ncdu` (Storage Manager), and `pavucontrol` (Audio Control).
-- **HakuSpace Configs:** It also provides toggles specifically for the Dockbar (Auto-hide, Exclusive mode, Icon Size), and offers direct shortcuts to open your `~/hakucfg` folder or edit your custom `general-menu.sh` script in VS Code. Like the Theme tab, it reads local configuration variables to dynamically display the current states of these settings.
+- **HakuSpace Configs:** It also provides toggles specifically for the Taskbar (Auto-hide, Exclusive mode, Icon Size), and offers direct shortcuts to open your `~/hakucfg` folder or edit your custom `general-menu.sh` script in VS Code. Like the Theme tab, it reads local configuration variables to dynamically display the current states of these settings.
 
 
 ---

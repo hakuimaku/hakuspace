@@ -168,13 +168,20 @@ hl.window_rule({
     scrolling_width = 0.4,
 })
 
--- Dockbar style
+-- Taskbar style
 hl.layer_rule({
-    name = "haku-dockbar",
+    name = "haku-taskbar",
     match = { namespace = "dock.*" },
 
     blur = false,
     animation = "slide bottom",
+})
+
+-- Desktop icons disable animations
+hl.layer_rule({
+    name = "haku-desktop-icons",
+    match = { namespace = "desktop-icons" },
+    no_anim = true,
 })
 
 -- Desktop icons style - Rename

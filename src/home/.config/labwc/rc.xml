@@ -297,7 +297,7 @@
         <action name="Execute" command="~/.local/bin/hakumenu.sh" />
         </keybind>
         <keybind key="W-w">
-        <action name="Execute" command="~/.local/bin/dockbar_manager.sh --toggle" />
+        <action name="Execute" command="~/.local/bin/taskbar_manager.sh --toggle" />
         </keybind>
         <keybind key="W-S-w">
         <action name="Execute" command="~/.local/bin/waybar_manager.sh --cycle" />

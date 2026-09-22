@@ -2,7 +2,7 @@
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
         cat <<'EOF'
-Usage: dockbar_geticon.sh APPLICATION
+Usage: taskbar_geticon.sh APPLICATION
 Print the icon name for an application.
 
 Arguments:
@@ -16,7 +16,7 @@ fi
 # It caches the result to avoid repeated lookups (enhance performance).
 
 APP="$1"
-CACHE_FILE="$HOME/.cache/dockbar_icon_cache.txt"
+CACHE_FILE="$HOME/.cache/taskbar_icon_cache.txt"
 THEME_FILE="$HOME/.config/gtk-3.0/settings.ini"
 
 CURRENT_THEME="default"

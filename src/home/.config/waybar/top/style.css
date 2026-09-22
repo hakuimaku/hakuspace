@@ -11,7 +11,7 @@
 }
 
 window#waybar {
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.7);
     color: @accent_color;
     transition: background-color 0.3s ease;
     border-radius: 0;

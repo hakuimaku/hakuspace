@@ -268,7 +268,7 @@ determine_deploy_mode() {
     done
     
     # Check a few scripts as well
-    for script in haku_theme.sh dockbar_manager.sh; do
+    for script in haku_theme.sh taskbar_manager.sh; do
         local dst="$DEST_BIN/$script"
         if [[ -e "$dst" ]]; then
             total_checked=$((total_checked + 1))
@@ -560,7 +560,7 @@ check_control_dir() {
         "wm/mango-custom.conf"
         "wm/niri-custom.kdl"
         "wm/hyprland-custom.lua"
-        "config/dockbar_pin_apps"
+        "config/taskbar_pin_apps"
         "config/hypridle.conf"
         "config/kitty.conf"
         "config/shell.fish"
@@ -614,7 +614,7 @@ check_state_dir() {
     fi
 
     local required_files=(
-        "dockbar-theme"
+        "taskbar-theme"
         "rofi-theme.rasi"
     )
     for file in "${required_files[@]}"; do

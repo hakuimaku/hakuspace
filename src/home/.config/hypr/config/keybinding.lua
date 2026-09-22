@@ -49,7 +49,7 @@ hl.bind(mainMod .. " + T",     hl.dsp.exec_cmd("$HOME/.local/bin/cava_manager.sh
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh"))
 hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh --fullscreen"))
 hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("$HOME/.local/bin/waybar_manager.sh --cycle"))
-hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("$HOME/.local/bin/dockbar_manager.sh --toggle"))
+hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("$HOME/.local/bin/taskbar_manager.sh --toggle"))
 hl.bind(mainMod .. " + CTRL + W", hl.dsp.exec_cmd("$HOME/.local/bin/waybar_manager.sh --toggle"))
 
 -- Move focus with mainMod + arrow keys

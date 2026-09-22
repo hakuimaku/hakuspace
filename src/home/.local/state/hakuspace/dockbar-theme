@@ -1,7 +1,0 @@
-{
-    "exclusive": false,
-
-    "wlr/taskbar": {
-        "icon-size": 40
-    }
-}

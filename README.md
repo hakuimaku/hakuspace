@@ -53,7 +53,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 * **Flexible Waybar Layouts:** Support 7 styles: `top`, `left`, `coredge`, `minimal`, `neon`, `island`, `legacy`.
 * **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
 * **Wallpaper Automation:** Wallpapers change automatically every 5 minutes.
-* **Dockbar:** Built-in, Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
+* **Taskbar:** Built-in, Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
 * **Desktop Icons**: Built-in, Items in folder `~/Desktop` will be shown on Desktop.
 
 > [!note]
@@ -242,7 +242,7 @@ See more in `~/hakucfg/wm/hyprland-custom.lua` or [here](src/home/hakucfg/wm/hyp
 | SUPER + C | Kill Focus Window |
 | SUPER + TAB | Open Menu |
 | SUPER + R | App Menu |
-| SUPER + W | Toggle Dockbar |
+| SUPER + W | Toggle Taskbar |
 | SUPER + P | Screenshot |
 | SUPER + Z | Toggle Floating |
 | SUPER + V | Open Clipboard History |
@@ -293,7 +293,7 @@ Want to understand how HakuSpace works under the hood? We've written comprehensi
 - [System Scripts](docs/core/sys.md)
 - [Utilities](docs/core/util.md)
 - [Haku Menu](docs/core/menu.md)
-- [Mini-Apps (Dockbar, Desktop Icons)](docs/core/app.md)
+- [Mini-Apps (Taskbar, Desktop Icons)](docs/core/app.md)
 
 ---
 

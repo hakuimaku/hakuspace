@@ -8,7 +8,7 @@
 # Targeted apps for graceful and force kill sequence
 EXIT_APP_LIST_DEFAULT=(
     "code" "code-url-handler" "zen" "zen-bin" "firefox" "chromium" "kitty" "slurp"
-    "waybar" "dockbar" "hypridle" "swaync" "sway-audio-idle-inhibit"
+    "waybar" "taskbar" "hypridle" "swaync" "sway-audio-idle-inhibit"
     "awww-daemon" "gammastep" "polkit-mate" "hyprsunset"
 )
 APP_LIST=("${EXIT_APP_LIST_DEFAULT[@]}" "${EXIT_APP_LIST_USER[@]}" )
