@@ -171,7 +171,7 @@ hl.window_rule({
 -- Taskbar style
 hl.layer_rule({
     name = "haku-taskbar",
-    match = { namespace = "dock.*" },
+    match = { namespace = "taskbar.*" },
 
     blur = false,
     animation = "slide bottom",
