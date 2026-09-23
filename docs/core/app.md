@@ -5,6 +5,7 @@ The `src/core/app/` directory houses custom mini-applications built specifically
 Currently, the following mini-apps are available:
 - [**Taskbar**](#the-taskbar-srccoreapptaskbar)
 - [**Desktop Icons**](#desktop-icons-srccoreappdesktop-icons)
+- [**Rounded Screen**](#rounded-screen-srccoreapprounded-screen)
 - [**Cava Underbar**](#cava-underbar-srccoreappcava-layer)
 
 ---
@@ -25,7 +26,7 @@ This is the master script that controls the Taskbar's lifecycle and settings. It
 
 ### `taskbar_geticon.sh` (The Icon Fetcher)
 The Taskbar needs to display the correct icons for your pinned applications.
-- **What it does:** It reads your personal list of pinned apps from `~/hakucfg/config/taskbar_pin_apps`. 
+- **What it does:** It reads your personal list of pinned apps from `~/hakucfg/config/taskbar-pin-apps`. 
 - **Icon Resolution:** Since Linux apps don't always have straightforward icon paths, this script hunts through your `/usr/share/icons/`, `~/.local/share/icons/`, and current GTK icon theme to find the highest resolution SVG or PNG that matches the app's desktop entry, ensuring your dock always looks crisp. 
 - **Caching & Theme Detection:** It intelligently caches the resolved icons and accurately detects your current GTK theme to speed up fetching times and provide better matching for dynamically changing themes.
 
@@ -54,6 +55,28 @@ Just like the Taskbar, the Desktop Icons app has its own manager script that lin
 You can customize almost everything about how your icons look and behave.
 - **Where:** Check `~/hakucfg/config/desktop-icons/desktop-icons.conf`.
 - **Options:** You can change the icon size, sorting method (by name, date, size), whether to show hidden files, or toggle the visibility of special system folders like `Home`, `Trash`, and `Computer`.
+
+---
+
+## Rounded Screen (`src/core/app/rounded-screen`)
+
+A sleek overlay that frames your entire monitor with perfectly rounded corners and a configurable border thickness, giving your display a modern, hardware-like bezel aesthetic. 
+
+### `rounded_screen.py` (The Overlay Engine)
+To bypass limitations in Wayland's layer-shell protocol (which doesn't let a single surface reserve exclusive space on all four edges without breaking other panels), this application uses a brilliant multi-window architecture:
+- **The Main Window:** Placed on the `OVERLAY` layer with an `exclusive_zone` of `-1`. It spans the entire physical screen, ignores all other panels (like Waybar), and draws the beautiful rounded corners and border.
+- **The 4 Invisible Dummy Edges:** Anchored to the top, bottom, left, and right, these invisible 4px windows sit on the `BOTTOM` layer with active exclusive zones. Because they are processed first by the compositor, they elegantly push other layer surfaces (like Waybar) inward. 
+- **The Result:** Waybar perfectly conforms to the inner edge of your new screen border, while the corners overlay everything seamlessly!
+
+### `rounded_screen_manager.sh` (The Controller)
+Manages the lifecycle of the Rounded Screen overlay.
+- **Toggling & Startup:** Controlled via `--toggle` and `--startup`. It hooks into the Haku Menu's Theme section and the Desktop Icons context menu.
+- **State Management:** Remembers if you had it turned on or off across reboots using `~/.local/state/hakuspace/rounded_screen_state`.
+
+### Configuration
+You can customize the appearance by editing `~/hakucfg/config/rounded-screen.conf`.
+- **`border_thickness`**: Thickness of the black frame (e.g., 4px).
+- **`border_radius`**: How curved the corners should be (e.g., 20px).
 
 ---
 

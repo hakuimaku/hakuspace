@@ -54,7 +54,7 @@ The control center for your status bar.
 
 ### `gen_shortcut.sh`
 A desktop shortcut generator.
-- **What it does:** Scans common system directories (like `/usr/share/applications` and your Flatpak/Snap folders) for `.desktop` files. You can use it to query available system apps (`-q`) or quickly copy an app's shortcut (`-a`) to your `~/Desktop` directory. Since HakuSpace has a built-in desktop icon renderer, this gives you functional app icons right on your wallpaper!
+- **What it does:** Scans common system directories (like `/usr/share/applications` and your Flatpak/Snap folders) for `.desktop` files. You can use it to query available system apps (`-q`), quickly copy an app's shortcut (`-a`) to your `~/Desktop` directory, or interactively select and add a shortcut using a Rofi menu (`-m`). Since HakuSpace has a built-in desktop icon renderer, this gives you functional app icons right on your wallpaper!
 
 
 ---
