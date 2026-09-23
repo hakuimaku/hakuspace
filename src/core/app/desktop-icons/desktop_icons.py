@@ -623,6 +623,10 @@ class DesktopIcon(Gtk.EventBox):
         self.add(vbox)
         
         name = gio_info.get_display_name()
+        raw_name = gio_info.get_name() or ""
+        if raw_name.startswith('.') or gio_info.get_is_hidden():
+            self.set_opacity(0.6)
+            
         gicon = gio_info.get_icon()
         self.is_desktop_file = name.endswith('.desktop')
         self.app_info = None
@@ -1592,6 +1596,19 @@ class DesktopLayout(Gtk.Fixed):
             subprocess.Popen([os.path.expanduser("~/.local/bin/random_wallpaper.sh")])
         rw_item.connect("activate", on_rw_toggle)
         space_menu.append(rw_item)
+
+        rs_on = False
+        try:
+            with open(os.path.expanduser("~/.local/state/hakuspace/rounded_screen_state"), "r") as f:
+                rs_on = (f.read().strip() == "1")
+        except:
+            pass
+        rs_item = Gtk.CheckMenuItem(label="Rounded Screen")
+        rs_item.set_active(rs_on)
+        def on_rs_toggle(w):
+            subprocess.Popen([os.path.expanduser("~/.local/bin/rounded_screen_manager.sh"), "--toggle"])
+        rs_item.connect("activate", on_rs_toggle)
+        space_menu.append(rs_item)
         
         space_menu.append(Gtk.SeparatorMenuItem())
         
@@ -1825,6 +1842,10 @@ class DesktopLayout(Gtk.Fixed):
         create_doc_item = Gtk.MenuItem(label="Create Document")
         create_doc_item.connect("activate", lambda w: self._prompt_create("Create Empty File", False))
         menu.append(create_doc_item)
+        
+        add_shortcut_item = Gtk.MenuItem(label="Add Shortcut")
+        add_shortcut_item.connect("activate", lambda w: subprocess.Popen([os.path.expanduser("~/.local/bin/gen_shortcut.sh"), "-m"]))
+        menu.append(add_shortcut_item)
         
         menu.append(Gtk.SeparatorMenuItem())
 
@@ -2338,6 +2359,7 @@ class DesktopManager:
                 
         def add_special(uri, name, icon_name, target_uri):
             info = Gio.FileInfo.new()
+            info.set_name(name)
             info.set_display_name(name)
             info.set_icon(Gio.ThemedIcon.new_from_names([icon_name]))
             info.set_file_type(Gio.FileType.SHORTCUT)
