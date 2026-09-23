@@ -13,7 +13,6 @@
 
 window#waybar {
     border-radius: 0;
-    border-top: 2px solid rgba(0, 0, 0, 0.3);
     background: linear-gradient(to right, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.4));
     color: @accent_color;
     transition: opacity 0.5s ease-in-out;

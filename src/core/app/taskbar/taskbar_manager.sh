@@ -7,10 +7,10 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
 
 STATE_DIR="$HOME/.local/state/hakuspace"
-MANUAL_STATE="$STATE_DIR/state/taskbar_manual_state"
+MANUAL_STATE="$STATE_DIR/taskbar_manual_state"
 
 TASKBAR_DIR="$HOME/.config/waybar/taskbar"
-TASKBAR_PIN_APPS="$HOME/hakucfg/config/taskbar_pin_apps"
+TASKBAR_PIN_APPS="$HOME/hakucfg/config/taskbar-pin-apps"
 STATE_FILE="$STATE_DIR/taskbar-theme"
 
 mkdir -p "$STATE_DIR"

@@ -560,7 +560,7 @@ check_control_dir() {
         "wm/mango-custom.conf"
         "wm/niri-custom.kdl"
         "wm/hyprland-custom.lua"
-        "config/taskbar_pin_apps"
+        "config/taskbar-pin-apps"
         "config/hypridle.conf"
         "config/kitty.conf"
         "config/shell.fish"
