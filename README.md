@@ -150,9 +150,17 @@ xhost +si:localuser:root
 Grants the local root user permission to connect to and launch graphical (GUI) applications (like `GParted`) within the current user's active X server or Xwayland session.
 
 
+## Dotfiles Management
+
+Haku Space provides built-in scripts to safely manage your dotfiles using a flexible deployment mechanism:
+- **Deployment Mode**: Files are automatically managed via **Symlink** (default, allowing instant updates when source files change) or **Copy** mode during installation.
+- **Customization**: All your personal tweaks should be done inside the `~/hakucfg` directory, keeping the core system clean and untouched.
+
+See more in: [Management & Deployment](docs/management.md)
+
 ### Update Haku Space
-Simply run `update.sh` script in hakuspace folder.
-``` bash
+Simply run the `update.sh` script in the hakuspace folder. This will safely update the core files while preserving your personal settings in `~/hakucfg`.
+```bash
 cd ~/hakuspace
 chmod +x update.sh
 ./update.sh
@@ -160,7 +168,7 @@ chmod +x update.sh
 
 ### Rollback Haku Space
 Restore files from a backup created by `install.sh` or `update.sh`.
-``` bash
+```bash
 cd ~/hakuspace
 chmod +x rollback.sh
 ./rollback.sh
@@ -175,6 +183,23 @@ If multiple backups are available, the newest one is selected by pressing Enter.
 - Delete the auto-generated files in `~/.local/state/hakuspace`.
 - If necessary, you can also remove the icons and themes inside `~/.icons` and `~/.themes`.
 - Review `pkg-core.txt`, `pkg-service.txt`, `pkg-optional.txt` and `pkg-WM.txt` (in `src/packages/`) to uninstall any unnecessary packages.
+
+---
+
+## Performance
+
+Haku Space is designed to balance aesthetic features and resource efficiency. Below is the RAM usage breakdown based on a system with **16GB RAM**:
+
+- **Fresh Arch Linux + Dotfiles (Base):** ~1.1 GB RAM
+- **Taskbar enabled:** +77 MB
+- **Desktop Icons enabled:** +100 MB
+- **Cava Underbar enabled:** +100 MB (High CPU usage)
+- **Rounded Screen enabled:** +70 MB
+
+**Total:** If you use all the built-in mini-apps simultaneously, it will consume at least **~1.45 GB RAM** upon startup.
+
+> [!note]
+> During your actual workflow, RAM consumption will naturally expand further depending on the applications you use and your specific needs.
 
 ---
 
@@ -325,6 +350,7 @@ systemctl --user disable swaync.service
 ## Contributing
 
 - This is a personal dotfiles configuration. Feel free to fork and adapt it to your needs!
+- Just make **Pull Requests** if you want to contribute to this project. I will review and merge them if they are useful for everyone.
 - Tiktok / See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372)
 - Discord: [haku-shell](https://discord.gg/Juuun8sXsN)
 
@@ -333,3 +359,8 @@ systemctl --user disable swaync.service
 ## Credits
 
 See **hakuspace-archive** for the assets used in this project: [hakuspace-archive](https://github.com/hakuimaku/hakuspace-archive)
+
+---
+
+## License
+MIT License
