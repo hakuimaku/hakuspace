@@ -1599,7 +1599,7 @@ class DesktopLayout(Gtk.Fixed):
 
         rs_on = False
         try:
-            with open(os.path.expanduser("~/.local/state/hakuspace/rounded_screen_state"), "r") as f:
+            with open(os.path.expanduser("~/.local/state/hakuspace/state/rounded_screen_state"), "r") as f:
                 rs_on = (f.read().strip() == "1")
         except:
             pass
