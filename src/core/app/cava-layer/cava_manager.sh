@@ -10,7 +10,7 @@ RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 PIDFILE="/tmp/cava-layer.pid"
 LOGFILE="/tmp/cava-layer.log"
 
-OVERLAY_STATE_FILE="$STATE_DIR/cava_overlay_state"
+TOP_STATE_FILE="$STATE_DIR/cava_top_state"
  
 log() { echo "[cava-layer-toggle] $*"; }
 err() { echo "[cava-layer-toggle] $*" >&2; }
@@ -26,7 +26,8 @@ Commands:
     toggle              Toggle the cava layer
     reload              Live-reload font/colors from the kitty config
                         (no restart, no interruption to cava itself)
-    -o, --overlay       Toggle the overlay mode (saves state and restarts)
+    -t, --top           Toggle the top mode (saves state and restarts)
+    -c, --color-switch  Toggle foreground color between black and white
 
 Options:
     -p, --config PATH       Forward configuration to cava_layer.py
@@ -88,13 +89,13 @@ start() {
  
     check_dependencies
  
-    local overlay_flag=""
-    if [[ "$(cat "$OVERLAY_STATE_FILE" 2>/dev/null || echo "0")" == "1" ]]; then
-        overlay_flag="--overlay"
+    local top_flag=""
+    if [[ "$(cat "$TOP_STATE_FILE" 2>/dev/null || echo "0")" == "1" ]]; then
+        top_flag="--top"
     fi
 
-    log "Starting: python3 $SCRIPT_PATH $overlay_flag $*"
-    nohup python3 "$SCRIPT_PATH" $overlay_flag "$@" >"$LOGFILE" 2>&1 &
+    log "Starting: python3 $SCRIPT_PATH $top_flag $*"
+    nohup python3 "$SCRIPT_PATH" $top_flag "$@" >"$LOGFILE" 2>&1 &
     local pid=$!
     disown "$pid" 2>/dev/null || true
     echo "$pid" > "$PIDFILE"
@@ -144,16 +145,47 @@ toggle() {
     fi
 }
 
-toggle_overlay() {
+toggle_top() {
     mkdir -p "$STATE_DIR"
-    local current_state=$(cat "$OVERLAY_STATE_FILE" 2>/dev/null || echo "0")
+    local current_state=$(cat "$TOP_STATE_FILE" 2>/dev/null || echo "0")
     if [[ "$current_state" == "1" ]]; then
-        echo "0" > "$OVERLAY_STATE_FILE"
-        log "Overlay mode disabled."
+        echo "0" > "$TOP_STATE_FILE"
+        log "Top mode disabled."
     else
-        echo "1" > "$OVERLAY_STATE_FILE"
-        log "Overlay mode enabled."
+        echo "1" > "$TOP_STATE_FILE"
+        log "Top mode enabled."
     fi
+    if is_running; then
+        stop
+        start
+    fi
+}
+
+toggle_color() {
+    mkdir -p "$STATE_DIR"
+    local COLOR_STATE_FILE="$STATE_DIR/cava_color_state"
+    local CAVA_CONFIG="$HOME/hakucfg/config/cava-layer"
+
+    if [[ ! -f "$CAVA_CONFIG" ]]; then
+        err "Cava config file not found at $CAVA_CONFIG"
+        return 1
+    fi
+
+    if grep -qE '^foreground\s*=\s*white' "$CAVA_CONFIG"; then
+        sed -i -E 's/^foreground\s*=\s*white/foreground = black/' "$CAVA_CONFIG"
+        echo "0" > "$COLOR_STATE_FILE"
+        log "Cava color changed to black."
+    elif grep -qE '^foreground\s*=\s*black' "$CAVA_CONFIG"; then
+        sed -i -E 's/^foreground\s*=\s*black/foreground = white/' "$CAVA_CONFIG"
+        echo "1" > "$COLOR_STATE_FILE"
+        log "Cava color changed to white."
+    else
+        # Fallback if neither is active (e.g., commented out)
+        sed -i -E 's/^#*\s*foreground\s*=\s*black/foreground = white/' "$CAVA_CONFIG"
+        echo "1" > "$COLOR_STATE_FILE"
+        log "Cava color forced to white."
+    fi
+
     if is_running; then
         stop
         start
@@ -191,8 +223,11 @@ case "${1:-}" in
     reload)
         reload
         ;;
-    -o|--overlay)
-        toggle_overlay
+    -t|--top)
+        toggle_top
+        ;;
+    -c|--color-switch)
+        toggle_color
         ;;
     *)
         # No explicit subcommand: treat everything (including -p/-H/-F flags,

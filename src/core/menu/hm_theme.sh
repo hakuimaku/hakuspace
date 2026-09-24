@@ -15,9 +15,9 @@ if [[ $# -eq 0 ]]; then
     CAVA_TEXT="OFF"
     [[ "$CAVA_STATUS" == "1" ]] && CAVA_TEXT="ON"
 
-    CAVA_OVERLAY_STATUS=$(cat "$STATE_DIR/cava_overlay_state" 2>/dev/null || echo "0")
-    IS_OVERLAY=""
-    [[ "$CAVA_OVERLAY_STATUS" == "1" ]] && IS_OVERLAY="[Overlay]" || IS_OVERLAY=""
+    CAVA_TOP_STATUS=$(cat "$STATE_DIR/cava_top_state" 2>/dev/null || echo "0")
+    IS_TOP=""
+    [[ "$CAVA_TOP_STATUS" == "1" ]] && IS_TOP="[Top]" || IS_TOP=""
 
     # Taskbar
     TASKBAR_STATUS=$(cat "$STATE_DIR/taskbar_manual_state" 2>/dev/null || echo "0")
@@ -34,12 +34,18 @@ if [[ $# -eq 0 ]]; then
     ROUNDED_SCREEN_TEXT="OFF"
     [[ "$ROUNDED_SCREEN_STATUS" == "1" ]] && ROUNDED_SCREEN_TEXT="ON"
 
+    # Edge Trigger
+    EDGE_TRIGGER_STATUS=$(cat "$STATE_DIR/edge_trigger_state" 2>/dev/null || echo "0")
+    EDGE_TRIGGER_TEXT="OFF"
+    [[ "$EDGE_TRIGGER_STATUS" == "1" ]] && EDGE_TRIGGER_TEXT="ON"
+
     cat <<EOF
   Change Theme
   Desktop ($DESKTOP_ICONS_TEXT)
 󱂩  Taskbar ($TASKBAR_TEXT)
   Rounded Screen ($ROUNDED_SCREEN_TEXT)
-󰝚  Cava Underbar ($CAVA_TEXT) $IS_OVERLAY
+  Edge Trigger ($EDGE_TRIGGER_TEXT)
+󰝚  Cava Underbar ($CAVA_TEXT) $IS_TOP
   Auto Random Wallpaper ($WALL_TEXT)
 󰏜  Change Wallpaper
 󱜏  Change Lively Wallpaper
@@ -54,6 +60,7 @@ case "$chosen" in
     *"Desktop"*) spawn $HOME/.local/bin/desktop_icons_manager.sh --toggle ;;
     *"Taskbar"*) spawn $HOME/.local/bin/taskbar_manager.sh --toggle ;;
     *"Rounded Screen"*) spawn $HOME/.local/bin/rounded_screen_manager.sh --toggle ;;
+    *"Edge Trigger"*) spawn $HOME/.local/bin/edge_trigger_manager.sh --toggle ;;
     *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh ;;
     *"Auto Random Wallpaper"*) spawn $HOME/.local/bin/random_wallpaper.sh --toggle ;;
     *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
