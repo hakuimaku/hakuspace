@@ -6,6 +6,7 @@ Currently, the following mini-apps are available:
 - [**Taskbar**](#the-taskbar-srccoreapptaskbar)
 - [**Desktop Icons**](#desktop-icons-srccoreappdesktop-icons)
 - [**Rounded Screen**](#rounded-screen-srccoreapprounded-screen)
+- [**Edge Trigger**](#edge-trigger-srccoreappedge-trigger)
 - [**Cava Underbar**](#cava-underbar-srccoreappcava-layer)
 
 ---
@@ -77,6 +78,29 @@ Manages the lifecycle of the Rounded Screen overlay.
 You can customize the appearance by editing `~/hakucfg/config/rounded-screen.conf`.
 - **`border_thickness`**: Thickness of the black frame (e.g., 4px).
 - **`border_radius`**: How curved the corners should be (e.g., 20px).
+
+---
+
+## Edge Trigger (`src/core/app/edge-trigger`)
+
+An invisible overlay that sits at the edges of your screen, allowing you to trigger specific commands simply by hovering your mouse against the screen borders.
+
+### `edge_trigger.py` (The Sensor)
+Using `GtkLayerShell` on the `OVERLAY` layer with a negative exclusive zone, this Python script creates small, invisible hover zones perfectly centered on your screen edges. It intelligently sits on top of all other panels (like Waybar) so it's never blocked.
+- **Dwell Time:** Prevents accidental triggers by requiring your mouse to rest in the zone for a configurable amount of time (`dwell_ms`) before activating.
+- **Cooldown:** Implements a timeout (`cooldown_ms`) after a successful trigger to prevent rapid, unintended repeated executions.
+
+### `edge_trigger_manager.sh` (The Controller)
+Manages the lifecycle of the Edge Trigger overlay.
+- **Toggling & Startup:** Controlled via `--toggle` and `--startup`. Integrated directly into the Haku Menu's Theme section.
+- **State Management:** Remembers if you had it turned on or off across reboots using `~/.local/state/hakuspace/edge_trigger_state`.
+
+### Configuration
+You can customize its behavior by editing `~/hakucfg/config/edge-trigger.conf`.
+- **`dwell_ms`**: Time in milliseconds the pointer must stay on the edge to trigger (default: 200).
+- **`cooldown_ms`**: Minimum time in milliseconds between consecutive triggers (default: 800).
+- **`edge_length_percent`**: The length of the trigger zone as a percentage of your screen width/height (default: 20).
+- You can enable/disable individual edges (Top, Bottom, Left, Right) and define the exact shell command each edge executes.
 
 ---
 

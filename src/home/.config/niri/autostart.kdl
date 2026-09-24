@@ -23,4 +23,5 @@ spawn-at-startup "sh" "-c" "$HOME/.local/bin/waybar_manager.sh" // Run waybar
 spawn-at-startup "sh" "-c" "sleep 1 && $HOME/.local/bin/taskbar_manager.sh --startup" // Run taskbar if state is true
 spawn-at-startup "sh" "-c" "$HOME/.local/bin/desktop_icons_manager.sh --startup" // Run desktop icons if state is true
 spawn-at-startup "sh" "-c" "$HOME/.local/bin/rounded_screen_manager.sh --startup" // Run rounded screen if state is true
+spawn-at-startup "sh" "-c" "$HOME/.local/bin/edge_trigger_manager.sh --startup" // Run edge trigger if state is true
 spawn-at-startup "sh" "-c" "$HOME/.local/bin/welcome.sh"
