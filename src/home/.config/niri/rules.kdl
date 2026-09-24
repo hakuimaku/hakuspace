@@ -25,6 +25,13 @@ window-rule {
     opacity 0.9
 }
 
+// Opacity for specific applications
+window-rule {
+    match app-id=r#"thunar"#
+    match app-id=r#"kitty"#
+    opacity 0.85
+}
+
 // Background effect for all windows
 window-rule {
     match app-id=r#".*"#
