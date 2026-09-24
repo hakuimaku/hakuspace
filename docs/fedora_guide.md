@@ -96,14 +96,14 @@ sudo dnf install xdg-desktop-portal-wlr
 
 ### C. Install Haku Space **Core** packages:
 
-- **Install the following packages for Haku Space** (`scottames/awww`, `solopasha/hyprland`, `atim/starship`):
+- **Install the following packages for Haku Space** (`scottames/awww`, `lionheartp/Hyprland`, `atim/starship`):
 ```bash
 sudo dnf install waybar rofi swaync kitty fastfetch fish direnv zoxide eza
 
 sudo dnf copr enable scottames/awww
 sudo dnf install awww
 
-sudo dnf copr enable solopasha/hyprland
+sudo dnf copr enable lionheartp/Hyprland
 sudo dnf install mpvpaper hypridle hyprlock
 sudo dnf install nwg-look
 
