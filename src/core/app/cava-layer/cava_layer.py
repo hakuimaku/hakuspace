@@ -178,11 +178,12 @@ class CavaLayerApp:
     script only positions and hosts it.
     """
 
-    def __init__(self, config_path, window_height=80, font_size=5, app_name="cava-layer"):
+    def __init__(self, config_path, window_height=80, font_size=5, app_name="cava-layer", overlay=False):
         self.config_path = os.path.expanduser(config_path)
         self.window_height = window_height
         self.font_size = font_size
         self.app_name = app_name
+        self.overlay = overlay
         self.cava_pid = None
 
         # Bar colors always track ~/.config/kitty/kitty.conf (following its
@@ -221,7 +222,10 @@ class CavaLayerApp:
 
         GtkLayerShell.init_for_window(self.window)
         GtkLayerShell.set_namespace(self.window, self.app_name)
-        GtkLayerShell.set_layer(self.window, GtkLayerShell.Layer.BOTTOM)
+        if self.overlay:
+            GtkLayerShell.set_layer(self.window, GtkLayerShell.Layer.OVERLAY)
+        else:
+            GtkLayerShell.set_layer(self.window, GtkLayerShell.Layer.BOTTOM)
         GtkLayerShell.set_anchor(self.window, GtkLayerShell.Edge.TOP, True)
         GtkLayerShell.set_anchor(self.window, GtkLayerShell.Edge.LEFT, True)
         GtkLayerShell.set_anchor(self.window, GtkLayerShell.Edge.RIGHT, True)
@@ -381,6 +385,11 @@ def parse_args():
         default='cava-layer',
         help="Layer shell namespace / WM class name (default: cava-layer)."
     )
+    parser.add_argument(
+        '-o', '--overlay',
+        action='store_true',
+        help="Run the bar in the OVERLAY layer (always on top)."
+    )
     return parser.parse_args()
 
 
@@ -391,6 +400,7 @@ def main():
         window_height=args.window_height,
         font_size=args.font_size,
         app_name=args.app_name,
+        overlay=args.overlay,
     )
 
     def signal_handler(sig, frame):

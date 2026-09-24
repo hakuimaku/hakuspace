@@ -5,23 +5,31 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
 
 if [[ $# -eq 0 ]]; then
+    # Random Wallpaper
     WALL_STATUS=$(cat "/tmp/random_wallpaper_status" 2>/dev/null || echo "0")
     WALL_TEXT="OFF"
     [[ "$WALL_STATUS" == "1" ]] && WALL_TEXT="ON"
 
-    # Check if Cava is running by checking the PID file
+    # Cava Layer
     CAVA_STATUS=$([[ -f /tmp/cava-layer.pid ]] && echo "1" || echo "0")
     CAVA_TEXT="OFF"
     [[ "$CAVA_STATUS" == "1" ]] && CAVA_TEXT="ON"
 
+    CAVA_OVERLAY_STATUS=$(cat "$STATE_DIR/cava_overlay_state" 2>/dev/null || echo "0")
+    IS_OVERLAY=""
+    [[ "$CAVA_OVERLAY_STATUS" == "1" ]] && IS_OVERLAY="[Overlay]" || IS_OVERLAY=""
+
+    # Taskbar
     TASKBAR_STATUS=$(cat "$STATE_DIR/taskbar_manual_state" 2>/dev/null || echo "0")
     TASKBAR_TEXT="OFF"
     [[ "$TASKBAR_STATUS" == "1" ]] && TASKBAR_TEXT="ON"
 
+    # Desktop Icons
     DESKTOP_ICONS_STATUS=$(cat "$STATE_DIR/desktop_icons_state" 2>/dev/null || echo "0")
     DESKTOP_ICONS_TEXT="OFF"
     [[ "$DESKTOP_ICONS_STATUS" == "1" ]] && DESKTOP_ICONS_TEXT="ON"
 
+    # Rounded Screen
     ROUNDED_SCREEN_STATUS=$(cat "$STATE_DIR/rounded_screen_state" 2>/dev/null || echo "0")
     ROUNDED_SCREEN_TEXT="OFF"
     [[ "$ROUNDED_SCREEN_STATUS" == "1" ]] && ROUNDED_SCREEN_TEXT="ON"
@@ -31,7 +39,7 @@ if [[ $# -eq 0 ]]; then
   Desktop ($DESKTOP_ICONS_TEXT)
 󱂩  Taskbar ($TASKBAR_TEXT)
   Rounded Screen ($ROUNDED_SCREEN_TEXT)
-󰝚  Cava Underbar ($CAVA_TEXT)
+󰝚  Cava Underbar ($CAVA_TEXT) $IS_OVERLAY
   Auto Random Wallpaper ($WALL_TEXT)
 󰏜  Change Wallpaper
 󱜏  Change Lively Wallpaper

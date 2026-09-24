@@ -14,9 +14,14 @@ if [[ $# -eq 0 ]]; then
     DOCK_ICON_SIZE_TEXT="$DOCK_ICON_SIZE"
     DOCK_ICON_SIZE_TEXT+="px"
 
+    CAVA_OVERLAY_STATUS=$(cat "$STATE_DIR/cava_overlay_state" 2>/dev/null || echo "0")
+    IS_OVERLAY=""
+    [[ "$CAVA_OVERLAY_STATUS" == "1" ]] && IS_OVERLAY="[Overlay ON]" || IS_OVERLAY="[Overlay OFF]"
+
     cat <<INNEREOF
 󱂩  Taskbar App Name ($DOCK_APP_NAME)
 󱂩  Taskbar Icon Size Change ($DOCK_ICON_SIZE_TEXT)
+󰝚  Toggle Cava Overlay $IS_OVERLAY
 󱁤  Settings Folder
 󱁤  HakuMenu General Tab
 󰖩  Wifi
@@ -32,6 +37,7 @@ chosen="$*"
 case "$chosen" in
     *"Taskbar App Name"*) spawn $HOME/.local/bin/taskbar_manager.sh --app-name ;;
     *"Taskbar Icon Size Change"*) spawn $HOME/.local/bin/taskbar_manager.sh --icon-size ;;
+    *"Toggle Cava Overlay"*) spawn $HOME/.local/bin/cava_manager.sh --overlay ;;
     *"Settings Folder"*) spawn xdg-open "$HOME/hakucfg" ;;
     *"HakuMenu General Tab"*) spawn code $HOME/hakucfg/general-menu.sh ;;
     *"Wifi"*) spawn nm-connection-editor ;;

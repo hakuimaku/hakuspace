@@ -82,17 +82,18 @@ You can customize the appearance by editing `~/hakucfg/config/rounded-screen.con
 
 ## Cava Underbar (`src/core/app/cava-layer`)
 
-If you like having an audio visualizer on your desktop, you've probably used `cava`. Normally, it runs inside a regular terminal window. HakuSpace takes it to the next level by embedding `cava` directly into the background of your screen, sitting just above your wallpaper but below your windows, acting as a dynamic "Underbar".
+If you like having an audio visualizer on your desktop, you've probably used `cava`. Normally, it runs inside a regular terminal window. HakuSpace takes it to the next level by embedding `cava` directly into the background of your screen, sitting just above your wallpaper but below your windows, acting as a dynamic "Underbar". It also features an "Overlay Mode" to make the visualizer sit above all other windows!
 
 ### `cava_layer.py` (The VTE Wrapper)
 This Python script uses `GtkLayerShell` and `VTE` (Virtual Terminal Emulator).
-- **Background Embedding:** It creates a borderless, completely transparent, and click-through terminal window, anchoring it to the bottom of your screen using the Wayland layer-shell protocol.
+- **Layer Shell Embedding:** It creates a borderless, completely transparent, and click-through terminal window. Depending on the settings, it renders either in the `BOTTOM` layer (under windows) or the `OVERLAY` layer (always on top).
 - **Theme Syncing:** It dynamically parses your `~/.config/kitty/kitty.conf` to extract your current foreground, background, and accent colors, ensuring the visualizer perfectly matches your overall system theme.
 - **Running Cava:** It quietly spawns the actual `cava` C-binary inside this invisible terminal window to process your audio streams.
 
 ### `cava_manager.sh` (The Process Controller)
 Because the Python script acts as a background daemon, it needs a manager to handle its lifecycle.
 - **Toggling:** You can use `cava_manager.sh toggle` (which is mapped in the Haku Menu's Theme tab) to spawn or gracefully kill the visualizer process and its PID file.
+- **Overlay Mode:** You can use `cava_manager.sh --overlay` to toggle the always-on-top overlay mode. The manager gracefully saves this state to `~/.local/state/haku/cava_overlay_state` and makes it accessible in the Haku Menu. If Cava is already running, it instantly restarts it in the new layer. If it is off, it smartly updates the state without turning Cava on unnecessarily.
 - **Live Reloading:** When you change your system's accent color (via `gen_style.sh`), you don't want the audio visualizer to stutter, drop frames, or restart. Calling `cava_manager.sh reload` sends a specific UNIX signal (`SIGUSR1`) to the Python daemon. The script intercepts this signal, re-reads the Kitty configuration, and instantly updates the visualizer's colors on the fly without ever interrupting the live audio stream!
 
 
