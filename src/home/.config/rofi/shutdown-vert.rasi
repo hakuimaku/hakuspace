@@ -30,7 +30,7 @@ window {
     height: 400px;
     background-color: @background;
     padding: 16px;
-    border-radius: 20px;
+    border-radius: 0;
 }
 
 mainbox {

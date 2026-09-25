@@ -31,7 +31,7 @@ window {
     height: 380px;
     background-color: @background;
     padding: 20px;
-    border-radius: 20px;
+    border-radius: 0;
 }
 
 mainbox {
@@ -92,7 +92,7 @@ element {
 element-icon {
     size: 230px;
     vertical-align: 0.5;
-    horizontal-align: 0.7;
+    horizontal-align: 0.5;
 }
 
 element-text {
