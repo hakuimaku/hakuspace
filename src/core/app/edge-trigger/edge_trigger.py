@@ -23,10 +23,10 @@ CONFIG = {
     'edge_bottom_enable': True,
     'edge_left_enable': False,
     'edge_right_enable': True,
-    'edge_top_cmd': 'wallpaper_select.sh -p 2',
-    'edge_bottom_cmd': 'hakumenu.sh -p 6',
+    'edge_top_cmd': 'wallpaper_select.sh -e -location 2 -theme-str "window { border-radius: 0 0 20px 20px; }"',
+    'edge_bottom_cmd': 'hakumenu.sh -e -location 6 -theme-str "window { border-radius: 20px 20px 0 0; }"',
     'edge_left_cmd': '',
-    'edge_right_cmd': 'shutdown.sh -p 4 -v',
+    'edge_right_cmd': 'shutdown.sh -v -e -location 4 -theme-str "window { border-radius: 20px 0 0 20px; }"',
     'edge_size': 2,
     'edge_length_percent': 20
 }
