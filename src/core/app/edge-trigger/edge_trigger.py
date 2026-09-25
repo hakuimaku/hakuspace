@@ -4,7 +4,6 @@
 import os
 import sys
 import subprocess
-import configparser
 import gi
 
 gi.require_version('Gtk', '3.0')
@@ -16,10 +15,7 @@ except ValueError:
 
 from gi.repository import Gtk, Gdk, GtkLayerShell, GLib
 
-CONFIG_DIR = os.path.expanduser("~/hakucfg/config")
-CONF_FILE = os.path.join(CONFIG_DIR, "edge-trigger.conf")
-
-# Default Config
+# Configuration Variables (Edit here)
 CONFIG = {
     'dwell_ms': 200,
     'cooldown_ms': 800,
@@ -27,81 +23,13 @@ CONFIG = {
     'edge_bottom_enable': True,
     'edge_left_enable': False,
     'edge_right_enable': True,
-    'edge_top_cmd': 'wallpaper_select.sh',
-    'edge_bottom_cmd': 'hakumenu.sh',
+    'edge_top_cmd': 'wallpaper_select.sh -p 2',
+    'edge_bottom_cmd': 'hakumenu.sh -p 6',
     'edge_left_cmd': '',
-    'edge_right_cmd': 'shutdown.sh',
+    'edge_right_cmd': 'shutdown.sh -p 4 -v',
     'edge_size': 2,
     'edge_length_percent': 20
 }
-
-def load_config():
-    os.makedirs(CONFIG_DIR, exist_ok=True)
-    config = configparser.ConfigParser()
-    
-    DEFAULT_SETTINGS_BLOCK = f"""[Settings]
-# Time in milliseconds the pointer must stay on the edge to trigger
-dwell_ms = {CONFIG['dwell_ms']}
-
-# Minimum time in milliseconds between consecutive triggers
-cooldown_ms = {CONFIG['cooldown_ms']}
-
-# Edge thickness in pixels
-edge_size = {CONFIG['edge_size']}
-
-# Edge length as a percentage of the screen width/height (1-100)
-edge_length_percent = {CONFIG['edge_length_percent']}
-
-[Top]
-enable = {str(CONFIG['edge_top_enable']).lower()}
-command = {CONFIG['edge_top_cmd']}
-
-[Bottom]
-enable = {str(CONFIG['edge_bottom_enable']).lower()}
-command = {CONFIG['edge_bottom_cmd']}
-
-[Left]
-enable = {str(CONFIG['edge_left_enable']).lower()}
-command = {CONFIG['edge_left_cmd']}
-
-[Right]
-enable = {str(CONFIG['edge_right_enable']).lower()}
-command = {CONFIG['edge_right_cmd']}
-"""
-
-    if not os.path.exists(CONF_FILE):
-        try:
-            with open(CONF_FILE, 'w') as configfile:
-                configfile.write(DEFAULT_SETTINGS_BLOCK)
-        except OSError as e:
-            print(f"Failed to create config file {CONF_FILE}: {e}")
-    else:
-        try:
-            config.read(CONF_FILE)
-            if 'Settings' in config:
-                CONFIG['dwell_ms'] = config['Settings'].getint('dwell_ms', CONFIG['dwell_ms'])
-                CONFIG['cooldown_ms'] = config['Settings'].getint('cooldown_ms', CONFIG['cooldown_ms'])
-                CONFIG['edge_size'] = config['Settings'].getint('edge_size', CONFIG['edge_size'])
-                CONFIG['edge_length_percent'] = config['Settings'].getint('edge_length_percent', CONFIG['edge_length_percent'])
-            
-            if 'Top' in config:
-                CONFIG['edge_top_enable'] = config['Top'].getboolean('enable', CONFIG['edge_top_enable'])
-                CONFIG['edge_top_cmd'] = config['Top'].get('command', CONFIG['edge_top_cmd'])
-                
-            if 'Bottom' in config:
-                CONFIG['edge_bottom_enable'] = config['Bottom'].getboolean('enable', CONFIG['edge_bottom_enable'])
-                CONFIG['edge_bottom_cmd'] = config['Bottom'].get('command', CONFIG['edge_bottom_cmd'])
-                
-            if 'Left' in config:
-                CONFIG['edge_left_enable'] = config['Left'].getboolean('enable', CONFIG['edge_left_enable'])
-                CONFIG['edge_left_cmd'] = config['Left'].get('command', CONFIG['edge_left_cmd'])
-                
-            if 'Right' in config:
-                CONFIG['edge_right_enable'] = config['Right'].getboolean('enable', CONFIG['edge_right_enable'])
-                CONFIG['edge_right_cmd'] = config['Right'].get('command', CONFIG['edge_right_cmd'])
-                
-        except Exception as e:
-            print(f"Failed to parse {CONF_FILE}: {e}")
 
 
 last_trigger_times = {
@@ -131,7 +59,15 @@ def execute_command(cmd, edge):
     
     if cmd:
         print(f"Executing: {cmd}")
-        subprocess.Popen(cmd, shell=True)
+        import shlex
+        cmd_parts = shlex.split(cmd)
+        if cmd_parts:
+            # If it's a local script without a full path, prefix with ~/.local/bin/
+            if not cmd_parts[0].startswith('/') and not cmd_parts[0].startswith('~'):
+                cmd_parts[0] = os.path.join(os.path.expanduser("~/.local/bin"), cmd_parts[0])
+            else:
+                cmd_parts[0] = os.path.expanduser(cmd_parts[0])
+            subprocess.Popen(cmd_parts)
         
     return False
 
@@ -218,8 +154,6 @@ def create_edge(edge, cmd):
 def main():
     GLib.set_prgname("edge-trigger")
     GLib.set_application_name("edge-trigger")
-    
-    load_config()
     
     windows = []
     

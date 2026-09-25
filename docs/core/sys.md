@@ -17,6 +17,7 @@ Have you ever logged out and had your system hang, or found zombie processes sti
 Your elegant replacement for typing terminal commands to reboot.
 - **What it does:** Displays a clean, icon-based Rofi menu tailored for system power management (`shutdown.rasi`).
 - **Options:** It allows you to select between Suspend (Sleep), Reboot, Poweroff, Hibernate, Lock Screen, or Log Out. Clicking any of these triggers the appropriate `systemctl` or local script command.
+- **Arguments:** Use `-p LOCATION` (or `--position LOCATION`) to position the Rofi window, and `-v` (or `--vertical`) to use the vertical theme. These options can be combined in any order.
 
 ### `dpms_handler.sh` (Monitor Power Control)
 Managing monitor power states varies wildly between different Window Managers. This script unifies them.

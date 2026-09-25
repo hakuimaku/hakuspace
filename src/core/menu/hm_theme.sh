@@ -24,6 +24,11 @@ if [[ $# -eq 0 ]]; then
     TASKBAR_TEXT="OFF"
     [[ "$TASKBAR_STATUS" == "1" ]] && TASKBAR_TEXT="ON"
 
+    # Waybar
+    WAYBAR_STATUS=$(cat "$STATE_DIR/waybar_manual_state" 2>/dev/null || echo "0")
+    WAYBAR_TEXT="OFF"
+    [[ "$WAYBAR_STATUS" == "1" ]] && WAYBAR_TEXT="ON"
+
     # Desktop Icons
     DESKTOP_ICONS_STATUS=$(cat "$STATE_DIR/desktop_icons_state" 2>/dev/null || echo "0")
     DESKTOP_ICONS_TEXT="OFF"
@@ -42,7 +47,8 @@ if [[ $# -eq 0 ]]; then
     cat <<EOF
   Change Theme
   Desktop ($DESKTOP_ICONS_TEXT)
-󱂩  Taskbar ($TASKBAR_TEXT)
+󰅹  Waybar ($WAYBAR_TEXT)
+󰐃  Taskbar ($TASKBAR_TEXT)
   Rounded Screen ($ROUNDED_SCREEN_TEXT)
   Edge Trigger ($EDGE_TRIGGER_TEXT)
 󰝚  Cava Underbar ($CAVA_TEXT) $IS_TOP
@@ -58,6 +64,7 @@ chosen="$*"
 case "$chosen" in
     *"Change Theme"*) spawn $HOME/.local/bin/change_theme.sh ;;
     *"Desktop"*) spawn $HOME/.local/bin/desktop_icons_manager.sh --toggle ;;
+    *"Waybar"*) spawn $HOME/.local/bin/waybar_manager.sh --toggle ;;
     *"Taskbar"*) spawn $HOME/.local/bin/taskbar_manager.sh --toggle ;;
     *"Rounded Screen"*) spawn $HOME/.local/bin/rounded_screen_manager.sh --toggle ;;
     *"Edge Trigger"*) spawn $HOME/.local/bin/edge_trigger_manager.sh --toggle ;;
