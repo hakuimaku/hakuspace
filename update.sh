@@ -169,8 +169,6 @@ if ask_yes_no "===> Do you want to update hakuspace configs now?"; then
                 if [[ ! -d "$HOME/.themes/hakulab" ]]; then
                     echo ">>> Deploying Hakulab theme for Labwc..."
                     copy_dir_content "$HOME_SRC_DIR/.themes/hakulab" "$HOME/.themes/hakulab"
-                else
-                    log_skip "Hakulab theme already exists in ~/.themes/hakulab. Skipping theme deployment."
                 fi
                 ;;
             *)
@@ -209,8 +207,9 @@ else
 fi
 
 # ============================================================================
-# BLOCK 4: NIXOS CONFIGURATION UPDATE & REBUILD
+# BLOCK 4: FINALIZE UPDATE AND RELOAD
 # ============================================================================
+step_title "4 - FINALIZE UPDATE AND RELOAD"
 if command -v nixos-rebuild >/dev/null 2>&1; then
     step_title "4 - NIXOS SYSTEM REBUILD"
     
