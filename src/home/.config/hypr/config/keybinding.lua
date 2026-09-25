@@ -44,7 +44,7 @@ hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("$HOME/.local/bin/clipboard_m
 hl.bind(mainMod .. " + F11",   hl.dsp.exec_cmd("$HOME/.local/bin/record.sh"))
 hl.bind(mainMod .. " + TAB",   hl.dsp.exec_cmd("$HOME/.local/bin/hakumenu.sh"))
 hl.bind(mainMod .. " + Y",     hl.dsp.exec_cmd("$HOME/.local/bin/wallpaper_select.sh"))
-hl.bind(mainMod .. " + SHIFT + Y", hl.dsp.exec_cmd("$HOME/.local/bin/wallpaper_video_select.sh"))
+
 hl.bind(mainMod .. " + T",     hl.dsp.exec_cmd("$HOME/.local/bin/cava_manager.sh"))
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh"))
 hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh --fullscreen"))

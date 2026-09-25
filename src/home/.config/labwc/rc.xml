@@ -314,9 +314,7 @@
         <keybind key="W-y">
         <action name="Execute" command="~/.local/bin/wallpaper_select.sh" />
         </keybind>
-        <keybind key="W-S-y">
-        <action name="Execute" command="~/.local/bin/wallpaper_video_select.sh" />
-        </keybind>
+
         <keybind key="W-f11">
         <action name="Execute" command="~/.local/bin/record.sh" />
         </keybind>
