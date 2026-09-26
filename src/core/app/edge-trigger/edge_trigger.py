@@ -28,7 +28,7 @@ CONFIG = {
     'edge_top_cmd': 'wallpaper_select.sh -e -location 2 -theme-str "window { border-radius: 0 0 20px 20px; }"',
     'edge_bottom_cmd': 'hakumenu.sh -e -location 6 -theme-str "window { border-radius: 20px 20px 0 0; }"',
     'edge_left_cmd': '',
-    'edge_right_cmd': 'shutdown.sh -v -e -location 4 -theme-str "window { border-radius: 20px 0 0 20px; }"',
+    'edge_right_cmd': 'shutdown.sh -v -e -location 3 -theme-str "window { border-radius: 0 0 0 20px; }"',
     'edge_size': 2,
     'edge_length_percent': 20
 }
@@ -36,7 +36,7 @@ CONFIG = {
 SAFE_ZONES = {
     GtkLayerShell.Edge.TOP: (0.0, 0.0, 1.0, 0.75),
     GtkLayerShell.Edge.BOTTOM: (0.0, 0.25, 1.0, 0.75),
-    GtkLayerShell.Edge.RIGHT: (0.75, 0.0, 0.25, 1.0),
+    GtkLayerShell.Edge.RIGHT: (0.8, 0.0, 0.2, 1.0),
     GtkLayerShell.Edge.LEFT: (0.0, 0.0, 0.25, 1.0),
 }
 
@@ -297,7 +297,14 @@ def create_edge(edge, cmd):
     
     GtkLayerShell.set_anchor(win, edge, True)
     
+    if edge == GtkLayerShell.Edge.RIGHT:
+        GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.TOP, True)
+    
     screen_w, screen_h = get_screen_geometry()
+    
+    if edge == GtkLayerShell.Edge.RIGHT:
+        margin_px = int(screen_h * 0.1)
+        GtkLayerShell.set_margin(win, GtkLayerShell.Edge.TOP, margin_px)
         
     if edge in (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM):
         # Center horizontally by NOT anchoring left/right
