@@ -30,7 +30,7 @@ This is your control panel for aesthetics and desktop widgets.
 ### `hm_setting.sh` (The Setting Tab)
 This tab acts as a bridge to both your system hardware settings and HakuSpace's internal configurations.
 - **What it does:** It gives you quick access to essential GUI tools like `nm-connection-editor` (Wifi), `blueman-manager` (Bluetooth), `gparted` (Disk Manager), `ncdu` (Storage Manager), and `pavucontrol` (Audio Control).
-- **HakuSpace Configs:** It also provides toggles specifically for the Taskbar (Auto-hide, Exclusive mode, Icon Size), and offers direct shortcuts to open your `~/hakucfg` folder or edit your custom `general-menu.sh` script in VS Code. Like the Theme tab, it reads local configuration variables to dynamically display the current states of these settings.
+- **HakuSpace Configs:** It also provides toggles specifically for the Taskbar (App Name, Icon Size), Cava Modes (Color Switch, Dynamic Mode), Rounded Screen Dynamic Mode, and the Opaque Theme Mode. It offers direct shortcuts to open your `~/hakucfg` folder or edit your custom `general-menu.sh` script in VS Code. Like the Theme tab, it reads local configuration variables to dynamically display the current states of these settings.
 
 
 ---
