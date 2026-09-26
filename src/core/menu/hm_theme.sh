@@ -10,6 +10,11 @@ if [[ $# -eq 0 ]]; then
     WALL_TEXT="OFF"
     [[ "$WALL_STATUS" == "1" ]] && WALL_TEXT="ON"
 
+    # Haku Shell
+    HAKU_SHELL_STATUS=$(cat "$STATE_DIR/haku_shell_state" 2>/dev/null || echo "0")
+    HAKU_SHELL_TEXT="OFF"
+    [[ "$HAKU_SHELL_STATUS" == "1" ]] && HAKU_SHELL_TEXT="ON"
+
     # Cava Layer
     CAVA_STATUS=$([[ -f /tmp/cava-layer.pid ]] && echo "1" || echo "0")
     CAVA_TEXT="OFF"
@@ -51,6 +56,7 @@ if [[ $# -eq 0 ]]; then
 
     cat <<EOF
   Change Theme
+󰆧  Haku Shell ($HAKU_SHELL_TEXT)
   Desktop ($DESKTOP_ICONS_TEXT)
 󰅹  Waybar ($WAYBAR_TEXT)
 󰐃  Taskbar ($TASKBAR_TEXT)
@@ -69,6 +75,7 @@ fi
 chosen="$*"
 case "$chosen" in
     *"Change Theme"*) spawn $HOME/.local/bin/change_theme.sh ;;
+    *"Haku Shell"*) spawn $HOME/.local/bin/haku_shell_mode.sh --toggle ;;
     *"Desktop"*) spawn $HOME/.local/bin/desktop_icons_manager.sh --toggle ;;
     *"Waybar"*) spawn $HOME/.local/bin/waybar_manager.sh --toggle ;;
     *"Taskbar"*) spawn $HOME/.local/bin/taskbar_manager.sh --toggle ;;

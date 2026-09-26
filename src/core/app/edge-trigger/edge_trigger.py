@@ -5,6 +5,7 @@ import os
 import sys
 import subprocess
 import gi
+import cairo
 
 gi.require_version('Gtk', '3.0')
 try:
@@ -31,6 +32,13 @@ CONFIG = {
     'edge_length_percent': 20
 }
 
+SAFE_ZONES = {
+    GtkLayerShell.Edge.TOP: (0.0, 0.0, 1.0, 0.75),
+    GtkLayerShell.Edge.BOTTOM: (0.0, 0.25, 1.0, 0.75),
+    GtkLayerShell.Edge.RIGHT: (0.75, 0.0, 0.25, 1.0),
+    GtkLayerShell.Edge.LEFT: (0.0, 0.0, 0.25, 1.0),
+}
+
 
 last_trigger_times = {
     GtkLayerShell.Edge.TOP: 0,
@@ -45,6 +53,126 @@ pending_timeouts = {
     GtkLayerShell.Edge.LEFT: None,
     GtkLayerShell.Edge.RIGHT: None
 }
+
+active_guards = {
+    GtkLayerShell.Edge.TOP: None,
+    GtkLayerShell.Edge.BOTTOM: None,
+    GtkLayerShell.Edge.LEFT: None,
+    GtkLayerShell.Edge.RIGHT: None
+}
+
+def get_screen_geometry():
+    display = Gdk.Display.get_default()
+    monitor = display.get_monitor(0)
+    if monitor:
+        geo = monitor.get_geometry()
+        return geo.width, geo.height
+    return 1920, 1080
+
+def compute_safe_rect_px(edge, screen_w, screen_h):
+    frac_x, frac_y, frac_w, frac_h = SAFE_ZONES[edge]
+    return (
+        int(frac_x * screen_w),
+        int(frac_y * screen_h),
+        int(frac_w * screen_w),
+        int(frac_h * screen_h)
+    )
+
+def kill_rofi():
+    try:
+        subprocess.run(['pkill', '-x', 'rofi'], check=False)
+    except Exception as e:
+        print(f"Error killing rofi: {e}")
+
+def cleanup_guard(edge):
+    guard_data = active_guards[edge]
+    if guard_data:
+        if guard_data['window']:
+            guard_data['window'].destroy()
+        if guard_data['liveness_id']:
+            GLib.source_remove(guard_data['liveness_id'])
+        if guard_data['timeout_id']:
+            GLib.source_remove(guard_data['timeout_id'])
+        active_guards[edge] = None
+
+def on_guard_triggered(widget, event, edge):
+    print(f"Guard triggered for edge {edge}, killing rofi.")
+    kill_rofi()
+    cleanup_guard(edge)
+    return False
+
+def check_rofi_alive(edge):
+    guard_data = active_guards.get(edge)
+    if not guard_data:
+        return False
+        
+    try:
+        result = subprocess.run(['pgrep', '-x', 'rofi'], capture_output=True)
+        if result.returncode != 0:
+            print(f"Rofi no longer alive for edge {edge}, cleaning up guard.")
+            cleanup_guard(edge)
+            return False
+    except Exception as e:
+        print(f"Error checking rofi liveness: {e}")
+        
+    return True
+
+def force_cleanup_guard(edge):
+    print(f"Guard max timeout reached for edge {edge}, cleaning up.")
+    cleanup_guard(edge)
+    return False
+
+def setup_guard(edge):
+    # Ensure no old guard is lingering
+    cleanup_guard(edge)
+    
+    screen_w, screen_h = get_screen_geometry()
+    
+    win = Gtk.Window()
+    GtkLayerShell.init_for_window(win)
+    GtkLayerShell.set_layer(win, GtkLayerShell.Layer.OVERLAY)
+    GtkLayerShell.set_exclusive_zone(win, -1)
+    
+    # Anchor to all edges to be fullscreen
+    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.TOP, True)
+    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.BOTTOM, True)
+    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.LEFT, True)
+    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.RIGHT, True)
+    
+    # Transparent background
+    screen = win.get_screen()
+    visual = screen.get_rgba_visual()
+    if visual:
+        win.set_visual(visual)
+    win.set_app_paintable(True)
+    win.connect("draw", lambda w, cr: False)
+    
+    # Set input shape: fullscreen minus safe zone
+    full_rect = cairo.RectangleInt(0, 0, screen_w, screen_h)
+    full_region = cairo.Region(full_rect)
+    
+    safe_x, safe_y, safe_w, safe_h = compute_safe_rect_px(edge, screen_w, screen_h)
+    safe_rect = cairo.RectangleInt(safe_x, safe_y, safe_w, safe_h)
+    safe_region = cairo.Region(safe_rect)
+    
+    full_region.subtract(safe_region)
+    win.input_shape_combine_region(full_region)
+    
+    win.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK)
+    win.connect("enter-notify-event", on_guard_triggered, edge)
+    
+    win.show_all()
+    
+    liveness_id = GLib.timeout_add(200, check_rofi_alive, edge)
+    timeout_id = GLib.timeout_add_seconds(60, force_cleanup_guard, edge)
+    
+    active_guards[edge] = {
+        'window': win,
+        'liveness_id': liveness_id,
+        'timeout_id': timeout_id
+    }
+    
+    return False
 
 def execute_command(cmd, edge):
     pending_timeouts[edge] = None
@@ -67,7 +195,13 @@ def execute_command(cmd, edge):
                 cmd_parts[0] = os.path.join(os.path.expanduser("~/.local/bin"), cmd_parts[0])
             else:
                 cmd_parts[0] = os.path.expanduser(cmd_parts[0])
-            subprocess.Popen(cmd_parts)
+            
+            try:
+                subprocess.Popen(cmd_parts)
+                # Schedule guard setup after 150ms delay
+                GLib.timeout_add(150, setup_guard, edge)
+            except Exception as e:
+                print(f"Failed to execute {cmd}: {e}")
         
     return False
 
@@ -112,14 +246,7 @@ def create_edge(edge, cmd):
     
     GtkLayerShell.set_anchor(win, edge, True)
     
-    # Calculate length in pixels based on screen geometry
-    display = Gdk.Display.get_default()
-    monitor = display.get_monitor(0)
-    if monitor:
-        geo = monitor.get_geometry()
-        screen_w, screen_h = geo.width, geo.height
-    else:
-        screen_w, screen_h = 1920, 1080
+    screen_w, screen_h = get_screen_geometry()
         
     if edge in (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM):
         # Center horizontally by NOT anchoring left/right
