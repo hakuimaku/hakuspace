@@ -216,3 +216,5 @@
     background: rgba(255, 255, 255, 0.293);
     transition: all 400ms ease;
 }
+
+@import url("../../.local/state/hakuspace/theme/opaque/swaync.css");

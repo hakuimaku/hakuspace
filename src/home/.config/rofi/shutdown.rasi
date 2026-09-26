@@ -83,3 +83,5 @@ element-text selected {
     text-color: @background;
     vertical-align: 0.5;
 }
+
+@import "../../.local/state/hakuspace/theme/opaque/rofi.rasi"
