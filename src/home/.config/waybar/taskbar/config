@@ -13,6 +13,7 @@
     "spacing": 2,
     "tooltip": true,
     "exclusive": true,
+    "reload_style_on_change": true,
 
     "modules-left": [
         "group/pin",

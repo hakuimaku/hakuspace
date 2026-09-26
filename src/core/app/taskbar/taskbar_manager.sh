@@ -8,7 +8,11 @@ source "$SCRIPT_DIR/haku_theme.sh"
 
 MANUAL_STATE="$STATE_DIR/taskbar_manual_state"
 
-TASKBAR_DIR="$HOME/.config/waybar/taskbar"
+TASKBAR_REAL_DIR="$HOME/.config/waybar/taskbar"
+TASKBAR_LINK_DIR="$HOME/.config/waybar"
+TASKBAR_CONFIG="$TASKBAR_LINK_DIR/config-taskbar"
+TASKBAR_STYLE="$TASKBAR_LINK_DIR/style-taskbar.css"
+
 TASKBAR_PIN_APPS="$HOME/hakucfg/config/taskbar-pin-apps"
 THEME_FILE="$THEME_ROOT/taskbar-theme"
 
@@ -40,8 +44,17 @@ if [[ ! -L "$TASKBAR_BIN" || "$(readlink -f "$TASKBAR_BIN")" != "$(readlink -f "
     ln -sf "$WAYBAR_BIN" "$TASKBAR_BIN"
 fi
 
+ensure_symlink() {
+    local target="$1" link="$2"
+    if [[ ! -L "$link" || "$(readlink -f "$link")" != "$(readlink -f "$target")" ]]; then
+        ln -sf "$target" "$link"
+    fi
+}
+ensure_symlink "$TASKBAR_REAL_DIR/config" "$TASKBAR_CONFIG"
+ensure_symlink "$TASKBAR_REAL_DIR/style.css" "$TASKBAR_STYLE"
+
 launch_taskbar() {
-    "$TASKBAR_BIN" -c "$TASKBAR_DIR/config" -s "$TASKBAR_DIR/style.css" >/dev/null 2>&1 &
+    "$TASKBAR_BIN" -c "$TASKBAR_CONFIG" -s "$TASKBAR_STYLE" >/dev/null 2>&1 &
     disown
 }
 
@@ -53,6 +66,15 @@ kill_taskbar() {
     pkill -x "taskbar"
 }
 
+if [[ $1 == "--reload" ]]; then
+    kill_taskbar
+    
+    if [[ $(cat "$MANUAL_STATE") == "1" ]]; then
+        launch_taskbar
+    fi
+    exit 0
+fi
+
 # Display help message
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     cat <<'INNEREOF'
@@ -63,7 +85,7 @@ Options:
     --startup           Restore previous state at boot
     --reload            Reload the taskbar
     --toggle            Toggle the taskbar on/off
-    --app-name            Toggle app name format
+    --app-name          Toggle app name format
     --icon-size         Change the icon size
     -h, --help          Show this help message
 INNEREOF
@@ -82,10 +104,10 @@ fi
 
 # Reload the taskbar
 if [[ $1 == "--reload" ]]; then
-    kill_taskbar
-    
     if [[ $(cat "$MANUAL_STATE") == "1" ]]; then
-        launch_taskbar
+        reload_taskbar
+    else
+        kill_taskbar
     fi
     exit 0
 fi
