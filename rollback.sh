@@ -181,12 +181,13 @@ restore_item() {
         ln -sfn "$(readlink "$source_item")" "$destination"
     elif [[ -d "$source_item" ]]; then
         ensure_dir "$destination"
-        (
-            shopt -s dotglob nullglob
-            for item in "$source_item"/*; do
-                restore_item "$item"
-            done
-        )
+        local prev_shopt
+        prev_shopt="$(shopt -p dotglob nullglob)"
+        shopt -s dotglob nullglob
+        for item in "$source_item"/*; do
+            restore_item "$item"
+        done
+        eval "$prev_shopt"
     else
         ensure_dir "$(dirname "$destination")"
         # Force remove if it's still a symlink to prevent cp dereferencing

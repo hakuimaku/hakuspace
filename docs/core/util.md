@@ -8,7 +8,7 @@ Here is a detailed breakdown of what each utility script does under the hood:
 
 ### `clean.sh` (The Housekeeper)
 Over time, applications dump a lot of cache and system logs that silently eat up your storage space.
-- **What it does:** It forcefully wipes out everything in your `~/.cache` folder, intelligently clears unneeded package files based on your distro (expanding its support to gracefully handle `yay`, `dnf`, `apt`, `zypper`, `nix-collect-garbage`, and more), and vacuums up `systemd` journal logs that are older than two weeks.
+- **What it does:** It forcefully wipes out everything in your `~/.cache` folder, intelligently clears unneeded package files based on your distro (gracefully handling `yay`, `dnf`, and `nix-collect-garbage`), and vacuums up `systemd` journal logs that are older than two weeks.
 - **Safety:** It prompts for your confirmation (`y/n`) in the terminal before nuking anything, ensuring you don't accidentally wipe data while you're working.
 
 ### `haku.sh` (Desktop Widgets)

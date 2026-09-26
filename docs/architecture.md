@@ -44,12 +44,12 @@ HakuSpace uses a **Hybrid System**: you can choose between **Deep Symlinking** o
 - This is the main script to get everything running. Here is its step-by-step logic:
   - **Phase 1: Prompting:** Asks for your Distro, preferred Window Manager, and deployment mode (Symlink or Copy).
   - **Phase 2: Backup:** Scans your system and safely moves any conflicting files to `~/.backup/Backup_<timestamp>`.
-  - **Phase 3: Dependencies:** Reads the text files in `src/packages/` and installs the required packages using your package manager.
+  - **Phase 3: Dependencies:** Reads the text files in `src/packages/` and installs the required packages using your package manager. **Important:** The script applies a strict regex filter (`^[a-zA-Z0-9@._+-]+$`). Lines with version constraints (e.g., `>=1.0`), spaces, or other characters will be silently dropped!
   - **Phase 4: Deployment:** 
     - Links or copies everything from `src/home/.config/` and `src/core/` to your machine.
     - Handles the `ONCE_CONFIGS` group (always copied, never symlinked).
     - Initializes your custom `~/hakucfg` space from the template.
-  - **Phase 5: Post-install:** Fixes script permissions, sets Fish as default shell, and clears old caches.
+  - **Phase 5: Post-install:** Fixes script permissions and sets Fish as default shell.
 
 ### `update.sh` (Applying Updates)
 - Run this whenever you pull fresh code from GitHub.
@@ -59,6 +59,7 @@ HakuSpace uses a **Hybrid System**: you can choose between **Deep Symlinking** o
     - Redeploys all configs and scripts based on your mode.
     - Intelligently **Skips** the `ONCE_CONFIGS` to preserve your GUI tweaks (like Thunar or btop settings).
     - Ignores your `~/hakucfg/` completely so your personal stuff stays safe.
+    - Note: explicitly skips `OPTIONAL` packages, they are only offered during initial installation.
 
 ### `rollback.sh` (The Undo Button)
 - Run this if an update breaks your system.
@@ -82,4 +83,5 @@ To fully understand how HakuSpace works under the hood, read through our detaile
 4. **[System Management](core/sys.md)**: The scripts controlling lock screens, smart idle prevention, and safe session exits.
 5. **[Utilities](core/util.md)**: Your daily toolbelt (screenshots, nightlight, desktop widgets).
 6. **[Haku Menu](core/menu.md)**: The modular, multi-tabbed Rofi launcher.
-7. **[Mini-Apps](core/app.md)**: The custom native apps built for HakuSpace (Taskbar, Desktop Icons, Cava Underbar).
+7. **[Mini-Apps](core/app.md)**: The custom native apps built for HakuSpace (Taskbar, Desktop Icons, Rounded Screen, Edge Trigger, Cava Underbar).
+8. **[NixOS Integration](nixos.md)**: Details on the Offline and Online Flake modes for NixOS users.

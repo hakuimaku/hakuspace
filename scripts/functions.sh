@@ -221,8 +221,7 @@ determine_deploy_mode() {
     local symlink_list=()
     local copy_list=()
     
-    local check_recursive
-    check_recursive() {
+    _determine_deploy_mode_check_recursive() {
         local src="${1:-}"
         local dst="${2:-}"
         if [[ -d "$src" ]]; then
@@ -231,7 +230,7 @@ determine_deploy_mode() {
             shopt -s dotglob nullglob
             local i
             for i in "$src"/*; do
-                check_recursive "$i" "$dst/${i##*/}"
+                _determine_deploy_mode_check_recursive "$i" "$dst/${i##*/}"
             done
             eval "$shopt_state"
         else
@@ -264,7 +263,7 @@ determine_deploy_mode() {
         [[ $is_skipped -eq 1 ]] && continue
         
         local dst="$DEST_CONFIG/$item_name"
-        check_recursive "$item" "$dst"
+        _determine_deploy_mode_check_recursive "$item" "$dst"
     done
     
     # Check a few scripts as well

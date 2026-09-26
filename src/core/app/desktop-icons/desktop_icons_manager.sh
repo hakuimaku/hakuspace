@@ -66,10 +66,13 @@ if [[ $1 == "--reload" ]]; then
 fi
 
 # Auto-start desktop icons if enabled
-if [[ $(cat "$DESKTOP_ICONS_STATE") == "1" ]]; then
-    if ! pgrep -f "$DESKTOP_MANAGER_BIN" >/dev/null; then
-        launch_desktop_icons
+if [[ "${1:-}" == "--startup" || -z "${1:-}" ]]; then
+    if [[ $(cat "$DESKTOP_ICONS_STATE") == "1" ]]; then
+        if ! pgrep -f "$DESKTOP_MANAGER_BIN" >/dev/null; then
+            launch_desktop_icons
+        fi
     fi
+    exit 0
 fi
 
 echo "Invalid option. Use --help for usage information."
