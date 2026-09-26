@@ -11,6 +11,7 @@ PIDFILE="/tmp/cava-layer.pid"
 LOGFILE="/tmp/cava-layer.log"
 
 TOP_STATE_FILE="$STATE_DIR/cava_top_state"
+DYNAMIC_STATE_FILE="$STATE_DIR/cava_dynamic_state"
  
 log() { echo "[cava-layer-toggle] $*"; }
 err() { echo "[cava-layer-toggle] $*" >&2; }
@@ -27,6 +28,7 @@ Commands:
     reload              Live-reload font/colors from the kitty config
                         (no restart, no interruption to cava itself)
     -t, --top           Toggle the top mode (saves state and restarts)
+    -d, --toggle-dynamic Toggle dynamic position (affected by panels)
     -c, --color-switch  Toggle foreground color between black and white
 
 Options:
@@ -94,8 +96,13 @@ start() {
         top_flag="--top"
     fi
 
-    log "Starting: python3 $SCRIPT_PATH $top_flag $*"
-    nohup python3 "$SCRIPT_PATH" $top_flag "$@" >"$LOGFILE" 2>&1 &
+    local dynamic_flag=""
+    if [[ "$(cat "$DYNAMIC_STATE_FILE" 2>/dev/null || echo "0")" == "1" ]]; then
+        dynamic_flag="--dynamic"
+    fi
+
+    log "Starting: python3 $SCRIPT_PATH $top_flag $dynamic_flag $*"
+    nohup python3 "$SCRIPT_PATH" $top_flag $dynamic_flag "$@" >"$LOGFILE" 2>&1 &
     local pid=$!
     disown "$pid" 2>/dev/null || true
     echo "$pid" > "$PIDFILE"
@@ -154,6 +161,22 @@ toggle_top() {
     else
         echo "1" > "$TOP_STATE_FILE"
         log "Top mode enabled."
+    fi
+    if is_running; then
+        stop
+        start
+    fi
+}
+
+toggle_dynamic() {
+    mkdir -p "$STATE_DIR"
+    local current_state=$(cat "$DYNAMIC_STATE_FILE" 2>/dev/null || echo "0")
+    if [[ "$current_state" == "1" ]]; then
+        echo "0" > "$DYNAMIC_STATE_FILE"
+        log "Dynamic mode disabled."
+    else
+        echo "1" > "$DYNAMIC_STATE_FILE"
+        log "Dynamic mode enabled."
     fi
     if is_running; then
         stop
@@ -225,6 +248,9 @@ case "${1:-}" in
         ;;
     -t|--top)
         toggle_top
+        ;;
+    -d|--toggle-dynamic)
+        toggle_dynamic
         ;;
     -c|--color-switch)
         toggle_color
