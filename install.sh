@@ -358,6 +358,14 @@ else
     log_warn "Check if the script exists and has execute permissions in ~/.local/bin/"
 fi
 
+# Gen opaque theme if not exist ~/.local/state/hakuspace/opaque_theme_state
+if [[ ! -f "$HOME/.local/state/hakuspace/opaque_theme_state" ]]; then
+    "$HOME/.local/bin/opaque_theme.sh" off >/dev/null 2>&1
+    log_ok "Executed opaque_theme.sh"
+else
+    log_skip "Skipping opaque_theme.sh execution as ~/.local/state/hakuspace/opaque_theme_state already exists."
+fi
+
 # Change default shell to fish
 echo ""
 if command -v fish >/dev/null 2>&1; then
