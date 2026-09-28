@@ -47,7 +47,7 @@ hyprlandRunRule = hl.window_rule({
 -- VS Code in special workspace
 codeSpecialWorkspace = hl.window_rule({
     name  = "code-scratchpad",
-    match = { class = "code" },
+    match = { class = "code|com.microsoft.VSCode" },
 
     workspace = "special:magic",
 })
