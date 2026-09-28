@@ -9,10 +9,13 @@ configuration {
     display-window: " 󰙀 Window ";
     sidebar-mode: true;
     window-format: "{w} | {c} | {t}";
-    hover-select: true;
-    kb-cancel: "Escape,MousePrimary";
-    me-select-entry: "";
-    me-accept-entry: "MousePrimary";
+    kb-cancel: "Escape,MouseSecondary";
+    kb-accept-entry: "Control+j,Control+m,Return,KP_Enter,MouseMiddle";
+    kb-row-select: "";
+    kb-mode-next: "Shift+Right,Control+Tab,Control+space";
+    kb-mode-previous: "Shift+Left,Control+ISO_Left_Tab,Control+Shift+space";
+    kb-row-up: "Up,Control+p,Control+z";
+    kb-row-down: "Down,Control+n,Control+x";
 }
 
 @import "~/.local/state/hakuspace/rofi-theme.rasi"
