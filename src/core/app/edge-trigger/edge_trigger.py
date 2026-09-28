@@ -20,8 +20,7 @@ from gi.repository import Gtk, Gdk, GtkLayerShell, GLib
 EDGE_TOP = 'top'
 EDGE_BOTTOM = 'bottom'
 EDGE_LEFT = 'left'
-EDGE_RIGHT_UP = 'right_up'
-EDGE_RIGHT_DOWN = 'right_down'
+EDGE_RIGHT = 'right'
 
 def get_gtk_edge(logical_edge):
     if logical_edge == EDGE_TOP: return GtkLayerShell.Edge.TOP
@@ -35,28 +34,24 @@ CONFIG = {
     'cooldown_ms': 800,
     'edge_top_enable': True,
     'edge_bottom_enable': True,
-    'edge_left_enable': False,
-    'edge_right_up_enable': True,
-    'edge_right_down_enable': True,
+    'edge_left_enable': True,
+    'edge_right_enable': True,
     'edge_top_cmd': '~/.local/bin/wallpaper_select.sh -e -location 2 -theme-str "window { border-radius: 0 0 20px 20px; }"',
     'edge_bottom_cmd': '~/.local/bin/hakumenu.sh -e -location 6 -theme-str "window { border-radius: 20px 20px 0 0; }"',
-    'edge_left_cmd': '',
-    'edge_right_up_cmd': 'swaync-client -t -sw',
-    'edge_right_down_cmd': '~/.local/bin/shutdown.sh -v -e -location 3 -theme-str "window { border-radius: 0 0 0 20px; }"',
+    'edge_left_cmd': '~/.local/bin/shutdown.sh -v -e -location 1 -theme-str "window { border-radius: 0 0 20px 0; }"',
+    'edge_right_cmd': 'swaync-client -t -sw',
     'edge_size': 2,
     'edge_top_length_percent': 20,
     'edge_bottom_length_percent': 20,
     'edge_left_length_percent': 20,
-    'edge_right_up_length_percent': 20,
-    'edge_right_down_length_percent': 10,
+    'edge_right_length_percent': 20,
 }
 
 SAFE_ZONES = {
     EDGE_TOP: (0.0, 0.0, 1.0, 0.6),
     EDGE_BOTTOM: (0.0, 0.4, 1.0, 0.6),
-    EDGE_RIGHT_UP: (0.6 , 0.0, 0.4, 1.0),
-    EDGE_RIGHT_DOWN: (0.85, 0.0, 0.15, 1.0),
-    EDGE_LEFT: (0.0, 0.0, 0.25, 1.0),
+    EDGE_RIGHT: (0.6 , 0.0, 0.4, 1.0),
+    EDGE_LEFT: (0.0, 0.0, 0.15, 1.0),
 }
 
 # Hyprland grabs ALL pointer input for any layer surface with exclusive
@@ -71,24 +66,21 @@ last_trigger_times = {
     EDGE_TOP: 0,
     EDGE_BOTTOM: 0,
     EDGE_LEFT: 0,
-    EDGE_RIGHT_UP: 0,
-    EDGE_RIGHT_DOWN: 0
+    EDGE_RIGHT: 0,
 }
 
 pending_timeouts = {
     EDGE_TOP: None,
     EDGE_BOTTOM: None,
     EDGE_LEFT: None,
-    EDGE_RIGHT_UP: None,
-    EDGE_RIGHT_DOWN: None
+    EDGE_RIGHT: None,
 }
 
 active_guards = {
     EDGE_TOP: None,
     EDGE_BOTTOM: None,
     EDGE_LEFT: None,
-    EDGE_RIGHT_UP: None,
-    EDGE_RIGHT_DOWN: None
+    EDGE_RIGHT: None,
 }
 
 def get_screen_geometry():
@@ -108,12 +100,23 @@ def compute_safe_rect_px(edge, screen_w, screen_h):
         int(frac_h * screen_h)
     )
 
+import signal
+
 def kill_process(edge):
     try:
-        if edge == EDGE_RIGHT_UP:
+        if edge == EDGE_RIGHT:
             subprocess.run(['swaync-client', '-cp'], check=False)
         else:
-            subprocess.run(['pkill', '-x', 'rofi'], check=False)
+            guard_data = active_guards.get(edge)
+            proc_pid = guard_data.get('proc_pid') if guard_data else None
+            if proc_pid:
+                try:
+                    pgid = os.getpgid(proc_pid)
+                    os.killpg(pgid, signal.SIGTERM)
+                except Exception as e:
+                    print(f"Error killing process group {proc_pid}: {e}")
+            else:
+                subprocess.run(['pkill', '-x', 'rofi'], check=False)
     except Exception as e:
         print(f"Error killing process for {edge}: {e}")
 
@@ -170,18 +173,42 @@ def check_alive(edge):
         return False
         
     try:
-        if edge == EDGE_RIGHT_UP:
+        if edge == EDGE_RIGHT:
             result = subprocess.run(['swaync-client', '-c'], capture_output=True, text=True)
             if result.stdout.strip() == 'false':
                 print(f"Swaync no longer alive for edge {edge}, cleaning up guard.")
                 cleanup_guard(edge)
                 return False
         else:
-            result = subprocess.run(['pgrep', '-x', 'rofi'], capture_output=True)
-            if result.returncode != 0:
-                print(f"Rofi no longer alive for edge {edge}, cleaning up guard.")
-                cleanup_guard(edge)
-                return False
+            proc_pid = guard_data.get('proc_pid')
+            rofi_pid = guard_data.get('rofi_pid')
+            
+            if proc_pid:
+                if rofi_pid is None:
+                    res = subprocess.run(['pgrep', '-g', str(proc_pid), '-x', 'rofi'], capture_output=True, text=True)
+                    if res.returncode == 0:
+                        rofi_pid = int(res.stdout.strip().split('\n')[0])
+                        guard_data['rofi_pid'] = rofi_pid
+                    else:
+                        try:
+                            os.kill(proc_pid, 0)
+                        except OSError:
+                            print(f"Process {proc_pid} no longer alive for edge {edge}, cleaning up guard.")
+                            cleanup_guard(edge)
+                            return False
+                else:
+                    try:
+                        os.kill(rofi_pid, 0)
+                    except OSError:
+                        print(f"Specific rofi {rofi_pid} no longer alive for edge {edge}, cleaning up guard.")
+                        cleanup_guard(edge)
+                        return False
+            else:
+                result = subprocess.run(['pgrep', '-x', 'rofi'], capture_output=True)
+                if result.returncode != 0:
+                    print(f"Rofi no longer alive for edge {edge}, cleaning up guard.")
+                    cleanup_guard(edge)
+                    return False
     except Exception as e:
         print(f"Error checking liveness: {e}")
         
@@ -192,7 +219,7 @@ def force_cleanup_guard(edge):
     cleanup_guard(edge)
     return False
 
-def setup_guard(edge):
+def setup_guard(edge, proc_pid=None):
     cleanup_guard(edge)
     
     screen_w, screen_h = get_screen_geometry()
@@ -243,24 +270,15 @@ def setup_guard(edge):
         'window': win,
         'liveness_id': liveness_id,
         'timeout_id': timeout_id,
-        'cursor_poll_id': cursor_poll_id
+        'cursor_poll_id': cursor_poll_id,
+        'proc_pid': proc_pid
     }
     
-    return False
-
-def is_blocked(edge):
-    if edge == EDGE_RIGHT_UP and active_guards.get(EDGE_RIGHT_DOWN):
-        return True
-    if edge == EDGE_RIGHT_DOWN and active_guards.get(EDGE_RIGHT_UP):
-        return True
     return False
 
 def execute_command(cmd, edge):
     pending_timeouts[edge] = None
     
-    if is_blocked(edge):
-        return False
-        
     current_time = GLib.get_monotonic_time() / 1000 # convert to ms
     last_time = last_trigger_times[edge]
     
@@ -278,17 +296,14 @@ def execute_command(cmd, edge):
                 cmd_parts[0] = os.path.expanduser(cmd_parts[0])
             
             try:
-                subprocess.Popen(cmd_parts)
-                GLib.timeout_add(150, setup_guard, edge)
+                proc = subprocess.Popen(cmd_parts, start_new_session=True)
+                GLib.timeout_add(150, setup_guard, edge, proc.pid)
             except Exception as e:
                 print(f"Failed to execute {cmd}: {e}")
         
     return False
 
 def on_enter_notify(widget, event, edge, cmd):
-    if is_blocked(edge):
-        return False
-        
     if pending_timeouts[edge] is not None:
         GLib.source_remove(pending_timeouts[edge])
         
@@ -326,22 +341,15 @@ def create_edge(edge, cmd):
     percent_key = f"edge_{edge}_length_percent"
     percent = CONFIG.get(percent_key, 20)
     
-    if edge == EDGE_RIGHT_UP:
+    if edge in (EDGE_LEFT, EDGE_RIGHT):
         GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.TOP, True)
-        length_px = int(screen_h * (percent / 100.0))
-        win.set_size_request(size, length_px)
-    elif edge == EDGE_RIGHT_DOWN:
-        GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.TOP, True)
-        margin_px = int(screen_h * (CONFIG['edge_right_up_length_percent'] / 100.0))
+        margin_px = int(screen_h * 0.1)
         GtkLayerShell.set_margin(win, GtkLayerShell.Edge.TOP, margin_px)
         length_px = int(screen_h * (percent / 100.0))
         win.set_size_request(size, length_px)
-    elif edge in (EDGE_TOP, EDGE_BOTTOM):
+    else:
         length_px = int(screen_w * (percent / 100.0))
         win.set_size_request(length_px, size)
-    else:
-        length_px = int(screen_h * (percent / 100.0))
-        win.set_size_request(size, length_px)
         
     GtkLayerShell.set_exclusive_zone(win, -1)
         
@@ -372,10 +380,8 @@ def main():
         windows.append(create_edge(EDGE_BOTTOM, CONFIG['edge_bottom_cmd']))
     if CONFIG['edge_left_enable']:
         windows.append(create_edge(EDGE_LEFT, CONFIG['edge_left_cmd']))
-    if CONFIG['edge_right_up_enable']:
-        windows.append(create_edge(EDGE_RIGHT_UP, CONFIG['edge_right_up_cmd']))
-    if CONFIG['edge_right_down_enable']:
-        windows.append(create_edge(EDGE_RIGHT_DOWN, CONFIG['edge_right_down_cmd']))
+    if CONFIG['edge_right_enable']:
+        windows.append(create_edge(EDGE_RIGHT, CONFIG['edge_right_cmd']))
         
     Gtk.main()
 

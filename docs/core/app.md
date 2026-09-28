@@ -88,7 +88,6 @@ An invisible overlay that sits at the edges of your screen, allowing you to trig
 Using `GtkLayerShell` on the `OVERLAY` layer with a negative exclusive zone, this Python script creates small, invisible hover zones on your screen edges. It intelligently sits on top of all other panels (like Waybar) so it's never blocked.
 - **Dwell Time:** Prevents accidental triggers by requiring your mouse to rest in the zone for a configurable amount of time (`dwell_ms`) before activating.
 - **Cooldown:** Implements a timeout (`cooldown_ms`) after a successful trigger to prevent rapid, unintended repeated executions.
-- **Split Edges & Mutex:** The right screen edge is split into two independent triggers: `right_up` (top section) and `right_down` (just below it). A built-in mutex prevents them from triggering simultaneously.
 
 ### Auto-Close Mechanism (Guard Window)
 To improve the user experience, edge-triggered menus automatically close when the mouse leaves a designated "safe zone".
@@ -99,13 +98,19 @@ To improve the user experience, edge-triggered menus automatically close when th
 **Current Safe Zones:**
 - **Top (`wallpaper_select.sh`):** Upper 60% of the screen.
 - **Bottom (`hakumenu.sh`):** Lower 60% of the screen.
-- **Right Up (`swaync`):** Rightmost 40% of the screen.
-- **Right Down (`shutdown.sh`):** Rightmost 15% of the screen.
+- **Left (`shutdown.sh`):** Leftmost 15% of the screen.
+- **Right (`swaync`):** Rightmost 40% of the screen.
 
 ### `edge_trigger_manager.sh` (The Controller)
 Manages the lifecycle of the Edge Trigger overlay.
 - **Toggling & Startup:** Controlled via `--toggle` and `--startup`. Integrated directly into the Haku Menu's Theme section. It also supports `--reload` to restart the overlay and `-h`/`--help` for usage information.
 - **State Management:** Remembers if you had it turned on or off across reboots using `~/.local/state/hakuspace/edge_trigger_state`.
+
+### Configuration
+- **`dwell_ms`**: Time in milliseconds the pointer must stay on the edge to trigger (default: 200).
+- **`cooldown_ms`**: Minimum time in milliseconds between consecutive triggers (default: 800).
+- **Individual Lengths:** You can specify the exact length of each trigger zone independently (e.g., `edge_top_length_percent`, `edge_right_length_percent`). Both `left` and `right` triggers are shifted down by 10% from the top.
+- You can enable/disable individual edges (`top`, `bottom`, `left`, `right`) and define the exact shell command each executes.
 
 ---
 
