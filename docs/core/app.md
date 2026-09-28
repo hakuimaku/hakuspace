@@ -63,7 +63,7 @@ You can customize almost everything about how your icons look and behave.
 
 A sleek overlay that frames your entire monitor with perfectly rounded corners and a configurable border thickness, giving your display a modern, hardware-like bezel aesthetic. 
 
-### `rounded_screen.py` (The Overlay Engine)
+### `rounded_screen.py` (The Renderer)
 To bypass limitations in Wayland's layer-shell protocol (which doesn't let a single surface reserve exclusive space on all four edges without breaking other panels), this application uses a brilliant multi-window architecture:
 - **The Main Window:** Placed on the `TOP` layer. It spans the entire physical screen and draws the beautiful rounded corners and border.
 - **Dynamic Mode:** You can toggle "Dynamic Mode" from the Haku Menu. When disabled, it anchors 4 invisible dummy edges to reserve exclusive space and forces itself across the screen using a negative exclusive zone. When enabled, it respects other panels' exclusive zones (like Waybar), allowing itself to be pushed inward dynamically for perfect layout integration.
@@ -85,20 +85,27 @@ You can customize the appearance by editing `~/hakucfg/config/rounded-screen.con
 An invisible overlay that sits at the edges of your screen, allowing you to trigger specific commands simply by hovering your mouse against the screen borders.
 
 ### `edge_trigger.py` (The Sensor)
-Using `GtkLayerShell` on the `OVERLAY` layer with a negative exclusive zone, this Python script creates small, invisible hover zones perfectly centered on your screen edges. It intelligently sits on top of all other panels (like Waybar) so it's never blocked.
+Using `GtkLayerShell` on the `OVERLAY` layer with a negative exclusive zone, this Python script creates small, invisible hover zones on your screen edges. It intelligently sits on top of all other panels (like Waybar) so it's never blocked.
 - **Dwell Time:** Prevents accidental triggers by requiring your mouse to rest in the zone for a configurable amount of time (`dwell_ms`) before activating.
 - **Cooldown:** Implements a timeout (`cooldown_ms`) after a successful trigger to prevent rapid, unintended repeated executions.
+- **Split Edges & Mutex:** The right screen edge is split into two independent triggers: `right_up` (top section) and `right_down` (just below it). A built-in mutex prevents them from triggering simultaneously.
+
+### Auto-Close Mechanism (Guard Window)
+To improve the user experience, edge-triggered menus automatically close when the mouse leaves a designated "safe zone".
+- When an edge successfully triggers its command, it spawns a full-screen, invisible **guard window**.
+- Using `cairo` input shapes, the guard window has a "hole" cut out corresponding to the active menu's safe zone.
+- As long as the mouse stays inside the menu's area (the hole), clicks pass through normally. The moment the mouse moves out and touches the guard window, the script automatically sends a termination command (e.g., `pkill -x rofi` or `swaync-client -cp`) and destroys the guard window.
+
+**Current Safe Zones:**
+- **Top (`wallpaper_select.sh`):** Upper 60% of the screen.
+- **Bottom (`hakumenu.sh`):** Lower 60% of the screen.
+- **Right Up (`swaync`):** Rightmost 40% of the screen.
+- **Right Down (`shutdown.sh`):** Rightmost 15% of the screen.
 
 ### `edge_trigger_manager.sh` (The Controller)
 Manages the lifecycle of the Edge Trigger overlay.
 - **Toggling & Startup:** Controlled via `--toggle` and `--startup`. Integrated directly into the Haku Menu's Theme section. It also supports `--reload` to restart the overlay and `-h`/`--help` for usage information.
 - **State Management:** Remembers if you had it turned on or off across reboots using `~/.local/state/hakuspace/edge_trigger_state`.
-
-### Configuration
-- **`dwell_ms`**: Time in milliseconds the pointer must stay on the edge to trigger (default: 200).
-- **`cooldown_ms`**: Minimum time in milliseconds between consecutive triggers (default: 800).
-- **`edge_length_percent`**: The length of the trigger zone as a percentage of your screen width/height (default: 20).
-- You can enable/disable individual edges (Top, Bottom, Left, Right) and define the exact shell command each edge executes.
 
 ---
 
