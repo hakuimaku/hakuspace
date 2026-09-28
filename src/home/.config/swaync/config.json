@@ -2,11 +2,10 @@
     "$schema": "/etc/xdg/swaync/configSchema.json",
     "positionX": "right",
     "positionY": "top",
-    "control-center-margin-top": 20,
-    "control-center-margin-bottom": 20,
-    "control-center-margin-right": 20,
-    "control-center-margin-left": 20,
-    "notification-icon-size": 56,
+    "control-center-margin-top": 40,
+    "control-center-margin-bottom": 60,
+    "control-center-margin-right": 0,
+    "control-center-margin-left": 0,
     "notification-body-image-height": 200,
     "notification-body-image-width": 200,
 
@@ -15,6 +14,7 @@
     "timeout-critical": 0,
 
     "fit-to-screen": true,
+    "_comment": "If control-center-width changes, update min-width of .widget-buttons-grid flowboxchild > button in style.css: (width - 44) / 4 - 12 - (5..10). Currently 450 -> 84.",
     "control-center-width": 450,
     "notification-window-width": 600,
     "keyboard-shortcuts": true,
@@ -25,12 +25,12 @@
     "hide-on-action": true,
     
     "widgets": [
-        "menubar",
+        "title",
+        "mpris",
         "buttons-grid",
+        "menubar",
         "volume",
         "backlight",
-        "mpris",
-        "title",
         "dnd",
         "notifications"
     ],
@@ -106,11 +106,11 @@
                     "update-command": "cat /tmp/random_wallpaper_status | grep -q '1' && echo true || echo false"
                 },
                 {
-                    "label": "󱂩",
+                    "label": "󰆧",
                     "type": "toggle",
                     "active": true,
-                    "command": "$HOME/.local/bin/taskbar_manager.sh --toggle >/dev/null 2>&1",
-                    "update-command": "cat $HOME/.local/state/hakuspace/state/taskbar_manual_state | grep -q '1' && echo true || echo false"
+                    "command": "$HOME/.local/bin/haku_shell_mode.sh --toggle >/dev/null 2>&1",
+                    "update-command": "cat $HOME/.local/state/hakuspace/state/haku_shell_state | grep -q '1' && echo true || echo false"
                 }
             ]
         },

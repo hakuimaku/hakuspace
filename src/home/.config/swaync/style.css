@@ -1,20 +1,25 @@
 @import url("../../.local/state/hakuspace/theme/colors.css");
 @import url("../../.local/state/hakuspace/theme/fonts.css");
 
-.notification-row {
-    transition: all 300ms ease;
+* {
     outline: none;
-    margin-bottom: 1px;
-    border-radius: 20px;
+    border: none;
+}
+
+.notification-row {
+    margin: 0;
+    padding: 0;
 }
 
 .notification {
-    background: rgba(0, 0, 0, 0.9);
-    border-radius: 16px;
-    padding: 12px;
+    min-height: 40px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 6px 0 0 0;
     color: @accent_color;
     border-bottom: 3px solid @accent_color;
-    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 .notification * {
@@ -40,11 +45,11 @@
 /* =============================== CONTROL CENTER =============================== */
 /* ============================================================================== */
 .control-center {
-    background: rgba(0, 0, 0, 0.9);
-    border-radius: 12px;
-    box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.5);
-    margin: 3px;
-    padding: 6px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 30px 0 0 30px;
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.5);
+    margin: 0;
+    padding: 10px 20px 10px 10px;
     color: @accent_color;
 }
 
@@ -54,13 +59,13 @@
 
 .control-center-clear-all {
     transition: all 1s ease;
-    box-shadow: 4px 4px 4px #000000;
+    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.5);
 }
 
 .control-center-dnd {
     background: @accent_color;
     border-radius: 10px;
-    box-shadow: 4px 4px 4px #000000;
+    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.5);
 }
 
 
@@ -75,7 +80,6 @@
 
 .widget-title {
     color: @accent_color;
-    font-weight: bold;
 }
 
 .widget-label {
@@ -84,13 +88,13 @@
 
 .widget-notifications,
 .widget-notifications * {
-    border-radius: 20px;
+    border-radius: 12px;
     padding: 2px;
-    background: rgba(0, 0, 0, 0.05);
+    background: none;
 }
 
 .widget-notifications {
-    box-shadow: 5px 5px #000000;
+    box-shadow: none;
 }
 
 .widget-menubar {
@@ -99,7 +103,7 @@
     padding: 8px 8px;
     margin: 20px;
     color: @accent_color;
-    box-shadow: 8px 8px 8px #000000;
+    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.5);
 }
 
 .widget-menubar > box > .menu-button-bar > .widget-menubar-container > button,
@@ -179,18 +183,37 @@
     color: @accent_color;
 }
 
+/*
+ * BUTTONS GRID: 4 columns, equal width (independent of label length).
+ * Width is set by min-width, so keep horizontal padding at 0.
+ * If "control-center-width" in config.json changes, recompute min-width:
+ *   min-width = (control-center-width - 44) / 4 - 12 - (5..10)
+ *   - 44 = .control-center padding (10 + 20) + margin-right 14 of the content
+ *   - 12 = button margin (6 * 2)
+ *   - (5..10) = spare room for the scrollbar
+ * Check: 5 * (min-width + 12) must be larger than (control-center-width - 44),
+ * otherwise a 5th button fits on the same row.
+ * Current: control-center-width 450 -> min-width 84
+ */
+.widget-buttons-grid flowboxchild {
+    padding: 0;
+    margin: 0;
+}
+
 .widget-buttons-grid flowboxchild > button {
     border-top: 3px solid rgba(255, 255, 255, 0.075);
-    padding: 4px 25px;
-    background: rgba(0, 0, 0, 0.1);
+    padding: 4px 0;
+    min-width: 84px;
+    background: rgba(45, 45, 45, 0.4);
     margin: 6px;
     border-radius: 10px;
-    box-shadow: 4px 4px 4px #000000;
+    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.5);
+    opacity: 0.8;
 }
 
 .widget-buttons-grid flowboxchild > button.toggle:checked {
     border-top: 3px solid @accent_color;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.5);
 }
 
 /* Override the font size for buttons in the widget-buttons-grid */
@@ -199,6 +222,67 @@
     font-size: 18px;
 }
 
+/* ============================================================================== */
+/* ================================= SCROLLBAR ================================== */
+/* ============================================================================== */
+.control-center scrollbar,
+.control-center scrollbar.vertical,
+.control-center scrollbar.overlay-indicator.vertical {
+    background: transparent;
+    border: none;
+    margin: 4px 2px;
+    padding: 0;
+    min-width: 0;
+}
+
+.control-center scrollbar trough,
+.control-center scrollbar.vertical trough {
+    background: transparent;
+    border: none;
+    min-width: 6px;
+}
+
+.control-center scrollbar slider,
+.control-center scrollbar.vertical slider,
+.control-center scrollbar.overlay-indicator.vertical slider,
+.control-center scrollbar.overlay-indicator.vertical:not(.dragging):not(.hovering) slider,
+.control-center scrollbar.overlay-indicator.vertical.hovering slider {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 999px;
+    min-width: 6px;
+    min-height: 40px;
+    margin: 0;
+    padding: 0;
+}
+
+.control-center scrollbar.hovering slider,
+.control-center scrollbar.vertical.hovering slider,
+.control-center scrollbar.overlay-indicator.vertical.hovering slider,
+.control-center scrollbar slider:hover {
+    background: alpha(@accent_color, 0.6);
+}
+
+.control-center scrollbar.dragging slider,
+.control-center scrollbar.vertical.dragging slider,
+.control-center scrollbar.overlay-indicator.vertical.dragging slider,
+.control-center scrollbar slider:active {
+    background: @accent_color;
+}
+
+.control-center scrollbar button {
+    min-width: 0;
+    min-height: 0;
+    opacity: 0;
+}
+
+.control-center viewport > * {
+    margin-right: 14px;
+}
+
+.widget-notifications {
+    margin-right: 14px;
+}
 
 /* ============================================================================== */
 /* =================================== HOVER ==================================== */
