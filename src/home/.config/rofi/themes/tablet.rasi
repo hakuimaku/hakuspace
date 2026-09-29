@@ -12,6 +12,7 @@
 
 /* ===== GLOBAL VARIABLES ===== */
 * {
+    img:                 url("../../.cache/walpaper_box_gen.jpg", height);
     background:          rgba(0, 0, 0, 0.7);
     foreground:          #dfdfdf;
     background-color:    transparent;
@@ -49,15 +50,46 @@ boxbar {
 content-area {
     orientation:         horizontal;
     spacing:             0;
-    children:            [ mode-switcher, listview ];
+    children:            [ listview ];
 }
 
 /* ===== IMAGE BOX ===== */
 imagebox {
     expand:                      false;
-    width:                       15%;
+    width:                       20%;
+    orientation:                 horizontal;
+    border-radius:               20px;
+    background-image:            @img;
+    children:                    [ image-space, mode-switcher ];
+}
+
+image-space {
+    expand:                      true;
+}
+
+/* ===== MODE SWITCHER ===== */
+mode-switcher {
+    expand:                      false;
+    width:                       7%;
+    orientation:                 vertical;
+    spacing:                     0;
+    background-color:            rgba(0, 0, 0, 0.7);
+    border-radius:               20px 0 0 20px;
+    margin:                      30px 0;
+    padding:                     12px 6px 12px 12px;
+}
+
+button {
+    padding:                     8px 4px;
+    horizontal-align:            0.5;
+    text-color:                  @accent;
+    border-radius:               0;
+}
+
+button selected {
     border-radius:               12px;
-    background-image:            url("../../.cache/walpaper_preview_vertical.jpg", height);
+    background-color:            @accent-dim;
+    text-color:                  @background;
 }
 
 /* ===== INPUT BAR ===== */
@@ -83,32 +115,13 @@ entry {
     border-radius:       0 12px 12px 0;
 }
 
-/* ===== MODE SWITCHER ===== */
-mode-switcher {
-    orientation:         vertical;
-    spacing:             10px;
-    border:              0 5px 0 0;
-    border-color:        @accent;
-    border-radius:       0;
-}
-
-button {
-    padding:             8px 14px;
-    text-color:          @accent;
-    border-radius:       12px 0 0 12px;
-}
-
-button selected {
-    background-color:    @accent;
-    text-color:          @background;
-}
-
 /* ===== LISTVIEW ===== */
 listview {
     scrollbar:           true;
     cycle:               true;
     dynamic:             true;
     layout:              vertical;
+    margin:              0 0 0 10px;
 }
 
 /* ===== ELEMENTS ===== */
@@ -132,7 +145,7 @@ element-text {
 /* ===== ELEMENT STATES ===== */
 element selected {
     background-color:    @accent;
-    border-radius:       0 12px 12px 0;
+    border-radius:       12px;
 }
 
 element-text selected {

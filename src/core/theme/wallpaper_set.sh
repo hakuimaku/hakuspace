@@ -12,7 +12,7 @@ EOF
         exit 0
 fi
 
-# Include AWWW_OPTS, GEN_HORI_OPTS, and GEN_VERT_OPTS from setting.sh if it exists
+# Include AWWW_OPTS, GEN_WIDE_OPTS, and GEN_BOX_OPTS from setting.sh if it exists
 [ -f "$HOME/hakucfg/setting.sh" ] && source "$HOME/hakucfg/setting.sh"
 
 AWWW_OPTS=${AWWW_OPTS:-"--transition-type random --transition-step 90 --transition-fps 60"}
@@ -21,8 +21,8 @@ WALLPAPER="${1:-}"
 CACHE_DIR="$HOME/.cache"
 mkdir -p "$CACHE_DIR"
 
-GEN_HORI_OPTS=${GEN_HORI_OPTS:-"-resize 800x250^ -gravity Center -crop 800x250+0+0 +repage"}
-GEN_VERT_OPTS=${GEN_VERT_OPTS:-"-resize 600x800^ -gravity Center -crop 600x800+0+0 +repage"}
+GEN_WIDE_OPTS=${GEN_WIDE_OPTS:-"-resize 800x250^ -gravity Center -crop 800x250+0+0 +repage"}
+GEN_BOX_OPTS=${GEN_BOX_OPTS:-"-resize 1653x852^ -gravity Center -extent 1653x852 -gravity NorthWest -crop 1212x852+400+0 +repage"}
 
 # Detect active monitor using wlr-randr
 get_active_monitor() {
@@ -64,8 +64,8 @@ make_cache_img() {
     # fi
 
     # Make wallpaper preview image for Rofi
-    if magick "${WALLPAPER}[0]" $GEN_HORI_OPTS "$CACHE_DIR/walpaper_preview.jpg" 2>/dev/null && \
-        magick "${WALLPAPER}[0]" $GEN_VERT_OPTS "$CACHE_DIR/walpaper_preview_vertical.jpg" 2>/dev/null; then
+    if magick "${WALLPAPER}[0]" $GEN_WIDE_OPTS "$CACHE_DIR/walpaper_wide_gen.jpg" 2>/dev/null && \
+        magick "${WALLPAPER}[0]" $GEN_BOX_OPTS "$CACHE_DIR/walpaper_box_gen.jpg" 2>/dev/null; then
         echo "Wallpaper preview image generated at $CACHE_DIR/walpaper_preview.jpg and $CACHE_DIR/walpaper_preview_vertical.jpg"
     else
         is_successfull=0
