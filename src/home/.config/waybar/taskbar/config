@@ -35,7 +35,7 @@
     },
     
     "wlr/taskbar": {
-        "tooltip-format": "{title} {app_id}",
+        "tooltip-format": "{title} ⬤ {name}",
         "on-click": "activate",
         "on-click-middle": "close",
         "on-click-right": "minimize",
@@ -49,7 +49,9 @@
             "seyclock"
         ],
         "app_ids-mapping": {
-            "seycmd": "kitty"
+            "seycmd": "kitty",
+            "thunar": "org.gnome.Nautilus.desktop",
+            "Thunar": "org.gnome.Nautilus.desktop"
         }
     },
 

@@ -43,6 +43,8 @@ if [ -f "$CACHE_FILE" ]; then
     fi
 fi
 
+ICON_FLAGS="Gtk.IconLookupFlags.FORCE_SYMBOLIC"
+ICON_SIZE=24
 case "$APP" in
     "vscode")
         SEARCH_NAMES="['code-symbolic', 'code', 'visual-studio-code', 'vscode']"
@@ -51,7 +53,9 @@ case "$APP" in
         SEARCH_NAMES="['view-app-grid-symbolic', 'view-app-grid', 'start-here', 'gnome-applications', 'application-x-executable']"
         ;;
     "thunar")
-        SEARCH_NAMES="['org.xfce.thunar', 'org.xfce.thunar-symbolic', 'system-file-manager-symbolic', 'org.xfce.thunar', 'thunar', 'system-file-manager']"
+        SEARCH_NAMES="['folder', 'inode-directory']"
+        ICON_FLAGS="Gtk.IconLookupFlags(0)"
+        ICON_SIZE=64
         ;;
     *)
         SEARCH_NAMES="['$APP-symbolic', '$APP', '$APP-desktop', 'org.$APP.$APP', 'com.$APP.$APP']"
@@ -71,7 +75,7 @@ fg = style.get_color(Gtk.StateFlags.NORMAL)
 
 def find(names):
     for name in names:
-        info = theme.lookup_icon(name, 24, Gtk.IconLookupFlags.FORCE_SYMBOLIC)
+        info = theme.lookup_icon(name, $ICON_SIZE, $ICON_FLAGS)
         if info:
             return info
     return None
