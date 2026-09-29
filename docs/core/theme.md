@@ -12,7 +12,8 @@ Whenever you change your wallpaper (whether you trigger it manually via `wallpap
 Everything starts when you pick a new image. The system calls `wallpaper_set.sh`, which is responsible for physically displaying the wallpaper on your screen. 
 - If you select a static image (`.png`, `.jpg`, `.gif`), it uses `awww` to render it. 
 - If you pick a video wallpaper (`.mp4`), it seamlessly switches to using `mpvpaper`.
-- This script also creates blurred cache versions of the wallpaper, which are used later for elements like the Niri overview backdrop or Rofi backgrounds.
+- This script creates blurred cache versions of the wallpaper, which are used later for elements like the Niri overview backdrop or Rofi backgrounds.
+- **State Caching:** The script also saves the current wallpaper path to `~/.cache/current_wallpaper`. This allows our autostart script, `wallpaper_resume.sh`, to know what was previously set. On startup, if `wallpaper_resume.sh` detects that the last wallpaper was a video, it will automatically relaunch `wallpaper_set.sh` to resume your lively wallpaper (since static images are natively restored by the `awww-daemon`).
 
 ### 2. Extracting the Colors (`get_accent_color.py`)
 If you have the automatic color extraction enabled (which is controlled by the `ACCENT_COLOR_BASED_ON_WALLPAPER=true` flag inside your `~/hakucfg/setting.sh` file), the system calls our Python script: `get_accent_color.py`.

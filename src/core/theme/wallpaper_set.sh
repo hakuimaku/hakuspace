@@ -106,6 +106,7 @@ case "$MIME_TYPE" in
 
         # Set static/animated image background using awww
         if awww img "$WALLPAPER" $AWWW_OPTS; then
+            echo "$WALLPAPER" > "$CACHE_DIR/current_wallpaper"
             make_cache_img
         else
             echo "Error: Failed to set image wallpaper using awww." >&2
@@ -128,6 +129,7 @@ case "$MIME_TYPE" in
         # Verify whether mpvpaper process started successfully
         sleep 0.3
         if kill -0 "$MPV_PID" 2>/dev/null; then
+            echo "$WALLPAPER" > "$CACHE_DIR/current_wallpaper"
             make_cache_img
         else
             echo "Error: mpvpaper failed to render video '$WALLPAPER' on monitor '$MONITOR'." >&2
