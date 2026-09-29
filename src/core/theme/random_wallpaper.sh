@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 
-# Include WALL_DIR & WALL_INTERVAL & ACCENT_COLOR_BASED_ON_WALLPAPER
+# Include WALL_DIR & WALL_MPV_DIR & WALL_INTERVAL & ACCENT_COLOR_BASED_ON_WALLPAPER
 [ -f "$HOME/hakucfg/setting.sh" ] && source "$HOME/hakucfg/setting.sh"
 
 # Fallback WALL_DIR and WALL_INTERVAL if not set
 WALL_DIR=${WALL_DIR:-$HOME/Pictures/Wallpapers}
+WALL_MPV_DIR=${WALL_MPV_DIR:-$HOME/Videos/Wallpapers}
 WALL_INTERVAL=${WALL_INTERVAL:-300}
 ACCENT_COLOR_BASED_ON_WALLPAPER=${ACCENT_COLOR_BASED_ON_WALLPAPER:-true}
 ACCENT_COLOR_MODE=${ACCENT_COLOR_MODE:-vivid}
+
+PREVIEW_DIR="$WALL_MPV_DIR/.thumbnails"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
@@ -28,15 +31,40 @@ run_wallpaper() {
 
         [[ "$(cat "$STATE_FILE" 2>/dev/null)" == "0" ]] && exit 0
 
-        WALL=$(find "$WALL_DIR" \
-            -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.gif" -o -iname "*.webp" \) \
-            -print | shuf -n 1)
+        if pgrep "mpvpaper" > /dev/null; then
+            WALL=$(find "$WALL_MPV_DIR" -type f -iname "*.mp4" -print | shuf -n 1)
+            IS_LIVELY=true
+        else
+            WALL=$(find "$WALL_DIR" \
+                -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.gif" -o -iname "*.webp" \) \
+                -print | shuf -n 1)
+            IS_LIVELY=false
+        fi
         
         if [ -n "$WALL" ]; then
             "$SET_WALLPAPER_SCRIPT" "$WALL"
 
             if [ "$ACCENT_COLOR_BASED_ON_WALLPAPER" = true ]; then
-                ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$WALL" "$ACCENT_COLOR_MODE")
+                if [ "$IS_LIVELY" = true ]; then
+                    filename=$(basename "${WALL%.*}")
+                    preview=""
+                    if [[ -f "$PREVIEW_DIR/$filename.gif" ]]; then
+                        preview="$PREVIEW_DIR/$filename.gif"
+                    elif [[ -f "$PREVIEW_DIR/$filename.jpg" ]]; then
+                        preview="$PREVIEW_DIR/$filename.jpg"
+                    elif [[ -f "$PREVIEW_DIR/$filename.png" ]]; then
+                        preview="$PREVIEW_DIR/$filename.png"
+                    fi
+
+                    if [[ -n "$preview" ]]; then
+                        ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$preview" "$ACCENT_COLOR_MODE")
+                    else
+                        ACCENT="#ffffff"
+                    fi
+                else
+                    ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$WALL" "$ACCENT_COLOR_MODE")
+                fi
+                
                 ACCENT="$(accent_color_or_fallback "$ACCENT")"
 
                 "$HOME/.local/bin/gen_style.sh" "$ACCENT" && \
