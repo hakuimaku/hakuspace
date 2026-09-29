@@ -2,7 +2,7 @@
 
 # This script is used to set up the main settings for all hakuspace's scripts.
 # DO NOT EDIT THIS LINE :v, used for checking setting.sh is up-to-date when run update.sh
-SETTING_VERSION="26.09-1"
+SETTING_VERSION="26.09-2"
 
 if [[ "$1" == "--version" || "$1" == "-v" ]]; then
     echo "$SETTING_VERSION"
@@ -39,8 +39,12 @@ ACCENT_COLOR_MODE="vivid"
 
 # ====== Screen Recording Settings ======
 SCREENREC_SAVE_DIR="$HOME/Videos"
-#REC_COMMAND="$HOME/.cargo/bin/wl-screenrec" # If you install wl-screenrec by cargo, uncomment the following line and comment the next one
-REC_COMMAND="wl-screenrec" # Default command for wl-screenrec, ensure it's in your PATH
+
+# Default command for wl-screenrec, ensure it's in your PATH
+REC_COMMAND="wl-screenrec"
+# If you install wl-screenrec by cargo, uncomment the above line and comment the below one
+#REC_COMMAND="$HOME/.cargo/bin/wl-screenrec"
+
 REC_OPTS="--max-fps 60" # wl-screenrec options, you can customize them as needed
 
 
@@ -62,8 +66,12 @@ WAYBAR_MODE_USER=()
 # Works best with wallpapers that have the subject in the center.
 # Change the options below to your liking, or leave them as default.
 # You can see the results in ~/.cache/, change wallpaper to gen them
-GEN_HORI_OPTS="-resize 800x250^ -gravity Center -crop 800x250+0+0 +repage" # Impact Rofi theme: televison.rasi
-GEN_VERT_OPTS="-resize 600x800^ -gravity Center -crop 600x800+0+0 +repage" # Impact Rofi theme: tablet.rasi
+
+# Rofi style: television.rasi
+# GEN_WIDE_OPTS=${GEN_WIDE_OPTS:-"-resize 800x250^ -gravity Center -crop 800x250+0+0 +repage"}
+
+# Rofi style: tablet.rasi
+# GEN_BOX_OPTS=${GEN_BOX_OPTS:-"-resize 1653x852^ -gravity Center -extent 1653x852 -gravity NorthWest -crop 1212x852+400+0 +repage"}
 
 
 
