@@ -96,8 +96,8 @@ To improve the user experience, edge-triggered menus automatically close when th
 - As long as the mouse stays inside the menu's area (the hole), clicks pass through normally. The moment the mouse moves out and touches the guard window, the script automatically sends a termination command (e.g., `pkill -x rofi` or `swaync-client -cp`) and destroys the guard window.
 
 **Current Safe Zones:**
-- **Top (`wallpaper_select.sh`):** Upper 60% of the screen.
-- **Bottom (`hakumenu.sh`):** Lower 60% of the screen.
+- **Top (`hakumenu.sh`):** Upper 60% of the screen.
+- **Bottom (`wallpaper_select.sh`):** Lower 60% of the screen.
 - **Left (`shutdown.sh`):** Leftmost 15% of the screen.
 - **Right (`swaync`):** Rightmost 40% of the screen.
 
