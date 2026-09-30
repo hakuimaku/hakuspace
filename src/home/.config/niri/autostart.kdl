@@ -17,8 +17,8 @@ spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
 spawn-at-startup "nm-applet" "--indicator"
 spawn-at-startup "blueman-applet"
 spawn-at-startup "fcitx5" "-d"
-spawn-at-startup "awww-daemon"
-spawn-at-startup "awww-daemon" "-n" "awww-daemon-backdrop"
+
+// Resume wallpaper on startup
 spawn-at-startup "sh" "-c" "$HOME/.local/bin/wallpaper_resume.sh"
 
 spawn-at-startup "sh" "-c" "$HOME/.local/bin/rounded_screen_manager.sh --startup" // Run rounded screen if state is true

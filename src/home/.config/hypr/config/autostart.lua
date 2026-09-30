@@ -17,8 +17,6 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
     hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
     hl.exec_cmd("$HOME/.local/bin/polkit_start.sh")
-    hl.exec_cmd("awww-daemon")
-    hl.exec_cmd("$HOME/.local/bin/wallpaper_resume.sh")
     hl.exec_cmd("swaync")
     hl.exec_cmd("wl-paste --type text --watch cliphist store")
     hl.exec_cmd("wl-paste --type image --watch cliphist store")
@@ -26,6 +24,9 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("blueman-applet")
     hl.exec_cmd("hypridle")
     hl.exec_cmd("fcitx5 -d")
+
+    -- Resume wallpaper on startup
+    hl.exec_cmd("$HOME/.local/bin/wallpaper_resume.sh")
 
     hl.exec_cmd("$HOME/.local/bin/rounded_screen_manager.sh --startup") -- Run rounded screen if state is true
     hl.exec_cmd("$HOME/.local/bin/edge_trigger_manager.sh --startup") -- Run edge trigger if state is true
