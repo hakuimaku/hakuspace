@@ -54,13 +54,16 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 * **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
 * **Wallpaper Automation:** Wallpapers change automatically every 5 minutes.
 * **Taskbar:** Built-in, Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
-* **Desktop Icons**: Built-in, Items in folder `~/Desktop` will be shown on Desktop.
-* **Rounded Screen Corners**: Built-in, Rounded corners for your screen, with a smooth and elegant look.
-* **Edge Trigger**: Built-in, Hover your mouse at the screen edges to quickly launch menus or applications.
-* **Haku Shell**: Enabling the features mentioned **above** automatically sets up a completely new look for you (inspired by *Caelestia-Shell*).
+* **Haku Shell**, the master toggle the aesthetic features: 
+  * **Desktop Icons**: Built-in, Items in folder `~/Desktop` will be shown on Desktop.
+  * **Rounded Screen Corners**: Built-in, Rounded corners for your screen, with a smooth and elegant look.
+  * **Edge Trigger**: Built-in, Hover your mouse at the screen edges to quickly launch menus or applications.
 
 > [!note]
 > My dotfiles are powered by scripts; if you're not using them, there's no impact on your performance!
+
+> [!tip]
+> See performance breakdown in [Performance](#performance) section.
 
 ---
 
@@ -111,7 +114,7 @@ Specific packages for each WM: [pkg-hyprland](src/packages/pkg-hyprland.txt) | [
 - Stable Release (Recommended):
 ```bash
 cd ~
-git clone --depth 1 --branch v26.09-2 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
+git clone --depth 1 --branch v26.10-1 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 - If you prefer to experience the **lastest changes**:
