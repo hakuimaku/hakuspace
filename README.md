@@ -49,15 +49,15 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 
 * **Control Center**: `~/hakucfg` this directory stores your custom configs so you don't have to touch the main ones, giving you much more freedom to customize.
 * **Accent Colors**: Synced across **Waybar**, **Rofi**, **Kitty**, **Swaync**,... giving your setup a **Super Clean** and **Cohesive Vibe**!
-* **Smart Accent Color:** Automatically generates the accent color based on your current wallpaper.
-* **Flexible Waybar Layouts:** Support 7 styles: `top`, `left`, `coredge`, `minimal`, `neon`, `island`, `legacy`.
-* **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
-* **Wallpaper Automation:** Wallpapers change automatically every 5 minutes.
-* **Taskbar:** Built-in, Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
-* **Haku Shell**, the master toggle the aesthetic features: 
-  * **Desktop Icons**: Built-in, Items in folder `~/Desktop` will be shown on Desktop.
-  * **Rounded Screen Corners**: Built-in, Rounded corners for your screen, with a smooth and elegant look.
-  * **Edge Trigger**: Built-in, Hover your mouse at the screen edges to quickly launch menus or applications.
+* **Smart Accent Color**: Automatically generates the accent color based on your current wallpaper.
+* **Flexible Waybar Layouts**: Support 7 styles: `top`, `left`, `coredge`, `minimal`, `neon`, `island`, `legacy`.
+* **Wallpaper Automation**: Wallpapers change automatically every 5 minutes.
+* **Taskbar**: Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
+* **Haku Shell**, Include aesthetic features: 
+  * **Unique Cava Underbar**: *Built-in*, Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
+  * **Desktop Icons**: *Built-in*, Items in folder `~/Desktop` will be shown on Desktop.
+  * **Rounded Screen Corners**: *Built-in*, Rounded corners for your screen, with a smooth and elegant look.
+  * **Edge Trigger**: *Built-in*, Hover your mouse at the screen edges to quickly launch menus or applications.
 
 > [!note]
 > My dotfiles are powered by scripts; if you're not using them, there's no impact on your performance!
