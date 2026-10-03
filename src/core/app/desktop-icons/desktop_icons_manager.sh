@@ -5,6 +5,7 @@
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
+source "$SCRIPT_DIR/haku_backend_lib.sh"
 DESKTOP_ICONS_STATE="$STATE_DIR/desktop_icons_state"
 
 DESKTOP_MANAGER_BIN="$HOME/.local/bin/desktop_icons.py"
@@ -36,6 +37,11 @@ Options:
     --reload            Reload desktop icons
     -h, --help          Show this help message
 EOF
+    exit 0
+fi
+
+if haku_backend_is "quickshell"; then
+    echo "Desktop icons are not supported in Quickshell backend yet."
     exit 0
 fi
 

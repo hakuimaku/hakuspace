@@ -268,7 +268,7 @@
         <action name="ShowMenu" menu="root-menu" />
         </keybind>
         <keybind key="W-r">
-        <action name="Execute" command="rofi -show drun" />
+        <action name="Execute" command="~/.local/bin/launcher.sh drun" />
         </keybind>
         <keybind key="W-q">
         <action name="Execute" command="kitty" />
@@ -280,10 +280,13 @@
         <action name="Execute" command="~/.local/bin/open_browser.sh" />
         </keybind>
         <keybind key="W-n">
-        <action name="Execute" command="swaync-client -t -sw" />
+        <action name="Execute" command="~/.local/bin/notif.sh toggle" />
         </keybind>
         <keybind key="W-slash">
-        <action name="Execute" command="rofi -modi emoji -show emoji" />
+        <action name="Execute" command="~/.local/bin/launcher.sh emoji" />
+        </keybind>
+        <keybind key="W-Escape">
+        <action name="Execute" command="~/.local/bin/haku_backend.sh set classic" />
         </keybind>
         <keybind key="A-F4">
         <action name="Close" />

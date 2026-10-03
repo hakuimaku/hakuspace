@@ -2,6 +2,7 @@
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
+source "$SCRIPT_DIR/haku_backend_lib.sh"
 
 # Apply GTK font (best-effort)
 if command -v gsettings >/dev/null 2>&1; then
@@ -23,7 +24,12 @@ fi
 #     "$HOME/.local/bin/taskbar_manager.sh" --reload >/dev/null 2>&1 || true
 # fi
 
-swaync-client --reload-config --reload-css >/dev/null 2>&1 || true
+if haku_backend_is "classic"; then
+    swaync-client --reload-config --reload-css >/dev/null 2>&1 || true
+else
+    # QML automatically watches JSON, but we can call a reload hook if needed
+    haku_qs_ipc shell reload >/dev/null 2>&1 || true
+fi
 
 for s in /tmp/kitty-*; do
     [[ -S "$s" ]] || continue

@@ -5,6 +5,7 @@
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
+source "$SCRIPT_DIR/haku_backend_lib.sh"
 
 MANUAL_STATE="$STATE_DIR/taskbar_manual_state"
 
@@ -54,15 +55,21 @@ ensure_symlink "$TASKBAR_REAL_DIR/config" "$TASKBAR_CONFIG"
 ensure_symlink "$TASKBAR_REAL_DIR/style.css" "$TASKBAR_STYLE"
 
 launch_taskbar() {
+    if haku_backend_is "quickshell"; then return 0; fi
     "$TASKBAR_BIN" -c "$TASKBAR_CONFIG" -s "$TASKBAR_STYLE" >/dev/null 2>&1 &
     disown
 }
 
 is_taskbar_running() {
+    if haku_backend_is "quickshell"; then
+        [[ $(cat "$MANUAL_STATE") == "1" ]]
+        return $?
+    fi
     pgrep -x "taskbar" >/dev/null
 }
 
 kill_taskbar() {
+    if haku_backend_is "quickshell"; then return 0; fi
     if pgrep -x "taskbar" >/dev/null; then
         pkill -x "taskbar"
         for _ in $(seq 1 20); do

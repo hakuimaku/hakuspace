@@ -109,8 +109,8 @@
                     "label": "󰆧",
                     "type": "toggle",
                     "active": true,
-                    "command": "$HOME/.local/bin/haku_shell_mode.sh --toggle >/dev/null 2>&1",
-                    "update-command": "cat $HOME/.local/state/hakuspace/state/haku_shell_state | grep -q '1' && echo true || echo false"
+                    "command": "$HOME/.local/bin/haku_space_mode.sh --toggle >/dev/null 2>&1",
+                    "update-command": "cat $HOME/.local/state/hakuspace/state/haku_space_state | grep -q '1' && echo true || echo false"
                 }
             ]
         },

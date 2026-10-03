@@ -4,6 +4,7 @@
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
+source "$SCRIPT_DIR/haku_backend_lib.sh"
 
 SCRIPT_PATH="${CAVA_LAYER_PATH:-$HOME/.local/bin/cava_layer.py}"
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
@@ -80,12 +81,23 @@ from gi.repository import Vte
 }
  
 is_running() {
+    if haku_backend_is "quickshell"; then
+        [[ "$(cat "$STATE_DIR/cava_layer_state" 2>/dev/null)" == "1" ]]
+        return $?
+    fi
     [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE" 2>/dev/null)" 2>/dev/null
 }
  
 start() {
     if is_running; then
-        log "Already running (pid=$(cat "$PIDFILE"))."
+        log "Already running."
+        return 0
+    fi
+    
+    if haku_backend_is "quickshell"; then
+        echo "1" > "$STATE_DIR/cava_layer_state"
+        echo "1" > "$PIDFILE" # Dummy PID for compat
+        log "Started (QS mode)"
         return 0
     fi
  
@@ -122,6 +134,13 @@ stop() {
     if ! is_running; then
         log "Not running."
         rm -f "$PIDFILE"
+        return 0
+    fi
+    
+    if haku_backend_is "quickshell"; then
+        echo "0" > "$STATE_DIR/cava_layer_state"
+        rm -f "$PIDFILE"
+        log "Stopped (QS mode)"
         return 0
     fi
  
