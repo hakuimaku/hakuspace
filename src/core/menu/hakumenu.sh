@@ -11,8 +11,8 @@ else
   EXTEND=()
 fi
 
-rofi -show " General" \
+rofi -show "" \
   -p "Haku Menu - Search" \
   -i \
   "${EXTEND[@]}" \
-  -modes " General:~/.local/bin/hm_general.sh, Theme:~/.local/bin/hm_theme.sh, Setting:~/.local/bin/hm_setting.sh"
+  -modes ":~/.local/bin/hm_general.sh,:~/.local/bin/hm_theme.sh,:~/.local/bin/hm_setting.sh"

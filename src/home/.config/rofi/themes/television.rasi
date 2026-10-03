@@ -62,7 +62,7 @@ inputbar {
 }
 
 prompt {
-    padding:             10px 15px;
+    padding:             10px 30px 10px 25px;
     background-color:    @accent;
     text-color:          @background;
 }
@@ -85,7 +85,8 @@ mode-switcher {
 }
 
 button {
-    padding:             8px 14px;
+    font:                "JetBrainsMono Nerd Font 18";
+    padding:             8px 20px 8px 13px;
     text-color:          @accent;
     border-radius:       0;
 }

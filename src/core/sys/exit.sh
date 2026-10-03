@@ -50,10 +50,7 @@ EOF
 
 SELECTION=$(echo "$MENU_OPTIONS" | rofi -dmenu \
     -p "System Monitor" \
-    -theme-str '
-        window { width: 55%; height: 60%; }
-        mainbox { children: [ inputbar, content-area]; }
-        entry { placeholder: "Select option or press ESC to cancel..."; }' \
+    -theme option-menu.rasi \
     -selected-row 0)
 
 # If user cancels or hits ESC

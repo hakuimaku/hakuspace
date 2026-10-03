@@ -35,7 +35,7 @@ if [ -z "$themes" ]; then
 fi
 
 # Select theme using rofi
-selected_theme=$(echo "$themes" | rofi -dmenu -p "Select Theme:" -theme-str 'mainbox { children: [ inputbar, content-area]; } window { width: 35%; height: 35%; }' -i)
+selected_theme=$(echo "$themes" | rofi -dmenu -p "Select Theme:" -theme option-menu.rasi -i)
 
 # Link theme if selected and update config.rasi
 if [ -n "$selected_theme" ]; then
