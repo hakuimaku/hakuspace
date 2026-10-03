@@ -10,6 +10,7 @@ EXIT_APP_LIST_DEFAULT=(
     "code" "code-url-handler" "zen" "zen-bin" "firefox" "chromium" "kitty" "slurp"
     "waybar" "taskbar" "hypridle" "swaync" "sway-audio-idle-inhibit"
     "awww-daemon" "gammastep" "polkit-mate" "hyprsunset" "agy"
+    "qemu" "java"
 )
 APP_LIST=("${EXIT_APP_LIST_DEFAULT[@]}" "${EXIT_APP_LIST_USER[@]}" )
 APP_PATTERN=$(IFS="|" ; echo "${APP_LIST[*]}")
@@ -51,6 +52,7 @@ EOF
 SELECTION=$(echo "$MENU_OPTIONS" | rofi -dmenu \
     -p "System Monitor" \
     -theme option-menu.rasi \
+    -theme-str 'window {width: 50%; height: 60%; }' \
     -selected-row 0)
 
 # If user cancels or hits ESC
