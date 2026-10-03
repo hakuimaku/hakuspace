@@ -303,6 +303,8 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
     echo ">>> Deploying .nanorc (nano configuration)..."
     deploy_config_item "$HOME_SRC_DIR/.nanorc" "$HOME/.nanorc"
 
+    echo ">>> Deploying .zshrc (Zsh configuration)..."
+    deploy_config_item "$HOME_SRC_DIR/.zshrc" "$HOME/.zshrc"
 
     log_ok "Configurations deployed finished."
 else
