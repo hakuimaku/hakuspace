@@ -22,7 +22,7 @@ CACHE_DIR="$HOME/.cache"
 mkdir -p "$CACHE_DIR"
 
 GEN_WIDE_OPTS=${GEN_WIDE_OPTS:-"-resize 800x250^ -gravity Center -crop 800x250+0+0 +repage"}
-GEN_BOX_OPTS=${GEN_BOX_OPTS:-"-resize 1653x852^ -gravity Center -extent 1653x852 -gravity NorthWest -crop 1212x852+400+0 +repage"}
+GEN_BOX_OPTS=${GEN_BOX_OPTS:-"-resize 1653x852^ -gravity Center -extent 1653x852 -gravity NorthWest -crop 1212x852+500+0 +repage"}
 
 # Detect active monitor using wlr-randr
 get_active_monitor() {
