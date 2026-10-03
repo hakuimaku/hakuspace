@@ -57,16 +57,17 @@ if [[ $# -eq 0 ]]; then
     cat <<EOF
   Change Theme
 󰆧  Haku Shell ($HAKU_SHELL_TEXT)
+󰝚  Cava Underbar ($CAVA_TEXT) $IS_TOP
   Desktop ($DESKTOP_ICONS_TEXT)
 󰅹  Waybar ($WAYBAR_TEXT)
 󰐃  Taskbar ($TASKBAR_TEXT)
+󰤕  Niri Animations
+󰏜  Change Wallpaper
+󱛹  Kill Lively Wallpaper
+  Auto Random Wallpaper ($WALL_TEXT)
   Rounded Screen ($ROUNDED_SCREEN_TEXT)
   Edge Trigger ($EDGE_TRIGGER_TEXT)
   Opaque Theme Mode $IS_OPAQUE
-󰝚  Cava Underbar ($CAVA_TEXT) $IS_TOP
-  Auto Random Wallpaper ($WALL_TEXT)
-󰏜  Change Wallpaper
-󱛹  Kill Lively Wallpaper
 EOF
     exit 0
 fi
@@ -75,16 +76,17 @@ chosen="$*"
 case "$chosen" in
     *"Change Theme"*) spawn $HOME/.local/bin/change_theme.sh ;;
     *"Haku Shell"*) spawn $HOME/.local/bin/haku_shell_mode.sh --toggle ;;
+    *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh ;;
     *"Desktop"*) spawn $HOME/.local/bin/desktop_icons_manager.sh --toggle ;;
     *"Waybar"*) spawn $HOME/.local/bin/waybar_manager.sh --toggle ;;
     *"Taskbar"*) spawn $HOME/.local/bin/taskbar_manager.sh --toggle ;;
+    *"Niri Animations"*) spawn $HOME/.local/bin/niri_animation_switcher.sh ;;
+    *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
+    *"Kill Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh --exit ;;
+    *"Auto Random Wallpaper"*) spawn $HOME/.local/bin/random_wallpaper.sh --toggle ;;
     *"Rounded Screen"*) spawn $HOME/.local/bin/rounded_screen_manager.sh --toggle ;;
     *"Edge Trigger"*) spawn $HOME/.local/bin/edge_trigger_manager.sh --toggle ;;
     *"Opaque Theme Mode"*) spawn $HOME/.local/bin/opaque_theme.sh --toggle ;;
-    *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh ;;
-    *"Auto Random Wallpaper"*) spawn $HOME/.local/bin/random_wallpaper.sh --toggle ;;
-    *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
-    *"Kill Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh --exit ;;
 esac
 
 exit 0

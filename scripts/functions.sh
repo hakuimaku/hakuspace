@@ -616,6 +616,7 @@ check_state_dir() {
     local required_files=(
         "taskbar-theme"
         "rofi-theme.rasi"
+        "niri-animation.kdl"
     )
     for file in "${required_files[@]}"; do
         if [[ ! -f "$target_dir/$file" ]]; then
