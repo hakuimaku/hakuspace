@@ -179,6 +179,13 @@ if ask_yes_no "===> Do you want to update hakuspace configs now?"; then
             "labwc")
                 echo ">>> Deploying Labwc configs..."
                 deploy_config_item "$WM_DIR_PATH" "$DEST_CONFIG/labwc"
+
+                if [[ ! -d "$HOME/.themes/hakulab" ]]; then
+                    echo ">>> Deploying Hakulab theme for Labwc..."
+                    copy_dir_content "$HOME_SRC_DIR/.themes/hakulab" "$HOME/.themes/hakulab"
+                else
+                    log_warn "Hakulab theme directory not found. Skipping theme deployment."
+                fi
                 ;;
             *)
                 log_warn "Unknown WM: $WM_NAME. Skipping WM config deployment."
@@ -254,13 +261,7 @@ if command -v nixos-rebuild >/dev/null 2>&1; then
 fi
 
 # Check if local/state/hakuspace exists, if not, deploy it
-if [[ ! -d "$HOME/.local/state/hakuspace/dockbar-theme" || ! -d "$HOME/.local/state/hakuspace/rofi-theme.rasi" ]]; then
-    log_info "Local state directory ~/.local/state/hakuspace does not exist. Deploying it now..."
-    deploy_config_item "$HOME_SRC_DIR/.local/state/hakuspace" "$HOME/.local/state/hakuspace"
-    log_ok "Local state directory deployed."
-else
-    log_skip "Local state directory ~/.local/state/hakuspace already exists. Skipping deployment."
-fi
+check_state_dir
 
 # Init HakuSpace Control
 check_control_dir

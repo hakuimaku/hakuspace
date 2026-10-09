@@ -205,21 +205,48 @@ determine_deploy_mode() {
     local copy_count=0
     local total_checked=0
     
+    local check_recursive
+    check_recursive() {
+        local src="$1"
+        local dst="$2"
+        if [[ -d "$src" ]]; then
+            local shopt_state
+            shopt_state="$(shopt -p dotglob nullglob)"
+            shopt -s dotglob nullglob
+            local i
+            for i in "$src"/*; do
+                check_recursive "$i" "$dst/${i##*/}"
+            done
+            eval "$shopt_state"
+        else
+            if [[ -e "$dst" || -L "$dst" ]]; then
+                total_checked=$((total_checked + 1))
+                if [[ -L "$dst" ]]; then
+                    symlink_count=$((symlink_count + 1))
+                else
+                    copy_count=$((copy_count + 1))
+                fi
+            fi
+        fi
+    }
+
     # Check all configs that Hakuspace tracks
     for item in "$SOURCE_CONFIG"/*; do
         [[ -e "$item" ]] || continue
         
         local item_name="${item##*/}"
-        local dst="$DEST_CONFIG/$item_name"
         
-        if [[ -e "$dst" ]]; then
-            total_checked=$((total_checked + 1))
-            if [[ -L "$dst" ]]; then
-                symlink_count=$((symlink_count + 1))
-            else
-                copy_count=$((copy_count + 1))
-            fi
-        fi
+        local is_skipped=0
+        for once in "${ONCE_CONFIGS[@]}"; do
+            [[ "$once" == "$item" ]] && { is_skipped=1; break; }
+        done
+        for skip in "${SKIP_CONFIGS[@]}"; do
+            [[ "$skip" == "$item" ]] && { is_skipped=1; break; }
+        done
+        [[ $is_skipped -eq 1 ]] && continue
+        
+        local dst="$DEST_CONFIG/$item_name"
+        check_recursive "$item" "$dst"
     done
     
     # Check a few scripts as well
@@ -514,4 +541,25 @@ check_control_dir() {
         log_warn "setting.sh not found in hakucfg. Creating default..."
         copy_file "$HAKUSPACE_CUSTOM_DIR/setting.sh" "$DEST_CUSTOM_DIR/setting.sh"
     fi
+}
+
+check_state_dir() {
+    local target_dir="$HOME/.local/state/hakuspace"
+    local source_dir="$HOME_SRC_DIR/.local/state/hakuspace"
+    
+    if [[ ! -d "$target_dir" ]]; then
+        log_info "Local state directory $target_dir does not exist. Creating..."
+        mkdir -p "$target_dir"
+    fi
+
+    local required_files=(
+        "dockbar-theme"
+        "rofi-theme.rasi"
+    )
+    for file in "${required_files[@]}"; do
+        if [[ ! -f "$target_dir/$file" ]]; then
+            log_warn "$file not found in state dir. Creating default..."
+            copy_file "$source_dir/$file" "$target_dir/$file"
+        fi
+    done
 }
