@@ -29,8 +29,6 @@ window#waybar {
 #custom-notification,
 #pulseaudio,
 #backlight,
-#pulseaudio-slider,
-#backlight-slider,
 #battery,
 #tray,
 #clock,
@@ -42,104 +40,40 @@ window#waybar {
     min-height: 30px;
 }
 
-#hyprland-workspaces {
-    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
-    border-radius: 20px;
-    min-height: 30px;
-}
-
-#niri-workspaces {
-    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
-    border-radius: 20px;
-    min-height: 30px;
-}
-
-#backlight-slider slider {
-    min-height: 0px;
-    min-width: 0px;
-    opacity: 0;
-    background-image: none;
-    border: none;
-    box-shadow: none;
-    background: none;
-}
-#backlight-slider trough {
-    min-height: 60px;
-    border-radius: 20px;
-    background: rgba(203, 203, 203, 0.5);
-}
-#backlight-slider highlight {
-    min-width: 10px;
-    border-radius: 20px;
-    background: @accent_color;
-}
-
-#pulseaudio-slider slider {
-    min-height: 0px;
-    min-width: 0px;
-    opacity: 0;
-    background-image: none;
-    border: none;
-    box-shadow: none;
-}
-#pulseaudio-slider trough {
-    min-height: 60px;
-    border-radius: 20px;
-    background: rgba(203, 203, 203, 0.5);
-}
-#pulseaudio-slider highlight {
-    min-width: 10px;
-    border-radius: 20px;
-    background: @accent_color;
-}
-
 /* ============================================================================== */
 /* WORKSPACES                                    */
 /* ============================================================================== */
 #workspaces {
-    border-radius: 20px;
+    border-radius: 999px;
+    padding: 8px 2px;
+    margin: 4px 0;
 }
+
 #workspaces button {
-    color: @accent_color;
-    padding: 2px 6px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    padding: 0;
+    margin: 4px;
+    min-width: 0;
+    min-height: 0;
     transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
-    margin: 2px;
-    border-radius: 20px;
-    min-height: 30px;
 }
 
 #workspaces button.active {
-    color: #000000;
     background-color: @accent_color;
+    padding: 16px 0;
     transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
-    min-height: 80px;
 }
 
 #workspaces button.empty {
-    color: rgba(0, 0, 0, 1);
+    background-color: rgba(255, 255, 255, 0.04);
 }
 
-/*
-#workspaces button:nth-child(1):not(.empty):not(.active) {
-    color: #ffffff;
+#workspaces button.empty.active {
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
-#workspaces button:nth-child(2):not(.empty):not(.active) {
-    color: #ffffff;
-}
 
-#workspaces button:nth-child(3):not(.empty):not(.active) {
-    color: #ffffff;
-}
-
-#workspaces button:nth-child(4):not(.empty):not(.active) {
-    color: #ffffff;
-}
-
-#workspaces button:nth-child(5):not(.empty):not(.active) {
-    color: #ffffff;
-}
-*/
 /* ============================================================================== */
 /* SPECIFIC MODULES                                 */
 /* ============================================================================== */
@@ -147,6 +81,8 @@ window#waybar {
 
 #clock { 
     color: @accent_color;
+    padding: 20px 0;
+    border-radius: 0 20px 20px 0;
 }
 
 #custom-recorder {
@@ -161,10 +97,6 @@ window#waybar {
     margin: 0 4px 8px 0;
 }
 
-#backlight { color: @accent_color; }
-
-#pulseaudio { color: @accent_color; }
-
 #battery { color: @accent_color; }
 
 #memory { color: @accent_color; }
@@ -175,6 +107,13 @@ window#waybar {
     min-height: 30px;
 }
 
+#backlight,
+#pulseaudio {
+    color: @accent_color;
+    padding: 10px 0;
+    border-left: 2px solid @accent_color;
+    border-radius: 0 20px 20px 0;
+}
 
 /* ============================================================================== */
 /* HOVER EFFECTS                                   */
@@ -193,31 +132,18 @@ window#waybar {
 }
 
 #workspaces button:hover {
-    background-color: transparent;
-    border-color: @accent_color;
+    background-color: @accent_color;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-height: 60px;
+    min-height: 40px;
 }
 
 #workspaces button.active:hover {
-    color: @accent_color;
-    background-color: transparent;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-height: 80px;
-}
-
-#workspaces button.empty:hover {
-    color: @accent_color;
+    min-height: 40px;
 }
 
 #clock:hover {
     min-height: 160px;
-}
-
-#pulseaudio:hover,
-#backlight:hover {
-    color: @accent_color;
-    background-color: transparent;
 }
 
 /* ============================================================================== */
@@ -242,4 +168,3 @@ tooltip label {
     50% { opacity: 0.5; }
     100% { opacity: 1; }
 }
-/* reload_trigger: 0 */
