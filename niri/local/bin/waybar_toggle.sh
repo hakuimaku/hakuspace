@@ -5,7 +5,8 @@ DIR_TOP="$HOME/.config/waybar/waybartop"
 STATE_FILE="/tmp/waybar_current_mode"
 
 if [ $1 == "--reset" ]; then
-    rm "$STATE_FILE"
+    echo "Remove state file ($STATE_FILE) to reset Waybar mode to top"
+    sudo rm "$STATE_FILE"
 fi
 
 if [ ! -f "$STATE_FILE" ]; then
