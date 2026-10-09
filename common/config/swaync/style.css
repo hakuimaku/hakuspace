@@ -9,11 +9,11 @@
 }
 
 .notification {
-    background: rgba(0, 0, 0, 0.85);
-    border-radius: 20px;
-    padding: 10px;
-    box-shadow: 5px 5px 5px #000000;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 16px;
+    padding: 12px;
     color: @accent_color;
+    border-bottom: 3px solid @accent_color;
 }
 
 .notification * {
@@ -84,10 +84,12 @@
 .widget-notifications,
 .widget-notifications * {
     border-radius: 20px;
+    padding: 2px;
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .widget-notifications {
-    box-shadow: 5px 5px 5px 5px #000000;
+    box-shadow: 5px 5px #000000;
 }
 
 .widget-menubar {
@@ -140,11 +142,17 @@
     color: @accent_color;
 }
 
+.widget-backlight,
+.widget-backlight * {
+    color: @accent_color;
+}
+
 .widget-volume scale trough,
 .widget-backlight scale trough {
-    background: rgba(255, 255, 255, 0.12);
-    min-height: 6px;
+    background: rgba(255, 255, 255, 0.075);
+    min-height: 8px;
     border-radius: 999px;
+    padding: 4px;
 }
 
 .widget-volume scale highlight,
@@ -157,16 +165,12 @@
 
 .widget-volume scale slider,
 .widget-backlight scale slider {
-    background: @accent_color;
-    border: 1px solid rgba(0, 0, 0, 0.75);
-    min-height: 14px;
-    min-width: 14px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    min-height: 0;
+    min-width: 0;
     border-radius: 999px;
-}
-
-.widget-backlight,
-.widget-backlight * {
-    color: @accent_color;
 }
 
 .widget-inhibitors,
@@ -175,14 +179,17 @@
 }
 
 .widget-buttons-grid flowboxchild > button {
+    border-top: 3px solid rgba(255, 255, 255, 0.075);
     padding: 4px 25px;
-    background: rgba(0, 0, 0, 0.4);
-    margin: 4px;
+    background: rgba(0, 0, 0, 0.1);
+    margin: 6px;
+    border-radius: 10px;
     box-shadow: 4px 4px 4px #000000;
 }
 
 .widget-buttons-grid flowboxchild > button.toggle:checked {
     border-top: 3px solid @accent_color;
+    background: rgba(0, 0, 0, 0.6);
 }
 
 /* Override the font size for buttons in the widget-buttons-grid */
