@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
 
 # This script is designed to safely exit the current window manager
-# If you see some apps still running after the exit (These will take a lot of RAM when login again)
-# You can add them to the APP_LIST array below for graceful and force kill sequence
+
+# Include EXIT_APP_LIST_USER and RAM_THRESHOLD_MB
+source "$HOME/hakuspace-control/main_setting.sh"
 
 # Targeted apps for graceful and force kill sequence
-APP_LIST=(
+EXIT_APP_LIST_DEFAULT=(
     "code" "code-url-handler" "zen" "zen-bin" "firefox" "chromium" "kitty" "slurp"
     "waybar" "dockbar" "hypridle" "swaync" "sway-audio-idle-inhibit"
     "awww-daemon" "gammastep" "polkit-mate" "hyprsunset"
 )
+APP_LIST=("${EXIT_APP_LIST_DEFAULT[@]}" "${EXIT_APP_LIST_USER[@]}" )
 APP_PATTERN=$(IFS="|" ; echo "${APP_LIST[*]}")
 
-# Threshold for RAM warning (in Megabytes)
-RAM_THRESHOLD_MB=300
+# Fallback RAM threshold if not set in main_setting.sh
+RAM_THRESHOLD_MB=${RAM_THRESHOLD_MB:-300}
 
 get_process_list() {
     ps -u "$USER" -o rss,comm | awk -v limit="$RAM_THRESHOLD_MB" '

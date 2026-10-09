@@ -2,14 +2,21 @@
 
 set -euo pipefail
 
+# Include BACKDROP_DIR
+source "$HOME/hakuspace-control/main_setting.sh"
+
+# Fallback BACKDROP_DIR if not set
+BACKDROP_DIR=${BACKDROP_DIR:-/tmp}
+
 WALLPAPER="${1:-}"
-BACKDROP_DIR="/tmp"
 
 # Detect active monitor using wlr-randr
 get_active_monitor() {
     local detected_monitor=""
     if command -v wlr-randr >/dev/null 2>&1; then
         detected_monitor=$(wlr-randr | awk '/^[^ ]/ {m=$1} /current/ {print m; exit}')
+    else
+        echo "Warning: wlr-randr not found. Defaulting to eDP-1." >&2
     fi
 
     # Fallback to eDP-1 if wlr-randr is missing or output is empty

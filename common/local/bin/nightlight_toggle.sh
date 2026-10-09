@@ -3,15 +3,19 @@
 # This script toggles the night light mode
 # hyprsunset (hyprland) or gammastep (other WM)
 
-TEMPERATURE=4000
+# Include NIGHT_LIGHT_TEMPERATURE variable from main_setting.sh
+source "$HOME/hakuspace-control/main_setting.sh"
+
+# Fallback temperature if NIGHT_LIGHT_TEMPERATURE is not set
+NIGHT_LIGHT_TEMPERATURE=${NIGHT_LIGHT_TEMPERATURE:-4000}
 
 run_nightlight() {
     if [[ "$XDG_CURRENT_DESKTOP" == "Hyprland" ]]; then
-        hyprsunset --temperature $TEMPERATURE &
-        echo "Night light mode enabled with hyprsunset at $TEMPERATURE K"
+        hyprsunset --temperature $NIGHT_LIGHT_TEMPERATURE &
+        echo "Night light mode enabled with hyprsunset at $NIGHT_LIGHT_TEMPERATURE K"
     else
-        gammastep -O $TEMPERATURE &
-        echo "Night light mode enabled with gammastep at $TEMPERATURE K"
+        gammastep -O $NIGHT_LIGHT_TEMPERATURE &
+        echo "Night light mode enabled with gammastep at $NIGHT_LIGHT_TEMPERATURE K"
     fi
 }
 

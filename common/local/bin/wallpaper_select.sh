@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-WALL_DIR="$HOME/Pictures/Wallpapers"
+# Include WALL_DIR
+source "$HOME/hakuspace-control/main_setting.sh"
+
+# Fallback WALL_DIR if not set
+WALL_DIR=${WALL_DIR:-$HOME/Pictures/Wallpapers}
 
 SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"

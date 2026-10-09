@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
-WALL_DIR="$HOME/Videos/Wallpapers"
-PREVIEW_DIR="$WALL_DIR/Preview"
+# Include WALL_MPV_DIR & PREVIEW_DIR
+source "$HOME/hakuspace-control/main_setting.sh"
+
+# Fallback WALL_MPV_DIR & PREVIEW_DIR if not set
+WALL_MPV_DIR=${WALL_MPV_DIR:-$HOME/Videos/Wallpapers}
+PREVIEW_DIR=${PREVIEW_DIR:-$WALL_MPV_DIR/Preview}
 
 SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
@@ -19,7 +23,7 @@ if [[ $1 == "--exit" ]]; then
 fi
 
 list_walls() {
-    cd "$WALL_DIR" || exit
+    cd "$WALL_MPV_DIR" || exit
     for file in *.mp4; do
         [[ -e "$file" ]] || continue
 
@@ -47,7 +51,7 @@ CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" -theme-str "
 ")
 
 if [ -n "$CHOICE" ]; then
-    WALL="$WALL_DIR/$CHOICE"
+    WALL="$WALL_MPV_DIR/$CHOICE"
     filename="${CHOICE%.*}"
 
     # Pick preview image for color (not video)

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-SCREENSHOT_DIR="$HOME/Pictures/Screenshots"
+# Include SCREENSHOT_DIR
+source "$HOME/hakuspace-control/main_setting.sh"
+SCREENSHOT_DIR=${SCREENSHOT_DIR:-"$HOME/Pictures/Screenshots"}
 mkdir -p "$SCREENSHOT_DIR"
 
 timestamp="$(date +'%Y-%m-%d_%H-%M-%S')"
