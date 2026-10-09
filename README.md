@@ -56,6 +56,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 * **Taskbar:** Built-in, Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
 * **Desktop Icons**: Built-in, Items in folder `~/Desktop` will be shown on Desktop.
 * **Rounded Screen Corners**: Built-in, Rounded corners for your screen, with a smooth and elegant look.
+* **Edge Trigger**: Built-in, Hover your mouse at the screen edges to quickly launch menus or applications.
 
 > [!note]
 > My dotfiles are powered by scripts; if you're not using them, there's no impact on your performance!
@@ -195,8 +196,9 @@ Haku Space is designed to balance aesthetic features and resource efficiency. Be
 - **Desktop Icons enabled:** +100 MB
 - **Cava Underbar enabled:** +100 MB (High CPU usage)
 - **Rounded Screen enabled:** +70 MB
+- **Edge Trigger enabled:** +60 MB
 
-**Total:** If you use all the built-in mini-apps simultaneously, it will consume at least **~1.45 GB RAM** upon startup.
+**Total:** If you use all the built-in mini-apps simultaneously, it will consume at least **~1.5 GB RAM** upon startup.
 
 > [!note]
 > During your actual workflow, RAM consumption will naturally expand further depending on the applications you use and your specific needs.
@@ -322,7 +324,7 @@ Want to understand how HakuSpace works under the hood? We've written comprehensi
 - [System Scripts](docs/core/sys.md)
 - [Utilities](docs/core/util.md)
 - [Haku Menu](docs/core/menu.md)
-- [Mini-Apps (Taskbar, Desktop Icons, Rounded Screen)](docs/core/app.md)
+- [Mini-Apps (Taskbar, Desktop Icons, Rounded Screen, Edge Trigger)](docs/core/app.md)
 
 ---
 
