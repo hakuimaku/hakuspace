@@ -282,7 +282,22 @@ See more in `~/hakucfg/wm/hyprland-custom.lua` or [here](src/home/hakucfg/wm/hyp
 
 ---
 
-# Troubleshooting
+## Documentation
+
+Want to understand how HakuSpace works under the hood? We've written comprehensive documentation explaining the internal architecture, scripts, and theming engine. 
+
+- [Architecture Overview](docs/architecture.md) (**Start Here!**)
+- [Management & Deployment](docs/management.md)
+- [The Core Libraries](docs/core/lib.md)
+- [Theming Engine](docs/core/theme.md)
+- [System Scripts](docs/core/sys.md)
+- [Utilities](docs/core/util.md)
+- [Haku Menu](docs/core/menu.md)
+- [Mini-Apps (Dockbar, Desktop Icons)](docs/core/app.md)
+
+---
+
+## Troubleshooting
 
 **Waybar issues**:
 - **Waybar clock**: You should set your timezone and locale manually in waybar configuration to ensure the clock displays correctly.
@@ -303,15 +318,14 @@ systemctl --user disable swaync.service
 
 ---
 
-# Contributing
+## Contributing
 
 - This is a personal dotfiles configuration. Feel free to fork and adapt it to your needs!
-- See Documentation for more knowledge of my setup: [Architecture](docs/architecture.md)
 - Tiktok / See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372)
 - Discord: [haku-shell](https://discord.gg/Juuun8sXsN)
 
 ---
 
-# Credits
+## Credits
 
 See **hakuspace-archive** for the assets used in this project: [hakuspace-archive](https://github.com/hakuimaku/hakuspace-archive)
