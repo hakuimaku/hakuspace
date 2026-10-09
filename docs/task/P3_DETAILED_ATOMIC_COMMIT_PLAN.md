@@ -461,13 +461,26 @@ No theme engine implementation.
 
 ## Wallpaper carousel
 
-### W1
+### W1 — DONE
 Audit existing wallpaper model/action path.
 
-No commit unless real code needs normalization.
+Result:
+- `wallpaper_ctl.sh` already exposes the QML-facing model/action contract required by W2–W5: structured static/lively lists, current/status, explicit apply, lively stop, and thumbnail preparation.
+- JSON records already provide `id`, `kind`, `path`, `label`, `thumbnail`, and `selected`; no Rofi parsing is needed in Hikai.
+- W1 normalization: static discovery now matches extensions case-insensitively and includes `.webp`, keeping the carousel model consistent with the existing random-wallpaper/static apply path.
+- No carousel QML is added in W1.
 
-### W2
+Commit only for the discovery normalization above.
+
+### W2 — DONE
 Fixed physical center selection slot.
+
+Result:
+- HakuMenu Theme now hosts a native wallpaper carousel surface backed directly by `wallpaper_ctl.sh` JSON output.
+- W2 renders only one stable 16:9 center slot; its geometry is derived from the available region, not thumbnail dimensions, so loading/aspect-ratio changes cannot move the physical center.
+- The current wallpaper is preferred; if no record is marked selected, the first discovered item is used as the non-interactive W2 fallback.
+- Static and lively records share the same center presentation. Navigation, side stacks, and apply actions remain intentionally deferred to W3–W5.
+- The Theme wallpaper region is transparent so the deprecated large generic panel background does not return.
 
 Commit:
 
@@ -475,8 +488,15 @@ Commit:
 p3(wallpaper): add fixed center selection slot
 ```
 
-### W3
+### W3 — DONE
 Stacked/overlapping left-right items. No big panel background.
+
+Result:
+- The W2 physical center slot remains fixed and keeps the selected/current record in front.
+- Up to three neighboring wallpapers are rendered on each side as progressively smaller, dimmer overlapping layers behind the center card.
+- Side-card geometry is derived only from the fixed center slot and neighbor depth, never from thumbnail dimensions, so asynchronous image loading cannot shift the carousel silhouette.
+- W3 remains presentation-only: no click, arrow, wheel, or apply behavior is introduced; `selectedIndex` still resolves from the backend-selected record (or the first item fallback) until W4 owns navigation state.
+- No generic wallpaper panel/background was added.
 
 Commit:
 
@@ -484,8 +504,22 @@ Commit:
 p3(wallpaper): add stacked side carousel
 ```
 
-### W4
+### W3.5 — Native Hikai entrypoints + standalone wallpaper debug layer
+
+- `wallpaper_select.sh` now routes no-argument Hikai use to Quickshell IPC while Classic keeps the Rofi frontend.
+- `hakumenu.sh` now routes Hikai to the native HakuMenu IPC while Classic keeps Rofi.
+- Wallpaper carousel is detached from HakuMenu and hosted by a centered standalone `WallpaperPanel` overlay for W4/W5 debugging.
+- No navigation/apply semantics are added here; W4/W5 remain responsible for those behaviors.
+
+### W4 — DONE
 Arrow + wheel navigation, one `selectedIndex`.
+
+Result:
+- `WallpaperCarousel` now owns exactly one mutable `selectedIndex`; backend `selected` only seeds that index after refresh.
+- Left/Right keys move the standalone Hikai wallpaper panel selection without applying wallpaper.
+- Mouse/touchpad wheel over the carousel moves the same `selectedIndex`.
+- Navigation is clamped at the first/last model item; side-card placement continues to derive from offsets around `selectedIndex`.
+- W4 does not execute wallpaper mutation; Enter/apply remains W5.
 
 Commit:
 
@@ -493,8 +527,15 @@ Commit:
 p3(wallpaper): add carousel navigation
 ```
 
-### W5
+### W5 — DONE
 Enter applies selected item.
+
+Result:
+- Enter/Return applies exactly the record currently at the fixed center slot; no side-card label or backend-selected flag is reparsed for dispatch.
+- Static records call `wallpaper_ctl.sh apply-static <path>` and lively records call `wallpaper_ctl.sh apply-lively <path>`.
+- Apply is guarded while a previous mutation is still running, preventing repeated Enter presses from spawning concurrent wallpaper mutations.
+- Successful apply closes the standalone wallpaper layer; reopening refreshes the model so backend `selected` reseeds the carousel from the newly active wallpaper.
+- Failed apply leaves the layer open and reports the backend error to the Quickshell log.
 
 Commit:
 
@@ -502,14 +543,87 @@ Commit:
 p3(wallpaper): apply selected item on enter
 ```
 
-### W6
+### W6 — DONE
 Thumbnail/performance hardening.
+
+Implementation notes:
+- Enter/Return closes the standalone wallpaper layer immediately after the apply process is accepted; wallpaper/accent mutation continues asynchronously in the existing `Process`.
+- The carousel instantiates image content only for the center slot plus the bounded three-card stack on each side (maximum seven decoded previews).
+- `Image.sourceSize` is capped near the rendered card dimensions so full-resolution static wallpapers are not decoded at native resolution just to draw small previews.
+- Preview loading remains asynchronous and card geometry is stable while a source is pending; the existing card surface acts as the placeholder.
+- Reopening during an in-flight successful apply refreshes the model when the backend finishes so `selected` state catches up safely.
 
 Commit:
 
 ```text
 p3(wallpaper): harden carousel thumbnail loading
 ```
+
+### W7 — DONE
+Persistent model/delegate cache to remove navigation thumbnail jank.
+
+Result:
+- `WallpaperCarousel` no longer rotates wallpaper records through seven shared visual slots. Each model record owns a stable delegate identity, so changing `selectedIndex` changes slot geometry/state rather than replacing every visible `Image.source`.
+- The visible deck remains bounded to center + three cards per side. A two-record prefetch margin is kept on each side, so at most eleven previews are active and normally only one new edge preview starts loading per navigation step.
+- Preview `sourceSize` is fixed from the physical center slot rather than each delegate's changing side scale; navigation therefore does not request a new decode size for the same wallpaper as it moves between deck positions.
+- The static/lively model cache survives standalone panel close/reopen for the lifetime of the Quickshell component; reopening does not automatically rerun both backend list commands or rebuild the thumbnail set.
+- Successful apply no longer refreshes the model immediately. The UI already owns the chosen `selectedIndex`, so the cached delegates stay intact while the backend mutation completes asynchronously.
+- W7 intentionally does not add animation or change the current card styling. Static/Lively mode separation remains W8.
+
+### W8 — DONE
+Static/Lively split + floating morph switch.
+
+Result:
+- Static and Lively are now separate presentation modes backed by their already cached backend lists; the active carousel never concatenates the two kinds.
+- Each kind remembers its own selected index. Switching Static → Lively → Static restores the previous position instead of resetting navigation.
+- Both delegate sets stay alive after first visit, preserving W7 thumbnail identity/cache across repeated mode switches. No backend list query is triggered by changing kind.
+- A two-slot floating switch is centered above the hero wallpaper. One shared accent `SelectionPill` morphs between Static and Lively; the buttons only change presentation mode and never apply wallpaper.
+- Initial mode follows the backend-selected wallpaper when one exists; otherwise Static is preferred when available.
+- W8 intentionally does not add carousel motion/opening animation or change wallpaper-card styling.
+
+#### W8 interaction polish — DONE
+
+- `Ctrl+Left` switches directly to Static and `Ctrl+Right` switches directly to Lively; plain Left/Right keep navigating wallpapers inside the active kind.
+- Each half of the floating switch owns its lane, and the pointer handler now lives inside the same visual item that expands. The interactive region therefore scales/grows with the painted button instead of remaining lane-sized while the button extends beyond it.
+- The selected button uses a fixed `8px` corner radius and intentionally grows beyond the black floating shell on every side while morphing between modes; its overflow area remains interactive.
+- Hover scales the complete button visual and label together, and the transformed visual itself is the hit target. Moving into the expanded edge no longer drops hover or produces a visible-but-dead click zone.
+
+### W9 — DONE
+Navigation motion + opening fade/reel + directional motion trail + final shadow-only card style.
+
+Result:
+- Stable W7 delegates now animate between deck targets (`x/y/width/height/opacity`) instead of teleporting when `selectedIndex` changes. The center slot remains physically fixed.
+- Opening runs as an explicit fade + horizontal rear-card reel phase. Rear cards first share one scrolling row, then settle into their stacked deck geometry so the opening reads as a reel rather than a simple offset/fade.
+- During navigation/opening, two low-opacity cached-image trails follow the movement direction to create a lightweight motion-blur impression without introducing a live blur shader. One transparent outer slot per side stays alive so navigation can animate incoming/outgoing cards instead of popping at the visible edge.
+- Wallpaper cards have **no border and no rounding**. Depth now uses one compact shadow per card; the earlier large stepped shadow stack was removed after runtime review because it read as visible layers rather than a natural shadow.
+- Pointer/keyboard navigation and apply are gated until the opening reel reaches `ready`; Escape remains available at the panel level.
+- Runtime tune W9.1 strengthened the reel topology and reduced the shadow footprint after video review.
+- W9.2 changed the hero timing after runtime review: the center wallpaper now begins opening together with the rear reel instead of waiting for the reel to settle.
+- W9.3 replaced the compact hard shadow with one soft blurred `MultiEffect` shadow per card while retaining square cards with no border/rounding.
+
+### W10 — DONE
+Circular center reveal for the selected hero wallpaper.
+
+Result:
+- The center wallpaper is revealed through a true alpha mask whose opaque circle expands from the physical center until its diameter covers the card corners.
+- The reveal begins at the same time as W9's opening fade/reel, honoring the W9.2 runtime decision that the hero must not wait behind the rear-card animation.
+- The card geometry never grows: only the circular mask diameter changes, so the physical center slot remains fixed throughout the opening.
+- The expensive mask effect only exists visually during opening. After reveal completion the original cached card surface is shown directly again.
+- The center shadow is withheld while the mask is partial so no rectangular shadow/source leaks outside the circular reveal; it returns when the hero is fully exposed.
+- Navigation/apply semantics are unchanged and remain gated by the W9 opening state until the complete opening sequence reaches `ready`.
+
+### W11 — DONE
+Interaction/performance hardening + animated close lifecycle.
+
+Result:
+- Closing is no longer an instant `PanelWindow` teardown. `UiState.closeWallpaper()` now requests a close while the wallpaper surface remains owned by the same screen; `WallpaperPanel` finalizes state only after the carousel signals that its exit sequence finished.
+- Exit phase 1 gathers both side stacks toward the fixed physical center slot. W11.1 replaces the vortex with a centered zoom-out + fade: the gathered carousel scales down as one surface while opacity falls to zero, with no rotation/orbit.
+- Escape, IPC close/toggle and successful Enter apply all use the same animated close path. Enter still starts wallpaper apply asynchronously before the close animation, so backend mutation is never placed on the animation critical path.
+- A second toggle during close cancels the teardown and restores the already-warm carousel instead of destroying/recreating the surface mid-animation. Screen destruction still uses a force-close path so stale `UiState` ownership cannot survive monitor removal.
+- Navigation now has a small 55 ms retarget guard. Rapid key-repeat/touchpad bursts therefore retarget the existing stable delegates without producing an unbounded transition queue or backend/model reload.
+- Static/Lively models, W7 stable delegates/prefetch and W10 hero-mask steady-state optimization remain unchanged.
+
+Wallpaper UX sequence W1-W11 is functionally complete. Final runtime gate remains the user-visible close-motion check plus the existing multi-WM/reload checkpoint before the P3 wallpaper tag.
 
 Gate:
 - compare against `wallpaper-change.png`;
@@ -758,3 +872,12 @@ Stop and report before more experimentation if:
 - a WM-specific workaround is about to enter shared UI code.
 
 Fallback to the last accepted commit is preferred over accumulating speculative fixes.
+
+
+### W9.2 — Center joins opening reel fade
+
+Runtime feedback removed the delayed center-card appearance from W9.1. The selected center wallpaper now participates in the panel fade immediately while the rear reel is scrolling/settling. No extra hold/reveal delay remains in W9; W10 remains reserved for the later circular-mask reveal treatment.
+
+### W9.3 — Soft blurred card shadow
+
+Runtime feedback confirmed the compact W9.1 shadow footprint was preferable, but the flat Rectangle still read as a hard offset block. W9.3 replaces that block with one `QtQuick.Effects.MultiEffect` shadow per card. Cards remain square with no border or rounding; only a modest soft blur/vertical offset is used, with the center card slightly stronger than side cards. Motion trails remain the lightweight cached-image approximation from W9 and are intentionally unchanged.

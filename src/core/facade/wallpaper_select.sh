@@ -23,11 +23,19 @@ resolve_script() {
 
 WALLPAPER_CTL="$(resolve_script wallpaper_ctl.sh ../backend/theme/wallpaper_ctl.sh)" || exit 1
 WALLPAPER_ROFI="$(resolve_script wallpaper_rofi.sh ../frontend/classic/wallpaper_rofi.sh)" || exit 1
+HAKU_BACKEND_LIB="$(resolve_script haku_backend_lib.sh ../lib/haku_backend_lib.sh)" || exit 1
+
+# shellcheck source=/dev/null
+source "$HAKU_BACKEND_LIB"
 
 print_help() {
     cat <<'EOF_HELP'
 Usage: wallpaper_select.sh [OPTION]
 Select and manage wallpapers.
+
+No arguments:
+    Classic                     Open the Classic wallpaper menu
+    Hikai                       Toggle the native centered wallpaper layer
 
 Classic compatibility:
     --static [CHOICE]           Static wallpaper script mode
@@ -49,7 +57,10 @@ EOF_HELP
 
 case "${1:-}" in
     '')
-        exec "$WALLPAPER_ROFI"
+        if haku_backend_is "classic"; then
+            exec "$WALLPAPER_ROFI"
+        fi
+        haku_qs_ipc wallpaper toggleDefault
         ;;
     --static|--lively)
         exec "$WALLPAPER_ROFI" "$@"

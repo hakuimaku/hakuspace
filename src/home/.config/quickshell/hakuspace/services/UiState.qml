@@ -3,7 +3,7 @@ import QtQuick
 
 QtObject {
     id: root
-    
+
     property string activePanel: ""
     property var trayMenu: null
     property var notificationPanel: null
@@ -11,6 +11,8 @@ QtObject {
     property string hakuMenuScreenName: ""
     property string hakuMenuQuery: ""
     property string hakuMenuSelectionLabel: ""
+    property string wallpaperScreenName: ""
+    property bool wallpaperCloseRequested: false
     readonly property string hakuMenuTabLabel: hakuMenuMode === "general" ? "General"
                                                    : hakuMenuMode === "drun" ? "Drun"
                                                    : hakuMenuMode === "theme" ? "Theme"
@@ -64,6 +66,50 @@ QtObject {
         if (hakuMenuScreenName === screenName) closeHakuMenu()
     }
 
+    function openWallpaper(screenName) {
+        wallpaperCloseRequested = false
+        wallpaperScreenName = screenName
+        activePanel = "wallpaper"
+    }
+
+    function toggleWallpaper(screenName) {
+        if (activePanel === "wallpaper" && wallpaperScreenName === screenName) {
+            // A second toggle while the close animation is running reopens the
+            // existing surface instead of tearing the layer down mid-motion.
+            if (wallpaperCloseRequested) {
+                wallpaperCloseRequested = false
+                return
+            }
+            closeWallpaper()
+            return
+        }
+        openWallpaper(screenName)
+    }
+
+    // Request an animated close. WallpaperPanel owns the visual sequence and
+    // calls finishCloseWallpaper only after the close animation has faded out.
+    function closeWallpaper() {
+        if (activePanel === "wallpaper") wallpaperCloseRequested = true
+    }
+
+    function finishCloseWallpaper(screenName) {
+        if (activePanel !== "wallpaper" || wallpaperScreenName !== screenName) return
+        wallpaperCloseRequested = false
+        activePanel = ""
+        wallpaperScreenName = ""
+    }
+
+    function forceCloseWallpaperIfScreen(screenName) {
+        if (wallpaperScreenName !== screenName) return
+        wallpaperCloseRequested = false
+        if (activePanel === "wallpaper") activePanel = ""
+        wallpaperScreenName = ""
+    }
+
+    function closeWallpaperIfScreen(screenName) {
+        if (wallpaperScreenName === screenName) closeWallpaper()
+    }
+
     function toggleNotifications(screenName, anchorX, anchorWidth) {
         if (activePanel === "notifications" && notificationPanel
                 && notificationPanel.screenName === screenName) {
@@ -111,6 +157,10 @@ QtObject {
     onActivePanelChanged: {
         if (activePanel !== "tray") trayMenu = null
         if (activePanel !== "notifications") notificationPanel = null
+        if (activePanel !== "wallpaper") {
+            wallpaperScreenName = ""
+            wallpaperCloseRequested = false
+        }
         if (activePanel !== "hakumenu") {
             hakuMenuMode = "closed"
             hakuMenuScreenName = ""
@@ -118,7 +168,7 @@ QtObject {
             hakuMenuSelectionLabel = ""
         }
     }
-    
+
     // One panel name is active at a time; toggling it closes the panel.
     function toggle(panel: string) {
         if (activePanel === panel) {

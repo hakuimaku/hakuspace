@@ -355,7 +355,7 @@ Item {
                     width: menu.innerWidth - (menu.showStateRegion ? stateRegion.width + Theme.gap * 2 : 0)
                     height: Math.max(0, menu.height - y - menu.innerPad)
                     radius: Theme.radius
-                    color: menu.listBg
+                    color: UiState.hakuMenuMode === "theme" ? "transparent" : menu.listBg
                     clip: true
 
                     HakuMenu.GeneralList {
