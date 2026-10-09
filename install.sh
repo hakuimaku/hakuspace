@@ -619,11 +619,13 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
     echo ">>> Deploying mimeapps.list..."
     copy_file "$SOURCE_ONCE_CONFIG/mimeapps.list" "$DEST_CONFIG/mimeapps.list"
 
-    echo ">>> Deploying .zshrc (zsh configuration)..."
-    copy_file "$SOURCE_COMMON_CONFIG/.zshrc" "$HOME/.zshrc"
+    if ! command -v nixos-rebuild >/dev/null 2>&1; then
+        echo ">>> Deploying .zshrc (zsh configuration)..."
+        copy_file "$SOURCE_COMMON_CONFIG/.zshrc" "$HOME/.zshrc"
 
-    echo ">>> Deploying .nanorc (nano configuration)..."
-    copy_file "$SOURCE_COMMON_CONFIG/.nanorc" "$HOME/.nanorc"
+        echo ">>> Deploying .nanorc (nano configuration)..."
+        copy_file "$SOURCE_COMMON_CONFIG/.nanorc" "$HOME/.nanorc"
+    fi
 
     log_ok "Configurations deployed finished."
 else
