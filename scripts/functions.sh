@@ -317,8 +317,8 @@ check_control_dir() {
         local source_version
         chmod +x "$HAKUSPACE_CONTROL_DIR/main_setting.sh"
 
-        source_version=$("$HAKUSPACE_CONTROL_DIR/main_setting.sh" | grep -oP 'Hakuspace Control Settings Version: \K[0-9]+\.[0-9]+\.[0-9]+')
-        current_version=$("$DEST_CONTROL_DIR/main_setting.sh" | grep -oP 'Hakuspace Control Settings Version: \K[0-9]+\.[0-9]+\.[0-9]+')
+        source_version=$("$HAKUSPACE_CONTROL_DIR/main_setting.sh" | grep -oP 'Hakuspace Control Settings Version: \K.*')
+        current_version=$("$DEST_CONTROL_DIR/main_setting.sh" | grep -oP 'Hakuspace Control Settings Version: \K.*')
         if [[ "$current_version" != "$source_version" ]]; then
             log_warn "Hakuspace Control version mismatch: $current_version (current) vs $source_version (expected). Updating..."
             log_warn "If you choose update, your custom settings in main_setting.sh will be overwritten."
