@@ -1,5 +1,4 @@
 niri
-niri-float-sticky
 gammastep
 xdg-desktop-portal-gnome
 xwayland-satellite
