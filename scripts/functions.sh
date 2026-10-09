@@ -563,6 +563,7 @@ check_control_dir() {
         "config/hypridle.conf"
         "config/kitty.conf"
         "config/shell.fish"
+        "config/hyprlock.conf"
         "general-menu.sh"
     )
     for file in "${required_files[@]}"; do
