@@ -24,6 +24,7 @@ window#waybar {
 /* COMMON MODULE STYLES                               */
 /* ============================================================================== */
 #custom-bar,
+#custom-logo,
 #window,
 #custom-recorder,
 #custom-notification,
@@ -73,6 +74,11 @@ window#waybar {
     background-color: rgba(255, 255, 255, 0.2);
 }
 
+#workspaces button.overview {
+    background-color: @accent_color;
+    min-height: 30px;
+    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+}
 
 /* ============================================================================== */
 /* SPECIFIC MODULES                                 */
@@ -82,7 +88,6 @@ window#waybar {
 #clock { 
     color: @accent_color;
     padding: 20px 0;
-    border-radius: 0 20px 20px 0;
 }
 
 #custom-recorder {
@@ -103,10 +108,11 @@ window#waybar {
 
 #cpu { color: @accent_color; }
 
-#custom-bar {
+#custom-logo {
     min-height: 30px;
 }
 
+#custom-bar,
 #backlight,
 #pulseaudio {
     color: @accent_color;
@@ -119,6 +125,7 @@ window#waybar {
 /* HOVER EFFECTS                                   */
 /* ============================================================================== */
 #custom-bar:hover,
+#custom-logo:hover,
 #clock:hover,
 #power-profiles-daemon:hover,
 #pulseaudio:hover,
@@ -143,7 +150,7 @@ window#waybar {
 }
 
 #clock:hover {
-    min-height: 160px;
+    min-height: 140px;
 }
 
 /* ============================================================================== */
