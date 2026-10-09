@@ -137,7 +137,7 @@ window-rule {
     open-floating true
     open-focused false
     
-    default-floating-position x=0 y=-52 relative-to="top"
+    default-floating-position x=0 y=-52 relative-to="top-left"
     min-width 1920
     min-height 70
     max-height 70
