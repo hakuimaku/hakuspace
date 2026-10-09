@@ -17,12 +17,23 @@ fi
 
 APP="$1"
 CACHE_FILE="$HOME/.cache/dockbar_icon_cache.txt"
+THEME_FILE="$HOME/.config/gtk-3.0/settings.ini"
+
+CURRENT_THEME="default"
+if [ -f "$THEME_FILE" ]; then
+    CURRENT_THEME=$(grep "^gtk-icon-theme-name" "$THEME_FILE" | cut -d'=' -f2 | tr -d ' ' || echo "default")
+fi
 
 if [ -f "$CACHE_FILE" ]; then
-    PATH_FOUND=$(grep "^${APP}:" "$CACHE_FILE" | cut -d':' -f2-)
-    if [ -n "$PATH_FOUND" ] && [ -f "$PATH_FOUND" ]; then
-        echo "$PATH_FOUND"
-        exit 0
+    CACHE_THEME=$(head -n 1 "$CACHE_FILE" | grep "^# THEME:" | cut -d':' -f2 | tr -d ' ')
+    if [ "$CURRENT_THEME" != "$CACHE_THEME" ]; then
+        rm -f "$CACHE_FILE"
+    else
+        PATH_FOUND=$(grep -m 1 "^${APP}:" "$CACHE_FILE" | cut -d':' -f2-)
+        if [ -n "$PATH_FOUND" ] && [ -f "$PATH_FOUND" ]; then
+            echo "$PATH_FOUND"
+            exit 0
+        fi
     fi
 fi
 
@@ -68,6 +79,11 @@ if found_path:
 PATH_FOUND=$(python3 -c "$PYTHON_CODE")
 
 if [ -n "$PATH_FOUND" ]; then
+    if [ ! -f "$CACHE_FILE" ]; then
+        echo "# THEME:$CURRENT_THEME" > "$CACHE_FILE"
+    else
+        sed -i "/^${APP}:/d" "$CACHE_FILE"
+    fi
     echo "${APP}:${PATH_FOUND}" >> "$CACHE_FILE"
     echo "$PATH_FOUND"
 fi
