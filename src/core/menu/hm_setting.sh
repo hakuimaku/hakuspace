@@ -5,22 +5,18 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
 
 if [[ $# -eq 0 ]]; then
-    DOCK_STATUS=$(cat "$STATE_DIR/dockbar_autohide_state" 2>/dev/null || echo "0")
-    DOCK_TEXT="OFF"
-    [[ "$DOCK_STATUS" == "1" ]] && DOCK_TEXT="ON"
+    DOCK_APP_NAME="OFF"
+    if grep -qE '"format":\s*"\{icon\} \{name\}"' $HOME/.local/state/hakuspace/taskbar-theme 2>/dev/null; then
+        DOCK_APP_NAME="ON"
+    fi
 
-    DOCK_EXCLUSIVE=$(grep -oP '"exclusive":\s*\K(true|false)' $HOME/.local/state/hakuspace/dockbar-theme 2>/dev/null)
-    DOCK_EXCLUSIVE_TEXT="OFF"
-    [[ "$DOCK_EXCLUSIVE" == "true" ]] && DOCK_EXCLUSIVE_TEXT="ON"
-
-    DOCK_ICON_SIZE=$(grep -oP '"icon-size":\s*\K\d+' $HOME/.local/state/hakuspace/dockbar-theme 2>/dev/null)
+    DOCK_ICON_SIZE=$(grep -oP '"icon-size":\s*\K\d+' $HOME/.local/state/hakuspace/taskbar-theme 2>/dev/null)
     DOCK_ICON_SIZE_TEXT="$DOCK_ICON_SIZE"
     DOCK_ICON_SIZE_TEXT+="px"
 
-    cat <<EOF
-󱂩  Dockbar Auto-hide Toggle ($DOCK_TEXT)
-󱂩  Dockbar Exclusive Toggle ($DOCK_EXCLUSIVE_TEXT)
-󱂩  Dockbar Icon Size Change ($DOCK_ICON_SIZE_TEXT)
+    cat <<INNEREOF
+󱂩  Taskbar App Name ($DOCK_APP_NAME)
+󱂩  Taskbar Icon Size Change ($DOCK_ICON_SIZE_TEXT)
 󱁤  Settings Folder
 󱁤  HakuMenu General Tab
 󰖩  Wifi
@@ -28,15 +24,14 @@ if [[ $# -eq 0 ]]; then
 󰋊  Disk Manager
 󰃢  Storage Manager
   Audio Control
-EOF
+INNEREOF
     exit 0
 fi
 
 chosen="$*"
 case "$chosen" in
-    *"Dockbar Auto-hide Toggle"*) spawn $HOME/.local/bin/dockbar_manager.sh --auto-hide ;;
-    *"Dockbar Exclusive Toggle"*) spawn $HOME/.local/bin/dockbar_manager.sh --exclusive ;;
-    *"Dockbar Icon Size Change"*) spawn $HOME/.local/bin/dockbar_manager.sh --icon-size ;;
+    *"Taskbar App Name"*) spawn $HOME/.local/bin/taskbar_manager.sh --app-name ;;
+    *"Taskbar Icon Size Change"*) spawn $HOME/.local/bin/taskbar_manager.sh --icon-size ;;
     *"Settings Folder"*) spawn xdg-open "$HOME/hakucfg" ;;
     *"HakuMenu General Tab"*) spawn code $HOME/hakucfg/general-menu.sh ;;
     *"Wifi"*) spawn nm-connection-editor ;;

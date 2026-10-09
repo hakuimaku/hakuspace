@@ -1,0 +1,134 @@
+{
+    "include": [
+        "$HOME/.config/waybar/module/notification_module",
+        "$HOME/hakucfg/config/taskbar_pin_apps",
+        "$HOME/.local/state/hakuspace/taskbar-theme"
+    ],
+    "name": "taskbar",
+    "layer": "top",
+    "position": "bottom",
+    "margin-bottom": 0,
+    "margin-left": 0,
+    "margin-right": 0,
+    "spacing": 2,
+    "tooltip": true,
+    "exclusive": true,
+
+    "modules-left": [
+        "group/pin",
+        "custom/separator",
+        "wlr/taskbar"
+    ],
+    "modules-center": [
+
+    ],
+
+    "modules-right": [
+        "group/adjusters",
+        "group/tools"
+    ],
+
+    "custom/separator": {
+        "format": " ",
+        "tooltip": false
+    },
+    
+    "wlr/taskbar": {
+        "tooltip-format": "{title} {app_id}",
+        "on-click": "activate",
+        "on-click-middle": "close",
+        "on-click-right": "minimize",
+        "all-outputs": true,
+        "homogeneous": true,
+        "justify": "center",
+        "ignore-list": [
+            "cavaunderbar",
+            "seycava",
+            "seylavat",
+            "seyclock"
+        ],
+        "app_ids-mapping": {
+            "seycmd": "kitty"
+        }
+    },
+
+    "group/adjusters": {
+        "orientation": "horizontal",
+        "modules": [
+            "backlight",
+            "pulseaudio",
+            "battery"
+        ]
+    },
+
+    "group/tools": {
+        "orientation": "horizontal",
+        "modules": [
+            "clock",
+            "custom/notification"
+        ]
+    },
+
+    "clock": {
+        "format": " {:%H:%M, %d/%m/%Y} ",
+        "format-alt": " {:%A, %d %B %Y} ",
+        "interval": 1,
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+        "calendar": {
+                    "mode"          : "month",
+                    "mode-mon-col"  : 3,
+                    "weeks-pos"     : "right",
+                    "on-scroll"     : 1,
+                    "format": {
+                              "months":     "<span color='#ffead3'><b>{}</b></span>",
+                              "days":       "<span color='#ecc6d9'><b>{}</b></span>",
+                              "weeks":      "<span color='#99ffdd'><b>W{}</b></span>",
+                              "weekdays":   "<span color='#ffcc66'><b>{}</b></span>",
+                              "today":      "<span color='#ff6699'><b><u>{}</u></b></span>"
+                              }
+                    },
+        "actions":  {
+                    "on-click-right": "mode",
+                    "on-scroll-up": "tz_up",
+                    "on-scroll-down": "tz_down",
+                    "on-scroll-up": "shift_up",
+                    "on-scroll-down": "shift_down"
+                    }
+    },
+
+    "battery": {
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon} {capacity}%",
+        "format-icons": {
+            "default": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+            "charging": ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"],
+            "plugged": [""]
+        },
+        "tooltip-format": "Battery: {capacity}%\nPower: {power}W\n{timeTo}",
+        "tooltip": true
+    },
+
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-muted": "󰝟 ",
+        "format-icons": {
+            "headphone": "󰋋",
+            "default": ["", "", ""]
+        },
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click-right": "pavucontrol",
+        "tooltip-format": "Volume: {volume}%"
+    },
+
+    "backlight": {
+        "format": "{icon} {percent}%",
+        "format-icons": ["", "", "", "", "", "", "", "", ""],
+        "on-scroll-up": "brightnessctl set 1%+",
+        "on-scroll-down": "brightnessctl set 1%-",
+        "on-click": "$HOME/.local/bin/nightlight_toggle.sh",
+        "tooltip-format": "Brightness: {percent}%"
+    }
+}

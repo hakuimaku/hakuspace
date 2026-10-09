@@ -19,8 +19,8 @@ if [[ -f "$HOME/.local/bin/desktop_icons_manager.sh" ]]; then
     "$HOME/.local/bin/desktop_icons_manager.sh" --reload >/dev/null 2>&1 || true
 fi
 
-if [[ -f "$HOME/.local/bin/dockbar_manager.sh" ]]; then
-    "$HOME/.local/bin/dockbar_manager.sh" --reload >/dev/null 2>&1 || true
+if [[ -f "$HOME/.local/bin/taskbar_manager.sh" ]]; then
+    "$HOME/.local/bin/taskbar_manager.sh" --reload >/dev/null 2>&1 || true
 fi
 
 swaync-client --reload-config --reload-css >/dev/null 2>&1 || true

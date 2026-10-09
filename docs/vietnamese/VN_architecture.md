@@ -82,4 +82,4 @@ HakuSpace dùng cơ chế **Hybrid (Lai)**: bạn được chọn giữa **Deep 
 4. **[Quản lý Hệ thống (System)](../core/sys.md)**: Các script khoá màn hình, chống tắt màn hình thông minh, và menu nguồn.
 5. **[Công cụ Tiện ích (Utilities)](../core/util.md)**: Các công cụ dùng hàng ngày (chụp màn hình, lọc ánh sáng xanh, clipboard).
 6. **[Haku Menu (Menu)](../core/menu.md)**: Giải phẫu menu đa tab tuỳ biến bằng Rofi.
-7. **[Ứng dụng Nhỏ (Mini-Apps)](../core/app.md)**: Các app xịn xò tự code (Dockbar, Desktop Icons, Cava Underbar).
+7. **[Ứng dụng Nhỏ (Mini-Apps)](../core/app.md)**: Các app xịn xò tự code (Taskbar, Desktop Icons, Cava Underbar).

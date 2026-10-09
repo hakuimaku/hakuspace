@@ -158,6 +158,8 @@ SHOW_COMPUTER = True
 USER_DIRS_FIRST = True
 SHOW_HIDDEN = False
 AUTO_ARRANGE = True
+SHOW_DESKTOP_ICONS = True
+BLACK_LABELS = False
 
 ################################################################################
 # CONFIGURATION & UTILITIES
@@ -189,7 +191,7 @@ def save_setting(key, value):
 def load_config():
     global ICON_SIZE, CELL_WIDTH, CELL_HEIGHT, ACTION_MODES, KEYBINDINGS
     global SORT_BY, SORT_REVERSE, FOLDERS_FIRST, SHOW_HOME, SHOW_TRASH, SHOW_COMPUTER
-    global SHOW_HIDDEN, USER_DIRS_FIRST, AUTO_ARRANGE
+    global SHOW_HIDDEN, USER_DIRS_FIRST, AUTO_ARRANGE, SHOW_DESKTOP_ICONS, BLACK_LABELS
     
     os.makedirs(CONFIG_DIR, exist_ok=True)
     config = configparser.ConfigParser()
@@ -224,6 +226,12 @@ show_hidden = {SHOW_HIDDEN}
 
 # Auto arrange icons strictly according to sorting criteria, disabling manual positioning
 auto_arrange = {AUTO_ARRANGE}
+
+# Show all desktop icons
+show_desktop_icons = {SHOW_DESKTOP_ICONS}
+
+# Use black text color for labels
+black_labels = {BLACK_LABELS}
 """
 
     if not os.path.exists(CONF_FILE):
@@ -262,6 +270,10 @@ auto_arrange = {AUTO_ARRANGE}
                     SHOW_HIDDEN = config['Settings'].getboolean('show_hidden')
                 if 'auto_arrange' in config['Settings']:
                     AUTO_ARRANGE = config['Settings'].getboolean('auto_arrange')
+                if 'show_desktop_icons' in config['Settings']:
+                    SHOW_DESKTOP_ICONS = config['Settings'].getboolean('show_desktop_icons')
+                if 'black_labels' in config['Settings']:
+                    BLACK_LABELS = config['Settings'].getboolean('black_labels')
             else:
                 append_blocks.append(DEFAULT_SETTINGS_BLOCK)
 
@@ -1611,27 +1623,27 @@ class DesktopLayout(Gtk.Fixed):
         
         space_menu.append(Gtk.SeparatorMenuItem())
         
-        dockbar_state = False
+        taskbar_state = False
         try:
-            with open(os.path.expanduser("~/.local/state/hakuspace/state/dockbar_manual_state"), "r") as f:
-                dockbar_state = (f.read().strip() == "1")
+            with open(os.path.expanduser("~/.local/state/hakuspace/state/taskbar_manual_state"), "r") as f:
+                taskbar_state = (f.read().strip() == "1")
         except:
             pass
             
-        dockbar_autohide = False
+        taskbar_autohide = False
         try:
-            with open(os.path.expanduser("~/.local/state/hakuspace/state/dockbar_autohide_state"), "r") as f:
-                dockbar_autohide = (f.read().strip() == "1")
+            with open(os.path.expanduser("~/.local/state/hakuspace/state/taskbar_autohide_state"), "r") as f:
+                taskbar_autohide = (f.read().strip() == "1")
         except:
             pass
             
-        dockbar_label = "Dockbar [Autohide]" if dockbar_autohide else "Dockbar"
-        dockbar_item = Gtk.CheckMenuItem(label=dockbar_label)
-        dockbar_item.set_active(dockbar_state)
-        def on_dockbar(w):
-            subprocess.Popen([os.path.expanduser("~/.local/bin/dockbar_manager.sh"), "--toggle"])
-        dockbar_item.connect("activate", on_dockbar)
-        space_menu.append(dockbar_item)
+        taskbar_label = "Taskbar [Autohide]" if taskbar_autohide else "Taskbar"
+        taskbar_item = Gtk.CheckMenuItem(label=taskbar_label)
+        taskbar_item.set_active(taskbar_state)
+        def on_taskbar(w):
+            subprocess.Popen([os.path.expanduser("~/.local/bin/taskbar_manager.sh"), "--toggle"])
+        taskbar_item.connect("activate", on_taskbar)
+        space_menu.append(taskbar_item)
         
         waybar_item = Gtk.MenuItem(label="Waybar")
         waybar_menu = Gtk.Menu()
@@ -1753,6 +1765,14 @@ class DesktopLayout(Gtk.Fixed):
 
         menu.append(Gtk.SeparatorMenuItem())
         
+        show_desktop_icons_item = Gtk.CheckMenuItem(label="Show Desktop Icons")
+        show_desktop_icons_item.set_active(SHOW_DESKTOP_ICONS)
+        def toggle_show_desktop_icons(w):
+            save_setting('show_desktop_icons', w.get_active())
+            self.on_reload(None)
+        show_desktop_icons_item.connect("toggled", toggle_show_desktop_icons)
+        menu.append(show_desktop_icons_item)
+        
         icons_item = Gtk.MenuItem(label="Desktop Icons")
         icons_menu = Gtk.Menu()
         icons_menu.get_style_context().add_class('desktop-context-menu')
@@ -1782,6 +1802,16 @@ class DesktopLayout(Gtk.Fixed):
         hidden_item.set_active(SHOW_HIDDEN)
         hidden_item.connect("toggled", lambda w: toggle_special('show_hidden', w))
         icons_menu.append(hidden_item)
+        
+        icons_menu.append(Gtk.SeparatorMenuItem())
+        
+        black_labels_item = Gtk.CheckMenuItem(label="Black Text Labels")
+        black_labels_item.set_active(BLACK_LABELS)
+        def toggle_black_labels(w):
+            save_setting('black_labels', w.get_active())
+            self.on_reload(None)
+        black_labels_item.connect("toggled", toggle_black_labels)
+        icons_menu.append(black_labels_item)
         
         icons_item.set_submenu(icons_menu)
         menu.append(icons_item)
@@ -2228,12 +2258,14 @@ class DesktopLayout(Gtk.Fixed):
             self.queue_draw()
 
     def on_draw_overlay(self, widget, cr):
+        color_r = color_g = color_b = 0.5 if BLACK_LABELS else 1.0
+
         if self.rubber_band_rect is not None:
             x, y, w, h = self.rubber_band_rect
-            cr.set_source_rgba(1.0, 1.0, 1.0, 0.15)
+            cr.set_source_rgba(color_r, color_g, color_b, 0.15)
             cr.rectangle(x, y, w, h)
             cr.fill()
-            cr.set_source_rgba(1.0, 1.0, 1.0, 0.5)
+            cr.set_source_rgba(color_r, color_g, color_b, 0.5)
             cr.set_line_width(1)
             cr.rectangle(x + 0.5, y + 0.5, max(w - 1, 0), max(h - 1, 0))
             cr.stroke()
@@ -2245,11 +2277,11 @@ class DesktopLayout(Gtk.Fixed):
         x = PADDING + col * (CELL_WIDTH + PADDING)
         y = PADDING + row * (CELL_HEIGHT + PADDING)
 
-        cr.set_source_rgba(1.0, 1.0, 1.0, 0.1)
+        cr.set_source_rgba(color_r, color_g, color_b, 0.1)
         self._draw_rounded_rect(cr, x, y, CELL_WIDTH, CELL_HEIGHT, 8)
         cr.fill()
 
-        cr.set_source_rgba(1.0, 1.0, 1.0, 0.5)
+        cr.set_source_rgba(color_r, color_g, color_b, 0.5)
         cr.set_dash([6, 4])
         cr.set_line_width(2)
         self._draw_rounded_rect(cr, x + 1, y + 1, CELL_WIDTH - 2, CELL_HEIGHT - 2, 8)
@@ -2288,6 +2320,8 @@ class DesktopManager:
         self.monitor.connect("changed", self.on_file_changed)
 
     def load_initial_files(self):
+        if not SHOW_DESKTOP_ICONS:
+            return
         if not os.path.exists(self.desktop_dir):
             return
             
@@ -2342,6 +2376,10 @@ class DesktopManager:
 
     def _process_file_changes(self):
         self._debounce_timer = None
+        if not SHOW_DESKTOP_ICONS:
+            self._pending_changes.clear()
+            return False
+            
         for filepath, event_type in self._pending_changes:
             if event_type in (Gio.FileMonitorEvent.CREATED, Gio.FileMonitorEvent.CHANGES_DONE_HINT):
                 try:
@@ -2536,8 +2574,29 @@ def create_desktop_window(app, monitor):
 def on_activate(app):
     app.layouts = []
     
+    css = DEFAULT_CSS
+    if BLACK_LABELS:
+        css += """
+.desktop-icon label { color: black; text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.7); }
+.desktop-icon.hovered {
+    background-color: rgba(128, 128, 128, 0.2);
+    border-color: rgba(128, 128, 128, 0.3);
+    box-shadow: 0 0 10px rgba(128, 128, 128, 0.2);
+}
+.desktop-icon.selected {
+    background-color: rgba(128, 128, 128, 0.3);
+    border-color: rgba(128, 128, 128, 0.5);
+    box-shadow: 0 0 12px rgba(128, 128, 128, 0.3);
+}
+.desktop-icon.hovered.selected {
+    background-color: rgba(128, 128, 128, 0.3);
+    border-color: rgba(128, 128, 128, 0.5);
+    box-shadow: 0 0 15px rgba(128, 128, 128, 0.4);
+}
+"""
+
     css_provider = Gtk.CssProvider()
-    css_provider.load_from_data(DEFAULT_CSS.encode('utf-8'))
+    css_provider.load_from_data(css.encode('utf-8'))
 
     Gtk.StyleContext.add_provider_for_screen(
         Gdk.Screen.get_default(),

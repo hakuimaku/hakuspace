@@ -1,0 +1,6 @@
+{
+    "wlr/taskbar": {
+        "icon-size": 40,
+        "format": "{icon} {name}"
+    }
+}

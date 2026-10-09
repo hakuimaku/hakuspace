@@ -82,4 +82,4 @@ To fully understand how HakuSpace works under the hood, read through our detaile
 4. **[System Management](core/sys.md)**: The scripts controlling lock screens, smart idle prevention, and safe session exits.
 5. **[Utilities](core/util.md)**: Your daily toolbelt (screenshots, nightlight, desktop widgets).
 6. **[Haku Menu](core/menu.md)**: The modular, multi-tabbed Rofi launcher.
-7. **[Mini-Apps](core/app.md)**: The custom native apps built for HakuSpace (Dockbar, Desktop Icons, Cava Underbar).
+7. **[Mini-Apps](core/app.md)**: The custom native apps built for HakuSpace (Taskbar, Desktop Icons, Cava Underbar).
