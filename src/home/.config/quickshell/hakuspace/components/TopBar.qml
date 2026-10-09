@@ -36,19 +36,14 @@ PanelWindow {
                 spacing: Theme.gap
                 TopModules.Logo {}
                 TopModules.Workspaces {}
-                TopModules.CavaGroup {}
+                TopModules.WindowTitle {}
+                // TopModules.CavaGroup {}
             }
             
             Row {
                 id: centerModules
                 anchors.centerIn: parent
                 spacing: Theme.gap
-                TopModule {
-                    text: "Window Title"
-                    icon: ""
-                    isAccent: false
-                    // Placeholder for future window title module
-                }
             }
             
             Row {
