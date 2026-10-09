@@ -1,9 +1,7 @@
 <div align="center">
 
 # Haku Space
-Arch Linux dotfiles for Hyprland / Niri / MangoWM / Labwc
-
-Haku Space now supporting Fedora too! See [Fedora Guide](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md)
+Arch / Fedora / NixOS dotfiles for Hyprland / Niri / MangoWM / Labwc
 
 </div>
 
@@ -12,8 +10,7 @@ Haku Space now supporting Fedora too! See [Fedora Guide](https://github.com/haku
     <a href="https://github.com/YaLTeR/niri"><img alt="Niri" src="https://img.shields.io/badge/Niri-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
     <a href="https://github.com/mangowm/mango"><img alt="MangoWM" src="https://img.shields.io/badge/MangoWM-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
     <a href="https://github.com/labwc/labwc"><img alt="Labwc" src="https://img.shields.io/badge/Labwc-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
-    <a href="https://archlinux.org/"><img alt="Arch Linux" src="https://img.shields.io/badge/Arch%20Linux-%231f1f1f?style=for-the-badge&logo=archlinux&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
-    <a href="https://fedoraproject.org/"><img alt="Fedora" src="https://img.shields.io/badge/Fedora-%231f1f1f?style=for-the-badge&logo=fedora&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
+    <br />
     <a href="https://github.com/hakuimaku/hakuspace/commits/main"><img alt="Last Commit" src="https://img.shields.io/github/last-commit/hakuimaku/hakuspace?style=for-the-badge&label=Last%20Commit&labelColor=%2368818f&color=%231f1f1f&logo=git&logoColor=%231f1f1f"></a>&nbsp;
     <a href="https://github.com/hakuimaku/hakuspace/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/hakuimaku/hakuspace?style=for-the-badge&label=Stars&labelColor=%2368818f&color=%231f1f1f&logo=github&logoColor=%231f1f1f"></a>&nbsp;
     <a href="https://github.com/hakuimaku/hakuspace"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/hakuimaku/hakuspace?style=for-the-badge&label=Repo%20Size&labelColor=%2368818f&color=%231f1f1f&logo=github&logoColor=%231f1f1f">
@@ -35,8 +32,8 @@ Haku Space now supporting Fedora too! See [Fedora Guide](https://github.com/haku
 
 </div>
 
-- Multi-WM Support: Designed for Arch Linux (supports Hyprland, Niri, MangoWM, Labwc) with seamless switching between window managers.
-- Distro Agnostic: Compatible with any Linux distribution given the core dependencies are installed.
+- Multi-WM Support: Hyprland, Niri, MangoWM, Labwc with seamless switching between window managers.
+- Multi-Distro Support: Arch, Fedora, Nixos currently.
 - DE-like Experience: Modular UI powered by Rofi, Waybar, SwayNC, and custom scripts.
 - Extensible: Highly customizable and easy to adapt to your own workflow.
 
@@ -66,7 +63,7 @@ Haku Space now supporting Fedora too! See [Fedora Guide](https://github.com/haku
   
 See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/main/common/pkg-core.txt) | [pkg-service](https://github.com/hakuimaku/hakuspace/blob/main/common/pkg-service.txt) | [pkg-optional](https://github.com/hakuimaku/hakuspace/blob/main/common/pkg-optional.txt)
 
-Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakuspace/blob/main/hyprland/pkg-hyprland.txt) | [pkg-niri](https://github.com/hakuimaku/hakuspace/blob/main/niri/pkg-niri.txt) | [pkg-mango](https://github.com/hakuimaku/hakuspace/blob/main/mango/pkg-mango.txt) | [pkg-labwc](https://github.com/hakuimaku/hakuspace/blob/main/labwc/pkg-labwc.txt)
+Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakuspace/blob/main/wm/pkg-hyprland.txt) | [pkg-niri](https://github.com/hakuimaku/hakuspace/blob/main/wm/pkg-niri.txt) | [pkg-mango](https://github.com/hakuimaku/hakuspace/blob/main/wm/pkg-mango.txt) | [pkg-labwc](https://github.com/hakuimaku/hakuspace/blob/main/wm/pkg-labwc.txt)
 
 </div>
 
@@ -83,7 +80,7 @@ Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakus
 | Screen Lock | [Hyprlock](https://github.com/hyprwm/hyprlock) |
 | Login Menu | [Ly](https://github.com/fairyglade/ly) |
 | Editor | [VS Code](https://code.visualstudio.com/) |
-| Browser | [Zen](https://zen-browser.app/) |
+| Browser | [Firefox](https://www.firefox.com/en-US/) |
 | Screen Recording | [Wl-screenrec](https://github.com/russelltg/wl-screenrec) |
 | Display Manager | [Ly](https://codeberg.org/fairyglade/ly#systemd) |
 
@@ -95,11 +92,14 @@ Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakus
 
 ## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Installation+Guide" alt="Typing SVG" />
 
-> [!Important]
-> **Prerequisites:** You need a pre-installed Arch Linux or an Arch-based Linux Distro (A fresh install is highly recommended). If you already have an existing WM or DE configuration, it is best to only reference the configs in HakuSpace rather than running the installation script directly over your system.
-
 > [!tip]
-> For Fedora users, you can follow the [Fedora Guide](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md)
+> For Fedora users, you should follow the [Fedora Guide](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md)
+
+### 0. Prerequisites:
+
+- You have completed the installation of Arch, Fedora, and NixOS (for derivative distros, please report any issues to me via: [Discord](https://discord.gg/https://discord.gg/Juuun8sXsN)).
+- You have installed and configured essential utilities such as Wi-Fi, Bluetooth, and necessary hardware drivers.
+- You are familiar with configuring the system via code, as my dotfiles do not feature a central graphical settings GUI.
 
 ### 1. Clone the Dotfiles
 If you prefer to experience the **lastest changes** (Lastest Git), you can clone the main branch:
@@ -273,13 +273,12 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 
 # <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Troubleshooting" alt="Typing SVG" />
 
-**Waybar bugs**:
+**Waybar issues**:
 - **Waybar clock**: You should set your timezone and locale manually in waybar configuration to ensure the clock displays correctly.
 - **Waybar cava module**: If you encounter issues with the Cava module in Waybar, ensure that you have installed `waybar-cava` and that it is properly configured in your Waybar config file.
 - Waybar use `ext/workspaces` for **Multi-WMs** setup.
 
-**My dotfiles bugs**:
-- Currently, my custom `gtk.css` is only compatible with **GTK 3** and only supports **Dark Mode**. If you are using Light Mode, you may encounter some issues with the appearance of GTK applications **(Thunar)**. If you don't want to use my thunar theme, remove `gtk.css` in `~/.config/gtk-3.0/`.
+**My dotfiles issues**:
 - **Cava Underbar in Niri** does not support the no-focus rule. As a result, you might accidentally move it from its original position or close it by mistake.
 - Some features might still be missing since I only tested this setup for **my personal use**. If you need more than what's provided, you'll need to install and configure those parts manually.
 - If you don't want to use certain apps (like `wl-screenrec`, `thunar`, `ly` etc.), you can easily remove and replace them with alternatives. However, some apps are deeply integrated into my scripts or configs, so removing them may break functionality or cause those scripts/configs to stop working.
