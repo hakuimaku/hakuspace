@@ -23,7 +23,6 @@ PanelWindow {
     readonly property real spanWidth: Math.min(Theme.levelOsdWidth,
                                                 Math.max(0, width - 2 * (FlareEdges.thickness + Theme.tipRadius)))
     readonly property real spanStart: (width - spanWidth) / 2
-
     Rectangle {
         id: osdBackground
         x: root.spanStart + Theme.gap
@@ -36,9 +35,10 @@ PanelWindow {
         visible: CenterState.osdExpansion > 0 && root.spanWidth > 0
 
         Osd.LevelOsdContent {
-            x: Theme.levelOsdPadding
+            anchors.horizontalCenter: parent.horizontalCenter
             y: Theme.levelOsdPadding
             width: Math.max(0, osdBackground.width - Theme.levelOsdPadding * 2)
+            height: implicitHeight
             mode: CenterState.transientMode
             opacity: CenterState.osdVisible && CenterState.osdExpansion > 0.4 ? 1 : 0
             visible: opacity > 0

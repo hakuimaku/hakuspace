@@ -202,7 +202,7 @@ The new P3 mockups do not cancel these established style directions:
 
 - **Notification popup:** borderless black Flare/toast; source X from Notification control, frame-derived Y; no generic card stroke.
 - **Notification Center:** non-modal right-side shell surface, wider spacing, taller history viewport, `Clear` uses accent fill + black text; hover may grow label without changing allocated geometry.
-- **Level OSD:** compact, physical-center stable, fixed percentage slot, same layout for volume/brightness, frame-derived attachment.
+- **Level OSD:** compact, physical-center stable, fixed percentage slot, same layout for volume/brightness, frame-derived attachment. Treat icon + level track + percentage as one optically centered group; do not let asymmetric slots bias the content to one side.
 - **Tray / Tooltip:** X from source control, Y from shared frame geometry, body clamped inside safe bounds while source neck/origin may still point to the true trigger.
 
 ## 2. Token contract (`quickshell.json` → `Theme.qml`)
@@ -318,7 +318,7 @@ HakuMenu shell-open motion remains a separate profile: ordinary controls must no
 - **Dashboard:** avatar + four mockup-defined cards; reserved empty space stays empty.
 - **Sidebar:** left-attached rounded lobe with circular options; immediate hover handoff from Navigation.
 - **Settings:** large centered stub only; no settings framework in P3.
-- **HakuMenu:** physical-center shell surface with General/Drun/Theme; stable center/height with approved width morph (General 95% of standard width); Theme-only state rail. Tabs use a moving selection pill and shared button motion.
+- **HakuMenu:** physical-center shell surface with General/Drun/Theme; stable center/height with approved width morph (General 95% of standard width); Theme-only state rail. Tabs use a moving selection pill and shared button motion. Its layer-shell is split: Top owns the visual-only Flare/background; Overlay owns the rounded body, content, input and keyboard focus so the menu remains usable over fullscreen clients.
 - **Wallpaper:** centered selected item with stacked side carousel; no large background panel and no dual-front reveal.
 - **Notification popup:** native P2 model, borderless HakuSpace/Flare visual treatment.
 - **Notification Center:** native P2 behavior, P3 spacing/height/primary-Clear polish.
@@ -333,6 +333,7 @@ HakuMenu shell-open motion remains a separate profile: ordinary controls must no
 - Prefer `components/motion/ButtonMotion.qml`, `MorphButton.qml`, `MorphIconButton.qml` and `SelectionPill.qml` over copy-pasted per-component hover/press `Behavior` blocks.
 - Take colours from `Theme` and durations/curves from `HAnimation` unless an existing documented hard-coded exception applies.
 - Centralize Flare geometry in the shared Flare library; do not reimplement flare maths in each panel.
+- For split-layer shell surfaces, keep one geometry/morph source of truth. Visual-only Top layers must use an empty input mask; interactive Overlay layers own content/focus and must not duplicate Flare geometry.
 - Centralize RoundedScreen/frame geometry per output; do not copy frame-offset arithmetic into individual surfaces.
 - Paint outlines define silhouette/grouping unless the mockup explicitly calls for a visible border.
 - Preserve surface-specific shape identity: do not replace Navigation/Sidebar/HakuMenu/Wallpaper with a generic black rounded card simply for code reuse.

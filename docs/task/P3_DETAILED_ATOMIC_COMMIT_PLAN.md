@@ -282,6 +282,8 @@ Gate:
 - physical center X and height remain stable;
 - General may use the approved 95%-of-standard width while Drun/Theme use standard width;
 - tab-to-tab width changes morph with the dedicated resize curve, not the shell-open bounce.
+- HakuMenu uses synchronized split layers: Top = visual-only Flare/background, Overlay = rounded body/content/input/focus.
+- Fullscreen clients may cover the Top visual shell, but Overlay content remains visible and usable without geometry drift.
 
 ### H3
 General/Drun/Theme tab shell.
@@ -509,7 +511,7 @@ p3(anchor): attach level osd to rounded frame
 ```
 
 ### P7
-Compact OSD + stable percentage slot + physical centering.
+Compact OSD + stable percentage slot + physical centering. Icon, track and percentage must be optically centered as one group inside the capsule.
 
 ```text
 p3(osd): stabilize compact centered layout

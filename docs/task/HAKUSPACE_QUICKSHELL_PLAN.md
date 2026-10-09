@@ -425,6 +425,7 @@ Current N11 path:
 - `CenterState` keeps the OSD open until queued commands and feedback complete;
 - a Top-layer flare extends from the bar;
 - a separate Overlay window renders the level content over fullscreen clients;
+- the volume/brightness icon + track + percentage group is optically centered as one unit inside the capsule;
 - overlay input mask is empty so it should be click-through.
 
 Do not call this DONE until P0 manual checks cover rapid input, fullscreen, classic fallback, multi-monitor, and screen scaling.
@@ -1327,6 +1328,13 @@ menuHeight  = stable across tabs
 Do not derive menu position from changing MPRIS title width.
 
 Vertical origin is frame-derived. HakuMenu remains physically centered while its width may morph by tab: General uses the approved compact width (95% of the standard HakuMenu width; currently 38% of output versus 40% for Drun/Theme). The width transition uses the dedicated HakuMenu resize motion, not the bouncy open curve. Use one radius family for outer menu, tab strip, list area and Theme state area.
+
+HakuMenu uses a split layer-shell architecture so fullscreen clients do not break the menu surface:
+
+- **Top layer:** visual-only Flare/background shell; empty input mask and no keyboard focus.
+- **Overlay layer:** rounded body plus all HakuMenu content/input/focus; no Flare ears.
+- Both layers consume one shared morph/geometry source so center X, width retargets, height reveal and RoundedScreen-derived Y stay synchronized.
+- When a fullscreen client covers the Top layer, the Overlay content/body remains usable and correctly rounded.
 
 Commit:
 

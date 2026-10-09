@@ -24,7 +24,7 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     color: "transparent"
-    implicitWidth: Math.max(0, Math.min(420, modelData.width - Theme.pad * 2))
+    implicitWidth: Math.max(0, Math.min(520, modelData.width - Theme.pad * 2))
     implicitHeight: Math.min(modelData.height - FlareEdges.topOriginY - Theme.pad,
                              Math.max(220, flare.naturalContentHeight + 16 + Theme.tipHugRadius))
     visible: panelOpen || closing
@@ -70,7 +70,7 @@ PanelWindow {
                                               - Theme.pad * 2 - Theme.tipHugRadius),
                          maxWidth: Math.max(0, root.width - 50) })
         contentKey: "notifications"
-        maxWidth: Math.min(400, Math.max(0, root.width - FlareEdges.thickness * 2))
+        maxWidth: Math.min(500, Math.max(0, root.width - FlareEdges.thickness * 2))
         wBounds: ({ start: 0, end: root.width })
         horizontalPadding: 22
         onSettled: (isShown) => {
