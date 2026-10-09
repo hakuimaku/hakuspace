@@ -21,10 +21,10 @@ Arch Linux dotfiles for Hyprland / Niri / MangoWM
 
 ## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Welcome+to+Haku+Space" alt="Typing SVG" />
 
-- Installation: [here](https://github.com/hakuimaku/hakuspace/blob/main/README.md#-3)
-- Update: [here](https://github.com/hakuimaku/hakuspace/blob/main/README.md#-update-haku-space-to-lastest-version)
-- Packages: [here](https://github.com/hakuimaku/hakuspace/blob/main/README.md#-2)
-- Keybinding: [here](https://github.com/hakuimaku/hakuspace/blob/main/README.md#-5)
+- Installation: [here](https://github.com/hakuimaku/hakuspace#-3)
+- Update: [here](https://github.com/hakuimaku/hakuspace#-update-haku-space-to-lastest-version)
+- Packages: [here](https://github.com/hakuimaku/hakuspace#-2)
+- Keybinding: [here](https://github.com/hakuimaku/hakuspace#-5)
 
 Overview:
 - **HakuSpace** is a dotfiles project for **Arch Linux**, supporting **Hyprland**, **Niri**, and **MangoWM**.  
