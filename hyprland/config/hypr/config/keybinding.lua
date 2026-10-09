@@ -15,14 +15,6 @@ local browser = "zen-browser"
 
 local mainMod = "SUPER" -- Sets "Windows" key as main modifier
 
--- Plugin keybindings
---hl.bind(mainMod .. " + G", function() hl.plugin.hyprexpo.expo("toggle") end)
-
---hl.bind("ALT + TAB", function() hl.plugin.hymission.toggle() end)
---hl.bind("ALT + A", function() hl.plugin.hymission.toggle("forceall") end)
---hl.bind("ALT + S", function() hl.plugin.hymission.open("onlycurrentworkspace") end)
---hl.bind("ALT + Escape", function() hl.plugin.hymission.close() end)
-
 -- Main keybindings
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
