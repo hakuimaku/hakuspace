@@ -15,8 +15,9 @@ zsh                           # Shell
 jq                            # Command-line JSON processor
 imagemagick                   # Image processing toolkit (For Niri, generating backdrop blur)
 python-colorthief             # Extract dominant color palette from images (Function wallpaper color picker)
-python-gobject                # Python bindings for GObject (Needed for Dockbar autohide-dock.py)
-gtk-layer-shell               # GTK library for layer shell protocol (Needed for Dockbar autohide-dock.py)
+python-gobject                # Python bindings for GObject
+gtk-layer-shell               # GTK library for layer shell protocol
+wlr-randr                     # Wayland output management utility
 
 # ==== Utility tools ===
 wl-clipboard                  # Wayland clipboard tools (wl-copy/wl-paste)
@@ -25,7 +26,19 @@ grim                          # Screenshot utility for Wayland
 slurp                         # Select a region of the screen for screenshots
 mpv                           # Media player (video/audio)
 imv                           # Lightweight image viewer (picture)
-sway-audio-idle-inhibit-git   # Inhibit idle/suspend while audio is playing (AUR)
+nwg-look                      # GTK theme and appearance configurator
+
+# === Portals / desktop integration ===
+xdg-desktop-portal            # Base desktop portal service
+xdg-desktop-portal-gtk        # GTK portal backend
+xdg-utils                     # xdg-open, xdg-mime, and related desktop helpers
+mate-polkit                   # MATE PolicyKit authentication agent
+xorg-xhost                    # X server access control utility (compat use-cases)
+
+qt6ct                         # Qt6 theme/configuration tool
+qt5ct                         # Qt5 theme/configuration tool
+qt5-wayland                   # Qt5 Wayland platform plugin
+qt6-wayland                   # Qt6 Wayland platform plugin
 
 # === File management / archive tools ===
 thunar                        # File manager
@@ -42,6 +55,7 @@ unzip                         # ZIP extraction support
 zip                           # ZIP creation utility
 
 # === Fonts ===
+rofi-emoji                    # Emoji font, Rofi menu selector
 noto-fonts                    # General Unicode font family
 noto-fonts-cjk                # CJK font coverage
 noto-fonts-emoji              # Emoji font set
