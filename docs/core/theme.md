@@ -36,6 +36,11 @@ Generating the config files isn't enough; the applications need to know that the
 - This script wakes up all the relevant applications and tells them to reload their configurations on the fly.
 - For example, it calls `reload_config.sh` (to reload the Window Manager), and sends reload commands to SwayNC, Kitty, and Cava. Note that Waybar updates its CSS automatically via its own hot-reload mechanism.
 
+### 6. Automated Wallpaper Transitions (`random_wallpaper.sh`)
+For those who want a dynamic desktop, `random_wallpaper.sh` automatically cycles through your wallpapers at a defined interval (`WALL_INTERVAL` in `setting.sh`).
+- **Context-Aware Selection:** The script is smart enough to detect your current wallpaper mode. If it detects that `mpvpaper` is actively running, it assumes you are in "lively mode" and will exclusively pick random video wallpapers (`.mp4`) from your `$WALL_MPV_DIR`. If `mpvpaper` is not running, it falls back to cycling through your static images in `$WALL_DIR`.
+- **Accent Color Synchronization:** Just like manual selection, it triggers the entire color extraction pipeline. When transitioning between video wallpapers, it cleverly extracts the new accent color from pre-generated thumbnail previews (located in the `.thumbnails/` directory) to ensure your desktop UI changes color synchronously with the video, without any stutter.
+
 ## Customizing the Theming Engine
 
 We've designed this system to be highly customizable. If you want to tweak how it behaves, you have several options:
