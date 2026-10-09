@@ -162,7 +162,7 @@ hl.window_rule({
     no_shadow = true,
     opacity = 0.5,
     size = "1920 60",
-    move = "0 0",
+    move = "0 -2",
 })
 
 -- Rules for haku.sh | scrolling layout

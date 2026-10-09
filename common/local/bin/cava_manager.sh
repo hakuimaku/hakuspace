@@ -25,11 +25,11 @@ run_cava() {
     pgrep -f "$APP_CLASS" >/dev/null && return 0
 
     kitty --class="$APP_CLASS" \
-            --config NONE \
             -o background_opacity=0 \
             -o background=#000000 \
             -o font_size=5 \
             -o window_padding_width=0 \
+            -o window_margin_width=0 \
             -o hide_window_decorations=yes \
             -e cava -p ~/.config/cava/config_underbar &
 }
