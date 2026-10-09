@@ -1,0 +1,65 @@
+
+menupopup, panel {
+    --panel-border-radius: 16px !important;
+    --arrowpanel-border-radius: 12px !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+
+    --menu-background-color: rgba(0, 0, 0, 0.8) !important;
+    --panel-background: rgba(0, 0, 0, 0.8) !important;
+}
+
+menuitem:hover, menu:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    color: #ffffff !important;
+}
+
+#urlbar-input {
+    font-size: 16px !important;
+}
+
+#urlbar-input-container {
+    align-items: center !important;
+}
+
+menupopup menuitem,
+menupopup menu {
+    font-size: 18px !important;
+}
+
+#appMenu-popup .subviewbutton,
+.panel-subview-body,
+.subviewbutton {
+    font-size: 16px !important;
+}
+
+#appMenu-popup .subviewbutton {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+}
+
+#appMenu-popup .subviewbutton .toolbarbutton-text {
+    margin-top: auto !important;
+    margin-bottom: auto !important;
+}
+
+
+tooltip {
+    appearance: none !important; 
+    
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    
+    font-size: 14px !important;
+    color: #c9c9c9 !important;
+    
+    border-radius: 16px !important;
+    border: 2px solid rgba(255, 255, 255, 0.15) !important;
+    
+    padding: 6px 12px !important;
+}
+
+tooltip label {
+    margin: 0 !important;
+    padding: 0 !important;
+}
