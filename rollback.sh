@@ -58,28 +58,6 @@ select_backup_dir() {
     SELECTED_BACKUP="$HOME/${backup_names[$((choice - 1))]}"
 }
 
-backup_current_state() {
-    local source_item
-    local relative_path
-    local destination
-    local safety_path
-
-    ROLLBACK_BACKUP_DIR="$HOME/Rollback_Backup_$(date +%Y-%m-%d_%H-%M-%S)"
-    mkdir -p "$ROLLBACK_BACKUP_DIR"
-
-    while IFS= read -r -d '' source_item; do
-        relative_path="${source_item#$SELECTED_BACKUP/}"
-        destination="$HOME/$relative_path"
-        [[ -e "$destination" || -L "$destination" ]] || continue
-
-        safety_path="$ROLLBACK_BACKUP_DIR/$relative_path"
-        mkdir -p "$(dirname "$safety_path")"
-        cp -a "$destination" "$safety_path"
-    done < <(find "$SELECTED_BACKUP" -mindepth 1 -maxdepth 1 -print0)
-
-    log_ok "Current state saved to $ROLLBACK_BACKUP_DIR"
-}
-
 restore_backup() {
     local source_item
     local relative_path
@@ -111,8 +89,6 @@ if ! ask_yes_no "===> Restore this backup now?"; then
     exit 0
 fi
 
-backup_current_state
 restore_backup
 
 log_ok "Rollback completed. Reload your session or restart affected applications if necessary."
-log_info "Safety backup: $ROLLBACK_BACKUP_DIR"
