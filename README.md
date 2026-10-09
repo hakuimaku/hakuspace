@@ -23,10 +23,11 @@ Fedora now supports Haku Space too! See [Fedora Guide](https://github.com/hakuim
 
 ## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Welcome+to+Haku+Space" alt="Typing SVG" />
 
-- Installation: [here](https://github.com/hakuimaku/hakuspace#-3)
-- Update: [here](https://github.com/hakuimaku/hakuspace#-update-haku-space-to-lastest-version)
-- Packages: [here](https://github.com/hakuimaku/hakuspace#-2)
-- Keybinding: [here](https://github.com/hakuimaku/hakuspace#-5)
+- 🛠️ Installation: [here](https://github.com/hakuimaku/hakuspace#-3)
+- 🔄 Update: [here](https://github.com/hakuimaku/hakuspace#-update-haku-space-to-lastest-version)
+- 📦 Packages: [here](https://github.com/hakuimaku/hakuspace#-2)
+- 🕹️ Keybinding: [here](https://github.com/hakuimaku/hakuspace#-5)
+- 🐞 Troubleshooting: [here](https://github.com/hakuimaku/hakuspace#-8)
 
 Overview:
 - **HakuSpace** is a dotfiles project for **Arch Linux**, supporting **Hyprland**, **Niri**, and **MangoWM**.  
@@ -93,10 +94,10 @@ git clone https://github.com/hakuimaku/hakuspace.git
 
 ```
 
-If you prefer the version I've tested, clone the **stable** release version `v2.1.5` (lastest):
+If you prefer the version I've tested, clone the **stable** release version `v2.1.6` (lastest):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.1.5 https://github.com/hakuimaku/hakuspace.git
+git clone --depth 1 --branch v2.1.6 https://github.com/hakuimaku/hakuspace.git
 
 ```
 
