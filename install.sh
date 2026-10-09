@@ -85,7 +85,7 @@ PKG_LABELS=()
 PKG_FILES=()
 
 log_info "You need to install pkg-core.txt & pkg-<WM_NAME>.txt for hakuspace to work properly"
-log_info "You can CTRL+C to cancel installing & nano ~/hakuspace/common/pkg-core.txt to edit package list"
+log_info "You can CTRL+C to cancel installing & nano ~/hakuspace/src/packages/pkg-core.txt to edit package list"
 
 if command -v yay >/dev/null 2>&1; then
     for i in "${!SELECTED_WMS[@]}"; do
@@ -157,7 +157,6 @@ FOLDERS=(
     "$HOME/.themes"
     "$HOME/Pictures/Wallpapers"
     "$HOME/Pictures/Screenshots"
-    "$HOME/Videos/Wallpapers/Preview"
 )
 
 for folder in "${FOLDERS[@]}"; do
@@ -193,7 +192,8 @@ if command -v nixos-rebuild >/dev/null 2>&1; then
                 log_skip "./hakuspace-config.nix is already imported in $CONFIG_NIX."
             else
                 log_info "Injecting ./hakuspace-config.nix into imports of configuration.nix..."
-                grep -q '\./hakuspace-config\.nix' "$CONFIG_NIX" || sudo sed -i '/\.\/hardware-configuration\.nix/a \      .\/hakuspace-config\.nix' "$CONFIG_NIX"
+                grep -q '\./hakuspace-config\.nix' "$CONFIG_NIX" || sudo sed -i '/^[[:space:]]*imports[[:space:]]*=/,/^[[:space:]]*];[[:space:]]*$/ { /^[[:space:]]*];[[:space:]]*$/i\      ./hakuspace-config.nix
+}' "$CONFIG_NIX"
                 log_ok "Updated imports in $CONFIG_NIX."
             fi
         else
@@ -228,8 +228,8 @@ fi
 # ============================================================================
 step_title "4 - SETUP HAKUSPACE CONFIG"
 
-log_info "Backing up existing configs in ~/.config and copying new configs from hakuspace/common/config"
-log_warn "Do NOT skip this step in the first time installation hakuspace"
+log_info "Backing up existing configs in ~/.config and copying new configs from hakuspace/src/home/.config"
+log_info "Do NOT skip this step in the first time installation hakuspace"
 
 if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
 
@@ -310,8 +310,8 @@ fi
 # ============================================================================
 step_title "5 - SETUP LOCAL BIN SCRIPTS"
 
-log_info "Backing up existing ~/.local/bin and copying new scripts from hakuspace/common/local/bin"
-log_warn "Do NOT skip this step in the first time installation hakuspace"
+log_info "Backing up existing ~/.local/bin and copying new scripts from hakuspace/src/home/.local/bin"
+log_info "Do NOT skip this step in the first time installation hakuspace"
 
 if ask_yes_no "===> Do you want to setup hakuspace scripts now?"; then
     if [[ -d "$SOURCE_BIN" ]]; then
@@ -348,8 +348,9 @@ fi
 step_title "7 - FINAL SETUP: MAKE SOMETHING WORK"
 
 # Gen style first time
+echo ""
 if [[ -x "$HOME/.local/bin/gen_style.sh" ]]; then
-    "$HOME/.local/bin/gen_style.sh"
+    "$HOME/.local/bin/gen_style.sh" --font "JetBrainsMono Nerd Font"
     log_ok "Executed gen_style.sh"
 else
     log_warn "Not executable or missing: $HOME/.local/bin/gen_style.sh"
@@ -357,6 +358,7 @@ else
 fi
 
 # Change default shell to fish
+echo ""
 if command -v fish >/dev/null 2>&1; then
     FISH_PATH="$(command -v fish)"
     
@@ -375,9 +377,11 @@ else
 fi
 
 # Init HakuSpace Control
+echo ""
 check_control_dir
 
 # NixOS configuration update
+echo ""
 if command -v nixos-rebuild >/dev/null 2>&1; then
     if ask_yes_no "===> NixOS configuration updated. Do you want to rebuild NixOS system now? (maybe have some conflicts)"; then
         sudo nixos-rebuild switch
@@ -395,6 +399,7 @@ for path in /usr/bin/ly /usr/local/bin/ly /usr/sbin/ly /usr/bin/ly-dm; do
     fi
 done
 
+echo ""
 if [ $FOUND -eq 1 ]; then
     if ask_yes_no "===> Do you want to enable ly service and disable getty now?"; then
         log_warn "Do NOT choose tty1 if you are using a display manager (SDDM, LightDM, etc.) in tty1."
@@ -415,10 +420,12 @@ else
 fi
 
 # Set GNOME color scheme to dark and set Thunar as default file manager
+echo ""
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 log_ok "Set GNOME color scheme to dark."
 
 # Set Thunar as default file manager if installed
+echo ""
 if command -v thunar >/dev/null 2>&1; then
     xdg-mime default thunar.desktop inode/directory
     log_ok "Set Thunar as default file manager."
