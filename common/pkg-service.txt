@@ -9,3 +9,8 @@ btop                          # Resource monitor (CPU/RAM/disk/network)
 pavucontrol                   # PulseAudio/PipeWire volume control GUI
 gparted                       # Disk partition editor GUI
 nano                          # Terminal text editor
+
+# === Network / Bluetooth ===
+nm-connection-editor          # NetworkManager interface
+blueman                       # Bluetooth interface
+bluez                         # Bluetooth engine
