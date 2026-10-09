@@ -49,7 +49,7 @@ Haku Space now supporting Fedora too! See [Fedora Guide](https://github.com/haku
 * **Smart Accent Color:** Automatically generates the accent color palette based on your current wallpaper.
 * **Flexible Waybar Layouts:** Support layouts: `top`, `left`, `coredge`, `minimal`, `full`, `neon` (Will be extended more).
 * **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
-* **Wallpaper Automation:** Wallpapers change automatically every 5 minutes (customizable in the `random_wallpaper.sh` script).
+* **Wallpaper Automation:** Wallpapers change automatically every 5 minutes (customizable WALL_INTERVAL in the `main_setting.sh`).
 * **Dockbar:** Built-in, Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
 * **Desktop Icons** `(experimental)`: Built-in, Items in folder `~/Desktop` will be shown on Desktop (still bugs btw).
 
