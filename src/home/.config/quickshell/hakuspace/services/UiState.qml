@@ -7,6 +7,24 @@ QtObject {
     property string activePanel: ""
     property var trayMenu: null
     property var notificationPanel: null
+    property string hakuMenuMode: "closed"
+    property string hakuMenuScreenName: ""
+
+    function openHakuMenu(screenName) {
+        hakuMenuScreenName = screenName
+        hakuMenuMode = "general"
+        activePanel = "hakumenu"
+    }
+
+    function closeHakuMenu() {
+        if (activePanel === "hakumenu") activePanel = ""
+        hakuMenuMode = "closed"
+        hakuMenuScreenName = ""
+    }
+
+    function closeHakuMenuIfScreen(screenName) {
+        if (hakuMenuScreenName === screenName) closeHakuMenu()
+    }
 
     function toggleNotifications(screenName, anchorX, anchorWidth) {
         if (activePanel === "notifications" && notificationPanel
@@ -55,6 +73,10 @@ QtObject {
     onActivePanelChanged: {
         if (activePanel !== "tray") trayMenu = null
         if (activePanel !== "notifications") notificationPanel = null
+        if (activePanel !== "hakumenu") {
+            hakuMenuMode = "closed"
+            hakuMenuScreenName = ""
+        }
     }
     
     // One panel name is active at a time; toggling it closes the panel.

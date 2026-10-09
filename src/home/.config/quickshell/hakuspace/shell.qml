@@ -31,6 +31,7 @@ ShellRoot {
         function open(fifo: string, jsonString: string) {
             try {
                 var req = JSON.parse(jsonString);
+                UiState.closeHakuMenu();
                 pickerWindow.open(fifo, req.prompt || "", req.items || [], req.password === true, req.noCustom === true);
             } catch (e) {
             }
@@ -45,6 +46,19 @@ ShellRoot {
             Quickshell.reload(false);
         }
         function quit() { Qt.quit(); }
+    }
+
+    IpcHandler {
+        target: "hakumenu"
+        function open(screenName: string) {
+            for (var screen of Quickshell.screens) {
+                if (screen.name === screenName) {
+                    UiState.openHakuMenu(screenName)
+                    return
+                }
+            }
+        }
+        function close() { UiState.closeHakuMenu() }
     }
 
     IpcHandler {
@@ -88,6 +102,11 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         NotificationCenterPanel {}
+    }
+
+    Variants {
+        model: Quickshell.screens
+        HakuMenuPanel {}
     }
 
     Variants {

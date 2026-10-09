@@ -14,9 +14,5 @@ TopModule {
     implicitWidth: implicitHeight + (hovered ? Theme.pad : 0)
     radius: height / 2
     
-    tooltip: "Have a nice day!\n(HakuMenu will be added in M4)"
-    
-    onClicked: {
-        UiState.toggle("hakumenu");
-    }
+    tooltip: "Have a nice day!"
 }

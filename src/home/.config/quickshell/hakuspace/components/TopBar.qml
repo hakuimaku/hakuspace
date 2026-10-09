@@ -137,6 +137,7 @@ PanelWindow {
             closeTrayMenu()
             UiState.closeTrayMenuIfScreen(root.modelData.name)
             UiState.closeNotificationsIfScreen(root.modelData.name)
+            UiState.closeHakuMenuIfScreen(root.modelData.name)
         }
     }
     
