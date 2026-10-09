@@ -11,5 +11,6 @@ nano                          # Terminal text editor
 
 # === Network / Bluetooth ===
 nm-connection-editor          # NetworkManager interface
+network-manager-applet        # NetworkManager system tray applet
 blueman                       # Bluetooth interface
 bluez                         # Bluetooth engine
