@@ -39,3 +39,20 @@ specificWidth_ScrollingLayout:set_enabled(true) -- Set width 60% for certain app
 -- Example change keybind for SUPER + E
 -- hl.unbind("SUPER + E") -- Unbind SUPER + E: Thunar open (Based on my default config)
 -- hl.bind("SUPER + E", hl.dsp.exec_cmd("discord")) -- Bind SUPER + E: Discord open (Bind new command)
+
+-- Hyprland bring back my old rounding and shadow
+-- hl.config({
+--     decoration = {
+--         rounding       = 16,
+--         rounding_power = 4,
+
+--         shadow = {
+--             enabled      = true,
+--             range        = 16,
+--             render_power = 8,
+--             sharp        = false,
+--             offset       = { 6, 6 },
+--             color        = "rgba(000000cc)",
+--         },
+--     },
+-- })
