@@ -14,13 +14,16 @@ if [[ "${1:-}" == "--early" ]]; then
 
     fi
     if haku_backend_is "classic"; then
-        swaync &
+        pgrep -x swaync >/dev/null || swaync &
     else
+        [[ "${QS_ALLOW_SWAYNC:-0}" == "1" ]] && { pgrep -x swaync >/dev/null || swaync & }
         # Quickshell early start
         # Reset runtime states
         rm -f /tmp/cava-layer.pid
         
-        setsid -f ~/.local/bin/qs_supervisor.sh >/dev/null 2>&1
+        if ! pgrep -f qs_supervisor.sh >/dev/null 2>&1; then
+            setsid -f ~/.local/bin/qs_supervisor.sh >/dev/null 2>&1
+        fi
         
         # Wait up to 3s for health check, but never block
         for ((i=0; i<3; i++)); do

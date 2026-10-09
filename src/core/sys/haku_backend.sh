@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/haku_backend_lib.sh"
 kill_classic_stack() {
     pkill -x waybar
     pkill -x taskbar
-    pkill -x swaync
+    [[ "${QS_ALLOW_SWAYNC:-0}" == "0" ]] && pkill -x swaync
     pkill -x rofi
     pkill -f edge_trigger.py
     pkill -f rounded_screen.py
@@ -18,7 +18,7 @@ kill_classic_stack() {
 }
 
 start_classic_stack() {
-    swaync &
+    pgrep -x swaync >/dev/null || swaync &
     ~/.local/bin/rounded_screen_manager.sh --startup
     ~/.local/bin/edge_trigger_manager.sh --startup
     ~/.local/bin/taskbar_manager.sh --startup
@@ -38,10 +38,10 @@ set_backend() {
     local runtime_dir="$(haku_runtime_dir)"
     
     if [[ "$target" == $QS_BACKEND_NAME ]]; then
+        kill_quickshell
         echo "Killing classic stack..."
         kill_classic_stack
         
-        # Bật Haku Space Mode (aesthetic modules) khi sang Hikai
         
         # Wait for D-Bus name to be released (simple delay)
         echo "Waiting for D-Bus release..."
@@ -94,7 +94,12 @@ set_backend() {
 
 kill_quickshell() {
     pkill -f qs_supervisor.sh
-    qs -c hakuspace kill 2>/dev/null || pkill -x qs || pkill -x quickshell
+    qs -c hakuspace kill 2>/dev/null
+    sleep 0.2
+    if pgrep -f "qs.*hakuspace" >/dev/null 2>&1 || pgrep -f "quickshell.*hakuspace" >/dev/null 2>&1; then
+        pkill -f "qs.*hakuspace"
+        pkill -f "quickshell.*hakuspace"
+    fi
 }
 
 verify_backend() {
@@ -102,7 +107,9 @@ verify_backend() {
     echo "Current backend: $current"
     if [[ "$current" == $QS_BACKEND_NAME ]]; then
         local violations=""
-        for proc in waybar taskbar swaync rofi edge_trigger.py rounded_screen.py cava_layer.py desktop_icons.py; do
+        local procs="waybar taskbar rofi edge_trigger.py rounded_screen.py cava_layer.py desktop_icons.py"
+        [[ "${QS_ALLOW_SWAYNC:-0}" == "0" ]] && procs="$procs swaync" # TEMP: swaync allowed until M3 (D-Bus activation re-spawns it)
+        for proc in $procs; do
             if [[ "$proc" == *.py ]]; then
                 if pgrep -f "$proc" >/dev/null 2>&1; then
                     violations="$violations $proc"

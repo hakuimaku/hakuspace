@@ -63,3 +63,4 @@ haku_qs_ipc() {
     fi
     return 0
 }
+export QS_ALLOW_SWAYNC=1  # TEMP, remove at M3

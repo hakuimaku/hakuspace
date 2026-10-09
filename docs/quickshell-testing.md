@@ -46,7 +46,7 @@ printf 'Option A\nOption B\nOption C\n' | ~/.local/bin/haku_pick.sh --prompt "Te
 When executed, a Picker UI will pop up in the center of the screen. Select an Option using the arrow keys and Enter. The terminal will print the selected result. Pressing Esc will exit with code 1.
 
 ### 5. Features Temporarily Missing in QS mode (Hikai)
-- **Notification Daemon:** Because `swaync` is blocked, there is currently no notification daemon displayed on the desktop in M0-M1. This feature will be rewritten in M3.
+- **Notification Daemon:** swaync is temporarily allowed in Hikai mode and handles notifications until M3..
 - **Launcher (Super+R) & Notif (Super+N):** Temporarily disabled in QS mode because the corresponding IPC launcher/notif is not yet implemented. The Launcher/Notif UI will be developed in M4.
 - **TopBar, Cava, Logo:** Currently just stubs or displaying placeholders due to missing data fetching logic (M2-M4).
 
@@ -56,3 +56,7 @@ When executed, a Picker UI will pop up in the center of the screen. Select an Op
 1. **Live Reload Theme**: Change the accent using `change_theme.sh`; the colors of the bar and components must update immediately (without restarting QS).
 2. **Live Reload State**: Run `echo 1 > ~/.local/state/hakuspace/state/waybar_manual_state` (or opaque_theme_state, rounded_screen_state); the QS UI must react instantly by toggling the module.
 3. **Clean Logs**: Check `cat /run/user/1000/quickshell/by-id/*/log.qslog` and ensure there are no `TypeError`, `ReferenceError`, or singleton errors immediately after startup.
+4. **Picker Consecutive Execution**: Run the picker test (`printf 'A\nB\n' | haku_pick.sh --prompt "Test"`), select an option. Immediately run it again and select another option. Both must print the selected result correctly without hanging. Ensure `pgrep -af 'haku_pick'` is empty afterwards.
+5. **Picker Resource Cleanup**: After using the picker, run `ls $XDG_RUNTIME_DIR/hakuspace`. There should be no leftover FIFO files (e.g., `picker_fifo_*`) or strange regular files created by mistake.
+
+> **M3 Condition Check:** At M3, Quickshell's NotificationServer MUST acquire the D-Bus name `org.freedesktop.Notifications` *before* killing swaync and removing `QS_ALLOW_SWAYNC=1`. Once done, `--verify` will strictly block swaync again.
