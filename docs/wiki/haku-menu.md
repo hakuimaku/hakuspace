@@ -36,3 +36,31 @@ This group contains system tools and Dockbar controls:
 - Change the Dockbar icon size.
 - Open the personal settings folder at `~/hakucfg`.
 - Open the Wi-Fi, Bluetooth, disk, storage, and audio managers.
+
+## Customizing Haku Menu
+
+### General tab
+
+Edit `~/hakucfg/general-menu.sh` to add, remove, or rename General menu items.
+
+1. Add the exact label to the output block near the top of the file.
+2. Add a matching pattern to the `case` block below it.
+3. Use `spawn` before the command so the menu can close while the application starts.
+
+Example:
+
+```bash
+My App
+```
+
+```bash
+*"My App"*) spawn my-app ;;
+```
+
+The text in the output block and the text matched in the `case` block must correspond. Reopen Haku Menu after saving the file.
+
+### Theme and Setting tabs
+
+The Theme and Setting tabs use the built-in HakuSpace scripts. Customize their values through `~/hakucfg/setting.sh` where an option is available. For example, wallpaper folders, recording locations, Waybar user modes, and font sizes are configured there.
+
+The menu itself is launched by `~/.local/bin/hakumenu.sh`. Advanced users can change the Rofi prompt or tab names there, but updates may replace that deployed file.
