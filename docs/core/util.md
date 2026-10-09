@@ -21,6 +21,11 @@ Shortcuts designed to get you into your workflow faster.
 - **`open_browser.sh`:** Queries your `xdg-mime` settings to find your default web browser and launches it. If it can't definitively find one, it falls back to a generic `xdg-open https:` command to let the system handle the routing.
 - **`open_config.sh`:** Gathers the paths to all your crucial config folders (Waybar, Rofi, Kitty, SwayNC, Cava, etc.) and seamlessly opens them all simultaneously inside a single VS Code window (`code -n`). It intelligently detects your current Window Manager (Hyprland, Niri, Mango, or Labwc) and opens its specific config folder too!
 
+### `fix_icon_theme.sh` (Icon Theme Fixer)
+Keeps your file manager and application icons looking consistent.
+- **What it does:** Scans your `~/.icons` directory for installed icon themes and automatically fixes missing or incorrectly named file type icons (like shell scripts, Python, or Ruby files) by creating the appropriate symlinks based on a predefined mapping. 
+- **Cache Rebuilding:** Automatically rebuilds the icon cache using `gtk-update-icon-cache` for each processed theme so your system recognizes the new icons immediately.
+
 ## Media & Screen Capture
 
 ### `screenshot.sh`
