@@ -5,7 +5,7 @@
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
 
-STATE_FILE="$STATE_DIR/rofi-theme.rasi"
+INPUT_THEME="$THEME_ROOT/rofi-theme.rasi"
 
 CONFIG_DIR="$HOME/.config/rofi"
 CONFIG_FILE="$CONFIG_DIR/config.rasi"
@@ -39,6 +39,7 @@ selected_theme=$(echo "$themes" | rofi -dmenu -p "Select Theme:" -theme-str 'mai
 
 # Link theme if selected and update config.rasi
 if [ -n "$selected_theme" ]; then
+    echo "Selected theme: $selected_theme"
     # Prioritize user custom theme over default if it exists in USER_THEME_DIR
     if [ -f "$USER_THEME_DIR/$selected_theme.rasi" ]; then
         ln -sf "$USER_THEME_DIR/$selected_theme.rasi" "$CONFIG_DIR/$selected_theme.rasi"
@@ -46,7 +47,7 @@ if [ -n "$selected_theme" ]; then
 
     # Update @theme line in rofi-theme.rasi
     if [ -f "$CONFIG_FILE" ]; then
-        cat > "$STATE_FILE" <<EOF
+        cat > "$INPUT_THEME" <<EOF
 @theme "$selected_theme"
 EOF
     else
