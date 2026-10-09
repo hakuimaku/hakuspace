@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Include Font Size Settings
-source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "$1 is required"; exit 1; }; }
 

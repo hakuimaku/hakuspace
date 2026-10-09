@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-
 # Include BACKDROP_DIR
-source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
 
 # Fallback BACKDROP_DIR if not set
 BACKDROP_DIR=${BACKDROP_DIR:-/tmp}

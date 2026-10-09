@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# This script manages the state of the dockbar
+# Toggle it on/off, reload it, toggle auto-hide, or restore the previous state at startup.
+
 STATE_DIR="$HOME/.local/state/haku_theme"
 AUTOHIDE_STATE="$STATE_DIR/dockbar_autohide_state"
 MANUAL_STATE="$STATE_DIR/dockbar_manual_state"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Include WALL_DIR
-source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
 
 # Fallback WALL_DIR if not set
 WALL_DIR=${WALL_DIR:-$HOME/Pictures/Wallpapers}
