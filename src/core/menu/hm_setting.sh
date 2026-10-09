@@ -14,14 +14,19 @@ if [[ $# -eq 0 ]]; then
     DOCK_ICON_SIZE_TEXT="$DOCK_ICON_SIZE"
     DOCK_ICON_SIZE_TEXT+="px"
 
-    CAVA_OVERLAY_STATUS=$(cat "$STATE_DIR/cava_overlay_state" 2>/dev/null || echo "0")
-    IS_OVERLAY=""
-    [[ "$CAVA_OVERLAY_STATUS" == "1" ]] && IS_OVERLAY="[Overlay ON]" || IS_OVERLAY="[Overlay OFF]"
+    CAVA_TOP_STATUS=$(cat "$STATE_DIR/cava_top_state" 2>/dev/null || echo "0")
+    IS_TOP=""
+    [[ "$CAVA_TOP_STATUS" == "1" ]] && IS_TOP="(ON)" || IS_TOP="(OFF)"
+
+    CAVA_COLOR_STATUS=$(cat "$STATE_DIR/cava_color_state" 2>/dev/null || echo "1")
+    IS_COLOR=""
+    [[ "$CAVA_COLOR_STATUS" == "1" ]] && IS_COLOR="(Accent)" || IS_COLOR="(Black)"
 
     cat <<INNEREOF
 󱂩  Taskbar App Name ($DOCK_APP_NAME)
 󱂩  Taskbar Icon Size Change ($DOCK_ICON_SIZE_TEXT)
-󰝚  Toggle Cava Overlay $IS_OVERLAY
+󰝚  Cava Top Toggle $IS_TOP
+󰝚  Cava Color Switch $IS_COLOR
 󱁤  Settings Folder
 󱁤  HakuMenu General Tab
 󰖩  Wifi
@@ -37,7 +42,8 @@ chosen="$*"
 case "$chosen" in
     *"Taskbar App Name"*) spawn $HOME/.local/bin/taskbar_manager.sh --app-name ;;
     *"Taskbar Icon Size Change"*) spawn $HOME/.local/bin/taskbar_manager.sh --icon-size ;;
-    *"Toggle Cava Overlay"*) spawn $HOME/.local/bin/cava_manager.sh --overlay ;;
+    *"Cava Top Toggle"*) spawn $HOME/.local/bin/cava_manager.sh --top ;;
+    *"Cava Color Switch"*) spawn $HOME/.local/bin/cava_manager.sh --color-switch ;;
     *"Settings Folder"*) spawn xdg-open "$HOME/hakucfg" ;;
     *"HakuMenu General Tab"*) spawn code $HOME/hakucfg/general-menu.sh ;;
     *"Wifi"*) spawn nm-connection-editor ;;
