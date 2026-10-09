@@ -4,9 +4,13 @@
    THUNAR WINDOW CONFIGURATION
    ========================================== */
 
-.thunar {
-    background-color: rgba(0, 0, 0, 0.85);
+* {
     border: none;
+}
+
+.thunar {
+    background-color: rgba(0, 0, 0, 0.9);
+    font-size: small;
 }
 
 .thunar .view {
@@ -15,6 +19,10 @@
 
 .thunar .view .cell {
     background-color: transparent;
+}
+
+.thunar .view:selected {
+    background-color: @accent_color;
 }
 
 .thunar headerbar {
@@ -82,6 +90,16 @@
 .thunar .sidebar treeview row:selected: {
     background-color: @accent_color;
     color: rgba(0, 0, 0, 0.8);
+}
+
+.thunar .sidebar scrollbar {
+    background-color: transparent;
+}
+
+.thunar .sidebar scrollbar, 
+.thunar .sidebar scrollbar slider {
+    min-width: 6px;
+    min-height: 6px;
 }
 
 .thunar progressbar progress {
@@ -172,6 +190,18 @@
 .thunar .path-bar button:checked {
     background-color: @accent_color;
     border-radius: 4px;
+}
+
+.thunar treeview header button {
+    background-color: transparent;
+    padding: 6px 10px;
+    font-weight: bold;
+    border-radius: 4px;
+}
+
+.thunar treeview header button:hover {
+    background-color: @accent_color;
+    color: rgba(0, 0, 0, 0.8);
 }
 
 /* ==========================================
