@@ -49,8 +49,11 @@ bluez
 bluez-utils
 blueman
 fcitx5
-fcitx5-bamboo
+fcitx5-lotus
 fcitx5-configtool
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji
 terminus-font-ttf
 ttf-jetbrains-mono-nerd
 rofi-emoji
