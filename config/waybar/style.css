@@ -2,21 +2,21 @@
 /* GLOBAL STYLES                                  */
 /* ============================================================================== */
 * {
-    font-family: "Terminus (TTF)";
-    font-size: 18px;
+    font-family: "Terminess Nerd Font";
+    font-size: 20px;
     font-weight: bold;
-    border-radius: 12px;
+    border-radius: 16px;
 }
 
 window#waybar {
     background-color: rgba(0, 0, 0, 0.8);
-    color: #dededd;
+    color: #e1e1e1;
     transition: background-color 0.3s ease;
 }
 
 .modules-left, .modules-center, .modules-right {
     background-color: transparent;
-    border-radius: 10px;
+    border-radius: 16px;
     padding: 2px;
     margin: 4px;
 }
@@ -45,15 +45,16 @@ window#waybar {
 /* WORKSPACES                                    */
 /* ============================================================================== */
 #workspaces button {
-    color: #dededd;
+    color: #e1e1e1;
     padding: 0 12px;
     transition: all 0.7s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
 #workspaces button.active {
     color: #000000;
-    background-color: #dededd;
+    background-color: #e1e1e1;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 70px;
 }
 
 #workspaces button.empty {
@@ -84,29 +85,29 @@ window#waybar {
 /* ============================================================================== */
 /* SPECIFIC MODULES                                 */
 /* ============================================================================== */
-#window { color: #dededd; }
+#window { color: #e1e1e1; }
 
 #clock { 
-    color: #dededd; 
+    color: #e1e1e1; 
 }
 
 #custom-recorder {
-    color: #dededd;
-    border: 1px solid #dededd;
+    color: #e1e1e1;
+    border: 1px solid #e1e1e1;
     animation: blink 1s infinite; 
 }
 
-#custom-notification { color: #dededd; }
+#custom-notification { color: #e1e1e1; }
 
-#backlight { color: #dededd; }
+#backlight { color: #e1e1e1; }
 
-#pulseaudio { color: #dededd; }
+#pulseaudio { color: #e1e1e1; }
 
-#battery { color: #dededd; }
+#battery { color: #e1e1e1; }
 
-#memory { color: #dededd; }
+#memory { color: #e1e1e1; }
 
-#cpu { color: #dededd; }
+#cpu { color: #e1e1e1; }
 /* ============================================================================== */
 /* HOVER EFFECTS                                   */
 /* ============================================================================== */
@@ -120,8 +121,9 @@ window#waybar {
 #memory:hover,
 #cpu:hover {
     color: #000000;
-    background-color: #dededd;
+    background-color: #e1e1e1;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 100px;
 }
 
 /* ============================================================================== */
@@ -129,13 +131,13 @@ window#waybar {
 /* ============================================================================== */
 tooltip {
     background: rgba(0, 0, 0, 1);
-    border: 1px solid #dededd;
+    border: 1px solid #e1e1e1;
     border-radius: 12px;
     padding: 10px;
 }
 
 tooltip label {
-    color: #dededd;
+    color: #e1e1e1;
     font-size: 18px;
 }
 
