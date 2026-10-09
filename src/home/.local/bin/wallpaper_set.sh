@@ -49,8 +49,11 @@ make_cache_img() {
     if command -v "niri" >/dev/null 2>&1; then
         mkdir -p "$CACHE_DIR"
         if magick "${WALLPAPER}[0]" -background black -alpha remove -set option:filter:blur 1.0 -blur 0x15 "$CACHE_DIR/backdrop.jpg" 2>/dev/null; then
-            awww img -n "awww-daemon-backdrop" "$CACHE_DIR/backdrop.jpg"
-            echo "Niri is running. Backdrop generated at $CACHE_DIR/backdrop.jpg"
+            echo "Niri backdrop image generated at $CACHE_DIR/backdrop.jpg"
+            if pgrep -x "niri" >/dev/null 2>&1; then
+                awww img -n "awww-daemon-backdrop" "$CACHE_DIR/backdrop.jpg"
+                echo "Niri is running. applied backdrop image to Niri."
+            fi
         else
             is_successfull=0
         fi
