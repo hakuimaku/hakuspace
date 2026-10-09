@@ -1,5 +1,7 @@
 # HakuSpace hoạt động như thế nào?
 
+> Đây là nội dung do AI tạo ra. Có thể không chính xác hoặc chưa đầy đủ. Nhưng tôi đã xem xét và đảm bảo rằng nó chính xác.
+
 Tài liệu này giúp bạn hiểu nhanh HakuSpace được sắp xếp và vận hành ra sao. Nội dung gồm bố cục repository, những file nào do HakuSpace quản lý và vai trò của từng script chính.
 
 Muốn tìm hiểu kỹ hơn về cách sao chép cấu hình, sao lưu và rollback, bạn xem [Quản lý dotfiles bằng cách sao chép](VN_dotfiles-copy-management.md).

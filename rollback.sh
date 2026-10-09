@@ -61,6 +61,9 @@ select_backup_dir() {
     SELECTED_BACKUP="$HOME/.backup/${backup_names[$((choice - 1))]}"
 }
 
+# MANAGED_DESTINATIONS contains the home paths controlled by HakuSpace.
+# Rollback moves existing entries from this list into Rollback_Backup_*
+# before restoring the selected backup. Paths outside this list are preserved.
 add_managed_destination() {
     MANAGED_DESTINATIONS+=("$1")
 }

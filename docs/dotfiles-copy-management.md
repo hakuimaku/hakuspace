@@ -1,5 +1,7 @@
 # HakuSpace Dotfiles Copy Management
 
+> AI generated content. Maybe inaccurate or incomplete. But I've reviewed it & ensured it is accurate.
+
 See Vietnamese translation: [VN_dotfiles-copy-management.md](./vietnamese/VN_dotfiles-copy-management.md)
 
 This document explains how HakuSpace installs, updates, and rolls back user configuration files. HakuSpace uses a **copy-based deployment model**. It does not use GNU Stow, symbolic links, Git worktrees, or a live synchronization process.
@@ -195,6 +197,8 @@ Rollback is not implemented as a blind copy over the current home directory. Its
 
 After confirmation, rollback builds a list of destinations that the installer and updater can manage. This includes repository-backed configuration entries, special WM paths, `~/.local/bin`, and `~/.nanorc`.
 
+The directories listed in `ONCE_CONFIGS` are a special exception. They are initialized by `install.sh` during first-time setup, then intentionally skipped by normal updates. Rollback skips them as well: it does not move the current copy into the rollback safety backup and does not restore the corresponding copy from the selected backup. This preserves user changes made after the first installation. For example, a rollback must not replace the current `~/.config/Thunar` with an older Thunar configuration.
+
 Each existing managed destination is moved into a new safety directory:
 
 ```text
@@ -253,7 +257,7 @@ Use these rules to avoid losing personal changes:
 - Treat `src/home/` as versioned base input, not as the live configuration directory.
 - Put supported personal overrides in `~/hakuspace-control`.
 - Expect direct edits to managed files under `~/.config` and `~/.local/bin` to be replaced by install or update.
-- Review `ONCE_CONFIGS` behavior. They are initialized by installation but skipped by normal updates.
+- Review `ONCE_CONFIGS` behavior. They are initialized by the first installation and skipped by both normal updates and rollback. Their current user-owned state is intentionally preserved.
 - Keep important backups under `~/.backup/` until the corresponding update has been verified.
 - Do not manually rename backup directories if you rely on timestamp sorting.
 - After restoring WM configuration, reload the relevant window manager or restart affected applications.
