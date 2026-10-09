@@ -6,122 +6,38 @@
 
 * {
     font-weight: bold;
-    border-radius: 20px;
 }
 
 window#waybar {
-    background-color: transparent;
+    background-color: rgba(0, 0, 0, 0.8);
     color: @accent_color;
     transition: background-color 0.3s ease;
 }
 
-.modules-center {
-    background-color: rgba(0, 0, 0, 0.7);
-    border-radius: 0 0 30px 30px;
-    padding: 6px 14px 6px 14px;
-    margin: 0 0 4px 0;
-    box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.4);
+.modules-left, .modules-center, .modules-right {
+    border-radius: 20px;
+    padding: 6px;
 }
-
-.modules-left {
-    background-color: rgba(0, 0, 0, 0.7);
-    border-radius: 0 0 30px 0;
-    padding: 6px 14px 6px 14px;
-    margin: 0 0 4px 0;
-    box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.4);
-}
-
-.modules-right {
-    background-color: rgba(0, 0, 0, 0.7);
-    border-radius: 0 0 0 30px;
-    padding: 6px 14px 6px 14px;
-    margin: 0 0 4px 0;
-    box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.4);
-}
-
 
 /* ============================================================================== */
 /* COMMON MODULE STYLES                               */
 /* ============================================================================== */
-#custom-monitor,
 #custom-bar,
-#custom-menu,
+#custom-logo,
 #window,
-#mpris,
-#cava,
 #custom-recorder,
 #custom-notification,
 #pulseaudio,
 #backlight,
-#pulseaudio-slider,
-#backlight-slider,
 #battery,
 #tray,
 #clock,
 #power-profiles-daemon {
-    margin: 1px;
-    padding: 0 10px;
-    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 20px;
-}
-
-#custom-monitor,
-#custom-bar {
-    border-top: 2px solid @accent_color;
-    border-radius: 0 0 20px 20px;
-    margin: 0 4px 0 4px;
-}
-
-#cpu,
-#memory,
-#temperature {
-    background-color: rgba(32, 32, 32, 0.6);
-    margin: 1px;
-    padding: 0 12px;
-    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 20px;
-}
-
-#tray {
     margin: 4px;
-}
-
-#backlight-slider slider {
-    opacity: 0;
-    background-image: none;
-    border: none;
-    box-shadow: none;
-    background: none;
-}
-#backlight-slider trough {
-    min-width: 60px;
-    border-radius: 5px;
-    background: rgba(203, 203, 203, 0.5);
-}
-#backlight-slider highlight {
-    min-width: 10px;
-    min-height: 10px;
-    border-radius: 5px;
-    background: @accent_color;
-}
-
-#pulseaudio-slider slider {
-    opacity: 0;
-    background-image: none;
-    border: none;
-    box-shadow: none;
-    background: none;
-}
-#pulseaudio-slider trough {
-    min-width: 60px;
-    min-height: 10px;
-    border-radius: 5px;
-    background: rgba(203, 203, 203, 0.5);
-}
-#pulseaudio-slider highlight {
-    min-width: 10px;
-    border-radius: 5px;
-    background: @accent_color;
+    padding: 1px;
+    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
+    border-radius: 20px;
+    min-height: 30px;
 }
 
 /* ============================================================================== */
@@ -129,15 +45,15 @@ window#waybar {
 /* ============================================================================== */
 #workspaces {
     border-radius: 999px;
-    padding: 2px 8px;
-    margin: 0 4px;
+    padding: 8px 2px;
+    margin: 4px 0;
 }
 
 #workspaces button {
     background-color: rgba(255, 255, 255, 0.2);
     border-radius: 999px;
-    padding: 0 10px;
-    margin: 0 3px;
+    padding: 0;
+    margin: 4px;
     min-width: 0;
     min-height: 0;
     transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
@@ -145,7 +61,7 @@ window#waybar {
 
 #workspaces button.active {
     background-color: @accent_color;
-    min-width: 30px;
+    padding: 16px 0;
     transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
@@ -159,78 +75,79 @@ window#waybar {
 
 #workspaces button.overview {
     background-color: @accent_color;
-    min-width: 30px;
+    min-height: 30px;
     transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
 /* ============================================================================== */
 /* SPECIFIC MODULES                                 */
 /* ============================================================================== */
-#window { color: @accent_color; }
-
 #clock { 
-    color: @accent_color; 
+    padding: 20px 0;
 }
 
 #custom-recorder {
     color: @accent_color;
-    border: 1px solid @accent_color;
     animation: blink 1s infinite; 
 }
 
-#custom-notification { color: @accent_color; }
+#custom-notification {
+    color: @accent_color;
+    padding: 10px 0;
+    margin: 0 4px 8px 0;
+}
 
-#backlight { color: @accent_color; }
+#custom-logo {
+    min-height: 30px;
+}
 
-#pulseaudio { color: @accent_color; }
-
-#battery { color: @accent_color; }
-
-#memory { color: @accent_color; }
-
-#cpu { color: @accent_color; }
-
-#temperature { color: @accent_color; }
-
+#custom-bar,
+#backlight,
+#pulseaudio {
+    color: @accent_color;
+    padding: 10px 0;
+    border-left: 2px solid @accent_color;
+    border-radius: 0 20px 20px 0;
+}
 
 /* ============================================================================== */
 /* HOVER EFFECTS                                   */
 /* ============================================================================== */
-#custom-monitor:hover,
+#custom-recorder:hover,
 #custom-bar:hover,
-#custom-menu:hover,
-#cpu:hover,
-#memory:hover,
-#temperature:hover,
-#mpris:hover,
-#cava:hover,
+#custom-logo:hover,
+#clock:hover,
+#power-profiles-daemon:hover,
 #pulseaudio:hover,
 #backlight:hover,
-#power-profiles-daemon:hover,
 #battery:hover,
 #custom-notification:hover {
     color: #000000;
     background-color: @accent_color;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 100px;
+    min-height: 60px;
+}
+
+#custom-bar:hover,
+#backlight:hover,
+#pulseaudio:hover {
+    border-radius: 20px;
+    min-height: 70px;
 }
 
 #workspaces button:hover {
     background-color: @accent_color;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 20px;
+    min-height: 40px;
 }
 
 #workspaces button.active:hover {
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 60px;
+    min-height: 40px;
 }
 
 #clock:hover {
-    color: #000000;
-    background-color: @accent_color;
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 100px;
+    min-height: 140px;
 }
 
 /* ============================================================================== */
@@ -244,7 +161,6 @@ tooltip {
 
 tooltip label {
     color: @accent_color;
-    font-size: 16px;
 }
 
 /* ============================================================================== */

@@ -1,0 +1,207 @@
+{
+    "layer": "top",
+    "position": "top",
+    "margin-bottom": 0,
+    "margin-left": 0,
+    "margin-right": 0,
+    "spacing": 0,
+    "tooltip": true,
+    "reload_style_on_change": true,
+
+    "modules-center": [
+        "custom/recorder",
+        "clock",
+        "hyprland/workspaces",
+        "niri/workspaces",
+        "mango/workspaces",
+        "group/monitor",
+        "group/bar"
+    ],
+
+    "clock": {
+        "format": " {:%H:%M} ",
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+        "calendar": {
+                    "mode"          : "month",
+                    "mode-mon-col"  : 3,
+                    "weeks-pos"     : "right",
+                    "on-scroll"     : 1,
+                    "format": {
+                              "months":     "<span color='#ffead3'><b>{}</b></span>",
+                              "days":       "<span color='#ecc6d9'><b>{}</b></span>",
+                              "weeks":      "<span color='#99ffdd'><b>W{}</b></span>",
+                              "weekdays":   "<span color='#ffcc66'><b>{}</b></span>",
+                              "today":      "<span color='#ff6699'><b><u>{}</u></b></span>"
+                              }
+                    },
+        "actions":  {
+                    "on-click-right": "mode",
+                    "on-scroll-up": "tz_up",
+                    "on-scroll-down": "tz_down",
+                    "on-scroll-up": "shift_up",
+                    "on-scroll-down": "shift_down"
+                    },
+        "on-click": "$HOME/.local/bin/hakumenu.sh",
+        "on-click-right": "swaync-client -t -sw"
+    },
+
+    "group/bar": {
+        "orientation": "horizontal",
+        "drawer": {
+            "transition-duration": 1000,
+            "transition-left-to-right": true,
+            "click-to-reveal": true
+        },
+        "modules": [
+            "custom/bar",
+            "backlight",
+            "pulseaudio",
+            "battery",
+            "power-profiles-daemon",
+            "tray"
+        ]
+    },
+
+    "group/monitor": {
+        "orientation": "horizontal",
+        "drawer": {
+            "transition-duration": 1000,
+            "transition-left-to-right": true,
+            "click-to-reveal": true
+        },
+        "modules": [
+            "custom/monitor",
+            "cpu",
+            "memory",
+            "temperature"
+        ]
+    },
+    
+    "backlight": {
+        "format": "{icon} {percent}%",
+        "format-icons": ["", "", "", "", "", "", "", "", ""],
+        "on-scroll-up": "brightnessctl set 1%+",
+        "on-scroll-down": "brightnessctl set 1%-",
+        "on-click": "hyprsunset --temperature 3500",
+        "on-click-right": "pkill hyprsunset",
+        "tooltip-format": "Brightness: {percent}%"
+    },
+
+    "battery": {
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon} {capacity}%",
+        "format-icons": {
+            "default": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+            "charging": ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"],
+            "plugged": [""]
+        },
+        "tooltip-format": "Battery: {capacity}%\nPower: {power}W\n{timeTo}",
+        "tooltip": true
+    },
+
+    "power-profiles-daemon": {
+        "format": "{icon}",
+        "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
+        "tooltip": true,
+        "format-icons": {
+            "default": "",
+            "performance": "",
+            "balanced": "",
+            "power-saver": ""
+        }
+    },
+
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-muted": "󰝟 ",
+        "format-icons": {
+            "headphone": "󰋋",
+            "default": ["", "", ""]
+        },
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click-right": "pavucontrol",
+        "tooltip-format": "Volume: {volume}%"
+    },
+
+    "tray": {
+        "icon-size": 18,
+        "spacing": 10,
+        "show-passive-items": true
+    },
+
+    "niri/workspaces": {
+        "format": "{icon}",
+        "format-icons": {
+            "active": "",
+            "default": ""
+        }
+    },
+
+    "hyprland/workspaces": {
+        "all-outputs": true,
+        "sort-by-number": true,
+        "show-special": true,
+        "format": "{icon}",
+        "format-icons": {
+            "active": "",
+            "default": ""
+	    }
+    },
+
+    "mango/workspaces": {
+        "format": "{icon}",
+        "format-icons": {
+            "active": "",
+            "default": "",
+            "urgent": "",
+            "empty": ""
+        },
+        "on-click": "activate",
+        "on-click-right": "toggle",
+        "overview-label": "    ",
+        "hide-empty": true
+    },
+
+    "custom/recorder": {
+        "exec": "if [ -f /tmp/recording_time ]; then cat /tmp/recording_time; fi",
+        "interval": 1,
+        "format": " {text}",
+        "return-type": "plain",
+        "if-file-exists": "/tmp/recording_pid",
+        "hide-empty-text": true,
+        "on-click": "$HOME/.local/bin/record.sh",
+        "tooltip": true,
+        "tooltip-format": "Stop recording"
+    },
+
+
+    "custom/bar": {
+        "format": "󰮯 ",
+        "tooltip-format": "Have a nice day!",
+        "tooltip": true
+    },
+
+    "custom/monitor": {
+        "format": " ",
+        "tooltip-format": "Click to show monitor stats",
+        "tooltip": true
+    },
+
+    "cpu": {
+        "interval": 2,
+        "format": "{usage}% "
+    },
+
+    "memory": {
+        "interval": 2,
+        "format": "{}% "
+    },
+
+     "temperature": {
+        "interval": 2,
+        "format": "{temperatureC}°C "
+    }
+}
