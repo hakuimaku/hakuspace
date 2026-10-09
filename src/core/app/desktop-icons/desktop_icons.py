@@ -158,7 +158,7 @@ SHOW_TRASH = True
 SHOW_COMPUTER = True
 USER_DIRS_FIRST = True
 SHOW_HIDDEN = False
-AUTO_ARRANGE = False
+AUTO_ARRANGE = True
 
 ################################################################################
 # CONFIGURATION & UTILITIES
