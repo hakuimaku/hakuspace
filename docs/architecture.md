@@ -2,68 +2,74 @@
 
 See the Vietnamese version: [VN_architecture](./vietnamese/VN_architecture.md).
 
-This is an overview for *you* and *AI* to understand what my dotfiles contain and how they are deployed onto your machine.
+Here is a quick overview for *you* to understand what's in my dotfiles and how they get installed on your machine.
 
-## Repository Layout
+## Repo Layout
 
 ```text
 hakuspace (root)
 ├── assets/                    # External assets; not copied to your machine
-├── docs/                      # Project documentation
-├── nix/                       # NixOS configuration and flake templates
+├── docs/                      # Docs and guides
+├── nix/                       # NixOS config and flake templates
 │
 ├── scripts/                   # Helper scripts
-├── install.sh                 # First-time dotfiles installation script
-├── update.sh                  # Dotfiles update script
-├── rollback.sh                # Restore dotfiles from a backup
+├── install.sh                 # First-time install script
+├── update.sh                  # Update script
+├── rollback.sh                # Restore from a backup script
+├── doctor.sh                  # Checks for broken symlinks and issues
 │
 └── src/
-    ├── home/                  # Main directory containing dotfiles
-    │   ├── .config/           # Configuration files for ~/.config
-    │   ├── .local/share/      # Organized HakuSpace scripts
-    │   │   └── hakuspace/     # Source scripts; linked flat into ~/.local/bin
-    │   └── hakucfg/           # Templates for HakuSpace's custom configuration
+    ├── core/                  # HakuSpace scripts; linked/copied to ~/.local/bin
+    ├── home/                  # Main directory with all the dotfiles
+    │   ├── .config/           # Config files for ~/.config
+    │   ├── .local/            # Local configurations and state for ~/.local
+    │   ├── .themes/           # Custom themes for ~/.themes
+    │   └── hakucfg/           # Templates for your personal configs
     │
-    └── packages/              # Package lists grouped for installation
+    └── packages/              # Package lists for installation
 ```
 
-## How Are the Dotfiles Managed?
+## How Are Dotfiles Managed?
 
-HakuSpace uses ordinary copied files. It does not use Stow, symbolic links, Git worktrees, or a live synchronization mechanism.
+HakuSpace uses a **Hybrid System**: you can choose between **Deep Symlinking** or **Classic Copying**.
+(It doesn't use Stow or Git worktrees).
 
-- `src/home/` recreates the layout of your home directory and contains the configurations and scripts. This is the BASE configuration.
-- `~/hakucfg/` is where you put your personal configuration files. In the repository, it is a template that can be deployed to your machine. This is the CUSTOM configuration.
-- Editing a deployed copy does not change the repository. Conversely, editing a repository file does not affect the current session until you run `install.sh` or `update.sh`.
+- `src/home/` acts like your home directory. This is the BASE config.
+- `~/hakucfg/` is where you put your personal stuff. It acts as a template in the repo. This is the CUSTOM config.
+- Depending on your choice during `install.sh`, your configs are either symlinked (edits sync instantly) or copied (edits stay local).
 
 ## How Do I Use These Dotfiles?
 
-### `install.sh`
+### `install.sh` (First-time Setup)
+- This is the main script to get everything running. Here is its step-by-step logic:
+  - **Phase 1: Prompting:** Asks for your Distro, preferred Window Manager, and deployment mode (Symlink or Copy).
+  - **Phase 2: Backup:** Scans your system and safely moves any conflicting files to `~/.backup/Backup_<timestamp>`.
+  - **Phase 3: Dependencies:** Reads the text files in `src/packages/` and installs the required packages using your package manager.
+  - **Phase 4: Deployment:** 
+    - Links or copies everything from `src/home/.config/` and `src/core/` to your machine.
+    - Handles the `ONCE_CONFIGS` group (always copied, never symlinked).
+    - Initializes your custom `~/hakucfg` space from the template.
+  - **Phase 5: Post-install:** Fixes script permissions, sets Fish as default shell, and clears old caches.
 
-- This is the script for the first dotfiles installation. You can run it again later, but doing so is not recommended.
-- What does it do?
-  - Installs the required packages.
-  - Creates the required directories.
-  - Copies configuration files and scripts from the repository to your machine.
-  - Initializes the once-only configurations, `ONCE_CONFIGS`.
-  - Initializes `~/hakucfg` if it does not already exist.
-  - Performs optional system setup steps for the first HakuSpace session.
-- The script also creates backups of files that will be overwritten during installation. You can find the timestamped backups under `~/.backup/`.
+### `update.sh` (Applying Updates)
+- Run this whenever you pull fresh code from GitHub.
+  - **Phase 1: Mode Detection:** Reads `~/.local/state/hakuspace/deploy_mode` to remember if you chose Symlink or Copy.
+  - **Phase 2: Backup:** Just like install, it creates a safety net in `~/.backup/` before touching anything.
+  - **Phase 3: Smart Sync:** 
+    - Redeploys all configs and scripts based on your mode.
+    - Intelligently **Skips** the `ONCE_CONFIGS` to preserve your GUI tweaks (like Thunar or btop settings).
+    - Ignores your `~/hakucfg/` completely so your personal stuff stays safe.
 
-### `update.sh`
+### `rollback.sh` (The Undo Button)
+- Run this if an update breaks your system.
+  - **Phase 1: Selection:** Lists all available backups in `~/.backup/` and lets you pick one (defaults to the newest).
+  - **Phase 2: Safe Cleanup:** 
+    - Carefully removes current HakuSpace symlinks. This prevents accidental dereferencing which could wipe out files inside the Git repo.
+  - **Phase 3: Restoration:** Copies all files from the chosen backup back to their exact original locations in `~/.config` and `~/.local/bin`.
 
-- This is the script for updating the dotfiles.
-- What does it do?
-  - Updates the repository to the latest or stable version.
-  - Copies configuration files and scripts from the repository to your machine.
-  - Preserves configurations in `ONCE_CONFIGS`; other managed files may be overwritten.
-- The script also creates backups of files that will be overwritten during the update. You can find the timestamped backups under `~/.backup/`.
+### `doctor.sh` (The Health Checker)
+- A diagnostic tool, incredibly useful if you chose Symlink mode.
+  - **Broken Symlinks Scan:** Checks your `~/.config` and `~/.local/bin` for symlinks that point to nowhere (because the target file was deleted or moved), and highlights them in red.
+  - **Overwritten Files Scan:** Detects files that should be symlinks managed by HakuSpace, but were somehow turned into real files (usually because your text editor broke the symlink when saving). The doctor points them out and tells you to run `update.sh` to fix them.
 
-### `rollback.sh`
-
-- This is the script for restoring dotfiles from a backup.
-- What does it do?
-  - Moves current managed files into `~/.backup/Rollback_Backup_*`.
-  - Restores the selected files and directories from the chosen backup.
-- It restores only files and directories managed by `install.sh` and `update.sh`. Other files under `~/.config` and `~/.local` are preserved.
-
-Continue reading: [Management](management.md) to understand how dotfiles are deployed and managed safely in your home directory.
+Read more: [Management](management.md) for details on how dotfiles are deployed and kept safe!

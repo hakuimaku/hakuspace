@@ -1,12 +1,12 @@
-# Dotfiles của tôi được quản lý như thế nào?
+# Quản lý Dotfiles như thế nào?
 
 Bản tiếng Anh: [Management](../management.md).
 
-Tài liệu này giải thích chi tiết cách HakuSpace triển khai và quản lý dotfiles an toàn trong máy tính của bạn. Chúng tôi sử dụng **Cơ chế Triển khai Lai (Hybrid Deployment)** để mang lại trải nghiệm tốt nhất.
+Tài liệu này giải thích cách HakuSpace cài đặt dotfiles an toàn vào máy bạn. Hệ thống dùng cơ chế **Hybrid Deployment**, nghĩa là bạn có thể chọn cách quản lý file!
 
-## 1. Kiến trúc Cốt lõi
+## 1. Cách hoạt động
 
-Thư mục gốc chứa toàn bộ cấu hình chuẩn (BASE) nằm tại `src/home/`:
+Repo chứa các file config gốc ở `src/home/`:
 
 ```text
 Repository                         Máy của bạn
@@ -16,56 +16,56 @@ src/core/*               ------->  ~/.local/bin/*
 src/home/hakucfg/*       --copy->  ~/hakucfg/*
 ```
 
-Khi cài đặt HakuSpace, bạn sẽ được quyền chọn 1 trong 2 cơ chế để phân phối cấu hình (`.config`) và các script (`core`):
+Khi cài đặt, bạn chọn 1 trong 2 chế độ cho `.config` và các script `core`:
 
 ### Chế độ 1: Symlink (Khuyên dùng)
-Chế độ này sử dụng kỹ thuật **Deep Symlinking** (tương tự như công cụ GNU Stow nổi tiếng).
-Thay vì link cả một thư mục lớn (như `~/.config/hypr`), hệ thống sẽ tạo các thư mục thật và chỉ tạo symlink cho từng file cụ thể bên trong.
+Dùng **Deep Symlinking** (giống GNU Stow).
+Thay vì link nguyên thư mục (như `~/.config/hypr`), hệ thống tạo thư mục thật và chỉ symlink các file bên trong.
 
 - **Ưu điểm:** 
-  - Khi các phần mềm tạo ra rác, cache, file log hay file trạng thái vào thư mục cấu hình của chúng, những file rác đó sẽ nằm lại trên máy của bạn thành các file thật. Chúng KHÔNG chui ngược vào Git repo làm bẩn lịch sử git của bạn.
-  - Khi bạn chỉnh sửa cấu hình ở `~/.config`, file trong Git repo sẽ tự động cập nhật ngay lập tức.
+  - Mấy file rác (cache, logs) của app sẽ nằm yên trên máy bạn, không bị chui vào Git repo làm bẩn lịch sử.
+  - Bạn sửa file ở `~/.config` là nó tự cập nhật luôn vào Git repo.
 - **Nhược điểm:** 
-  - Nếu bạn tạo một file hoàn toàn mới trong `~/.config`, bạn phải tự copy file đó vào thư mục HakuSpace repo và chạy lại `update.sh` để biến nó thành symlink.
+  - Nếu bạn tạo file mới toanh ở `~/.config`, bạn phải tự move nó vào Repo rồi chạy lại `update.sh` để link.
 
 ### Chế độ 2: Copy (Truyền thống)
-Chế độ này đơn giản là copy đứt đoạn toàn bộ file từ Repo ra máy của bạn.
+Copy đứt đoạn toàn bộ file từ Repo ra máy bạn.
 
-- **Ưu điểm:** Đơn giản, dễ hiểu, an toàn tuyệt đối.
-- **Nhược điểm:** Mọi chỉnh sửa của bạn ở `~/.config` sẽ KHÔNG cập nhật vào Git repo. Bạn phải tự tay copy ngược lại vào Repo nếu muốn lưu trữ thay đổi.
+- **Ưu điểm:** Cực kỳ đơn giản, an toàn.
+- **Nhược điểm:** Bạn sửa file ở `~/.config` sẽ không lưu vào Git repo. Bạn phải tự copy ngược lại nếu muốn lưu.
 
-Lựa chọn của bạn sẽ được lưu tại `~/.local/state/hakuspace/deploy_mode`. Các script `update.sh` và `rollback.sh` sau này sẽ tự động đọc file này để hành xử cho đúng.
+Lựa chọn của bạn được lưu ở `~/.local/state/hakuspace/deploy_mode` để `update.sh` và `rollback.sh` nhớ và làm theo sau này.
 
-## 2. Các Quy Tắc Đặc Biệt
+## 2. Luật đặc biệt
 
-Để tránh việc các phần mềm phá hỏng Repo của bạn, một số cấu hình tuân theo bộ quy tắc cực kỳ nghiêm ngặt:
+Không phải cái gì cũng symlink đâu. Để tránh app làm hỏng Repo của bạn, có vài luật như sau:
 
-### Nhóm `ONCE_CONFIGS` (Luôn Copy 1 lần)
-Các phần mềm như Thunar, xfce4, mpv, btop... có thói quen tự ý ghi đè file cấu hình khi bạn thay đổi cài đặt bằng giao diện UI của chúng.
-Nếu dùng symlink, chúng sẽ làm đứt symlink hoặc ghi đè file hỏng vào Repo. Do đó, các cấu hình này **LUÔN LUÔN** được triển khai bằng cơ chế Copy đứt đoạn. Hơn nữa, `update.sh` sẽ **bỏ qua (skip)** không bao giờ update ghi đè lại các cấu hình này, nhằm bảo vệ những tinh chỉnh cá nhân của bạn.
+### `ONCE_CONFIGS` (Luôn Copy)
+Mấy app như Thunar, xfce4, mpv, btop hay có trò tự ghi đè file config khi bạn chỉnh UI.
+Để tránh đứt symlink, các config này **LUÔN** được copy đứt đoạn, dù bạn chọn chế độ nào. Hơn nữa, `update.sh` sẽ **bỏ qua** không update tụi nó để giữ lại các tùy chỉnh cá nhân của bạn!
 
-### Thư mục `hakucfg` (Không gian của riêng bạn)
-HakuSpace được thiết kế để không bao giờ "dẫm đạp" lên dữ liệu cá nhân của bạn. Thư mục `~/hakucfg/` là nơi để bạn chứa các biến môi trường, tự khởi chạy (autostart) và các custom script riêng. Thư mục này được triển khai theo cơ chế Copy 1 lần và để yên đó vĩnh viễn.
+### `hakucfg` (Không gian riêng của bạn)
+HakuSpace không đụng vào đồ cá nhân của bạn. `~/hakucfg/` là nơi chứa biến môi trường, autostart và script riêng của bạn. Nó luôn được Copy một lần và để yên đó vĩnh viễn.
 
-## 3. Các Script Quản Trị
+## 3. Các Script quản lý
 
-Chúng tôi cung cấp 3 công cụ chính để bạn quản trị hệ thống của mình:
+Có 3 script chính để bạn lo liệu mọi thứ:
 
 ### `install.sh`
-Dành cho lần cài đặt đầu tiên. Nó sẽ hỏi bạn chọn Window Manager và Chế độ triển khai (Symlink/Copy), sau đó rải toàn bộ cấu hình ra máy.
+Chạy lần đầu. Nó sẽ hỏi bạn chọn Window Manager và chế độ (Symlink/Copy), rồi cài đặt mọi thứ.
 
 ### `update.sh`
-Mỗi khi bạn lấy bản cập nhật mới từ GitHub của HakuSpace, hãy chạy `update.sh`. Nó sẽ tự đọc cấu hình cũ của bạn (Symlink hay Copy) và đồng bộ bản cập nhật ra ngoài máy một cách hoàn hảo, đồng thời né tránh an toàn nhóm `ONCE_CONFIGS`.
+Mỗi khi kéo update mới từ GitHub, chạy cái này. Nó tự biết bạn đang dùng chế độ nào và đồng bộ update ra máy (tất nhiên là né `ONCE_CONFIGS` ra!).
 
 ### `rollback.sh`
-An toàn là trên hết! Trước khi bất kỳ file nào bị `install.sh` hay `update.sh` ghi đè lên, file gốc của bạn sẽ được cất gọn vào `~/.backup/Backup_<thời_gian>`.
-Nếu bản cập nhật làm lỗi máy, hãy chạy `rollback.sh`:
-- Nó sẽ quét cực kỳ thông minh qua `~/.config` và `~/.local/bin`.
-- Nó chủ động xoá bỏ các symlink của HakuSpace (nếu có) trước khi khôi phục, nhằm chống lại hiệu ứng "dereference" tai hại có thể làm xoá nhầm file gốc trong Repo.
-- Khôi phục chính xác các file cũ về đúng vị trí.
+An toàn là bạn! Trước khi ghi đè gì, HakuSpace luôn backup ra `~/.backup/Backup_<thời_gian>`.
+Lỡ update bị lỗi thì cứ chạy `rollback.sh`:
+- Quét nhanh `~/.config` và `~/.local/bin`.
+- Xóa an toàn các symlink để tránh lỡ tay xóa nhầm file gốc trong Repo.
+- Khôi phục file cũ về đúng chỗ cũ.
 
-### `doctor.sh` (Bác sĩ toàn vẹn)
-Nếu hệ thống có gì đó sai sai, hãy chạy `./doctor.sh`.
-Nếu bạn đang dùng chế độ Symlink, bác sĩ sẽ quét toàn bộ `~/.config` và `~/.local/bin` để tìm:
-- **Symlink bị gãy (Broken):** Những symlink trỏ vào khoảng không do file gốc bị xoá.
-- **File bị ghi đè (Overwritten):** Đôi khi bạn vô tình mở file cấu hình bằng một text editor không hỗ trợ symlink, rồi lỡ tay bấm Lưu. Text editor đó sẽ bẻ gãy symlink và tạo ra một file thật. Bác sĩ sẽ phát hiện ra điều này và nhắc bạn chạy `update.sh` để khôi phục symlink.
+### `doctor.sh` (Bác sĩ)
+Nếu máy có vấn đề, hãy chạy `./doctor.sh`.
+Nếu bạn đang dùng Symlink, bác sĩ sẽ quét để tìm:
+- **Symlink gãy:** Mấy file gốc bị xóa mất.
+- **File bị ghi đè:** Lỡ bạn mở symlink bằng text editor rồi lưu đè thành file thật, bác sĩ sẽ báo liền và nhắc bạn chạy `update.sh` để sửa.
