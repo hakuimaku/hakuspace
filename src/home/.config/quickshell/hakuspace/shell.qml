@@ -16,11 +16,8 @@ ShellRoot {
         reloadableId: "hakuspace-notification-records"
         property string recordsJson: "[]"
         property int nextKey: 1
-        // Keep the existing swaync path active until the P2 cutover.
-        onLoaded: {
-            if (Quickshell.env("QS_ALLOW_SWAYNC") !== "1")
-                NotificationStore.start(notificationMemory)
-        }
+        // Restore history before the native server activates.
+        onLoaded: NotificationStore.start(notificationMemory)
     }
 
     Picker {
@@ -48,6 +45,19 @@ ShellRoot {
             Quickshell.reload(false);
         }
         function quit() { Qt.quit(); }
+    }
+
+    IpcHandler {
+        target: "notif"
+        function toggleCenter() {
+            if (!NotificationStore._started || Quickshell.screens.length === 0) return
+            var screen = Quickshell.screens[0]
+            UiState.toggleNotifications(screen.name, screen.width - Theme.pad - Theme.fontSize * 2,
+                                        Theme.fontSize * 2)
+        }
+        function toggleDnd() { NotificationStore.toggleDnd() }
+        function clearAll() { NotificationStore.clearAll() }
+        function count(): string { return String(NotificationStore.count) }
     }
 
     // Route external level keys through the queued audio and brightness services.

@@ -16,7 +16,7 @@ if [[ "${1:-}" == "--early" ]]; then
     if haku_backend_is "classic"; then
         pgrep -x swaync >/dev/null || swaync &
     else
-        [[ "${QS_ALLOW_SWAYNC:-0}" == "1" ]] && { pgrep -x swaync >/dev/null || swaync & }
+        pkill -x swaync
         # Quickshell early start
         # Reset runtime states
         rm -f /tmp/cava-layer.pid
