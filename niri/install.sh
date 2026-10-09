@@ -29,16 +29,6 @@ HAKU_DIR="$HOME/hakuspace"
 NIRI_DIR="$HAKU_DIR/niri"
 COMMON_DIR="$HAKU_DIR/common"
 
-# check ~/hakuspace
-if [ -d "$HAKU_DIR" ]; then
-    echo "XXX [ERROR] Not found directory $HAKU_DIR"
-    echo "Please make sure you have cloned the repository to $HOME"
-    exit 1
-else
-    echo ":: Found hakuspace directory in $HAKU_DIR"
-fi
-
-
 # ============================================================================
 # ========= BLOCK 1: CHECK AND INSTALL DEPENDENCIES (yay, git, curl) =========
 # ============================================================================
