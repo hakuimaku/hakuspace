@@ -69,19 +69,13 @@ PanelWindow {
         }
         Keys.onReturnPressed: event => {
             if (!carousel.interactionReady) { event.accepted = true; return }
-            if (carousel.applySelected()) {
-                // UX contract: selection feedback is immediate. The backend
-                // mutation continues asynchronously after this surface closes.
-                UiState.closeWallpaper()
+            if (carousel.acceptSelected())
                 event.accepted = true
-            }
         }
         Keys.onEnterPressed: event => {
             if (!carousel.interactionReady) { event.accepted = true; return }
-            if (carousel.applySelected()) {
-                UiState.closeWallpaper()
+            if (carousel.acceptSelected())
                 event.accepted = true
-            }
         }
     }
 
@@ -95,6 +89,7 @@ PanelWindow {
             id: carousel
             anchors.fill: parent
             visible: root.panelOpen
+            onApplyAccepted: UiState.closeWallpaper()
             onCloseAnimationFinished: UiState.finishCloseWallpaper(root.modelData.name)
         }
     }
