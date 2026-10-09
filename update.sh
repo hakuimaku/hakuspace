@@ -104,8 +104,8 @@ if command -v yay >/dev/null 2>&1; then
     done
 
     # Add common core, service, optional packages
-    PKG_LABELS+=("CORE" "SERVICE" "OPTIONAL")
-    PKG_FILES+=("$PKG_CORE" "$PKG_SERVICE" "$PKG_OPTIONAL")
+    PKG_LABELS+=("CORE" "SERVICE")
+    PKG_FILES+=("$PKG_CORE" "$PKG_SERVICE")
 
     echo ">>> Package lists to be updated automatically:"
     for i in "${!PKG_LABELS[@]}"; do
@@ -133,58 +133,62 @@ fi
 # ============================================================================
 step_title "2 - BACKUP AND UPDATE CONFIG IN ~/.config"
 
-SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
-DEST_CONFIG="$HOME/.config"
-
 if ask_yes_no "===> Do you want to update hakuspace configs now?"; then
 
-    echo ">>> Deploying Common configs..."
-    for folder in "$SOURCE_COMMON_CONFIG"/*/; do
+    echo ">>> Deploying configs..."
+    for folder in "$SOURCE_CONFIG"/*/; do
         [[ -d "$folder" ]] || continue
         folder_name="$(basename "$folder")"
-        if [[ "$folder_name" == "hypr" ]]; then
+        # Deloy config not in the list of ONCE_CONFIGS and SKIP_CONFIGS
+        if [[ " ${ONCE_CONFIGS[*]} " == *" $folder "* || " ${SKIP_CONFIGS[*]} " == *" $folder "* ]]; then
             continue
         fi
         copy_dir_content "$SOURCE_COMMON_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
     done
-    copy_file "$SOURCE_COMMON_CONFIG/hypr/hypridle.conf" "$DEST_CONFIG/hypr/hypridle.conf"
-    copy_file "$SOURCE_COMMON_CONFIG/hypr/hyprlock.conf" "$DEST_CONFIG/hypr/hyprlock.conf"
-    copy_file "$SOURCE_COMMON_CONFIG/hypr/hyprlock_tiny.conf" "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
+    copy_file "$SOURCE_CONFIG/hypr/hypridle.conf" "$DEST_CONFIG/hypr/hypridle.conf"
+    copy_file "$SOURCE_CONFIG/hypr/hyprlock.conf" "$DEST_CONFIG/hypr/hyprlock.conf"
+    copy_file "$SOURCE_CONFIG/hypr/hyprlock_tiny.conf" "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
 
     # Loop through selected WMs
-   for i in "${!SELECTED_WMS[@]}"; do
+    for i in "${!SELECTED_WMS[@]}"; do
         WM_NAME="${SELECTED_WMS[$i]}"
         WM_DIR_PATH="${SELECTED_WM_DIRS[$i]}"
-        SOURCE_WM_CONFIG="$WM_DIR_PATH"
 
-        if [[ $WM_NAME == "hyprland" ]]; then
-            echo ">>> Deploying Hyprland configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG/config" "$DEST_CONFIG/hypr/config"
-            copy_file "$SOURCE_WM_CONFIG/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
-        elif [[ $WM_NAME == "niri" ]]; then
-            echo ">>> Deploying Niri configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG" "$DEST_CONFIG/niri"
-        elif [[ $WM_NAME == "mango" ]]; then
-            echo ">>> Deploying Mango configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG" "$DEST_CONFIG/mango"
-        elif [[ $WM_NAME == "labwc" ]]; then
-            echo ">>> Deploying Labwc configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG" "$DEST_CONFIG/labwc"
-        else
-            log_warn "Unknown WM: $WM_NAME. Skipping WM config deployment."
-        fi
+        case "$WM_NAME" in
+            "hyprland")
+                echo ">>> Deploying Hyprland configs..."
+                # Hyprland will copy content in hypr/ instead of hypr dir for not overriting hyprlock and hypridle configs
+                copy_dir_content "$WM_DIR_PATH/config" "$DEST_CONFIG/hypr/config"
+                copy_file "$WM_DIR_PATH/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
+                ;;
+            "niri")
+                echo ">>> Deploying Niri configs..."
+                copy_dir_content "$WM_DIR_PATH" "$DEST_CONFIG/niri"
+                ;;
+            "mango")
+                echo ">>> Deploying Mango configs..."
+                copy_dir_content "$WM_DIR_PATH" "$DEST_CONFIG/mango"
+                ;;
+            "labwc")
+                echo ">>> Deploying Labwc configs..."
+                copy_dir_content "$WM_DIR_PATH" "$DEST_CONFIG/labwc"
+                ;;
+            *)
+                log_warn "Unknown WM: $WM_NAME. Skipping WM config deployment."
+                ;;
+        esac
     done
 
     echo ">>> Deploying Thunar gtk.css theme..."
-    copy_file "$SOURCE_COMMON_CONFIG/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css"
-
-    echo ">>> Deploying .nanorc (nano configuration)..."
-    copy_file "$SOURCE_COMMON_CONFIG/.nanorc" "$HOME/.nanorc"
+    copy_file "$SOURCE_CONFIG/gtk-3.0/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css"
 
     echo ">>> Deploying starship.toml (starship configuration)..."
-    copy_file "$SOURCE_COMMON_CONFIG/starship.toml" "$DEST_CONFIG/starship.toml"
+    copy_file "$SOURCE_CONFIG/starship.toml" "$DEST_CONFIG/starship.toml"
 
-    log_ok "Configurations deployed successfully."
+    echo ">>> Deploying .nanorc (nano configuration)..."
+    copy_file "$HOME_SRC_DIR/.nanorc" "$HOME/.nanorc"
+
+    log_ok "Configurations deployed finished."
 else
     log_skip "Skipping config deployment."
 fi

@@ -231,67 +231,74 @@ step_title "4 - SETUP HAKUSPACE CONFIG"
 log_info "Backing up existing configs in ~/.config and copying new configs from hakuspace/common/config"
 log_warn "Do NOT skip this step in the first time installation hakuspace"
 
-SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
-SOURCE_ONCE_CONFIG="$COMMON_DIR/once-config"
-DEST_CONFIG="$HOME/.config"
-
 if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
 
-    echo ">>> Deploying Common configs..."
-    for folder in "$SOURCE_COMMON_CONFIG"/*/; do
+    echo ">>> Deploying configs..."
+    for folder in "$SOURCE_CONFIG"/*/; do
         [[ -d "$folder" ]] || continue
         folder_name="$(basename "$folder")"
-        if [[ "$folder_name" == "hypr" ]]; then
+        # Deloy config not in the list of ONCE_CONFIGS and SKIP_CONFIGS
+        if [[ " ${ONCE_CONFIGS[*]} " == *" $folder "* || " ${SKIP_CONFIGS[*]} " == *" $folder "* ]]; then
             continue
         fi
         copy_dir_content "$SOURCE_COMMON_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
     done
-    copy_file "$SOURCE_COMMON_CONFIG/hypr/hypridle.conf" "$DEST_CONFIG/hypr/hypridle.conf"
-    copy_file "$SOURCE_COMMON_CONFIG/hypr/hyprlock.conf" "$DEST_CONFIG/hypr/hyprlock.conf"
-    copy_file "$SOURCE_COMMON_CONFIG/hypr/hyprlock_tiny.conf" "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
+    copy_file "$SOURCE_CONFIG/hypr/hypridle.conf" "$DEST_CONFIG/hypr/hypridle.conf"
+    copy_file "$SOURCE_CONFIG/hypr/hyprlock.conf" "$DEST_CONFIG/hypr/hyprlock.conf"
+    copy_file "$SOURCE_CONFIG/hypr/hyprlock_tiny.conf" "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
 
+    # Once configs (Thunar, gtk-3.0, xfce4, mpv, btop)
+    # Which will be deployed only once and not overwritten in future runs (update.sh)
     echo ">>> Deploying Once configs..."
-    for folder in "$SOURCE_ONCE_CONFIG"/*/; do
+    for folder in "${ONCE_CONFIGS[@]}"; do
         [[ -d "$folder" ]] || continue
         folder_name="$(basename "$folder")"
-        copy_dir_content "$SOURCE_ONCE_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
+        copy_dir_content "$folder" "$DEST_CONFIG/$folder_name"
     done
 
-    # Loop through selected WMs (hyprland will always be last if "ALL" was chosen)
+    # Loop through selected WMs
     for i in "${!SELECTED_WMS[@]}"; do
         WM_NAME="${SELECTED_WMS[$i]}"
         WM_DIR_PATH="${SELECTED_WM_DIRS[$i]}"
-        SOURCE_WM_CONFIG="$WM_DIR_PATH"
 
-        if [[ $WM_NAME == "hyprland" ]]; then
-            echo ">>> Deploying Hyprland configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG/config" "$DEST_CONFIG/hypr/config"
-            copy_file "$SOURCE_WM_CONFIG/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
-        elif [[ $WM_NAME == "niri" ]]; then
-            echo ">>> Deploying Niri configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG" "$DEST_CONFIG/niri"
-        elif [[ $WM_NAME == "mango" ]]; then
-            echo ">>> Deploying Mango configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG" "$DEST_CONFIG/mango"
-        elif [[ $WM_NAME == "labwc" ]]; then
-            echo ">>> Deploying Labwc configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG" "$DEST_CONFIG/labwc"
-        else
-            log_warn "Unknown WM: $WM_NAME. Skipping WM config deployment."
-        fi
+        case "$WM_NAME" in
+            "hyprland")
+                echo ">>> Deploying Hyprland configs..."
+                # Hyprland will copy content in hypr/ instead of hypr dir for not overriting hyprlock and hypridle configs
+                copy_dir_content "$WM_DIR_PATH/config" "$DEST_CONFIG/hypr/config"
+                copy_file "$WM_DIR_PATH/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
+                ;;
+            "niri")
+                echo ">>> Deploying Niri configs..."
+                copy_dir_content "$WM_DIR_PATH" "$DEST_CONFIG/niri"
+                ;;
+            "mango")
+                echo ">>> Deploying Mango configs..."
+                copy_dir_content "$WM_DIR_PATH" "$DEST_CONFIG/mango"
+                ;;
+            "labwc")
+                echo ">>> Deploying Labwc configs..."
+                copy_dir_content "$WM_DIR_PATH" "$DEST_CONFIG/labwc"
+                ;;
+            *)
+                log_warn "Unknown WM: $WM_NAME. Skipping WM config deployment."
+                ;;
+        esac
     done
 
     echo ">>> Deploying Thunar gtk.css theme..."
-    copy_file "$SOURCE_COMMON_CONFIG/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css"
-
-    echo ">>> Deploying mimeapps.list..."
-    copy_file "$SOURCE_ONCE_CONFIG/mimeapps.list" "$DEST_CONFIG/mimeapps.list"
+    copy_file "$SOURCE_CONFIG/gtk-3.0/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css"
 
     echo ">>> Deploying starship.toml (starship configuration)..."
-    copy_file "$SOURCE_COMMON_CONFIG/starship.toml" "$DEST_CONFIG/starship.toml"
+    copy_file "$SOURCE_CONFIG/starship.toml" "$DEST_CONFIG/starship.toml"
 
     echo ">>> Deploying .nanorc (nano configuration)..."
-    copy_file "$SOURCE_COMMON_CONFIG/.nanorc" "$HOME/.nanorc"
+    copy_file "$HOME_SRC_DIR/.nanorc" "$HOME/.nanorc"
+
+    # mimeapps.list only deployed once, update.sh do not deploy it again
+    echo ">>> Deploying mimeapps.list..."
+    copy_file "$SOURCE_CONFIG/mimeapps.list" "$DEST_CONFIG/mimeapps.list"
+
 
     log_ok "Configurations deployed finished."
 else
@@ -305,9 +312,6 @@ step_title "5 - SETUP LOCAL BIN SCRIPTS"
 
 log_info "Backing up existing ~/.local/bin and copying new scripts from hakuspace/common/local/bin"
 log_warn "Do NOT skip this step in the first time installation hakuspace"
-
-SOURCE_BIN="$COMMON_DIR/local/bin"
-DEST_BIN="$HOME/.local/bin"
 
 if ask_yes_no "===> Do you want to setup hakuspace scripts now?"; then
     if [[ -d "$SOURCE_BIN" ]]; then
