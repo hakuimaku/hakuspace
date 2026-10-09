@@ -55,22 +55,26 @@ binds {
     Mod+Right { focus-column-right; }
     Mod+S     { focus-column-right; }
 
-    Mod+Ctrl+A     { move-column-left; }
-    Mod+Ctrl+S     { move-column-right; }
-    Mod+Ctrl+Left  { move-column-left; }
-    Mod+Ctrl+Down  { move-window-down; }
-    Mod+Ctrl+Up    { move-window-up; }
-    Mod+Ctrl+Right { move-column-right; }
+    Mod+Shift+A     { move-column-left; }
+    Mod+Shift+S     { move-column-right; }
+    Mod+Shift+Left  { move-column-left; }
+    Mod+Shift+Down  { move-window-down; }
+    Mod+Shift+Up    { move-window-up; }
+    Mod+Shift+Right { move-column-right; }
+
+    Mod+Ctrl+Left  { consume-or-expel-window-left; }
+    Mod+Ctrl+Right { consume-or-expel-window-right; }
+    Mod+Ctrl+A     { consume-or-expel-window-left; }
+    Mod+Ctrl+S     { consume-or-expel-window-right; }
+    Mod+BracketLeft  { consume-or-expel-window-left; }
+    Mod+BracketRight { consume-or-expel-window-right; }
+    Mod+period  { consume-window-into-column; }
+    Mod+comma { expel-window-from-column; }
 
     Mod+Home { focus-column-first; }
     Mod+End  { focus-column-last; }
     Mod+Ctrl+Home { move-column-to-first; }
     Mod+Ctrl+End  { move-column-to-last; }
-
-    Mod+BracketLeft  { consume-or-expel-window-left; }
-    Mod+BracketRight { consume-or-expel-window-right; }
-    Mod+period  { consume-window-into-column; }
-    Mod+comma { expel-window-from-column; }
 
     Mod+Shift+R { switch-preset-column-width-back; }
     Mod+Ctrl+Shift+R { switch-preset-window-height; }
