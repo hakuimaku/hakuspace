@@ -8,7 +8,13 @@ HEIGHT=""
 # Check dependencies
 if ! command -v hyprlock &> /dev/null; then
     echo "hyprlock is not installed. Please install it to use this script."
+    notify-send "Lock screen" "hyprlock is not installed. Please install it to use this script."
     exit 1
+fi
+
+if ! command -v jq &> /dev/null; then
+    echo "Warning: jq is not installed"
+    notify-send "Lock screen" "Warning: jq is not installed"
 fi
 
 if ! command -v wlr-randr &> /dev/null; then
@@ -50,9 +56,10 @@ sleep 0.2
 
 if [[ -z "$WIDTH" || -z "$HEIGHT" ]]; then
     echo "Could not determine monitor resolution. How it could be..."
+    notify-send "Lock screen" "Could not determine monitor resolution. How it could be..."
 fi
 
-echo "executing hyprlock with appropriate configuration..."
+echo "Executing hyprlock with appropriate configuration..."
 if [[ "$WIDTH" -ge 1920 && "$HEIGHT" -ge 1080 ]]; then
     hyprlock
 else
