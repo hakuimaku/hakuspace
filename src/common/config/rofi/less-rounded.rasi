@@ -1,0 +1,126 @@
+/* =====================================
+        Rofi Theme: Haku Theme :>
+ =======================================*/
+
+@import "../../.local/state/haku_theme/rofi-style.rasi"
+
+/* ===== GLOBAL VARIABLES ===== */
+* {
+    background:          rgba(0, 0, 0, 0.9);
+    foreground:          #dfdfdf;
+    modebar-bg:          rgba(27, 27, 27, 0.5);
+    background-color:    transparent;
+    text-color:          @foreground;
+    
+    margin:              0;
+    padding:             0;
+    spacing:             0;
+}
+
+/* ===== MAIN WINDOW ===== */
+window {
+    width:               35%;
+    height:              50%;
+    background-color:    @background;
+    border-radius:       4px;
+    padding:             20px;
+}
+
+mainbox {
+    spacing:             16px;
+    children:            [ inputbar, mode-switcher, listview ];
+}
+
+/* ===== INPUT BAR ===== */
+inputbar {
+    padding:             10px;
+    background-color:    rgba(0, 0, 0, 0.2);
+    border-radius:       4px;
+    children:            [ prompt, entry ];
+}
+
+prompt {
+    padding:             10px 15px;
+    background-color:    @accent;
+    text-color:          @background;
+    border-radius:       4px;
+    font-weight:         bold;
+}
+
+entry {
+    padding:             10px;
+    margin:              0 10px 0 10px;
+    text-color:          @accent;
+    placeholder:         "Search...";
+    placeholder-color:   rgba(223, 223, 223, 0.4);
+}
+
+/* ===== MODE SWITCHER (Apps/Run/Window) ===== */
+mode-switcher {
+    margin:              0px 10px;
+    padding:             6px;
+    background-color:    @accent;
+    border-radius:       4px;
+    spacing:             10px;
+}
+
+button {
+    padding:             8px 14px;
+    border-radius:       4px;
+    background-color:    transparent;
+    text-color:          @background;
+}
+
+button selected {
+    background-color:    @background;
+    text-color:          @accent;
+}
+
+/* ===== LISTVIEW ===== */
+listview {
+    margin:              0px 0px 10px 0px;
+    scrollbar:           true;
+    cycle:               true;
+    dynamic:             true;
+}
+
+/* ===== ELEMENTS ===== */
+element {
+    padding:             10px;
+    margin:              2px 10px;
+    border-radius:       4px;
+    orientation:         horizontal;
+    vertical-align:      0.5; 
+}
+
+element-icon {
+    size:                24px;
+    margin:              0 10px 0 0;
+    vertical-align:      0.5;
+}
+
+element-text {
+    text-color:          @accent;
+    vertical-align:      0.5;
+}
+
+/* ===== ELEMENT STATES ===== */
+element selected {
+    background-color:    @accent;
+}
+
+element-text selected {
+    text-color:          @background;
+}
+
+element-icon selected {
+    background-color:    transparent; 
+}
+
+/* ===== SCROLLBAR ===== */
+scrollbar {
+    handle-width:           6px;
+    handle-color:           @accent;
+    handle-rounded-corners: false;
+    padding:                0px 0px 0px 6px;
+}
