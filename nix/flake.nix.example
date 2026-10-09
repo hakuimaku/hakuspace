@@ -6,7 +6,7 @@
     description = "System Configuration powered by Hakuspace NixOS";
 
     inputs = {
-        nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+        nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
         hakuspace = {
             url = "github:hakuimaku/hakuspace?dir=nix";
             inputs.nixpkgs.follows = "nixpkgs";
