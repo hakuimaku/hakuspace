@@ -295,17 +295,17 @@ else
 fi
 
 if ! command -v yay >/dev/null 2>&1; then
-    log_error "yay is not installed. Please install yay first."
-    exit 1
+    log_error "yay is not installed. Please install yay first to run step 2."
+    log_error "If you're using another Distro, please install the packages manually."
 fi
 
-DEPENDENCIES=("yay" "git" "curl")
+DEPENDENCIES=("git" "curl")
 for pkg in "${DEPENDENCIES[@]}"; do
     if command -v "$pkg" >/dev/null 2>&1; then
         log_ok "$pkg exists."
     else
         log_warn "$pkg not found."
-        if ask_yes_no "===> Install $pkg now?"; then
+        if ask_yes_no "===> Install $pkg by yay now?"; then
             yay -S --noconfirm "$pkg"
         else
             log_warn "You need $pkg for full installer flow."
@@ -326,12 +326,16 @@ echo ":: Ready to install packages from:"
 echo "   - $PKG_WM"
 echo "   - $PKG_COMMON"
 
-if ask_yes_no "===> Do you want to install package lists now?"; then
-    yay -S --noconfirm - < "$PKG_WM"
-    yay -S --noconfirm - < "$PKG_COMMON"
-    log_ok "All packages from the lists have been processed."
+if command -v yay >/dev/null 2>&1; then
+    if ask_yes_no "===> Do you want to install packages now?"; then
+        yay -S --noconfirm - < "$PKG_COMMON"
+        yay -S --noconfirm - < "$PKG_WM"
+        log_ok "Package installation completed."
+    else
+        log_skip "Skipping package installation."
+    fi
 else
-    log_skip "Skipping package installation."
+    log_error "yay is not installed. Please install yay first to run this step. If you're using another Distro, please install the packages manually."
 fi
 
 # ============================================================================
@@ -403,11 +407,18 @@ fi
 # ============================================================================
 step_title "6 - SETUP OH MY ZSH AND PLUGINS"
 
-if ! command -v zsh >/dev/null 2>&1; then
-    if ask_yes_no ":: Zsh is missing. Install zsh now?"; then
-        yay -S --noconfirm zsh
+if command -v yay >/dev/null 2>&1; then
+    if ! command -v zsh >/dev/null 2>&1; then
+        if ask_yes_no ":: Zsh is missing. Install zsh now?"; then
+            yay -S --noconfirm zsh
+        fi
     fi
+else
+    log_warn "yay is not installed. Please install zsh manually if you want to use Oh My Zsh."
+    log_warn "If you're using another Distro, please install zsh manually."
 fi
+
+
 
 if ask_yes_no "===> Do you want to install Oh My Zsh now?"; then
     if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
