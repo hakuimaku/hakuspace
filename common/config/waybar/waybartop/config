@@ -17,6 +17,7 @@
         "custom/menu",
         "hyprland/workspaces",
         "niri/workspaces",
+        "mango/workspaces",
         "custom/recorder",
         "group/monitor",
         "group/bar"
@@ -169,6 +170,20 @@
             "active": "",
             "default": ""
 	    }
+    },
+
+    "mango/workspaces": {
+        "format": "{icon}",
+        "format-icons": {
+            "active": "",
+            "default": "",
+            "urgent": "",
+            "empty": ""
+        },
+        "on-click": "activate",
+        "on-click-right": "toggle",
+        "overview-label": "    ",
+        "hide-empty": true
     },
 
     "custom/recorder": {

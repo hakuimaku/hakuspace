@@ -12,7 +12,8 @@
     "modules-left": [
         "custom/bar",
         "hyprland/workspaces",
-        "niri/workspaces"
+        "niri/workspaces",
+        "mango/workspaces"
     ],
     "modules-center": [
         "clock"
@@ -139,6 +140,20 @@
             "active": "",
             "default": ""
 	    }
+    },
+
+    "mango/workspaces": {
+        "format": "{icon}",
+        "format-icons": {
+            "active": "",
+            "default": "",
+            "urgent": "",
+            "empty": ""
+        },
+        "on-click": "activate",
+        "on-click-right": "toggle",
+        "overview-label": "    ",
+        "hide-empty": true
     },
 
     "custom/recorder": {
