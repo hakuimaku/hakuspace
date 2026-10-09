@@ -1,19 +1,26 @@
 #!/usr/bin/env bash
 
-if ! command -v wl-screenrec &> /dev/null; then
-    notify-send -u critical "Recording System" "Error: wl-screenrec is not installed!" -i dialog-error
-    echo "Error: wl-screenrec is not installed. Please install it first."
-    exit 1
-fi
-
+# Customize the save directory for recordings
+SAVE_DIR="$HOME/Videos" 
 PID_FILE="/tmp/recording_pid"
 TIME_FILE="/tmp/recording_time"
 
-# Customize the save directory for recordings
-SAVE_DIR="$HOME/Videos" 
-mkdir -p "$SAVE_DIR"
+# If you install wl-screenrec by cargo, uncomment the following line and comment the next one
+#REC_COMMAND="$HOME/.cargo/bin/wl-screenrec"
+REC_COMMAND="wl-screenrec"
 
-REC_OPTS="--max-fps 60"
+# wl-screenrec options, you can customize them as needed
+REC_OPTS="--max-fps 60 --codec avc --encode-pixfmt nv12"
+
+
+# Check dependency
+if ! command -v "$REC_COMMAND" &> /dev/null; then
+    notify-send -u critical "Recording System" "Error: $REC_COMMAND is not installed!" -i dialog-error
+    echo "Error: $REC_COMMAND is not installed. Please install it first."
+    exit 1
+fi
+
+mkdir -p "$SAVE_DIR"
 
 stop_recording() {
     if [ -f "$PID_FILE" ]; then
@@ -44,24 +51,24 @@ start_recording() {
     
     case "$chosen" in
         *"Only Sound")
-            wl-screenrec $REC_OPTS --audio --audio-device default.monitor -f "$FILEPATH" &
+            $REC_COMMAND $REC_OPTS --audio --audio-device default.monitor -f "$FILEPATH" &
             MSG="Recording: System Audio"
             ;;
         *"Micro and Sound")
             # Record audio from the default device (usually the microphone).
             # If you want to mix both game audio + mic, you need to set up loopback on Pipewire.
-            wl-screenrec $REC_OPTS --audio -f "$FILEPATH" &
+            $REC_COMMAND $REC_OPTS --audio -f "$FILEPATH" &
             MSG="Recording: Microphone/Default"
             ;;
         *"No Sound")
             # Only record the screen, no audio.
-            wl-screenrec $REC_OPTS -f "$FILEPATH" &
+            $REC_COMMAND $REC_OPTS -f "$FILEPATH" &
             MSG="Recording: No Sound"
             ;;
     esac
 
     echo $! > "$PID_FILE"
-    notify-send "Recording System" "$MSG" -i video-display
+    notify-send "Recording System" "$MSG" -i video-display -t 1000
     
     SEC=0
     while [ -f "$PID_FILE" ] && ps -p $(cat "$PID_FILE") > /dev/null; do
