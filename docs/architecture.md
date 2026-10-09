@@ -1,6 +1,6 @@
 # HakuSpace Architecture
 
-See Vietnamese translation: [Kiến trúc HakuSpace](VN_architecture.md)
+See Vietnamese translation: [VN_architecture.md](./vietnamese/VN_architecture.md)
 
 This document is the high-level entry point for the HakuSpace repository. It describes the repository layout, ownership boundaries, and the responsibilities of the main scripts.
 

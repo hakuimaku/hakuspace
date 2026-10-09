@@ -1,6 +1,6 @@
 # Fedora - Haku Space Installation Guide
 
-See Vietnamese translation: [Hướng dẫn cài đặt Haku Space trên Fedora](VN_Fedora_Guide.md)
+See Vietnamese translation: [VN_Fedora_Guide.md](./vietnamese/VN_Fedora_Guide.md)
 
 ## Prerequisites
 - Who wants to use Haku Space on Fedora :)
