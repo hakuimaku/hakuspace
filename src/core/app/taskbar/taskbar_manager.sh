@@ -6,14 +6,18 @@
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
 
-STATE_DIR="$HOME/.local/state/hakuspace"
 MANUAL_STATE="$STATE_DIR/taskbar_manual_state"
 
 TASKBAR_DIR="$HOME/.config/waybar/taskbar"
 TASKBAR_PIN_APPS="$HOME/hakucfg/config/taskbar-pin-apps"
-STATE_FILE="$STATE_DIR/taskbar-theme"
+THEME_FILE="$THEME_ROOT/taskbar-theme"
 
 mkdir -p "$STATE_DIR"
+
+if [[ ! -f "$THEME_FILE" ]]; then
+    echo "Warning: Taskbar theme file not found."
+    notify-send "Taskbar" "Warning: Taskbar theme file not found."
+fi
 
 # Ensure state file exists and contain valid values (0 or 1)
 if [[ ! -f "$MANUAL_STATE" ]] || ! grep -qxE '0|1' "$MANUAL_STATE"; then
@@ -101,11 +105,11 @@ fi
 
 # Format Toggle (App Name ON/OFF)
 if [[ $1 == "--app-name" ]]; then
-    if grep -qE '"format":\s*"\{icon\} \{name\}"' "$STATE_FILE"; then
-        sed -i -E 's/"format":\s*"\{icon\} \{name\}"/"format": "{icon}"/' "$STATE_FILE"
+    if grep -qE '"format":\s*"\{icon\} \{name\}"' "$THEME_FILE"; then
+        sed -i -E 's/"format":\s*"\{icon\} \{name\}"/"format": "{icon}"/' "$THEME_FILE"
         echo "Taskbar App Name disabled."
     else
-        sed -i -E 's/"format":\s*"\{icon\}"/"format": "{icon} {name}"/' "$STATE_FILE"
+        sed -i -E 's/"format":\s*"\{icon\}"/"format": "{icon} {name}"/' "$THEME_FILE"
         echo "Taskbar App Name enabled."
     fi
     "$0" --reload
@@ -114,13 +118,13 @@ fi
 
 # Change Icon Size
 if [[ $1 == "--icon-size" ]]; then
-    current_size=$(grep -oP '"icon-size":\s*\K\d+' "$STATE_FILE" | head -n 1)
+    current_size=$(grep -oP '"icon-size":\s*\K\d+' "$THEME_FILE" | head -n 1)
     [[ -z "$current_size" ]] && current_size=40
 
     new_size=$(rofi -dmenu -p "Icon size (current: $current_size):" <<< "$current_size" -theme-str 'window {width: 40%; height: 40%;}' -theme-str 'entry { placeholder: "Type new size"; }')
     
     if [[ -n "$new_size" && "$new_size" =~ ^[0-9]+$ ]]; then
-        sed -i -E "s/\"icon-size\": *[0-9]+/\"icon-size\": $new_size/g" "$STATE_FILE"
+        sed -i -E "s/\"icon-size\": *[0-9]+/\"icon-size\": $new_size/g" "$THEME_FILE"
         echo "Icon size updated to $new_size."
         
         if [[ -f "$TASKBAR_PIN_APPS" ]]; then
