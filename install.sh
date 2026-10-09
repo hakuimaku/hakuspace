@@ -726,6 +726,27 @@ fi
 # ============================================================================
 step_title "8 - ENABLE SYSTEM SERVICES"
 
+# Gen style first time
+if [[ -x "$HOME/.local/bin/gen_style.sh" ]]; then
+    "$HOME/.local/bin/gen_style.sh"
+    log_ok "Executed gen_style.sh"
+else
+    log_warn "Not executable or missing: $HOME/.local/bin/gen_style.sh"
+    log_warn "Check if the script exists and has execute permissions in ~/.local/bin/"
+fi
+
+# Init HakuSpace Control
+check_control_dir
+
+# NixOS configuration update
+if command -v nixos-rebuild >/dev/null 2>&1; then
+    if ask_yes_no "===> NixOS configuration updated. Do you want to rebuild NixOS system now? (maybe have some conflicts)"; then
+        sudo nixos-rebuild switch
+    else
+        log_warn "You chose not to rebuild NixOS system. Please remember to run 'sudo nixos-rebuild switch' later."
+    fi
+fi
+
 # Check if ly is installed
 FOUND=0
 for path in /usr/bin/ly /usr/local/bin/ly /usr/sbin/ly /usr/bin/ly-dm; do
@@ -764,27 +785,6 @@ if command -v thunar >/dev/null 2>&1; then
     log_ok "Set Thunar as default file manager."
 else
     log_warn "Thunar is not installed. Skipping setting default file manager."
-fi
-
-# Gen style first time
-if [[ -x "$HOME/.local/bin/gen_style.sh" ]]; then
-    "$HOME/.local/bin/gen_style.sh"
-    log_ok "Executed gen_style.sh"
-else
-    log_warn "Not executable or missing: $HOME/.local/bin/gen_style.sh"
-    log_warn "Check if the script exists and has execute permissions in ~/.local/bin/"
-fi
-
-# Init HakuSpace Control
-check_control_dir
-
-# NixOS configuration update
-if command -v nixos-rebuild >/dev/null 2>&1; then
-    if ask_yes_no "===> NixOS configuration updated. Do you want to rebuild NixOS system now? (maybe have some conflicts)"; then
-        sudo nixos-rebuild switch
-    else
-        log_warn "You chose not to rebuild NixOS system. Please remember to run 'sudo nixos-rebuild switch' later."
-    fi
 fi
 
 echo ""

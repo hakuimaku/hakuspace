@@ -412,12 +412,6 @@ else
     log_error "If you're using another distro, install packages manually."
 fi
 
-# Block 1.1: Check NixOS offline installation mode & update NixOS configuration
-if [[ -f "/etc/nixos/hakuspace-config.nix" && grep -q "./hakuspace-config.nix" "/etc/nixos/configuration.nix" ]]; then
-    copy_file "$COMMON_DIR/nixos/hakuspace-config.nix" "/etc/nixos/hakuspace-config.nix"
-    log_ok "NixOS hakuspace-config.nix updated finished."
-fi
-
 # ============================================================================
 # BLOCK 2: BACKUP AND COPY CONFIG
 # ============================================================================
@@ -504,19 +498,45 @@ else
     log_skip "Skipping local/bin update."
 fi
 
-# Init HakuSpace Control
-check_control_dir
-
-# NixOS configuration update
+# ============================================================================
+# BLOCK 4: NIXOS CONFIGURATION UPDATE & REBUILD
+# ============================================================================
 if command -v nixos-rebuild >/dev/null 2>&1; then
-    if ask_yes_no "===> NixOS configuration updated. Do you want to rebuild NixOS system now? (maybe have some conflicts)"; then
-        log_info "Rebuilding NixOS system..."
-        sudo nixos-rebuild switch
-        log_ok "NixOS system rebuilt successfully."
+    step_title "4 - NIXOS SYSTEM REBUILD"
+    
+    REBUILD_DONE=0
+
+    # Online mode
+    if [[ -f "/etc/nixos/flake.nix" ]] && grep -q "hakuspace.nixosModules.default" "/etc/nixos/flake.nix"; then
+        log_info "Detected NixOS with Hakuspace Flake (Online Mode)."
+        if ask_yes_no "===> Do you want to update flake inputs and rebuild NixOS now?"; then
+            cd /etc/nixos && sudo nix flake update && sudo nixos-rebuild switch --flake .
+            log_ok "NixOS updated and rebuilt successfully via Flake."
+            REBUILD_DONE=1
+        fi
+    # Offline mode
+    elif [[ -f "/etc/nixos/hakuspace-config.nix" ]] && grep -q "./hakuspace-config.nix" "/etc/nixos/configuration.nix"; then
+        log_info "Detected NixOS with Local hakuspace-config.nix (Offline Mode)."
+        if ask_yes_no "===> Do you want to update local hakuspace-config.nix and rebuild NixOS now?"; then
+            copy_file "$NIXOS_DIR/hakuspace-config.nix" "/etc/nixos/hakuspace-config.nix"
+            log_info "Rebuilding NixOS system..."
+            sudo nixos-rebuild switch
+            log_ok "NixOS updated and rebuilt successfully via Local Config."
+            REBUILD_DONE=1
+        fi
+    # No Hakuspace configuration detected
     else
-        log_warn "You chose not to rebuild NixOS system. Please remember to run 'sudo nixos-rebuild switch' later."
+        log_warn "NixOS detected, but no Hakuspace configuration pattern found."
+        log_warn "How it could be..."
+    fi
+
+    if [[ "$REBUILD_DONE" -eq 0 ]]; then
+        log_warn "You chose not to rebuild the NixOS system. Please remember to rebuild later to apply system-level changes."
     fi
 fi
+
+# Init HakuSpace Control
+check_control_dir
 
 # Final message
 echo ""
