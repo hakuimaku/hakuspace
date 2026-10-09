@@ -55,6 +55,9 @@ alias menu="~/.local/bin/hakumenu.sh"
 alias openconfig="~/.local/bin/open_config.sh"
 alias pacsize='expac -H M "%m\t%n" $(\pacman -Qeq) | sort -h -r'
 alias pacsizefull='expac -H M "%m\t%n" | sort -h -r'
+alias nix-clean='sudo nix-env --profile /nix/var/nix/profiles/system --delete-generations +3 && sudo nix-store --gc'
+alias nix-switch='sudo nixos-rebuild switch'
+alias nix-dir='cd /etc/nixos'
 
 # History quality-of-life
 HISTFILE="$HOME/.zsh_history"

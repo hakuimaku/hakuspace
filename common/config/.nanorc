@@ -1,6 +1,16 @@
+include "/usr/share/nano/*.nanorc"
+
 set titlecolor bold,blue,black
 
 set statuscolor bold,white,black
 
 set keycolor blue
 set functioncolor white
+
+set tabsize 4
+set tabstospaces
+set autoindent
+set trimblanks
+set zap
+set linenumbers
+set mouse
