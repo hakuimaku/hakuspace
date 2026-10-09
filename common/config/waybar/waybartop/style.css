@@ -108,15 +108,13 @@ window#waybar {
 /* WORKSPACES                                    */
 /* ============================================================================== */
 #workspaces {
-    background-color: rgba(0, 0, 0, 0.28);
     border-radius: 999px;
     padding: 2px 8px;
     margin: 0 4px;
 }
 
 #workspaces button {
-    background-color: rgba(255, 255, 255, 0.08);
-    color: @accent_color;
+    background-color: rgba(255, 255, 255, 0.2);
     border-radius: 999px;
     padding: 0 10px;
     margin: 0 3px;
@@ -127,14 +125,16 @@ window#waybar {
 
 #workspaces button.active {
     background-color: @accent_color;
-    color: #000000;
     min-width: 30px;
     transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
 #workspaces button.empty {
     background-color: rgba(255, 255, 255, 0.04);
-    color: #000000;
+}
+
+#workspaces button.empty.active {
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 

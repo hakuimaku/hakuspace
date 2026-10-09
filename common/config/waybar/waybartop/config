@@ -160,7 +160,6 @@
         "show-special": true,
         "format": "{icon}",
         "format-icons": {
-            "magic": "",
             "active": "",
             "default": ""
 	    }
