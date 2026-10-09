@@ -23,6 +23,22 @@ window#waybar {
     box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.4);
 }
 
+.modules-left {
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 0 0 30px 0;
+    padding: 6px 14px 6px 14px;
+    margin: 0 0 4px 0;
+    box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.4);
+}
+
+.modules-right {
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 0 0 0 30px;
+    padding: 6px 14px 6px 14px;
+    margin: 0 0 4px 0;
+    box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.4);
+}
+
 
 /* ============================================================================== */
 /* COMMON MODULE STYLES                               */
@@ -30,6 +46,8 @@ window#waybar {
 #custom-monitor,
 #custom-bar,
 #window,
+#mpris,
+#cava,
 #custom-recorder,
 #custom-notification,
 #pulseaudio,
@@ -75,7 +93,7 @@ window#waybar {
     background: none;
 }
 #backlight-slider trough {
-    min-width: 100px;
+    min-width: 60px;
     border-radius: 5px;
     background: rgba(203, 203, 203, 0.5);
 }
@@ -91,9 +109,10 @@ window#waybar {
     background-image: none;
     border: none;
     box-shadow: none;
+    background: none;
 }
 #pulseaudio-slider trough {
-    min-width: 100px;
+    min-width: 60px;
     min-height: 10px;
     border-radius: 5px;
     background: rgba(203, 203, 203, 0.5);
@@ -176,6 +195,8 @@ window#waybar {
 #cpu:hover,
 #memory:hover,
 #temperature:hover,
+#mpris:hover,
+#cava:hover,
 #pulseaudio:hover,
 #backlight:hover,
 #power-profiles-daemon:hover,

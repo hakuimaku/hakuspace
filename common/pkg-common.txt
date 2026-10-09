@@ -6,6 +6,7 @@ blueman
 power-profiles-daemon
 nano
 waybar
+waybar-cava
 rofi
 swaync
 kitty

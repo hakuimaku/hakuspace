@@ -8,14 +8,24 @@
     "tooltip": true,
     "reload_style_on_change": true,
 
+    "modules-left": [
+        "cava",
+        "mpris"
+    ],
     "modules-center": [
         "clock",
-        "custom/notification",
         "hyprland/workspaces",
-        "niri/workspaces",
+        "ext/workspaces",
         "custom/recorder",
         "group/monitor",
         "group/bar"
+    ],
+    "modules-right": [
+        "backlight",
+        "backlight/slider",
+        "pulseaudio",
+        "pulseaudio/slider",
+        "custom/notification"
     ],
 
     "clock": {
@@ -55,10 +65,6 @@
         },
         "modules": [
             "custom/bar",
-            "backlight",
-            "backlight/slider",
-            "pulseaudio",
-            "pulseaudio/slider",
             "battery",
             "power-profiles-daemon",
             "tray"
@@ -146,7 +152,7 @@
         "show-passive-items": true
     },
 
-    "niri/workspaces": {
+    "ext/workspaces": {
         "format": "{icon}",
         "format-icons": {
             "active": "",
@@ -220,5 +226,18 @@
      "temperature": {
         "interval": 2,
         "format": "{temperatureC}°C "
+    },
+
+    "mpris": {
+        "format": "  / {title} ",
+        "format-paused": "  / <i>{title}</i> ",
+        "title-len": 20
+    },
+
+    "cava": {
+        "cava_config": "$HOME/.config/cava/config_waybar",
+        "input_delay": 0,
+        "bar_delimiter": 0,
+        "format-icons" : ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█" ]
     }
 }
