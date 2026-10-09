@@ -49,7 +49,7 @@ make_cache_img() {
     # Make Niri backdrop
     if [[ "${XDG_CURRENT_DESKTOP:-}" == "niri" ]] || pgrep -x "niri" >/dev/null 2>&1; then
         if magick "${WALLPAPER}[0]" -background black -alpha remove -set option:filter:blur 1.0 -blur 0x15 "$CACHE_DIR/backdrop.jpg" 2>/dev/null; then
-            awww img -n "awww-daemon-backdrop" "$CACHE_DIR/backdrop.jpg"
+            awww img -n "awww-daemon-backdrop" --transition-type none "$CACHE_DIR/backdrop.jpg"
             echo "Niri backdrop image generated at $CACHE_DIR/backdrop.jpg"
         else
             is_successfull=0
@@ -117,6 +117,10 @@ case "$MIME_TYPE" in
     video/*)
         # Terminate previous mpvpaper instance before launching a new one
         pkill mpvpaper 2>/dev/null || true
+        
+        # Make awww remove wallpaper (with solid black background)
+        awww clear
+        
         sleep 0.2
 
         MONITOR=$(get_active_monitor)

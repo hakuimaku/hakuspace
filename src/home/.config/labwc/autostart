@@ -1,9 +1,6 @@
 systemctl --user --no-block start labwc-session.target
 dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP >/dev/null 2>&1 &
 systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP >/dev/null 2>&1 &
-(sleep 0.2; ~/.local/bin/polkit_start.sh >/dev/null 2>&1 &)
-awww-daemon >/dev/null 2>&1 &
-~/.local/bin/wallpaper_resume.sh >/dev/null 2>&1 &
 swaync >/dev/null 2>&1 &
 fcitx5 -d >/dev/null 2>&1 &
 wl-paste --type text --watch cliphist store >/dev/null 2>&1 &
@@ -13,10 +10,15 @@ blueman-applet >/dev/null 2>&1 &
 hypridle >/dev/null 2>&1 &
 fcitx5 -d >/dev/null 2>&1 &
 
-(sleep 0.2; ~/.local/bin/rounded_screen_manager.sh --startup >/dev/null 2>&1 &)
-(sleep 0.2; ~/.local/bin/edge_trigger_manager.sh --startup >/dev/null 2>&1 &)
-(sleep 0.2; ~/.local/bin/taskbar_manager.sh --startup >/dev/null 2>&1 &)
-(sleep 0.2; ~/.local/bin/waybar_manager.sh >/dev/null 2>&1 &)
-(sleep 0.2; ~/.local/bin/desktop_icons_manager.sh --startup >/dev/null 2>&1 &)
+(sleep 0.1; ~/.local/bin/polkit_start.sh >/dev/null 2>&1 &)
+
+# Resume wallpaper on startup
+(sleep 0.1; ~/.local/bin/wallpaper_resume.sh >/dev/null 2>&1 &)
+
+(sleep 0.1; ~/.local/bin/rounded_screen_manager.sh --startup >/dev/null 2>&1 &)
+(sleep 0.1; ~/.local/bin/edge_trigger_manager.sh --startup >/dev/null 2>&1 &)
+(sleep 0.1; ~/.local/bin/taskbar_manager.sh --startup >/dev/null 2>&1 &)
+(sleep 0.1; ~/.local/bin/waybar_manager.sh >/dev/null 2>&1 &)
+(sleep 0.1; ~/.local/bin/desktop_icons_manager.sh --startup >/dev/null 2>&1 &)
 
 ~/.local/bin/welcome.sh

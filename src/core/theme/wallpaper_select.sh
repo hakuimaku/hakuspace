@@ -36,6 +36,23 @@ generate_thumbnails() {
     done
 }
 
+
+apply_accent_color() {
+    local target_image="$1"
+    if [ "$ACCENT_COLOR_BASED_ON_WALLPAPER" = true ]; then
+        # Default to white if not found (e.g. video without preview)
+        if [[ ! -f "$target_image" ]]; then
+            ACCENT="#ffffff"
+        else
+            ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$target_image" "$ACCENT_COLOR_MODE")
+        fi
+        ACCENT="$(accent_color_or_fallback "$ACCENT")"
+
+        "$HOME/.local/bin/gen_style.sh" "$ACCENT" && \
+            "$HOME/.local/bin/apply_style.sh"
+    fi
+}
+
 set_wallpaper() {
     local choice="$1"
     local mode="$2"
@@ -46,14 +63,7 @@ set_wallpaper() {
         # Set the wallpaper
         "$SET_WALLPAPER_SCRIPT" "$wall"
         
-        # Check if accent color should be based on wallpaper
-        if [ "$ACCENT_COLOR_BASED_ON_WALLPAPER" = true ]; then
-            ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$wall" "$ACCENT_COLOR_MODE")
-            ACCENT="$(accent_color_or_fallback "$ACCENT")"
-
-            "$HOME/.local/bin/gen_style.sh" "$ACCENT" && \
-                "$HOME/.local/bin/apply_style.sh"
-        fi
+        apply_accent_color "$wall" 
     elif [ "$mode" = "lively" ]; then
         local wall="$WALL_MPV_DIR/$choice"
         local filename="${choice%.*}"
@@ -70,18 +80,10 @@ set_wallpaper() {
 
         "$SET_WALLPAPER_SCRIPT" "$wall"
 
-        # Check if accent color should be based on wallpaper
-        if [ "$ACCENT_COLOR_BASED_ON_WALLPAPER" = true ]; then
-            if [[ -n "$preview" ]]; then
-                ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$preview" "$ACCENT_COLOR_MODE")
-            else
-                ACCENT="#ffffff"
-            fi
-
-            ACCENT="$(accent_color_or_fallback "$ACCENT")"
-
-            "$HOME/.local/bin/gen_style.sh" "$ACCENT" && \
-                "$HOME/.local/bin/apply_style.sh"
+        if [[ -n "$preview" ]]; then
+            apply_accent_color "$preview"
+        else
+            apply_accent_color "not_found"
         fi
     fi
 }
@@ -157,8 +159,18 @@ if [[ "$1" == "--exit" ]]; then
         exit 1
     fi
     pkill mpvpaper
-    notify-send "Lively Wallpaper exited"
-    exit 1
+
+    # Restore awww wallpaper in cache
+    awww restore
+
+    # Restore Accent Color | Niri backdrop
+    current_wall=$(awww query | sed -n 's/.*currently displaying: image: //p')
+    if [[ -n "$current_wall" && -f "$current_wall" ]]; then
+        "$SET_WALLPAPER_SCRIPT" "$current_wall"
+        apply_accent_color "$current_wall"
+    fi
+    
+    exit 0
 fi
 
 # argument --extend to set position of rofi window
