@@ -36,20 +36,6 @@ THEME_DEFAULT_SIZE="14"
 
 mkdir -p "$THEME_RENDER_DIR" "$STATE_DIR"
 
-# Display help message
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-    cat <<'EOF'
-This script manages the Haku theme state and rendering model.
-See more details in the comments at the top of the script.
-Usage: haku_theme.sh [OPTION]
-
-Options:
-    --print             Print current theme values in state.env
-    -h, --help          Display this help message
-EOF
-    exit 0
-fi
-
 # Load only the canonical state file; rendered files are never read back.
 theme_load_state() {
     ACCENT_COLOR="$THEME_DEFAULT_ACCENT"
@@ -79,13 +65,5 @@ theme_state_value() {
         *) return 1 ;;
     esac
 }
-
-# Print current theme in state.env
-if [[ "$1" == "--print" ]]; then
-    theme_load_state
-    printf 'ACCENT_COLOR=%s\n' "${ACCENT_COLOR:-$THEME_DEFAULT_ACCENT}"
-    printf 'FONT_FAMILY=%s\n' "${FONT_FAMILY:-$THEME_DEFAULT_FONT}"
-    printf 'FONT_SIZE=%s\n' "${FONT_SIZE:-$THEME_DEFAULT_SIZE}"
-fi
 
 theme_load_state
