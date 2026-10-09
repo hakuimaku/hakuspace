@@ -355,6 +355,9 @@
         <keybind key="W-S-p">
         <action name="Execute" command="~/.local/bin/screenshot.sh --fullscreen" />
         </keybind>
+        <keybind key="W-l">
+        <action name="Execute" command="~/.local/bin/nightlight_toggle.sh" />
+        </keybind>
 
         <!-- keybind for Show Menu -->
         <keybind key="A-grave">

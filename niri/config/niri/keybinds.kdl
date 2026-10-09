@@ -19,6 +19,7 @@ binds {
     Mod+Shift+Y hotkey-overlay-title="Lively Wallpaper Select" { spawn "sh" "-c" "$HOME/.local/bin/wallpaper_video_select.sh"; }
     Mod+Shift+W hotkey-overlay-title="Cycle Waybar Mode" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --cycle"; }
     Mod+W hotkey-overlay-title="Toggle Dockbar" { spawn "sh" "-c" "$HOME/.local/bin/dockbar_manager.sh --toggle"; }
+    Mod+L hotkey-overlay-title="Toggle Night Light" { spawn "sh" "-c" "$HOME/.local/bin/nightlight_toggle.sh"; }
 
     // Application Launchers
     Mod+Q hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
@@ -27,8 +28,6 @@ binds {
     Mod+B hotkey-overlay-title="Open Browser: zen-browser" { spawn "zen-browser"; }
     Mod+Slash hotkey-overlay-title="Open Emoji Menu" { spawn "rofi" "-modi" "emoji" "-show" "emoji"; }
     Mod+N hotkey-overlay-title="Open Notification Center" { spawn "swaync-client" "-t" "-sw"; }
-    Mod+L hotkey-overlay-title="Adjust Brightness" { spawn "gammastep" "-O" "4200K"; }
-    Mod+Shift+L hotkey-overlay-title="Reset Brightness" { spawn "pkill" "gammastep"; }
 
     // Screenshots
     Print { screenshot; }
