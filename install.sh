@@ -2,7 +2,7 @@
 set -u
 
 # ======================================================================================
-# HAKUSPACE INSTALLER (CLEANED - COPY MODE + COLOR LOGS)
+# HAKUSPACE INSTALLER (UPGRADED MODE - REFIXED BY TENSEY)
 # ======================================================================================
 
 cat << 'EOF'
@@ -87,7 +87,7 @@ step_title() {
 }
 
 # --------------------------------
-# Utility helpers
+# Utility helpers (UPDATED TO MATCH UPDATER LOGIC)
 # --------------------------------
 ask_yes_no() {
     local prompt="$1"
@@ -101,14 +101,11 @@ ensure_dir() {
     if [[ ! -d "$dir" ]]; then
         mkdir -p "$dir"
         log_ok "Created directory: $dir"
-    else
-        log_skip "Directory already exists: $dir"
     fi
 }
 
 backup_item() {
     local target="$1"
-
     [[ -e "$target" || -L "$target" ]] || return 0
 
     local rel="${target#$HOME/}"
@@ -118,7 +115,6 @@ backup_item() {
     mv "$target" "$backup_target"
     log_backup "$target -> $backup_target"
 }
-
 
 copy_dir_content() {
     local src="$1"
@@ -140,7 +136,7 @@ copy_dir_content() {
     return 0
 }
 
-copy_file_with_backup() {
+copy_file() {
     local src="$1"
     local dst="$2"
 
@@ -158,33 +154,6 @@ copy_file_with_backup() {
     cp -f "$src" "$dst"
     log_copy "$src -> $dst"
     return 0
-}
-
-copy_config_folders_with_backup() {
-    local source_dir="$1"
-    local dest_dir="$2"
-
-    if [[ ! -d "$source_dir" ]]; then
-        log_warn "Source directory does not exist: $source_dir"
-        return 1
-    fi
-
-    ensure_dir "$dest_dir"
-
-    for folder in "$source_dir"/*/; do
-        [[ -d "$folder" ]] || continue
-
-        local folder_name
-        folder_name="$(basename "$folder")"
-        local target_path="$dest_dir/$folder_name"
-
-        if [[ -e "$target_path" || -L "$target_path" ]]; then
-            backup_item "$target_path"
-        fi
-
-        cp -r "$folder" "$dest_dir/"
-        log_copy "$folder -> $dest_dir/"
-    done
 }
 
 install_pkg_file() {
@@ -351,12 +320,14 @@ echo -e "${C_GREEN}--- Everything is ready to install Config! ---${C_RESET}"
 # ============================================================================
 step_title "2 - INSTALL PACKAGES FROM LIST"
 
-PKG_LABELS=("$WM" "CORE" "SERVICE" "OPTIONAL")
+wm_upper=$(echo "$WM" | tr '[:lower:]' '[:upper:]')
+
+PKG_LABELS=("$wm_upper" "CORE" "SERVICE" "OPTIONAL")
 PKG_FILES=("$PKG_WM" "$PKG_CORE" "$PKG_SERVICE" "$PKG_OPTIONAL")
 INSTALL_FLAGS=(0 0 0 0)   # 1=install, 0=skip
 
 echo ":: Package lists:"
-echo "   [0] WM         : $WM needs to install first to work properly."
+echo "   [0] WM         : $wm_upper needs to install first to work properly."
 echo "   [1] CORE       : Core packages needed for the hakuspace to function properly. (Waybar, Rofi, Kitty, etc.)"
 echo "   [2] SERVICE    : System service packages. If you currently have DE, you can skip this. (ly, xdg-desktop-portal, etc.)"
 echo "   [3] OPTIONAL   : Optional packages for customization. (Browser, Cava, etc.)"
@@ -372,7 +343,7 @@ done
 
 echo ""
 echo ":: Install plan (1=install, 0=skip): [${INSTALL_FLAGS[*]}]"
-echo "   ${WM}=${INSTALL_FLAGS[0]} CORE=${INSTALL_FLAGS[1]} SERVICE=${INSTALL_FLAGS[2]} OPTIONAL=${INSTALL_FLAGS[3]}"
+echo "   ${wm_upper}=${INSTALL_FLAGS[0]} CORE=${INSTALL_FLAGS[1]} SERVICE=${INSTALL_FLAGS[2]} OPTIONAL=${INSTALL_FLAGS[3]}"
 echo ""
 
 if command -v yay >/dev/null 2>&1; then
@@ -420,7 +391,7 @@ for folder in "${FOLDERS[@]}"; do
 done
 
 # ============================================================================
-# BLOCK 4: BACKUP AND COPY CONFIG
+# BLOCK 4: BACKUP AND COPY CONFIG (REFIXED UPGRADE WITH SELECTIVE MODE)
 # ============================================================================
 step_title "4 - BACKUP AND COPY CONFIG TO ~/.config"
 
@@ -428,35 +399,36 @@ SOURCE_WM_CONFIG="$WM_DIR/config"
 SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
 DEST_CONFIG="$HOME/.config"
 
-if ask_yes_no "===> Do you want to backup and copy your current config now?"; then
+if ask_yes_no "===> Do you want to backup and copy your config now?"; then
     echo ">>> Deploying Common configs..."
-    copy_config_folders_with_backup "$SOURCE_COMMON_CONFIG" "$DEST_CONFIG"
+    for folder in "$SOURCE_COMMON_CONFIG"/*/; do
+        [[ -d "$folder" ]] || continue
+        local folder_name
+        folder_name="$(basename "$folder")"
+        copy_dir_content "$SOURCE_COMMON_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
+    done
 
-    # Not using copy_dir_content here to avoid overwriting existing the whole ~/.config
     if [[ $WM == "hyprland" ]]; then
         echo ">>> Deploying Hyprland configs..."
-        copy_config_folders_with_backup "$SOURCE_WM_CONFIG/hypr" "$DEST_CONFIG/hypr"
-        copy_file_with_backup "$SOURCE_WM_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
+        copy_dir_content "$SOURCE_WM_CONFIG/hypr" "$DEST_CONFIG/hypr"
     elif [[ $WM == "niri" ]]; then
         echo ">>> Deploying Niri configs..."
-        copy_config_folders_with_backup "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
+        copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
     elif [[ $WM == "mango" ]]; then
         echo ">>> Deploying Mango configs..."
-        copy_config_folders_with_backup "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
+        copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
     else
         log_warn "Unknown WM: $WM. Skipping WM config deployment."
     fi
 
-    # copy_config_folders_with_backup is not copy file
-    # Copy specific files like mimeapps.list, .zshrc, .nanorc
     echo ">>> Deploying mimeapps.list..."
-    copy_file_with_backup "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/mimeapps.list"
+    copy_file "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/mimeapps.list"
 
     echo ">>> Deploying .zshrc (zsh configuration)..."
-    copy_file_with_backup "$COMMON_DIR/.zshrc" "$HOME/.zshrc"
+    copy_file "$COMMON_DIR/.zshrc" "$HOME/.zshrc"
 
     echo ">>> Deploying .nanorc (nano configuration)..."
-    copy_file_with_backup "$COMMON_DIR/.nanorc" "$HOME/.nanorc"
+    copy_file "$COMMON_DIR/.nanorc" "$HOME/.nanorc"
 
     log_ok "Configurations deployed successfully."
 else

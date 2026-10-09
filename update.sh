@@ -2,7 +2,7 @@
 set -u
 
 # ======================================================================================
-# HAKUSPACE UPDATER (LATEST/STABLE & COPY MODE)
+# HAKUSPACE UPDATER (LATEST/STABLE & COPY MODE) - REFIXED BY TENSEY
 # ======================================================================================
 
 cat << 'EOF'
@@ -132,7 +132,7 @@ copy_dir_content() {
     return 0
 }
 
-copy_file_with_backup() {
+copy_file() {
     local src="$1"
     local dst="$2"
 
@@ -150,33 +150,6 @@ copy_file_with_backup() {
     cp -f "$src" "$dst"
     log_copy "$src -> $dst"
     return 0
-}
-
-copy_config_folders_with_backup() {
-    local source_dir="$1"
-    local dest_dir="$2"
-
-    if [[ ! -d "$source_dir" ]]; then
-        log_warn "Source directory does not exist: $source_dir"
-        return 1
-    fi
-
-    ensure_dir "$dest_dir"
-
-    for folder in "$source_dir"/*/; do
-        [[ -d "$folder" ]] || continue
-
-        local folder_name
-        folder_name="$(basename "$folder")"
-        local target_path="$dest_dir/$folder_name"
-
-        if [[ -e "$target_path" || -L "$target_path" ]]; then
-            backup_item "$target_path"
-        fi
-
-        cp -r "$folder" "$dest_dir/"
-        log_copy "$folder -> $dest_dir/"
-    done
 }
 
 install_pkg_file() {
@@ -244,17 +217,25 @@ preflight_checks
 # ============================================================================
 step_title "0 - UPDATE DOTFILES REPOSITORY"
 
+SCRIPT_NAME=$(basename "$0")
+BACKUP_SCRIPT="/tmp/${SCRIPT_NAME}.bak"
+
+cp "$0" "$BACKUP_SCRIPT"
+
 echo "Select update mode:"
 echo -e "${C_BOLD}[1]${C_RESET} LATEST (Pull from main branch - Experimental)"
 echo -e "${C_BOLD}[2]${C_RESET} STABLE (Checkout latest release tag - Recommended)"
 echo ""
 read -r -p ">>> Choose mode (1/2): " update_mode
 
+REPO_CHANGED=0
+
 if [[ "$update_mode" == "1" ]]; then
     log_info "Switching to main branch and pulling latest changes..."
     git checkout main
     git pull origin main
     log_ok "Repository updated to LATEST."
+    REPO_CHANGED=1
 elif [[ "$update_mode" == "2" ]]; then
     log_info "Fetching tags from remote..."
     git fetch --tags
@@ -268,8 +249,20 @@ elif [[ "$update_mode" == "2" ]]; then
         git checkout "$LATEST_TAG"
         log_ok "Repository updated to STABLE ($LATEST_TAG)."
     fi
+    REPO_CHANGED=1
 else
     log_error "Invalid choice. Skipping repository update."
+fi
+
+if [[ "$REPO_CHANGED" -eq 1 && -f "$BACKUP_SCRIPT" ]]; then
+    if ! cmp -s "$BACKUP_SCRIPT" "$0"; then
+        echo ""
+        log_warn "Detecting that '$SCRIPT_NAME' has new updates in repository!"
+        log_error "Please re-run the script to execute with new logic: ./${SCRIPT_NAME}"
+        rm -f "$BACKUP_SCRIPT"
+        exit 0
+    fi
+    rm -f "$BACKUP_SCRIPT"
 fi
 
 select_window_manager
@@ -317,86 +310,91 @@ SOURCE_WM_CONFIG="$WM_DIR/config"
 SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
 DEST_CONFIG="$HOME/.config"
 
-if ask_yes_no "===> Do you want to backup and apply new configs now?"; then
+echo ""
+echo "[1]. FULL COPY, like a fresh install (WM + Common + Zsh)"
+echo "[2]. SELECTIVE COPY, choose which configs to update (Recommended)"
+echo "[0]. SKIP config update"
+echo ""
 
-    if ask_yes_no "===> Do you want to FULL copy everything (WM, Common, Zsh)?"; then
-        echo ">>> Deploying Common configs..."
-        copy_config_folders_with_backup "$SOURCE_COMMON_CONFIG" "$DEST_CONFIG"
+read -r -p ">>> Choose config update mode (1/2/0): " config_mode
+if [[ "$config_mode" == "1" ]]; then
+    echo ">>> Deploying Common configs..."
+    for folder in "$SOURCE_COMMON_CONFIG"/*/; do
+        [[ -d "$folder" ]] || continue
+        local folder_name
+        folder_name="$(basename "$folder")"
+        copy_dir_content "$SOURCE_COMMON_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
+    done
 
-        if [[ $WM == "hyprland" ]]; then
-            echo ">>> Deploying Hyprland configs..."
-            copy_config_folders_with_backup "$SOURCE_WM_CONFIG/hypr" "$DEST_CONFIG/hypr"
-            copy_file_with_backup "$SOURCE_WM_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
-        elif [[ $WM == "niri" ]]; then
-            echo ">>> Deploying Niri configs..."
-            copy_config_folders_with_backup "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
-        elif [[ $WM == "mango" ]]; then
-            echo ">>> Deploying Mango configs..."
-            copy_config_folders_with_backup "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
-        else
-            log_warn "Unknown WM: $WM. Skipping WM config deployment."
-        fi
-
-        echo ">>> Deploying mimeapps.list..."
-        copy_file_with_backup "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/mimeapps.list"
-
-        echo ">>> Deploying .zshrc (zsh configuration)..."
-        copy_file_with_backup "$COMMON_DIR/.zshrc" "$HOME/.zshrc"
-
-        echo ">>> Deploying .nanorc (nano configuration)..."
-        copy_file_with_backup "$COMMON_DIR/.nanorc" "$HOME/.nanorc"
-
-        log_ok "Configurations deployed successfully."
-
+    if [[ $WM == "hyprland" ]]; then
+        echo ">>> Deploying Hyprland configs..."
+        copy_dir_content "$SOURCE_WM_CONFIG/hypr" "$DEST_CONFIG/hypr"
+    elif [[ $WM == "niri" ]]; then
+        echo ">>> Deploying Niri configs..."
+        copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
+    elif [[ $WM == "mango" ]]; then
+        echo ">>> Deploying Mango configs..."
+        copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
     else
-        # ------------------------------------------------------------------
-        # Copy SELECTIVE
-        # ------------------------------------------------------------------
-        echo ">>> Entering Selective Mode..."
-        
-        # 1. Common configs (Waybar, Rofi, Fastfetch, Cava, Kitty, Swaync...)
-        COMMON_APPS=("waybar" "rofi" "fastfetch" "cava" "kitty" "swaync")
+        log_warn "Unknown WM: $WM. Skipping WM config deployment."
+    fi
 
-        for app in "${COMMON_APPS[@]}"; do
+    echo ">>> Deploying mimeapps.list..."
+    copy_file "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/mimeapps.list"
+
+    echo ">>> Deploying .zshrc (zsh configuration)..."
+    copy_file "$COMMON_DIR/.zshrc" "$HOME/.zshrc"
+
+    echo ">>> Deploying .nanorc (nano configuration)..."
+    copy_file "$COMMON_DIR/.nanorc" "$HOME/.nanorc"
+
+    log_ok "Configurations deployed successfully."
+
+elif [[ "$config_mode" == "2" ]]; then
+    echo ">>> Entering Selective Mode..."
+        
+    # 1. Common configs (Waybar, Rofi, Fastfetch, Cava, Kitty, Swaync...)
+    COMMON_APPS=("waybar" "rofi" "fastfetch" "cava" "kitty" "swaync")
+
+    for app in "${COMMON_APPS[@]}"; do
+        if [[ -d "$SOURCE_COMMON_CONFIG/$app" ]]; then
             if ask_yes_no "   -> Do you want to deploy $app configs?"; then
-                echo "   >>> Deployed $app configs."
                 copy_dir_content "$SOURCE_COMMON_CONFIG/$app" "$DEST_CONFIG/$app"
-                copy_config_folders_with_backup "$SOURCE_COMMON_CONFIG/$app" "$DEST_CONFIG/$app"
             fi
-        done
-
-        # 2. Hyprlock & Hypridle
-        if ask_yes_no "   -> Deploy hyprlock, hypridle configs?"; then
-            echo "   >>> Deploying Hypr configs..."
-            copy_file_with_backup "$SOURCE_COMMON_CONFIG/hypr/hyprlock.conf" "$DEST_CONFIG/hypr/hyprlock.conf"
-            copy_file_with_backup "$SOURCE_COMMON_CONFIG/hypr/hyprlock_tiny.conf" "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
-            copy_file_with_backup "$SOURCE_COMMON_CONFIG/hypr/hypridle.conf" "$DEST_CONFIG/hypr/hypridle.conf"
+        else
+            log_warn "Source app folder not found: $app. Skipping..."
         fi
+    done
 
-        # 3. .zshrc
-        if ask_yes_no "   -> Deploy .zshrc (Zsh configuration)?"; then
-            echo "   >>> Deploying Zshrc..."
-            copy_file_with_backup "$COMMON_DIR/.zshrc" "$HOME/.zshrc"
-        fi
+    # 2. Hyprlock & Hypridle
+    if ask_yes_no "   -> Do you want to deploy hyprlock, hypridle configs?"; then
+        echo "   >>> Deploying Hypr configs..."
+        copy_file "$SOURCE_COMMON_CONFIG/hypr/hyprlock.conf" "$DEST_CONFIG/hypr/hyprlock.conf"
+        copy_file "$SOURCE_COMMON_CONFIG/hypr/hyprlock_tiny.conf" "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
+        copy_file "$SOURCE_COMMON_CONFIG/hypr/hypridle.conf" "$DEST_CONFIG/hypr/hypridle.conf"
+    fi
+
+    # 3. .zshrc
+    if ask_yes_no "   -> Do you want to deploy .zshrc (Zsh configuration)?"; then
+        echo "   >>> Deploying Zshrc..."
+        copy_file "$COMMON_DIR/.zshrc" "$HOME/.zshrc"
+    fi
         
-        # 4. WM configs
-        if [[ $WM == "hyprland" ]]; then
-            if ask_yes_no "   -> [Detected: Hyprland] Deploy Hyprland configs?"; then
-                echo "   >>> Deploying Hyprland configs..."
-                copy_dir_content "$SOURCE_WM_CONFIG/hyprland" "$DEST_CONFIG/hyprland"
-            fi
-            
-        elif [[ $WM == "niri" ]]; then
-            if ask_yes_no "   -> [Detected: Niri] Deploy Niri configs?"; then
-                echo "   >>> Deploying Niri configs..."
-                copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
-            fi
-            
-        elif [[ $WM == "mango" ]]; then
-            if ask_yes_no "   -> [Detected: Mango] Deploy Mango configs?"; then
-                echo "   >>> Deploying Mango configs..."
-                copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
-            fi
+    # 4. WM configs
+    if [[ $WM == "hyprland" ]]; then
+        if ask_yes_no "   -> [Detected: Hyprland] Do you want to deploy Hyprland configs?"; then
+            echo "   >>> Deploying Hyprland configs..."
+            copy_dir_content "$SOURCE_WM_CONFIG/hypr" "$DEST_CONFIG/hypr"
+        fi   
+    elif [[ $WM == "niri" ]]; then
+        if ask_yes_no "   -> [Detected: Niri] Do you want to deploy Niri configs?"; then
+            echo "   >>> Deploying Niri configs..."
+            copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
+        fi   
+    elif [[ $WM == "mango" ]]; then
+        if ask_yes_no "   -> [Detected: Mango] Do you want to deploy Mango configs?"; then
+            echo "   >>> Deploying Mango configs..."
+            copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
         fi
     fi
 
@@ -406,7 +404,7 @@ else
 fi
 
 # ============================================================================
-# BLOCK 3: BACKUP AND COPY LOCAL BIN (Old Block 5)
+# BLOCK 3: BACKUP AND COPY LOCAL BIN
 # ============================================================================
 step_title "3 - BACKUP AND UPDATE ~/.local/bin"
 
@@ -430,5 +428,6 @@ echo -e "${C_BOLD}${C_CYAN}>>>>>>>>>> Update complete! You may need to restart y
 echo -e "${C_MAGENTA}Backup folder for this update: $BACKUP_DIR${C_RESET}"
 
 echo ""
-echo -e "${C_BOLD}${C_YELLOW}   ! Note${C_RESET}"
-echo -e "${C_YELLOW}After the update, your file manager (thunar) might reset to defaults and delete your bookmarks. please copy your old configuration file back from the backup folder in your home directory at ~/Backup_.../.config/gtk-3.0${C_RESET}"
+if [[ "$config_mode" == "1" ]]; then
+    log_warn "Note: You chose FULL COPY. If your Thunar bookmarks are missing, restore them from $BACKUP_DIR/.config/gtk-3.0/bookmarks"
+fi
