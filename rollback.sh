@@ -58,23 +58,50 @@ select_backup_dir() {
     SELECTED_BACKUP="$HOME/${backup_names[$((choice - 1))]}"
 }
 
-restore_backup() {
+restore_item() {
     local source_item
     local relative_path
     local destination
 
+    source_item="$1"
+    relative_path="${source_item#$SELECTED_BACKUP/}"
+    destination="$HOME/$relative_path"
+
+    if [[ -e "$destination" || -L "$destination" ]]; then
+        backup_item "$destination"
+    fi
+
+    if [[ -d "$source_item" && ! -L "$source_item" ]]; then
+        copy_dir_content "$source_item" "$destination" 1
+    else
+        copy_file "$source_item" "$destination" 1
+    fi
+
+    ((restored_count++))
+}
+
+restore_backup() {
+    local BACKUP_DIR="$HOME/Rollback_Backup_$(date +%Y-%m-%d_%H-%M-%S)"
+    local source_item
+    local child_item
+    local relative_path
+    local restored_count=0
+
     while IFS= read -r -d '' source_item; do
         relative_path="${source_item#$SELECTED_BACKUP/}"
-        destination="$HOME/$relative_path"
 
-        if [[ -d "$source_item" && ! -L "$source_item" ]]; then
-            copy_dir_content "$source_item" "$destination" 1
+        if [[ "$relative_path" == ".config" || "$relative_path" == ".local" ]]; then
+            while IFS= read -r -d '' child_item; do
+                restore_item "$child_item"
+            done < <(find "$source_item" -mindepth 1 -maxdepth 1 -print0)
         else
-            copy_file "$source_item" "$destination" 1
+            restore_item "$source_item"
         fi
-
-        log_copy "$source_item -> $destination"
     done < <(find "$SELECTED_BACKUP" -mindepth 1 -maxdepth 1 -print0)
+
+    if [[ "$restored_count" -gt 0 && -d "$BACKUP_DIR" ]]; then
+        rm -rf "$BACKUP_DIR"
+    fi
 }
 
 print_rollback_header

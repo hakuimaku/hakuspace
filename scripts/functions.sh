@@ -84,6 +84,29 @@ backup_item() {
     fi
 }
 
+# Copy dir to backup dir
+backup_dir() {
+    local dir="$1"
+    [[ -d "$dir" ]] || return 0
+
+    local rel="${dir#$HOME/}"
+    rel="${rel#/}"
+    local backup_target="$BACKUP_DIR/$rel"
+    local parent_dir
+    parent_dir="$(dirname "$dir")"
+
+    if [[ -w "$parent_dir" && ( ! -e "$dir" || -w "$dir" ) ]]; then
+        mkdir -p "$(dirname "$backup_target")"
+        cp -r "$dir" "$backup_target"
+        log_backup "$dir -> $backup_target"
+    else
+        sudo mkdir -p "$(dirname "$backup_target")"
+        sudo cp -r "$dir" "$backup_target"
+        sudo chown -R "$USER:$USER" "$(dirname "$backup_target")" 2>/dev/null
+        log_backup "$dir -> $backup_target (sudo)"
+    fi
+}
+
 copy_file() {
     local src="$1"
     local dst="$2"
