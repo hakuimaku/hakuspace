@@ -59,6 +59,15 @@ if ! [[ "$FONT_SIZE" =~ ^[0-9]+$ ]] || [[ "$FONT_SIZE" -le 0 ]]; then
     FONT_SIZE="$DEFAULT_SIZE"
 fi
 
+# --- Check if accent color too dark ---
+r=$(printf "%d" 0x${ACCENT_COLOR:1:2})
+g=$(printf "%d" 0x${ACCENT_COLOR:3:2})
+b=$(printf "%d" 0x${ACCENT_COLOR:5:2})
+if [ $((r + g + b)) -lt 180 ]; then
+    notify-send "Color ${ACCENT_COLOR} is too dark" "Generating color failed"
+    exit 1
+fi
+
 # --- convert accent to hyprland rgba(hex8) ---
 hex_to_rgba() {
     local hex="${1:-}"
