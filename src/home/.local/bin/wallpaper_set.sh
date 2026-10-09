@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-# Include BACKDROP_DIR & AWWW_OPTS
+# Include AWWW_OPTS
 [ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
 
-BACKDROP_DIR=${BACKDROP_DIR:-/tmp}
 AWWW_OPTS=${AWWW_OPTS:-"--transition-type random --transition-step 90 --transition-fps 60"}
 
 WALLPAPER="${1:-}"
+BACKDROP_DIR="$HOME/.cache"
 
 # Detect active monitor using wlr-randr
 get_active_monitor() {
@@ -15,6 +15,7 @@ get_active_monitor() {
         detected_monitor=$(wlr-randr | awk '/^[^ ]/ {m=$1} /current/ {print m; exit}')
     else
         echo "Warning: wlr-randr not found. Defaulting to eDP-1." >&2
+        notify-send "Warning: wlr-randr not found. Defaulting to eDP-1."
     fi
 
     # Fallback to eDP-1 if wlr-randr is missing or output is empty
@@ -33,6 +34,7 @@ make_niri_backdrop() {
             awww img -n "awww-daemon-backdrop" "$BACKDROP_DIR/backdrop.jpg"
         else
             echo "Warning: Failed to generate backdrop via ImageMagick." >&2
+            notify-send "Warning: Failed to generate backdrop via ImageMagick."
         fi
     fi
 }

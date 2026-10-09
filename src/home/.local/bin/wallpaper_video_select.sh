@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-# Include WALL_MPV_DIR & PREVIEW_DIR & ACCENT_COLOR_BASED_ON_WALLPAPER
+# Include WALL_MPV_DIR & ACCENT_COLOR_BASED_ON_WALLPAPER
 [ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
 
 WALL_MPV_DIR=${WALL_MPV_DIR:-$HOME/Videos/Wallpapers}
-PREVIEW_DIR=${PREVIEW_DIR:-$WALL_MPV_DIR/Preview}
 ACCENT_COLOR_BASED_ON_WALLPAPER=${ACCENT_COLOR_BASED_ON_WALLPAPER:-true}
 
+PREVIEW_DIR="$WALL_MPV_DIR/.thumbnails"
 SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
 
