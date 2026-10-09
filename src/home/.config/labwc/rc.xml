@@ -331,6 +331,9 @@
         <keybind key="W-S-w">
         <action name="Execute" command="~/.local/bin/waybar_manager.sh --cycle" />
         </keybind>
+        <keybind key="W-C-w">
+        <action name="Execute" command="~/.local/bin/waybar_manager.sh --toggle" />
+        </keybind>
         <keybind key="W-v">
         <action name="Execute" command="~/.local/bin/clipboard_menu.sh" />
         </keybind>
