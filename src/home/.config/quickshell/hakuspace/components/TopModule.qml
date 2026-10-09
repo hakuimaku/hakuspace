@@ -16,6 +16,7 @@ Rectangle {
     property string tooltip: ""
     property int borderWidth: 0
     property string borderColor: "transparent"
+    property int blinkDuration: HAnimation.normal
 
     signal clicked()
     signal rightClicked()
@@ -37,8 +38,8 @@ Rectangle {
     SequentialAnimation on opacity {
         running: root.blink
         loops: Animation.Infinite
-        NumberAnimation { to: 0.5; duration: HAnimation.normal; easing.type: Easing.InOutQuad }
-        NumberAnimation { to: 1.0; duration: HAnimation.normal; easing.type: Easing.InOutQuad }
+        NumberAnimation { to: 0.5; duration: root.blinkDuration; easing.type: Easing.InOutQuad }
+        NumberAnimation { to: 1.0; duration: root.blinkDuration; easing.type: Easing.InOutQuad }
     }
     
     // Normal opacity fallback when not blinking
@@ -93,11 +94,12 @@ Rectangle {
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         onEntered: {
             root.hovered = true
-            tooltipTimer.start()
+            if (root.tooltip !== "") {
+                tooltipObj.active = true
+            }
         }
         onExited: {
             root.hovered = false
-            tooltipTimer.stop()
             tooltipObj.active = false
         }
         onClicked: (mouse) => {
@@ -106,16 +108,6 @@ Rectangle {
         }
         onWheel: (wheel) => {
             root.scrolled(wheel.angleDelta.y);
-        }
-    }
-    
-    Timer {
-        id: tooltipTimer
-        interval: 400
-        onTriggered: {
-            if (root.tooltip !== "") {
-                tooltipObj.active = true
-            }
         }
     }
     

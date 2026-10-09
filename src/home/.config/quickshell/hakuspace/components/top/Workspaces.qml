@@ -7,6 +7,9 @@ import "../../services/WM"
 TopModule {
     id: root
     
+    color: "transparent"
+    tooltip: ""
+    
     property int dot: 20
     property int gap: 8
     property int activeW: 50
@@ -16,7 +19,6 @@ TopModule {
     property int activeIdx: ids.indexOf(activeId)
     property int n: ids.length
     
-
     function slotX(index) {
         var x = index * (dot + gap);
         if (activeIdx !== -1 && index > activeIdx) {
@@ -61,7 +63,6 @@ TopModule {
             Rectangle {
                 property int wsId: root.ids[index]
                 property bool isOccupied: WM.occupied.indexOf(wsId) !== -1
-                property bool isHovered: root.hoveredIdx === index
                 
                 width: root.dot
                 height: root.dot
@@ -141,12 +142,10 @@ TopModule {
         
         // Indicators are retargeted from root
         // 3. Interactions
-        property int hoveredIdx: -1
         
         MouseArea {
             anchors.fill: parent
             anchors.margins: -4
-            hoverEnabled: true
             
             function getIndexAt(mx) {
                 // Approximate clicking since they animate, we use current active layout
@@ -157,11 +156,6 @@ TopModule {
                 }
                 return -1;
             }
-            
-            onPositionChanged: (mouse) => {
-                root.hoveredIdx = getIndexAt(mouse.x);
-            }
-            onExited: root.hoveredIdx = -1
             
             onClicked: (mouse) => {
                 var idx = getIndexAt(mouse.x);

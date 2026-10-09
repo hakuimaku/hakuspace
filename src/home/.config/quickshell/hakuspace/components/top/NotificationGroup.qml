@@ -1,5 +1,8 @@
 import QtQuick
 import "../"
 Row {
-    TopModule { text: "" }
+    TopModule { 
+        text: "" 
+        tooltip: "Notifications"
+    }
 }

@@ -17,7 +17,7 @@ QtObject {
     // Default bezier for shell components (HDrawer, layers)
     property list<real> shellCurve: [0.16, 1.0, 0.3, 1.0]
     
-    // Caelestia workspace morphing tokens
+    // Workspace morphing tokens
     property list<real> spatialCurve: [0.38, 1.21, 0.22, 1.0]
     property list<real> effectsCurve: [0.34, 0.8, 0.34, 1.0]
     property int spatial: 250
