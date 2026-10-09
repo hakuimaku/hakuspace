@@ -13,6 +13,12 @@ layer-rule {
     place-within-backdrop true
 }
 
+// Rounded corners for all windows
+window-rule {
+    geometry-corner-radius 0
+    clip-to-geometry true
+}
+
 // Opacity for inactive windows
 window-rule {
     match is-active=false
@@ -29,27 +35,6 @@ window-rule {
         noise 0.05
         saturation 2
     }
-}
-
-// Opacity and background effect for specific applications
-window-rule {
-    match app-id=r#"thunar"#
-    match app-id=r#"kitty"#
-    match app-id=r#"code"#
-    opacity 0.8
-
-    background-effect {
-        xray true
-        blur true
-        noise 0.05
-        saturation 2
-    }
-}
-
-// Rounded corners for all windows
-window-rule {
-    geometry-corner-radius 16
-    clip-to-geometry true
 }
 
 // Rules for specific applications
@@ -137,16 +122,15 @@ window-rule {
 
 // Rules for cava underbar
 window-rule {
-    match app-id=r#"cavaunderbar"#
+    match app-id="cavaunderbar"
 
     open-floating true
     open-focused false
     
-    default-floating-position x=0 y=-52 relative-to="top-left"
+    default-floating-position x=0 y=-56 relative-to="top-left"
     min-width 1920
     min-height 70
     max-height 70
-    opacity 0.6
 
     background-effect {
         xray false
@@ -156,6 +140,10 @@ window-rule {
     }
 
     shadow {
+        off
+    }
+
+    focus-ring {
         off
     }
 }

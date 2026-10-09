@@ -27,7 +27,7 @@ cursor {
 
 // https://niri-wm.github.io/niri/Configuration:-Layout
 layout {
-    gaps 12
+    gaps 16
 
     // When to center a column when changing focus, options are:
     // - "never", default behavior, focusing an off-screen column will keep at the left
@@ -51,7 +51,10 @@ layout {
     }
 
     focus-ring {
-        off
+        on
+        width 3
+        inactive-color "#505050"
+        urgent-color "#9b0000"
     }
 
     border {
@@ -62,10 +65,10 @@ layout {
         on
 
         draw-behind-window true
-        softness 30
+        softness 20
         spread 5
-        offset x=5 y=10
-        color "#0007"
+        offset x=0 y=0
+        color "rgba(0, 0, 0, 0.7)"
     }
 
     tab-indicator {
@@ -107,7 +110,7 @@ gestures {
 
 // https://niri-wm.github.io/niri/Configuration:-Input
 input {
-    focus-follows-mouse
+    //focus-follows-mouse
 
     keyboard {
         xkb {
