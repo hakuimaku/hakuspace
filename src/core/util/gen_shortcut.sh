@@ -19,11 +19,43 @@ if [[ $1 == "-h" || $1 == "--help" ]]; then
     echo "Options:"
     echo "   <AppName> <ExecPath> [IconPath]   Create a custom shortcut"
     echo "   -a|--add <KeywordOrPath>          Find and copy matching shortcuts to Desktop"
+    echo "   -m|--menu                         Select and add a shortcut using rofi menu"
     echo "   -q|--query [Keyword]              List available system shortcuts (optional filter)"
     exit 0
 fi
 
 mkdir -p "$DESKTOP_DIR"
+
+# Menu logic (-m or --menu)
+if [[ $1 == "-m" || $1 == "--menu" ]]; then
+    if ! command -v rofi &> /dev/null; then
+        echo "Error: rofi is not installed."
+        exit 1
+    fi
+
+    ALL_FILES=()
+    for dir in "${SEARCH_DIRS[@]}"; do
+        if [ -d "$dir" ]; then
+            while IFS= read -r file; do
+                ALL_FILES+=("$file")
+            done < <(find "$dir" -iname "*.desktop" 2>/dev/null)
+        fi
+    done
+    
+    if [ ${#ALL_FILES[@]} -eq 0 ]; then
+        echo "No shortcuts found."
+        exit 1
+    fi
+
+    SELECTED=$(printf "%s\n" "${ALL_FILES[@]}" | rofi -dmenu -i -p "Add Shortcut" -theme-str 'window {width: 70%;}')
+    
+    if [ -n "$SELECTED" ]; then
+        bash "$0" -a "$SELECTED"
+    else
+        echo "Cancelled."
+    fi
+    exit 0
+fi
 
 # Query logic (-q or --query)
 if [[ $1 == "-q" || $1 == "--query" ]]; then
