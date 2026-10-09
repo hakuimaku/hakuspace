@@ -48,6 +48,9 @@ fi
 # --------------------------------
 HAKU_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 COMMON_DIR="$HAKU_DIR/common"
+WM_DIR="$HAKU_DIR/wm"
+
+NIX_DIR="$HAKU_DIR/nix"
 
 BACKUP_TS="$(date +%Y-%m-%d_%H-%M-%S)"
 BACKUP_DIR="$HOME/Backup_$BACKUP_TS"
@@ -189,42 +192,42 @@ select_window_manager() {
     echo -e "${C_BOLD}[4]${C_RESET} LABWC"
     echo -e "${C_BOLD}[5]${C_RESET} ALL (Niri, Mango, Hyprland, Labwc)"
     echo ""
-    read -r -p ">>> Which Window Manager config do you want to update?: " wm_choice
+    read -r -p ">>> Which Window Manager do you want to install?: " wm_choice
 
     case "$wm_choice" in
-        1) 
+        1)
             SELECTED_WMS=("hyprland")
-            SELECTED_WM_DIRS=("$HAKU_DIR/hyprland")
-            SELECTED_PKG_WMS=("$HAKU_DIR/hyprland/pkg-hyprland.txt")
-            log_info "Selected: Hyprland" 
+            SELECTED_WM_DIRS=("$WM_DIR/hyprland")
+            SELECTED_PKG_WMS=("$WM_DIR/pkg-hyprland.txt")
+            log_info "Selected: Hyprland"
             ;;
-        2) 
+        2)
             SELECTED_WMS=("niri")
-            SELECTED_WM_DIRS=("$HAKU_DIR/niri")
-            SELECTED_PKG_WMS=("$HAKU_DIR/niri/pkg-niri.txt")
-            log_info "Selected: Niri" 
+            SELECTED_WM_DIRS=("$WM_DIR/niri")
+            SELECTED_PKG_WMS=("$WM_DIR/pkg-niri.txt")
+            log_info "Selected: Niri"
             ;;
-        3) 
+        3)
             SELECTED_WMS=("mango")
-            SELECTED_WM_DIRS=("$HAKU_DIR/mango")
-            SELECTED_PKG_WMS=("$HAKU_DIR/mango/pkg-mango.txt")
-            log_info "Selected: Mango" 
+            SELECTED_WM_DIRS=("$WM_DIR/mango")
+            SELECTED_PKG_WMS=("$WM_DIR/pkg-mango.txt")
+            log_info "Selected: Mango"
             ;;
         4)
             SELECTED_WMS=("labwc")
-            SELECTED_WM_DIRS=("$HAKU_DIR/labwc")
-            SELECTED_PKG_WMS=("$HAKU_DIR/labwc/pkg-labwc.txt")
+            SELECTED_WM_DIRS=("$WM_DIR/labwc")
+            SELECTED_PKG_WMS=("$WM_DIR/pkg-labwc.txt")
             log_info "Selected: Labwc"
             ;;
         5)
             SELECTED_WMS=("niri" "mango" "labwc" "hyprland")
-            SELECTED_WM_DIRS=("$HAKU_DIR/niri" "$HAKU_DIR/mango" "$HAKU_DIR/labwc" "$HAKU_DIR/hyprland")
-            SELECTED_PKG_WMS=("$HAKU_DIR/niri/pkg-niri.txt" "$HAKU_DIR/mango/pkg-mango.txt" "$HAKU_DIR/labwc/pkg-labwc.txt" "$HAKU_DIR/hyprland/pkg-hyprland.txt")
+            SELECTED_WM_DIRS=("$WM_DIR/niri" "$WM_DIR/mango" "$WM_DIR/labwc" "$WM_DIR/hyprland")
+            SELECTED_PKG_WMS=("$WM_DIR/pkg-niri.txt" "$WM_DIR/pkg-mango.txt" "$WM_DIR/pkg-labwc.txt" "$WM_DIR/pkg-hyprland.txt")
             log_info "Selected: All Window Managers"
             ;;
-        *) 
-            log_error "Invalid choice. Exiting."
-            exit 1 
+        *)
+            log_error "Invalid choice. Please run again and choose 1, 2, 3, 4 or 5."
+            exit 1
             ;;
     esac
 }
@@ -353,26 +356,25 @@ step_title "1 - UPDATE PACKAGES FROM LISTS"
 PKG_LABELS=()
 PKG_FILES=()
 
-# Dynamically build lists for all selected WMs
-for i in "${!SELECTED_WMS[@]}"; do
-    wm_name="${SELECTED_WMS[$i]}"
-    wm_upper=$(echo "$wm_name" | tr '[:lower:]' '[:upper:]')
-    PKG_LABELS+=("$wm_upper")
-    PKG_FILES+=("${SELECTED_PKG_WMS[$i]}")
-done
-
-# Add common core, service, optional packages
-PKG_LABELS+=("CORE" "SERVICE" "OPTIONAL")
-PKG_FILES+=("$PKG_CORE" "$PKG_SERVICE" "$PKG_OPTIONAL")
-
-echo ">>> Package lists to be updated automatically:"
-for i in "${!PKG_LABELS[@]}"; do
-    echo "  - ${PKG_LABELS[$i]}: ${PKG_FILES[$i]}"
-done
-echo ""
-
 if command -v yay >/dev/null 2>&1; then
-    if ask_yes_no "===> Do you want to install/update all packages now?"; then
+    for i in "${!SELECTED_WMS[@]}"; do
+        wm_name="${SELECTED_WMS[$i]}"
+        wm_upper=$(echo "$wm_name" | tr '[:lower:]' '[:upper:]')
+        PKG_LABELS+=("$wm_upper")
+        PKG_FILES+=("${SELECTED_PKG_WMS[$i]}")
+    done
+
+    # Add common core, service, optional packages
+    PKG_LABELS+=("CORE" "SERVICE" "OPTIONAL")
+    PKG_FILES+=("$PKG_CORE" "$PKG_SERVICE" "$PKG_OPTIONAL")
+
+    echo ">>> Package lists to be updated automatically:"
+    for i in "${!PKG_LABELS[@]}"; do
+        echo "  - ${PKG_LABELS[$i]}: ${PKG_FILES[$i]}"
+    done
+    echo ""
+
+    if ask_yes_no "===> Do you want to install/update ALL packages now?"; then
         for i in "${!PKG_LABELS[@]}"; do
             label="${PKG_LABELS[$i]}"
             file="${PKG_FILES[$i]}"
@@ -383,7 +385,14 @@ if command -v yay >/dev/null 2>&1; then
         log_skip "Skipping package installation/update."
     fi
 else
-    log_error "yay is not installed. Please install yay manually."
+    log_error "yay is not installed. Please install yay first to run this step."
+    log_error "If you're using another distro, install packages manually."
+fi
+
+# Block 1.1: Check NixOS offline installation mode & update NixOS configuration
+if [[ -f "/etc/nixos/hakuspace-config.nix" && grep -q "./hakuspace-config.nix" "/etc/nixos/configuration.nix" ]]; then
+    copy_file "$COMMON_DIR/nixos/hakuspace-config.nix" "/etc/nixos/hakuspace-config.nix"
+    log_ok "NixOS hakuspace-config.nix updated finished."
 fi
 
 # ============================================================================
@@ -395,23 +404,30 @@ SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
 DEST_CONFIG="$HOME/.config"
 
 if ask_yes_no "===> Do you want to update hakuspace configs now?"; then
+
     echo ">>> Deploying Common configs..."
     for folder in "$SOURCE_COMMON_CONFIG"/*/; do
         [[ -d "$folder" ]] || continue
         folder_name="$(basename "$folder")"
+        if [[ "$folder_name" == "hypr" ]]; then
+            continue
+        fi
         copy_dir_content "$SOURCE_COMMON_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
     done
+    copy_file "$SOURCE_COMMON_CONFIG/hypr/hypridle.conf" "$DEST_CONFIG/hypr/hypridle.conf"
+    copy_file "$SOURCE_COMMON_CONFIG/hypr/hyprlock.conf" "$DEST_CONFIG/hypr/hyprlock.conf"
+    copy_file "$SOURCE_COMMON_CONFIG/hypr/hyprlock_tiny.conf" "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
 
     # Loop through selected WMs
     for i in "${!SELECTED_WMS[@]}"; do
         WM_NAME="${SELECTED_WMS[$i]}"
         WM_DIR_PATH="${SELECTED_WM_DIRS[$i]}"
-        SOURCE_WM_CONFIG="$WM_DIR_PATH/config"
+        SOURCE_WM_CONFIG="$WM_DIR_PATH"
 
         if [[ $WM_NAME == "hyprland" ]]; then
             echo ">>> Deploying Hyprland configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG/hypr/config" "$DEST_CONFIG/hypr/config"
-            copy_file "$SOURCE_WM_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
+            copy_dir_content "$SOURCE_WM_CONFIG/config" "$DEST_CONFIG/config"
+            copy_file "$SOURCE_WM_CONFIG/hyprland.lua" "$DEST_CONFIG/hyprland.lua"
         elif [[ $WM_NAME == "niri" ]]; then
             echo ">>> Deploying Niri configs..."
             copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
@@ -461,6 +477,17 @@ fi
 
 # Init HakuSpace Control
 check_control_dir
+
+# NixOS configuration update
+if [[ command -v nixos-rebuild >/dev/null 2>&1 ]]; then
+    if ask_yes_no "===> NixOS configuration updated. Do you want to rebuild NixOS system now?"; then
+        log_info "Rebuilding NixOS system..."
+        sudo nixos-rebuild switch
+        log_ok "NixOS system rebuilt successfully."
+    else
+        log_warn "You chose not to rebuild NixOS system. Please remember to run 'sudo nixos-rebuild switch' later."
+    fi
+fi
 
 # Final message
 echo ""
