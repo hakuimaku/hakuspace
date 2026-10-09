@@ -1,49 +1,64 @@
+// Reference: Caelestia's fastfetch config
 {
     "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
     "logo": {
         "source": "~/Documents/fastfetch.jpg",
         "type": "kitty",
-        "width": 22,
-        "height": 10,
-        "padding": {
-        "top": 2,          // Top padding
-        "left": 2,         // Left padding
-        "right": 2         // Right padding
-        },
-        "color": {
-            "1": "white"
-        }
+        "width": 18,
+        "height": 8,
+        "padding": { "top": 1, "left": 2, "right": 2 },
+        "color": { "1": "white" }
     },
     "display": {
-        "separator": " : ",
-        "color": {
-            "keys": "white",
-            "output": "white",
-            "title": "white"
-        }
+        "separator": "  ",
+        "color": { "keys": "white", "output": "white", "title": "white" },
+        "constants": ["\u001b[37m", "\u001b[37m"]
     },
     "modules": [
-        "title",
-        "separator",
-        "os",
-        "de",
-        "wm",
-
         "break",
-
-        "cpu",
-        "gpu",
-        "disk",
-        "swap",
-        "memory",
-        "localip",
-
-
-        "break",
-        
+        {
+            "type": "custom",
+            "key": "╭───HakuSpace───────────────────────╮"
+        },
+        {
+            "type": "command",
+            "key": "│ {$2}{$1}  user  ",
+            "text": "echo $USER",
+            "format": "{$2}{>22}{$1} │"
+        },
+        {
+            "type": "kernel",
+            "key": "│ {$2}󰌽{$1}  kernel",
+            "format": "{$2}{release>22}{$1} │"
+        },
+        {
+            "type": "os",
+            "key": "│ {$2}{$1}  os    ",
+            "format": "{$2}{name>22}{$1} │"
+        },
+        {
+            "type": "wm",
+            "key": "│ {$2}{$1}  wm    ",
+            "format": "{$2}{>22}{$1} │"
+        },
+        {
+            "type": "packages",
+            "key": "│   pkgs  ",
+            "format": "{all>22} │"
+        },
+        {
+            "type": "disk",
+            "key": "│ {$2}{$1}  disk  ",
+            "folders": "/",
+            "format": "{$2}{>22}{$1} │"
+        },
+        {
+            "type": "custom",
+            "key": "╰───────────────────────────────────╯"
+        },
         {
             "type": "colors",
-            "symbol": "circle"
+            "symbol": "circle",
         }
     ]
 }
