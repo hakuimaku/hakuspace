@@ -213,7 +213,7 @@ Haku Space is designed to balance aesthetic features and resource efficiency. Be
 See the main configuration file at [hakuspace-config.nix](nix/hakuspace-config.nix)
 
 > [!note]
-> My dotfiles do not use `home-manager` feature (because my dots are not only for symlink-based dotfiles managers).
+> My dotfiles do not use `home-manager` feature rn. I'm not currently using NixOS, next time I use it again, I will develop home-manager feature for NixOS. Or you can contribute it :D
 >
 > Manage dotfiles by run `install.sh` and `update.sh` script. `hakuspace-config.nix` just a basic setup packages and programs.
 
@@ -355,6 +355,11 @@ systemctl --user disable swaync.service
 - Just make **Pull Requests** if you want to contribute to this project. I will review and merge them if they are useful for everyone.
 - Tiktok / See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372)
 - Discord: [haku-shell](https://discord.gg/Juuun8sXsN)
+
+| Contributor | Role |
+|-------------|-------------|
+| [hakuimaku](https://github.com/hakuimaku) | The Author |
+| You | ... |
 
 ---
 
