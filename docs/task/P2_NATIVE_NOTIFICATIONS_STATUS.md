@@ -1,6 +1,6 @@
 # P2 Native Notifications — first execution batch
 
-Status: **P2.0 verified; P2.1 verified on one Hyprland output with multi-monitor pending; P2.2 lifecycle skeleton verified.**
+Status: **P2.0 verified; P2.1 verified on Hyprland with a temporary second output; P2.2 lifecycle skeleton verified.**
 P2.3 and later phases have not started. The live Hikai session still uses SwayNC.
 
 ## Baseline and local API
@@ -19,7 +19,9 @@ P2.3 and later phases have not started. The live Hikai session still uses SwayNC
 
 The server is owned by one `NotificationStore` singleton, with one `Instantiator` and `model: 1`, outside all screen variants. It initially advertises plain bodies only; markup, links, images, actions, inline reply and persistence capabilities remain off.
 
-The private-bus probe (`python3 scripts/notification_probe.py`) proved that Quickshell owns `org.freedesktop.Notifications` and one `notify-send` produces one model record. The same probe passed on the real Hyprland session bus after temporarily stopping SwayNC. The service-only probe exited and SwayNC was restored; final `busctl --user status org.freedesktop.Notifications` showed `Comm=swaync`, while `qs -c hakuspace ipc call shell ping` returned `pong`. This session has one connected monitor (`hyprctl monitors -j`), so the multi-monitor event-count acceptance remains untested.
+The private-bus probe (`python3 scripts/notification_probe.py`) proved that Quickshell owns `org.freedesktop.Notifications` and one `notify-send` produces one model record. The same probe passed on the real Hyprland session bus after temporarily stopping SwayNC. The service-only probe exited and SwayNC was restored; final `busctl --user status org.freedesktop.Notifications` showed `Comm=swaync`, while `qs -c hakuspace ipc call shell ping` returned `pong`.
+
+Hyprland normally has one physical output here. A temporary `HAKU-P2-TEST` headless output made `Quickshell.screens.length == 2` in the probe; one send still produced one record, and replacement/reload tests passed. The output was removed, leaving only `eDP-1`. Physical two-monitor placement remains a later UI test.
 
 During development, the deployed Hikai process has `QS_ALLOW_SWAYNC=1`. `NotificationStore` does not instantiate its server when that flag is set. This preserves the notification path until the P2.7 cutover. The probe process runs without the flag and tests native ownership. To repeat the real-session procedure, stop SwayNC, run `python3 scripts/notification_probe.py --inner`, then start `swaync` in a detached session; always verify the final D-Bus owner. The default probe uses a private bus and does not touch the desktop daemon.
 
@@ -35,4 +37,4 @@ The probe passed: two independent notifications, replacement without count infla
 
 ## Phase boundary
 
-No popup, Notification Center, `notif` IPC, `notif.sh` change, or SwayNC cutover was made. P2.3 is held until the P2.1 multi-monitor acceptance can be tested, as required by the execution plan. Niri, MangoWM, fractional scale and visual input behavior remain unverified.
+No popup, Notification Center, `notif` IPC, `notif.sh` change, or SwayNC cutover was made. P2.3 may start after this first-batch boundary. Niri, MangoWM, fractional scale and visual input behavior remain unverified.

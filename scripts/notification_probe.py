@@ -30,10 +30,15 @@ ShellRoot {
         property int nextKey: 1
         onLoaded: NotificationStore.start(notificationMemory)
     }
+    Variants {
+        model: Quickshell.screens
+        QtObject { required property var modelData }
+    }
     IpcHandler {
         target: "notificationprobe"
         function state(): string {
-            return JSON.stringify({count: NotificationStore.count,
+            return JSON.stringify({screens: Quickshell.screens.length,
+                                   count: NotificationStore.count,
                                    records: NotificationStore.records})
         }
         function dismiss(key: int) { NotificationStore.dismiss(key) }
@@ -83,8 +88,10 @@ def run_inner():
             wait_for(lambda: str(qs.pid) in command(
                 "busctl", "--user", "status", "org.freedesktop.Notifications"
             ), "Quickshell notification ownership")
-            assert state() == {"count": 0, "records": []}
-            print("PASS ownership and empty model")
+            initial = state()
+            assert initial["count"] == 0 and initial["records"] == []
+            assert initial["screens"] >= int(os.environ.get("HAKU_P2_EXPECT_SCREENS", "1"))
+            print(f"PASS ownership and empty model on {initial['screens']} screen(s)")
 
             first = int(command("notify-send", "-p", "-t", "0", "P2 first", "one"))
             second = int(command("notify-send", "-p", "-t", "0", "P2 second", "two"))
