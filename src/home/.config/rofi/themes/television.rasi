@@ -12,6 +12,7 @@
 
 /* ===== GLOBAL VARIABLES ===== */
 * {
+    img:                 url("../../.cache/walpaper_wide_gen.jpg", width);
     background:          rgba(0, 0, 0, 0.7);
     foreground:          #dfdfdf;
     background-color:    transparent;
@@ -50,7 +51,7 @@ imagebox {
     margin:                      0 0 20px;
     padding:                     0 0 20% 0;
     border-radius:               12px;
-    background-image:            url("../../.cache/walpaper_preview.jpg", width);
+    background-image:            @img;
     children:                    [ inputbar ];
 }
 
@@ -78,15 +79,15 @@ entry {
 mode-switcher {
     orientation:         vertical;
     spacing:             10px;
-    border:              0 5px 0 0;
+    border:              4px;
     border-color:        @accent;
-    border-radius:       0;
+    border-radius:       12px;
 }
 
 button {
     padding:             8px 14px;
     text-color:          @accent;
-    border-radius:       12px 0 0 12px;
+    border-radius:       0;
 }
 
 button selected {
@@ -100,6 +101,7 @@ listview {
     cycle:               true;
     dynamic:             true;
     layout:              vertical;
+    margin:              0 0 0 10px;
 }
 
 /* ===== ELEMENTS ===== */
@@ -123,7 +125,7 @@ element-text {
 /* ===== ELEMENT STATES ===== */
 element selected {
     background-color:    @accent;
-    border-radius:       0 12px 12px 0;
+    border-radius:       12px;
 }
 
 element-text selected {
