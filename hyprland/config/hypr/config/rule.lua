@@ -121,13 +121,19 @@ local swayncAnimation = hl.layer_rule({
 -------------------------------------------------
 ----------- Floating window for apps ------------
 -------------------------------------------------
-local floatingApps = hl.window_rule({
-    name  = "floating-apps",
+local floatingCenter = hl.window_rule({
+    name  = "floating-center",
     match = { class = "imv|mpv|org.gnome.Calculator" },
 
     float = true,
-    center = true,
     size  = "1280 720",
+})
+
+local floatingApps = hl.window_rule({
+    name  = "floating-apps",
+    match = { title = "Picture-in-Picture" },
+
+    float = true,
 })
 
 -- Browser popups like save, etc. should usually be floating
@@ -199,5 +205,6 @@ waybarAnimation:set_enabled(true)
 swayncAnimation:set_enabled(true)
 
 -- Floating window rules
-floatingApps:set_enabled(true) -- Floating certain apps (mpv, imv, calculator)
+floatingCenter:set_enabled(true) -- Floating Centered apps (mpv, imv, calculator)
+floatingApps:set_enabled(true) -- Floating apps (pavucontrol)
 floatingXdgPortal:set_enabled(true) -- Floating xdg-desktop-portal-gtk (save, open, etc.)
