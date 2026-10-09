@@ -6,6 +6,7 @@
 source "$HOME/hakuspace-control/main_setting.sh"
 
 WAYBAR_DIR="$HOME/.config/waybar"
+USER_WAYBAR_DIR="$HOME/hakuspace-control/waybar"
 STATE_FILE="$HOME/.local/state/haku_theme/waybar_current_mode"
 CURRENT_STATE="top"
 WAYBAR_MODES_DEAULT=("top" "neon" "coredge" "full" "minimal" "left")
@@ -24,10 +25,14 @@ fi
 # Link selected mode files to main config directory
 link_mode() {
     local mode="$1"
-    local target_dir="$WAYBAR_DIR/$mode"
+    local target_dir=""
 
-    if [[ ! -d "$target_dir" ]]; then
-        notify-send "Waybar Error" "Mode directory not found: $target_dir"
+    if [[ -d "$WAYBAR_DIR/$mode" ]]; then
+        target_dir="$WAYBAR_DIR/$mode"
+    elif [[ -d "$USER_WAYBAR_DIR/$mode" ]]; then
+        target_dir="$USER_WAYBAR_DIR/$mode"
+    else
+        notify-send "Waybar Error" "Mode directory not found: $mode"
         exit 1
     fi
 
@@ -36,7 +41,6 @@ link_mode() {
     echo "$mode" > "$STATE_FILE"
     CURRENT_STATE="$mode"
 }
-
 # Start or restart Waybar
 restart_waybar() {
     if [[ "$XDG_CURRENT_DESKTOP" == "niri" ]]; then
