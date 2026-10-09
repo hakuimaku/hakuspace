@@ -59,7 +59,7 @@ window-rule {
     default-column-width { proportion 0.65; }
 }
 
-window-rule {
+/-window-rule {
     match app-id=r#"thunar"#
     match title="^Properties$"
     
