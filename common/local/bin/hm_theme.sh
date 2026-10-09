@@ -15,10 +15,15 @@ if [[ $# -eq 0 ]]; then
     DOCKBAR_TEXT="OFF"
     [[ "$DOCKBAR_STATUS" == "1" ]] && DOCKBAR_TEXT="ON"
 
+    DESKTOP_ICONS_STATUS=$(cat "$HOME/.local/state/haku_theme/desktop_icons_state" 2>/dev/null || echo "0")
+    DESKTOP_ICONS_TEXT="OFF"
+    [[ "$DESKTOP_ICONS_STATUS" == "1" ]] && DESKTOP_ICONS_TEXT="ON"
+
     cat <<EOF
 󰝚  Cava Underbar ($CAVA_TEXT)
   Auto Random Wallpaper ($WALL_TEXT)
 󱂩  Toggle Dockbar ($DOCKBAR_TEXT)
+  Show Desktop Icons ($DESKTOP_ICONS_TEXT)
 󰏜  Change Wallpaper
 󱜏  Change Lively Wallpaper
 󱛹  Kill Lively Wallpaper
@@ -34,6 +39,7 @@ case "$chosen" in
     *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh --toggle ;;
     *"Auto Random Wallpaper"*) spawn $HOME/.local/bin/random_wallpaper.sh --toggle ;;
     *"Toggle Dockbar"*) spawn $HOME/.local/bin/dockbar_manager.sh --toggle ;;
+    *"Show Desktop Icons"*) spawn $HOME/.local/bin/desktop_icons_manager.sh --toggle ;;
     *"Switch Waybar Theme"*) spawn $HOME/.local/bin/waybar_manager.sh --select ;;
     *"Switch Rofi Theme"*) spawn $HOME/.local/bin/rofi_theme_switcher.sh ;;
     *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
