@@ -1618,11 +1618,7 @@ class DesktopLayout(Gtk.Fixed):
         cw_item.connect("activate", on_cw)
         space_menu.append(cw_item)
         
-        lw_item = Gtk.MenuItem(label="Change Lively Wallpaper")
-        def on_lw(w):
-            subprocess.Popen([os.path.expanduser("~/.local/bin/wallpaper_video_select.sh")])
-        lw_item.connect("activate", on_lw)
-        space_menu.append(lw_item)
+
         
         space_menu.append(Gtk.SeparatorMenuItem())
         

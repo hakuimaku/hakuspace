@@ -71,8 +71,7 @@ case "$chosen" in
     *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh ;;
     *"Auto Random Wallpaper"*) spawn $HOME/.local/bin/random_wallpaper.sh --toggle ;;
     *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
-    *"Change Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh ;;
-    *"Kill Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh --exit ;;
+
 esac
 
 exit 0

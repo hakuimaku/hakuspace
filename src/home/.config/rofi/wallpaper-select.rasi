@@ -50,7 +50,7 @@ content-area {
 /* ===== INPUT BAR ===== */
 inputbar {
     orientation: horizontal;
-    children: [ prompt, entry ];
+    children: [ prompt, entry, mode-switcher ];
 }
 
 prompt {
@@ -68,6 +68,25 @@ entry {
     placeholder-color:   rgba(223, 223, 223, 0.4);
     background-color:    rgba(255, 255, 255, 0.1);
     border-radius:       0 12px 12px 0;
+}
+
+/* ===== MODE SWITCHER ===== */
+mode-switcher {
+    orientation:         horizontal;
+    width:               500px;
+    spacing:             10px;
+    border-radius:       0;
+}
+
+button {
+    padding:             8px 14px;
+    text-color:          @accent;
+    border-radius:       12px;
+}
+
+button selected {
+    background-color:    @accent;
+    text-color:          @background;
 }
 
 /* ===== LISTVIEW ===== */
