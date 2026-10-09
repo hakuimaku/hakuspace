@@ -1,7 +1,5 @@
 <div align="center">
 
-<img width="80" height="80" alt="haku" src="https://github.com/user-attachments/assets/fc36600f-33ae-43ac-9621-3850f97da6f6" />
-
 # Haku Space
 Arch Linux dotfiles for Hyprland / Niri / MangoWM
 
