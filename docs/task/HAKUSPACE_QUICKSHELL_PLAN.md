@@ -289,21 +289,47 @@ Current code:
 
 `QUICKSHELL_TESTING.md` still says “Hyprland only”; fix that during P0 after Niri runtime verification.
 
-### 3.6 Tray — **DONE core / polish pending**
+### 3.6 Tray — **DONE icon/activation baseline / custom QML menu PLANNED**
 
-Implemented:
+Current implementation:
 
 - native `SystemTray.items`;
 - icon loading;
-- left activation;
-- right-click native menu / secondary activation;
+- left click currently always calls `activate()`;
+- right click calls the platform/native menu through `display()` when `hasMenu`, otherwise `secondaryActivate()`;
 - scroll forwarding.
 
-Pending polish:
+The next Tray direction is **not** to keep polishing the platform menu. Build a native HakuSpace QML renderer for tray menus, while preserving the platform path as a compatibility fallback.
 
-- middle-click policy if desired;
-- verify native menu placement at fractional scaling and multi-monitor edges;
-- decide whether themed QS menus are worth replacing native tray menus. This is not a parity blocker.
+Quickshell 0.3.1 exposes the primitives needed for this design:
+
+- `SystemTrayItem.menu` is a menu handle consumable by `QsMenuOpener`;
+- `SystemTrayItem.onlyMenu` identifies items whose primary action is the menu;
+- `QsMenuOpener { menu: item.menu }` exposes the menu's children as `ObjectModel<QsMenuEntry>`;
+- `QsMenuEntry` provides `text`, `icon`, `enabled`, `isSeparator`, `buttonType`, `checkState`, `hasChildren`, and `triggered()`;
+- submenu entries can be opened recursively with another `QsMenuOpener`.
+
+Target UX:
+
+- render DBusMenu content in HakuSpace QML instead of handing normal menus to the platform renderer;
+- use the same Flare geometry/content stack as tooltips so a tray hover can morph into its menu instead of spawning an unrelated rectangular popup;
+- for a right-edge tray item, preserve the visual attachment to the bar/right edge and keep the flare seam correct at fractional scale;
+- support text, icons, disabled rows, separators, checkbox/radio state, nested submenus, and trigger actions;
+- menu model changes must update without closing/reopening the menu where Quickshell provides change notifications.
+
+Primary runtime acceptance targets are `nm-applet --indicator` and `blueman-applet`, because their menus exercise dynamic DBusMenu content such as network/device lists. **VERIFY on the deployed machine** that both arrive through `SystemTrayItem.menu`; do not hard-code app ids or app-specific menu parsing.
+
+Important constraints / VERIFY items:
+
+1. **Height and scrolling.** `TopBar.tipAreaH` is currently 160 px and `TooltipLayer` uses that height. Wi-Fi/Bluetooth menus can exceed it. Short menus may reuse the existing `FlareHost`; long menus need a clipped/scrollable body and may need the reusable `FlareWindow`/large-panel host planned in P3.0 rather than enlarging the bar window dynamically.
+2. **Outside click and keyboard.** The current bar/tooltip surface is not a complete menu interaction window: it should not be assumed to receive keyboard focus or clicks outside its input region. A full menu implementation therefore needs a compositor-safe overlay/input strategy. Prefer one transparent screen-sized overlay or an equivalent Quickshell window/input-mask design that can close on outside click and route keyboard navigation. `HyprlandFocusGrab` may be used only as an optional Hyprland enhancement, never as the cross-WM contract.
+3. **`onlyMenu` left click.** If `SystemTrayItem.onlyMenu` is true, left click must open the QML menu instead of calling a no-op `activate()`. Normal items keep their primary activation semantics unless the tray protocol/app behavior proves otherwise.
+4. **Fallback behavior.** Keep a compatibility path for items whose menu cannot be rendered reliably. If no usable custom menu is available, fall back to the protocol actions already exposed by Quickshell (`display()`, `secondaryActivate()`, and normal `activate()` as appropriate). **VERIFY** how Quickshell handles StatusNotifierItem implementations that expose only `ContextMenu`; do not assume that such items are represented as a usable `menu` handle.
+5. **Menu icons.** `QsMenuEntry.icon` is documented as an image-source URL, but raw/pixmap-backed tray menu icons still need runtime verification with real applications. Mark unsupported icon forms as a rendering fallback, not a menu failure.
+6. **Live DBusMenu updates.** Treat automatic live updates as the expected path, but test it explicitly with changing Wi-Fi/device lists. Quickshell's DBusMenu API also exposes layout refresh hooks for providers that fail to update correctly; use manual refresh only for reproduced compatibility cases, not as a polling loop.
+7. **Item disappearance/reload.** Closing/removing a tray item while its menu is open must tear down menu/submenu state cleanly and must not leave a stuck flare, stale model object, focus grab, or overlay.
+
+This is a visual/interaction improvement, not a reason to rewrite `SystemTray.items` ownership. Keep tray discovery in Quickshell and make the custom renderer a generic `QsMenuEntry` view reusable by Tray first and potentially by other DBusMenu surfaces later.
 
 ### 3.7 Settings group — **IMPLEMENTED / resource hardening pending**
 
@@ -470,7 +496,7 @@ Priority order:
 ```text
 P0 Freeze/stabilize current baseline
   ↓
-P1 Top-bar + flare hardening
+P1 Top-bar + flare + Tray QML-menu hardening
   ↓
 P2 Native notifications
   ↓
@@ -650,16 +676,78 @@ Requirements:
 - no separate popup window for a small tooltip calendar;
 - width fits flare bounds and fractional scale.
 
-### P1.4 Tray polish
+### P1.4 Tray QML menu renderer — model + short-menu path
 
-Verify native menus first. Add only what is demonstrably missing:
+Replace the current "native menu is good enough" assumption with a staged custom-renderer plan. The goal is a generic QML menu view backed by `QsMenuOpener`, with platform/native rendering retained as fallback.
 
-- middle-click if a real tray use case requires it;
-- menu placement at screen edges;
-- fractional-scale/multi-monitor coordinates;
-- graceful behavior when an item disappears while menu/tooltip is active.
+**Stage A — protocol/model probe before styling**
 
-Do not replace native tray menus just to make them themed.
+Build a minimal probe/dev surface that opens `SystemTrayItem.menu` through `QsMenuOpener` and records/visually exposes:
+
+- top-level `children`;
+- text/icon/enabled/separator state;
+- checkbox/radio `buttonType` + `checkState`;
+- `hasChildren` and recursive submenu contents;
+- `triggered()` behavior;
+- `onlyMenu`;
+- model changes while the menu stays open.
+
+Probe at minimum:
+
+- `nm-applet --indicator`;
+- `blueman-applet`;
+- one ordinary application tray menu;
+- one item with no menu if available;
+- one app suspected to expose only `ContextMenu` if available.
+
+Do not proceed by app-specific heuristics. Record any Quickshell/upstream incompatibility as a capability/fallback case.
+
+**Stage B — reusable QML menu content**
+
+Create a generic menu content component, separate from Tray ownership, capable of rendering:
+
+- normal action rows;
+- icon + label;
+- disabled state;
+- separators;
+- checkbox and radio indicators;
+- submenu affordance;
+- nested `QsMenuOpener`;
+- bounded width and text elision/wrap policy;
+- vertical scrolling when content exceeds the host's safe height.
+
+The renderer must consume `QsMenuEntry` state directly rather than copying the whole menu into a second stale JS model.
+
+**Stage C — Flare integration for short menus**
+
+For menus that fit the current top-bar interaction surface:
+
+- render the menu through the existing `FlareHost`/Flare geometry path;
+- preserve the tray item's anchor and right-edge hugging;
+- morph tooltip → menu when the same tray target owns both states;
+- suppress the tooltip while the menu is open;
+- close cleanly if the tray item disappears or the bar hides;
+- verify 1.0x, 1.25x, and 1.5x scale plus multi-monitor right edges.
+
+Do **not** resize the TopBar window to accommodate long menus. Long-menu input/window handling is completed with the reusable large-panel/overlay primitive in P3.0.
+
+**Click policy**
+
+- left click + `onlyMenu == true` → open the QML menu;
+- left click + normal item → `activate()`;
+- right click + usable menu → open the QML menu;
+- custom renderer unsupported/fails → platform `display()` fallback where available;
+- no menu → preserve a tested `secondaryActivate()`/activation fallback;
+- middle-click behavior remains protocol/app dependent and is added only after a real use case is reproduced.
+
+**VERIFY before closing P1.4**
+
+- raw/pixmap menu icon rendering;
+- ContextMenu-only tray items;
+- live Wi-Fi/Bluetooth menu mutations without stale rows;
+- checkbox/radio state updating after trigger;
+- submenu lifecycle and back/hover/click policy;
+- item disappearance and Quickshell reload while menu is open.
 
 ### P1.5 Polling/resource audit
 
@@ -687,6 +775,10 @@ Decision:
 - no stuck tooltip when bar/target hides;
 - geometry tests cover the full Flare spec contract;
 - calendar is functional;
+- tray `QsMenuOpener` probe is documented against real tray applications;
+- short custom tray menus render text/icons/state/separators/submenus without stale copied models;
+- `onlyMenu` left-click semantics are correct;
+- unsupported/custom-menu edge cases fall back without breaking tray activation;
 - idle resource numbers are recorded;
 - no new poller is introduced per screen unnecessarily.
 
@@ -804,6 +896,19 @@ Requirements:
 
 Also finish the opt-in flare demo and `docs/flare.md` as the acceptance example for this reusable primitive.
 
+#### P3.0a Tray long-menu / interaction overlay
+
+Use the same reusable window/input primitive to finish the cases that cannot safely live inside the 160 px tooltip area:
+
+- tall DBusMenu content with a bounded, scrollable viewport;
+- transparent outside-click capture that closes menu/submenu state without blocking the rest of the desktop after close;
+- keyboard focus and navigation policy (at minimum close/escape, directional/submenu navigation where implemented, activate, and scroll);
+- correct ownership when switching between tray items or monitors;
+- no Hyprland-only focus dependency: any `HyprlandFocusGrab` support is an optimization behind a generic behavior contract;
+- tooltip → tray menu → submenu transitions reuse Flare geometry/state rather than opening unrelated platform popups.
+
+The overlay may be shared by Launcher/HakuMenu/Power/other large panels, but Tray must not create a second incompatible full-screen click-catcher. Define one ownership/input model and reuse it.
+
 ### P3.1 Launcher
 
 Implement `modules/launcher/` with at least:
@@ -885,6 +990,8 @@ Do not copy rofi pixel semantics blindly if they conflict with the native shell 
 - wallpaper picker works;
 - clipboard selection works;
 - record/shell/theme flows no longer fail because rofi is forbidden in Hikai;
+- long tray menus scroll correctly, close on outside click/Escape, and do not require Hyprland-specific focus behavior;
+- tray menu ownership cannot conflict with Launcher/HakuMenu/Power overlay ownership;
 - no duplicate panel can remain open through `UiState`;
 - Classic paths remain unchanged from the user's perspective.
 
