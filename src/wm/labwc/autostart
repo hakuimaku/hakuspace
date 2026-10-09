@@ -15,5 +15,4 @@ fcitx5 -d >/dev/null 2>&1 &
 (sleep 0.2; ~/.local/bin/waybar_manager.sh >/dev/null 2>&1 &)
 (sleep 0.2; ~/.local/bin/dockbar_manager.sh --startup >/dev/null 2>&1 &)
 (sleep 0.2; ~/.local/bin/desktop_icons_manager.sh --startup >/dev/null 2>&1 &)
-(sleep 0.2; ~/.local/bin/idle_manager.sh --startup >/dev/null 2>&1 &)
 ~/.local/bin/welcome.sh
