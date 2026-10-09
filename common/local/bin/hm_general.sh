@@ -5,7 +5,7 @@ spawn() { ( "$@" & ) >/dev/null 2>&1; disown; }
 if [[ $# -eq 0 ]]; then
     cat <<'EOF'
   App Menu
-󰨞  Visual Studio Code
+  Code Editor
   Browser
   Screen Record
   Local Send
@@ -18,7 +18,7 @@ fi
 chosen="$*"
 case "$chosen" in
     *"App Menu"*) spawn rofi -show drun ;;
-    *"Visual Studio Code"*) spawn code ;;
+    *"Code Editor"*) spawn code ;;
     *"Browser"*) spawn zen-browser ;;
     *"Screen Record"*) spawn $HOME/.local/bin/record.sh ;;
     *"Local Send"*) spawn localsend ;;
