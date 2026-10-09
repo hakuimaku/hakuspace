@@ -47,3 +47,6 @@ Whenever an app needs root permissions (like GParted or a system updater), it ne
 A small quality-of-life script.
 - **What it does:** If `WELCOME_MSG=true` is set in your `~/hakucfg/setting.sh`, it waits two seconds after you log in and sends a friendly "Have a good day" system notification to greet you.
 
+
+---
+⬅️ **Previous:** [Theming Engine](theme.md) | **Next:** [Utilities](util.md) ➡️

@@ -33,3 +33,6 @@ HakuSpace supports four different Window Managers (Hyprland, Niri, MangoWM, and 
   - On Labwc, it executes `labwc --reconfigure`.
 - **Why it matters:** Because of this library, other scripts (like theme switchers or setting toggles) don't need to care about which Window Manager you are using. They just call `reload_config.sh` and trust that the system will handle it correctly!
 
+
+---
+⬅️ **Previous:** [Management](../management.md) | **Next:** [Theming Engine](theme.md) ➡️

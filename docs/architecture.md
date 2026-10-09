@@ -72,4 +72,14 @@ HakuSpace uses a **Hybrid System**: you can choose between **Deep Symlinking** o
   - **Broken Symlinks Scan:** Checks your `~/.config` and `~/.local/bin` for symlinks that point to nowhere (because the target file was deleted or moved), and highlights them in red.
   - **Overwritten Files Scan:** Detects files that should be symlinks managed by HakuSpace, but were somehow turned into real files (usually because your text editor broke the symlink when saving). The doctor points them out and tells you to run `update.sh` to fix them.
 
-Read more: [Management](management.md) for details on how dotfiles are deployed and kept safe!
+## Dive Deeper (Table of Contents)
+
+To fully understand how HakuSpace works under the hood, read through our detailed documentation in the following order:
+
+1. **[Management](management.md)**: Understand the Hybrid Deployment system (Symlink vs Copy) and how your configurations are safely deployed.
+2. **[Core Libraries](core/lib.md)**: The foundational state management and Window Manager abstraction scripts.
+3. **[Theming Engine](core/theme.md)**: How HakuSpace magically extracts colors from your wallpaper and applies them live.
+4. **[System Management](core/sys.md)**: The scripts controlling lock screens, smart idle prevention, and safe session exits.
+5. **[Utilities](core/util.md)**: Your daily toolbelt (screenshots, nightlight, desktop widgets).
+6. **[Haku Menu](core/menu.md)**: The modular, multi-tabbed Rofi launcher.
+7. **[Mini-Apps](core/app.md)**: The custom native apps built for HakuSpace (Dockbar, Desktop Icons, Cava Underbar).

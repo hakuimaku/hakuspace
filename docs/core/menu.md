@@ -32,3 +32,6 @@ This tab acts as a bridge to both your system hardware settings and HakuSpace's 
 - **What it does:** It gives you quick access to essential GUI tools like `nm-connection-editor` (Wifi), `blueman-manager` (Bluetooth), `gparted` (Disk Manager), `ncdu` (Storage Manager), and `pavucontrol` (Audio Control).
 - **HakuSpace Configs:** It also provides toggles specifically for the Dockbar (Auto-hide, Exclusive mode, Icon Size), and offers direct shortcuts to open your `~/hakucfg` folder or edit your custom `general-menu.sh` script in VS Code. Like the Theme tab, it reads local configuration variables to dynamically display the current states of these settings.
 
+
+---
+⬅️ **Previous:** [Utilities](util.md) | **Next:** [Mini-Apps](app.md) ➡️

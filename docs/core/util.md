@@ -56,3 +56,6 @@ The control center for your status bar.
 A desktop shortcut generator.
 - **What it does:** Scans common system directories (like `/usr/share/applications` and your Flatpak/Snap folders) for `.desktop` files. You can use it to query available system apps (`-q`) or quickly copy an app's shortcut (`-a`) to your `~/Desktop` directory. Since HakuSpace has a built-in desktop icon renderer, this gives you functional app icons right on your wallpaper!
 
+
+---
+⬅️ **Previous:** [System Management](sys.md) | **Next:** [Haku Menu](menu.md) ➡️

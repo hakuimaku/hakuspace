@@ -42,3 +42,6 @@ We've designed this system to be highly customizable. If you want to tweak how i
 1. **Disable Auto-Theming:** If you prefer a static color scheme that doesn't change with your wallpaper, simply open `~/hakucfg/setting.sh` and set `ACCENT_COLOR_BASED_ON_WALLPAPER=false`.
 2. **Change the Extraction Mode:** Don't like the vivid colors? Open `~/hakucfg/setting.sh` and change `ACCENT_COLOR_MODE` to `dominant`, `brightest`, or `saturated` to suit your taste.
 3. **Pick a Color Manually:** Sometimes you just want to choose the color yourself. You can run the `accent_color_picker.sh` script to open a graphical color picker. Whatever color you select there will immediately be pushed through `gen_style.sh` and applied to your entire system!
+
+---
+⬅️ **Previous:** [Core Libraries](lib.md) | **Next:** [System Management](sys.md) ➡️
