@@ -26,7 +26,7 @@ M2 module status (as built):
 | Module | Status | Notes |
 |---|---|---|
 | Logo | Done | Click → `UiState.toggle("hakumenu")`; no panel consumes it yet |
-| Workspaces | **Rework planned** | Morphing "worm" indicator; Hyprland + Niri only, known bugs. Multi-WM rework (4 WM, per-slot click + tooltip): `M2_WORKSPACES_PLAN.md` |
+| Workspaces | Done (Hyprland, Niri, Mango; Labwc hidden due to upstream crash) | Morphing "worm" indicator. Multi-WM support with independent tooltip cells. |
 | WindowTitle | Done (not in original plan) | Shows class + title; **Hyprland only** (data from `WM`) |
 | Tray | Done | `SystemTray` + `IconImage`; right-click uses `item.display()` |
 | Settings group | Done | Backlight / volume / battery in one accent pill + power-profile module; no drawer |
@@ -303,12 +303,12 @@ Per `quickshell-testing.md`. Across **Hyprland, Niri, Mango, Labwc**, both switc
 
 ## Appendix C — Observations (code today; not changed)
 
-1. **`WM.activate()` compares `Env.wmName === "hyprland"`** (raw value) while the rest of `WM.qml` uses the lower-cased `_wm`. On Hyprland `XDG_CURRENT_DESKTOP` is `Hyprland` (set in `hypr/config/environment.lua`), so by reading the code the click/scroll on workspaces would not dispatch on Hyprland (Niri's value is already lower-case). **VERIFY** on the machine; likely fix: compare `_wm`.
+1. **(Fixed in M2.W)** `WM.activate()` comparing `Env.wmName` has been replaced by backend-specific implementations.
 2. **`HAnimation` curves have 4 numbers** (`[0.38, 1.21, 0.22, 1.0]`, `moduleCurve`, …). Qt's `easing.bezierCurve` takes control points plus the end point (groups of 6: `…, 1, 1`). **VERIFY** that the curves are actually applied (they may fall back silently).
 3. **Pollers are not gated by visibility:** `SettingsGroup` runs a 2 s `Timer` + `Process` (sysfs brightness, `wpctl`, `powerprofilesctl`) permanently; `RecorderGroup` runs a 1 s `bash` poll permanently. The M2 plan asked for polling only when needed (`SysStats` is the only ref-counted poller, and it is not mounted).
 4. **Tray middle-click** is not handled (`TopModule` accepts left/right buttons only); tray menus use the native `display()`.
 5. **`TopModule` contains hard-coded colours** (`#ff3333` urgent, `#000000` accent-hover, `#ffffff`); `RoundedScreen` fills with `#000000`.
 6. **Tooltip max width is 400** (`TooltipLayer`), not 360 as in the original spec.
 7. **`haku_pick.sh` ignores `--width/--height/--selected/--lines` in Hikai** (they are sent in the JSON but the picker does not use them).
-8. **`Env.wmName` defaults to `"Hyprland"`** when `XDG_CURRENT_DESKTOP` is empty.
+8. **(Fixed in M2.W)** `Env.wmName` defaults are bypassed since WM backend logic relies on `HYPRLAND_INSTANCE_SIGNATURE` and others directly.
 9. **`hm_theme.sh`** reads `shell_backend` directly instead of sourcing the lib (cosmetic).
