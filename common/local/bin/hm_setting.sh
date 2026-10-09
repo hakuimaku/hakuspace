@@ -9,6 +9,7 @@ if [[ $# -eq 0 ]]; then
   Disk Manager
 󰋊  Storage Manager
 󰓃  Audio Control
+󱁤  Open Overall Configuration
   HakuMenu General Tab
   HakuMenu Theme Tab
   HakuMenu Setting Tab
@@ -23,6 +24,7 @@ case "$chosen" in
     *"Disk Manager"*) spawn gparted ;;
     *"Storage Manager"*) spawn kitty --class ncdu -e sudo ncdu / ;;
     *"Audio Control"*) spawn pavucontrol ;;
+    *"Open Overall Configuration"*) spawn $HOME/.local/bin/open_config.sh ;;
     *"HakuMenu General Tab"*) spawn code $HOME/.local/bin/hm_general.sh ;;
     *"HakuMenu Theme Tab"*) spawn code $HOME/.local/bin/hm_theme.sh ;;
     *"HakuMenu Setting Tab"*) spawn code $HOME/.local/bin/hm_setting.sh ;;

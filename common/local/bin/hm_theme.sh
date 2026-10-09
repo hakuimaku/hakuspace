@@ -14,10 +14,11 @@ if [[ $# -eq 0 ]]; then
     cat <<EOF
   Cava Underbar ($CAVA_TEXT)
 󰁪  Auto Random Wallpaper ($WALL_TEXT)
+  Waybar Mode Select
+󱂩  Toggle Dockbar
 󰸉  Change Wallpaper
   Change Lively Wallpaper
 󰃾  Kill Lively Wallpaper
-  Waybar Mode Select
   Change Theme (Font/Size/Color)
 EOF
     exit 0
@@ -27,10 +28,11 @@ chosen="$*"
 case "$chosen" in
     *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh --toggle ;;
     *"Auto Random Wallpaper"*) spawn $HOME/.local/bin/random_wallpaper.sh --toggle ;;
+    *"Waybar Mode Select"*) spawn $HOME/.local/bin/waybar_manager.sh --select ;;
+    *"Toggle Dockbar"*) spawn $HOME/.local/bin/dockbar_manager.sh --toggle ;;
     *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
     *"Change Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh ;;
     *"Kill Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh --exit ;;
-    *"Waybar Mode Select"*) spawn $HOME/.local/bin/waybar_manager.sh --select ;;
     *"Change Theme"*) spawn $HOME/.local/bin/change_theme.sh ;;
 esac
 
