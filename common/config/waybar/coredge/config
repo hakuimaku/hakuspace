@@ -172,7 +172,11 @@
         "homogeneous": true,
         "justify": "center",
         "ignore-list": [
-            "cavaunderbar"
+            "cavaunderbar",
+            "seycmd",
+            "seycava",
+            "seylavat",
+            "seyclock"
         ]
     },
 
