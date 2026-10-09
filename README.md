@@ -36,23 +36,27 @@ Recommend Monitor eDP-1, 1080p (because in hyprland.lua, Haku Space I use). You 
 <h2 style="color:#1abc9c;">🚀 Installation</h2>
 
 <h3 style="color:#ff8c00;">Step 1: Clone the Repository</h3>
+
 ```bash
 cd ~
 git clone https://github.com/hakuimaku/hakuspace.git
 ```
 
 <h3 style="color:#ff8c00;">Step 2: Navigate to Directory</h3>
+
 ```bash
 cd hakuspace
 ```
 
 <h3 style="color:#ff8c00;">Step 3: Run Installer</h3>
 > ⚠️ **Review the script carefully before running**
+
 ```bash
 ./install.sh
 ```
 
 <h3 style="color:#ff8c00;">Step 4: Reboot</h3>
+
 ```bash
 reboot
 ```
