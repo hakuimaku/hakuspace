@@ -6,11 +6,15 @@
 
 # 🌆 HakuSpace - Dotfiles for Hyprland and Niri
 
+*Haku, the ultimate anchor of your soul, a treasure so irreplaceable that the Abyss itself will tear apart anyone who dares to touch it - Made in Abyss*
+
 [![Hyprland](https://img.shields.io/badge/Hyprland-orange)](https://github.com/hyprwm/hyprland) [![Niri](https://img.shields.io/badge/Niri-purple)](https://github.com/niri-wm/niri) [![Arch Linux](https://img.shields.io/badge/Arch-Linux-1793D1?logo=arch-linux&logoColor=white)](https://archlinux.org) [![Dotfiles](https://img.shields.io/badge/Dotfiles-HakuSpace-ff69b4)](https://github.com/hakuimaku/hakuspace) [![License: MIT](https://img.shields.io/badge/License-MIT-green)](https://opensource.org/licenses/MIT)
 
 **Welcome to Haku Space! Simple — Clean — Beautiful**
 
 - **HakuSpace** is an optimized dotfiles collection supporting both **Hyprland** and **Niri** on Arch Linux.
+- These dotfiles rely solely on **Rofi** and **Waybar** for primary user interaction, while the core functionality is driven by **custom scripts** (listed in `hakuspace/common/local/bin`).
+- My dotfiles have evolved into a full DE, though it's still a work in progress.
 - **Easy to extend and customize to fit your needs!**
 
 ---
@@ -59,16 +63,34 @@ chmod +x install.sh
 ### 3. Complete the Installation
 After running the installation script, restart your computer and log in to either **Hyprland** or **Niri** to experience the new setup.
 
-### 4. Change GTK theme
+---
+
+### 4. After Installation
+1) Change the GTK theme:
 - Go to `GTK Settings` in Rofi App Menu.
 - Change the theme, icons, and mouse cursor for a better aesthetic.
 
+2) **Install additional packages**:
+```bash
+yay -S waybar-cava
+```
+`waybar-cava` is a plugin for Waybar that provides a visualizer for audio output. My waybar top needs this to work properly (cava module).
+
+3) Allow Local Root User to Access X/Xwayland Display (For Niri; if Hyprland does not work, you can also try this)
+```bash
+xhost +si:localuser:root
+```
+Grants the local root user permission to connect to and launch graphical (GUI) applications (like `GParted`) within the current user's active X server or Xwayland session.
+
+
 ### 🔽 Update Haku Space to lastest version
 
-- First, you need to clone the lastest stable version (or the lastest git).
+- First, you need to clone the lastest stable version (or git pull for the lastest git).
 - Check the release notes or the full changelog for details on what has changed. If you are using the latest git version, please check the commit history.
 - To update hakuspace, simply re-run the `install.sh` script, as it will automatically back up your existing files and apply the latest changes.
 - You can skip steps in `install.sh` to save time.
+
+> Well, if you want to update the whole dotfiles. just run the `install.sh` script again without skipping any steps. It will automatically back up your existing files and apply the latest changes.
 
 ### 🗑 Uninstall Haku Space
 > (WM: The Window Manager you are currently using, e.g., hyprland, niri).
@@ -116,6 +138,7 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 - Lively wallpapers: `~/Videos/Wallpapers`
 - Lively wallpaper thumbnail: in folder Preview `~/Videos/Wallpapers/Preview` and add image .jpg/.png (same name with video) to make the thumbnail appear in rofi select menu if you want to use lively wallpaper
 - Haku Theme for waybar, rofi,... (includes accent_color, font, font size): `~/.local/state/haku_theme`
+- State files for random wallpaper, waybar current mode, and cava underbar: `/tmp/random_wallpaper_status`, `/tmp/waybar_current_mode`, `/tmp/cava_underbar_status`
 
 ## 🎶 Just chill
 - Open your terminal on Workspace 1 and type `haku.sh` for a little surprise. To close them, just append the '--clear' argument (e.g., `haku.sh --clear`).
@@ -125,7 +148,8 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 # 🐞 Troubleshooting
 - Currently, my custom `gtk.css` is only compatible with **GTK 3** and only supports **Dark Mode**. If you are using Light Mode, you may encounter some issues with the appearance of GTK applications **(Thunar)**.
 - **Waybar clock**: You should set your timezone and locale manually in waybar configuration to ensure the clock displays correctly.
-- If clicking on **workspaces in Waybar** on Hyprland doesn't switch them, please install waybar-git. This bug has already been fixed by the author in the latest upstream version.
+- **Waybar cava module**: If you encounter issues with the Cava module in Waybar, ensure that you have installed `waybar-cava` and that it is properly configured in your Waybar config file.
+- If clicking on **workspaces in Waybar** on Hyprland doesn't switch them, please install `waybar-git`. This bug has already been fixed by the author in the latest upstream version.
 - **Cava Underbar in Niri** does not support the no-focus rule. As a result, you might accidentally move it from its original position or close it by mistake.
 - Some features might still be missing since I only tested this setup for **my personal use**. If you need more than what's provided, you'll need to install and configure those parts manually.
 - If you don't want to use certain apps (like `xdg-desktop-portal-gnome`, `wl-screenrec`, etc.), you can easily remove and replace them with alternatives. However, some apps are deeply integrated into my scripts or configs, so removing them may break functionality or cause those scripts/configs to stop working.
