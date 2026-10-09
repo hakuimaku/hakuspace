@@ -296,7 +296,7 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
                     echo ">>> Deploying Hakulab theme for Labwc..."
                     copy_dir_content "$HOME_SRC_DIR/.themes/hakulab" "$HOME/.themes/hakulab"
                 else
-                    log_warn "Hakulab theme directory not found. Skipping theme deployment."
+                    log_skip "Hakulab theme already exists in ~/.themes/hakulab. Skipping theme deployment."
                 fi
                 ;;
             *)
@@ -306,8 +306,7 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
     done
 
     echo ">>> Deploying Thunar gtk.css theme..."
-    backup_dir "$DEST_CONFIG/gtk-3.0"
-    deploy_config_item "$SOURCE_CONFIG/gtk-3.0/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css" 1
+    deploy_config_item "$SOURCE_CONFIG/gtk-3.0/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css"
 
     echo ">>> Deploying starship.toml (starship configuration)..."
     deploy_config_item "$SOURCE_CONFIG/starship.toml" "$DEST_CONFIG/starship.toml"
