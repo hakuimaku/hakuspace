@@ -58,31 +58,31 @@
         <!-- Script gen_style.sh will auto-generate font settings, please do not edit -->
         <!-- BEGIN GENERATED FONTS -->
         <font place="ActiveWindow">
-            <name>JetBrainsMono Nerd Font</name>
+            <name>monospace</name>
             <size>12</size>
             <slant>normal</slant>
             <weight>normal</weight>
         </font>
         <font place="InactiveWindow">
-            <name>JetBrainsMono Nerd Font</name>
+            <name>monospace</name>
             <size>12</size>
             <slant>normal</slant>
             <weight>normal</weight>
         </font>
         <font place="MenuHeader">
-            <name>JetBrainsMono Nerd Font</name>
+            <name>monospace</name>
             <size>12</size>
             <slant>normal</slant>
             <weight>normal</weight>
         </font>
         <font place="MenuItem">
-            <name>JetBrainsMono Nerd Font</name>
+            <name>monospace</name>
             <size>12</size>
             <slant>normal</slant>
             <weight>normal</weight>
         </font>
         <font place="OnScreenDisplay">
-            <name>JetBrainsMono Nerd Font</name>
+            <name>monospace</name>
             <size>12</size>
             <slant>normal</slant>
             <weight>normal</weight>
@@ -369,6 +369,12 @@
         </keybind>
 
         <!-- Window management -->
+        <keybind key="W-z">
+        <action name="ResizeRelative" left="-10%" right="-10%" top="-10%" bottom="-10%" />
+        </keybind>
+        <keybind key="W-S-z">
+        <action name="ResizeRelative" left="10%" right="10%" top="10%" bottom="10%" />
+        </keybind>
         <keybind key="A-Tab">
         <action name="NextWindow" />
         </keybind>
@@ -392,6 +398,32 @@
         </keybind>
         <keybind key="W-x">
         <action name="Resize" />
+        </keybind>
+
+        <!-- Window Resize Alt + WASD -->
+        <keybind key="A-w">
+        <action name="ResizeRelative" top="10%"/>
+        </keybind>
+        <keybind key="A-s">
+        <action name="ResizeRelative" bottom="10%" />
+        </keybind>
+        <keybind key="A-a">
+        <action name="ResizeRelative" left="10%" />
+        </keybind>
+        <keybind key="A-d">
+        <action name="ResizeRelative" right="10%" />
+        </keybind>
+        <keybind key="A-S-s">
+        <action name="ResizeRelative" top="-10%"/>
+        </keybind>
+        <keybind key="A-S-w">
+        <action name="ResizeRelative" bottom="-10%" />
+        </keybind>
+        <keybind key="A-S-d">
+        <action name="ResizeRelative" left="-10%" />
+        </keybind>
+        <keybind key="A-S-a">
+        <action name="ResizeRelative" right="-10%" />
         </keybind>
 
         <!-- Window snapping -->
