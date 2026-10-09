@@ -117,12 +117,9 @@ sudo dnf install python3-pip
 pip install colorthief
 ```
 
-- **Install utility tools** (`tofik/sway`):
+- **Install utility tools**:
 ```bash
 sudo dnf install wl-clipboard cliphist cliphist slurp mpv imv
-
-sudo dnf copr enable tofik/sway
-sudo dnf install sway-audio-idle-inhibit
 ```
 
 - **Install file manager & tools**:
