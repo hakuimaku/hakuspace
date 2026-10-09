@@ -1,6 +1,6 @@
-| <img width="1920" height="1080" alt="screenshot_2026-06-23_15-38-16" src="https://github.com/user-attachments/assets/8393b504-9932-4325-80c2-3b8307f1ab57" /> | <img width="1920" height="1080" alt="20260618_074132" src="https://github.com/user-attachments/assets/5cb478b4-51b4-4db2-af11-5fb0b07fec58" /> |
-|---|---|
-| <img width="1920" height="1080" alt="screenshot_2026-06-25_07-47-03" src="https://github.com/user-attachments/assets/62b0470f-6a5f-4ad3-abe5-391e7a5bed0d" /> | <img width="1920" height="1080" alt="screenshot_2026-06-25_07-55-46" src="https://github.com/user-attachments/assets/6cea11a9-af14-4ac5-8729-c161be4578e0" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-07-04_16-41-24" src="https://github.com/user-attachments/assets/d6ae6da9-6bb7-4aae-826b-54864f3b34d1" /> | <img width="1920" height="1080" alt="screenshot_2026-07-04_16-42-34" src="https://github.com/user-attachments/assets/66c4f28c-5241-498a-9b0e-6ad784e1bb9f" /> |
+|--|--|
+| <img width="1920" height="1080" alt="screenshot_2026-07-04_16-45-54" src="https://github.com/user-attachments/assets/9fdbfc73-6ba8-4682-aa56-2b82f4611cd5" /> | <img width="1920" height="1080" alt="screenshot_2026-07-04_16-43-36" src="https://github.com/user-attachments/assets/bf1a419f-1462-4d03-88fd-e9842a2e6169" /> |
 
 
 
@@ -34,10 +34,10 @@
 > **Prerequisites:** You need a pre-installed Arch Linux or an Arch-based Linux Distro (A fresh install is highly recommended). If you already have an existing WM or DE configuration, it is best to only reference the configs in HakuSpace rather than running the installation script directly over your system.
 
 ### 1. Clone the Stable Release (Recommended)
-Run the following commands to clone the stable release version `v2.0.4`:
+Run the following commands to clone the stable release version `v2.0.5`:
 ```bash
 cd ~
-git clone --depth 1 --branch v2.0.4 https://github.com/hakuimaku/hakuspace.git
+git clone --depth 1 --branch v2.0.5 https://github.com/hakuimaku/hakuspace.git
 
 ```
 
@@ -173,6 +173,9 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
   - [airfish 空气鱼](https://www.pixiv.net/en/users/67512705)
   - [Android/アンドロイド](https://www.pixiv.net/en/users/67750556)
   - [Roby0174](https://www.deviantart.com/roby0174)
+  - [越前蟹参号](https://www.pixiv.net/en/users/98660769)
+  - [mmAir](https://www.pixiv.net/en/users/39363802)
+  - [ゲン助](https://www.pixiv.net/en/users/32008)
 
 
 ## 🎨 Happy Ricing!
