@@ -180,9 +180,13 @@ if command -v nixos-rebuild >/dev/null 2>&1; then
                 log_skip "./hakuspace-config.nix is already imported in $CONFIG_NIX."
             else
                 log_info "Injecting ./hakuspace-config.nix into imports of configuration.nix..."
-                grep -q '\./hakuspace-config\.nix' "$CONFIG_NIX" || sudo sed -i '/^[[:space:]]*imports[[:space:]]*=/,/^[[:space:]]*];[[:space:]]*$/ { /^[[:space:]]*];[[:space:]]*$/i\      ./hakuspace-config.nix
+                sudo sed -i '/^[[:space:]]*imports[[:space:]]*=/,/^[[:space:]]*];[[:space:]]*$/ { /^[[:space:]]*];[[:space:]]*$/i\      ./hakuspace-config.nix
 }' "$CONFIG_NIX"
-                log_ok "Updated imports in $CONFIG_NIX."
+                if grep -q "./hakuspace-config.nix" "$CONFIG_NIX"; then
+                    log_ok "Updated imports in $CONFIG_NIX."
+                else
+                    log_warn "Failed to inject into imports. Please add ./hakuspace-config.nix manually to $CONFIG_NIX."
+                fi
             fi
         else
             log_warn "$CONFIG_NIX not found! Please import hakuspace-config.nix manually."
@@ -348,14 +352,12 @@ step_title "7 - FINAL SETUP: MAKE SOMETHING WORK"
 # Check if local/state/hakuspace exists, if not, deploy it
 check_state_dir
 
-# Gen style first time
-echo ""
-if [[ -x "$HOME/.local/bin/gen_style.sh" ]]; then
+# Gen Style if not exist ~/.local/state/hakuspace/state/state.env
+if [[ ! -f "$HOME/.local/state/hakuspace/state/state.env" ]]; then
     "$HOME/.local/bin/gen_style.sh" --font "JetBrainsMono Nerd Font"
     log_ok "Executed gen_style.sh"
 else
-    log_warn "Not executable or missing: $HOME/.local/bin/gen_style.sh"
-    log_warn "Check if the script exists and has execute permissions in ~/.local/bin/"
+    log_skip "Skipping gen_style.sh execution as ~/.local/state/hakuspace/state/state.env already exists."
 fi
 
 # Gen opaque theme if not exist ~/.local/state/hakuspace/opaque_theme_state
@@ -428,10 +430,14 @@ else
     log_warn "ly service not found. Skipping service enable/disable."
 fi
 
-# Set GNOME color scheme to dark and set Thunar as default file manager
+# Set GNOME color scheme to dark
 echo ""
-gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-log_ok "Set GNOME color scheme to dark."
+if command -v gsettings >/dev/null 2>&1; then
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+    log_ok "Set GNOME color scheme to dark."
+else
+    log_warn "gsettings is not installed. Skipping GNOME color scheme setup."
+fi
 
 # Set Thunar as default file manager if installed
 echo ""

@@ -63,17 +63,17 @@ is_taskbar_running() {
 }
 
 kill_taskbar() {
-    pkill -x "taskbar"
-}
-
-if [[ $1 == "--reload" ]]; then
-    kill_taskbar
-    
-    if [[ $(cat "$MANUAL_STATE") == "1" ]]; then
-        launch_taskbar
+    if pgrep -x "taskbar" >/dev/null; then
+        pkill -x "taskbar"
+        for _ in $(seq 1 20); do
+            pgrep -x "taskbar" >/dev/null || break
+            sleep 0.1
+        done
+        if pgrep -x "taskbar" >/dev/null; then
+            pkill -9 -x "taskbar"
+        fi
     fi
-    exit 0
-fi
+}
 
 # Display help message
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
@@ -104,10 +104,10 @@ fi
 
 # Reload the taskbar
 if [[ $1 == "--reload" ]]; then
+    kill_taskbar
+    
     if [[ $(cat "$MANUAL_STATE") == "1" ]]; then
-        reload_taskbar
-    else
-        kill_taskbar
+        launch_taskbar
     fi
     exit 0
 fi

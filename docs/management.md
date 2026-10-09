@@ -41,11 +41,13 @@ Your deployment mode isn't saved to a configuration file; instead, `update.sh` h
 Not everything is symlinked. To stop apps from breaking your repo, we have some strict rules:
 
 ### `ONCE_CONFIGS` (Always Copied)
-Apps like Thunar, xfce4, mpv, and btop love to overwrite their configs when you use their GUI.
+Apps like Thunar, xfce4, mpv, btop, cava, and mimeapps.list often overwrite their configs during normal use.
 To stop them from breaking symlinks, these are **ALWAYS** copied as real files, no matter what mode you picked. Also, `update.sh` will **skip** updating them to protect your personal tweaks!
 
 ### `hakucfg` (Your Custom Space)
-HakuSpace won't touch your personal stuff. `~/hakucfg/` is for your own environment variables, autostarts, and custom scripts. It's always deployed via Copy and left alone during updates.
+HakuSpace won't touch your personal stuff. `~/hakucfg/` is for your own environment variables, autostarts, and custom scripts. 
+
+**Important Developer Note:** `~/hakucfg/` is NOT copied blindly as a whole directory. Instead, the `check_control_dir()` function in `scripts/functions.sh` maintains a hardcoded `required_files` array (like `setting.sh`, WM configs, and menu scripts). It iterates through this array and copies files from `src/home/hakucfg/` ONLY if they are completely missing on the user's machine (except for `setting.sh`, which uses a specific version-check to handle upgrades). If you add a new template file to `src/home/hakucfg/`, you **must** remember to manually add it to the `required_files` array; otherwise, existing users will never receive it during updates!
 
 ## 3. The Scripts
 

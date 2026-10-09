@@ -21,7 +21,16 @@ launch_app() {
 }
 
 kill_app() {
-    pkill -f "$EDGE_TRIGGER_BIN"
+    if pgrep -f "$EDGE_TRIGGER_BIN" >/dev/null; then
+        pkill -f "$EDGE_TRIGGER_BIN"
+        for _ in $(seq 1 20); do
+            pgrep -f "$EDGE_TRIGGER_BIN" >/dev/null || break
+            sleep 0.1
+        done
+        if pgrep -f "$EDGE_TRIGGER_BIN" >/dev/null; then
+            pkill -9 -f "$EDGE_TRIGGER_BIN"
+        fi
+    fi
 }
 
 # Display help message

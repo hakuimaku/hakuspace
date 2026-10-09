@@ -70,7 +70,7 @@ To bypass limitations in Wayland's layer-shell protocol (which doesn't let a sin
 
 ### `rounded_screen_manager.sh` (The Controller)
 Manages the lifecycle of the Rounded Screen overlay.
-- **Toggling & Startup:** Controlled via `--toggle`, `--startup`, and `--toggle-dynamic`. It hooks into the Haku Menu's Setting section.
+- **Toggling & Startup:** Controlled via `--toggle`, `--startup`, and `--toggle-dynamic`. The main toggle hooks into the Haku Menu's Theme section, while Dynamic Mode is located in the Setting section.
 - **State Management:** Remembers if you had it turned on or off across reboots using `~/.local/state/hakuspace/rounded_screen_state` and `rounded_screen_dynamic_state`.
 
 ### Configuration
@@ -91,7 +91,7 @@ Using `GtkLayerShell` on the `OVERLAY` layer with a negative exclusive zone, thi
 
 ### `edge_trigger_manager.sh` (The Controller)
 Manages the lifecycle of the Edge Trigger overlay.
-- **Toggling & Startup:** Controlled via `--toggle` and `--startup`. Integrated directly into the Haku Menu's Theme section.
+- **Toggling & Startup:** Controlled via `--toggle` and `--startup`. Integrated directly into the Haku Menu's Theme section. It also supports `--reload` to restart the overlay and `-h`/`--help` for usage information.
 - **State Management:** Remembers if you had it turned on or off across reboots using `~/.local/state/hakuspace/edge_trigger_state`.
 
 ### Configuration
@@ -114,6 +114,9 @@ This Python script uses `GtkLayerShell` and `VTE` (Virtual Terminal Emulator).
 
 ### `cava_manager.sh` (The Process Controller)
 Because the Python script acts as a background daemon, it needs a manager to handle its lifecycle.
+
+**Developer Note on CLI conventions:** Be aware that unlike other manager scripts in HakuSpace which primarily use long flags (e.g., `--toggle`, `--reload`), `cava_manager.sh` utilizes positional sub-commands (`start`, `stop`, `toggle`, `reload`) mixed with flags (e.g., `-t`/`--top`, `-d`/`--toggle-dynamic`).
+
 - **Toggling:** You can use `cava_manager.sh toggle` (which is mapped in the Haku Menu's Theme tab) to spawn or gracefully kill the visualizer process and its PID file.
 - **Top Mode & Dynamic Mode:** You can use `cava_manager.sh --top` to toggle the top layer mode, or `--toggle-dynamic` to toggle Dynamic Mode (which adapts to other panels' exclusive zones). The manager gracefully saves these states to `~/.local/state/hakuspace/cava_overlay_state` and `cava_dynamic_state` and makes them accessible in the Haku Menu.
 - **Live Reloading:** When you change your system's accent color (via `gen_style.sh`), you don't want the audio visualizer to stutter, drop frames, or restart. Calling `cava_manager.sh reload` sends a specific UNIX signal (`SIGUSR1`) to the Python daemon. The script intercepts this signal, re-reads the Kitty configuration, and instantly updates the visualizer's colors on the fly without ever interrupting the live audio stream!

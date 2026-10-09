@@ -250,12 +250,12 @@ check_state_dir
 # Init HakuSpace Control
 check_control_dir
 
-# Gen Style if not exist ~/.local/state/hakuspace
-if [[ ! -d "$HOME/.local/state/hakuspace" ]]; then
+# Gen Style if not exist ~/.local/state/hakuspace/state/state.env
+if [[ ! -f "$HOME/.local/state/hakuspace/state/state.env" ]]; then
     "$HOME/.local/bin/gen_style.sh" --font "JetBrainsMono Nerd Font"
     log_ok "Executed gen_style.sh"
 else
-    log_skip "Skipping gen_style.sh execution as ~/.local/state/hakuspace already exists."
+    log_skip "Skipping gen_style.sh execution as ~/.local/state/hakuspace/state/state.env already exists."
 fi
 
 # Gen opaque theme if not exist ~/.local/state/hakuspace/opaque_theme_state

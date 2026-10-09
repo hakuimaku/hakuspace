@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
+# This script allows the user to switch between different Rofi themes.
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/haku_theme.sh"
+
+STATE_FILE="$STATE_DIR/rofi-theme.rasi"
+
 CONFIG_DIR="$HOME/.config/rofi"
 CONFIG_FILE="$CONFIG_DIR/config.rasi"
-
-STATE_DIR="$HOME/.local/state/hakuspace"
-STATE_FILE="$STATE_DIR/rofi-theme.rasi"
 
 THEME_DIR="$CONFIG_DIR/themes"
 USER_THEME_DIR="$HOME/hakucfg/config/rofi"
@@ -40,12 +44,12 @@ if [ -n "$selected_theme" ]; then
         ln -sf "$USER_THEME_DIR/$selected_theme.rasi" "$CONFIG_DIR/$selected_theme.rasi"
     fi
 
-    # Update @theme line in config.rasi
+    # Update @theme line in rofi-theme.rasi
     if [ -f "$CONFIG_FILE" ]; then
         cat > "$STATE_FILE" <<EOF
 @theme "$selected_theme"
 EOF
     else
-        notify-send "Rofi Theme Switcher" "Config file not found: $STATE_FILE"
+        notify-send "Rofi Theme Switcher" "config.rasi not found in $CONFIG_DIR. Please ensure Rofi is installed and configured."
     fi
 fi
