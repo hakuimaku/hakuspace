@@ -2,8 +2,8 @@
 /* DOCKBAR STYLES                                  */
 /* ============================================================================== */
 
-@import url("../../../.local/state/haku_theme/colors.css");
-@import url("../../../.local/state/haku_theme/fonts.css");
+@import url("../../../.local/state/hakuspace/theme/colors.css");
+@import url("../../../.local/state/hakuspace/theme/fonts.css");
 
 * {
     font-weight: bold;

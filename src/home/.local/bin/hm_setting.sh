@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
 spawn() { ( "$@" & ) >/dev/null 2>&1; disown; }
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/haku_theme.sh"
 
 if [[ $# -eq 0 ]]; then
-    DOCK_STATUS=$(cat "$HOME/.local/state/haku_theme/dockbar_autohide_state" 2>/dev/null || echo "0")
+    DOCK_STATUS=$(cat "$THEME_STATE_DIR/dockbar_autohide_state" 2>/dev/null || echo "0")
     DOCK_TEXT="OFF"
     [[ "$DOCK_STATUS" == "1" ]] && DOCK_TEXT="ON"
 

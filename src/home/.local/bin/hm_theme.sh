@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 spawn() { ( "$@" & ) >/dev/null 2>&1; disown; }
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/haku_theme.sh"
 
 if [[ $# -eq 0 ]]; then
     WALL_STATUS=$(cat "/tmp/random_wallpaper_status" 2>/dev/null || echo "0")
@@ -12,11 +14,11 @@ if [[ $# -eq 0 ]]; then
     CAVA_TEXT="OFF"
     [[ "$CAVA_STATUS" == "1" ]] && CAVA_TEXT="ON"
 
-    DOCKBAR_STATUS=$(cat "$HOME/.local/state/haku_theme/dockbar_manual_state" 2>/dev/null || echo "0")
+    DOCKBAR_STATUS=$(cat "$THEME_STATE_DIR/dockbar_manual_state" 2>/dev/null || echo "0")
     DOCKBAR_TEXT="OFF"
     [[ "$DOCKBAR_STATUS" == "1" ]] && DOCKBAR_TEXT="ON"
 
-    DESKTOP_ICONS_STATUS=$(cat "$HOME/.local/state/haku_theme/desktop_icons_state" 2>/dev/null || echo "0")
+    DESKTOP_ICONS_STATUS=$(cat "$THEME_STATE_DIR/desktop_icons_state" 2>/dev/null || echo "0")
     DESKTOP_ICONS_TEXT="OFF"
     [[ "$DESKTOP_ICONS_STATUS" == "1" ]] && DESKTOP_ICONS_TEXT="ON"
 

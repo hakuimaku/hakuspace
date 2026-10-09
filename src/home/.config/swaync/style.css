@@ -1,5 +1,5 @@
-@import url("../../.local/state/haku_theme/colors.css");
-@import url("../../.local/state/haku_theme/fonts.css");
+@import url("../../.local/state/hakuspace/theme/colors.css");
+@import url("../../.local/state/hakuspace/theme/fonts.css");
 
 .notification-row {
     transition: all 300ms ease;

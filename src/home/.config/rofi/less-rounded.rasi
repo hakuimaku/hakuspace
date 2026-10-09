@@ -2,7 +2,7 @@
         Rofi Theme: Haku Theme :>
  =======================================*/
 
-@import "../../.local/state/haku_theme/rofi-style.rasi"
+@import "../../.local/state/hakuspace/theme/rofi-style.rasi"
 
 /* ===== GLOBAL VARIABLES ===== */
 * {

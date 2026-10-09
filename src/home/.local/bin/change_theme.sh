@@ -1,49 +1,13 @@
 #!/usr/bin/env bash
 
-STATE_DIR="$HOME/.local/state/haku_theme"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/haku_theme.sh"
+
 GEN="$HOME/.local/bin/gen_style.sh"
 APPLY="$HOME/.local/bin/apply_style.sh"
 
-mkdir -p "$STATE_DIR"
-
-get_current_accent() {
-    local accent="#ffffff"
-    if [[ -f "$STATE_DIR/colors.css" ]]; then
-        local parsed
-        parsed="$(sed -nE 's/^\s*@define-color\s+accent_color\s+(#[0-9a-fA-F]{6})\s*;.*$/\1/p' "$STATE_DIR/colors.css" | head -n1 || true)"
-        [[ -n "${parsed:-}" ]] && accent="$parsed"
-    fi
-    printf '%s\n' "$accent"
-}
-
-get_current_size() {
-    local size="16"
-    if [[ -f "$STATE_DIR/fonts.css" ]]; then
-        local parsed
-        parsed="$(sed -nE 's/^\s*font-size:\s*([0-9]+)px\s*;.*$/\1/p' "$STATE_DIR/fonts.css" | head -n1 || true)"
-        [[ -n "${parsed:-}" ]] && size="$parsed"
-    fi
-    printf '%s\n' "$size"
-}
-
-get_current_font() {
-    local font="monospace"
-    if [[ -f "$STATE_DIR/fonts.css" ]]; then
-        local parsed
-        parsed="$(sed -nE 's/^\s*font-family:\s*"([^"]+)".*$/\1/p' "$STATE_DIR/fonts.css" | head -n1 || true)"
-        [[ -n "${parsed:-}" ]] && font="$parsed"
-    fi
-    printf '%s\n' "$font"
-}
-
-ACCENT="$(get_current_accent)"
-FONT_FAMILY="$(get_current_font)"
-FONT_SIZE="$(get_current_size)"
-
 prompt="Change Theme - Choose an option:"
-
-choice="$(
-    cat <<EOF | rofi -dmenu -p "$prompt" -i
+choice="$(cat <<EOF | rofi -dmenu -p "$prompt" -i
   Change font
   Change font size
   Change color
@@ -52,7 +16,14 @@ EOF
 [[ -z "${choice:-}" ]] && exit 0
 
 case "$choice" in
-    "  Change font")
+    *"Change font size"*)
+        new_size="$(printf '%s\n' "$FONT_SIZE" | rofi -dmenu -p "  Current: ${FONT_SIZE}px" -theme-str 'entry { placeholder: "Type font size here"; }' -i)"
+        [[ -z "${new_size:-}" ]] && exit 0
+        [[ "$new_size" =~ ^[0-9]+$ ]] || exit 0
+        FONT_SIZE="$new_size"
+        ;;
+
+    *"Change font"*)
         fonts="$(fc-list : family 2>/dev/null | sed 's/,.*//' | sort -u || true)"
         [[ -z "$fonts" ]] && { echo "No fonts found via fc-list" >&2; exit 1; }
         new_font="$(printf '%s\n' "$fonts" | rofi -dmenu -p "  Current: ${FONT_FAMILY}" -i)"
@@ -60,16 +31,8 @@ case "$choice" in
         FONT_FAMILY="$new_font"
         ;;
 
-    "  Change font size")
-        new_size="$(printf '%s\n' "$FONT_SIZE" | rofi -dmenu -p "  Current: ${FONT_SIZE}px" -theme-str 'entry { placeholder: "Type font size here"; }' -i)"
-        [[ -z "${new_size:-}" ]] && exit 0
-        [[ "$new_size" =~ ^[0-9]+$ ]] || exit 0
-        FONT_SIZE="$new_size"
-        ;;
-
-    "  Change color")
-        accent_choice="$(
-        cat <<'EOF' | rofi -dmenu -p "  Current: ${ACCENT}" -theme-str 'entry { placeholder: "Type hex color here #xxxxxx"; }' -i
+    *"Change color"*)
+        accent_choice="$(cat <<'EOF' | rofi -dmenu -p "  Current: ${ACCENT_COLOR}" -theme-str 'entry { placeholder: "Type hex color here #xxxxxx"; }' -i
 Pick Color   [Press Enter]
 Slate Blue   #7288AE
 Green        #A2CB8B
@@ -79,18 +42,20 @@ Pink         #F9B2D7
 White        #FFFFFF
 Grey         #BFC9D1
 EOF
-    )"
-    [[ -z "${accent_choice:-}" ]] && exit 0
-    
-    if [[ "$accent_choice" == "Pick Color   [Press Enter]" ]]; then
-        ~/.local/bin/accent_color_picker.sh
-        exit 0
-    else
+        )"
+        [[ -z "${accent_choice:-}" ]] && exit 0
+
+        if [[ "$accent_choice" == "Pick Color   [Press Enter]" ]]; then
+            "$HOME/.local/bin/accent_color_picker.sh"
+            exit 0
+        fi
         picked_hex="$(printf '%s\n' "$accent_choice" | grep -oE '#[0-9a-fA-F]{6}' | head -n1 || true)"
-        [[ -n "$picked_hex" ]] && ACCENT="$picked_hex"
-    fi
-    ;;
+        [[ -n "$picked_hex" ]] && ACCENT_COLOR="$picked_hex"
+        ;;
+    *)
+        exit 0
+        ;;
 esac
 
-"$GEN" "$ACCENT" "$FONT_FAMILY" "$FONT_SIZE"
+"$GEN" "$ACCENT_COLOR" "$FONT_FAMILY" "$FONT_SIZE"
 "$APPLY"

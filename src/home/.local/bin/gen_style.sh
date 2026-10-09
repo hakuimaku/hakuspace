@@ -1,176 +1,101 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/haku_theme.sh"
 source "$SCRIPT_DIR/accent_color.sh"
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-        cat <<'EOF'
+usage() {
+    cat <<'EOF'
 Usage: gen_style.sh [ACCENT] [FONT] [SIZE]
 Generate theme files for the desktop environment.
-
-Arguments:
-    ACCENT              Hex accent color, for example #d65d0e
-    FONT                Font family
-    SIZE                Font size in pixels
 
 Options:
     -a, --accent HEX    Set the accent color
     -f, --font NAME     Set the font family
-    -s, --size N        Set the font size
+    -s, --size N        Set the font size in pixels
     -h, --help          Show this help message
 EOF
-        exit 0
-fi
+}
 
-# This script generates theme files for:
-# waybar, swaync, hyprland, rofi, kitty, btop, labwc, and a newtab page for Zen browser.
+[[ "${1:-}" == "-h" || "${1:-}" == "--help" ]] && { usage; exit 0; }
 
-# Default values
-DEFAULT_ACCENT="#ffffff"
-DEFAULT_FONT="monospace"
-DEFAULT_SIZE="14"
-
-STATE_DIR="$HOME/.local/state/haku_theme"
-BTOP_THEME_DIR="$HOME/.config/btop/themes"
-mkdir -p "$STATE_DIR"
-
-# Labwc
-LABWC_RC="$HOME/.config/labwc/rc.xml"
-LABWC_OVERRIDE="$HOME/.config/labwc/themerc-override"
-
-# Allow env overrides
-ACCENT_COLOR="${ACCENT_COLOR:-$DEFAULT_ACCENT}"
-FONT_FAMILY="${FONT_FAMILY:-$DEFAULT_FONT}"
-FONT_SIZE="${FONT_SIZE:-$DEFAULT_SIZE}"
-
-# Track whether font/size were provided by user
 FONT_PROVIDED=false
 SIZE_PROVIDED=false
 
-# Positional args (simple debug)
-#   $1 = accent, $2 = font, $3 = size
 if [[ "${1-}" != "" && "${1-}" != --* ]]; then ACCENT_COLOR="$1"; shift; fi
 if [[ "${1-}" != "" && "${1-}" != --* ]]; then FONT_FAMILY="$1"; FONT_PROVIDED=true; shift; fi
 if [[ "${1-}" != "" && "${1-}" != --* ]]; then FONT_SIZE="$1"; SIZE_PROVIDED=true; shift; fi
 
-# Flags (optional)
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --accent|-a) ACCENT_COLOR="${2:?missing value for --accent}"; shift 2 ;;
-        --font|-f)   FONT_FAMILY="${2:?missing value for --font}"; FONT_PROVIDED=true; shift 2 ;;
-        --size|-s)   FONT_SIZE="${2:?missing value for --size}"; SIZE_PROVIDED=true; shift 2 ;;
+        --font|-f) FONT_FAMILY="${2:?missing value for --font}"; FONT_PROVIDED=true; shift 2 ;;
+        --size|-s) FONT_SIZE="${2:?missing value for --size}"; SIZE_PROVIDED=true; shift 2 ;;
         *) echo "Unknown arg: $1" >&2; exit 2 ;;
     esac
 done
 
-# ================================================================
-# Keep existing font/size from state unless explicitly provided
-# ================================================================
-if [[ "$FONT_PROVIDED" = false && -f "$STATE_DIR/fonts.css" ]]; then
-    parsed_font="$(sed -nE 's/^\s*font-family:\s*"([^"]+)".*$/\1/p' "$STATE_DIR/fonts.css" | head -n1 || true)"
-    [[ -n "$parsed_font" ]] && FONT_FAMILY="$parsed_font"
-fi
+# Keep state values when a caller changes only the accent.
+[[ "$FONT_PROVIDED" == false ]] && FONT_FAMILY="${FONT_FAMILY:-$THEME_DEFAULT_FONT}"
+[[ "$SIZE_PROVIDED" == false ]] && FONT_SIZE="${FONT_SIZE:-$THEME_DEFAULT_SIZE}"
 
-if [[ "$SIZE_PROVIDED" = false && -f "$STATE_DIR/fonts.css" ]]; then
-    parsed_size="$(sed -nE 's/^\s*font-size:\s*([0-9]+)px.*$/\1/p' "$STATE_DIR/fonts.css" | head -n1 || true)"
-    [[ -n "$parsed_size" ]] && FONT_SIZE="$parsed_size"
-fi
-
-# sanitize values
 ACCENT_COLOR="$(printf '%s' "$ACCENT_COLOR" | tr -cd '#0-9a-fA-F')"
-if ! [[ "$ACCENT_COLOR" =~ ^#[0-9a-fA-F]{6}$ ]]; then
-    ACCENT_COLOR="$DEFAULT_ACCENT"
-fi
+[[ "$ACCENT_COLOR" =~ ^#[0-9a-fA-F]{6}$ ]] || ACCENT_COLOR="$THEME_DEFAULT_ACCENT"
+[[ "$FONT_SIZE" =~ ^[0-9]+$ && "$FONT_SIZE" -gt 0 ]] || FONT_SIZE="$THEME_DEFAULT_SIZE"
+[[ -n "$FONT_FAMILY" ]] || FONT_FAMILY="$THEME_DEFAULT_FONT"
 
-if ! [[ "$FONT_SIZE" =~ ^[0-9]+$ ]] || [[ "$FONT_SIZE" -le 0 ]]; then
-    FONT_SIZE="$DEFAULT_SIZE"
-fi
-
-# Check if accent color is too dark
 validated_accent="$(accent_color_or_fallback "$ACCENT_COLOR")"
-if [[ "$validated_accent" == "#ffffff" && "${ACCENT_COLOR,,}" != "#ffffff" ]]; then
-    notify-send "Color ${ACCENT_COLOR} is too dark" "Generating color failed"
+if [[ "$validated_accent" == "$THEME_DEFAULT_ACCENT" && "${ACCENT_COLOR,,}" != "$THEME_DEFAULT_ACCENT" ]]; then
+    notify-send "Color ${ACCENT_COLOR} is too dark" "Generating color failed" 2>/dev/null || true
     exit 1
 fi
 ACCENT_COLOR="$validated_accent"
 
-# Convert accent to rgba(hex8)
+theme_save_state
+
 hex_to_rgba() {
-    local hex="${1:-}"
-    hex="${hex#\#}"
-    hex="${hex//[^0-9a-fA-F]/}"
-    if [[ "$hex" =~ ^[0-9a-fA-F]{6}$ ]]; then
-        printf 'rgba(%sff)' "${hex,,}"
-        return 0
-    elif [[ "$hex" =~ ^[0-9a-fA-F]{8}$ ]]; then
-        printf 'rgba(%s)' "${hex,,}"
-        return 0
-    fi
-    printf 'rgba(ffffffff)'
+    local hex="${1#\#}"
+    printf 'rgba(%sff)\n' "${hex,,}"
 }
 
-# Convert accent to rgb
 hex_to_rgb() {
-    local hex="${1:-}"
-    hex="${hex#\#}"
-    hex="${hex//[^0-9a-fA-F]/}"
-    if [[ "$hex" =~ ^[0-9a-fA-F]{6}$ ]]; then
-        printf 'rgb(%d, %d, %d)' $((16#${hex:0:2})) $((16#${hex:2:2})) $((16#${hex:4:2}))
-        return 0
-    elif [[ "$hex" =~ ^[0-9a-fA-F]{8}$ ]]; then
-        printf 'rgb(%d, %d, %d)' $((16#${hex:0:2})) $((16#${hex:2:2})) $((16#${hex:4:2}))
-        return 0
-    fi
-    printf 'rgb(255, 255, 255)'
+    local hex="${1#\#}"
+    printf 'rgb(%d, %d, %d)\n' $((16#${hex:0:2})) $((16#${hex:2:2})) $((16#${hex:4:2}))
 }
 
-# Convert accent to 0xRRGGBBAA format
 hex_to_0x() {
-    local hex="${1:-}"
-    hex="${hex#\#}"
-    hex="${hex//[^0-9a-fA-F]/}"
-    if [[ "$hex" =~ ^[0-9a-fA-F]{6}$ ]]; then
-        printf '0x%sff' "${hex,,}"
-        return 0
-    elif [[ "$hex" =~ ^[0-9a-fA-F]{8}$ ]]; then
-        printf '0x%s' "${hex,,}"
-        return 0
-    fi
-    printf '0xffffffff'
+    printf '0x%sff\n' "${1#\#}"
 }
 
 ACCENT_RGBA="$(hex_to_rgba "$ACCENT_COLOR")"
 ACCENT_RGB="$(hex_to_rgb "$ACCENT_COLOR")"
 ACCENT_0X="$(hex_to_0x "$ACCENT_COLOR")"
 
-# ===================================================
-# ============== Generate theme files ===============
-# ===================================================
-
-# Colors (waybar, swaync)
-cat > "$STATE_DIR/colors.css" <<EOF
+render_colors() {
+    cat > "$THEME_RENDER_DIR/colors.css" <<EOF
 /* Generated by ~/.local/bin/gen_style.sh */
 @define-color accent_color ${ACCENT_COLOR};
 EOF
+}
 
-# Fonts (waybar, swaync)
-cat > "$STATE_DIR/fonts.css" <<EOF
+render_fonts() {
+    cat > "$THEME_RENDER_DIR/fonts.css" <<EOF
 /* Generated by ~/.local/bin/gen_style.sh */
 * {
     font-family: "${FONT_FAMILY}";
     font-size: ${FONT_SIZE}px;
 }
 EOF
+}
 
-# Hyprland style (hyprlock)
-cat > "$STATE_DIR/hyprland-style.conf" <<EOF
+render_hyprland() {
+    cat > "$THEME_RENDER_DIR/hyprland-style.conf" <<EOF
 # Generated by ~/.local/bin/gen_style.sh
 \$font_family = ${FONT_FAMILY}
 \$font_size = ${FONT_SIZE}
 \$accent_color = ${ACCENT_RGB}
 EOF
-
-cat > "$STATE_DIR/hyprland-style.lua" <<EOF
+    cat > "$THEME_RENDER_DIR/hyprland-style.lua" <<EOF
 -- Generated by ~/.local/bin/gen_style.sh
 return {
     font_family = "${FONT_FAMILY}",
@@ -178,18 +103,20 @@ return {
     border_color = "${ACCENT_RGBA}",
 }
 EOF
+}
 
-# Rofi style
-cat > "$STATE_DIR/rofi-style.rasi" <<EOF
+render_rofi() {
+    cat > "$THEME_RENDER_DIR/rofi-style.rasi" <<EOF
 /* Generated by ~/.local/bin/gen_style.sh */
 * {
     accent: ${ACCENT_COLOR};
     font: "${FONT_FAMILY} ${FONT_SIZE}";
 }
 EOF
+}
 
-# Kitty style
-cat > "$STATE_DIR/kitty-style.conf" <<EOF
+render_kitty() {
+    cat > "$THEME_RENDER_DIR/kitty-style.conf" <<EOF
 # Generated by ~/.local/bin/gen_style.sh
 font_family      family="${FONT_FAMILY}"
 font_size        ${FONT_SIZE}
@@ -197,14 +124,14 @@ foreground ${ACCENT_COLOR}
 color7 ${ACCENT_COLOR}
 color15 ${ACCENT_COLOR}
 EOF
+}
 
-# Btop theme
-cat > "$BTOP_THEME_DIR/HakuBtop.theme" <<EOF
+render_btop() {
+    mkdir -p "$THEME_BTOP_DIR"
+    cat > "$THEME_BTOP_DIR/HakuBtop.theme" <<EOF
 # Generated by ~/.local/bin/gen_style.sh
-# Minimal accent mapping (edit keys as you like)
 theme[main_bg]="#000000"
 theme[main_fg]="#c0c0c0"
-
 theme[title]="${ACCENT_COLOR}"
 theme[hi_fg]="${ACCENT_COLOR}"
 theme[selected_fg]="${ACCENT_COLOR}"
@@ -214,18 +141,20 @@ theme[mem_box]="${ACCENT_COLOR}"
 theme[net_box]="${ACCENT_COLOR}"
 theme[disk_box]="${ACCENT_COLOR}"
 EOF
+}
 
-# Newtab page (Zen browser)
-cat > "$STATE_DIR/newtab.css" <<EOF
+render_newtab() {
+    cat > "$THEME_RENDER_DIR/newtab.css" <<EOF
 /* Generated by ~/.local/bin/gen_style.sh */
 :root {
     --accent_color: ${ACCENT_COLOR};
     --font_family: "${FONT_FAMILY}";
 }
 EOF
+}
 
-# Niri style (for border)
-cat > "$STATE_DIR/niri-style.kdl" <<EOF
+render_niri() {
+    cat > "$THEME_RENDER_DIR/niri-style.kdl" <<EOF
 // Generated by ~/.local/bin/gen_style.sh
 layout {
     focus-ring {
@@ -233,9 +162,10 @@ layout {
     }
 }
 EOF
+}
 
-# MangoWM style (for border)
-cat > "$STATE_DIR/mangowm-style.conf" <<EOF
+render_mango() {
+    cat > "$THEME_RENDER_DIR/mangowm-style.conf" <<EOF
 # Generated by ~/.local/bin/gen_style.sh
 focuscolor=${ACCENT_0X}
 maximizescreencolor=${ACCENT_0X}
@@ -243,11 +173,13 @@ scratchpadcolor=${ACCENT_0X}
 globalcolor=${ACCENT_0X}
 overlaycolor=${ACCENT_0X}
 EOF
+}
 
-# Labwc theme
-if [[ -f "$LABWC_RC" && -f "$LABWC_OVERRIDE" ]]; then
-    # Labwc theme override
-    GEN_BLOCK="# BEGIN GENERATED THEME
+render_labwc() {
+    [[ -f "$THEME_LABWC_RC" && -f "$THEME_LABWC_OVERRIDE" ]] || return 0
+
+    local theme_block
+    theme_block="# BEGIN GENERATED THEME
 window.active.border.color: ${ACCENT_COLOR}
 window.inactive.border.color: #000000
 window.active.label.text.color: ${ACCENT_COLOR}
@@ -264,72 +196,32 @@ osd.window-switcher.style-classic.item.active.border.color: ${ACCENT_COLOR}
 osd.window-switcher.style-thumbnail.item.active.border.color: ${ACCENT_COLOR}
 # END GENERATED THEME"
 
-    if grep -q "# BEGIN GENERATED THEME" "$LABWC_OVERRIDE"; then
-        awk -v block="$GEN_BLOCK" '
-            /# BEGIN GENERATED THEME/ { print block; skip=1; next }
-            /# END GENERATED THEME/ { skip=0; next }
-            !skip { print }
-        ' "$LABWC_OVERRIDE" > "$LABWC_OVERRIDE.tmp" && mv "$LABWC_OVERRIDE.tmp" "$LABWC_OVERRIDE"
-    else
-        echo "[ERROR] NOT FOUND # BEGIN GENERATED THEME in $LABWC_OVERRIDE"
-        notify-send "[ERROR] NOT FOUND # BEGIN GENERATED THEME in $LABWC_OVERRIDE" "Labwc theme update failed"
+    if grep -q "# BEGIN GENERATED THEME" "$THEME_LABWC_OVERRIDE"; then
+        awk -v block="$theme_block" '/# BEGIN GENERATED THEME/ { print block; skip=1; next } /# END GENERATED THEME/ { skip=0; next } !skip { print }' \
+            "$THEME_LABWC_OVERRIDE" > "${THEME_LABWC_OVERRIDE}.tmp" && mv "${THEME_LABWC_OVERRIDE}.tmp" "$THEME_LABWC_OVERRIDE"
     fi
 
-    # Labwc rc.xml (font)
-    if [[ -f "$LABWC_RC" ]]; then
-        LABWC_FONT_SIZE=$(( FONT_SIZE - 2 ))
-        if [ "$LABWC_FONT_SIZE" -lt 8 ]; then
-            LABWC_FONT_SIZE=8  # Limit minimum font size to 8
-        fi
-        export GEN_FONT_BLOCK="        <!-- BEGIN GENERATED FONTS -->
-        <font place=\"ActiveWindow\">
-            <name>${FONT_FAMILY}</name>
-            <size>${LABWC_FONT_SIZE}</size>
-            <slant>normal</slant>
-            <weight>normal</weight>
-        </font>
-        <font place=\"InactiveWindow\">
-            <name>${FONT_FAMILY}</name>
-            <size>${LABWC_FONT_SIZE}</size>
-            <slant>normal</slant>
-            <weight>normal</weight>
-        </font>
-        <font place=\"MenuHeader\">
-            <name>${FONT_FAMILY}</name>
-            <size>${LABWC_FONT_SIZE}</size>
-            <slant>normal</slant>
-            <weight>normal</weight>
-        </font>
-        <font place=\"MenuItem\">
-            <name>${FONT_FAMILY}</name>
-            <size>${LABWC_FONT_SIZE}</size>
-            <slant>normal</slant>
-            <weight>normal</weight>
-        </font>
-        <font place=\"OnScreenDisplay\">
-            <name>${FONT_FAMILY}</name>
-            <size>${LABWC_FONT_SIZE}</size>
-            <slant>normal</slant>
-            <weight>normal</weight>
-        </font>
+    local labwc_font_size=$((FONT_SIZE - 2))
+    (( labwc_font_size < 8 )) && labwc_font_size=8
+    export GEN_FONT_BLOCK="        <!-- BEGIN GENERATED FONTS -->
+        <font place=\"ActiveWindow\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
+        <font place=\"InactiveWindow\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
+        <font place=\"MenuHeader\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
+        <font place=\"MenuItem\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
+        <font place=\"OnScreenDisplay\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
         <!-- END GENERATED FONTS -->"
-
-        if grep -q "<!-- BEGIN GENERATED FONTS -->" "$LABWC_RC"; then
-            awk '
-                /<!-- BEGIN GENERATED FONTS -->/ { print ENVIRON["GEN_FONT_BLOCK"]; skip=1; next }
-                /<!-- END GENERATED FONTS -->/ { skip=0; next }
-                !skip { print }
-            ' "$LABWC_RC" > "${LABWC_RC}.tmp" && mv "${LABWC_RC}.tmp" "$LABWC_RC"
-        else
-            echo "[ERROR] NOT FOUND <!-- BEGIN GENERATED FONTS --> in $LABWC_RC"
-            notify-send "[ERROR] NOT FOUND <!-- BEGIN GENERATED FONTS --> in $LABWC_RC" "Labwc rc.xml update failed"
-        fi
+    if grep -q "<!-- BEGIN GENERATED FONTS -->" "$THEME_LABWC_RC"; then
+        awk '/<!-- BEGIN GENERATED FONTS -->/ { print ENVIRON["GEN_FONT_BLOCK"]; skip=1; next } /<!-- END GENERATED FONTS -->/ { skip=0; next } !skip { print }' \
+            "$THEME_LABWC_RC" > "${THEME_LABWC_RC}.tmp" && mv "${THEME_LABWC_RC}.tmp" "$THEME_LABWC_RC"
     fi
-fi
+}
 
+RENDERERS=(colors fonts hyprland rofi kitty btop newtab niri mango labwc)
+for renderer in "${RENDERERS[@]}"; do
+    "render_${renderer}"
+done
 
-# Output summary
-echo "Generated theme state in: $STATE_DIR"
+echo "Generated theme files in: $THEME_RENDER_DIR"
 echo "ACCENT_COLOR=$ACCENT_COLOR"
 echo "FONT_FAMILY=$FONT_FAMILY"
 echo "FONT_SIZE=$FONT_SIZE"
