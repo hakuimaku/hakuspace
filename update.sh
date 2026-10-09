@@ -518,7 +518,7 @@ if command -v nixos-rebuild >/dev/null 2>&1; then
     elif [[ -f "/etc/nixos/hakuspace-config.nix" ]] && grep -q "./hakuspace-config.nix" "/etc/nixos/configuration.nix"; then
         log_info "Detected NixOS with Local hakuspace-config.nix (Offline Mode)."
         if ask_yes_no "===> Do you want to update local hakuspace-config.nix and rebuild NixOS now?"; then
-            copy_file "$NIXOS_DIR/hakuspace-config.nix" "/etc/nixos/hakuspace-config.nix"
+            copy_file "$NIX_DIR/hakuspace-config.nix" "/etc/nixos/hakuspace-config.nix"
             log_info "Rebuilding NixOS system..."
             sudo nixos-rebuild switch
             log_ok "NixOS updated and rebuilt successfully via Local Config."
