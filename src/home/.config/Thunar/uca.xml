@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <actions>
 <action>
-	<icon>utilities-terminal</icon>
+	<icon>kitty</icon>
 	<name>Open Terminal Here</name>
 	<submenu></submenu>
 	<unique-id>1786619912228942-1</unique-id>
@@ -13,7 +13,7 @@
 	<directories/>
 </action>
 <action>
-	<icon>dialog-xml-editor</icon>
+	<icon>visualstudiocode</icon>
 	<name>Open Code</name>
 	<submenu></submenu>
 	<unique-id>1787380058874833-1</unique-id>
