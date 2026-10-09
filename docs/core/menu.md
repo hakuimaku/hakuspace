@@ -1,6 +1,6 @@
 # The Haku Menu (src/core/menu)
 
-If you've ever pressed the keybind for the "Haku Menu" (usually `SUPER + TAB`), you've seen the multi-tabbed, customizable Rofi interface that serves as the central command hub for your desktop. 
+If you've ever pressed the keybind for the "Haku Menu" (usually `SUPER + TAB`), you've seen the multi-tabbed, customizable Rofi interface that serves as the central command hub for your desktop.
 
 The scripts that power this menu are located in `src/core/menu/`. Instead of a monolithic, hard-to-edit configuration, the Haku Menu is modular. It uses Rofi's custom script mode (`-modes`) to separate the menu into three distinct tabs: **General**, **Theme**, and **Setting**.
 
@@ -9,8 +9,11 @@ Here is a detailed breakdown of how the menu is built:
 ## The Main Hub
 
 ### `hakumenu.sh`
-This is the entry-point script. It doesn't actually contain any of the menu items; it simply launches Rofi and binds the three custom bash scripts to their respective tabs.
-- **What it does:** Runs `rofi -show "General"` and defines the custom modes: 
+This is the stable public entry-point script. It is now a UI-free routing wrapper that delegates the Classic presentation to `frontend/classic/hakumenu_rofi.sh` while preserving the deployed `hakumenu.sh` basename used by keybinds and Waybar.
+
+### `hakumenu_rofi.sh`
+This is the Classic presentation adapter. It launches Rofi and binds the three custom bash scripts to their respective tabs.
+- **What it does:** Runs the HakuMenu Rofi mode and defines the custom modes:
   - `General` -> `hm_general.sh`
   - `Theme` -> `hm_theme.sh`
   - `Setting` -> `hm_setting.sh`

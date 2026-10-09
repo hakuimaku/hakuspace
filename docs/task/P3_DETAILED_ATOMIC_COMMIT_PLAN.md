@@ -384,6 +384,57 @@ Classic must remain unchanged.
 
 ---
 
+## Core script frontend/backend split
+
+This refactor is inserted before real HakuMenu Theme / Wallpaper action wiring so Hikai does not depend on Classic Rofi scripts as its domain API.
+
+Detailed execution spec:
+
+```text
+docs/task/P3_CORE_SCRIPT_FRONTEND_BACKEND_SPLIT_PLAN.md
+```
+
+Architecture rule:
+
+```text
+backend/domain = headless explicit commands
+Classic frontend = Rofi / haku_pick presentation
+facade = stable public command basename
+```
+
+Run C0–C7 from the dedicated plan before wiring Theme or Wallpaper UI to script actions. C8–C15 may follow immediately or after the next UI milestone, but no new Hikai feature may introduce a dependency on a direct-Rofi backend script.
+
+Atomic commits:
+
+```text
+C0  plan/inventory
+C1  core-script guardrails
+C2  taskbar split
+C3  waybar split
+C4  theme mutation split
+C5  rofi-theme split
+C6  niri-animation split
+C7  wallpaper split
+C8  power split
+C9  session-exit split
+C10 recorder split
+C11 clipboard split
+C12 shell-switcher split
+C13 shortcut split
+C14 source-tree taxonomy/README
+C15 final direct-Rofi audit — DONE (C9 destructive exit remains NEEDS VERIFY)
+```
+
+Gate before returning to HakuMenu Theme:
+
+- `theme_ctl.sh` is headless and explicit;
+- wallpaper model/action contract is available independently of Rofi before W1;
+- Classic public command behavior remains unchanged;
+- no direct picker invocation exists in `src/core/backend/`;
+- flattened `~/.local/bin` deployment has no basename collision/regression.
+
+---
+
 ## HakuMenu Theme
 
 ### M1
@@ -521,12 +572,13 @@ p3(osd): stabilize compact centered layout
 
 ## Remaining migration
 
-### X1+
-Power / Clipboard / other remaining Hikai direct rofi paths.
+The broad `src/core` frontend/backend separation is now specified in:
 
-One feature/caller family per commit.
+```text
+docs/task/P3_CORE_SCRIPT_FRONTEND_BACKEND_SPLIT_PLAN.md
+```
 
-Never bundle all migration into one commit.
+Any remaining Hikai direct-Rofi caller migration after C0–C15 still follows the original rule: one feature/caller family per commit, never one giant migration batch.
 
 ---
 

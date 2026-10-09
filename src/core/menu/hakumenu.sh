@@ -1,18 +1,25 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-# This script is used to show the Haku Menu
-# Need script: hm-general.sh, hm-theme.sh, hm-setting.sh
+# Stable HakuMenu entrypoint. Hikai currently opens its native HakuMenu through
+# its own trigger path, so this command preserves the existing Classic Rofi
+# behavior without embedding the Rofi invocation in the routing script.
 
-# argument --extend to set position of rofi window
-if [[ "$1" == "--extend" || "$1" == "-e" ]]; then
-  shift
-  EXTEND=("$@")
-else
-  EXTEND=()
-fi
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-rofi -show "" \
-  -p "Haku Menu - Search" \
-  -i \
-  "${EXTEND[@]}" \
-  -modes ":~/.local/bin/hm_general.sh,:~/.local/bin/hm_theme.sh,:~/.local/bin/hm_setting.sh"
+resolve_frontend() {
+    local candidate
+    for candidate in \
+        "$SCRIPT_DIR/hakumenu_rofi.sh" \
+        "$SCRIPT_DIR/../frontend/classic/hakumenu_rofi.sh" \
+        "$HOME/.local/bin/hakumenu_rofi.sh"; do
+        if [[ -x "$candidate" || -f "$candidate" ]]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+    printf 'hakumenu.sh: unable to resolve hakumenu_rofi.sh\n' >&2
+    return 1
+}
+
+exec "$(resolve_frontend)" "$@"

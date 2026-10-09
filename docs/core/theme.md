@@ -52,3 +52,44 @@ We've designed this system to be highly customizable. If you want to tweak how i
 
 ---
 **Previous:** [Core Libraries](lib.md) | **Next:** [System Management](sys.md)
+
+## Niri Animation Control Boundary
+
+Niri animation selection is split into three layers so Hikai and future UI code do not depend on Rofi:
+
+- `niri_animation_ctl.sh` is the headless backend. It parses `niri-animation.kdl`, reports the active option, and applies an explicit `<mode> <option-id>` selection.
+- `niri_animation_rofi.sh` is the Classic-only Rofi frontend. It owns the mode switcher and script-mode presentation but does not edit KDL itself.
+- `niri_animation_switcher.sh` remains the compatibility facade. Calling it without arguments opens the Classic picker, while `--list`, `--get`, and `--set` expose the headless API.
+
+The backend contract is:
+
+```text
+niri_animation_ctl.sh list [--json]
+niri_animation_ctl.sh get <mode>
+niri_animation_ctl.sh set <mode> <option-id>
+```
+
+The Niri session check and KDL validation belong to the backend. `NIRI_BYPASS=1` exists only for controlled testing outside a Niri session.
+
+## Wallpaper Control Boundary
+
+Wallpaper selection is split into three layers so future Hikai Theme/Wallpaper UI does not depend on the Classic menu protocol:
+
+- `wallpaper_ctl.sh` is the headless backend. It discovers static/video wallpapers, generates missing video previews, reports structured state, applies an explicit wallpaper, synchronizes the wallpaper-derived accent, and stops/restores lively wallpaper state.
+- `wallpaper_rofi.sh` is the Classic-only frontend. It converts backend records into the existing icon-bearing script-mode rows and owns the Classic menu geometry.
+- `wallpaper_select.sh` remains the compatibility facade. Calling it without arguments still opens the Classic selector; the legacy `--static`, `--lively`, `--exit`, and `--extend` entry points remain available.
+
+The structured backend contract intended for Hikai is:
+
+```text
+wallpaper_ctl.sh list-static --json
+wallpaper_ctl.sh list-lively --json
+wallpaper_ctl.sh apply-static <id-or-path>
+wallpaper_ctl.sh apply-lively <id-or-path>
+wallpaper_ctl.sh stop-lively
+wallpaper_ctl.sh current --json
+wallpaper_ctl.sh status --json
+wallpaper_ctl.sh ensure-thumbnails
+```
+
+Each JSON list record contains `id`, `kind`, `path`, `label`, `thumbnail`, and `selected`, so QML does not need to parse Classic menu escape sequences.

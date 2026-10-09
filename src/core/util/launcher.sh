@@ -1,12 +1,32 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-# Facade for application launcher and emoji picker
+# Public launcher facade. Keep this basename stable for existing keybinds.
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/haku_backend_lib.sh"
+
+resolve_script() {
+    local name="$1"
+    local candidate
+    for candidate in \
+        "$SCRIPT_DIR/$name" \
+        "$SCRIPT_DIR/../lib/$name" \
+        "$SCRIPT_DIR/../frontend/classic/$name" \
+        "$HOME/.local/bin/$name"; do
+        if [[ -x "$candidate" || -f "$candidate" ]]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+    printf 'launcher.sh: unable to resolve %s\n' "$name" >&2
+    return 1
+}
+
+# shellcheck source=/dev/null
+source "$(resolve_script haku_backend_lib.sh)"
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-    cat <<'EOF'
+    cat <<'HELP'
 Usage: launcher.sh [MODE]
 Manage the application launcher facade.
 
@@ -14,22 +34,21 @@ Modes:
     drun                Open the application launcher (default)
     emoji               Open the emoji picker
     -h, --help          Show this help message
-EOF
+HELP
     exit 0
 fi
 
 MODE="${1:-drun}"
+case "$MODE" in
+    drun|emoji) ;;
+    *)
+        printf 'launcher.sh: unknown mode: %s\n' "$MODE" >&2
+        exit 2
+        ;;
+esac
 
 if haku_backend_is "classic"; then
-    if [[ "$MODE" == "emoji" ]]; then
-        exec rofi -modi emoji -show emoji
-    else
-        exec rofi -show drun
-    fi
-else
-    if [[ "$MODE" == "emoji" ]]; then
-        haku_qs_ipc launcher open emoji
-    else
-        haku_qs_ipc launcher open drun
-    fi
+    exec "$(resolve_script launcher_rofi.sh)" "$MODE"
 fi
+
+haku_qs_ipc launcher open "$MODE"
