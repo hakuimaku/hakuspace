@@ -11,5 +11,5 @@
   <property name="misc-middle-click-in-tab" type="bool" value="true"/>
   <property name="misc-text-beside-icons" type="bool" value="false"/>
   <property name="misc-symbolic-icons-in-sidepane" type="bool" value="false"/>
-  <property name="misc-highlighting-enabled" type="bool" value="true"/>
+  <property name="misc-highlighting-enabled" type="bool" value="false"/>
 </channel>
