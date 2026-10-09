@@ -155,7 +155,7 @@
         "format-icons": {
             "magic": ""
 	    },
-        "format-window-separator": "\n",
+        "format-window-separator": " ",
         "window-rewrite-default": "",
         "window-rewrite": {
             "title<.*youtube.*>": "",
