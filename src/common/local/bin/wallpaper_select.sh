@@ -13,7 +13,7 @@ list_walls() {
     cd "$WALL_DIR" || exit
     for file in *.{jpg,jpeg,png,gif}; do
         [[ -e "$file" ]] || continue
-        echo -en "$file\0icon\x1f$WALL_DIR/$file\n"
+        echo -e "$file\0icon\x1f$WALL_DIR/$file"
     done
 }
 

@@ -42,11 +42,8 @@ kill_dockbar() {
 }
 
 run_autohide_script() {
-    if command -v nix-shell >/dev/null 2>&1; then
-        nix-shell -p gobject-introspection gtk3 pango gtk-layer-shell "python3.withPackages (ps: with ps; [ pygobject3 ])" --run "python3 \"$AUTOHIDE_SCRIPT\"" >/dev/null 2>&1 &
-    else
-        python3 "$AUTOHIDE_SCRIPT" >/dev/null 2>&1 &
-    fi
+    export GI_TYPELIB_PATH="/run/current-system/sw/lib/girepository-1.0:$GI_TYPELIB_PATH"
+    python3 "$AUTOHIDE_SCRIPT" &
 }
 
 # Display help message

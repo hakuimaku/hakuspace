@@ -55,7 +55,7 @@ MIME_TYPE=$(file -b --mime-type "$WALLPAPER")
 case "$MIME_TYPE" in
     image/*)
         # Kill any active mpvpaper instance to avoid layer overlapping
-        pkill -x mpvpaper 2>/dev/null || true
+        pkill mpvpaper 2>/dev/null || true
 
         # Set static/animated image background using awww
         if awww img "$WALLPAPER" $AWWW_OPTS; then
@@ -68,7 +68,7 @@ case "$MIME_TYPE" in
 
     video/*)
         # Terminate previous mpvpaper instance before launching a new one
-        pkill -x mpvpaper 2>/dev/null || true
+        pkill mpvpaper 2>/dev/null || true
         sleep 0.2
 
         MONITOR=$(get_active_monitor)

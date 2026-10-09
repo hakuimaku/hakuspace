@@ -30,7 +30,7 @@ show_help() {
     echo "  --help      Show this help message."
     echo "  --startup   Start the audio monitoring daemon (prints log to stdout)."
     echo "  --toggle    Toggle hypridle and the monitoring daemon on/off."
-    echo "  --check     Check if the daemon is currently running."
+    echo "  --check     Check if the daemon is running and if hypridle is paused."
 }
 
 is_audio_playing() {
@@ -98,7 +98,6 @@ toggle_service() {
 
     if [ "$DAEMON_RUNNING" -eq 1 ]; then
         log_msg "TOGGLE: Stopping hypridle and daemon..."
-        notify-send "Idle Manager" "Stopping hypridle and daemon..."
         
         kill -TERM "$DAEMON_PID" 2>/dev/null
         rm -f "$PID_FILE" 2>/dev/null
@@ -110,7 +109,6 @@ toggle_service() {
         log_msg "TOGGLE: All services stopped."
     else
         log_msg "TOGGLE: Starting hypridle and daemon..."
-        notify-send "Idle Manager" "Starting hypridle and daemon..."
         
         pkill -CONT -x -u "$USER" hypridle 2>/dev/null
         pkill -TERM -x -u "$USER" hypridle 2>/dev/null
@@ -128,15 +126,36 @@ toggle_service() {
 }
 
 check_status() {
+    local daemon_status="Inactive"
+    local daemon_pid=""
+    local hypridle_status="Not running"
+
     if [ -f "$PID_FILE" ]; then
-        DAEMON_PID=$(cat "$PID_FILE")
-        if ps -p "$DAEMON_PID" > /dev/null 2>&1; then
-            echo "STATUS: Active (Daemon is running, PID: $DAEMON_PID)"
-            exit 0
+        daemon_pid=$(cat "$PID_FILE")
+        if ps -p "$daemon_pid" > /dev/null 2>&1; then
+            daemon_status="Active (PID: $daemon_pid)"
         fi
     fi
-    echo "STATUS: Inactive (Daemon is stopped)"
-    exit 1
+
+    HYPRIDLE_PID=$(pgrep -x -u "$USER" hypridle | head -n 1)
+    if [ -n "$HYPRIDLE_PID" ]; then
+        # Check process state (T = Stopped/Paused)
+        proc_state=$(ps -o state= -p "$HYPRIDLE_PID" 2>/dev/null | tr -d ' ')
+        if [[ "$proc_state" =~ T ]]; then
+            hypridle_status="Paused / Blocked (PID: $HYPRIDLE_PID)"
+        else
+            hypridle_status="Running / Active (PID: $HYPRIDLE_PID)"
+        fi
+    fi
+
+    echo "DAEMON: $daemon_status"
+    echo "HYPRIDLE: $hypridle_status"
+
+    if [ "$daemon_status" != "Inactive" ]; then
+        exit 0
+    else
+        exit 1
+    fi
 }
 
 case "$1" in

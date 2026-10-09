@@ -16,12 +16,8 @@ if [[ ! -f "$DESKTOP_ICONS_STATE" ]] || ! grep -qxE '0|1' "$DESKTOP_ICONS_STATE"
 fi
 
 launch_desktop_icons() {
-    if command -v nix-shell >/dev/null 2>&1; then
-        nix-shell -p gobject-introspection gtk3 pango gtk-layer-shell "python3.withPackages (ps: with ps; [ pygobject3 ])" --run "python3 \"$DESKTOP_MANAGER_BIN\"" >/dev/null 2>&1 &
-    else
-        python3 "$DESKTOP_MANAGER_BIN" >/dev/null 2>&1 &
-    fi
-    disown
+    export GI_TYPELIB_PATH="/run/current-system/sw/lib/girepository-1.0:$GI_TYPELIB_PATH"
+    python3 "$DESKTOP_MANAGER_BIN" &
 }
 
 kill_desktop_icons() {

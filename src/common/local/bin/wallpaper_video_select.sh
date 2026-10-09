@@ -37,7 +37,7 @@ list_walls() {
             thumb="video-x-generic"
         fi
 
-        echo -en "$file\0icon\x1f$thumb\n"
+        echo -e "$file\0icon\x1f$thumb\n"
     done
 }
 

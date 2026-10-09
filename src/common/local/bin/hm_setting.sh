@@ -19,8 +19,8 @@ if [[ $# -eq 0 ]]; then
 󱂩  Dockbar Auto-hide Toggle ($DOCK_TEXT)
 󱂩  Dockbar Exclusive Toggle ($DOCK_EXCLUSIVE_TEXT)
 󱂩  Dockbar Icon Size Change ($DOCK_ICON_SIZE_TEXT)
-󱁤  Open Settings Folder
-󱁤  Open Config Menu General Tab
+󱁤  Settings Folder
+󱁤  HakuMenu General Tab
 󰖩  Wifi
 󰂯  Bluetooth
 󰋊  Disk Manager
