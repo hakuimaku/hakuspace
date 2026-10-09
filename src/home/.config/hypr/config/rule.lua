@@ -105,7 +105,7 @@ rofiAnimation = hl.layer_rule({
     name = "rofi-slide",
     match = { namespace = "rofi" },
 
-    animation = "popin 60%",
+    animation = "slide",
     blur = true,
 })
 -- Animation for Waybar
