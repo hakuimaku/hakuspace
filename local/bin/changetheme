@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+STATE_DIR="$HOME/.local/state/haku_theme"
+GEN="$HOME/.local/bin/gen-style.sh"
+APPLY="$HOME/.local/bin/apply-style.sh"
+
+mkdir -p "$STATE_DIR"
+
+# 1) Read current accent from state (fallback #ffffff)
+ACCENT="#ffffff"
+if [[ -f "$STATE_DIR/colors.css" ]]; then
+  # parse: @define-color accent_color #68818f;
+  parsed="$(sed -nE 's/^\s*@define-color\s+accent_color\s+(#[0-9a-fA-F]{6})\s*;.*$/\1/p' "$STATE_DIR/colors.css" | head -n1 || true)"
+  [[ -n "$parsed" ]] && ACCENT="$parsed"
+fi
+
+# 2) Get fonts list
+fonts="$(fc-list : family 2>/dev/null | sed 's/,.*//' | sort -u || true)"
+if [[ -z "$fonts" ]]; then
+  echo "No fonts found via fc-list" >&2
+  exit 1
+fi
+
+# 3) Choose font family via rofi
+font="$(printf '%s\n' "$fonts" | rofi -dmenu -p "Choose Font Family" -i)"
+[[ -z "${font:-}" ]] && exit 0
+
+# 4) Default size from current state (fallback 16)
+default_size="16"
+if [[ -f "$STATE_DIR/fonts.css" ]]; then
+  # parse: font-size: 16px;
+  parsed_size="$(sed -nE 's/^\s*font-size:\s*([0-9]+)px\s*;.*$/\1/p' "$STATE_DIR/fonts.css" | head -n1 || true)"
+  [[ -n "$parsed_size" ]] && default_size="$parsed_size"
+fi
+
+size="$(printf '%s\n' "$default_size" | rofi -dmenu -p "Type Font Size" -i)"
+[[ -z "${size:-}" ]] && exit 0
+[[ "$size" =~ ^[0-9]+$ ]] || size="$default_size"
+
+# 5) Generate state with same accent, new font+size, then apply
+"$GEN" "$ACCENT" "$font" "$size"
+"$APPLY"
+
+notify-send "Theme Updated" "Font: $font | Size: $size | Accent: $ACCENT"

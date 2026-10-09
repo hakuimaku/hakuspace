@@ -1,8 +1,10 @@
 /* ============================================================================== */
 /* GLOBAL STYLES                                  */
 /* ============================================================================== */
+@import url("../../.local/state/haku_theme/colors.css");
+@import url("../../.local/state/haku_theme/fonts.css");
+
 * {
-    font-family: "JetBrainsMono Nerd Font";
     font-size: 16px;
     font-weight: bold;
     border-radius: 20px;
@@ -10,7 +12,7 @@
 
 window#waybar {
     background-color: transparent;
-    color: #68818f;
+    color: @accent_color;
     transition: background-color 0.3s ease;
 }
 
@@ -21,10 +23,10 @@ window#waybar {
     margin: 2px;
 }
 
+
 /* ============================================================================== */
 /* COMMON MODULE STYLES                               */
 /* ============================================================================== */
-#hyprland-workspaces,
 #window,
 #custom-recorder,
 #custom-notification,
@@ -41,11 +43,18 @@ window#waybar {
     min-width: 50px;
 }
 
+#hyprland-workspaces {
+    margin: 2px;
+    padding: 0 8px;
+    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 0px;
+}
+
 /* ============================================================================== */
 /* WORKSPACES                                    */
 /* ============================================================================== */
 #workspaces button {
-    color: #68818f;
+    color: @accent_color;
     padding: 0 12px;
     transition: all 0.7s cubic-bezier(0, 0.5, 0.35, 1);
     margin: 2px;
@@ -53,7 +62,7 @@ window#waybar {
 
 #workspaces button.active {
     color: #000000;
-    background-color: #68818f;
+    background-color: @accent_color;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
     min-width: 70px;
 }
@@ -86,29 +95,29 @@ window#waybar {
 /* ============================================================================== */
 /* SPECIFIC MODULES                                 */
 /* ============================================================================== */
-#window { color: #68818f; }
+#window { color: @accent_color; }
 
 #clock { 
-    color: #68818f; 
+    color: @accent_color; 
 }
 
 #custom-recorder {
-    color: #68818f;
-    border: 1px solid #68818f;
+    color: @accent_color;
+    border: 1px solid @accent_color;
     animation: blink 1s infinite; 
 }
 
-#custom-notification { color: #68818f; }
+#custom-notification { color: @accent_color; }
 
-#backlight { color: #68818f; }
+#backlight { color: @accent_color; }
 
-#pulseaudio { color: #68818f; }
+#pulseaudio { color: @accent_color; }
 
-#battery { color: #68818f; }
+#battery { color: @accent_color; }
 
-#memory { color: #68818f; }
+#memory { color: @accent_color; }
 
-#cpu { color: #68818f; }
+#cpu { color: @accent_color; }
 /* ============================================================================== */
 /* HOVER EFFECTS                                   */
 /* ============================================================================== */
@@ -121,14 +130,14 @@ window#waybar {
 #memory:hover,
 #cpu:hover {
     color: #000000;
-    background-color: #68818f;
+    background-color: @accent_color;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
     min-width: 100px;
 }
 
 #clock:hover {
     color: #000000;
-    background-color: #68818f;
+    background-color: @accent_color;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
     min-width: 450px;
 }
@@ -143,7 +152,7 @@ tooltip {
 }
 
 tooltip label {
-    color: #68818f;
+    color: @accent_color;
     font-size: 16px;
 }
 
