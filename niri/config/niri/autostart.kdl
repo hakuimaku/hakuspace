@@ -26,8 +26,3 @@ spawn-at-startup "sh" "-c" "$HOME/.local/bin/waybar_manager.sh"
 spawn-at-startup "fcitx5" "-d"
 spawn-at-startup "gammastep" "-O" "4200K"
 spawn-at-startup "sh" "-c" "$HOME/.local/bin/welcome.sh"
-
-// For Cava Underbar
-spawn-at-startup "niri-float-sticky" "-disable-auto-stick"
-// If you're using Fedora, uncomment the line below & comment the line above
-//spawn-at-startup "$HOME/go/bin/niri-float-sticky" "-disable-auto-stick"
