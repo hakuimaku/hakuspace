@@ -19,7 +19,7 @@ This is the entry-point script. It doesn't actually contain any of the menu item
 
 ### `hm_general.sh` (The General Tab)
 This tab is meant for your daily drivers and frequently used applications.
-- **What it does:** By default, it provides quick shortcuts to launch your App Menu, Code Editor, Browser, Screen Recorder, Local Send, File Manager, and the Shutdown menu.
+- **What it does:** By default, it provides quick shortcuts to launch your App Menu, Code Editor, Browser, Screen Recorder, Local Send, File Manager, and the Shutdown menu. It incorporates improved spawn functions to ensure better background process management (removing risky `disown` calls that could orphan tasks).
 - **User Customization:** This script is intentionally designed to be overridden! Before loading the default list, it checks if a file named `~/hakucfg/general-menu.sh` exists. If you've created that file, the script validates its syntax and executes it instead. This means you can build your own custom application launcher tab without ever touching the core repository files!
 
 ### `hm_theme.sh` (The Theme Tab)
@@ -34,4 +34,4 @@ This tab acts as a bridge to both your system hardware settings and HakuSpace's 
 
 
 ---
-⬅️ **Previous:** [Utilities](util.md) | **Next:** [Mini-Apps](app.md) ➡️
+**Previous:** [Utilities](util.md) | **Next:** [Mini-Apps](app.md)

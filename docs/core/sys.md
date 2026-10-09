@@ -49,4 +49,4 @@ A small quality-of-life script.
 
 
 ---
-⬅️ **Previous:** [Theming Engine](theme.md) | **Next:** [Utilities](util.md) ➡️
+**Previous:** [Theming Engine](theme.md) | **Next:** [Utilities](util.md)
