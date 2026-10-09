@@ -15,19 +15,18 @@ window#waybar {
     transition: background-color 0.3s ease;
 }
 
-.modules-center {
-    background-color: rgba(0, 0, 0, 0.7);
-    border-radius: 0 0 30px 30px;
-    padding: 6px 14px 6px 14px;
-    margin: 0 0 4px 0;
-    box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.4);
+.modules-left, .modules-center, .modules-right {
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 20px;
+    padding: 4px;
+    margin: 6px;
+    box-shadow: 3px 3px 3px #000000;
 }
 
 
 /* ============================================================================== */
 /* COMMON MODULE STYLES                               */
 /* ============================================================================== */
-#custom-monitor,
 #custom-haku,
 #window,
 #custom-recorder,
@@ -41,27 +40,25 @@ window#waybar {
 #clock,
 #power-profiles-daemon {
     margin: 1px;
-    padding: 0 10px;
+    padding: 0 6px;
     transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 20px;
+    min-width: 50px;
 }
 
-#custom-monitor,
-#custom-haku {
-    border-top: 2px solid @accent_color;
-    border-radius: 0 0 20px 20px;
-    margin: 0 4px 0 4px;
-}
-
-#cpu,
-#memory,
-#temperature {
-    background-color: rgba(32, 32, 32, 0.6);
+#hyprland-workspaces {
     margin: 1px;
-    padding: 0 12px;
+    padding: 0 4px;
     transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 20px;
+    min-width: 0px;
 }
+
+#niri-workspaces {
+    margin: 1px;
+    padding: 0 4px;
+    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 0px;
+}
+
 
 #tray {
     margin: 4px;
@@ -107,37 +104,45 @@ window#waybar {
 /* ============================================================================== */
 /* WORKSPACES                                    */
 /* ============================================================================== */
-#workspaces {
-    background-color: rgba(0, 0, 0, 0.28);
-    border-radius: 999px;
-    padding: 2px 8px;
-    margin: 0 4px;
-}
-
 #workspaces button {
-    background-color: rgba(255, 255, 255, 0.08);
     color: @accent_color;
-    border-radius: 999px;
-    padding: 0 10px;
-    margin: 0 3px;
-    min-width: 0;
-    min-height: 0;
+    padding: 0 12px;
     transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+    margin: 2px;
 }
 
 #workspaces button.active {
-    background-color: @accent_color;
     color: #000000;
-    min-width: 30px;
+    background-color: @accent_color;
     transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 100px;
 }
 
 #workspaces button.empty {
-    background-color: rgba(255, 255, 255, 0.04);
-    color: rgba(255, 255, 255, 0.35);
+    color: rgba(0, 0, 0, 1);
 }
 
+/*
+#workspaces button:nth-child(1):not(.empty):not(.active) {
+    color: #ffffff;
+}
 
+#workspaces button:nth-child(2):not(.empty):not(.active) {
+    color: #ffffff;
+}
+
+#workspaces button:nth-child(3):not(.empty):not(.active) {
+    color: #ffffff;
+}
+
+#workspaces button:nth-child(4):not(.empty):not(.active) {
+    color: #ffffff;
+}
+
+#workspaces button:nth-child(5):not(.empty):not(.active) {
+    color: #ffffff;
+}
+*/
 /* ============================================================================== */
 /* SPECIFIC MODULES                                 */
 /* ============================================================================== */
@@ -165,18 +170,10 @@ window#waybar {
 
 #cpu { color: @accent_color; }
 
-#temperature { color: @accent_color; }
-
 
 /* ============================================================================== */
 /* HOVER EFFECTS                                   */
 /* ============================================================================== */
-#custom-monitor:hover,
-#cpu:hover,
-#memory:hover,
-#temperature:hover,
-#pulseaudio:hover,
-#backlight:hover,
 #custom-haku:hover,
 #power-profiles-daemon:hover,
 #battery:hover,
@@ -188,21 +185,34 @@ window#waybar {
 }
 
 #workspaces button:hover {
-    background-color: @accent_color;
+    background-color: transparent;
+    border-color: @accent_color;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 20px;
+    min-width: 100px;
 }
 
 #workspaces button.active:hover {
+    color: @accent_color;
+    background-color: transparent;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 60px;
+    min-width: 100px;
+}
+
+#workspaces button.empty:hover {
+    color: @accent_color;
 }
 
 #clock:hover {
     color: #000000;
     background-color: @accent_color;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 100px;
+    min-width: 450px;
+}
+
+#pulseaudio:hover,
+#backlight:hover {
+    color: @accent_color;
+    background-color: transparent;
 }
 
 /* ============================================================================== */
