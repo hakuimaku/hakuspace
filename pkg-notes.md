@@ -29,7 +29,6 @@ Note: This file is a reference for the package categories used in `pkg.txt`. It 
 - rsync
 - wget
 - jq
-- downgrade
 
 ## 3. Clipboard / portal / screenshot / screen recording / theme utilities
 
@@ -59,7 +58,6 @@ Note: This file is a reference for the package categories used in `pkg.txt`. It 
 ## 5. Multimedia / wallpaper / terminal utilities
 
 - mpv
-- vlc
 - imv
 - cava
 - pipes.sh
@@ -78,33 +76,26 @@ Note: This file is a reference for the package categories used in `pkg.txt`. It 
 - bluez-utils
 - blueman
 
-## 7. Input method / Vietnamese input method
-
-- fcitx5
-- fcitx5-bamboo
-- fcitx5-configtool
-
-## 8. Font
+## 7. Font
 
 - noto-fonts
 - noto-fonts-emoji
 - noto-fonts-cjk
-- terminus-font-ttf
 - ttf-jetbrains-mono-nerd
 - rofi-emoji
 
-## 9. Qt / Wayland / theme integration
+## 8. Qt / Wayland / theme integration
 
 - qt6ct
 - qt5-wayland
 - qt6-wayland
 
-## 10. User Applications
+## 9. User Applications
 
 - zen-browser-bin
 - visual-studio-code-bin
 
-## 11. Python / theme utilities
+## 10. Python / theme utilities
 
 - python-colorthief
 - python-pywal16
