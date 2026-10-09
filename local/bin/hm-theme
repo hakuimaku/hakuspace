@@ -9,6 +9,7 @@ if [[ $# -eq 0 ]]; then
   Change Lively Wallpaper
 󰃾  Kill Lively Wallpaper
   Waybar Left & Top Toggle
+󰁪  Auto Random Wallpaper
   Change Theme
 EOF
   exit 0
@@ -21,6 +22,7 @@ case "$chosen" in
   *"Change Lively Wallpaper"*) spawn ~/.local/bin/wallmpvselect ;;
   *"Kill Lively Wallpaper"*) spawn ~/.local/bin/wallmpvselect --exit ;;
   *"Waybar Left & Top Toggle"*) spawn ~/.local/bin/waybar_toggle ;;
+  *"Auto Random Wallpaper"*) spawn ~/.local/bin/random_wallpaper.sh ;;
   *"Change Theme"*) spawn ~/.local/bin/changetheme ;;
 esac
 
