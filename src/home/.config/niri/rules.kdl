@@ -58,6 +58,8 @@ window-rule {
     match app-id=r#"app.zen_browser.zen"#
     match app-id=r#"firefox"#
     match app-id=r#"code"#
+    match app-id=r#"com.microsoft.VSCode"#
+    
     open-maximized true
 }
 
