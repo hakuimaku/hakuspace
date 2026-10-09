@@ -8,6 +8,7 @@
     "spacing": 2,
     "tooltip": true,
     "reload_style_on_change": true,
+    "mode": "",
     "exclusive": true,
 
     "modules-center": [
