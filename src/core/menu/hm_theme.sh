@@ -66,7 +66,6 @@ if [[ $# -eq 0 ]]; then
 󰝚  Cava Underbar ($CAVA_TEXT) $IS_TOP
   Auto Random Wallpaper ($WALL_TEXT)
 󰏜  Change Wallpaper
-󱜏  Change Lively Wallpaper
 󱛹  Kill Lively Wallpaper
 EOF
     exit 0
@@ -85,7 +84,7 @@ case "$chosen" in
     *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh ;;
     *"Auto Random Wallpaper"*) spawn $HOME/.local/bin/random_wallpaper.sh --toggle ;;
     *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
-
+    *"Kill Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh --exit ;;
 esac
 
 exit 0
