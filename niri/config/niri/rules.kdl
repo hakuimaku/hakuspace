@@ -90,20 +90,40 @@ window-rule {
 // Rules for specific layers
 layer-rule {
     match namespace="waybar"
-    match namespace="rofi"
 
     opacity 1.0
-
     shadow {
         on
-        softness 80
-        spread 10
+        softness 100
+        spread 12
         offset x=0 y=0
         draw-behind-window true
         color "#00000064"
     }
 }
 
+layer-rule {
+    match namespace="rofi"
+
+    opacity 0.9
+    geometry-corner-radius 20
+    background-effect {
+        blur true
+        xray false
+        noise 0.3
+        saturation 1.5
+    }
+    shadow {
+        on
+        softness 80
+        spread 20
+        offset x=0 y=0
+        draw-behind-window true
+        color "#00000064"
+    }
+}
+
+// Rules for xdg-desktop-portal-gtk
 window-rule {
     match app-id=r#"xdg-desktop-portal-gtk"#
 
@@ -111,4 +131,19 @@ window-rule {
     default-floating-position x=0 y=0
     min-width 400
     min-height 600
+}
+
+// Rules for hakuspace
+window-rule {
+    match app-id=r#"seycava"#
+    match app-id=r#"seylavat"#
+    match app-id=r#"seyclock"#
+
+    default-column-width { proportion 0.4; }
+}
+
+window-rule {
+    match app-id=r#"seycmd"#
+
+    default-column-width { proportion 0.6; }
 }
