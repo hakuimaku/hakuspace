@@ -15,7 +15,7 @@
     "modules-center": [
         "clock",
         "hyprland/workspaces",
-        "ext/workspaces",
+        "niri/workspaces",
         "custom/recorder",
         "group/monitor",
         "group/bar"
@@ -152,7 +152,7 @@
         "show-passive-items": true
     },
 
-    "ext/workspaces": {
+    "niri/workspaces": {
         "format": "{icon}",
         "format-icons": {
             "active": "",
