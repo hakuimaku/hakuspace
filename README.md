@@ -45,7 +45,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 * **Control Center**: `~/hakuspace-control` this directory stores your custom configs so you don't have to touch the main ones, giving you much more freedom to customize.
 * **Accent Colors**: Synced across **Waybar**, **Rofi**, **Kitty**, **Swaync**,... giving your setup a **Super Clean** and **Cohesive Vibe**!
 * **Smart Accent Color:** Automatically generates the accent color based on your current wallpaper.
-* **Flexible Waybar Layouts:** Support layouts: `top`, `left`, `coredge`, `minimal`, `full`, `neon` (Will be extended more).
+* **Flexible Waybar Layouts:** Support 7 styles: `top`, `left`, `coredge`, `minimal`, `full`, `neon`, `island`.
 * **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
 * **Wallpaper Automation:** Wallpapers change automatically every 5 minutes.
 * **Dockbar:** Built-in, Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
