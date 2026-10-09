@@ -34,6 +34,13 @@ Rectangle {
     
     implicitHeight: Theme.fontSize * 1.8
     implicitWidth: Math.max(implicitHeight, row.implicitWidth + Theme.pad * 2 + (hovered ? 20 : 0))
+    readonly property real hoverSafeWidth: Math.max(implicitHeight, row.implicitWidth + Theme.pad * 2 + 20)
+    onVisibleChanged: {
+        if (!visible) {
+            hovered = false
+            tooltipObj.active = false
+        }
+    }
 
     SequentialAnimation on opacity {
         running: root.blink
@@ -42,7 +49,6 @@ Rectangle {
         NumberAnimation { to: 1.0; duration: root.blinkDuration; easing.type: Easing.InOutQuad }
     }
     
-    // Normal opacity fallback when not blinking
     onBlinkChanged: {
         if (!blink) opacity = muted ? 0.5 : 1.0
     }

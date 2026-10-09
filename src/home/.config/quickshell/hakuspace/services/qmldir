@@ -8,3 +8,9 @@ singleton WM 1.0 WM/WM.qml
 singleton SysStats 1.0 SysStats.qml
 singleton TooltipManager 1.0 TooltipManager.qml
 singleton FlareEdges 1.0 FlareEdges.qml
+singleton Audio 1.0 Audio.qml
+singleton Brightness 1.0 Brightness.qml
+singleton Recorder 1.0 Recorder.qml
+singleton Media 1.0 Media.qml
+singleton CenterState 1.0 CenterState.qml
+singleton Cava 1.0 Cava.qml

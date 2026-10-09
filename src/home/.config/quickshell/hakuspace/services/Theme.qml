@@ -19,7 +19,7 @@ QtObject {
     property string inkBg: "#111111"
     property string workspaceDot: "#424242"
     
-    property color barColor: AppState.opaqueThemeState ? root.inkBg : root.bg
+    property color barColor: "#000000"
     
     property int radius: 16
     property int radiusSm: 8
@@ -32,7 +32,13 @@ QtObject {
     property string font: "sans-serif"
     property string fontFamily: font
     property int fontSize: 14
+    readonly property int topBarTopPadding: 4
+    readonly property real topBarHeight: Math.max(30, fontSize * 2.3) + topBarTopPadding
+    readonly property real levelOsdWidth: Math.max(240, fontSize * 22)
+    readonly property int levelOsdPadding: 16
+    readonly property real levelOsdHeight: Math.max(42, fontSize * 2.4 + 2 * (levelOsdPadding + gap))
     
+    // Convert rgba() to Qt-compatible #AARRGGBB before applying theme data.
     function parseColor(c) {
         if (!c) return "#000000";
         var rgbaMatch = c.match(/^rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)$/);
@@ -81,6 +87,7 @@ QtObject {
         }
     }
 
+    // Watch the generated theme file for live color and sizing updates.
     property FileView themeFile: FileView {
         path: Env.themeDir + "/quickshell.json"
         watchChanges: true

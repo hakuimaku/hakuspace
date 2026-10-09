@@ -11,11 +11,11 @@ Item {
         _update();
     }
     
+    // Normalize ext-workspace data; its API does not expose a window count.
     function _update() {
         var wss = [];
         try {
             if (WindowManager && WindowManager.windowsets) {
-                // Readonly container safe check
                 for (var j = 0; j < WindowManager.windowsets.values.length; j++) {
                     wss.push(WindowManager.windowsets.values[j]);
                 }
@@ -24,7 +24,6 @@ Item {
         
         wss.sort((a, b) => {
             if (a.coordinates !== undefined && b.coordinates !== undefined) {
-                // sort by coordinates (array)
                 if (a.coordinates[0] !== b.coordinates[0]) return a.coordinates[0] - b.coordinates[0];
                 if (a.coordinates.length > 1 && b.coordinates.length > 1) {
                     return a.coordinates[1] - b.coordinates[1];
@@ -42,10 +41,10 @@ Item {
                 key: "ext:" + ws.id,
                 label: ws.name,
                 name: ws.name,
-                output: ws.projection ? ws.projection.name : "", // ext-workspace has projections? Windowset projection might not be the name
+                output: ws.projection ? ws.projection.name : "",
                 active: ws.active,
                 focused: ws.active,
-                occupied: true, // as per plan, we don't know so set all to dim occupied
+                occupied: true,
                 windows: -1,
                 focusedTitle: "",
                 urgent: ws.urgent,
@@ -53,6 +52,7 @@ Item {
             });
         }
         
+        // Avoid replacing the model when the snapshot is unchanged.
         if (JSON.stringify(WM.workspaces) !== JSON.stringify(newWorkspaces)) {
             WM.workspaces = newWorkspaces;
         }
@@ -64,7 +64,7 @@ Item {
     }
     
     function activate(key) {
-        var id = key.substring(4); // "ext:id"
+        var id = key.substring(4);
         if (WindowManager && WindowManager.windowsets) {
             for (var i = 0; i < WindowManager.windowsets.values.length; i++) {
                 var ws = WindowManager.windowsets.values[i];

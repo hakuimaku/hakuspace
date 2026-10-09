@@ -9,6 +9,7 @@ Item {
     property var contentProps: ({})
     property var contentKey: null
     property real maxWidth: 360
+    property real horizontalPadding: 12
     
     enum AttachMode { Top, Left, Right, Bottom }
     property int attach: FlareHost.Top
@@ -27,6 +28,7 @@ Item {
         shown: root.shown
         contentW: contentItem.naturalWidth
         contentH: contentItem.naturalHeight
+        padX: root.horizontalPadding * 2
         bounds: root.wBounds
         maxW: root.maxWidth
         snap: 2 * Theme.tipHugRadius

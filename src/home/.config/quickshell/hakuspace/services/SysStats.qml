@@ -13,17 +13,16 @@ QtObject {
 
     property int _subscribers: 0
 
-    // Internal state
     property real _prevTotal: 0
     property real _prevIdle: 0
     property real _memTotal: 0
     property real _memAvailable: 0
 
+    // Poll only while at least one monitor drawer subscribes.
     function acquire() {
         _subscribers++;
         if (_subscribers === 1) {
             statTimer.start();
-            // Trigger immediately
             statProc.running = false;
             statProc.running = true;
         }
@@ -71,6 +70,7 @@ QtObject {
                         var non_idle_time = user + nice + system + irq + softirq + steal;
                         var total_time = idle_time + non_idle_time;
                         
+                        // CPU load uses deltas because /proc/stat counters are cumulative.
                         if (root._prevTotal > 0) {
                             var total_d = total_time - root._prevTotal;
                             var idle_d = idle_time - root._prevIdle;
@@ -92,6 +92,7 @@ QtObject {
                             root.ram = Math.round(((root._memTotal - root._memAvailable) / root._memTotal) * 100);
                         }
                     }
+                // Hide temperature when thermal_zone0 is unavailable.
                 } else if (line === "NOTEMP") {
                     root.hasTemp = false;
                 } else if (/^\d+$/.test(line)) {

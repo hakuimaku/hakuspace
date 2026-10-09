@@ -80,25 +80,34 @@ printf 'Option A\nOption B\nOption C\n' | ~/.local/bin/haku_pick.sh --prompt "Te
 
 ## 4. Top bar
 
-Expected layout: **left** Logo, Workspaces, WindowTitle; **right** Tray, Settings group (+ Power profile), Recorder, Clock, Notification (stub); **center** empty.
+Expected layout: **left** Logo, Workspaces, WindowTitle; **right** Tray, Settings group (+ Power profile), Recorder, Clock, Notification (stub); **center** Dynamic Center, hidden when idle.
 
 | Module | Test | Expected |
 |---|---|---|
 | **Logo** | Hover; click | Hover inverts the colors; clicking does not open anything yet (record `UiState.activePanel`); tooltip says "Have a nice day!…" |
 | **Workspaces** | Switch workspace with the keyboard; scroll over the group; click a dot | The accent indicator **expands and contracts** toward the new dot (it stretches farther when moving farther, and changes direction correctly); a dot with windows is brighter than an empty dot; repeated key presses do not stutter. *Record clearly whether clicking/scrolling switches workspaces (see observation 1 in section 8).* |
-| **WindowTitle** | Change the focused window | Class + title change with a fade effect; tooltip shows `App ID` / `Title`. **Only Hyprland** provides data; Niri remains empty/default |
+| **WindowTitle** | Change the focused window | Class + title change with a fade effect; visible title is limited to 32 Unicode characters with an ellipsis, while the tooltip keeps the full title. **Only Hyprland** provides data; Niri remains empty/default |
 | **Tray** | Have `nm-applet`, `blueman-applet`, `fcitx5` running | All icons appear; left click activates; right click opens the native menu at the correct location (or uses `secondaryActivate`); scrolling is sent to the applet; the icon disappears when the applet exits. Middle click is **not supported yet** |
 | **Settings** | Scroll on the brightness icon; scroll / left click / right click on the volume icon; hover the battery; click Power profile | Brightness changes (`brightnessctl`) and left click toggles night light; volume changes by ±1%, left click mutes/unmutes, right click opens `pavucontrol`; tooltips show the correct value; Power profile cycles `performance → balanced → power-saver`. On desktops, the brightness and battery icons hide automatically |
 | **Recorder** | Start/stop recording with `record.sh` (F11 or click) | While recording: a blinking accent chip with elapsed time; otherwise: icon only. (`record.sh` still uses rofi's picker in classic) |
 | **Clock** | Observe; scroll on the clock; right click | `HH:mm` + weekday/date on two lines; scrolling changes `monthOffset` (tooltip changes month), right click returns to the current month. The tooltip is **placeholder text**; there is no calendar grid yet |
 | **Notification** | Hover | Stub: only the "Notifications" tooltip |
 
-Not attached to the bar (test if temporarily reattached): **Monitor** (CPU/RAM/temp drawer; values must match `btop`/`top`; closing the drawer stops `SysStats` polling), **Cava** (`cava` starts as soon as the module is created; check `pgrep cava`), **Music** (placeholder).
+Not attached to the bar (test if temporarily reattached): **Monitor** (CPU/RAM/temp drawer; values must match `btop`/`top`; closing the drawer stops `SysStats` polling), **Music** (placeholder). When audible, Cava occupies a stable slot left of MPRIS in the centered media cluster and shares one process across screens.
 
 General checks:
 - No fake values ("12%", "99%") remain in any module; `qs log` is clean.
 - Switch hikai ↔ classic several times: the classic bar returns correctly, with no extra processes.
 - Plug/unplug a monitor while QS is running: no crash; each monitor has its own bar.
+
+### Dynamic Center (N11)
+
+- Scroll volume or brightness, then press the hardware volume, mute, and brightness keys: the shared `level_control.sh` path must open the OSD immediately in Hikai. TopBar draws its flare on the Top layer; the Overlay draws a black rounded background, read-only slider, and percentage. The percentage updates to the confirmed value. It closes about 1.4 s after the last command completes. Try 10–20 rapid inputs and switch directly from volume to brightness; the OSD should stay open. In classic mode or before Quickshell starts, the script must still adjust the device directly. Mic mute changes the source without showing the output-volume OSD. Reloading the shell or background polling alone must not show the OSD. Check visibility over a fullscreen client and click-through behavior.
+- Record the screen: Center shows compact `REC` without elapsed time; the right Recorder keeps the elapsed timer and start/stop control. Volume and brightness still open the separate OSD while recording, temporarily hiding the Center visual.
+- Start/pause media: show title and artist, with play/pause on click when the player supports it. Playing players take priority; ties and paused players use D-Bus name order. A stopped player is ignored. During playback, the shared Cava process keeps reading audio even while its visual is hidden. After 3 seconds of detected sound, Cava appears in a stable slot left of MPRIS; after about 0.5 seconds of silence or immediately on pause, Cava hides and MPRIS returns to the center. Resume audio and verify the same delay before Cava reappears. Hover both modules and check that the cluster stays centered. The MPRIS icon has an accent circle.
+- With the Cava binary or config unavailable, the Cava module hides after the process fails and does not restart repeatedly. Restore the dependency and reload Quickshell before checking Cava again.
+- Test a long title, many tray icons, narrow output, and both together: the media title must elide and Cava hide before the centered cluster touches either side. Repeat on outputs with different sizes/scales. Check the extra 4 px top padding and the OSD seam; left/right and bottom padding stay at their previous values. Toggle the topbar: RoundedScreen must keep its full four-edge rounded border in both states.
+- Check `qs log -c hakuspace` for QML errors while switching states. Interactive visual and multi-monitor checks remain necessary after deployment.
 
 ---
 
@@ -107,7 +116,7 @@ General checks:
 - **Notifications:** `swaync` is allowed to run and handle notifications until M3 (`QS_ALLOW_SWAYNC=1`; `--verify` ignores swaync).
 - **Super+R, Super+/ (launcher), Super+N (notifications):** do nothing in Hikai because the `launcher`/`notif` IPC endpoints do not exist yet (M3/M4).
 - **HakuMenu, power menu, wallpaper picker, clipboard menu:** still use legacy rofi/scripts; they cannot run while rofi is forbidden (M4).
-- **Notification, Music, Cava, Monitor:** stubs or not attached (see `M2_PLAN.md`).
+- **Notification, Monitor:** stubs or not attached (see `M2_PLAN.md`). `MusicGroup` remains a placeholder; Dynamic Center handles MPRIS media and Cava appears conditionally beside it.
 - **Edge trigger, cava layer, taskbar, desktop icons:** not available in Hikai (M5/M6).
 - **Mango, Labwc:** workspaces are not supported.
 
@@ -125,7 +134,7 @@ Implemented: a background shape that expands/contracts around the hovered module
 |---|---|---|
 | T1 | Move onto a module → away → back (after 50 ms, 300 ms, 3 s) | Tooltip reappears (wait ~400 ms if fully hidden); is not empty; does not hide while the pointer remains on the module |
 | T2 | Keep the pointer over a module whose text changes (scroll the Clock month; change volume in Settings) | Tooltip text updates in place immediately, without flickering |
-| T3 | WindowTitle tooltip with a very long title | Wraps onto multiple lines, width ≤ 400 px, is not clipped, and does not overflow the screen |
+| T3 | WindowTitle tooltip with a very long title | Wraps onto multiple lines, width ≤ 500 px, has 22 px padding on each side, is not clipped, and does not overflow the screen |
 | T4 | Enable the opaque theme | Tooltip background matches the bar background |
 | T5 | Restart QS and wait a few seconds | No tooltip appears automatically |
 | T6 | Move quickly A → B → C and stay there | Tooltip settles under C |
@@ -152,7 +161,7 @@ QSG_RENDER_TIMING=1 qs -c hakuspace
 # CPU while idle and while moving across 5 adjacent modules
 top -H -p "$(pgrep -f 'qs -c hakuspace' | head -1)"
 ```
-Record: idle CPU (bar not interacting), CPU while morphing, and whether any frame exceeds ~16 ms. `SettingsGroup` (2 s) and `RecorderGroup` (1 s) currently **poll continuously**; check their impact on idle CPU.
+Record: idle CPU (bar not interacting), CPU while morphing, and whether any frame exceeds ~16 ms. Shared Audio and Brightness services poll every 2 s; shared Recorder polls every 1 s; SettingsGroup still polls power profile every 2 s. Check their impact on idle CPU.
 
 ---
 
@@ -162,4 +171,4 @@ Record: idle CPU (bar not interacting), CPU while morphing, and whether any fram
 2. **Animation curve:** `HAnimation` uses a 4-number bezier; Qt requires 6 numbers. Observe whether workspace movement overshoots as designed (the `spatialCurve` control point has y = 1.21) or is merely the default movement.
 3. **Picker:** `--width/--height/--selected/--lines` have not been applied.
 4. **Hyprland blur layer:** if layer blur is enabled, check whether the transparent strip beneath the bar (namespace `hakuspace-bar`, with no layer rule yet) is blurred.
-5. **Ungated polling** (Settings, Recorder): see section 7.
+5. **Ungated polling** (shared levels, Recorder, power profile): see section 7.

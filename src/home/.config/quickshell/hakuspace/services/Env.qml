@@ -10,6 +10,7 @@ QtObject {
     readonly property string stateDir: home + "/.local/state/hakuspace/state"
     readonly property string themeDir: home + "/.local/state/hakuspace/theme"
     readonly property string binDir: home + "/.local/bin"
+    // XDG_RUNTIME_DIR may be absent in manually started sessions.
     readonly property string runtimeDir: Quickshell.env("XDG_RUNTIME_DIR") || ("/run/user/" + Quickshell.env("UID"))
     readonly property string wmName: Quickshell.env("XDG_CURRENT_DESKTOP") || "Hyprland"
 }

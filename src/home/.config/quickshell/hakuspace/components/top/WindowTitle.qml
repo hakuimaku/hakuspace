@@ -12,6 +12,11 @@ Item {
     
     property string activeClass: "Desktop"
     property string activeTitle: ""
+    readonly property int maxTitleCharacters: 32
+    readonly property var titleCharacters: Array.from(activeTitle)
+    readonly property string displayTitle: titleCharacters.length > maxTitleCharacters
+                                           ? titleCharacters.slice(0, maxTitleCharacters - 1).join("") + "…"
+                                           : activeTitle
     
     property bool hovered: false
     
@@ -95,7 +100,7 @@ Item {
                     return "";
                 }
                 font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize + 2
+                font.pixelSize: Theme.fontSize + 3
                 font.weight: Font.Bold
                 color: Theme.fg
                 anchors.verticalCenter: parent.verticalCenter
@@ -103,6 +108,7 @@ Item {
             
             Column {
                 anchors.verticalCenter: parent.verticalCenter
+                anchors.verticalCenterOffset: -2
                 spacing: 0
                 
                 Text {
@@ -117,7 +123,7 @@ Item {
                 
                 Text {
                     id: titleText
-                    text: root.activeTitle !== "" ? root.activeTitle : ""
+                    text: root.displayTitle
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
                     font.weight: Font.Bold

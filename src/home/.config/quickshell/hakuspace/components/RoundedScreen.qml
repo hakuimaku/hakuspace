@@ -7,7 +7,6 @@ Item {
     id: rootItem
     required property var modelData
     
-    // Main Rounded Corner Overlay
     PanelWindow {
         screen: rootItem.modelData
         anchors { top: true; bottom: true; left: true; right: true }
@@ -93,7 +92,6 @@ Item {
     }
 
 
-    // Bottom Spacer
     PanelWindow {
         screen: rootItem.modelData
         color: "transparent"
@@ -104,7 +102,6 @@ Item {
         mask: Region {}
         visible: AppState.roundedScreenState && AppState.roundedScreenThickness > 0
     }
-    // Left Spacer
     PanelWindow {
         screen: rootItem.modelData
         color: "transparent"
@@ -115,7 +112,6 @@ Item {
         mask: Region {}
         visible: AppState.roundedScreenState && AppState.roundedScreenThickness > 0
     }
-    // Right Spacer
     PanelWindow {
         screen: rootItem.modelData
         color: "transparent"

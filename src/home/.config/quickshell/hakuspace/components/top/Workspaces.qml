@@ -16,7 +16,6 @@ TopModule {
     property int activeIdx: {
         for (var i = 0; i < items.length; i++) {
             if (items[i].active || items[i].focused) {
-                // Prefer globally focused if available
                 if (items[i].focused)
                     return i;
 
@@ -144,7 +143,6 @@ TopModule {
 
                 HTooltip {
                     target: cell
-                    // Show tooltip if this cell is hovered (we will set a property isHovered from outside)
                     enabled: cell.isHovered && ws !== undefined
                     text: {
                         if (!ws)
@@ -236,7 +234,6 @@ TopModule {
             }
         }
 
-        // 2. Gliding Indicator (The Worm)
         Rectangle {
             id: indicator
 

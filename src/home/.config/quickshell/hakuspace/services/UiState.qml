@@ -4,9 +4,9 @@ import QtQuick
 QtObject {
     id: root
     
-    // Tracks which panel/menu is currently open (hakumenu, launcher, notif, power, wallpaper)
     property string activePanel: ""
     
+    // One panel name is active at a time; toggling it closes the panel.
     function toggle(panel: string) {
         if (activePanel === panel) {
             activePanel = ""

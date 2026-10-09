@@ -14,7 +14,7 @@ Item {
     function _update() {
         var wss = [];
         for (var idx = 0; idx < Hyprland.workspaces.values.length; idx++) wss.push(Hyprland.workspaces.values[idx]);
-        // special: id < 0; name format special:<name>
+        // Negative IDs are special workspaces and appear after normal ones.
         wss.sort((a, b) => {
             if (a.id < 0 && b.id > 0) return 1;
             if (a.id > 0 && b.id < 0) return -1;
@@ -30,15 +30,13 @@ Item {
                 lbl = lbl.substring(8);
             }
             
-            // Occupied/windows: ws.toplevels.values.length, fallback to lastIpcObject.windows
+            // IPC metadata fills gaps when the toplevel list is unavailable.
             var winCount = (ws.toplevels && ws.toplevels.values) ? ws.toplevels.values.length : (ws.lastIpcObject && ws.lastIpcObject.windows !== undefined ? ws.lastIpcObject.windows : 0);
             
-            // focusedTitle
             var fTitle = "";
             if (ws.lastIpcObject && ws.lastIpcObject.lastwindowtitle) {
                 fTitle = ws.lastIpcObject.lastwindowtitle;
             } else if (ws.toplevels && ws.toplevels.values && ws.toplevels.values.length > 0) {
-                // Approximate if lastwindowtitle is missing
                 fTitle = ws.toplevels.values[0].title || "";
             }
             
@@ -77,7 +75,6 @@ Item {
         if (WM.activeWindowTitle !== newTitle) WM.activeWindowTitle = newTitle;
     }
     
-    // Bindings
     Connections {
         target: Hyprland.workspaces
         function onValuesChanged() { _update() }
@@ -86,6 +83,7 @@ Item {
         target: Hyprland
         function onFocusedWorkspaceChanged() { _update() }
         function onActiveToplevelChanged() { _update() }
+        // These events do not reliably update workspace properties directly.
         function onRawEvent(eventName) {
             if (eventName === "openwindow" || eventName === "closewindow" || eventName === "movewindow" || eventName === "urgent") {
                 Hyprland.refreshWorkspaces();
@@ -102,7 +100,7 @@ Item {
     }
     
     function activate(key) {
-        var id = parseInt(key.substring(5)); // "hypr:-1" -> -1
+        var id = parseInt(key.substring(5));
         var wss = Hyprland.workspaces.values;
         for (var i = 0; i < wss.length; i++) {
             if (wss[i].id === id) {

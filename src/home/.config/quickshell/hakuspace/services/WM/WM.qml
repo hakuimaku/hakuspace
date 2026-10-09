@@ -7,15 +7,11 @@ import "../"
 Item {
     id: root
 
-    // ==========================================
-    // Unified Data Model
-    // ==========================================
     property var workspaces: []
     property bool supported: backendName !== "none"
     property string backendName: "none"
     property var caps: ({ occupied: false, windowCount: false, urgent: false, perOutput: false, special: false, secondary: false })
     
-    // For WindowTitle module
     property string activeWindowClass: ""
     property string activeWindowTitle: ""
     
@@ -31,6 +27,7 @@ Item {
         }
     }
     
+    // Prefer global focus when multiple outputs have active workspaces.
     function cycle(step, outputName) {
         if (!supported) return;
         var wsList = workspacesFor(outputName);
@@ -40,7 +37,7 @@ Item {
         for (var i = 0; i < wsList.length; i++) {
             if (wsList[i].focused || wsList[i].active) {
                 currentIdx = i;
-                if (wsList[i].focused) break; // Prefer globally focused
+                if (wsList[i].focused) break;
             }
         }
         if (currentIdx === -1) currentIdx = 0;
@@ -52,6 +49,7 @@ Item {
         activate(wsList[nextIdx].key);
     }
     
+    // Each compositor exposes a different per-output workspace policy.
     function workspacesFor(outputName) {
         if (!supported) return [];
         if (backendName === "hyprland") {
@@ -66,9 +64,6 @@ Item {
         return workspaces;
     }
 
-    // ==========================================
-    // Backend Loading
-    // ==========================================
     property Item backendItem: null
     
     Component.onCompleted: {
@@ -84,13 +79,12 @@ Item {
             comp = Qt.createComponent("HyprlandBackend.qml");
         } else if (envNiri) {
             backendName = "niri";
-            comp = Qt.createComponent("NiriBackend.qml"); // stub for now
+            comp = Qt.createComponent("NiriBackend.qml");
         } else if (envMango) {
             backendName = "mango";
-            comp = Qt.createComponent("MangoBackend.qml"); // stub
+            comp = Qt.createComponent("MangoBackend.qml");
+        // Disable Labwc workspace loading: ext-workspace crashes Quickshell 0.3.1.
         } else if (envLabwc || envXdg.toLowerCase().indexOf("labwc") !== -1) {
-            // Labwc's ext-workspace-v1 support causes a C++ bad_function_call crash in Quickshell 0.3.1.
-            // As per plan, we set supported = false and hide the module.
             backendName = "none";
             comp = Qt.createComponent("NullBackend.qml");
         } else {
