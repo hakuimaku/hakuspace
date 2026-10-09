@@ -19,9 +19,9 @@ Haku Space now supporting Fedora too! See [Fedora Guide](https://github.com/haku
     <a href="https://github.com/hakuimaku/hakuspace"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/hakuimaku/hakuspace?style=for-the-badge&label=Repo%20Size&labelColor=%2368818f&color=%231f1f1f&logo=github&logoColor=%231f1f1f">
 </p>
 
-| <img width="1920" height="1080" alt="screenshot_2026-07-27_16-18-17" src="https://github.com/user-attachments/assets/765518c1-7473-4820-b660-7ea9d7b52380" /> | <img width="1920" height="1080" alt="screenshot_2026-07-16_10-55-31" src="https://github.com/user-attachments/assets/5ff87ffb-89bd-458e-9b0d-8ed959aa4e26" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-08-03_17-50-02" src="https://github.com/user-attachments/assets/8cc12f0f-d03f-47e7-9b09-85e16e40f3e2" /> | <img width="1920" height="1080" alt="screenshot_2026-08-03_17-59-18" src="https://github.com/user-attachments/assets/259dfd36-f46c-4366-ab8e-fa9ab6fc90bd" /> |
 |--|--|
-| <img width="1920" height="1080" alt="screenshot_2026-07-16_10-57-36" src="https://github.com/user-attachments/assets/02050014-7041-4a92-aa94-cef9a00c0592" /> | <img width="1920" height="1080" alt="screenshot_2026-07-27_16-21-05" src="https://github.com/user-attachments/assets/fb2bf14c-8c01-4138-b834-dc0b8ed35bbd" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-07-16_10-57-36" src="https://github.com/user-attachments/assets/02050014-7041-4a92-aa94-cef9a00c0592" /> | <img width="1920" height="1080" alt="screenshot_2026-08-03_17-53-03" src="https://github.com/user-attachments/assets/2ffee716-eaa0-471f-bbbf-e6c341adf75f" /> |
 
 ## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Welcome+to+Haku+Space" alt="Typing SVG" />
 
@@ -36,7 +36,7 @@ See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372).
 **Join my Discord channel to get more help!** [Discord btw](https://discord.gg/g5RsNKRHn).
 
 - **HakuSpace** is a dotfiles project for **Arch Linux**, supporting **Hyprland**, **Niri**, **MangoWM** and **Labwc**.
-- My dotfiles support *Multi-WM**, which means you can easily switch to a new wm whenever you get bored!
+- My dotfiles support **Multi-WM**, which means you can easily switch to a new wm whenever you get bored!
 - The main user interaction layer is built around **Rofi**, **Waybar**, and **SwayNC**, while most core behavior is powered by [custom scripts](https://github.com/hakuimaku/hakuspace/tree/main/common/local/bin).
 - Haku Space can run on **any distro** as long as you install all the **core packages**
 - It has grown into a DE-like experience, though it is still actively evolving.  
@@ -108,10 +108,10 @@ git clone https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 
-If you prefer the version I've tested (a little honestly), clone the **stable** release version `v2.1.9` (lastest):
+If you prefer the version I've tested (a little honestly), clone the **stable** release version `v2.2.0` (lastest):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.1.9 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
+git clone --depth 1 --branch v2.2.0 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 
@@ -257,7 +257,7 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 - Icons: `~/.icons`
 - Themes: `~/.themes`
 - All hakuspace scripts: `~/.local/bin`
-- Fastfetch logo: `~/.config/fastfetch/`
+- Fastfetch logo: `~/.config/fastfetch`
 - Wallpapers: `~/Pictures/Wallpapers`
 - Lively wallpapers: `~/Videos/Wallpapers`
 - Lively wallpaper thumbnail: in folder Preview `~/Videos/Wallpapers/Preview` and add image .jpg/.png (same name with video) to make the thumbnail appear in rofi select menu if you want to use lively wallpaper
