@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -u
 
 cat << 'EOF'
@@ -49,6 +49,8 @@ fi
 # --------------------------------
 HAKU_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 COMMON_DIR="$HAKU_DIR/common"
+
+NIX_DIR="$HAKU_DIR/nix"
 
 BACKUP_TS="$(date +%Y-%m-%d_%H-%M-%S)"
 BACKUP_DIR="$HOME/Backup_$BACKUP_TS"
@@ -109,11 +111,53 @@ backup_item() {
     [[ -e "$target" || -L "$target" ]] || return 0
 
     local rel="${target#$HOME/}"
+    rel="${rel#/}"
     local backup_target="$BACKUP_DIR/$rel"
+    
     mkdir -p "$(dirname "$backup_target")"
 
-    mv "$target" "$backup_target"
+    if [[ "$target" == /etc/* || ! -w "$(dirname "$target")" ]]; then
+        sudo cp -a "$target" "$backup_target" && sudo rm -rf "$target"
+        sudo chown -R "$USER":"$USER" "$backup_target"
+    else
+        cp -a "$target" "$backup_target" && rm -rf "$target"
+    fi
+
     log_backup "$target -> $backup_target"
+}
+
+copy_file() {
+    local src="$1"
+    local dst="$2"
+
+    if [[ ! -f "$src" ]]; then
+        log_warn "Source file not found: $src"
+        return 1
+    fi
+
+    local need_sudo=0
+    if [[ "$dst" == /etc/* || ( -e "$dst" && ! -w "$dst" ) || ( ! -e "$dst" && ! -w "$(dirname "$dst")" ) ]]; then
+        need_sudo=1
+    fi
+
+    if [[ $need_sudo -eq 1 ]]; then
+        sudo mkdir -p "$(dirname "$dst")"
+    else
+        ensure_dir "$(dirname "$dst")"
+    fi
+
+    if [[ -e "$dst" || -L "$dst" ]]; then
+        backup_item "$dst"
+    fi
+
+    if [[ $need_sudo -eq 1 ]]; then
+        sudo cp -f "$src" "$dst"
+    else
+        cp -f "$src" "$dst"
+    fi
+
+    log_copy "$src -> $dst"
+    return 0
 }
 
 copy_dir_content() {
@@ -133,26 +177,6 @@ copy_dir_content() {
     
     cp -rf "$src"/. "$dst"/
     log_copy "$src/. -> $dst/"
-    return 0
-}
-
-copy_file() {
-    local src="$1"
-    local dst="$2"
-
-    if [[ ! -f "$src" ]]; then
-        log_warn "Source file not found: $src"
-        return 1
-    fi
-
-    ensure_dir "$(dirname "$dst")"
-
-    if [[ -e "$dst" || -L "$dst" ]]; then
-        backup_item "$dst"
-    fi
-
-    cp -f "$src" "$dst"
-    log_copy "$src -> $dst"
     return 0
 }
 
@@ -536,7 +560,63 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
     echo ">>> Deploying .nanorc (nano configuration)..."
     copy_file "$SOURCE_COMMON_CONFIG/.nanorc" "$HOME/.nanorc"
 
-    log_ok "Configurations deployed successfully."
+    # =======================================================
+    # NixOS specific deployment (Online Remote / Offline)
+    # =======================================================
+    if command -v nixos-rebuild >/dev/null 2>&1; then
+        echo ""
+        log_info "NixOS detected. Choose configuration mode for HakuSpace Dotfiles:"
+        echo -e "  ${C_BOLD}[1]${C_RESET} Offline (Copy hakuspace-config.nix and edit configuration.nix)"
+        echo -e "  ${C_BOLD}[2]${C_RESET} Online Remote (Deploy flake.nix from template)"
+        echo -e "  ${C_BOLD}[0]${C_RESET} Skip NixOS deployment"
+        read -r -p ">>> Choose mode (1/2/0): " nixos_mode
+
+        NIXOS_ETC="/etc/nixos"
+        SOURCE_HAKU_NIX="$NIX_DIR/hakuspace-config.nix"
+        SOURCE_FLAKE_EXAMPLE="$NIX_DIR/flake.nix.example"
+
+        if [[ "$nixos_mode" == "1" ]]; then
+            log_info "Deploying NixOS Offline Config..."
+            # Note: We assume the user runs this script with proper permissions 
+            # to write to /etc/nixos, or copy_file will use standard cp. 
+            copy_file "$SOURCE_HAKU_NIX" "$NIXOS_ETC/hakuspace-config.nix"
+            
+            CONFIG_NIX="$NIXOS_ETC/configuration.nix"
+            if [[ -f "$CONFIG_NIX" ]]; then
+                # Check if hakuspace-config.nix is already imported
+                if grep -q "./hakuspace-config.nix" "$CONFIG_NIX"; then
+                    log_skip "./hakuspace-config.nix is already imported in $CONFIG_NIX."
+                else
+                    log_info "Injecting ./hakuspace-config.nix into imports of configuration.nix..."
+                    sudo sed -i -E 's|(imports\s*=\s*\[)|\1\n        ./hakuspace-config.nix|' "$CONFIG_NIX"
+                    log_ok "Updated imports in $CONFIG_NIX."
+                fi
+            else
+                log_warn "$CONFIG_NIX not found! Please import hakuspace-config.nix manually."
+            fi
+
+        elif [[ "$nixos_mode" == "2" ]]; then
+            log_info "Deploying NixOS Online Remote Config (Flake)..."
+            DEST_FLAKE="$NIXOS_ETC/flake.nix"
+            
+            if [[ -f "$DEST_FLAKE" ]]; then
+                if ask_yes_no "===> $DEST_FLAKE already exists. Do you want to backup and override it?"; then
+                    copy_file "$SOURCE_FLAKE_EXAMPLE" "$DEST_FLAKE"
+                    log_ok "flake.nix overwritten successfully."
+                else
+                    log_skip "Kept existing flake.nix."
+                fi
+            else
+                copy_file "$SOURCE_FLAKE_EXAMPLE" "$DEST_FLAKE"
+                log_ok "flake.nix deployed successfully."
+            fi
+        else
+            log_skip "Skipping NixOS specific deployment."
+        fi
+    fi
+    # =======================================================
+
+    log_ok "Configurations deployed finished."
 else
     log_skip "Skipping config deployment."
 fi
