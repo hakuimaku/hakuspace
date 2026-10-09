@@ -24,10 +24,10 @@ CONF_FILE = os.path.join(CONFIG_DIR, "rounded-screen.conf")
 BORDER_THICKNESS = 4
 BORDER_RADIUS = 20
 OPACITY = 1.0
-ENABLE_EXCLUSIVE = True
+DYNAMIC_POSITION = True
 
 def load_config():
-    global BORDER_THICKNESS, BORDER_RADIUS
+    global BORDER_THICKNESS, BORDER_RADIUS, DYNAMIC_POSITION
     
     os.makedirs(CONFIG_DIR, exist_ok=True)
     config = configparser.ConfigParser()
@@ -38,6 +38,9 @@ border_thickness = {BORDER_THICKNESS}
 
 # Border radius in pixels
 border_radius = {BORDER_RADIUS}
+
+# Make rounded screen dynamic (affected by waybar/panels)
+dynamic_position = {DYNAMIC_POSITION}
 """
 
     if not os.path.exists(CONF_FILE):
@@ -54,6 +57,8 @@ border_radius = {BORDER_RADIUS}
                     BORDER_THICKNESS = config['Settings'].getint('border_thickness', BORDER_THICKNESS)
                 if 'border_radius' in config['Settings']:
                     BORDER_RADIUS = config['Settings'].getint('border_radius', BORDER_RADIUS)
+                if 'dynamic_position' in config['Settings']:
+                    DYNAMIC_POSITION = config['Settings'].getboolean('dynamic_position', DYNAMIC_POSITION)
         except Exception as e:
             print(f"Failed to parse {CONF_FILE}: {e}")
 
@@ -181,7 +186,8 @@ def main():
     GtkLayerShell.set_anchor(main_win, GtkLayerShell.Edge.LEFT, True)
     GtkLayerShell.set_anchor(main_win, GtkLayerShell.Edge.RIGHT, True)
     
-    GtkLayerShell.set_exclusive_zone(main_win, -1)
+    if not DYNAMIC_POSITION:
+        GtkLayerShell.set_exclusive_zone(main_win, -1)
     
     screen = main_win.get_screen()
     visual = screen.get_rgba_visual()
@@ -197,7 +203,7 @@ def main():
     
     # 2. INVISIBLE DUMMY EDGES
     # These windows reserve the 4px exclusive zone so that Waybar and other apps are pushed inward.
-    if BORDER_THICKNESS > 0:
+    if not DYNAMIC_POSITION and BORDER_THICKNESS > 0:
         windows.append(create_invisible_edge(GtkLayerShell.Edge.TOP, BORDER_THICKNESS))
         windows.append(create_invisible_edge(GtkLayerShell.Edge.BOTTOM, BORDER_THICKNESS))
         windows.append(create_invisible_edge(GtkLayerShell.Edge.LEFT, BORDER_THICKNESS))
