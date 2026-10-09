@@ -21,7 +21,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
     <a href="https://github.com/hakuimaku/hakuspace"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/hakuimaku/hakuspace?style=for-the-badge&label=Repo%20Size&labelColor=%23000000&color=%23212121&logo=github&logoColor=%23FFFFFF"></a>
 </p>
 
-| <img width="1920" height="1080" alt="screenshot_2026-09-23_15-47-52" src="https://github.com/user-attachments/assets/184e6d0c-41ac-4087-b9d7-e0e94a77563f" /> | <img width="1920" height="1080" alt="screenshot_2026-09-23_15-48-42" src="https://github.com/user-attachments/assets/97abc9d3-bfe7-4ba5-9dcc-35036e15f98f" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-09-29_16-13-28" src="https://github.com/user-attachments/assets/69ce3bf5-3dd0-43a9-aa7f-d12fd488dfb9" /> | <img width="1920" height="1080" alt="screenshot_2026-09-29_16-12-47" src="https://github.com/user-attachments/assets/f429c5b6-9694-4ed6-9aa6-a87d25f8247a" /> |
 |--|--|
 | <img width="1920" height="1080" alt="screenshot_2026-09-23_15-52-55" src="https://github.com/user-attachments/assets/b87cd87d-f9da-4e32-8b0d-5b948dd55c19" /> | <img width="1920" height="1080" alt="screenshot_2026-09-23_15-43-51" src="https://github.com/user-attachments/assets/aba0fcdd-b063-451a-bf1f-7c77e879c0a8" /> |
 
@@ -57,6 +57,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 * **Desktop Icons**: Built-in, Items in folder `~/Desktop` will be shown on Desktop.
 * **Rounded Screen Corners**: Built-in, Rounded corners for your screen, with a smooth and elegant look.
 * **Edge Trigger**: Built-in, Hover your mouse at the screen edges to quickly launch menus or applications.
+* **Haku Shell**: Enabling the features mentioned **above** automatically sets up a completely new look for you (inspired by *Caelestia-Shell*).
 
 > [!note]
 > My dotfiles are powered by scripts; if you're not using them, there's no impact on your performance!
@@ -110,7 +111,7 @@ Specific packages for each WM: [pkg-hyprland](src/packages/pkg-hyprland.txt) | [
 - Stable Release (Recommended):
 ```bash
 cd ~
-git clone --depth 1 --branch v26.09-1 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
+git clone --depth 1 --branch v26.09-2 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 - If you prefer to experience the **lastest changes**:
