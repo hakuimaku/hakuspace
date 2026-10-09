@@ -177,7 +177,7 @@ def main():
     main_win = Gtk.Window()
     main_win.set_title("Rounded Screen Main")
     GtkLayerShell.init_for_window(main_win)
-    GtkLayerShell.set_layer(main_win, GtkLayerShell.Layer.OVERLAY)
+    GtkLayerShell.set_layer(main_win, GtkLayerShell.Layer.TOP)
     GtkLayerShell.set_namespace(main_win, "rounded-screen")
     main_win.set_wmclass("rounded-screen", "rounded-screen")
     
