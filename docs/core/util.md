@@ -32,17 +32,22 @@ Keeps your file manager and application icons looking consistent.
 A robust wrapper around your Wayland screen capture tools.
 - **What it does:** Uses tools like `grim` and `slurp` to let you capture full screens, specific areas, or active windows. It automatically pipes the image directly to your clipboard while simultaneously saving a timestamped, high-res PNG into your `~/Pictures` folder.
 
-### `record.sh`
-Your built-in screen recorder.
-- **What it does:** Hooks into `wl-screenrec` to capture high-framerate MP4s of your desktop.
-- **Features:** Usually triggered via a keybind, it begins recording your screen (with or without audio) and saves the output to your `~/Videos` folder. Pressing the keybind again safely sends an interrupt signal to terminate the recording and encode the file.
+### Screen recording
+Screen recording keeps the long-standing `record.sh` keybind command, but selection and capture lifecycle are now separated.
+
+- **`record.sh` (compatibility facade):** with no arguments it preserves the old toggle behavior: stop an active recording, otherwise open the Classic picker. It also exposes explicit `--status`, `--list-modes`, `--list-sources`, `--start`, and `--stop` commands for non-Rofi callers.
+- **`record_ctl.sh` (headless backend):** owns `wl-screenrec`, PipeWire/Pulse setup, physical source discovery, virtual mic+system mixing, timer/state files, and stop/cleanup. Stable mode IDs are `system-audio`, `mic-system`, and `no-audio`.
+- **`record_rofi.sh` (Classic frontend):** owns only the mode and microphone/source menus, then delegates the selected stable IDs to `record_ctl.sh`.
+
+Recordings still default to `~/Videos`, and invoking the public facade again while recording still sends the normal interrupt/cleanup path.
 
 ## Quality of Life Toggles
 
-### `clipboard_menu.sh`
-Never lose copied text again.
-- **What it does:** Checks if `wl-paste` is running in the background. If not, it starts watching your clipboard and silently stores everything you copy (both text and images) into a `cliphist` database. 
-- **The Menu:** When you trigger the script, it opens a sleek Rofi interface displaying your clipboard history, allowing you to instantly copy old items back to your active clipboard. You can also run it with the `--wipe` flag to nuke your history for privacy.
+### Clipboard history
+Clipboard history is split into a headless controller and the Classic picker while keeping the existing public command stable.
+- `clipboard_ctl.sh` owns `cliphist` history actions and the `wl-paste` watcher lifecycle. Its explicit commands are `ensure-watchers`, `list`, `copy`, and `wipe`; it does not own picker UI.
+- `clipboard_rofi.sh` is the Classic picker. It asks the controller to ensure watchers, displays the raw history rows, then sends the selected row back to `copy`.
+- `clipboard_menu.sh` remains the compatibility facade used by existing keybinds. No arguments open the Classic picker; `--wipe` preserves the old clear-history behavior. Headless callers may use `--ensure-watchers`, `--list`, and `--copy`.
 
 ### `nightlight_toggle.sh`
 Saves your eyes during late-night coding sessions.
@@ -53,13 +58,32 @@ Saves your eyes during late-night coding sessions.
 A quick VPN switch.
 - **What it does:** Uses the Cloudflare `warp-cli` to toggle your WARP connection on and off, routing your internet traffic through their private network for privacy and speed directly from a keybind or a Waybar module.
 
-### `waybar_manager.sh`
-The control center for your status bar.
-- **What it does:** Instead of manually restarting Waybar when things go wrong, this script safely terminates and relaunches it. It's also responsible for switching between different structural layouts (like `top`, `island`, `minimal`, `coredge`) and making sure the theming engine's CSS files are correctly linked to the active layout.
+### Waybar management
+Waybar keeps the long-standing `waybar_manager.sh` public command, but its responsibilities are now split so Hikai can reuse the control logic without driving a Classic picker.
 
-### `gen_shortcut.sh`
-A desktop shortcut generator.
-- **What it does:** Scans common system directories (like `/usr/share/applications` and your Flatpak/Snap folders) for `.desktop` files. You can use it to query available system apps (`-q`), quickly copy an app's shortcut (`-a`) to your `~/Desktop` directory, or interactively select and add a shortcut using a Rofi menu (`-m`). Since HakuSpace has a built-in desktop icon renderer, this gives you functional app icons right on your wallpaper!
+- **`waybar_manager.sh` (compatibility facade):** preserves the existing startup/keybind CLI (`--cycle`, `--select`, `--reload`, `--toggle`) and the current Hikai policy where only the `top` variant is supported.
+- **`waybar_ctl.sh` (headless backend):** owns mode discovery, current-mode state, symlink changes, Waybar lifecycle, explicit `list/current/set/cycle/toggle/reload/startup` operations, and contains no picker UI.
+- **`waybar_rofi.sh` (Classic frontend):** displays the Classic mode selector and passes the selected mode id to `waybar_ctl.sh set`.
+
+Default and user modes still come from the existing Waybar directories plus `WAYBAR_MODE_USER` in `~/hakucfg/setting.sh`; source-tree organization does not change the flat `~/.local/bin` deployment contract.
+
+### Login shell switching
+Login-shell switching keeps the existing `shell_switcher.sh` public command while separating Classic picker/authentication UX from the mutation backend.
+
+- **`shell_switcher.sh` (compatibility facade):** no arguments preserve the Classic picker and `--print` preserves the wrapper-friendly behavior. Headless callers can use `--list [--json]`, `--current`, and `--set <shell-id/path>`.
+- **`shell_ctl.sh` (headless backend):** discovers supported `fish`/`zsh` installs, reports the passwd login shell, registers a selected binary in `/etc/shells` when required, and performs `chsh`. It never opens Rofi or asks for credentials. Non-interactive authorization that cannot proceed returns exit status `77`.
+- **`shell_rofi.sh` (Classic frontend):** owns the Rofi shell picker and the existing Rofi sudo-password flow, then retries the explicit backend mutation. Terminal launches still start the selected shell after a successful change, while `--print` only returns its resolved path.
+
+The NixOS guard remains in the backend: login shells on NixOS must still be configured declaratively.
+
+### Desktop shortcut tools
+Desktop-shortcut discovery and mutation are separated from the Classic picker while keeping `gen_shortcut.sh` compatible.
+
+- **`gen_shortcut.sh` (compatibility facade):** preserves custom shortcut creation, `-a/--add`, legacy `-q/--query`, and `-m/--menu`. Headless callers can use `--list [keyword]` or explicit `--create <name> <exec> [icon]`.
+- **`shortcut_ctl.sh` (headless backend):** discovers `.desktop` entries across the existing system/user Flatpak/Snap paths, copies/trusts an existing entry, or creates a new one. It has no Rofi/picker dependency.
+- **`shortcut_rofi.sh` (Classic frontend):** owns the `Add Shortcut` Rofi menu and sends the selected `.desktop` path to the backend.
+
+This keeps the desktop-icons `Add Shortcut` integration compatible while exposing shortcut operations independently of Classic UI.
 
 
 ---

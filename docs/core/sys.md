@@ -10,14 +10,17 @@ Here is a detailed breakdown of each script:
 
 ### `exit.sh` (The Safe Exit)
 Have you ever logged out and had your system hang, or found zombie processes still running in the background?
-- **What it does:** This script safely and gracefully exits your current session. Before killing your Window Manager, it targets essential apps (like VS Code, Firefox, Waybar, etc.) and gives them a polite `SIGTERM` signal so they can save their states. It then follows up with a `SIGKILL` to forcefully clean up any stubborn background processes, and clears out X11 socket files.
-- **The Interface:** Before doing anything, it pops up a specialized Rofi menu displaying all your active processes sorted by RAM usage, allowing you to confirm the exit or cancel it.
+- **Architecture:** `exit.sh` is now a stable public facade. Destructive cleanup and WM quit live in the headless `backend/system/session_exit_ctl.sh`; Classic confirmation/UI lives in `frontend/classic/exit_rofi.sh`.
+- **Process report:** `exit.sh --process-report` (or `session_exit_ctl.sh process-report`) is side-effect free and prints active processes sorted by aggregate RAM usage.
+- **Classic confirmation:** Calling `exit.sh` with no arguments keeps the existing Rofi system-monitor confirmation. Escape, cancel, or any row other than `[!] EXIT ANYWAY` is a frontend-only no-op.
+- **Explicit execute:** `session_exit_ctl.sh execute` performs the existing graceful `SIGTERM`, forced cleanup, socket/runtime cleanup, user-systemd teardown, and Hyprland/Niri/Mango/Labwc quit branch. It requires the explicit `execute` subcommand; invoking the backend with no arguments cannot terminate the session. `exit.sh --execute` exposes the same explicit headless operation.
 
 ### `shutdown.sh` (The Power Menu)
 Your elegant replacement for typing terminal commands to reboot.
-- **What it does:** Displays a clean, icon-based Rofi menu tailored for system power management (`shutdown.rasi`).
-- **Options:** It allows you to select between Suspend (Sleep), Reboot, Poweroff, Hibernate, Lock Screen, or Log Out. Clicking any of these triggers the appropriate `systemctl` or local script command.
-- **Arguments:** Use `-p LOCATION` (or `--position LOCATION`) to position the Rofi window, and `-v` (or `--vertical`) to use the vertical theme. These options can be combined in any order.
+- **Architecture:** `shutdown.sh` is the stable public facade. Classic presentation lives in `frontend/classic/power_rofi.sh`, while explicit actions live in the headless `backend/system/power_ctl.sh`. The frontend maps the selected row index to a stable action ID instead of dispatching from the displayed icon.
+- **Classic UI:** Calling `shutdown.sh` with no arguments keeps the icon-based menu and `shutdown.rasi`. Use `-v` / `--vertical` for `shutdown-vert.rasi`, and `-e` / `--extend` to pass Classic placement arguments through to the menu.
+- **Headless actions:** `shutdown.sh --suspend`, `--reboot`, `--poweroff`, `--hibernate`, `--lock`, and `--logout` delegate to explicit controller commands. `shutdown.sh --list` is side-effect free and prints the stable action IDs.
+- **Session-exit boundary:** Logout delegates to the stable `exit.sh` facade, so the normal power menu still gets Classic confirmation. The underlying cleanup is independently callable through `session_exit_ctl.sh execute` for explicit headless use.
 
 ### `dpms_handler.sh` (Monitor Power Control)
 Managing monitor power states varies wildly between different Window Managers. This script unifies them.

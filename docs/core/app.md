@@ -17,13 +17,14 @@ The Taskbar is a Windows-style taskbar that sits at the bottom of your screen. I
 
 Because it runs independently from your main top status bar, it has its own dedicated management system.
 
-### `taskbar_manager.sh` (The Control Center)
-This is the master script that controls the Taskbar's lifecycle and settings. It acts as the bridge between the Rofi `Haku Menu` and the underlying Waybar process.
+### Taskbar control split
+The public command remains `taskbar_manager.sh`, so existing keybinds, startup files, HakuMenu actions and user configuration do not need to change. Internally, Taskbar control is now separated by responsibility:
 
-- **State Management:** It uses `~/.local/state/hakuspace/` to remember if you turned the Taskbar on or off (`taskbar_manual_state`). When you reboot, passing `--startup` to this script ensures your Taskbar returns exactly as you left it.
-- **The Master Switch (`--toggle`):** This command completely enables or disables the Taskbar. 
-- **Taskbar App Name (`--app-name`):** Toggles whether the Taskbar displays application names next to icons. It achieves this by dynamically parsing and rewriting a JSON state file (`taskbar-theme`).
-- **Icon Sizing (`--icon-size`):** Prompts you via a Rofi text input to enter a custom pixel size, rather than cycling through fixed sizes, and updates the Waybar configuration on the fly.
+- **`taskbar_manager.sh` (compatibility facade):** preserves the existing `--startup`, `--reload`, `--toggle`, `--app-name`, and `--icon-size` CLI and routes each operation to the correct internal script.
+- **`taskbar_ctl.sh` (headless backend):** owns Taskbar state, Waybar lifecycle, app-name format mutation, and explicit icon-size get/set operations. It never opens Rofi or another picker.
+- **`taskbar_rofi.sh` (Classic frontend):** owns the Rofi icon-size prompt only, then passes the chosen numeric value to `taskbar_ctl.sh`.
+
+State still lives under `~/.local/state/hakuspace/`: `taskbar_manual_state` controls whether the Taskbar is enabled across sessions, while the generated `taskbar-theme` holds Waybar Taskbar presentation settings. The public behavior is intentionally unchanged; the split exists so future Hikai UI can call the headless controller directly instead of driving a Classic picker.
 
 ### `taskbar_geticon.sh` (The Icon Fetcher)
 The Taskbar needs to display the correct icons for your pinned applications.
