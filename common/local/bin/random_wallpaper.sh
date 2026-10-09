@@ -31,7 +31,10 @@ run_wallpaper() {
 
         [[ "$(cat "$STATE_FILE" 2>/dev/null)" == "0" ]] && exit 0
 
-        WALL=$(find "$WALL_DIR" -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.gif" -o -name "*.webp" \) | shuf -n 1)
+        WALL=$(find "$WALL_DIR" \
+            -path "$BACKDROP_DIR" -prune -o \
+            -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.gif" -o -iname "*.webp" \) \
+            -print | shuf -n 1)
         
         if [ -n "$WALL" ]; then
             set_wallpaper "$WALL"
