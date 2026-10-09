@@ -347,3 +347,4 @@ docs/vietnamese/VN_quickshell.md
 docs/quickshell-testing.md
 ```
 - Removed monitor module and drawer from TopBar layout per user request.
+- Implemented Window Title (Hyprland): Icon + Class + Title styling, moved to leftModules next to Workspaces. Cava disabled temporarily.

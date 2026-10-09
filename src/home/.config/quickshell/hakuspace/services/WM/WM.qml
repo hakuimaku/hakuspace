@@ -17,6 +17,9 @@ Item {
     property var urgent: []
     property bool supported: true
     
+    property string activeWindowClass: ""
+    property string activeWindowTitle: ""
+    
     function activate(id) {
         if (!supported) return;
         
@@ -57,10 +60,23 @@ Item {
         var newActiveId = Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : -1;
         var newUrgent = []; // Hyprland doesn't expose urgent easily, fallback empty
         
+        var newClass = "";
+        var newTitle = "";
+        
+        if (Hyprland.activeToplevel) {
+            newTitle = Hyprland.activeToplevel.title || "";
+            if (Hyprland.activeToplevel.wayland) {
+                newClass = Hyprland.activeToplevel.wayland.appId || "";
+            }
+        }
+        
         if (JSON.stringify(ids) !== JSON.stringify(newIds)) ids = newIds;
         if (JSON.stringify(occupied) !== JSON.stringify(newOccupied)) occupied = newOccupied;
         if (activeId !== newActiveId) activeId = newActiveId;
         if (JSON.stringify(urgent) !== JSON.stringify(newUrgent)) urgent = newUrgent;
+        
+        if (activeWindowClass !== newClass) activeWindowClass = newClass;
+        if (activeWindowTitle !== newTitle) activeWindowTitle = newTitle;
     }
     
     Connections {
@@ -70,6 +86,15 @@ Item {
     Connections {
         target: _wm === "hyprland" ? Hyprland : null
         function onFocusedWorkspaceChanged() { root._updateHyprland() }
+        function onActiveToplevelChanged() { root._updateHyprland() }
+    }
+    Connections {
+        target: _wm === "hyprland" && Hyprland.activeToplevel ? Hyprland.activeToplevel : null
+        function onTitleChanged() { root._updateHyprland() }
+    }
+    Connections {
+        target: _wm === "hyprland" && Hyprland.activeToplevel && Hyprland.activeToplevel.wayland ? Hyprland.activeToplevel.wayland : null
+        function onAppIdChanged() { root._updateHyprland() }
     }
     
     // --- Niri Logic ---
