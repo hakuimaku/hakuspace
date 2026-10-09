@@ -71,13 +71,13 @@ case "$choice" in
   "  Change color")
     accent_choice="$(
       cat <<'EOF' | rofi -dmenu -p "  Current: ${ACCENT}" -i
-Red     #ff003c
-Blue    #00aaff
-Green   #00ff99
-Orange  #ff7a00
-Yellow  #efbf04
-White   #ffffff
-Pink    #ff66cc
+Slate Blue   #7288AE
+Green        #A2CB8B
+Peach        #FFB399
+Yellow       #efbf04
+Pink         #F9B2D7
+White        #ffffff
+Grey         #BFC9D1
 Custom  (type hex)
 EOF
     )"
