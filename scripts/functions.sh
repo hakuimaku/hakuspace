@@ -307,8 +307,8 @@ check_control_dir() {
         fi
     done
 
-    mkdir -p "$DEST_CUSTOM_DIR/waybar"
-    mkdir -p "$DEST_CUSTOM_DIR/rofi"
+    mkdir -p "$DEST_CUSTOM_DIR/config/waybar"
+    mkdir -p "$DEST_CUSTOM_DIR/config/rofi"
     chmod +x "$DEST_CUSTOM_DIR/setting.sh"
     chmod +x "$DEST_CUSTOM_DIR/general-menu.sh"
 

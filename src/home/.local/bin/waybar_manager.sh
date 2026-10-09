@@ -6,7 +6,7 @@
 [ -f "$HOME/hakucfg/setting.sh" ] && source "$HOME/hakucfg/setting.sh"
 
 WAYBAR_DIR="$HOME/.config/waybar"
-USER_WAYBAR_DIR="$HOME/hakucfg/waybar"
+USER_WAYBAR_DIR="$HOME/hakucfg/config/waybar"
 STATE_FILE="$HOME/.local/state/haku_theme/waybar_current_mode"
 CURRENT_STATE="top"
 WAYBAR_MODES_DEAULT=("top" "neon" "island" "coredge" "full" "minimal" "left")
