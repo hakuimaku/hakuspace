@@ -6,11 +6,11 @@ import "../base"
 Item {
     id: root
     property real maxHeight: 500
-    property real maxWidth: 350
+    property real maxWidth: 450
     readonly property var entries: NotificationStore.records.filter(function(record) {
         return !record.transient && !record.dismissed
     }).reverse()
-    implicitWidth: Math.min(350, maxWidth)
+    implicitWidth: Math.min(450, maxWidth)
     implicitHeight: Math.min(maxHeight, Math.max(180,
         header.height + Theme.gap + Math.min(entries.length, 3) * Theme.fontSize * 10))
 
@@ -18,7 +18,7 @@ Item {
         id: header
         width: root.width
         height: Math.max(Theme.fontSize * 2.2, dndButton.height)
-        spacing: Theme.gap
+        spacing: Theme.gap * 2
 
         Text {
             width: Math.max(0, parent.width - dndButton.width - clearButton.width
@@ -35,6 +35,11 @@ Item {
         HButton {
             id: dndButton
             width: Theme.fontSize * 5.3
+            hoverScaleDelta: 0
+            expandedVisual: true
+            hoverXScaleDelta: 0.18
+            pressXScaleDelta: 0.06
+            hoverFadeAmount: 0.18
             text: NotificationStore.dnd ? "DND On" : "DND Off"
             selected: NotificationStore.dnd
             activeFocusOnTab: true
@@ -47,6 +52,11 @@ Item {
         HButton {
             id: clearButton
             width: Theme.fontSize * 4
+            hoverScaleDelta: 0
+            expandedVisual: true
+            hoverXScaleDelta: 0.24
+            pressXScaleDelta: 0.08
+            hoverFadeAmount: 0.12
             text: "Clear"
             idleColor: Theme.accent
             foregroundColor: Theme.onAccentColor
@@ -65,6 +75,11 @@ Item {
         HButton {
             id: closeButton
             width: Theme.fontSize * 2
+            hoverScaleDelta: 0
+            expandedVisual: true
+            hoverXScaleDelta: 0.30
+            pressXScaleDelta: 0.10
+            hoverFadeAmount: 0.20
             text: "×"
             activeFocusOnTab: true
             Accessible.role: Accessible.Button

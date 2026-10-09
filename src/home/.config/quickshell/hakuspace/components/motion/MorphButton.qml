@@ -29,6 +29,17 @@ Rectangle {
     property real hoverScaleDelta: 0.008
     property real pressScaleDelta: 0.030
     property real selectedScaleDelta: 0.0
+    // Optional horizontal-only expansion.  The default path keeps the legacy
+    // transform behavior.  `expandedVisual` draws a dedicated centered
+    // background shell so the expansion is unmistakable without changing the
+    // control's allocated layout width or hitbox.
+    property real hoverXScaleDelta: 0.0
+    property real pressXScaleDelta: 0.0
+    property bool expandedVisual: false
+    property real hoverFadeAmount: 0.0
+    readonly property real horizontalScale: 1
+        + motion.hoverProgress * hoverXScaleDelta
+        - motion.pressProgress * pressXScaleDelta
     property real disabledOpacity: 0.45
 
     readonly property bool hovered: interactive ? hitArea.containsMouse : externalHovered
@@ -64,10 +75,37 @@ Rectangle {
 
     signal clicked()
 
-    color: targetBackground
+    color: expandedVisual ? "transparent" : targetBackground
     opacity: enabled ? 1 : disabledOpacity
     scale: motion.scale
     transformOrigin: Item.Center
+    transform: Scale {
+        origin.x: root.width / 2
+        origin.y: root.height / 2
+        xScale: root.expandedVisual ? 1 : root.horizontalScale
+        yScale: 1
+    }
+
+    Rectangle {
+        id: expandedBackground
+        visible: root.expandedVisual
+        z: 0
+        anchors.centerIn: parent
+        width: root.width * root.horizontalScale
+        height: root.height
+        radius: root.radius
+        color: root.targetBackground
+        opacity: Math.max(0, Math.min(1,
+            1 - root.hoverFadeAmount + motion.hoverProgress * root.hoverFadeAmount))
+
+        Behavior on color {
+            ColorAnimation {
+                duration: root.transitionDuration
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: root.transitionCurve
+            }
+        }
+    }
 
     Behavior on color {
         ColorAnimation {
@@ -107,6 +145,7 @@ Rectangle {
 
     Text {
         id: label
+        z: 1
         anchors.centerIn: parent
         visible: root.text.length > 0
         text: root.text

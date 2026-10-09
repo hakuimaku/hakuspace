@@ -8,11 +8,16 @@ Rectangle {
     id: root
     required property var record
     property bool compact: false
-    implicitWidth: 350
-    implicitHeight: content.implicitHeight + Theme.pad * 2
-    radius: Theme.radiusSm
+    // Presentation knobs let popup cards diverge from Notification Center cards
+    // without duplicating the notification body component.
+    property real cardRadius: Theme.radiusSm
+    property real cardPadding: 12
+    property bool showBorder: true
+    implicitWidth: 450
+    implicitHeight: content.implicitHeight + cardPadding * 2
+    radius: cardRadius
     color: Theme.surface
-    border.width: record.urgency === NotificationUrgency.Critical ? 2 : 1
+    border.width: showBorder ? (record.urgency === NotificationUrgency.Critical ? 2 : 1) : 0
     border.color: record.urgency === NotificationUrgency.Critical ? "#ff5555" : Theme.fgMuted
 
     function iconSource(icon) {
@@ -23,9 +28,9 @@ Rectangle {
 
     Column {
         id: content
-        x: Theme.pad
-        y: Theme.pad
-        width: root.width - Theme.pad * 2
+        x: root.cardPadding
+        y: root.cardPadding
+        width: root.width - root.cardPadding * 2
         spacing: Theme.gap
 
         Row {
