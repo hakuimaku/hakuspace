@@ -67,7 +67,7 @@ fullscreenBorder = hl.window_rule({
 
 fullWidth_ScrollingLayout = hl.window_rule({
     name = "full_width_scrolling",
-    match = { class = "code|app.zen_browser.zen|zen.*|discord|firefox|google-chrome|jetbrains.*" },
+    match = { class = "code|com.microsoft.VSCode|app.zen_browser.zen|zen.*|discord|firefox|google-chrome|jetbrains.*" },
 
     scrolling_width = 1.0
 })
@@ -84,7 +84,7 @@ specificWidth_ScrollingLayout = hl.window_rule({
 --------------------------------
 opacityCertainApps = hl.window_rule({
     name  = "opacity-for-certain-apps",
-    match = { class = "thunar|Thunar|kitty|code|jetbrains.*" },
+    match = { class = "thunar|Thunar|kitty|code|com.microsoft.VSCode|jetbrains.*" },
 
     opacity = 0.9,
 })
