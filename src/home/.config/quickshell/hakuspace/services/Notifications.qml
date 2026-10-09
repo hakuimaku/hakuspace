@@ -16,6 +16,7 @@ QtObject {
     property var _deadlines: ({})
     property int _nextKey: 1
     property var _memory: null
+    property bool _started: false
 
     onRecordsChanged: {
         if (_memory) _memory.recordsJson = JSON.stringify(records)
@@ -27,6 +28,7 @@ QtObject {
         _memory = memory
         records = JSON.parse(memory.recordsJson || "[]")
         _nextKey = memory.nextKey || 1
+        _started = true
         return server
     }
 
@@ -119,6 +121,7 @@ QtObject {
     }
 
     function accept(notification) {
+        if (!_started) throw new Error("Notification arrived before history restore")
         // Quickshell drops an untracked notification after the signal handler.
         notification.tracked = true
         var key = activeKeyForId(notification.id, notification.lastGeneration)
@@ -194,7 +197,7 @@ QtObject {
 
     property Instantiator server: Instantiator {
         // The deployed Hikai session still runs swaync during the P2 probe.
-        active: Quickshell.env("QS_ALLOW_SWAYNC") !== "1"
+        active: root._started && Quickshell.env("QS_ALLOW_SWAYNC") !== "1"
         model: 1
         delegate: NotificationServer {
             keepOnReload: true
