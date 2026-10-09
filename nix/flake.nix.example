@@ -7,18 +7,25 @@
 
     inputs = {
         nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
+        nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable"; # for hypridle v0.1.8
         hakuspace = {
             url = "github:hakuimaku/hakuspace?dir=nix";
             inputs.nixpkgs.follows = "nixpkgs";
         };
     };
 
-    outputs = { self, nixpkgs, hakuspace, ... }@inputs: {
+    outputs = { self, nixpkgs, nixpkgs-unstable, hakuspace, ... }@inputs: {
         nixosConfigurations = {
             
             # Change "nixos" to your hostname or leave it for default
             nixos = nixpkgs.lib.nixosSystem {
                 system = "x86_64-linux";
+                specialArgs = {
+                    unstable = import nixpkgs-unstable {
+                        system = "x86_64-linux";
+                    };
+                };
+                
                 modules = [
                     ./hardware-configuration.nix
                     ./configuration.nix
