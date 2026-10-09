@@ -34,14 +34,14 @@ window {
 
 mainbox {
     orientation:         vertical;
-    spacing:             12px;
+    spacing:             20px;
     children:            [ inputbar, boxbar ];
 }
 
 /* ===== BOX BAR ===== */
 boxbar {
     orientation:         horizontal;
-    spacing:             12px;
+    spacing:             20px;
     children:            [ imagebox, content-area ];
 }
 
@@ -70,7 +70,6 @@ prompt {
     padding:             10px 15px;
     background-color:    @accent;
     text-color:          @background;
-    font-weight:         bold;
     border-radius:       12px 0 0 12px;
 }
 
@@ -88,7 +87,7 @@ entry {
 mode-switcher {
     orientation:         vertical;
     spacing:             10px;
-    border:              0 3px 0 0;
+    border:              0 5px 0 0;
     border-color:        @accent;
     border-radius:       0;
 }
@@ -144,6 +143,5 @@ element-text selected {
 scrollbar {
     handle-width:           6px;
     handle-color:           @accent;
-    handle-rounded-corners: true;
     padding:                0px 0px 0px 20px;
 }

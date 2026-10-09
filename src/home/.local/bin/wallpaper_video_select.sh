@@ -12,7 +12,7 @@ SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
 source "$HOME/.local/bin/accent_color.sh"
 
-ROFI_THEME="$HOME/.config/rofi/wallpaper-select.rasi"
+ROFI_THEME="wallpaper-select.rasi"
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
         cat <<'EOF'
@@ -79,7 +79,7 @@ list_walls() {
 
 generate_thumbnails
 
-CHOICE=$(list_walls | rofi -dmenu -i -p "Lively Wallpaper" -config "$ROFI_THEME")
+CHOICE=$(list_walls | rofi -dmenu -i -p "Lively Wallpaper" -theme "$ROFI_THEME")
 
 if [ -n "$CHOICE" ]; then
     WALL="$WALL_MPV_DIR/$CHOICE"

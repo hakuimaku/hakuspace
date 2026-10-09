@@ -12,9 +12,9 @@ prompt="Change Theme - Choose an option:"
 choice="$(cat <<EOF | rofi -dmenu -p "$prompt" -theme-str "$ROFI_THEME_BASE height: 40%; }" -i
   Change Waybar Theme
   Change Rofi Theme
-  Change font
-  Change font size
-  Change color
+  Change Font
+  Change Font Size
+  Change Accent Color
 EOF
 )"
 [[ -z "${choice:-}" ]] && exit 0
@@ -22,14 +22,14 @@ EOF
 case "$choice" in
     *"Change Waybar Theme"*) spawn $HOME/.local/bin/waybar_manager.sh --select ;;
     *"Change Rofi Theme"*) spawn $HOME/.local/bin/rofi_theme_switcher.sh ;;
-    *"Change font size"*)
+    *"Change Font Size"*)
         new_size="$(printf '%s\n' "$FONT_SIZE" | rofi -dmenu -p "  Current: ${FONT_SIZE}px" -theme-str "entry { placeholder: \"Type font size here\"; } $ROFI_THEME_BASE height: 30%; }" -i)"
         [[ -z "${new_size:-}" ]] && exit 0
         [[ "$new_size" =~ ^[0-9]+$ ]] || exit 0
         FONT_SIZE="$new_size"
         ;;
 
-    *"Change font"*)
+    *"Change Font"*)
         fonts="$(fc-list : family 2>/dev/null | sed 's/,.*//' | sort -u || true)"
         [[ -z "$fonts" ]] && { echo "No fonts found via fc-list" >&2; exit 1; }
         new_font="$(printf '%s\n' "$fonts" | rofi -dmenu -p "  Current: ${FONT_FAMILY}" -theme-str "$ROFI_THEME_BASE height: 40%; }" -i)"
@@ -37,7 +37,7 @@ case "$choice" in
         FONT_FAMILY="$new_font"
         ;;
 
-    *"Change color"*)
+    *"Change Accent Color"*)
         accent_choice="$(cat <<'EOF' | rofi -dmenu -p "  Current: ${ACCENT_COLOR}" -theme-str "entry { placeholder: \"Type hex color here #xxxxxx\"; } $ROFI_THEME_BASE height: 50%; }" -i
 Pick Color   [Press Enter]
 Slate Blue   #7288AE

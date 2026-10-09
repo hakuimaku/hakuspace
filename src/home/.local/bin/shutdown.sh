@@ -9,7 +9,7 @@ options="󰒲
 󰩈"
 
 # Design rofi
-chosen=$(echo -e "$options" | rofi -dmenu -p "Shutdown" -i -config ~/.config/rofi/shutdown.rasi)
+chosen=$(echo -e "$options" | rofi -dmenu -p "Shutdown" -i -theme "shutdown.rasi")
 
 # List action
 case $chosen in 

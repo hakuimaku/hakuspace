@@ -23,6 +23,7 @@ if [[ $# -eq 0 ]]; then
     [[ "$DESKTOP_ICONS_STATUS" == "1" ]] && DESKTOP_ICONS_TEXT="ON"
 
     cat <<EOF
+  Change Theme
 󰝚  Cava Underbar ($CAVA_TEXT)
   Auto Random Wallpaper ($WALL_TEXT)
 󱂩  Toggle Dockbar ($DOCKBAR_TEXT)
@@ -30,13 +31,13 @@ if [[ $# -eq 0 ]]; then
 󰏜  Change Wallpaper
 󱜏  Change Lively Wallpaper
 󱛹  Kill Lively Wallpaper
-  Change Theme
 EOF
     exit 0
 fi
 
 chosen="$*"
 case "$chosen" in
+    *"Change Theme"*) spawn $HOME/.local/bin/change_theme.sh ;;
     *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh ;;
     *"Auto Random Wallpaper"*) spawn $HOME/.local/bin/random_wallpaper.sh --toggle ;;
     *"Toggle Dockbar"*) spawn $HOME/.local/bin/dockbar_manager.sh --toggle ;;
@@ -44,7 +45,6 @@ case "$chosen" in
     *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
     *"Change Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh ;;
     *"Kill Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh --exit ;;
-    *"Change Theme"*) spawn $HOME/.local/bin/change_theme.sh ;;
 esac
 
 exit 0
