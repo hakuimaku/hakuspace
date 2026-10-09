@@ -77,6 +77,16 @@ ShellRoot {
 
     Variants {
         model: Quickshell.screens
+        NotificationCenterPanel {}
+    }
+
+    Variants {
+        model: Quickshell.screens
+        NotificationPopup {}
+    }
+
+    Variants {
+        model: Quickshell.screens
         LevelOsdOverlay {}
     }
 

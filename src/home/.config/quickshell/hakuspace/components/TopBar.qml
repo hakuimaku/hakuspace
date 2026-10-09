@@ -136,6 +136,7 @@ PanelWindow {
             if (TooltipManager.activeBar === root) TooltipManager.dismiss()
             closeTrayMenu()
             UiState.closeTrayMenuIfScreen(root.modelData.name)
+            UiState.closeNotificationsIfScreen(root.modelData.name)
         }
     }
     
@@ -216,7 +217,7 @@ PanelWindow {
                 TopModules.SettingsGroup {}
                 TopModules.RecorderGroup {}
                 TopModules.ClockGroup {}
-                TopModules.NotificationGroup {}
+                TopModules.NotificationGroup { screenName: root.modelData.name }
             }
         }
     }
