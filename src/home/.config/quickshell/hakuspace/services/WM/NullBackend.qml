@@ -11,3 +11,4 @@ Item {
     function activate(key) {}
     function secondary(key) {}
 }
+
