@@ -89,8 +89,10 @@ Item {
             backendName = "mango";
             comp = Qt.createComponent("MangoBackend.qml"); // stub
         } else if (envLabwc || envXdg.toLowerCase().indexOf("labwc") !== -1) {
-            backendName = "ext";
-            comp = Qt.createComponent("ExtBackend.qml"); // stub
+            // Labwc's ext-workspace-v1 support causes a C++ bad_function_call crash in Quickshell 0.3.1.
+            // As per plan, we set supported = false and hide the module.
+            backendName = "none";
+            comp = Qt.createComponent("NullBackend.qml");
         } else {
             backendName = "none";
             comp = Qt.createComponent("NullBackend.qml");

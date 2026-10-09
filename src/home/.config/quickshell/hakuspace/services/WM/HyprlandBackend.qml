@@ -12,7 +12,8 @@ Item {
     }
     
     function _update() {
-        var wss = Hyprland.workspaces.values;
+        var wss = [];
+        for (var idx = 0; idx < Hyprland.workspaces.values.length; idx++) wss.push(Hyprland.workspaces.values[idx]);
         // special: id < 0; name format special:<name>
         wss.sort((a, b) => {
             if (a.id < 0 && b.id > 0) return 1;
@@ -126,3 +127,4 @@ Item {
         }
     }
 }
+
