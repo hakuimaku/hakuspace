@@ -3,3 +3,4 @@ niri-float-sticky
 swayidle
 swaylock-effects
 gammastep
+xdg-desktop-portal-gnome
