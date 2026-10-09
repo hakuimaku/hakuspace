@@ -240,8 +240,7 @@ QtObject {
     }
 
     property Instantiator server: Instantiator {
-        // The deployed Hikai session still runs swaync during the P2 probe.
-        active: root._started && Quickshell.env("QS_ALLOW_SWAYNC") !== "1"
+        active: root._started
         model: 1
         delegate: NotificationServer {
             keepOnReload: true

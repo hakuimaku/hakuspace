@@ -53,8 +53,6 @@ else
             haku_qs_ipc notif clearAll
             ;;
         count)
-            # Quickshell doesn't easily return output to CLI without a return fifo for IPC in current spec, 
-            # but IPC contract says it returns int. `qs ipc call` might print to stdout.
             haku_qs_ipc notif count
             ;;
         *)

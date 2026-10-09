@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/haku_backend_lib.sh"
 kill_classic_stack() {
     pkill -x waybar
     pkill -x taskbar
-    [[ "${QS_ALLOW_SWAYNC:-0}" == "0" ]] && pkill -x swaync
+    pkill -x swaync
     pkill -x rofi
     pkill -f edge_trigger.py
     pkill -f rounded_screen.py
@@ -59,7 +59,8 @@ set_backend() {
         for ((i=0; i<retries; i++)); do
             echo -n "."
             sleep 1
-            if qs -c hakuspace ipc call shell ping 2>/dev/null | grep -q "pong"; then
+            if qs -c hakuspace ipc call shell ping 2>/dev/null | grep -q "pong" &&
+               busctl --user status org.freedesktop.Notifications 2>/dev/null | grep -Eq '^Comm=(qs|quickshell)$'; then
                 success=1
                 echo " [OK]"
                 break
@@ -98,6 +99,10 @@ kill_quickshell() {
     if pgrep -f '^(/[^ ]*/)?(qs|quickshell)( [^ ]+)* -c hakuspace( |$)' >/dev/null 2>&1; then
         pkill -f '^(/[^ ]*/)?(qs|quickshell)( [^ ]+)* -c hakuspace( |$)'
     fi
+    for ((i=0; i<20; i++)); do
+        if ! haku_qs_alive; then break; fi
+        sleep 0.1
+    done
 }
 
 verify_backend() {
@@ -105,8 +110,7 @@ verify_backend() {
     echo "Current backend: $current"
     if [[ "$current" == $QS_BACKEND_NAME ]]; then
         local violations=""
-        local procs="waybar taskbar rofi edge_trigger.py rounded_screen.py cava_layer.py desktop_icons.py"
-        [[ "${QS_ALLOW_SWAYNC:-0}" == "0" ]] && procs="$procs swaync" # TEMP: swaync allowed until M3 (D-Bus activation re-spawns it)
+        local procs="waybar taskbar rofi edge_trigger.py rounded_screen.py cava_layer.py desktop_icons.py swaync"
         for proc in $procs; do
             if [[ "$proc" == *.py ]]; then
                 if pgrep -f "$proc" >/dev/null 2>&1; then
@@ -124,6 +128,10 @@ verify_backend() {
         fi
         if ! haku_qs_alive; then
             echo "Violation: quickshell is not running!"
+            return 1
+        fi
+        if ! busctl --user status org.freedesktop.Notifications 2>/dev/null | grep -Eq '^Comm=(qs|quickshell)$'; then
+            echo "Violation: quickshell does not own org.freedesktop.Notifications!"
             return 1
         fi
     fi

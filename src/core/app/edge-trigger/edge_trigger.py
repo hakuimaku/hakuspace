@@ -39,7 +39,7 @@ CONFIG = {
     'edge_top_cmd': '~/.local/bin/hakumenu.sh -e -location 2 -theme-str "window { border-radius: 0 0 20px 20px; }"',
     'edge_bottom_cmd': '~/.local/bin/wallpaper_select.sh -e -location 6 -theme-str "window { border-radius: 20px 20px 0 0; }"',
     'edge_left_cmd': '~/.local/bin/shutdown.sh -v -e -location 1 -theme-str "window { border-radius: 0 0 20px 0; }"',
-    'edge_right_cmd': 'swaync-client -t -sw',
+    'edge_right_cmd': '~/.local/bin/notif.sh toggle',
     'edge_size': 2,
     'edge_top_length_percent': 20,
     'edge_bottom_length_percent': 20,

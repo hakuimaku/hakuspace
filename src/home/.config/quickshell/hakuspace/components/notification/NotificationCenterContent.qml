@@ -21,7 +21,8 @@ Item {
         spacing: Theme.gap
 
         Text {
-            width: Math.max(0, parent.width - dndButton.width - clearButton.width - parent.spacing * 2)
+            width: Math.max(0, parent.width - dndButton.width - clearButton.width
+                            - closeButton.width - parent.spacing * 3)
             anchors.verticalCenter: parent.verticalCenter
             text: "Notifications (" + NotificationStore.count + ")"
             textFormat: Text.PlainText
@@ -53,6 +54,17 @@ Item {
             Keys.onReturnPressed: NotificationStore.clearAll()
             Keys.onSpacePressed: NotificationStore.clearAll()
             onClicked: NotificationStore.clearAll()
+        }
+        HButton {
+            id: closeButton
+            width: Theme.fontSize * 2
+            text: "×"
+            activeFocusOnTab: true
+            Accessible.role: Accessible.Button
+            Accessible.name: "Close Notification Center"
+            Keys.onReturnPressed: UiState.closeNotifications()
+            Keys.onSpacePressed: UiState.closeNotifications()
+            onClicked: UiState.closeNotifications()
         }
     }
 

@@ -17,6 +17,7 @@ Item {
     property alias start: morph.mStart
     property alias end: morph.mEnd
     property alias currentHeight: morph.mHeight
+    property alias naturalContentHeight: contentItem.naturalHeight
     property alias hugging: morph.hugging
     signal settled(bool isShown)
     
