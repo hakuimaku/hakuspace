@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script handles DPMS (Display Power Management Signaling) commands for different window managers.
+# This script handles DPMS commands for different window managers.
 
 WM=$(echo "$XDG_CURRENT_DESKTOP" | tr '[:upper:]' '[:lower:]')
 
@@ -17,5 +17,16 @@ elif [ "$WM" = "mango" ]; then
         mmsg dispatch wakeup_monitor
     else
         mmsg dispatch sleep_monitor
+    fi
+elif [ "$WM" = "labwc" ]; then
+    # Dynamically extract the first active display name (e.g., eDP-1)
+    MONITOR=$(wlr-randr | awk '/^[a-zA-Z0-9-]+/ {print $1; exit}')
+    
+    if [ -n "$MONITOR" ]; then
+        if [ "$1" = "on" ]; then
+            wlr-randr --output "$MONITOR" --on
+        else
+            wlr-randr --output "$MONITOR" --off
+        fi
     fi
 fi
