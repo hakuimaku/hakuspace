@@ -205,10 +205,10 @@ import sys
 kind, directory, preview_dir, current = sys.argv[1:]
 items = []
 if os.path.isdir(directory):
-    allowed = {".jpg", ".jpeg", ".png", ".gif"} if kind == "static" else {".mp4"}
+    allowed = {".jpg", ".jpeg", ".png", ".gif", ".webp"} if kind == "static" else {".mp4"}
     for name in sorted(os.listdir(directory), key=str.casefold):
         path = os.path.join(directory, name)
-        if not os.path.isfile(path) or os.path.splitext(name)[1] not in allowed:
+        if not os.path.isfile(path) or os.path.splitext(name)[1].lower() not in allowed:
             continue
         thumb = path
         if kind == "lively":

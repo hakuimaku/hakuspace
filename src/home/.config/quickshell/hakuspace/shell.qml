@@ -58,7 +58,33 @@ ShellRoot {
                 }
             }
         }
+        function openDefault() {
+            if (Quickshell.screens.length > 0)
+                UiState.openHakuMenu(Quickshell.screens[0].name)
+        }
         function close() { UiState.closeHakuMenu() }
+    }
+
+    IpcHandler {
+        target: "wallpaper"
+        enabled: true
+        function open(screenName: string) {
+            for (var screen of Quickshell.screens) {
+                if (screen.name === screenName) {
+                    UiState.openWallpaper(screenName)
+                    return
+                }
+            }
+        }
+        function openDefault() {
+            if (Quickshell.screens.length > 0)
+                UiState.openWallpaper(Quickshell.screens[0].name)
+        }
+        function toggleDefault() {
+            if (Quickshell.screens.length > 0)
+                UiState.toggleWallpaper(Quickshell.screens[0].name)
+        }
+        function close() { UiState.closeWallpaper() }
     }
 
     IpcHandler {
@@ -116,6 +142,11 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         HakuMenuPanel {}
+    }
+
+    Variants {
+        model: Quickshell.screens
+        WallpaperPanel {}
     }
 
     Variants {
