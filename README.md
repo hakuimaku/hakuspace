@@ -79,6 +79,25 @@ cd ~ && rm -rf hakuspace
 reboot
 ```
 
+### After installing **hakuspace**
+You can immediately use the plugins that I have pre-configured. Simply install and enable them using the commands below (or tweak them as you like in `plugin.lua`).
+
+* **[hyprexpo](https://github.com/sandwichfarm/hyprexpo)** - Overview layout for your workspaces.
+* **[hypr-dynamic-cursors](https://github.com/VirtCode/hypr-dynamic-cursors)** - Smooth, physics-based dynamic cursor effects.
+
+```bash
+hyprpm update
+
+hyprpm add https://github.com/virtcode/hypr-dynamic-cursors
+hyprpm enable dynamic-cursors
+
+hyprpm add https://github.com/sandwichfarm/hyprexpo
+hyprpm enable hyprexpo
+
+hyprpm reload
+```
+
+
 ---
 
 <h2 style="color:#1abc9c;">🐛 Troubleshooting</h2>
