@@ -1,8 +1,8 @@
 /* ============================================================================== */
 /* GLOBAL STYLES                                  */
 /* ============================================================================== */
-@import url("../../../.local/state/haku_theme/colors.css");
-@import url("../../../.local/state/haku_theme/fonts.css");
+@import url("../../.local/state/haku_theme/colors.css");
+@import url("../../.local/state/haku_theme/fonts.css");
 
 * {
     font-weight: bold;
