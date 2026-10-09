@@ -24,7 +24,7 @@
     "wlr/taskbar": {
         "format": "{icon}",
         "tooltip-format": "{title} {app_id}",
-        "icon-size": 52,
+        "icon-size": 40,
         "on-click": "activate",
         "on-click-middle": "close",
         "on-click-right": "minimize",
@@ -47,27 +47,35 @@
         "modules": [
             "image#menu",
             "image#kitty",
-            "image#thunar"
+            "image#thunar",
+            "image#zen"
         ]
     },
 
     "image#kitty": {
         "exec": "$HOME/.local/bin/dockbar_geticon.sh kitty",
-        "size": 52,
+        "size": 40,
         "interval": "once",
         "on-click": "kitty"
     },
 
     "image#thunar": {
         "exec": "$HOME/.local/bin/dockbar_geticon.sh thunar",
-        "size": 52,
+        "size": 40,
         "interval": "once",
         "on-click": "thunar"
     },
 
+    "image#zen": {
+        "exec": "$HOME/.local/bin/dockbar_geticon.sh zen-browser",
+        "size": 40,
+        "interval": "once",
+        "on-click": "zen-browser"
+    },
+
     "image#menu": {
         "exec": "$HOME/.local/bin/dockbar_geticon.sh menu",
-        "size": 52,
+        "size": 40,
         "interval": "once",
         "on-click": "$HOME/.local/bin/hakumenu.sh"
     }
