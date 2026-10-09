@@ -43,14 +43,15 @@ prompt {
     padding:             10px 15px;
     background-color:    @accent;
     text-color:          @background;
-    border-radius:       20px;
+    border-radius:       12px;
     font-weight:         bold;
 }
 
 entry {
     padding:             10px;
+    margin:              0 10px 0 10px;
     text-color:          @accent;
-    placeholder:         "󱎸 Search...";
+    placeholder:         "Search...";
     placeholder-color:   rgba(223, 223, 223, 0.4);
 }
 
@@ -59,13 +60,13 @@ mode-switcher {
     margin:              0px 10px;
     padding:             6px;
     background-color:    @accent;
-    border-radius:       20px;
+    border-radius:       12px;
     spacing:             10px;
 }
 
 button {
     padding:             8px 14px;
-    border-radius:       20px;
+    border-radius:       12px;
     background-color:    transparent;
     text-color:          @background;
 }
@@ -87,7 +88,7 @@ listview {
 element {
     padding:             10px;
     margin:              2px 10px;
-    border-radius:       20px;
+    border-radius:       12px;
     orientation:         horizontal;
     vertical-align:      0.5; 
 }
