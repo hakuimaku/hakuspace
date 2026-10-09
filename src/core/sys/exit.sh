@@ -10,7 +10,7 @@ EXIT_APP_LIST_DEFAULT=(
     "code" "code-url-handler" "zen" "zen-bin" "firefox" "chromium" "kitty" "slurp"
     "waybar" "taskbar" "hypridle" "swaync" "sway-audio-idle-inhibit"
     "awww-daemon" "gammastep" "polkit-mate" "hyprsunset" "agy"
-    "qemu" "java"
+    "qemu" "java" "quickshell" "qs" "qs_supervisor.sh"
 )
 APP_LIST=("${EXIT_APP_LIST_DEFAULT[@]}" "${EXIT_APP_LIST_USER[@]}" )
 APP_PATTERN=$(IFS="|" ; echo "${APP_LIST[*]}")
@@ -76,6 +76,7 @@ rm -f /tmp/.X11-unix/X* 2>/dev/null
 rm -f /tmp/.X*-lock 2>/dev/null
 rm -rf /tmp/hypr /tmp/niri* /tmp/sway* /tmp/waybar* 2>/dev/null
 rm -rf /tmp/cava-layer.log /tmp/cava-layer.pid 2>/dev/null
+rm -rf "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hakuspace" 2>/dev/null
 
 # Unset environment variables
 systemctl --user unset-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP 2>/dev/null

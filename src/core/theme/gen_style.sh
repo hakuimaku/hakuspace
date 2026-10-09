@@ -231,7 +231,38 @@ osd.window-switcher.style-thumbnail.item.active.border.color: ${ACCENT_COLOR}
     fi
 }
 
-RENDERERS=(colors fonts hyprland rofi kitty btop newtab niri mango labwc)
+render_quickshell() {
+    cat > "$THEME_RENDER_DIR/quickshell.json" <<JSON
+{
+    "preset": "ink",
+    "accent": "${ACCENT_COLOR}",
+    "fontFamily": "${FONT_FAMILY}",
+    "fontSize": ${FONT_SIZE},
+    "colors": {
+        "bg": "rgba(0, 0, 0, 0.7)",
+        "surface": "rgba(32, 32, 32, 0.6)",
+        "surfaceHi": "${ACCENT_COLOR}",
+        "border": "transparent",
+        "fg": "${ACCENT_COLOR}",
+        "fgDim": "${ACCENT_DIM}",
+        "fgMuted": "rgba(255, 255, 255, 0.5)",
+        "onAccent": "#000000"
+    },
+    "shape": {
+        "radius": 12,
+        "radiusSm": 8,
+        "borderWidth": 0,
+        "gap": 4,
+        "pad": 10
+    },
+    "effects": {
+        "shadow": true,
+        "blur": true
+    }
+}
+JSON
+}
+RENDERERS=(colors fonts hyprland rofi kitty btop newtab niri mango labwc quickshell)
 for renderer in "${RENDERERS[@]}"; do
     "render_${renderer}"
 done
@@ -240,3 +271,4 @@ echo "Generated theme files in: $THEME_RENDER_DIR"
 echo "ACCENT_COLOR=$ACCENT_COLOR"
 echo "FONT_FAMILY=$FONT_FAMILY"
 echo "FONT_SIZE=$FONT_SIZE"
+

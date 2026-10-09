@@ -6,6 +6,7 @@
 [ -f "$HOME/hakucfg/setting.sh" ] && source "$HOME/hakucfg/setting.sh"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
+source "$SCRIPT_DIR/haku_backend_lib.sh"
 
 WAYBAR_DIR="$HOME/.config/waybar"
 USER_WAYBAR_DIR="$HOME/hakucfg/config/waybar"
@@ -16,6 +17,28 @@ WAYBAR_MODES_DEAULT=("top" "left" "island" "neon" "coredge" "minimal" "legacy")
 
 # WAYBAR_MODES_DEAULT + WAYBAR_MODE_USER
 WAYBAR_MODES=("${WAYBAR_MODES_DEAULT[@]}" "${WAYBAR_MODE_USER[@]}")
+
+if haku_backend_is "quickshell"; then
+    if [[ "${1:-}" == "--toggle" ]]; then
+        current=$(cat "$STATUS_FILE" 2>/dev/null || echo "1")
+        if [[ "$current" == "1" ]]; then
+            echo "0" > "$STATUS_FILE"
+        else
+            echo "1" > "$STATUS_FILE"
+        fi
+        exit 0
+    elif [[ "${1:-}" == "--cycle" || "${1:-}" == "--select" ]]; then
+        notify-send -a "HakuSpace" -i "info" "Quickshell Mode" "Only 'top' variant is supported in quickshell right now."
+        exit 0
+    elif [[ "${1:-}" == "--reload" || -z "${1:-}" ]]; then
+        exit 0
+    elif [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+        # Let it fall through to print help
+        :
+    else
+        exit 0
+    fi
+fi
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
         cat <<'EOF'

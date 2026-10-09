@@ -1,0 +1,3 @@
+singleton Env 1.0 Env.qml
+singleton Theme 1.0 Theme.qml
+singleton AppState 1.0 AppState.qml
