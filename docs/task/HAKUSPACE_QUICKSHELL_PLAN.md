@@ -1321,11 +1321,12 @@ Invariant:
 
 ```text
 menuCenterX = outputWidth / 2
+menuHeight  = stable across tabs
 ```
 
 Do not derive menu position from changing MPRIS title width.
 
-Vertical origin is frame-derived. Outer menu bounds stay fixed across tabs. Use one radius family for outer menu, tab strip, list area and Theme state area.
+Vertical origin is frame-derived. HakuMenu remains physically centered while its width may morph by tab: General uses the approved compact width (95% of the standard HakuMenu width; currently 38% of output versus 40% for Drun/Theme). The width transition uses the dedicated HakuMenu resize motion, not the bouncy open curve. Use one radius family for outer menu, tab strip, list area and Theme state area.
 
 Commit:
 
@@ -1347,6 +1348,48 @@ Commit shell/tab structure before tab content:
 
 ```text
 p3(hakumenu): add general drun theme tabs
+```
+
+#### P3.5.4 Shared interactive motion foundation
+
+Hikai interactive controls must not switch visible hover/press/selection/focus state in a single frame. Establish the shared motion primitives before expanding P3 into more button-heavy surfaces.
+
+Shared layer:
+
+```text
+HAnimation button motion tokens
+components/motion/ButtonMotion.qml
+components/motion/MorphButton.qml
+components/motion/MorphIconButton.qml
+components/motion/SelectionPill.qml
+```
+
+Rules:
+
+- hover is quick and restrained;
+- press compresses slightly and releases softly;
+- selection/focus use dedicated non-shell curves;
+- HakuMenu's bouncy open curve is not reused for ordinary buttons;
+- tab switching uses one moving selection pill rather than three instant active backgrounds;
+- list-row selection/hover morphs inside stable row bounds;
+- search focus/hover morphs without resizing the field;
+- interaction motion must not alter implicit layout size or push neighboring controls.
+
+Initial migration scope:
+
+```text
+HakuMenu tabs/search/General rows/Drun rows
+Tray menu rows/back action
+Notification dismiss/DND/Clear/close buttons
+```
+
+Commits may be split between the primitive library and migrations, but all new P3 interactive controls should reuse this layer rather than duplicating ad-hoc `Behavior` blocks.
+
+Suggested commits:
+
+```text
+p3(motion): add shared button morph primitives
+p3(motion): migrate hakumenu tray and notifications
 ```
 
 ---
@@ -1452,7 +1495,7 @@ When Theme is active:
 main list region + narrow right state region
 ```
 
-For General/Drun the right state region is hidden. Outer HakuMenu bounds do not move.
+For General/Drun the right state region is hidden. Physical center X and height stay fixed; width follows the approved General-compact versus Drun/Theme-standard morph.
 
 Commits:
 
@@ -1577,6 +1620,8 @@ p3(anchor): attach tooltips to rounded frame
 p3(anchor): attach tray menu to rounded frame
 ```
 
+Tray menu rows, Back, checkbox/radio state and press/hover feedback use the shared Hikai button-motion primitives; do not restore instant row colour switching.
+
 #### P3.10.3 Notification popup
 
 Preserve the native popup model; attach/polish as a borderless frame-related Flare toast.
@@ -1599,6 +1644,7 @@ Visual requirements:
 - roomier outer/header spacing;
 - taller history viewport;
 - `Clear` accent-filled with black text;
+- DND/Clear/close/dismiss interaction states use shared button motion instead of instant colour changes;
 - hover can increase label size without reallocating the header.
 
 #### P3.10.5 Level OSD
@@ -1774,7 +1820,7 @@ P3 is complete only when:
 - avatar persists under the HakuSpace user-data directory;
 - Sidebar opens immediately from Navigation hover without flicker and uses circular controls;
 - Settings is only the approved stub;
-- HakuMenu is distinct from Navigation, physically centered and stable across tabs;
+- HakuMenu is distinct from Navigation, physically centered with stable height and the approved tab-width morph;
 - HakuMenu General uses the real `hm_general.sh` contract;
 - HakuMenu Drun is the native Hikai launcher route;
 - HakuMenu Theme remains a stub with its right state region;

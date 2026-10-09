@@ -137,20 +137,12 @@ Item {
         } else {
             throttleTimer.stop();
 
-            // Close back into the real anchor span instead of collapsing a
-            // full-width surface vertically.  This keeps the Flare coherent
-            // in both directions and avoids detached ear frames on close.
-            var anchor = anchorSpan();
-            _activeWidthCurve = closeWidthCurve;
-            if (anchor) {
-                animStart.to = anchor.start;
-                animEnd.to = anchor.end;
-                animStart.duration = closeDuration;
-                animEnd.duration = closeDuration;
-                animStart.restart();
-                animEnd.restart();
-            }
-
+            // Opening resolves the horizontal span first and then reveals the
+            // surface vertically. Closing is the exact visual reverse: keep
+            // the current span stable while the surface slides back up. Once
+            // height reaches zero, the span can snap to the anchor invisibly.
+            animStart.stop();
+            animEnd.stop();
             animHeight.to = 0;
             animHeight.duration = closeDuration;
             animHeight.restart();
@@ -170,5 +162,21 @@ Item {
     
     NumberAnimation { id: animStart; target: root; property: "mStart"; easing.bezierCurve: root._activeWidthCurve; onFinished: checkSettled() }
     NumberAnimation { id: animEnd; target: root; property: "mEnd"; easing.bezierCurve: root._activeWidthCurve; onFinished: checkSettled() }
-    NumberAnimation { id: animHeight; target: root; property: "mHeight"; duration: HAnimation.normal; easing.bezierCurve: root.shown ? root.openHeightCurve : root.closeHeightCurve; onFinished: checkSettled() }
+    NumberAnimation {
+        id: animHeight
+        target: root
+        property: "mHeight"
+        duration: HAnimation.normal
+        easing.bezierCurve: root.shown ? root.openHeightCurve : root.closeHeightCurve
+        onFinished: {
+            if (!root.shown && root.mHeight <= 0.01) {
+                var anchor = root.anchorSpan();
+                if (anchor) {
+                    root.mStart = anchor.start;
+                    root.mEnd = anchor.end;
+                }
+            }
+            checkSettled();
+        }
+    }
 }

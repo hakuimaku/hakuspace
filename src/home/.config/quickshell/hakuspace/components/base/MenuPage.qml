@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Widgets
 import "../../services"
+import "../motion" as Motion
 
 Item {
     id: root
@@ -40,25 +41,30 @@ Item {
         anchors.fill: parent
         visible: !childLoader.active
 
-        Rectangle {
+        Motion.MorphButton {
+            id: backButton
             width: parent.width
             height: visible ? root.rowHeight : 0
             visible: root.parentPage !== null
-            color: backArea.containsMouse ? Theme.surfaceHi : Theme.surface
+            radius: 0
+            idleColor: Theme.surface
+            hoverColor: Theme.surfaceHi
+            pressedColor: Theme.surfaceHi
+            foregroundColor: Theme.fg
+            hoverForegroundColor: Theme.onAccentColor
+            pressedForegroundColor: Theme.onAccentColor
+            hoverScaleDelta: 0
+            pressScaleDelta: 0.010
+            onClicked: root.parentPage.closeChild()
+
             Text {
                 anchors.fill: parent
                 anchors.leftMargin: Theme.pad
                 verticalAlignment: Text.AlignVCenter
                 text: "‹  Back"
-                color: backArea.containsMouse ? Theme.onAccentColor : Theme.fg
+                color: backButton.foreground
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSize
-            }
-            MouseArea {
-                id: backArea
-                anchors.fill: parent
-                hoverEnabled: true
-                onClicked: root.parentPage.closeChild()
             }
         }
 
@@ -94,67 +100,82 @@ Item {
                             visible: row.modelData.isSeparator
                         }
 
-                        Rectangle {
+                        Motion.MorphButton {
+                            id: rowButton
                             anchors.fill: parent
-                            color: rowArea.containsMouse && row.modelData.enabled ? Theme.surfaceHi : Theme.surface
                             visible: !row.modelData.isSeparator
-                        }
-
-                        Row {
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.leftMargin: Theme.pad
-                            anchors.rightMargin: Theme.pad
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: Theme.gap
-                            visible: !row.modelData.isSeparator
-
-                            Text {
-                                width: root.rowHeight * 0.8
-                                horizontalAlignment: Text.AlignHCenter
-                                text: row.modelData.buttonType === QsMenuButtonType.CheckBox
-                                      ? (row.modelData.checkState === Qt.Checked ? "☑" : "☐")
-                                      : row.modelData.buttonType === QsMenuButtonType.RadioButton
-                                        ? (row.modelData.checkState === Qt.Checked ? "◉" : "○") : ""
-                                color: rowArea.containsMouse ? Theme.onAccentColor : Theme.accent
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontSize
-                            }
-                            IconImage {
-                                width: row.modelData.icon ? root.rowHeight * 0.7 : 0
-                                height: root.rowHeight * 0.7
-                                visible: width > 0
-                                source: row.modelData.icon || ""
-                            }
-                            Text {
-                                width: Math.max(0, root.width - Theme.pad * 2 - root.rowHeight * 1.8
-                                                - (row.modelData.icon ? root.rowHeight * 0.7 + Theme.gap : 0))
-                                text: row.modelData.text || ""
-                                elide: Text.ElideRight
-                                color: rowArea.containsMouse ? Theme.onAccentColor : Theme.fg
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontSize
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                            Text {
-                                text: row.modelData.hasChildren ? "›" : ""
-                                color: rowArea.containsMouse ? Theme.onAccentColor : Theme.fgDim
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontSize
-                            }
-                        }
-
-                        MouseArea {
-                            id: rowArea
-                            anchors.fill: parent
-                            enabled: !row.modelData.isSeparator && row.modelData.enabled
-                            hoverEnabled: true
+                            enabled: row.modelData.enabled
+                            radius: 0
+                            selected: row.modelData.checkState === Qt.Checked
+                            selectedOverridesHover: false
+                            idleColor: Theme.surface
+                            hoverColor: Theme.surfaceHi
+                            pressedColor: Theme.surfaceHi
+                            selectedColor: Theme.hoverMuted
+                            foregroundColor: Theme.fg
+                            hoverForegroundColor: Theme.onAccentColor
+                            pressedForegroundColor: Theme.onAccentColor
+                            selectedForegroundColor: Theme.accent
+                            disabledOpacity: 1
+                            hoverScaleDelta: 0
+                            pressScaleDelta: 0.010
                             onClicked: {
                                 if (row.modelData.hasChildren) {
                                     root.openChild(row.modelData)
                                 } else {
                                     row.modelData.triggered()
                                     root.dismissed()
+                                }
+                            }
+
+                            Row {
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.leftMargin: Theme.pad
+                                anchors.rightMargin: Theme.pad
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: Theme.gap
+
+                                Text {
+                                    width: root.rowHeight * 0.8
+                                    horizontalAlignment: Text.AlignHCenter
+                                    text: row.modelData.buttonType === QsMenuButtonType.CheckBox
+                                          ? (row.modelData.checkState === Qt.Checked ? "☑" : "☐")
+                                          : row.modelData.buttonType === QsMenuButtonType.RadioButton
+                                            ? (row.modelData.checkState === Qt.Checked ? "◉" : "○") : ""
+                                    color: rowButton.foreground
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSize
+                                }
+                                IconImage {
+                                    width: row.modelData.icon ? root.rowHeight * 0.7 : 0
+                                    height: root.rowHeight * 0.7
+                                    visible: width > 0
+                                    source: row.modelData.icon || ""
+                                }
+                                Text {
+                                    width: Math.max(0, root.width - Theme.pad * 2 - root.rowHeight * 1.8
+                                                    - (row.modelData.icon ? root.rowHeight * 0.7 + Theme.gap : 0))
+                                    text: row.modelData.text || ""
+                                    elide: Text.ElideRight
+                                    color: rowButton.foreground
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSize
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                Text {
+                                    text: row.modelData.hasChildren ? "›" : ""
+                                    color: rowButton.hovered || rowButton.pressed ? rowButton.foreground : Theme.fgDim
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSize
+
+                                    Behavior on color {
+                                        ColorAnimation {
+                                            duration: HAnimation.buttonHoverDuration
+                                            easing.type: Easing.BezierSpline
+                                            easing.bezierCurve: HAnimation.buttonHoverCurve
+                                        }
+                                    }
                                 }
                             }
                         }

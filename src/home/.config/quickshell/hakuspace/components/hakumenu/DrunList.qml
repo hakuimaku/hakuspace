@@ -3,6 +3,7 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Widgets
 import "../../services"
+import "../motion" as Motion
 
 Item {
     id: root
@@ -119,16 +120,29 @@ Item {
             policy: ScrollBar.AsNeeded
         }
 
-        delegate: Rectangle {
+        delegate: Motion.MorphButton {
             id: appRow
             required property var modelData
             required property int index
-            readonly property bool selected: ListView.isCurrentItem
             width: appList.width
             height: Math.max(48, Theme.fontSize * 3.5)
             radius: Theme.radiusSm
-            color: selected ? root.rowSelectedColor
-                            : (rowMouse.containsMouse ? root.rowHoverColor : "transparent")
+            selected: ListView.isCurrentItem
+            selectedOverridesHover: true
+            idleColor: "transparent"
+            hoverColor: root.rowHoverColor
+            pressedColor: root.rowSelectedColor
+            selectedColor: root.rowSelectedColor
+            foregroundColor: Theme.fg
+            hoverForegroundColor: Theme.accent
+            pressedForegroundColor: Theme.accent
+            selectedForegroundColor: Theme.accent
+            hoverScaleDelta: 0.003
+            pressScaleDelta: 0.012
+            onHoveredChanged: {
+                if (hovered) appList.currentIndex = appRow.index
+            }
+            onClicked: root.activateIndex(appRow.index)
 
             Row {
                 anchors.fill: parent
@@ -157,10 +171,9 @@ Item {
                     Text {
                         width: parent.width
                         text: appRow.modelData.name || appRow.modelData.id
-                        color: appRow.selected ? Theme.accent : Theme.fg
+                        color: appRow.foreground
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSize
-                        font.bold: appRow.selected
                         elide: Text.ElideRight
                     }
 
@@ -174,15 +187,6 @@ Item {
                         visible: text.length > 0
                     }
                 }
-            }
-
-            MouseArea {
-                id: rowMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onEntered: appList.currentIndex = appRow.index
-                onClicked: root.activateIndex(appRow.index)
             }
         }
 

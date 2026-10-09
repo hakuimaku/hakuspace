@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import Quickshell.Io
 import "../../services"
+import "../motion" as Motion
 
 Item {
     id: root
@@ -190,16 +191,32 @@ Item {
                 opacity: 0.55
             }
 
-            Rectangle {
+            Motion.MorphButton {
                 id: row
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 height: root.rowHeight
                 radius: Theme.radiusSm
-                readonly property bool selected: generalList.currentIndex === rowWrap.index
-                color: selected ? root.rowSelectedColor
-                                : (rowMouse.containsMouse ? root.rowHoverColor : "transparent")
+                selected: generalList.currentIndex === rowWrap.index
+                selectedOverridesHover: true
+                idleColor: "transparent"
+                hoverColor: root.rowHoverColor
+                pressedColor: root.rowSelectedColor
+                selectedColor: root.rowSelectedColor
+                foregroundColor: Theme.fg
+                hoverForegroundColor: Theme.accent
+                pressedForegroundColor: Theme.accent
+                selectedForegroundColor: Theme.accent
+                hoverScaleDelta: 0.003
+                pressScaleDelta: 0.012
+                onHoveredChanged: {
+                    if (hovered) {
+                        generalList.currentIndex = rowWrap.index
+                        root.syncSelectionLabel()
+                    }
+                }
+                onClicked: root.activateIndex(rowWrap.index)
 
                 Text {
                     anchors.left: parent.left
@@ -208,23 +225,10 @@ Item {
                     anchors.rightMargin: Theme.pad * 1.5
                     anchors.verticalCenter: parent.verticalCenter
                     text: rowWrap.modelData.raw
-                    color: row.selected ? Theme.accent : Theme.fg
+                    color: row.foreground
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize + 1
-                    font.bold: row.selected
                     elide: Text.ElideRight
-                }
-
-                MouseArea {
-                    id: rowMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onEntered: {
-                        generalList.currentIndex = rowWrap.index
-                        root.syncSelectionLabel()
-                    }
-                    onClicked: root.activateIndex(rowWrap.index)
                 }
             }
         }
