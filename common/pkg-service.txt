@@ -5,9 +5,10 @@ bluez                         # Core Bluetooth protocol stack
 bluez-utils                   # Bluetooth CLI tools (including bluetoothctl)
 blueman                       # GUI Bluetooth manager
 power-profiles-daemon         # Power profile switching (balanced/performance/power-saver)
+brightnessctl                 # Brightness control utility
 
 # === Session/login ===
-ly                            # TUI display/login manager
+ly                            # TUI display/login manager (like sddm, gdm,...)
 uwsm                          # Universal Wayland Session Manager
 
 # === Portal / desktop integration ===
