@@ -282,8 +282,6 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
                 if [[ ! -d "$HOME/.themes/hakulab" ]]; then
                     echo ">>> Deploying Hakulab theme for Labwc..."
                     copy_dir_content "$HOME_SRC_DIR/.themes/hakulab" "$HOME/.themes/hakulab"
-                else
-                    log_skip "Hakulab theme already exists in ~/.themes/hakulab. Skipping theme deployment."
                 fi
                 ;;
             *)
