@@ -6,7 +6,7 @@ Arch Linux dotfiles for Hyprland / Niri / MangoWM
 </div>
 
 <p align="center">
-    <a href="https://hypr.land/"><img alt="Hyprland" src="https://img.shields.io/badge/Hyprland-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
+    <a href="https://github.com/hyprwm/Hyprland"><img alt="Hyprland" src="https://img.shields.io/badge/Hyprland-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
     <a href="https://github.com/YaLTeR/niri"><img alt="Niri" src="https://img.shields.io/badge/Niri-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
     <a href="https://github.com/mangowm/mango"><img alt="MangoWM" src="https://img.shields.io/badge/MangoWM-%231f1f1f?style=for-the-badge&logo=wayland&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
     <a href="https://archlinux.org/"><img alt="Arch Linux" src="https://img.shields.io/badge/Arch%20Linux-%231f1f1f?style=for-the-badge&logo=archlinux&logoColor=%231f1f1f&labelColor=%2368818f&color=%231f1f1f"></a>&nbsp;
@@ -49,6 +49,9 @@ See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/
 | Screen Lock | [Hyprlock](https://github.com/hyprwm/hyprlock) |
 | Login Menu | [Ly](https://github.com/fairyglade/ly) |
 | Editor | [VS Code](https://code.visualstudio.com/) |
+| Browser | [Zen](https://zen-browser.app/) |
+
+> XDG Desktop Portal: GTK by default, but each WM will use its specific, recommended portal according to its official wiki (hyprland uses hyprland, niri uses gnome, and mangowm uses wlr).
 
 ---
 
@@ -67,7 +70,7 @@ See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/
 > [!Important]
 > **Prerequisites:** You need a pre-installed Arch Linux or an Arch-based Linux Distro (A fresh install is highly recommended). If you already have an existing WM or DE configuration, it is best to only reference the configs in HakuSpace rather than running the installation script directly over your system.
 
-### 1. Clone the Stable Release (Recommended)
+### 1. Clone the Stable Release
 Run the following commands to clone the stable release version `v2.1.0`:
 ```bash
 cd ~
@@ -95,7 +98,7 @@ chmod +x install.sh
 ```
 
 ### 3. Complete the Installation
-After running the installation script, restart your computer and log in to either **Hyprland** or **Niri** to experience the new setup.
+After running the installation script, restart your computer and log in to either **Hyprland**, **Niri** or **Mango** to experience the new setup.
 
 ---
 
