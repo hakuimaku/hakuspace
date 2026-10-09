@@ -60,7 +60,8 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("blueman-applet")
     hl.exec_cmd("hypridle")
     hl.exec_cmd("sway-audio-idle-inhibit")
-    hl.exec_cmd("/home/hakuimaku/.local/bin/welcome")
+    hl.exec_cmd("~/.local/bin/welcome")
+    hl.exec_cmd("~/.local/bin/cava_manager")
 end)
 
 
@@ -377,14 +378,14 @@ hl.window_rule({
     float = true,
     center = true,
     size  = "1280 720",
-    opacity = 0.8,
+    opacity = 0.9,
 })
 
 hl.window_rule({
     name  = "opacity-for-certain-apps",
     match = { class = "(?i)nemo|code|kitty|jetbrains.*" },
 
-    opacity = 0.8,
+    opacity = 0.9,
 })
 
 hl.window_rule({
@@ -410,7 +411,6 @@ hl.layer_rule({
     match = { namespace = "rofi" },
     animation = "slide top",
     ignore_alpha = 0.8,
-    dim_around = true,
     blur = true,
     blur_popups = true,
 })
@@ -461,8 +461,7 @@ hl.window_rule({
     no_blur = true,
     no_focus = true,
     no_shadow = true,
-    opacity = 0.4,
-    size = "540 60",
-    move = "12 45",
+    opacity = 0.6,
+    size = "1920 100",
+    move = "0 0",
 })
-
