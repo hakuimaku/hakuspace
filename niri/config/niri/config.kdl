@@ -19,4 +19,4 @@ include "rules.kdl"
 screenshot-path "~/Pictures/Screenshots/screenshot_%Y-%m-%d_%H-%M-%S.png"
 
 // Include user custom config file
-include "../../hakuspace-control/niri-custom.kdl"
+include optional=true "~/hakuspace-control/niri-custom.kdl"
