@@ -45,7 +45,7 @@ PanelWindow {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Theme.gap
                 TopModules.Logo {}
-                TopModules.Workspaces {}
+                TopModules.Workspaces { screenName: root.modelData.name }
                 TopModules.WindowTitle {}
             }
             
