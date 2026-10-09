@@ -1,0 +1,58 @@
+#!/bin/bash
+
+DIV="──────────────────────────────"
+
+# List options
+options="󰍜  App Menu
+󰨞  Visual Studio Code
+󰇧  Browser
+  File Manager
+󰈆  Quit
+$DIV
+  Cava Underbar
+󰸉  Change Wallpaper
+  Change Lively Wallpaper
+󰃾  Kill Lively Wallpaper
+  Change Theme
+󰑋  Screen Record
+󰖩  Wifi
+󰂯  Bluetooth
+  Local Send
+󰓃  Audio Control
+  Disk Manager
+󰋊  Storage Manager
+󱤆  Power Save Supermode
+󰉻  Hyprland Folder
+  Setting"
+
+# Design rofi
+chosen=$(echo -e "$options" | rofi -dmenu -p "Haku Menu - Search" -i -theme-str 'window 
+{
+    width: 600px;
+    background-color: rgba(0, 0, 0, 0.7);
+}')
+
+# List action
+case $chosen in
+    *"App Menu"*) rofi -show drun ;;
+    *"Visual Studio Code"*) code & ;;
+    *"Browser"*) zen-browser & ;;
+    *"File Manager"*) nemo & ;;
+    *"Quit"*) ~/.local/bin/shutdown ;;
+    $DIV) notify-send "This is not a valid option sir" ;;
+    *"Cava Underbar"*) ~/.local/bin/cava_manager --toggle ;;
+    *"Change Wallpaper"*) ~/.local/bin/wallselect ;;
+    *"Change Lively Wallpaper"*) ~/.local/bin/wallmpvselect ;;
+    *"Kill Lively Wallpaper"*) pkill mpvpaper ;;
+    *"Change Theme"*) ~/.local/bin/changetheme ;;
+    *"Screen Record"*) ~/.local/bin/record & ;;
+    *"Wifi"*) nm-connection-editor & ;;
+    *"Bluetooth"*) blueman-manager & ;;
+    *"Local Send"*) localsend & ;;
+    *"Audio Control"*) pavucontrol & ;;
+    *"Disk Manager"*) gparted & ;;
+    *"Storage Manager"*) kitty --class ncdu -e sudo ncdu / ;;
+    *"Power Save Supermode"*) ~/.local/bin/power_toggle ;;\
+    *"Hyprland Folder"*) nemo ~/.config/hypr/ ;;
+    *"Setting"*) code ~/.local/bin/quick_settings ;;
+esac

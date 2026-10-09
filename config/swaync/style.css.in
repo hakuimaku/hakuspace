@@ -1,0 +1,84 @@
+* {
+    font-family: "${FONT_FAMILY}", monospace;
+    font-size: ${FONT_SIZE}px;
+    font-weight: bold;
+}
+
+.notification-row {
+    outline: none;
+    margin: 5px;
+}
+
+.notification {
+    background: rgba(0, 0, 0, 1);
+    border: 1px solid #000000;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 0 5px #000000;
+}
+
+.notification-content .summary {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: bold;
+    text-shadow: 0 0 2px #ffffff;
+}
+
+.notification-content .body {
+    color: #FFFFFF;
+    font-size: 14px;
+}
+
+.notification-content .time {
+    color: #a6adc8;
+}
+
+.notification-action {
+    color: #11111b;
+    background: #FFFFFF;
+    border-radius: 5px;
+}
+
+/* --- CONTROL CENTER --- */
+.control-center {
+    background: rgba(0, 0, 0, 1);
+    border-radius: 15px;
+    box-shadow: 0 0 10px #000000;
+    margin: 3px;
+}
+
+.widget-title {
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.widget-label {
+    color: #FFFFFF;
+}
+
+.widget-buttons-grid > flowbox > flowboxchild > button {
+    background: #ffffff;
+    border-radius: 10px;
+    margin: 3px;
+    border: 1px solid #ffffff;
+}
+
+.widget-buttons-grid > flowbox > flowboxchild > button:hover {
+    background: #ffffff;
+    color: #ffffff;
+}
+
+.widget-dnd {
+    color: #ffffff;
+}
+
+.widget-dnd > switch {
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #FFFFFF;
+}
+
+.widget-dnd > switch:checked {
+    background: #FFFFFF;
+}

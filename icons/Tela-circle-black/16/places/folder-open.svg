@@ -1,0 +1,15 @@
+<svg
+   width="16"
+   height="16">
+  <defs
+     id="defs1">
+    <style
+       id="current-color-scheme"
+       type="text/css">.ColorScheme-Text { color:#727272; } .ColorScheme-Highlight { color:#4d4d4d; }</style>
+  </defs>
+  <path
+     d="M 3.0625,2 C 2.335375,2 1.75,2.669 1.75,3.5 V 8 H 0 l 1.75,4 c 0,1.108 0.7805,2 1.75,2 h 8.75 C 13.2195,14 14,13.108 14,12 V 6 C 14,4.892 13.2195,4 12.25,4 H 7.875 L 6.125,2 Z M 3.5,6 h 8.75 v 6 L 10.5,8 h -7 z"
+     class="ColorScheme-Text"
+     fill="currentColor"
+     id="path1" />
+</svg>

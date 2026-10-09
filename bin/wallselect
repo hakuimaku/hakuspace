@@ -1,0 +1,40 @@
+#!/bin/bash
+
+WALL_DIR="$HOME/Pictures/Wallpapers"
+
+list_walls() {
+    cd "$WALL_DIR" || exit
+    for file in *.{jpg,jpeg,png,gif}; do
+        [[ -e "$file" ]] || continue
+        echo -en "$file\0icon\x1f$WALL_DIR/$file\n"
+    done
+}
+
+CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" \
+-theme-str "
+    window { 
+        width: 65%; 
+    }
+    listview { 
+        columns: 4; 
+        lines: 2; 
+        spacing: 5px; 
+        padding: 5px;
+    }
+    element { 
+        orientation: vertical; 
+        padding: 5px;
+        border-radius: 15px;
+    }
+    element-icon { 
+        size: 250px; 
+        horizontal-align: 0.5;
+    }")
+
+if [ -n "$CHOICE" ]; then
+    awww img "$WALL_DIR/$CHOICE" \
+        --transition-type grow \
+        --transition-pos "top" \
+        --transition-step 255 \
+        --transition-fps 60
+fi

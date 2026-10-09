@@ -1,0 +1,46 @@
+[general]
+mode = scientific
+framerate = 60
+sensitivity = 150
+bars = 0
+bar_width = 4
+gravity = 200
+noise_reduction = 77
+autosens = 1
+
+[input]
+method = pipewire
+source = auto
+
+[output]
+method = noncurses
+style = stereo
+reverse = 1
+orientation = top
+channels = mono
+reverse = 0
+
+[color]
+background = default
+#foreground = '#FF003C'
+#foreground = '#00FFFF'
+#foreground = '#000000'
+#foreground = '#EFBF04'
+foreground = '#FFFFFF'
+
+#horizontal_gradient = 1
+#horizontal_gradient_color_1 = '#FF003C'
+#horizontal_gradient_color_2 = '#00FFFF'
+
+[smoothing]
+integral = 0
+monstercat = 0
+waves = 0
+gravity = 500
+
+[eq]
+1=0.8
+2=0.5
+3=0.5
+4=0.5
+5=0.5
