@@ -112,11 +112,21 @@ backup_item() {
     [[ -e "$target" || -L "$target" ]] || return 0
 
     local rel="${target#$HOME/}"
+    rel="${rel#/}"
     local backup_target="$BACKUP_DIR/$rel"
-    mkdir -p "$(dirname "$backup_target")"
+    local target_dir
+    target_dir="$(dirname "$target")"
 
-    mv "$target" "$backup_target"
-    log_backup "$target -> $backup_target"
+    if [[ -w "$target_dir" && ( ! -e "$target" || -w "$target" ) ]]; then
+        mkdir -p "$(dirname "$backup_target")"
+        mv "$target" "$backup_target"
+        log_backup "$target -> $backup_target"
+    else
+        sudo mkdir -p "$(dirname "$backup_target")"
+        sudo mv "$target" "$backup_target"
+        sudo chown -R "$USER:$USER" "$(dirname "$backup_target")" 2>/dev/null
+        log_backup "$target -> $backup_target (sudo)"
+    fi
 }
 
 copy_file() {
@@ -128,14 +138,27 @@ copy_file() {
         return 1
     fi
 
-    ensure_dir "$(dirname "$dst")"
-
     if [[ -e "$dst" || -L "$dst" ]]; then
         backup_item "$dst"
     fi
 
-    cp -f "$src" "$dst"
-    log_copy "$src -> $dst"
+    local dest_dir
+    dest_dir="$(dirname "$dst")"
+
+    if [[ ! -d "$dest_dir" ]]; then
+        if ! mkdir -p "$dest_dir" 2>/dev/null; then
+            sudo mkdir -p "$dest_dir"
+        fi
+    fi
+
+    if [[ -w "$dest_dir" ]]; then
+        cp -f "$src" "$dst"
+        log_copy "$src -> $dst"
+    else
+        sudo cp -f "$src" "$dst"
+        log_copy "$src -> $dst (sudo)"
+    fi
+    
     return 0
 }
 
@@ -502,7 +525,7 @@ if command -v nixos-rebuild >/dev/null 2>&1; then
                 log_skip "./hakuspace-config.nix is already imported in $CONFIG_NIX."
             else
                 log_info "Injecting ./hakuspace-config.nix into imports of configuration.nix..."
-                sudo sed -i -E 's|(imports\s*=\s*\[)|\1\n        ./hakuspace-config.nix|' "$CONFIG_NIX"
+                grep -q '\./hakuspace-config\.nix' "$CONFIG_NIX" || sudo sed -i '/\.\/hardware-configuration\.nix/a \      .\/hakuspace-config\.nix' "$CONFIG_NIX"
                 log_ok "Updated imports in $CONFIG_NIX."
             fi
         else
