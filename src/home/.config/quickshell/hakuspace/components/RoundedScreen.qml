@@ -12,12 +12,12 @@ Item {
         anchors { top: true; bottom: true; left: true; right: true }
         color: "transparent"
         
-        exclusionMode: AppState.roundedScreenDynamicState ? ExclusionMode.Normal : ExclusionMode.Ignore
-        WlrLayershell.layer: AppState.roundedScreenDynamicState ? WlrLayer.Top : WlrLayer.Overlay
+        exclusionMode: ExclusionMode.Normal
+        WlrLayershell.layer: WlrLayer.Top
         
         mask: Region {}
         
-        visible: AppState.roundedScreenState
+        visible: true
         
         Canvas {
             id: canvas
@@ -100,7 +100,7 @@ Item {
         anchors { bottom: true; left: true; right: true }
         implicitHeight: AppState.roundedScreenThickness
         mask: Region {}
-        visible: AppState.roundedScreenState && AppState.roundedScreenThickness > 0
+        visible: AppState.roundedScreenThickness > 0
     }
     PanelWindow {
         screen: rootItem.modelData
@@ -110,7 +110,7 @@ Item {
         anchors { top: true; bottom: true; left: true }
         implicitWidth: AppState.roundedScreenThickness
         mask: Region {}
-        visible: AppState.roundedScreenState && AppState.roundedScreenThickness > 0
+        visible: AppState.roundedScreenThickness > 0
     }
     PanelWindow {
         screen: rootItem.modelData
@@ -120,6 +120,6 @@ Item {
         anchors { top: true; bottom: true; right: true }
         implicitWidth: AppState.roundedScreenThickness
         mask: Region {}
-        visible: AppState.roundedScreenState && AppState.roundedScreenThickness > 0
+        visible: AppState.roundedScreenThickness > 0
     }
 }
