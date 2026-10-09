@@ -16,6 +16,7 @@ WALL_MPV_DIR="$HOME/Videos/Wallpapers" # For lively wallpaper videos
 PREVIEW_DIR="$WALL_MPV_DIR/Preview" # For lively wallpaper thumbnail previews
 BACKDROP_DIR="/tmp" # For Niri only
 WALL_INTERVAL=300 # Interval in seconds for random wallpaper changes
+ACCENT_COLOR_BASED_ON_WALLPAPER=true # true or false
 
 # Screen Recording Settings
 SCREENREC_SAVE_DIR="$HOME/Videos"

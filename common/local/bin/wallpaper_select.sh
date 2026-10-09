@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-# Include WALL_DIR
+# Include WALL_DIR & ACCENT_COLOR_BASED_ON_WALLPAPER
 [ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
 
-# Fallback WALL_DIR if not set
 WALL_DIR=${WALL_DIR:-$HOME/Pictures/Wallpapers}
+ACCENT_COLOR_BASED_ON_WALLPAPER=${ACCENT_COLOR_BASED_ON_WALLPAPER:-true}
 
 SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
@@ -28,23 +28,23 @@ CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" \
 if [ -n "$CHOICE" ]; then
     WALL="$WALL_DIR/$CHOICE"
     
-    # 1. Set the selected wallpaper
+    # Set the wallpaper
     "$SET_WALLPAPER_SCRIPT" "$WALL"
     
-    # 2. Get accent color from the selected wallpaper
-    ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$WALL")
-    [[ -z "$ACCENT" ]] && ACCENT="#ffffff"
+    # Check if accent color should be based on wallpaper
+    if [ "$ACCENT_COLOR_BASED_ON_WALLPAPER" = true ]; then
+        ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$WALL")
+        [[ -z "$ACCENT" ]] && ACCENT="#ffffff"
 
-    # 3. If the accent color is too dark, use a lighter default
-    r=$(printf "%d" 0x${ACCENT:1:2})
-    g=$(printf "%d" 0x${ACCENT:3:2})
-    b=$(printf "%d" 0x${ACCENT:5:2})
-    if [ $((r + g + b)) -lt 180 ]; then
-        ACCENT="#ffffff"
+        r=$(printf "%d" 0x${ACCENT:1:2})
+        g=$(printf "%d" 0x${ACCENT:3:2})
+        b=$(printf "%d" 0x${ACCENT:5:2})
+        if [ $((r + g + b)) -lt 180 ]; then
+            ACCENT="#ffffff"
+        fi
+
+        "$HOME/.local/bin/gen_style.sh" "$ACCENT"
+        sleep 0.2
+        "$HOME/.local/bin/apply_style.sh"
     fi
-
-    # 4. Generate theme files with the new accent color
-    "$HOME/.local/bin/gen_style.sh" "$ACCENT"
-    sleep 0.2
-    "$HOME/.local/bin/apply_style.sh"
 fi

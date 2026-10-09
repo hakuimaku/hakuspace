@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-# Include WALL_DIR & WALL_INTERVAL
+# Include WALL_DIR & WALL_INTERVAL & ACCENT_COLOR_BASED_ON_WALLPAPER
 [ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
 
 # Fallback WALL_DIR and WALL_INTERVAL if not set
 WALL_DIR=${WALL_DIR:-$HOME/Pictures/Wallpapers}
 WALL_INTERVAL=${WALL_INTERVAL:-300}
+ACCENT_COLOR_BASED_ON_WALLPAPER=${ACCENT_COLOR_BASED_ON_WALLPAPER:-true}
 
 SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
@@ -32,17 +33,19 @@ run_wallpaper() {
         if [ -n "$WALL" ]; then
             "$SET_WALLPAPER_SCRIPT" "$WALL"
 
-            ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$WALL")
-            [[ -z "$ACCENT" ]] && ACCENT="#ffffff"
+            if [ "$ACCENT_COLOR_BASED_ON_WALLPAPER" = true ]; then
+                ACCENT=$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$WALL")
+                [[ -z "$ACCENT" ]] && ACCENT="#ffffff"
 
-            r=$(printf "%d" 0x${ACCENT:1:2})
-            g=$(printf "%d" 0x${ACCENT:3:2})
-            b=$(printf "%d" 0x${ACCENT:5:2})
-            [[ $((r + g + b)) -lt 180 ]] && ACCENT="#ffffff"
+                r=$(printf "%d" 0x${ACCENT:1:2})
+                g=$(printf "%d" 0x${ACCENT:3:2})
+                b=$(printf "%d" 0x${ACCENT:5:2})
+                [[ $((r + g + b)) -lt 180 ]] && ACCENT="#ffffff"
 
-            "$HOME/.local/bin/gen_style.sh" "$ACCENT"
-            sleep 0.2
-            "$HOME/.local/bin/apply_style.sh"
+                "$HOME/.local/bin/gen_style.sh" "$ACCENT"
+                sleep 0.2
+                "$HOME/.local/bin/apply_style.sh"
+            fi
         fi
     done
 }
