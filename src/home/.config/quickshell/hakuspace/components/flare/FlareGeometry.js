@@ -1,28 +1,6 @@
 .pragma library
 
-/**
- * @file FlareGeometry.js
- * @brief Geometry calculations for Flare Lib surfaces and morphing tooltips.
- * 
- * Note: `.pragma library` is a standard Qt QML directive that enables
- * this JavaScript file to be loaded as a shared library across QML components.
- * Linters configured for pure Node.js/browser JS may flag it, but it is 100% valid in QML.
- */
 
-/**
- * Calculates horizontal span bounds [start, end] for a tooltip / popup target.
- *
- * @param {Object} args - Input parameters for span resolution
- * @param {number} [args.anchorStart=0] - Left X coordinate of anchor item
- * @param {number} [args.anchorEnd=0] - Right X coordinate of anchor item
- * @param {number} [args.contentW=0] - Content width requirement
- * @param {number} [args.padX=0] - Horizontal padding
- * @param {number} [args.minW=0] - Minimum span width
- * @param {number} [args.maxW=Infinity] - Maximum span width
- * @param {Object} [args.bounds] - Screen/bar boundary { start: number, end: number }
- * @param {number} [args.snap=0] - Boundary snap threshold
- * @returns {{ start: number, end: number }} Resolved span coordinates
- */
 function resolveSpan(args) {
     if (!args) return { start: 0, end: 0 };
     
@@ -65,16 +43,6 @@ function resolveSpan(args) {
     return { start: eL, end: eR };
 }
 
-/**
- * Computes edge proximity factors (kS, kE) in range [0, 1] relative to bounds.
- *
- * @param {number} start - Current span start coordinate
- * @param {number} end - Current span end coordinate
- * @param {Object} config - Configuration object
- * @param {Object} [config.bounds] - Screen/bar bounds { start: number, end: number }
- * @param {number} [config.rf=1] - Foot transition radius
- * @returns {{ kS: number, kE: number }} Edge factors (0 at boundary, 1 when far)
- */
 function hugFactors(start, end, config) {
     var bStart = (config && config.bounds && Number(config.bounds.start)) || 0;
     var bEnd = (config && config.bounds && Number(config.bounds.end)) || 0;
@@ -90,13 +58,6 @@ function hugFactors(start, end, config) {
     };
 }
 
-/**
- * Calculates geometry positions and scales for corner ears and feet.
- *
- * @param {Object} state - Current surface state { start, end, height, kS, kE }
- * @param {Object} config - Surface configuration { r, rf }
- * @returns {Object} Calculated positions and scaling factors for ears and feet
- */
 function pieces(state, config) {
     if (!state) state = {};
     if (!config) config = {};
@@ -125,14 +86,6 @@ function pieces(state, config) {
     };
 }
 
-/**
- * Determines animation durations for asymmetric leading/trailing morph transitions.
- *
- * @param {boolean} movingTowardStart - Direction of movement
- * @param {number} D - Base duration in milliseconds
- * @param {number} trailFactor - Factor for trailing edge speed adjustment
- * @returns {{ startMs: number, endMs: number }} Animation duration object
- */
 function durations(movingTowardStart, D, trailFactor) {
     var baseD = Number(D) || 0;
     var tf = Number(trailFactor) || 1;
@@ -142,14 +95,6 @@ function durations(movingTowardStart, D, trailFactor) {
     };
 }
 
-/**
- * Checks if target position change exceeds threshold to justify retargeting animation.
- *
- * @param {Object} prev - Previous span { start, end }
- * @param {Object} next - Next target span { start, end }
- * @param {number} [eps=2] - Epsilon threshold in pixels
- * @returns {boolean} True if retargeting is needed
- */
 function needsRetarget(prev, next, eps) {
     var e = Number(eps) || 2;
     var pStart = (prev && Number(prev.start)) || 0;
@@ -160,7 +105,6 @@ function needsRetarget(prev, next, eps) {
     return Math.abs(pStart - nStart) > e || Math.abs(pEnd - nEnd) > e;
 }
 
-// Node.js module export support for automated unit testing (test_flare_geometry.js)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         resolveSpan: resolveSpan,

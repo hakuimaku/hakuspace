@@ -7,6 +7,9 @@ Item {
     id: root
     width: parent.width
     height: parent.tipAreaH
+    readonly property real maxTooltipWidth: Math.min(500, Math.max(0, width - FlareEdges.thickness * 2))
+    readonly property real horizontalPadding: 22
+    readonly property real maxTextWidth: Math.max(0, maxTooltipWidth - horizontalPadding * 2)
     
     property var windowRoot: {
         var p = root;
@@ -20,16 +23,17 @@ Item {
         anchorItem: TooltipManager.current ? TooltipManager.current.target : null
         shown: TooltipManager.shown && root.visible
         content: TooltipManager.current ? (TooltipManager.current.component || textComp) : null
-        contentProps: ({ payload: TooltipManager.current, maxWidth: 400 })
+        contentProps: ({ payload: TooltipManager.current, maxWidth: root.maxTextWidth })
         contentKey: TooltipManager.current ? TooltipManager.current.target : null
-        maxWidth: 400
+        maxWidth: root.maxTooltipWidth
+        horizontalPadding: root.horizontalPadding
     }
     
     Component {
         id: textComp
         Text {
             property var payload: null
-            property real maxWidth: 400
+            property real maxWidth: root.maxTextWidth
             width: implicitWidth > maxWidth ? maxWidth : implicitWidth
             text: payload && payload.text ? payload.text : ""
             color: Theme.accent

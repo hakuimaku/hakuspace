@@ -10,16 +10,16 @@ Row {
     id: root
     spacing: Theme.gap
 
+    Item { width: 4; height: 1; visible: SystemTray.items.length > 0 }
+
     Repeater {
         model: SystemTray.items
 
         TopModule {
             id: trayItem
-            // We use implicitHeight for width to make it a square
             implicitWidth: implicitHeight
             tooltip: modelData.tooltipTitle !== "" ? modelData.tooltipTitle : (modelData.title !== "" ? modelData.title : modelData.id)
 
-            // Override hover color
             color: hovered ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
 
             IconImage {

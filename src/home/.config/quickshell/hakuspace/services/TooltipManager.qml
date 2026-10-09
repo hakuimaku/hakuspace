@@ -16,6 +16,7 @@ Item {
         onTriggered: root.shown = true
     }
     
+    // A short grace period prevents flicker between nearby targets.
     Timer {
         id: graceTimer
         interval: 120
@@ -32,6 +33,7 @@ Item {
         onTriggered: root.warm = false
     }
     
+    // Associate each tooltip with the top-level bar containing its target.
     function show(target, text, component, props) {
         if (!target) return;
         

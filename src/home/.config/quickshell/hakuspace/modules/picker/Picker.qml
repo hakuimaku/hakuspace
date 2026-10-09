@@ -18,7 +18,6 @@ PanelWindow {
         left: true; right: true
     }
     
-    // Dimmed background
     color: "transparent"
     
     Rectangle {
@@ -92,7 +91,6 @@ PanelWindow {
         
         MouseArea {
             anchors.fill: parent
-            // Prevent clicks from closing
         }
         
         ColumnLayout {

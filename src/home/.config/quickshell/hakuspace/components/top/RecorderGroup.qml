@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell
 import Quickshell.Io
 import "../../services"
 import ".."
@@ -7,37 +6,8 @@ import ".."
 TopModule {
     id: root
     
-    property bool isRecording: false
-    property string recordTime: ""
-    
-    Timer {
-        interval: 1000
-        repeat: true
-        running: true
-        triggeredOnStart: true
-        onTriggered: {
-            pollProc.running = false
-            pollProc.running = true
-        }
-    }
-    
-    Process {
-        id: pollProc
-        command: ["bash", "-c", "if [ -f /tmp/recording_pid ]; then echo \"T:$(cat /tmp/recording_time 2>/dev/null)\"; else echo \"STOPPED\"; fi"]
-        stdout: SplitParser {
-            onRead: data => {
-                if (!data) return;
-                var line = data.trim()
-                if (line.startsWith("T:")) {
-                    root.isRecording = true
-                    root.recordTime = line.substring(2)
-                } else if (line === "STOPPED") {
-                    root.isRecording = false
-                    root.recordTime = ""
-                }
-            }
-        }
-    }
+    property bool isRecording: Recorder.isRecording
+    property string recordTime: Recorder.recordTime
     
     visible: true
     

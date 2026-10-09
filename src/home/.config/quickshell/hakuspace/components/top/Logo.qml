@@ -8,7 +8,6 @@ TopModule {
     icon: "󰮯"
     isAccent: true
     
-    // Circular
     implicitWidth: implicitHeight
     radius: height / 2
     

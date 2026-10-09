@@ -136,10 +136,10 @@ binds {
     Mod+Ctrl+9 { move-column-to-workspace 9; }
 
     // Audio - Media Controls
-    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 2%+"; }
-    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%-"; }
-    XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
-    XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "$HOME/.local/bin/level_control.sh volume-up"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "$HOME/.local/bin/level_control.sh volume-down"; }
+    XF86AudioMute        allow-when-locked=true { spawn-sh "$HOME/.local/bin/level_control.sh volume-mute"; }
+    XF86AudioMicMute     allow-when-locked=true { spawn-sh "$HOME/.local/bin/level_control.sh mic-mute"; }
 
     XF86AudioPlay        allow-when-locked=true { spawn-sh "playerctl play-pause"; }
     XF86AudioPause       allow-when-locked=true { spawn-sh "playerctl play-pause"; }
@@ -147,6 +147,6 @@ binds {
     XF86AudioPrev        allow-when-locked=true { spawn-sh "playerctl previous"; }
     XF86AudioNext        allow-when-locked=true { spawn-sh "playerctl next"; }
 
-    XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "-e4" "-n2" "set" "2%+"; }
-    XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "-e4" "-n2" "set" "2%-"; } 
+    XF86MonBrightnessUp allow-when-locked=true { spawn-sh "$HOME/.local/bin/level_control.sh brightness-up"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn-sh "$HOME/.local/bin/level_control.sh brightness-down"; }
 }

@@ -12,11 +12,9 @@ TopModule {
     
     property int monthOffset: 0
     
-    // Clear default text/icon
     text: ""
     icon: ""
     
-    // Override implicitWidth to fit our custom row
     implicitWidth: Math.max(implicitHeight, contentRow.implicitWidth + Theme.pad * 2 + (hovered ? 20 : 0))
     
     Row {

@@ -10,9 +10,9 @@ Row {
     id: root
     spacing: Theme.gap
 
-    property int backlight: -1
-    property int volume: -1
-    property bool muted: false
+    property int backlight: Brightness.level
+    property int volume: Audio.volume
+    property bool muted: Audio.muted
     property string ppd: ""
 
     Process {
@@ -23,9 +23,8 @@ Row {
         execProc.command = ["bash", "-c", cmd];
         execProc.running = false;
         execProc.running = true;
-        pollTimer.restart();
-        pollProc.running = false;
-        pollProc.running = true;
+        ppdPoll.running = false;
+        ppdPoll.running = true;
     }
 
     Timer {
@@ -34,62 +33,43 @@ Row {
         repeat: true
         running: true
         onTriggered: {
-            pollProc.running = false;
-            pollProc.running = true;
+            if (!ppdPoll.running) ppdPoll.running = true;
         }
     }
 
     Process {
-        id: pollProc
+        id: ppdPoll
         running: true
-        command: ["bash", "-c", "echo \"B:$(cat /sys/class/backlight/*/brightness 2>/dev/null | head -n1)/$(cat /sys/class/backlight/*/max_brightness 2>/dev/null | head -n1)\"; wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null; powerprofilesctl get 2>/dev/null"]
+        command: ["powerprofilesctl", "get"]
         stdout: SplitParser {
             onRead: data => {
                 if (!data) return;
                 var line = data.trim();
-                if (line.startsWith("B:")) {
-                    var parts = line.substring(2).split('/');
-                    if (parts.length === 2 && parts[0] && parts[1]) {
-                        var b = parseInt(parts[0]);
-                        var m = parseInt(parts[1]);
-                        if (m > 0) root.backlight = Math.round((b / m) * 100);
-                    } else {
-                        root.backlight = -1;
-                    }
-                } else if (line.startsWith("Volume:")) {
-                    var vStr = line.split(" ")[1];
-                    root.volume = Math.round(parseFloat(vStr) * 100);
-                    root.muted = line.indexOf("[MUTED]") !== -1;
-                } else if (line === "performance" || line === "balanced" || line === "power-saver") {
+                if (line === "performance" || line === "balanced" || line === "power-saver") {
                     root.ppd = line;
                 }
             }
         }
     }
 
-    // --- System Group (Accent Background) ---
-    // Instead of using TopModule which expands on hover, we group them into one solid pill
-    // But using TopModule with isAccent: true for each also works well and gives hover effects.
-    // Let's use a solid pill container for the group.
     
     Rectangle {
         color: Theme.accent
         radius: Theme.radiusSm
         implicitHeight: Theme.fontSize * 1.8
-        implicitWidth: sysRow.implicitWidth + Theme.pad * 3
+        implicitWidth: sysRow.implicitWidth + Theme.pad * 2
         
         Behavior on implicitWidth { NumberAnimation { duration: HAnimation.normal } }
         
         Row {
             id: sysRow
             anchors.centerIn: parent
-            spacing: 16
+            spacing: 0
             
-            // Backlight
             Item {
                 id: blItem
-                width: iconTextBL.implicitWidth
-                height: iconTextBL.implicitHeight
+                width: Theme.fontSize * 1.8
+                height: Theme.fontSize * 1.8
                 anchors.verticalCenter: parent.verticalCenter
                 visible: root.backlight >= 0
                 
@@ -114,16 +94,15 @@ Row {
                     onEntered: blTooltip.active = true
                     onExited: blTooltip.active = false
                     onClicked: root.exec("nohup " + Env.binDir + "/nightlight_toggle.sh >/dev/null 2>&1 &")
-                    onWheel: (wheel) => root.exec("brightnessctl set " + (wheel.angleDelta.y > 0 ? "1%+" : "1%-"))
+                    onWheel: (wheel) => Brightness.change("brightnessctl set " + (wheel.angleDelta.y > 0 ? "1%+" : "1%-"))
                 }
                 HTooltip { id: blTooltip; target: blItem; text: "Brightness: " + root.backlight + "%" }
             }
             
-            // Volume
             Item {
                 id: volItem
-                width: iconTextVol.implicitWidth
-                height: iconTextVol.implicitHeight
+                width: Theme.fontSize * 1.8
+                height: Theme.fontSize * 1.8
                 anchors.verticalCenter: parent.verticalCenter
                 visible: root.volume >= 0
                 
@@ -151,19 +130,18 @@ Row {
                         if (mouse.button === Qt.RightButton) {
                             root.exec("pavucontrol")
                         } else {
-                            root.exec("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")
+                            Audio.change("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")
                         }
                     }
-                    onWheel: (wheel) => root.exec("wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ " + (wheel.angleDelta.y > 0 ? "1%+" : "1%-"))
+                    onWheel: (wheel) => Audio.change("wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ " + (wheel.angleDelta.y > 0 ? "1%+" : "1%-"))
                 }
                 HTooltip { id: volTooltip; target: volItem; text: root.muted ? "Volume: Muted" : ("Volume: " + root.volume + "%") }
             }
             
-            // Battery
             Item {
                 id: batItem
-                width: iconTextBat.implicitWidth
-                height: iconTextBat.implicitHeight
+                width: Theme.fontSize * 1.8
+                height: Theme.fontSize * 1.8
                 anchors.verticalCenter: parent.verticalCenter
                 
                 property var bat: UPower.displayDevice
@@ -199,7 +177,6 @@ Row {
         }
     }
 
-    // --- PPD (Transparent Background, Accent Text) ---
     TopModule {
         property var icons: { "performance": "", "balanced": "", "power-saver": "" }
         visible: root.ppd !== ""

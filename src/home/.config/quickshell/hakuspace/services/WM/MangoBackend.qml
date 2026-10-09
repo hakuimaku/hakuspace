@@ -29,7 +29,7 @@ Item {
                     name: "Tag " + t.index,
                     output: monitorName,
                     active: t.is_active,
-                    focused: t.is_active, // Mango doesn't have a separate globally focused tag? We'll assume active is focused
+                    focused: t.is_active,
                     occupied: t.client_count > 0,
                     windows: t.client_count,
                     focusedTitle: "",
@@ -44,6 +44,7 @@ Item {
         }
     }
     
+    // Load a snapshot before consuming the live tag stream.
     Process {
         id: mangoInitProc
         command: ["mmsg", "get", "all-tags"]
@@ -82,6 +83,7 @@ Item {
             }
         }
         
+        // Retry the watcher after a disconnect while Mango remains active.
         onExited: {
             if (WM.backendName === "mango") {
                 mangoRestartTimer.start();
@@ -100,10 +102,10 @@ Item {
     }
     
     function activate(key) {
-        var parts = key.split(":"); // "mango:eDP-1:3"
+        var parts = key.split(":");
         if (parts.length < 3) return;
         var idx = parts[2];
-        // Mango dispatch uses view,<n>,0
+        // Mango dispatch expects view,<tag>,0 for the selected tag.
         mangoActionProc.command = ["mmsg", "dispatch", "view," + idx + ",0"];
         mangoActionProc.running = false;
         mangoActionProc.running = true;

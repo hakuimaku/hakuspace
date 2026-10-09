@@ -5,10 +5,10 @@ import "."
 Item {
     id: root
     
-    // rsOn phụ thuộc trạng thái của AppState
     property bool rsOn: AppState.roundedScreenState && AppState.roundedScreenThickness > 0
     property real thickness: rsOn ? AppState.roundedScreenThickness : 0
     
+    // Reserve the rounded-screen border when placing flare surfaces.
     function getBounds(windowWidth) {
         return {
             start: thickness,

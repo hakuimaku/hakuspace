@@ -14,6 +14,7 @@ Item {
     property var workspacesData: []
     property var windowsData: ({})
 
+    // Merge workspace snapshots with window events into the shared WM model.
     function _update() {
         var newWorkspaces = [];
         var newClass = "";
@@ -118,6 +119,7 @@ Item {
                         backend.windowsData = map;
                         backend._update();
                     }
+                    // Activation affects one output; focus may move across outputs.
                     if (event.WorkspaceActivated) {
                         var targetId = event.WorkspaceActivated.id;
                         var isFocused = event.WorkspaceActivated.focused;
@@ -170,6 +172,7 @@ Item {
                         }
                         backend._update();
                     }
+                    // Reassign after mutation so QML bindings see the updated map.
                     if (event.WindowOpenedOrChanged) {
                         var win = event.WindowOpenedOrChanged.window;
                         var wmap1 = backend.windowsData;
@@ -210,6 +213,7 @@ Item {
             }
         }
 
+        // Clear stale state and reconnect if the event stream stops.
         onExited: {
             if (WM.backendName !== "niri") return;
             backend.workspacesData = [];
@@ -230,7 +234,7 @@ Item {
     }
 
     function activate(key) {
-        var id = parseInt(key.substring(5)); // "niri:3" -> 3
+        var id = parseInt(key.substring(5));
         var ws = null;
         for (var i = 0; i < workspacesData.length; i++) {
             if (workspacesData[i].id === id) {
@@ -242,6 +246,7 @@ Item {
 
         var output = ws.output;
         var idx = ws.idx;
+        // Focus the monitor first because workspace indices are output-local.
         niriActionProc.command = ["bash", "-c", "niri msg action focus-monitor '" + output + "' && niri msg action focus-workspace " + idx];
         niriActionProc.running = false;
         niriActionProc.running = true;

@@ -9,3 +9,4 @@ TrayGroup 1.0 TrayGroup.qml
 NotificationGroup 1.0 NotificationGroup.qml
 CavaGroup 1.0 CavaGroup.qml
 WindowTitle 1.0 WindowTitle.qml
+CenterModule 1.0 CenterModule.qml
