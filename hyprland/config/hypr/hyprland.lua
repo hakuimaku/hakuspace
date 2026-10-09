@@ -1,9 +1,9 @@
---    __  __                      _                 _ 
---   / / / /_  ______  _________ / /___ _____  ____/ /
---  / /_/ / / / / __ \/ ___/ __  / __  / __ \/ __  / 
--- / __  / /_/ / /_/ / /  / /_/ / /_/ / / / / /_/ /  
---/_/ /_/\__, / .___/_/   \__,_/\__,_/_/ /_/\__,_/   
---      /____/_/                                     
+--      __  __                 __                __
+--     / / / /_  ______  _____/ /___ _____  ____/ /
+--    / /_/ / / / / __ \/ ___/ / __ `/ __ \/ __  / 
+--   / __  / /_/ / /_/ / /  / / /_/ / / / / /_/ /  
+--  /_/ /_/\__, / .___/_/  /_/\__,_/_/ /_/\__,_/   
+--        /____/_/     
 
 ------------------
 ---- MONITORS ----
@@ -13,6 +13,7 @@
 hl.monitor({
     output   = "eDP-1",
     mode     = "1920x1080@60",
+    --mode     = "1366x768@60",
     --mode     = "1280x720@60",
     position = "auto",
     scale    = "1",
@@ -63,3 +64,10 @@ require("config/layout")
 -- disable this by default to avoid errors if you don't have any plugins installed.
 
 --require("config/plugin")
+
+-- User custom config file.
+local custom_dir = os.getenv("HOME") .. "/hakuspace-control/"
+local ok, custom = pcall(dofile, custom_dir .. "hyprland-custom.lua")
+if not ok then
+    hl.dispatch(hl.dsp.exec_cmd("notify-send 'Hyprland' 'Load custom config failed' -t 5000"))
+end
