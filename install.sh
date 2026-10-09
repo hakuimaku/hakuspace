@@ -241,7 +241,7 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
         if [[ " ${ONCE_CONFIGS[*]} " == *" $folder "* || " ${SKIP_CONFIGS[*]} " == *" $folder "* ]]; then
             continue
         fi
-        copy_dir_content "$SOURCE_COMMON_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
+        copy_dir_content "$SOURCE_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
     done
     copy_file "$SOURCE_CONFIG/hypr/hypridle.conf" "$DEST_CONFIG/hypr/hypridle.conf"
     copy_file "$SOURCE_CONFIG/hypr/hyprlock.conf" "$DEST_CONFIG/hypr/hyprlock.conf"
