@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # This script is used to set up the main settings for all hakuspace's scripts.
-# DO NOT EDIT THIS LINE :v, check main_setting.sh up-to-date when run update.sh
+# DO NOT EDIT THIS LINE :v, used for check main_setting.sh up-to-date when run update.sh
 SETTING_VERSION="2.2.2"
 echo "Hakuspace Control Settings Version: $SETTING_VERSION"
 
@@ -16,7 +16,7 @@ SCREENSHOT_DIR="$HOME/Pictures/Screenshots"
 WALL_DIR="$HOME/Pictures/Wallpapers"
 WALL_MPV_DIR="$HOME/Videos/Wallpapers" # For lively wallpaper videos
 PREVIEW_DIR="$WALL_MPV_DIR/Preview" # For lively wallpaper thumbnail previews
-BACKDROP_DIR="/tmp" # For Niri only
+BACKDROP_DIR="$HOME/.cache" # For Niri only
 WALL_INTERVAL=300 # Interval in seconds for random wallpaper changes
 ACCENT_COLOR_BASED_ON_WALLPAPER=true
 AWWW_OPTS="--transition-type random --transition-step 90 --transition-fps 60" # Options for awww transition

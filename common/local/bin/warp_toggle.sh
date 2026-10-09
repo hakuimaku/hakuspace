@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script toggles the Cloudflare WARP connection on or off.
 

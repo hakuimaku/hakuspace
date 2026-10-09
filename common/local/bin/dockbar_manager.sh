@@ -7,7 +7,6 @@ STATE_DIR="$HOME/.local/state/haku_theme"
 AUTOHIDE_STATE="$STATE_DIR/dockbar_autohide_state"
 MANUAL_STATE="$STATE_DIR/dockbar_manual_state"
 
-DOCKBAR_BIN="$HOME/.local/bin/dockbar"
 DOCKBAR_DIR="$HOME/.config/waybar/dockbar"
 DOCKBAR_PIN_APPS="$HOME/hakuspace-control/dockbar_pin_apps"
 AUTOHIDE_SCRIPT="$HOME/.local/bin/dockbar_autohide.py"
@@ -22,15 +21,33 @@ for state_file in "$AUTOHIDE_STATE" "$MANUAL_STATE"; do
 done
 
 # Check dependencies
-if [ ! -L "$DOCKBAR_BIN" ]; then
-    if [ ! -f "/usr/bin/waybar" ]; then
-        echo "Waybar binary not found in /usr/bin/waybar. Please install Waybar first."
-        notify-send "Dockbar" "Waybar binary not found in /usr/bin/waybar. Please install Waybar first."
-        exit 1
-    fi
-    mkdir -p "$HOME/.local/bin"
-    ln -s /usr/bin/waybar "$DOCKBAR_BIN"
+WAYBAR_BIN=$(command -v waybar)
+if [[ -z "$WAYBAR_BIN" ]]; then
+    echo "Waybar binary not found in PATH. Please install Waybar first."
+    notify-send "Dockbar" "Waybar binary not found in PATH. Please install Waybar first."
+    exit 1
 fi
+
+launch_dockbar() {
+    "$WAYBAR_BIN" -c "$DOCKBAR_DIR/config" -s "$DOCKBAR_DIR/style.css" >/dev/null 2>&1 &
+    disown
+}
+
+is_dockbar_running() {
+    pgrep -f "waybar -c $DOCKBAR_DIR/config" >/dev/null
+}
+
+kill_dockbar() {
+    pkill -f "waybar -c $DOCKBAR_DIR/config"
+}
+
+run_autohide_script() {
+    if command -v nix-shell >/dev/null 2>&1; then
+        nix-shell -p gobject-introspection gtk3 pango gtk-layer-shell "python3.withPackages (ps: with ps; [ pygobject3 ])" --run "python3 \"$AUTOHIDE_SCRIPT\"" >/dev/null 2>&1 &
+    else
+        python3 "$AUTOHIDE_SCRIPT" >/dev/null 2>&1 &
+    fi
+}
 
 # Display help message
 if [[ $1 == "--help" ]]; then
@@ -56,11 +73,10 @@ if [[ $1 == "--startup" ]]; then
     if [[ $(cat "$MANUAL_STATE") == "1" ]]; then
         if [[ $(cat "$AUTOHIDE_STATE") == "1" ]]; then
             pkill -f "$AUTOHIDE_SCRIPT"
-            "$AUTOHIDE_SCRIPT" &
+            run_autohide_script
         else
-            if ! pgrep -x "dockbar" >/dev/null; then
-                "$DOCKBAR_BIN" -c "$DOCKBAR_DIR/config" -s "$DOCKBAR_DIR/style.css" >/dev/null 2>&1 &
-                disown
+            if ! is_dockbar_running; then
+                launch_dockbar
             fi
         fi
     fi
@@ -69,30 +85,28 @@ fi
 
 # Trigger from Python (Does not change state)
 if [[ $1 == "--trigger-show" ]]; then
-    if ! pgrep -x "dockbar" >/dev/null; then
-        "$DOCKBAR_BIN" -c "$DOCKBAR_DIR/config" -s "$DOCKBAR_DIR/style.css" >/dev/null 2>&1 &
-        disown
+    if ! is_dockbar_running; then
+        launch_dockbar
     fi
     exit 0
 fi
 
 if [[ $1 == "--trigger-hide" ]]; then
-    pkill -x "dockbar"
+    kill_dockbar
     exit 0
 fi
 
 # Reload the dockbar
 if [[ $1 == "--reload" ]]; then
-    pkill -x "dockbar"
+    kill_dockbar
     pkill -f "$AUTOHIDE_SCRIPT"
     
     # Note: Reload respects the master switch (MANUAL_STATE)
     if [[ $(cat "$MANUAL_STATE") == "1" ]]; then
         if [[ $(cat "$AUTOHIDE_STATE") == "1" ]]; then
-            "$AUTOHIDE_SCRIPT" &
+            run_autohide_script
         else
-            "$DOCKBAR_BIN" -c "$DOCKBAR_DIR/config" -s "$DOCKBAR_DIR/style.css" >/dev/null 2>&1 &
-            disown
+            launch_dockbar
         fi
     fi
     exit 0
@@ -107,19 +121,18 @@ if [[ $1 == "--toggle" ]]; then
         
         if [[ $(cat "$AUTOHIDE_STATE") == "1" ]]; then
             # If autohide is enabled, start the python script
-            pkill -x "dockbar"
+            kill_dockbar
             pkill -f "$AUTOHIDE_SCRIPT"
-            "$AUTOHIDE_SCRIPT" &
+            run_autohide_script
         else
             # If autohide is disabled, just show the static dockbar
-            pkill -x "dockbar"
-            "$DOCKBAR_BIN" -c "$DOCKBAR_DIR/config" -s "$DOCKBAR_DIR/style.css" >/dev/null 2>&1 &
-            disown
+            kill_dockbar
+            launch_dockbar
         fi
     else
         # Turn OFF manual mode
         echo "0" > "$MANUAL_STATE"
-        pkill -x "dockbar"
+        kill_dockbar
         
         # If autohide is enabled, kill the python script too
         if [[ $(cat "$AUTOHIDE_STATE") == "1" ]]; then
@@ -171,12 +184,11 @@ if [[ $1 == "--auto-hide" ]]; then
         
         # If manual mode is ON, fallback to static dockbar
         if [[ $(cat "$MANUAL_STATE") == "1" ]]; then
-            if ! pgrep -x "dockbar" >/dev/null; then
-                "$DOCKBAR_BIN" -c "$DOCKBAR_DIR/config" -s "$DOCKBAR_DIR/style.css" >/dev/null 2>&1 &
-                disown
+            if ! is_dockbar_running; then
+                launch_dockbar
             fi
         else
-            pkill -x "dockbar"
+            kill_dockbar
         fi
     else
         # Turn ON autohide
@@ -184,9 +196,9 @@ if [[ $1 == "--auto-hide" ]]; then
         
         # Only run the script if manual mode is ON
         if [[ $(cat "$MANUAL_STATE") == "1" ]]; then
-            pkill -x "dockbar"
+            kill_dockbar
             pkill -f "$AUTOHIDE_SCRIPT"
-            "$AUTOHIDE_SCRIPT" &
+            run_autohide_script
         fi
     fi
     exit 0

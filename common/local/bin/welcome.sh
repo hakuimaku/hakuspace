@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 sleep 2 
 notify-send "My master, $USER!" "Have a good day ✨" -i face-smile

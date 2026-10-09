@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script is used to show the Haku Menu
 # Need script: hm-general.sh, hm-theme.sh, hm-setting.sh

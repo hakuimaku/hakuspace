@@ -15,6 +15,19 @@ if [[ ! -f "$DESKTOP_ICONS_STATE" ]] || ! grep -qxE '0|1' "$DESKTOP_ICONS_STATE"
     echo "0" > "$DESKTOP_ICONS_STATE"
 fi
 
+launch_desktop_icons() {
+    if command -v nix-shell >/dev/null 2>&1; then
+        nix-shell -p gobject-introspection gtk3 pango gtk-layer-shell "python3.withPackages (ps: with ps; [ pygobject3 ])" --run "python3 \"$DESKTOP_MANAGER_BIN\"" >/dev/null 2>&1 &
+    else
+        python3 "$DESKTOP_MANAGER_BIN" >/dev/null 2>&1 &
+    fi
+    disown
+}
+
+kill_desktop_icons() {
+    pkill -f "$DESKTOP_MANAGER_BIN"
+}
+
 # Display help message
 if [[ $1 == "--help" ]]; then
     cat <<'EOF'
@@ -32,11 +45,11 @@ fi
 if [[ $1 == "--toggle" ]]; then
     if [[ $(cat "$DESKTOP_ICONS_STATE") == "1" ]]; then
         echo "0" > "$DESKTOP_ICONS_STATE"
-        pkill -f "$DESKTOP_MANAGER_BIN"
+        kill_desktop_icons
         echo "Desktop icons disabled"
     else
         echo "1" > "$DESKTOP_ICONS_STATE"
-        "$DESKTOP_MANAGER_BIN" &
+        launch_desktop_icons
         echo "Desktop icons enabled"
     fi
     exit 0
@@ -45,8 +58,8 @@ fi
 # Reload desktop icons if running
 if [[ $1 == "--reload" ]]; then
     if pgrep -f "$DESKTOP_MANAGER_BIN" >/dev/null; then
-        pkill -f "$DESKTOP_MANAGER_BIN"
-        "$DESKTOP_MANAGER_BIN" &
+        kill_desktop_icons
+        launch_desktop_icons
         echo "Desktop icons reloaded"
     else
         echo "Desktop icons are not running. Use --toggle to enable them."
@@ -57,8 +70,7 @@ fi
 # Auto-start desktop icons if enabled
 if [[ $(cat "$DESKTOP_ICONS_STATE") == "1" ]]; then
     if ! pgrep -f "$DESKTOP_MANAGER_BIN" >/dev/null; then
-        "$DESKTOP_MANAGER_BIN" &
-        disown
+        launch_desktop_icons
     fi
 fi
 

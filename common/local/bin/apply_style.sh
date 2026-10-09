@@ -2,9 +2,7 @@
 
 STATE_DIR="$HOME/.local/state/haku_theme"
 
-# ---------------------------------------------------
-# 1) Apply GTK font (best-effort)
-# ---------------------------------------------------
+# Apply GTK font (best-effort)
 if command -v gsettings >/dev/null 2>&1 && [[ -f "$STATE_DIR/fonts.css" ]]; then
     # Parse from fonts.css:
     #   font-family: "JetBrainsMono Nerd Font";
@@ -19,16 +17,14 @@ if command -v gsettings >/dev/null 2>&1 && [[ -f "$STATE_DIR/fonts.css" ]]; then
     fi
 fi
 
-# ---------------------------------------------------
-# 2) Reload apps
-# ---------------------------------------------------
+# Reload apps
 # hyprland reload
-if pgrep -x Hyprland >/dev/null; then
-    hyprctl reload >/dev/null 2>&1 || true
+if [[ $XDG_CURRENT_DESKTOP == "Hyprland" ]]; then
+    hyprctl reload
 fi
 
 # Labwc reload
-if pgrep -x labwc >/dev/null; then
+if [[ $XDG_CURRENT_DESKTOP == "labwc" ]]; then
     labwc --reconfigure
 fi
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script toggles the hypridle process on or off, which is responsible for managing idle states.
 

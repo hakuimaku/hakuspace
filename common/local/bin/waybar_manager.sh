@@ -49,8 +49,8 @@ restart_waybar() {
         fi
     fi
 
-    if pgrep -x waybar >/dev/null; then
-        pkill -x waybar
+    if pgrep -fx waybar >/dev/null; then
+        pkill -fx waybar
         sleep 0.2
     fi
 
