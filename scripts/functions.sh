@@ -87,13 +87,14 @@ backup_item() {
 copy_file() {
     local src="$1"
     local dst="$2"
+    local skip_backup="${3:-0}"
 
     if [[ ! -f "$src" ]]; then
         log_warn "Source file not found: $src"
         return 1
     fi
 
-    if [[ -e "$dst" || -L "$dst" ]]; then
+    if [[ "$skip_backup" -ne 1 && ( -e "$dst" || -L "$dst" ) ]]; then
         backup_item "$dst"
     fi
 
@@ -120,13 +121,14 @@ copy_file() {
 copy_dir_content() {
     local src="$1"
     local dst="$2"
+    local skip_backup="${3:-0}"
 
     if [[ ! -d "$src" ]]; then
         log_warn "Source directory not found: $src"
         return 1
     fi
 
-    if [[ -e "$dst" || -L "$dst" ]]; then
+    if [[ "$skip_backup" -ne 1 && ( -e "$dst" || -L "$dst" ) ]]; then
         backup_item "$dst"
     fi
 

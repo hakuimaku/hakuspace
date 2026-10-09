@@ -68,12 +68,9 @@ restore_backup() {
         destination="$HOME/$relative_path"
 
         if [[ -d "$source_item" && ! -L "$source_item" ]]; then
-            mkdir -p "$destination"
-            cp -a "$source_item"/. "$destination"/
+            copy_dir_content "$source_item" "$destination" 1
         else
-            mkdir -p "$(dirname "$destination")"
-            rm -rf "$destination"
-            cp -a "$source_item" "$destination"
+            copy_file "$source_item" "$destination" 1
         fi
 
         log_copy "$source_item -> $destination"
