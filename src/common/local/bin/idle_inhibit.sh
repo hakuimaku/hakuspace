@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+# This script is designed to manage the idle state of the screen based on a state file and audio playback status.
+# The main core is in hypridle, this script return value is used to determine
+
+# Check hypridle version >= v0.1.8
+HYPRIDLE_VERSION=$(hypridle -V | awk '{print $2}' | sed 's/^v//')
+MIN_VERSION="0.1.8"
+
+if [[ $(printf '%s\n%s' "$MIN_VERSION" "$HYPRIDLE_VERSION" | sort -V | head -n1) != "$MIN_VERSION" ]]; then
+    echo "Error: hypridle version is too old to use this script. Please update to v0.1.8 or higher."
+    exit 1
+fi
+
 STATE_DIR="$HOME/.local/state/haku_theme"
 STATE_FILE="$STATE_DIR/idle_inhibit"
 
