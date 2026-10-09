@@ -1,5 +1,32 @@
 #!/bin/bash
 
+# MangoWM Floating Window is above waybar, sucks
+if [[ $XDG_CURRENT_DESKTOP == "mango" ]]; then
+    echo "Cava Underbar is not supported on MangoWM."
+    notify-send "Cava Underbar is not supported on MangoWM."
+    exit 1
+fi
+
+# Check dependencies
+if ! command -v kitty >/dev/null 2>&1; then
+    echo "kitty terminal is required to run Cava Underbar." >&2
+    notify-send "kitty terminal is required to run Cava Underbar."
+    exit 1
+fi
+
+if ! command -v cava >/dev/null 2>&1; then
+    echo "cava is required to run Cava Underbar." >&2
+    notify-send "cava is required to run Cava Underbar."
+    exit 1
+fi
+
+if ! command -v socat >/dev/null 2>&1; then
+    echo "socat is required to run Cava Underbar." >&2
+    notify-send "socat is required to run Cava Underbar."
+    exit 1
+fi
+
+# Main
 APP_CLASS="cavaunderbar"
 STATE_FILE="/tmp/cava_underbar_status"
 SOCKET_PATH="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock"
