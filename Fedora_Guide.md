@@ -1,10 +1,7 @@
 # Fedora - Haku Space Installation Guide
 
-> [!important]
-> Currently, this guide only helps you with install **Niri** WM. If you want to install Hyprland/Mango, you may want to install packages from: [Hyprland](https://github.com/hakuimaku/hakuspace/blob/main/hyprland/pkg-hyprland.txt) | [Mango](https://github.com/hakuimaku/hakuspace/blob/main/mango/pkg-mango.txt)
-
 ## Prerequisites
-- Who wants to use Niri on Fedora :)
+- Who wants to use Haku Space on Fedora :)
 - A computer with Fedora installed.
 - This installation guide assumes you have basic knowledge of using the terminal and installing software on Fedora.
 - I'm using Fedora Workstation 44, this guide I written for this version.
@@ -17,16 +14,16 @@
 Open a terminal and run the following command to ensure your system is up to date:
 
 ```bash
-sudo dnf update -y
+sudo dnf upgrade --refresh
 ```
 
 ---
 
 ## 2. **Install Packages**: 
 
-### A. Install Niri:
+### A-1. Install Niri:
 
-Install niri & gammastep from the COPR repository `yalter/niri`:
+Install niri from the COPR repository `yalter/niri`:
 ```bash
 sudo dnf copr enable yalter/niri
 sudo dnf install niri gammastep
@@ -38,27 +35,57 @@ sudo dnf install golang
 go install github.com/probeldev/niri-float-sticky@latest
 ```
 
+### A-2. Install Hyprland:
+
+Install hyprland from the COPR repository `lionheartp/Hyprland`:
+```bash
+sudo dnf copr enable lionheartp/Hyprland
+sudo dnf install hyprland hyprsunset
+```
+
+### A-3. Install Mango:
+
+```bash
+sudo dnf install --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release
+sudo dnf install mangowm gammastep
+```
+
+---
+
 ### B. Install XDG Desktop Portal and related packages:
+Install common XDG Desktop Portal packages:
 ```bash
 sudo dnf install xdg-desktop-portal xdg-desktop-portal-gtk xdg-utils mate-polkit gnome-keyring
 ```
 
-For Niri:
+- For **Niri**:
 ```bash
 sudo dnf install xdg-desktop-portal-gnome
 ```
+
+- For **Hyprland**:
+```bash
+sudo dnf install xdg-desktop-portal-hyprland
+```
+
+- For **Mango**:
+```bash
+sudo dnf install xdg-desktop-portal-wlr
+```
+
+---
 
 ### C. Install ly (Display Manager):
 ```bash
 sudo dnf install ly
 ```
 
-Activate ly service
-
 > [!important]
 > If you want to use ly as your display manager, you need to enable it.
 > I recommend you to use `tty2` for ly, because `tty1` is used by the gdm (or other display manager) by default.
 > If you want to use ly on `tty1`, you need to disable gdm (or other display manager) first.
+
+Activate ly service:
 
 ```bash
 sudo systemctl enable ly@tty2.service
@@ -66,6 +93,8 @@ sudo systemctl disable getty@tty2.service
 ```
 
 How to switch between display managers: `ctrl + alt + f1` for gdm, `ctrl + alt + f2` for ly.
+
+---
 
 ### D. Install Haku Space **Core** packages:
 
@@ -133,6 +162,8 @@ sudo dnf install code
 > [!tip]
 > See more optional packages: [here](https://github.com/hakuimaku/hakuspace/blob/main/common/pkg-optional.txt)
 
+---
+
 ## 3. Install Haku Space Configurations
 
 Clone my Haku Space repository to your home directory:
@@ -150,6 +181,6 @@ chmod +x install.sh
 > [!tip]
 > Follow the prompts to complete the installation process.
 > Skip step 1, 2.
-> In step 8, you can skip `enable ly service and disable getty` if you don't want to use ly display manager or use ly on `tty2`.
+> In step 8, you can skip `enable ly service and disable getty` if **you already active ly service [above](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md#c-install-ly-display-manager)**.
 
 Restart your computer to apply the changes and start using Haku Space on Fedora!
