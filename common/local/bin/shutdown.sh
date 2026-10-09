@@ -1,10 +1,18 @@
 #!/bin/bash
 
-exit() {
+hexit() {
     if pgrep -x "Hyprland" > /dev/null; then
         hyprctl eval 'hl.dispatch(hl.dsp.exit())'
     elif pgrep -x "niri" > /dev/null; then
         pkill niri
+    fi
+}
+
+hlock() {
+    if pgrep -x "Hyprland" > /dev/null; then
+        hyprlock
+    elif pgrep -x "niri" > /dev/null; then
+        swaylock
     fi
 }
 
@@ -29,6 +37,6 @@ case $chosen in
     *"Reboot"*) systemctl reboot ;;
     *"Power Off"*) systemctl poweroff ;;
     *"Sleep"*) systemctl suspend ;;
-    *"Lock"*) hyprlock ;;
-    *"Exit"*) exit ;;
+    *"Lock"*) hlock ;;
+    *"Exit"*) hexit ;;
 esac
