@@ -513,9 +513,16 @@ fi
 # ============================================================================
 step_title "8 - ENABLE SYSTEM SERVICES"
 
-sudo systemctl enable ly@tty1.service
-sudo systemctl disable getty@tty1.service
+if ask_yes_no "===> Do you want to enable ly service and disable getty now?"; then
+    sudo systemctl enable ly@tty1.service
+    sudo systemctl disable getty@tty1.service
+    log_ok "ly service enabled and getty disabled."
+else
+    log_skip "Skipping service enable/disable."
+fi
 
+# Set GNOME color scheme to dark and set Thunar as default file manager
+gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 xdg-mime default thunar.desktop inode/directory
 
 if [[ -x "$HOME/.local/bin/gen-style.sh" ]]; then
