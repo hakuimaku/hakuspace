@@ -81,10 +81,10 @@ git clone https://github.com/hakuimaku/hakuspace.git
 
 ```
 
-If you prefer the version I've tested, clone the **stable** release version `v2.1.2` (lastest):
+If you prefer the version I've tested, clone the **stable** release version `v2.1.3` (lastest):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.1.2 https://github.com/hakuimaku/hakuspace.git
+git clone --depth 1 --branch v2.1.3 https://github.com/hakuimaku/hakuspace.git
 
 ```
 
@@ -114,7 +114,7 @@ After running the installation script, restart your computer and log in to eithe
 
 | waybar-git | waybar-cava |
 |------------|-------------|
-| `waybar-git` is a lastest git version of Waybar, which is supporting **mango/workspaces** module if you're using MangoWM. And fix `hyprland/workspaces` switching if you're using Hyprland. |  `waybar-cava` is a plugin for Waybar that provides a visualizer for audio output. My waybar top needs this to work properly (cava module). |
+| `waybar-git` is a lastest git version of Waybar, which is supporting `mango/workspaces` module if you're using MangoWM. And fix `hyprland/workspaces` switching if you're using Hyprland. |  `waybar-cava` is a plugin for Waybar that provides a visualizer for audio output. My waybar top needs this to work properly (cava module). |
 
 3) Allow Local Root User to Access X/Xwayland Display
 ```bash
@@ -124,9 +124,6 @@ Grants the local root user permission to connect to and launch graphical (GUI) a
 
 
 ### 🔽 Update Haku Space to lastest version
-
-> Script `update.sh` available in version v2.1.2 or newer & main branch.
-
 1. Get the lastest version
 - Git pull for the lastest git.
 ``` bash
