@@ -15,17 +15,32 @@ Arch Linux dotfiles for Hyprland / Niri / MangoWM
     <a href="https://github.com/hakuimaku/hakuspace"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/hakuimaku/hakuspace?style=for-the-badge&label=Repo%20Size&labelColor=%2368818f&color=%231f1f1f&logo=github&logoColor=%231f1f1f">
 </p>
 
-
 | <img width="1920" height="1080" alt="screenshot_2026-07-16_10-54-36" src="https://github.com/user-attachments/assets/50b76a8d-c18b-481e-9c00-8f0c4058a3b3" /> | <img width="1920" height="1080" alt="screenshot_2026-07-16_10-55-31" src="https://github.com/user-attachments/assets/5ff87ffb-89bd-458e-9b0d-8ed959aa4e26" /> |
 |--|--|
 | <img width="1920" height="1080" alt="screenshot_2026-07-16_10-57-36" src="https://github.com/user-attachments/assets/02050014-7041-4a92-aa94-cef9a00c0592" /> | <img width="1920" height="1080" alt="screenshot_2026-07-08_20-00-14" src="https://github.com/user-attachments/assets/f3e86070-14a3-4abd-8b99-c3c68ffb71dc" /> |
 
 ## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Welcome+to+Haku+Space" alt="Typing SVG" />
 
+- Installation: here
+- Update: here
+- Packages: here
+- Keybinding: here
+
+Overview:
 - **HakuSpace** is a dotfiles project for **Arch Linux**, supporting **Hyprland**, **Niri**, and **MangoWM**.  
 - The main user interaction layer is built around **Rofi**, **Waybar**, and **SwayNC**, while most core behavior is powered by custom scripts in `hakuspace/common/local/bin`.  
 - It has grown into a DE-like experience, though it is still actively evolving.  
 - Designed to be easy to extend and customize for your own workflow.
+
+---
+
+## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Key+Features" alt="Typing SVG" />
+
+* **Smart Accent Colors:** Automatically generates the accent color palette based on your current wallpaper.
+* **Flexible Waybar Layouts:** Supports two standard layouts: **Left** and **Top**.
+* **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
+* **Wallpaper Automation:** Wallpapers change automatically every 5 minutes (customizable in the `random_wallpaper.sh` script).
+* **Unified Aesthetic:** Handcrafted and polished configurations for Waybar, Rofi, Swaync and Thunar theme *100% beautiful for real. :)*
 
 ---
 
@@ -55,16 +70,6 @@ See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/
 | Display Manager | [Ly](https://codeberg.org/fairyglade/ly#systemd) |
 
 > XDG Desktop Portal: GTK by default, but each WM will use its specific, recommended portal according to its official wiki (hyprland uses hyprland, niri uses gnome, and mangowm uses wlr).
-
----
-
-## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Key+Features" alt="Typing SVG" />
-
-* **Smart Accent Colors:** Automatically generates the accent color palette based on your current wallpaper.
-* **Flexible Waybar Layouts:** Supports two standard layouts: **Left** and **Top**.
-* **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
-* **Wallpaper Automation:** Wallpapers change automatically every 5 minutes (customizable in the `random_wallpaper.sh` script).
-* **Unified Aesthetic:** Handcrafted and polished configurations for Waybar, Rofi, Swaync and Thunar theme *100% beautiful for real. :)*
 
 ---
 
@@ -183,6 +188,20 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 2) Make sure to set the correct permissions for the plugin binary (if needed) using `hl.permission` in `hyprland.lua`
 3) Uncomment `hl.exec_cmd("hyprpm reload -n")` in `autostart.lua` to automatically reload Hyprland when plugins are enabled/disabled
 4) Customize the plugin configuration in `plugin.lua` as needed
+
+---
+
+## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Keybinding" alt="Typing SVG" />
+
+- See more keybinding in: [Hyprland](https://github.com/hakuimaku/hakuspace/blob/main/hyprland/config/hypr/config/keybinding.lua) | [Niri](https://github.com/hakuimaku/hakuspace/blob/main/niri/config/niri/keybinds.kdl) | [MangoWM](https://github.com/hakuimaku/hakuspace/blob/main/mango/config/mango/bind.conf)
+- Hotkeys:
+
+| Bind | Function |
+|------|----------|
+| SUPER + Q | Open Kitty Terminal |
+| SUPER + C | Kill Focus Window |
+| SUPER + TAB | Open Menu |
+| SUPER + P | Screenshot |
 
 ---
 
