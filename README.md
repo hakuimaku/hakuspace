@@ -293,7 +293,7 @@ Want to understand how HakuSpace works under the hood? We've written comprehensi
 - [System Scripts](docs/core/sys.md)
 - [Utilities](docs/core/util.md)
 - [Haku Menu](docs/core/menu.md)
-- [Mini-Apps (Taskbar, Desktop Icons)](docs/core/app.md)
+- [Mini-Apps (Taskbar, Desktop Icons, Rounded Screen)](docs/core/app.md)
 
 ---
 

@@ -22,12 +22,17 @@ if [[ $# -eq 0 ]]; then
     DESKTOP_ICONS_TEXT="OFF"
     [[ "$DESKTOP_ICONS_STATUS" == "1" ]] && DESKTOP_ICONS_TEXT="ON"
 
+    ROUNDED_SCREEN_STATUS=$(cat "$STATE_DIR/rounded_screen_state" 2>/dev/null || echo "0")
+    ROUNDED_SCREEN_TEXT="OFF"
+    [[ "$ROUNDED_SCREEN_STATUS" == "1" ]] && ROUNDED_SCREEN_TEXT="ON"
+
     cat <<EOF
   Change Theme
 󰝚  Cava Underbar ($CAVA_TEXT)
   Auto Random Wallpaper ($WALL_TEXT)
 󱂩  Toggle Taskbar ($TASKBAR_TEXT)
   Show Desktop Icons ($DESKTOP_ICONS_TEXT)
+  Rounded Screen ($ROUNDED_SCREEN_TEXT)
 󰏜  Change Wallpaper
 󱜏  Change Lively Wallpaper
 󱛹  Kill Lively Wallpaper
@@ -42,6 +47,7 @@ case "$chosen" in
     *"Auto Random Wallpaper"*) spawn $HOME/.local/bin/random_wallpaper.sh --toggle ;;
     *"Toggle Taskbar"*) spawn $HOME/.local/bin/taskbar_manager.sh --toggle ;;
     *"Show Desktop Icons"*) spawn $HOME/.local/bin/desktop_icons_manager.sh --toggle ;;
+    *"Rounded Screen"*) spawn $HOME/.local/bin/rounded_screen_manager.sh --toggle ;;
     *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
     *"Change Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh ;;
     *"Kill Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh --exit ;;

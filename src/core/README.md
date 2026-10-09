@@ -21,6 +21,7 @@ Scripts are grouped into the following categories:
   * **`desktop-icons/`**: Scripts for rendering and managing desktop icons.
   * **`cava-layer/`**: Background audio visualizer management.
   * **`taskbar/`**: Taskbar launcher and management utilities.
+  * **`rounded-screen/`**: Rounded screen overlay.
 * **`sys/`**: System-level operations, including power management (shutdown, exit, lock), idle inhibition, and the startup welcome script.
 * **`util/`**: General-purpose utilities such as screen recording, screenshot tools, Waybar mode management, and the clipboard menu.
 * **`theme/`**: Appearance and styling scripts, including wallpaper selection, accent color generation, and Rofi theme switching.
