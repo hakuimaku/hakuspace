@@ -86,6 +86,7 @@ in
         file
         go
         ffmpeg
+        gcc
 
         # Core packages
         git
