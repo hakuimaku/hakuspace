@@ -50,6 +50,7 @@ rofi-emoji
 xdg-desktop-portal
 xdg-desktop-portal-gtk
 xdg-utils
+xorg-xhost
 polkit-gnome
 qt6ct
 qt5-wayland
