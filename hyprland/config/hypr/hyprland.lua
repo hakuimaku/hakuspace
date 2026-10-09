@@ -44,19 +44,22 @@ hl.monitor({
 
 -- hl.permission("/usr/(bin|local/bin)/grim", "screencopy", "allow")
 -- hl.permission("/usr/(lib|libexec|lib64)/xdg-desktop-portal-hyprland", "screencopy", "allow")
--- hl.permission("/usr/(bin|local/bin)/hyprpm", "plugin", "allow")
+hl.permission("/usr/(bin|local/bin)/hyprpm", "plugin", "allow")
 
 
+-------------------------
+--- LOAD CONFIG FILES ---
+-------------------------
 
-local config_dir = os.getenv("HOME") .. "/.config/hypr/config/"
-dofile(config_dir .. "config.lua") -- include: input, misc, layout, desgin,...
-dofile(config_dir .. "autostart.lua")
-dofile(config_dir .. "environment.lua")
-dofile(config_dir .. "animation.lua")
-dofile(config_dir .. "keybinding.lua")
-dofile(config_dir .. "windowrule.lua")
+require("config/config")
+require("config/autostart")
+require("config/environment")
+require("config/animation")
+require("config/keybinding")
+require("config/windowrule")
+require("config/layout")
 
--- Load plugin configuration
--- Uncomment the following lines if you want to load plugin.lua:
+-- uncomment this line to load the plugin config file.
+-- disable this by default to avoid errors if you don't have any plugins installed.
 
---pcall(dofile, config_dir .. "plugin.lua")
+--require("config/plugin")

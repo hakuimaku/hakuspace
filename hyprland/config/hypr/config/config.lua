@@ -8,7 +8,6 @@ local font_family = style.font_family
 local font_size = style.font_size
 local border_color = style.border_color
 
-
 -----------------------
 ---- LOOK AND FEEL ----
 -----------------------
@@ -16,10 +15,10 @@ local border_color = style.border_color
 -- Refer to https://wiki.hypr.land/Configuring/Basics/Variables/
 hl.config({
     general = {
-        gaps_in  = 5,
-        gaps_out = 10,
+        gaps_in  = 6,
+        gaps_out = 12,
 
-        border_size = 1,
+        border_size = 2,
 
         col = {
             active_border   = border_color,
@@ -32,13 +31,11 @@ hl.config({
 
         -- Please see https://wiki.hypr.land/Configuring/Advanced-and-Cool/Tearing/ before you turn this on
         allow_tearing = false,
-
-        layout = "dwindle",
     },
 
     decoration = {
         rounding       = 12,
-        rounding_power = 4,
+        rounding_power = 8,
 
         -- Change transparency of focused and unfocused windows
         active_opacity   = 1.0,
@@ -46,45 +43,21 @@ hl.config({
 
         shadow = {
             enabled      = true,
-            range        = 4,
-            render_power = 3,
-            color        = 0xee1a1a1a,
+            range        = 16,
+            render_power = 8,
+            color        = "rgba(000000aa)",
         },
 
         blur = {
             enabled   = true,
-            size      = 4,
+            size      = 6,
             passes    = 3,
-            vibrancy  = 0.1696,
+            vibrancy  = 2,
         },
     },
 
     animations = {
         enabled = true,
-    },
-})
-
-
-
--- See https://wiki.hypr.land/Configuring/Layouts/Dwindle-Layout/ for more
-hl.config({
-    dwindle = {
-        preserve_split = true, -- You probably want this
-    },
-})
-
--- See https://wiki.hypr.land/Configuring/Layouts/Master-Layout/ for more
-hl.config({
-    master = {
-        new_status = "master",
-        new_on_top = true,
-    },
-})
-
--- See https://wiki.hypr.land/Configuring/Layouts/Scrolling-Layout/ for more
-hl.config({
-    scrolling = {
-        fullscreen_on_one_column = true,
     },
 })
 
@@ -95,8 +68,8 @@ hl.config({
 
 hl.config({
     misc = {
-        force_default_wallpaper = 0,    -- Set to 0 or 1 to disable the anime mascot wallpapers
-        disable_hyprland_logo   = true, -- If true disables the random hyprland logo / anime girl background. :(
+        force_default_wallpaper = -1,    -- Set to 0 or 1 to disable the anime mascot wallpapers
+        disable_hyprland_logo   = true, -- If true disables the random hyprland logo
     },
 })
 

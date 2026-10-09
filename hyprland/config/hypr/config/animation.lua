@@ -3,15 +3,15 @@
 --------------------------
 ------- ANIMATIONS -------
 --------------------------
-hl.curve( "myBezier", {type = "bezier", points = { {0.05, 0.9}, {0.1, 1.05} } })
+hl.curve( "myBezier", {type = "bezier", points = { {0.05, 0.9}, {0.1, 1.1} } })
 hl.curve( "easeInOut", { type = "bezier", points = { {0.65, 0}, {0.35, 1} } })
 hl.curve( "smoothzz", { type = "bezier", points = { {0.1, 0.8}, {0.24, 1} } })
 
 -- Window
 hl.animation({ leaf = "windows", enabled = true, duration = 1, speed = 6, bezier = "myBezier", style = "gnomed" })
 hl.animation({ leaf = "windowsIn", enabled = true, duration = 1, speed = 6, bezier = "myBezier", style = "gnomed" })
-hl.animation({ leaf = "windowsOut", enabled = true, duration = 1, speed = 6, bezier = "myBezier", style = "gnomed" })
-hl.animation({ leaf = "windowsMove", enabled = true, duration = 1, speed = 4, bezier = "easeInOut" })
+hl.animation({ leaf = "windowsOut", enabled = true, duration = 1, speed = 12, bezier = "myBezier", style = "gnomed" })
+hl.animation({ leaf = "windowsMove", enabled = true, duration = 1, speed = 8, bezier = "myBezier" })
 
 -- Layer
 hl.animation({ leaf = "layers", enabled = true, duration = 1, speed = 8, bezier = "myBezier" })
