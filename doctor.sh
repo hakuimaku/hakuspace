@@ -123,6 +123,7 @@ fi
 
 check_module "$SOURCE_CONFIG/gtk-3.0/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css"
 check_module "$HOME_SRC_DIR/.nanorc" "$HOME/.nanorc" "$HOME/.nanorc"
+check_module "$HOME_SRC_DIR/.zshrc" "$HOME/.zshrc" "$HOME/.zshrc"
 
 total_broken=$(( ${#BROKEN_LINKS[@]} + ${#OVERWRITTEN_FILES[@]} ))
 
