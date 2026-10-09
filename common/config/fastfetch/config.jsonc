@@ -4,7 +4,7 @@
         "source": "~/.config/fastfetch/hakufetch.txt",
         "type": "auto",
         "position": "top",
-        "padding": { "top": 2, "left": 2 },
+        "padding": { "left": 2 },
         "color": { "1": "blue" }
     },
     "display": {
@@ -13,10 +13,9 @@
         "constants": ["\u001b[34m", "\u001b[34m"]
     },
     "modules": [
-        "break",
         {
             "type": "custom",
-            "key": "  ╭─HakuSpace──╮"
+            "key": "  ╭─Haku-Space─╮"
         },
         {
             "type": "command",
@@ -25,7 +24,7 @@
         },
         {
             "type": "kernel",
-            "key": "  │ {$2}󰌽{$1}  kernel  │"
+            "key": "  │ {$2}{$1}  kernel  │"
         },
         {
             "type": "os",
@@ -38,8 +37,11 @@
         {
             "type": "disk",
             "key": "  │ {$2}{$1}  disk    │",
-            "folder": "/",
-            "format": "{<12}{$1}"
+            "folder": "/"
+        },
+        {
+            "type": "memory",
+            "key": "  │ {$2}{$1}  memory  │"
         },
         {
             "type": "packages",
