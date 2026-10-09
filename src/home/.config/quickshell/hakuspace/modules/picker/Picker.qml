@@ -22,7 +22,7 @@ PanelWindow {
     
     Rectangle {
         anchors.fill: parent
-        color: Theme.scrim || "#80000000"
+        color: Theme.scrim
     }
     
     property string currentFifo: ""
@@ -173,7 +173,7 @@ PanelWindow {
                 delegate: Rectangle {
                     width: listView.width
                     height: Theme.fontSize * 2
-                    color: index === listView.currentIndex ? Theme.surfaceHi : "transparent"
+                    color: index === listView.currentIndex || delegateMouse.containsMouse ? Theme.surfaceHi : Theme.surface
                     radius: Theme.radiusSm
                     
                     Text {
@@ -181,13 +181,15 @@ PanelWindow {
                         anchors.leftMargin: Theme.pad
                         verticalAlignment: Text.AlignVCenter
                         text: modelData
-                        color: index === listView.currentIndex ? Theme.onAccentColor : Theme.fg
+                        color: index === listView.currentIndex || delegateMouse.containsMouse ? Theme.onAccentColor : Theme.fg
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSize
                     }
                     
                     MouseArea {
+                        id: delegateMouse
                         anchors.fill: parent
+                        hoverEnabled: true
                         onClicked: submit(modelData)
                     }
                 }

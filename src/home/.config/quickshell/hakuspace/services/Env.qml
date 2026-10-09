@@ -5,12 +5,10 @@ import Quickshell
 QtObject {
     id: root
 
-    readonly property string home: Quickshell.env("HOME") || ""
-    readonly property string configDir: home + "/.config/hakuspace"
-    readonly property string stateDir: home + "/.local/state/hakuspace/state"
-    readonly property string themeDir: home + "/.local/state/hakuspace/theme"
-    readonly property string binDir: home + "/.local/bin"
-    // XDG_RUNTIME_DIR may be absent in manually started sessions.
-    readonly property string runtimeDir: Quickshell.env("XDG_RUNTIME_DIR") || ("/run/user/" + Quickshell.env("UID"))
-    readonly property string wmName: Quickshell.env("XDG_CURRENT_DESKTOP") || "Hyprland"
+    // Paths are relative to the directory containing shell.qml.
+    readonly property string stateDir: Quickshell.shellPath("../../../.local/state/hakuspace/state")
+    readonly property string themeDir: Quickshell.shellPath("../../../.local/state/hakuspace/theme")
+    readonly property string binDir: Quickshell.shellPath("../../../.local/bin")
+    readonly property string cavaConfig: Quickshell.shellPath("../../cava/config_waybar")
+    readonly property string roundedScreenConfig: Quickshell.shellPath("../../../hakucfg/config/rounded-screen.conf")
 }

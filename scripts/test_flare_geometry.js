@@ -112,6 +112,61 @@ assert(nullP.earStart.u === 0 && nullP.earStart.scale === 0, `null args for piec
 let zeroRf = FlareGeometry.hugFactors(10, 90, { bounds: { start: 0, end: 100 }, rf: 0 });
 assert(!isNaN(zeroRf.kS) && !isNaN(zeroRf.kE), `rf=0 does not return NaN (kS=${zeroRf.kS})`);
 
+console.log("\n--- Symmetry, connecting edges, and malformed values ---");
+for (const k of [0, 0.25, 0.5, 1]) {
+    const left = FlareGeometry.hugFactors(k * 20, 80, { bounds: { start: 0, end: 100 }, rf: 20 });
+    const right = FlareGeometry.hugFactors(20, 100 - k * 20, { bounds: { start: 0, end: 100 }, rf: 20 });
+    assert(left.kS === right.kE && left.kS === k, `hug symmetry k=${k}`);
+}
+
+for (const height of [0, 10, 40]) {
+    for (const k of [0, 0.5, 1]) {
+        const both = FlareGeometry.pieces({ start: 100, end: 200, height, kS: k, kE: k }, { r: 20, rf: 20 });
+        const ear = k * Math.min(1, height / 20);
+        const foot = (1 - k) * Math.min(1, height / 20);
+        assert(both.earStart.scale === ear && both.earEnd.scale === ear,
+               `both ear scales at k=${k}, height=${height}`);
+        assert(both.footStart.scale === foot && both.footEnd.scale === foot,
+               `both foot scales at k=${k}, height=${height}`);
+        assert(both.earStart.u + 20 === 100 && both.earEnd.u === 200
+               && both.footStart.u === 100 && both.footEnd.u + 20 === 200,
+               `body connecting edges at k=${k}, height=${height}`);
+        assert(both.radiusStart === both.radiusEnd && both.radiusStart === 20 * k,
+               `symmetric radii at k=${k}, height=${height}`);
+    }
+}
+
+for (const r of [0, 20]) {
+    for (const rf of [0, 20]) {
+        const piece = FlareGeometry.pieces({ start: 100, end: 200, height: 30, kS: 0.5, kE: 0.5 }, { r, rf });
+        assert(Object.values(piece).flatMap(value => typeof value === 'object' ? Object.values(value) : [value])
+                   .every(Number.isFinite), `finite pieces at r=${r}, rf=${rf}`);
+        if (r === 0) assert(piece.earStart.scale === 0 && piece.earEnd.scale === 0, 'zero radius hides ears');
+        if (rf === 0) assert(piece.footStart.scale === 0 && piece.footEnd.scale === 0, 'zero hug radius hides feet');
+    }
+}
+
+const bad = [null, undefined, NaN, Infinity, -Infinity, 'bad'];
+for (const value of bad) {
+    const span = FlareGeometry.resolveSpan({ anchorStart: value, anchorEnd: value, contentW: value,
+        padX: value, minW: value, maxW: value, snap: value, bounds: { start: 0, end: 100 } });
+    const hug = FlareGeometry.hugFactors(value, value, { bounds: { start: value, end: value }, rf: value });
+    const piece = FlareGeometry.pieces({ start: value, end: value, height: value, kS: value, kE: value },
+        { r: value, rf: value });
+    assert([span.start, span.end, hug.kS, hug.kE,
+        ...Object.values(piece).flatMap(part => typeof part === 'object' ? Object.values(part) : [part])]
+        .every(Number.isFinite), `malformed ${String(value)} stays finite`);
+}
+
+const zeroHug = FlareGeometry.hugFactors(0, 90, { bounds: { start: 0, end: 100 }, rf: 0 });
+assert(zeroHug.kS === 0 && zeroHug.kE === 1, 'zero hug radius keeps exact edge attachment');
+
+const timing = FlareGeometry.durations(true, NaN, Infinity);
+assert(Number.isFinite(timing.startMs) && Number.isFinite(timing.endMs),
+       'malformed motion durations stay finite');
+assert(FlareGeometry.needsRetarget({ start: NaN, end: Infinity }, { start: 0, end: 0 }, NaN) === false,
+       'malformed retarget input stays stable');
+
 if (failCount > 0) {
     console.error(`\nFAILED ${failCount} tests.`);
     process.exit(1);

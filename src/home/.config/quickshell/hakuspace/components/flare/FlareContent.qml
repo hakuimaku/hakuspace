@@ -14,29 +14,35 @@ Item {
     property bool shown: false
     property bool useA: true
     property var lastKey: null
+
+    function applyProps(item) {
+        if (!item || !contentProps) return
+        for (var key in contentProps) {
+            if (key in item) item[key] = contentProps[key]
+        }
+    }
+
+    function syncActive() {
+        var activeLoader = useA ? loaderA : loaderB
+        if (activeLoader.sourceComponent !== contentComponent)
+            activeLoader.sourceComponent = contentComponent
+        applyProps(activeLoader.item)
+        Qt.callLater(updateSize)
+    }
     
     onShownChanged: {
         if (shown) {
-            hideTimer.stop();
-            var activeLoader = useA ? loaderA : loaderB;
-            if (!activeLoader.item && contentComponent) {
-                activeLoader.sourceComponent = contentComponent;
-                if (activeLoader.item) {
-                    for (var k in contentProps) activeLoader.item[k] = contentProps[k];
-                }
-                Qt.callLater(updateSize);
-            }
+            hideTimer.stop()
+            syncActive()
         }
     }
+
+    onContentComponentChanged: syncActive()
     
     onContentPropsChanged: {
         var activeLoader = useA ? loaderA : loaderB;
-        if (activeLoader.item) {
-            for (var k in contentProps) {
-                activeLoader.item[k] = contentProps[k];
-            }
-            Qt.callLater(updateSize);
-        }
+        applyProps(activeLoader.item)
+        Qt.callLater(updateSize)
     }
     
     onContentKeyChanged: {
@@ -46,16 +52,7 @@ Item {
             lastKey = contentKey;
         }
         
-        var activeLoader = useA ? loaderA : loaderB;
-        activeLoader.sourceComponent = contentComponent;
-        
-        if (activeLoader.item) {
-            for (var k in contentProps) {
-                activeLoader.item[k] = contentProps[k];
-            }
-        }
-        
-        Qt.callLater(updateSize);
+        syncActive()
     }
     
     function updateSize() {
@@ -86,13 +83,13 @@ Item {
     Loader {
         id: loaderA
         anchors.centerIn: parent
+        onImplicitWidthChanged: Qt.callLater(root.updateSize)
+        onImplicitHeightChanged: Qt.callLater(root.updateSize)
         opacity: useA ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: HAnimation.effects } }
         onOpacityChanged: { if (opacity === 0) sourceComponent = null; }
         onLoaded: {
-            if (useA && root.contentProps) {
-                for (var k in root.contentProps) item[k] = root.contentProps[k];
-            }
+            if (useA) root.applyProps(item)
             Qt.callLater(updateSize);
         }
     }
@@ -100,13 +97,13 @@ Item {
     Loader {
         id: loaderB
         anchors.centerIn: parent
+        onImplicitWidthChanged: Qt.callLater(root.updateSize)
+        onImplicitHeightChanged: Qt.callLater(root.updateSize)
         opacity: !useA ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: HAnimation.effects } }
         onOpacityChanged: { if (opacity === 0) sourceComponent = null; }
         onLoaded: {
-            if (!useA && root.contentProps) {
-                for (var k in root.contentProps) item[k] = root.contentProps[k];
-            }
+            if (!useA) root.applyProps(item)
             Qt.callLater(updateSize);
         }
     }

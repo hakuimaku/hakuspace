@@ -12,6 +12,8 @@ Item {
     property real r: 20
     property real rf: Theme.tipHugRadius
     property color surfaceColor: Theme.barColor
+    // Cover the antialiased join at fractional body coordinates without moving the outer curve.
+    readonly property real seamOverlap: 2
 
     default property alias content: body.data
     
@@ -32,22 +34,22 @@ Item {
 
     Shape {
         x: p.earStart.u; y: p.earStart.v
-        width: r; height: r
+        width: r + root.seamOverlap; height: r
         preferredRendererType: Shape.CurveRenderer
         transformOrigin: Item.TopRight
         scale: p.earStart.scale
         visible: scale > 0
-        ShapePath { fillColor: root.surfaceColor; strokeColor: "transparent"; PathSvg { path: "M 0 0 L " + r + " 0 L " + r + " " + r + " A " + r + " " + r + " 0 0 0 0 0 Z" } }
+        ShapePath { fillColor: root.surfaceColor; strokeColor: "transparent"; PathSvg { path: "M 0 0 L " + (r + root.seamOverlap) + " 0 L " + (r + root.seamOverlap) + " " + r + " L " + r + " " + r + " A " + r + " " + r + " 0 0 0 0 0 Z" } }
     }
 
     Shape {
-        x: p.earEnd.u; y: p.earEnd.v
-        width: r; height: r
+        x: p.earEnd.u - root.seamOverlap; y: p.earEnd.v
+        width: r + root.seamOverlap; height: r
         preferredRendererType: Shape.CurveRenderer
         transformOrigin: Item.TopLeft
         scale: p.earEnd.scale
         visible: scale > 0
-        ShapePath { fillColor: root.surfaceColor; strokeColor: "transparent"; PathSvg { path: "M 0 0 L " + r + " 0 A " + r + " " + r + " 0 0 0 0 " + r + " Z" } }
+        ShapePath { fillColor: root.surfaceColor; strokeColor: "transparent"; PathSvg { path: "M 0 0 L " + (r + root.seamOverlap) + " 0 A " + r + " " + r + " 0 0 0 " + root.seamOverlap + " " + r + " L 0 " + r + " Z" } }
     }
 
     Shape {

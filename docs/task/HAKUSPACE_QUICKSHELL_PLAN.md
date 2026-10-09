@@ -2,8 +2,8 @@
 
 Companion documents that currently exist in `docs/task/`:
 
-- `QUICKSHELL_TESTING.md` — manual/runtime verification matrix. It still contains stale entries and must be synchronized during P0.
-- `QUICKSHELL_STYLE.md` — visual/token conventions. Its reference to the removed `M2_PLAN.md` is stale and must be cleaned during P0.
+- `QUICKSHELL_TESTING.md` — manual/runtime verification matrix, updated for the P0 labwc pass; the other three WMs remain to be tested.
+- `QUICKSHELL_STYLE.md` — visual/token conventions, synchronized with the P0 theme decision.
 - `FLARE_LIB_SPEC.md` — flare geometry/rendering contract. The core library exists; L3/L4 are not fully closed.
 
 The old `WORKSPACES_PLAN.md` and `M2_WORKSPACES_PROBE.md` are deleted in the current working tree. Their useful conclusions are absorbed into this master plan; do not recreate them unless a new probe is needed.
@@ -81,7 +81,7 @@ Current IPC targets:
 |---|---|---|
 | `shell` | `ping()`, `reload()`, `quit()` | **DONE** |
 | `picker` | `open(fifo, jsonString)` | **DONE**, caller migration pending |
-| `level` | `change(action)` | **IMPLEMENTED / VERIFY** in current N11 working tree |
+| `level` | `change(action)` | **IMPLEMENTED / VERIFY**; N11 is committed, with runtime checks still open |
 | `notif` | planned `toggleCenter`, `toggleDnd`, `clearAll`, `count` | **PLANNED** |
 | `launcher` | planned `open(mode)` | **PLANNED** |
 | `hakumenu` | planned toggle/open contract | **PLANNED** |
@@ -175,7 +175,7 @@ Implemented:
 - live rounded-screen radius/thickness from `rounded-screen.conf`;
 - shared animation tokens.
 
-**P0 decision:** in the current working tree `Theme.barColor` is hard-coded to `#000000` instead of following `AppState.opaqueThemeState ? inkBg : bg`. Determine whether this is an intentional new visual policy. If intentional, update the state/style contract; if not, restore the previous semantic behavior. Do not leave docs and runtime behavior disagreeing.
+**Current background policy:** `Theme.barColor` keeps the `AppState.opaqueThemeState ? inkBg : bg` binding, while both `inkBg` and `bg` are fixed to `#000000`. Ordinary idle modules/cards and the Picker scrim are opaque black. Hover/selection fills use the accent colour with black text/icons; Tray and WindowTitle hover use dark grey `Theme.hoverMuted`, with WindowTitle text/icon in accent. The Logo and Settings group stay accent-filled with black icons in both states. Logo hover grows the icon font size by 2 px and expands the pill by `Theme.pad`. `Theme.surfaceHi` is bound to `accent`; the generated JSON mirrors this, while `Theme.qml` ignores incoming values for fixed background tokens so old theme files cannot override them. The MPRIS icon circle remains accent-filled with a black glyph. The earlier P0 labwc pixel check (`#000000` with opaque off, `#111111` with opaque on) is historical and must be repeated for the current policy.
 
 ### 3.3 Picker — **DONE core / integration debt**
 
@@ -289,17 +289,17 @@ Current code:
 
 `QUICKSHELL_TESTING.md` still says “Hyprland only”; fix that during P0 after Niri runtime verification.
 
-### 3.6 Tray — **DONE icon/activation baseline / custom QML menu PLANNED**
+### 3.6 Tray — **QML + Flare menus IMPLEMENTED / VERIFY**
 
 Current implementation:
 
 - native `SystemTray.items`;
 - icon loading;
-- left click currently always calls `activate()`;
-- right click calls the platform/native menu through `display()` when `hasMenu`, otherwise `secondaryActivate()`;
+- normal left click calls `activate()`; `onlyMenu` left click requests its menu;
+- right click routes usable `SystemTrayItem.menu` models, short or long, through `QsMenuOpener`, `MenuContent`, and the shared Flare panel; unavailable/empty models retain compatibility `display()` fallback, and no-menu items use `secondaryActivate()`;
 - scroll forwarding.
 
-The next Tray direction is **not** to keep polishing the platform menu. Build a native HakuSpace QML renderer for tray menus, while preserving the platform path as a compatibility fallback.
+The controlled fixture passed action, checkbox, submenu/back, radio, repeated-open, Escape, outside click, and close animation on the deployed Niri session at scale 1.0. Wi-Fi, Bluetooth, and Fcitx5 expose usable DBusMenu models and now use the shared QML + Flare panel. Tall menus scroll inside a monitor-bounded panel; menu size no longer triggers native fallback. See `TRAY_FULL_QML_FLARE_REPORT.md` for the current runtime matrix and remaining cases.
 
 Quickshell 0.3.1 exposes the primitives needed for this design:
 
@@ -309,7 +309,7 @@ Quickshell 0.3.1 exposes the primitives needed for this design:
 - `QsMenuEntry` provides `text`, `icon`, `enabled`, `isSeparator`, `buttonType`, `checkState`, `hasChildren`, and `triggered()`;
 - submenu entries can be opened recursively with another `QsMenuOpener`.
 
-Target UX:
+Implemented short-menu path and longer-term target UX:
 
 - render DBusMenu content in HakuSpace QML instead of handing normal menus to the platform renderer;
 - use the same Flare geometry/content stack as tooltips so a tray hover can morph into its menu instead of spawning an unrelated rectangular popup;
@@ -317,12 +317,12 @@ Target UX:
 - support text, icons, disabled rows, separators, checkbox/radio state, nested submenus, and trigger actions;
 - menu model changes must update without closing/reopening the menu where Quickshell provides change notifications.
 
-Primary runtime acceptance targets are `nm-applet --indicator` and `blueman-applet`, because their menus exercise dynamic DBusMenu content such as network/device lists. **VERIFY on the deployed machine** that both arrive through `SystemTrayItem.menu`; do not hard-code app ids or app-specific menu parsing.
+The deployed protocol probe confirmed `nm-applet --indicator`, `blueman-applet`, and Fcitx5 expose `SystemTrayItem.menu` through `QsMenuOpener`. All three route through the same QML renderer. Live content mutation and raw/pixmap icon rendering still need direct visual verification. Do not hard-code app ids or app-specific menu parsing.
 
 Important constraints / VERIFY items:
 
-1. **Height and scrolling.** `TopBar.tipAreaH` is currently 160 px and `TooltipLayer` uses that height. Wi-Fi/Bluetooth menus can exceed it. Short menus may reuse the existing `FlareHost`; long menus need a clipped/scrollable body and may need the reusable `FlareWindow`/large-panel host planned in P3.0 rather than enlarging the bar window dynamically.
-2. **Outside click and keyboard.** The current bar/tooltip surface is not a complete menu interaction window: it should not be assumed to receive keyboard focus or clicks outside its input region. A full menu implementation therefore needs a compositor-safe overlay/input strategy. Prefer one transparent screen-sized overlay or an equivalent Quickshell window/input-mask design that can close on outside click and route keyboard navigation. `HyprlandFocusGrab` may be used only as an optional Hyprland enhancement, never as the cross-WM contract.
+1. **Height and scrolling.** `TopBar.tipAreaH` remains 160 px for tooltips. All tray menus use `FlarePanelWindow` below the bar, and `MenuPage` clips and scrolls within monitor height. Recheck fractional scale and small outputs.
+2. **Outside click and keyboard.** `FlarePanelWindow` captures outside clicks while open, drops its input mask during close animation, and handles Escape with generic Wayland keyboard focus. Directional row navigation remains a future improvement; test Niri, Hyprland, and Mango independently.
 3. **`onlyMenu` left click.** If `SystemTrayItem.onlyMenu` is true, left click must open the QML menu instead of calling a no-op `activate()`. Normal items keep their primary activation semantics unless the tray protocol/app behavior proves otherwise.
 4. **Fallback behavior.** Keep a compatibility path for items whose menu cannot be rendered reliably. If no usable custom menu is available, fall back to the protocol actions already exposed by Quickshell (`display()`, `secondaryActivate()`, and normal `activate()` as appropriate). **VERIFY** how Quickshell handles StatusNotifierItem implementations that expose only `ContextMenu`; do not assume that such items are represented as a usable `menu` handle.
 5. **Menu icons.** `QsMenuEntry.icon` is documented as an image-source URL, but raw/pixmap-backed tray menu icons still need runtime verification with real applications. Mark unsupported icon forms as a rendering fallback, not a menu failure.
@@ -382,7 +382,7 @@ P1 should reduce or gate avoidable idle polling where an event-driven API is ava
 
 This is **not the same feature** as the old classic `cava_layer.py`/underbar effect. Porting that old layer is a separate future product decision; it is not required merely because the center Cava exists.
 
-### 3.11 Volume/brightness OSD — **IMPLEMENTED / VERIFY in current working tree**
+### 3.11 Volume/brightness OSD — **IMPLEMENTED / VERIFY**
 
 Current N11 path:
 
@@ -498,6 +498,8 @@ P0 Freeze/stabilize current baseline
   ↓
 P1 Top-bar + flare + Tray QML-menu hardening
   ↓
+Tray full QML + Flare / shared large-panel primitive (implemented; runtime verification open)
+  ↓
 P2 Native notifications
   ↓
 P3 Launcher / HakuMenu / power / wallpaper / picker migration
@@ -509,19 +511,21 @@ P5 Packaging / doctor / distro integration / release verification
 P6 Optional polish and experimental features
 ```
 
-P2 and P3 may share primitives, but do not start both large feature families simultaneously before P0 is green.
+The Tray panel primitive is implemented ahead of native notifications so Notification Center can reuse its ownership/input model. P2 and the remaining P3 features may share primitives, but do not start both large feature families simultaneously before P0 is green.
 
 ---
 
-## 5. P0 — Freeze and stabilize the current baseline — **NEXT, highest priority**
+## 5. P0 — Freeze and stabilize the current baseline — **IN PROGRESS**
 
 ### Goal
 
-Turn the current mixed committed/uncommitted repository into a clean, reproducible baseline before adding another large surface.
+Turn the N11 and workspace implementation into a clean, reproducible baseline before adding another large surface.
+
+Execution update (2026-10-07): N11 is already committed in `2da1b0cd`; the P0 work started from clean `HEAD` `68c3ba59`. Labwc startup, hidden workspaces, two Classic ↔ Hikai cycles, IPC reload, volume/brightness OSD, queued volume presses, Classic volume fallback, opaque state, and RoundedScreen with the bar hidden passed. The Hyprland, Niri, and MangoWM runtime matrices are pending until those sessions are available. P0 remains **IMPLEMENTED / VERIFY**, not DONE.
 
 ### P0.1 Close N11 as one coherent feature set
 
-Scope already present in the working tree:
+Scope already committed in N11:
 
 - `Audio.qml`;
 - `Brightness.qml`;
@@ -601,7 +605,7 @@ After runtime results are known:
 
 - update `QUICKSHELL_TESTING.md` so it stops saying Mango is unsupported;
 - update WindowTitle notes to include verified Niri support if it passes;
-- remove stale `M2_PLAN.md` references from existing docs;
+- remove stale references to the deleted M2 plan from existing docs;
 - remove outdated observations that refer to fixed `Env.wmName` activation logic;
 - keep Labwc documented as an upstream Quickshell limitation, not an unfinished local implementation;
 - make `FLARE_LIB_SPEC.md` status wording match actual L3/L4 state.
@@ -628,7 +632,9 @@ and, on the deployed system:
 
 ---
 
-## 6. P1 — Top-bar and flare hardening
+## 6. P1 — Top-bar and flare hardening — **IMPLEMENTED / VERIFY**
+
+The 2026-10-08 Clock/Tray closeout fixed component-only tooltip activation and verified Clock hover, left click, scroll, reset, hide/restore, and clean reload on one Niri output at scale 1.0. The subsequent Tray milestone routes both short and long usable DBusMenus through a shared QML + Flare panel. See `P1_STATUS.md` and `TRAY_FULL_QML_FLARE_REPORT.md` for runtime matrices. T1–T13 as a whole, fractional scale, multi-monitor, and hover performance remain VERIFY.
 
 ### Goal
 
@@ -665,7 +671,7 @@ Record a lightweight performance baseline:
 
 ### P1.3 Clock/calendar completion
 
-Replace placeholder calendar text with an actual calendar payload/component using the existing tooltip/flare path.
+The placeholder calendar text has been replaced by `CalendarGrid` in the existing tooltip/Flare path. The component-only hover gate and left-click request were fixed in the 2026-10-08 closeout. Runtime interaction passed at scale 1.0; fractional scale and a second monitor remain VERIFY.
 
 Requirements:
 
@@ -678,7 +684,7 @@ Requirements:
 
 ### P1.4 Tray QML menu renderer — model + short-menu path
 
-Replace the current "native menu is good enough" assumption with a staged custom-renderer plan. The goal is a generic QML menu view backed by `QsMenuOpener`, with platform/native rendering retained as fallback.
+The `QsMenuOpener`-backed generic QML renderer is implemented for short and long menus. The short fixture and Wi-Fi submenu paths have passed on Niri at scale 1.0. The staged sections below retain the original design requirements; the shared panel implementation is recorded in `TRAY_FULL_QML_FLARE_REPORT.md`. Native fallback remains only for unavailable or persistently empty menu models.
 
 **Stage A — protocol/model probe before styling**
 
@@ -881,24 +887,24 @@ notif.count() -> int/string suitable for CLI output
 
 Remove Hikai's remaining dependency on rofi for normal shell interaction.
 
-### P3.0 Large-panel primitive first
+### P3.0 Large-panel primitive first — **Tray primitive IMPLEMENTED / VERIFY**
 
-Before building several panels, finish a reusable large-panel host (`FlareWindow` or an equivalent implementation consistent with `FLARE_LIB_SPEC.md`).
+`FlarePanelWindow` now provides the reusable large-panel host for Tray. Notification Center and later panels should reuse its ownership and input contract. Fractional-scale, multi-monitor, and cross-compositor runtime verification remain open.
 
 Requirements:
 
 - transparent fixed-size `PanelWindow` below/around the bar rather than runtime window resizing;
 - `ExclusionMode.Ignore`;
-- input mask limited to interactive panel body;
+- full outside-click input capture while the menu is open, followed by an empty input mask during close morph so desktop clicks are unblocked;
 - safe multi-monitor ownership;
 - no duplicated flare geometry;
 - verify the seam with TopBar at 1.0x, 1.25x, and 1.5x scale.
 
 Also finish the opt-in flare demo and `docs/flare.md` as the acceptance example for this reusable primitive.
 
-#### P3.0a Tray long-menu / interaction overlay
+#### P3.0a Tray long-menu / interaction overlay — **IMPLEMENTED / VERIFY**
 
-Use the same reusable window/input primitive to finish the cases that cannot safely live inside the 160 px tooltip area:
+The Tray implementation now uses the reusable window/input primitive for menus that cannot safely live inside the 160 px tooltip area:
 
 - tall DBusMenu content with a bounded, scrollable viewport;
 - transparent outside-click capture that closes menu/submenu state without blocking the rest of the desktop after close;
@@ -1296,8 +1302,8 @@ Hikai can be considered release-ready when:
 
 ## 17. Immediate next action
 
-**Do P0 only.**
+Finish the open P0 compositor matrix, interactive P1 checks, and remaining Tray full-QML runtime checks in `QUICKSHELL_TESTING.md`. The P1 baseline is recorded in `P1_STATUS.md`; the Tray migration and current acceptance matrix are recorded in `TRAY_FULL_QML_FLARE_REPORT.md`.
 
-Do not start native notifications, launcher, or another major visual feature until the current N11 + workspace baseline is cleanly verified and the documentation drift is corrected.
+Do not mark P1 DONE from static checks or the Niri protocol probe alone. The tray short-menu input path, other WMs, fractional scales, multi-monitor behavior, hover performance, and remaining protocol fallback cases still need verification.
 
-The first new implementation milestone after P0 should be **P1 hardening**, followed by **P2 native notifications**.
+P2 native notifications follows this Tray verification work and reuses the shared panel ownership/input primitive.

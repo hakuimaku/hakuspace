@@ -1,3 +1,4 @@
+//@ pragma UseQApplication
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
@@ -32,7 +33,7 @@ ShellRoot {
         enabled: true
         function ping(): string { return "pong"; }
         function reload() {
-            Quickshell.reload();
+            Quickshell.reload(false);
         }
         function quit() { Qt.quit(); }
     }
@@ -55,6 +56,11 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         TopBar {}
+    }
+
+    Variants {
+        model: Quickshell.screens
+        TrayMenuPanel {}
     }
 
     Variants {
