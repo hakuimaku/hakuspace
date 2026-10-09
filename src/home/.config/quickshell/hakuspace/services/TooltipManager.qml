@@ -39,25 +39,22 @@ Item {
         var newComp = component !== undefined ? component : null;
         var newProps = props !== undefined ? props : {};
         
-        if (current && current.target === target && current.text === newText && current.component === newComp) {
-            return;
+        var isSame = (current && current.target === target && current.text === newText && current.component === newComp);
+        
+        if (!isSame) {
+            current = {
+                target: target,
+                text: newText,
+                component: newComp,
+                props: newProps
+            };
+            
+            var p = target;
+            while (p && p.parent) {
+                p = p.parent;
+            }
+            activeBar = p;
         }
-        
-        current = {
-            target: target,
-            text: newText,
-            component: newComp,
-            props: newProps
-        };
-        
-        var p = target;
-        var debugP = target; while(debugP) { console.log("target ancestor:", debugP); debugP = debugP.parent; }
-        while (p && p.parent) {
-            p = p.parent;
-        }
-        activeBar = p;
-        
-        console.log("TOOLTIP MANAGER: target=", target, " text=", newText, " activeBar=", activeBar, " warm=", warm, " shown=", shown);
         
         graceTimer.stop();
         
@@ -65,7 +62,7 @@ Item {
             shown = true;
             showTimer.stop();
         } else if (!showTimer.running) {
-            showTimer.restart();
+            showTimer.start();
         }
     }
     

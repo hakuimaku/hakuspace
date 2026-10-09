@@ -44,7 +44,6 @@ PanelWindow {
         inputField.text = "";
         listView.currentIndex = 0;
         visible = true;
-        console.log("[picker] Picker.open visible set to true for fifo:", fifo);
     }
     function finish(line) {
         if (!currentFifo) return;
@@ -52,7 +51,6 @@ PanelWindow {
         currentFifo = "";
         visible = false;
         
-        console.log("[picker] finish called with line:", line, "fifo:", f);
         writer.environment = { "HAKU_PICK_TEXT": line };
         writer.command = ["sh", "-c", "printf '%s\\n' \"$HAKU_PICK_TEXT\" > \"$1\"", "_", f];
         writer.running = true;

@@ -20,15 +20,17 @@ Item {
         anchorItem: TooltipManager.current ? TooltipManager.current.target : null
         shown: TooltipManager.shown && root.visible
         content: TooltipManager.current ? (TooltipManager.current.component || textComp) : null
-        contentProps: ({ payload: TooltipManager.current })
+        contentProps: ({ payload: TooltipManager.current, maxWidth: 400 })
         contentKey: TooltipManager.current ? TooltipManager.current.target : null
-        maxWidth: 360
+        maxWidth: 400
     }
     
     Component {
         id: textComp
         Text {
             property var payload: null
+            property real maxWidth: 400
+            width: implicitWidth > maxWidth ? maxWidth : implicitWidth
             text: payload && payload.text ? payload.text : ""
             color: Theme.accent
             font.family: Theme.fontFamily

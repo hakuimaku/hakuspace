@@ -15,7 +15,6 @@ TopModule {
     tooltip: "Have a nice day!\n(HakuMenu will be added in M4)"
     
     onClicked: {
-        console.log("Logo clicked, toggling hakumenu");
         UiState.toggle("hakumenu");
     }
 }

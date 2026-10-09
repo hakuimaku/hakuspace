@@ -19,6 +19,9 @@ Row {
             implicitWidth: implicitHeight
             tooltip: modelData.tooltipTitle !== "" ? modelData.tooltipTitle : (modelData.title !== "" ? modelData.title : modelData.id)
 
+            // Override hover color
+            color: hovered ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+
             IconImage {
                 anchors.centerIn: parent
                 width: Theme.fontSize + 4

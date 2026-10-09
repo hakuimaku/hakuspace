@@ -49,7 +49,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: root.hovered ? Theme.surfaceHi : "transparent"
+        color: root.hovered ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
         radius: Theme.radiusSm
         Behavior on color { ColorAnimation { duration: HAnimation.normal } }
     }
@@ -80,7 +80,7 @@ Item {
         Row {
             id: row
             anchors.centerIn: parent
-            spacing: Theme.gap + 6
+            spacing: Theme.gap + 10
             
             Text {
                 id: iconText
@@ -92,7 +92,7 @@ Item {
                     if (c.indexOf("discord") !== -1) return "";
                     if (c.indexOf("spotify") !== -1) return "";
                     if (c.indexOf("thunar") !== -1 || c.indexOf("file") !== -1) return "";
-                    return "";
+                    return "";
                 }
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSize + 2
@@ -107,13 +107,12 @@ Item {
                 
                 Text {
                     id: classText
-                    text: root.activeClass !== "" ? root.activeClass : "Desktop"
+                    text: root.activeClass !== "" ? root.activeClass : "...hakushell..."
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize * 0.75
                     font.weight: Font.Bold
                     color: Theme.fgMuted
-                    elide: Text.ElideRight
-                    width: Math.min(implicitWidth, 350)
+                    width: implicitWidth
                 }
                 
                 Text {
@@ -123,8 +122,7 @@ Item {
                     font.pixelSize: Theme.fontSize
                     font.weight: Font.Bold
                     color: Theme.fg
-                    elide: Text.ElideRight
-                    width: Math.min(implicitWidth, 350)
+                    width: implicitWidth
                     visible: root.activeTitle !== ""
                 }
             }
