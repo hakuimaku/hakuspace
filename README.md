@@ -88,10 +88,10 @@ git clone https://github.com/hakuimaku/hakuspace.git
 
 ```
 
-If you prefer the version I've tested, clone the **stable** release version `v2.1.3` (lastest):
+If you prefer the version I've tested, clone the **stable** release version `v2.1.4` (lastest):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.1.3 https://github.com/hakuimaku/hakuspace.git
+git clone --depth 1 --branch v2.1.4 https://github.com/hakuimaku/hakuspace.git
 
 ```
 
