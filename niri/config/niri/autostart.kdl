@@ -28,4 +28,4 @@ spawn-at-startup "gammastep" "-O" "4200K"
 spawn-at-startup "sh" "-c" "~/.local/bin/welcome.sh"
 
 // For Cava Underbar
-spawn-at-startup "niri-float-sticky"
+spawn-at-startup "niri-float-sticky" "-disable-auto-stick"

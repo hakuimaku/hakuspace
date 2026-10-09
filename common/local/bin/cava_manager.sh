@@ -32,6 +32,8 @@ run_cava() {
             -o window_margin_width=0 \
             -o hide_window_decorations=yes \
             -e cava -p ~/.config/cava/config_underbar &
+
+    niri-float-sticky -app-id "$APP_CLASS" &
 }
 
 stop_cava() {
