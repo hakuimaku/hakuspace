@@ -10,6 +10,7 @@ Open or clear the Haku desktop widgets.
 
 Options:
     --clear             Close all Haku windows
+    --do-not-exit       Do not exit after opening windows (useful for debugging)
     -h, --help          Show this help message
 EOF
         exit 0
@@ -114,7 +115,11 @@ if [[ $XDG_CURRENT_DESKTOP == "Hyprland" ]]; then
 
     hyprctl eval "hl.dsp.exec_cmd('hyprctl keyword input:follow_mouse 1')"
     
-    kill -9 $PPID
+    if [[ $1 != "--do-not-exit" ]]; then
+        kill -9 $PPID
+    fi
+
+    exit 0
 fi
 
 # Exec for Niri
@@ -136,7 +141,11 @@ if [[ $XDG_CURRENT_DESKTOP == "niri" ]]; then
 
     niri msg action focus-column-left
 
-    kill -9 $PPID
+    if [[ $1 != "--do-not-exit" ]]; then
+        kill -9 $PPID
+    fi
+
+    exit 0
 fi
 
 # Exec for Mango
@@ -184,7 +193,11 @@ if [[ $XDG_CURRENT_DESKTOP == "mango" ]]; then
     stack_id "$cava_id" "left"
     sleep 0.2
 
-    kill -9 $PPID
+    if [[ $1 != "--do-not-exit" ]]; then
+        kill -9 $PPID
+    fi
+
+    exit 0
 fi
 
 # Exec for Labwc
@@ -196,7 +209,11 @@ if [[ $XDG_CURRENT_DESKTOP == "labwc" ]]; then
     clock
     cmd
 
-    kill -9 $PPID
+    if [[ $1 != "--do-not-exit" ]]; then
+        kill -9 $PPID
+    fi
+
+    exit 0
 fi
 
 echo "No supported window manager detected. Exiting."

@@ -1544,6 +1544,136 @@ class DesktopLayout(Gtk.Fixed):
         menu = Gtk.Menu()
         menu.get_style_context().add_class('desktop-context-menu')
 
+        # === HAKUSPACE MENU ===
+        hakumenu_item = Gtk.MenuItem(label="Menu")
+        def on_hakumenu(w):
+            subprocess.Popen([os.path.expanduser("~/.local/bin/hakumenu.sh")])
+        hakumenu_item.connect("activate", on_hakumenu)
+        menu.append(hakumenu_item)
+        
+        space_item = Gtk.MenuItem(label="Space")
+        space_menu = Gtk.Menu()
+        space_menu.get_style_context().add_class('desktop-context-menu')
+        space_item.set_submenu(space_menu)
+        
+        cava_on = False
+        try:
+            with open("/tmp/cava-layer.pid", "r") as f:
+                cava_on = len(f.read().strip()) > 0
+        except:
+            pass
+        cava_item = Gtk.CheckMenuItem(label="Cava Underbar")
+        cava_item.set_active(cava_on)
+        def on_cava_toggle(w):
+            subprocess.Popen([os.path.expanduser("~/.local/bin/cava_manager.sh"), "toggle"])
+        cava_item.connect("activate", on_cava_toggle)
+        space_menu.append(cava_item)
+        
+        rw_on = False
+        try:
+            with open("/tmp/random_wallpaper_status", "r") as f:
+                rw_on = (f.read().strip() == "1")
+        except:
+            pass
+        rw_item = Gtk.CheckMenuItem(label="Random Wallpaper")
+        rw_item.set_active(rw_on)
+        def on_rw_toggle(w):
+            subprocess.Popen([os.path.expanduser("~/.local/bin/random_wallpaper.sh")])
+        rw_item.connect("activate", on_rw_toggle)
+        space_menu.append(rw_item)
+        
+        space_menu.append(Gtk.SeparatorMenuItem())
+        
+        cw_item = Gtk.MenuItem(label="Change Wallpaper")
+        def on_cw(w):
+            subprocess.Popen([os.path.expanduser("~/.local/bin/wallpaper_select.sh")])
+        cw_item.connect("activate", on_cw)
+        space_menu.append(cw_item)
+        
+        lw_item = Gtk.MenuItem(label="Change Lively Wallpaper")
+        def on_lw(w):
+            subprocess.Popen([os.path.expanduser("~/.local/bin/wallpaper_video_select.sh")])
+        lw_item.connect("activate", on_lw)
+        space_menu.append(lw_item)
+        
+        space_menu.append(Gtk.SeparatorMenuItem())
+        
+        ct_item = Gtk.MenuItem(label="Change Theme")
+        def on_ct(w):
+            subprocess.Popen([os.path.expanduser("~/.local/bin/change_theme.sh")])
+        ct_item.connect("activate", on_ct)
+        space_menu.append(ct_item)
+        
+        acp_item = Gtk.MenuItem(label="Accent Color Picker")
+        def on_acp(w):
+            subprocess.Popen([os.path.expanduser("~/.local/bin/accent_color_picker.sh")])
+        acp_item.connect("activate", on_acp)
+        space_menu.append(acp_item)
+        
+        space_menu.append(Gtk.SeparatorMenuItem())
+        
+        dockbar_state = False
+        try:
+            with open(os.path.expanduser("~/.local/state/hakuspace/state/dockbar_manual_state"), "r") as f:
+                dockbar_state = (f.read().strip() == "1")
+        except:
+            pass
+            
+        dockbar_autohide = False
+        try:
+            with open(os.path.expanduser("~/.local/state/hakuspace/state/dockbar_autohide_state"), "r") as f:
+                dockbar_autohide = (f.read().strip() == "1")
+        except:
+            pass
+            
+        dockbar_label = "Dockbar [Autohide]" if dockbar_autohide else "Dockbar"
+        dockbar_item = Gtk.CheckMenuItem(label=dockbar_label)
+        dockbar_item.set_active(dockbar_state)
+        def on_dockbar(w):
+            subprocess.Popen([os.path.expanduser("~/.local/bin/dockbar_manager.sh"), "--toggle"])
+        dockbar_item.connect("activate", on_dockbar)
+        space_menu.append(dockbar_item)
+        
+        waybar_item = Gtk.MenuItem(label="Waybar")
+        waybar_menu = Gtk.Menu()
+        waybar_menu.get_style_context().add_class('desktop-context-menu')
+        waybar_item.set_submenu(waybar_menu)
+        
+        waybar_on = False
+        try:
+            waybar_on = subprocess.run(["pgrep", "waybar"], capture_output=True).returncode == 0
+        except:
+            pass
+        wt_item = Gtk.CheckMenuItem(label="Waybar Toggle")
+        wt_item.set_active(waybar_on)
+        def on_wt(w):
+            subprocess.Popen([os.path.expanduser("~/.local/bin/waybar_manager.sh"), "--toggle"])
+        wt_item.connect("activate", on_wt)
+        waybar_menu.append(wt_item)
+        
+        ws_item = Gtk.MenuItem(label="Waybar Select Mode")
+        def on_ws(w):
+            subprocess.Popen([os.path.expanduser("~/.local/bin/waybar_manager.sh"), "--select"])
+        ws_item.connect("activate", on_ws)
+        waybar_menu.append(ws_item)
+        
+        wc_item = Gtk.MenuItem(label="Waybar Cycle Mode")
+        def on_wc(w):
+            subprocess.Popen([os.path.expanduser("~/.local/bin/waybar_manager.sh"), "--cycle"])
+        wc_item.connect("activate", on_wc)
+        waybar_menu.append(wc_item)
+        
+        space_menu.append(waybar_item)
+        menu.append(space_item)
+        menu.append(Gtk.SeparatorMenuItem())
+
+        ow_item = Gtk.MenuItem(label="Open Widget")
+        def on_ow(w):
+            subprocess.Popen([os.path.expanduser("~/.local/bin/haku.sh"), "--do-not-exit"])
+        ow_item.connect("activate", on_ow)
+        space_menu.append(ow_item)
+        # === END HAKUSPACE MENU ===
+
         reload_item = Gtk.MenuItem(label="Reload")
         reload_item.connect("activate", self.on_reload)
         menu.append(reload_item)
