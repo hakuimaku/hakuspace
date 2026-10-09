@@ -48,13 +48,16 @@ fi
 
 # Startup (Restore previous state)
 if [[ $1 == "--startup" ]]; then
-    if [[ $(cat "$AUTOHIDE_STATE") == "1" ]]; then
-        pkill -f "$AUTOHIDE_SCRIPT"
-        "$AUTOHIDE_SCRIPT" &
-    elif [[ $(cat "$MANUAL_STATE") == "1" ]]; then
-        if ! pgrep -x "dockbar" >/dev/null; then
-            "$DOCKBAR_BIN" -c "$DOCKBAR_DIR/config" -s "$DOCKBAR_DIR/style.css" >/dev/null 2>&1 &
-            disown
+    # Note: Autohide script ONLY runs if Manual mode is ON
+    if [[ $(cat "$MANUAL_STATE") == "1" ]]; then
+        if [[ $(cat "$AUTOHIDE_STATE") == "1" ]]; then
+            pkill -f "$AUTOHIDE_SCRIPT"
+            "$AUTOHIDE_SCRIPT" &
+        else
+            if ! pgrep -x "dockbar" >/dev/null; then
+                "$DOCKBAR_BIN" -c "$DOCKBAR_DIR/config" -s "$DOCKBAR_DIR/style.css" >/dev/null 2>&1 &
+                disown
+            fi
         fi
     fi
     exit 0
@@ -77,33 +80,13 @@ fi
 # Reload the dockbar
 if [[ $1 == "--reload" ]]; then
     pkill -x "dockbar"
-    if [[ $(cat "$AUTOHIDE_STATE") == "1" ]]; then
-        pkill -f "$AUTOHIDE_SCRIPT"
-        "$AUTOHIDE_SCRIPT" &
-    elif [[ $(cat "$MANUAL_STATE") == "1" ]]; then
-        "$DOCKBAR_BIN" -c "$DOCKBAR_DIR/config" -s "$DOCKBAR_DIR/style.css" >/dev/null 2>&1 &
-        disown
-    fi
-    exit 0
-fi
-
-# Manual Toggle (Toggle the dockbar on/off)
-if [[ $1 == "--toggle" ]]; then
-    if [[ $(cat "$AUTOHIDE_STATE") == "1" ]]; then
-        echo "0" > "$AUTOHIDE_STATE"
-        pkill -f "$AUTOHIDE_SCRIPT"
-        
-        echo "1" > "$MANUAL_STATE"
-        pkill -x "dockbar"
-        "$DOCKBAR_BIN" -c "$DOCKBAR_DIR/config" -s "$DOCKBAR_DIR/style.css" >/dev/null 2>&1 &
-        disown
-    else
-        if [[ $(cat "$MANUAL_STATE") == "1" ]]; then
-            echo "0" > "$MANUAL_STATE"
-            pkill -x "dockbar"
+    pkill -f "$AUTOHIDE_SCRIPT"
+    
+    # Note: Reload respects the master switch (MANUAL_STATE)
+    if [[ $(cat "$MANUAL_STATE") == "1" ]]; then
+        if [[ $(cat "$AUTOHIDE_STATE") == "1" ]]; then
+            "$AUTOHIDE_SCRIPT" &
         else
-            echo "1" > "$MANUAL_STATE"
-            pkill -x "dockbar"
             "$DOCKBAR_BIN" -c "$DOCKBAR_DIR/config" -s "$DOCKBAR_DIR/style.css" >/dev/null 2>&1 &
             disown
         fi
@@ -111,18 +94,49 @@ if [[ $1 == "--toggle" ]]; then
     exit 0
 fi
 
-# Exclusive Mode Toggle (Toggle exclusive mode in the dockbar configuration)
+# Manual Toggle (Toggle the dockbar on/off)
+# Master switch: Controls whether dockbar (and its autohide script) is allowed to run.
+if [[ $1 == "--toggle" ]]; then
+    if [[ $(cat "$MANUAL_STATE") == "0" ]]; then
+        # Turn ON manual mode
+        echo "1" > "$MANUAL_STATE"
+        
+        if [[ $(cat "$AUTOHIDE_STATE") == "1" ]]; then
+            # If autohide is enabled, start the python script
+            pkill -x "dockbar"
+            pkill -f "$AUTOHIDE_SCRIPT"
+            "$AUTOHIDE_SCRIPT" &
+        else
+            # If autohide is disabled, just show the static dockbar
+            pkill -x "dockbar"
+            "$DOCKBAR_BIN" -c "$DOCKBAR_DIR/config" -s "$DOCKBAR_DIR/style.css" >/dev/null 2>&1 &
+            disown
+        fi
+    else
+        # Turn OFF manual mode
+        echo "0" > "$MANUAL_STATE"
+        pkill -x "dockbar"
+        
+        # If autohide is enabled, kill the python script too
+        if [[ $(cat "$AUTOHIDE_STATE") == "1" ]]; then
+            pkill -f "$AUTOHIDE_SCRIPT"
+        fi
+    fi
+    exit 0
+fi
+
+# Exclusive Mode Toggle
 if [[ $1 == "--exclusive" ]]; then
     if grep -q '"exclusive": true' "$DOCKBAR_DIR/config"; then
         sed -i 's/"exclusive": true/"exclusive": false/' "$DOCKBAR_DIR/config"
     else
         sed -i 's/"exclusive": false/"exclusive": true/' "$DOCKBAR_DIR/config"
     fi
-    $HOME/.local/bin/dockbar_manager.sh --reload
+    "$HOME/.local/bin/dockbar_manager.sh" --reload
     exit 0
 fi
 
-# Change Icon Size (Change the icon size in the dockbar configuration)
+# Change Icon Size
 if [[ $1 == "--icon-size" ]]; then
     current_size=$(grep -oP '"icon-size":\s*\K\d+' "$DOCKBAR_DIR/config" | head -n 1)
     [[ -z "$current_size" ]] && current_size=52
@@ -142,11 +156,14 @@ if [[ $1 == "--icon-size" ]]; then
 fi
 
 # Auto-hide Toggle
+# Sub-switch: Independent state, but action only takes effect if Manual mode is ON.
 if [[ $1 == "--auto-hide" ]]; then
     if [[ $(cat "$AUTOHIDE_STATE") == "1" ]]; then
+        # Turn OFF autohide
         echo "0" > "$AUTOHIDE_STATE"
         pkill -f "$AUTOHIDE_SCRIPT"
         
+        # If manual mode is ON, fallback to static dockbar
         if [[ $(cat "$MANUAL_STATE") == "1" ]]; then
             if ! pgrep -x "dockbar" >/dev/null; then
                 "$DOCKBAR_BIN" -c "$DOCKBAR_DIR/config" -s "$DOCKBAR_DIR/style.css" >/dev/null 2>&1 &
@@ -156,10 +173,15 @@ if [[ $1 == "--auto-hide" ]]; then
             pkill -x "dockbar"
         fi
     else
+        # Turn ON autohide
         echo "1" > "$AUTOHIDE_STATE"
-        pkill -x "dockbar"
-        pkill -f "$AUTOHIDE_SCRIPT"
-        "$AUTOHIDE_SCRIPT" &
+        
+        # Only run the script if manual mode is ON
+        if [[ $(cat "$MANUAL_STATE") == "1" ]]; then
+            pkill -x "dockbar"
+            pkill -f "$AUTOHIDE_SCRIPT"
+            "$AUTOHIDE_SCRIPT" &
+        fi
     fi
     exit 0
 fi
