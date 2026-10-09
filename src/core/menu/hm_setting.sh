@@ -31,6 +31,7 @@ if [[ $# -eq 0 ]]; then
     [[ "$DYNAMIC_STATUS" == "1" ]] && IS_DYNAMIC="(ON)" || IS_DYNAMIC="(OFF)"
 
     cat <<INNEREOF
+  Change Shell
 󱂩  Taskbar App Name ($DOCK_APP_NAME)
 󱂩  Taskbar Icon Size Change ($DOCK_ICON_SIZE_TEXT)
 󰝚  Cava Top Toggle $IS_TOP
@@ -50,6 +51,7 @@ fi
 
 chosen="$*"
 case "$chosen" in
+    *"Change Shell"*) spawn $HOME/.local/bin/shell_switcher.sh ;;
     *"Taskbar App Name"*) spawn $HOME/.local/bin/taskbar_manager.sh --app-name ;;
     *"Taskbar Icon Size Change"*) spawn $HOME/.local/bin/taskbar_manager.sh --icon-size ;;
     *"Cava Top Toggle"*) spawn $HOME/.local/bin/cava_manager.sh --top ;;
