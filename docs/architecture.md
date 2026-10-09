@@ -53,8 +53,8 @@ HakuSpace uses a **Hybrid System**: you can choose between **Deep Symlinking** o
 
 ### `update.sh` (Applying Updates)
 - Run this whenever you pull fresh code from GitHub.
-  - **Phase 1: Mode Detection:** Reads `~/.local/state/hakuspace/deploy_mode` to remember if you chose Symlink or Copy.
-  - **Phase 2: Backup:** Just like install, it creates a safety net in `~/.backup/` before touching anything.
+  - **Phase 1: Repository Update:** Prompts you to choose between LATEST (main branch) or STABLE (latest tag) to update the repository.
+  - **Phase 2: Backup & Mode Detection:** Creates a safety net in `~/.backup/` before touching anything. It then heuristically scans your currently deployed files to determine whether you are using Symlink or Copy mode.
   - **Phase 3: Smart Sync:** 
     - Redeploys all configs and scripts based on your mode.
     - Intelligently **Skips** the `ONCE_CONFIGS` to preserve your GUI tweaks (like Thunar or btop settings).
