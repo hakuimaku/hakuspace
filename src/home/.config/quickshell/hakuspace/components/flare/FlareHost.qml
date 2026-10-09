@@ -10,6 +10,20 @@ Item {
     property var contentKey: null
     property real maxWidth: 360
     property real horizontalPadding: 12
+    property int contentFadeDuration: HAnimation.effects
+    property bool contentReady: false
+
+    onShownChanged: {
+        if (!shown) contentReady = false
+        else if (contentItem.ready) contentReady = true
+    }
+
+    Connections {
+        target: contentItem
+        function onReadyChanged() {
+            if (root.shown && contentItem.ready) root.contentReady = true
+        }
+    }
     
     enum AttachMode { Top, Left, Right, Bottom }
     property int attach: FlareHost.Top
@@ -26,7 +40,7 @@ Item {
     FlareMorph {
         id: morph
         anchorItem: root.anchorItem
-        shown: root.shown
+        shown: root.shown && root.contentReady
         contentW: contentItem.naturalWidth
         contentH: contentItem.naturalHeight
         padX: root.horizontalPadding * 2
@@ -49,6 +63,7 @@ Item {
         FlareContent {
             id: contentItem
             shown: root.shown
+            fadeDuration: root.contentFadeDuration
             anchors.centerIn: parent
             contentComponent: root.content
             contentProps: root.contentProps

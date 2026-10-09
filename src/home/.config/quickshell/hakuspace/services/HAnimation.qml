@@ -13,6 +13,12 @@ QtObject {
     property list<real> tooltipCurve: [0.4, 0.0, 0.2, 1.0]
     
     property list<real> shellCurve: [0.16, 1.0, 0.3, 1.0]
+
+    property int hakuMenuOpenDuration: 320
+    property int hakuMenuCloseDuration: 400
+    property list<real> hakuMenuOpenCurve: [0.88, 1.31, 0.25, 0.98, 1, 1]
+    property list<real> hakuMenuCloseCurve: [0.1, 0, 0.45, 1]
+    property real hakuMenuBounceHeadroom: 0.04
     
     // Six control values drive the asymmetric workspace and flare motion.
     property list<real> spatialCurve: [0.5, 1.21, 0.22, 1, 1, 1]

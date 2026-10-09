@@ -1,14 +1,22 @@
 # HakuSpace × Quickshell
 
-Companion documents that currently exist in `docs/task/`:
+This is the **canonical master implementation plan** for HakuSpace Hikai/Quickshell. It covers the whole roadmap, not only P3.
 
-- `QUICKSHELL_TESTING.md` — manual/runtime verification matrix, updated for the P0 labwc pass; the other three WMs remain to be tested.
-- `QUICKSHELL_STYLE.md` — visual/token conventions, synchronized with the P0 theme decision.
-- `FLARE_LIB_SPEC.md` — flare geometry/rendering contract. The core library exists; L3/L4 are not fully closed.
+Companion documents in `docs/task/`:
 
-The old `WORKSPACES_PLAN.md` and `M2_WORKSPACES_PROBE.md` are deleted in the current working tree. Their useful conclusions are absorbed into this master plan; do not recreate them unless a new probe is needed.
+- `QUICKSHELL_STYLE.md` — canonical visual/token/surface contract;
+- `QUICKSHELL_TESTING.md` — manual/runtime verification matrix;
+- `FLARE_LIB_SPEC.md` — shared Flare geometry/rendering contract.
 
----
+Canonical implementation baseline for this revision is the stable commit:
+
+```text
+a7b6f0e7  P2 notifications DONE
+```
+
+The user intends to discard/fallback the uncommitted P3 geometry experiments and start P3 again from a clean stable checkpoint. Therefore this document describes the desired repository **after that fallback**, not the abandoned experimental working tree.
+
+> **2026-10-08 P3 mockup lock:** the seven latest Paint mockups — `base.png`, `navigation.png`, `dashboard.png`, `sidebar.png`, `setting.png`, `hakumenu.png`, `wallpaper-change.png` — supersede the earlier P3 Navigation/HakuMenu/Wallpaper visual drafts. The abandoned TopBar-center collar/notch/shoulder experiment remains cancelled.
 
 ## 0. Status vocabulary
 
@@ -31,16 +39,33 @@ A feature is **not DONE** merely because `qml_syntax_check.py` or `scripts/preco
 
 ### 1.1 Git state
 
-At review time:
+For this plan, use `a7b6f0e7` (`P2 notifications DONE`) as the canonical stable fallback point before P3 product work.
+
+Expected P3 starting state:
 
 - branch: `quickshell`;
-- `HEAD`: `ddefc67e`;
-- workspace work through the Niri reducer is committed;
-- a large **uncommitted/staged N11 working tree** exists for Dynamic Center, MPRIS/Cava, level OSD, shared audio/brightness services, hardware-key routing, and related style cleanup;
-- `WORKSPACES_PLAN.md` and `M2_WORKSPACES_PROBE.md` are deleted in the working tree;
-- the current master plan and testing guide were already partially edited, but they do not accurately describe the code yet.
+- P2 native notifications are committed and active in Hikai;
+- Hikai no longer depends on swaync for notification ownership;
+- the experimental P3 TopBar-center collar/profile work is discarded;
+- the experimental first Wallpaper/Navigation pass is discarded unless a specific reusable primitive is deliberately recovered after review;
+- product-code working tree is clean before the first P3 commit.
 
-Do not flatten this distinction in reports. Until P0 is closed, say whether a finding is from `HEAD` or from the current working tree.
+Before starting P3:
+
+```bash
+git status --short
+git log -5 --oneline
+git diff --check
+scripts/precommit_check.sh
+```
+
+Recommended stable marker:
+
+```bash
+git tag p3-v2-baseline
+```
+
+Do not start P3 from a dirty product-code tree. Documentation-only edits may be committed separately.
 
 ### 1.2 Static validation already run during this re-baseline
 
@@ -68,25 +93,28 @@ This gate does **not** replace `qmllint`, compositor runtime checks, D-Bus tests
 
 ### 2.1 Shell surfaces
 
-`shell.qml` currently creates:
+At the P2-complete baseline, `shell.qml` creates:
 
 1. one global `Picker` overlay;
 2. one `TopBar` per `Quickshell.screens` screen;
-3. one `LevelOsdOverlay` per screen;
-4. one `RoundedScreen` per screen.
+3. one `TrayMenuPanel` per screen;
+4. one `NotificationCenterPanel` per screen;
+5. one `NotificationPopup` per screen;
+6. one `LevelOsdOverlay` per screen;
+7. one `RoundedScreen` per screen.
 
-Current IPC targets:
+Current IPC targets at the P2-complete baseline:
 
 | Target | Functions | Status |
 |---|---|---|
 | `shell` | `ping()`, `reload()`, `quit()` | **DONE** |
-| `picker` | `open(fifo, jsonString)` | **DONE**, caller migration pending |
-| `level` | `change(action)` | **IMPLEMENTED / VERIFY**; N11 is committed, with runtime checks still open |
-| `notif` | planned `toggleCenter`, `toggleDnd`, `clearAll`, `count` | **PLANNED** |
-| `launcher` | planned `open(mode)` | **PLANNED** |
-| `hakumenu` | planned toggle/open contract | **PLANNED** |
-| `power` | planned toggle/open contract | **PLANNED** |
-| `wallpaper` | planned toggle/open contract | **PLANNED** |
+| `picker` | `open(fifo, jsonString)` | **DONE core**, remaining caller migration belongs to later native-surface work |
+| `level` | `change(action)` | **DONE core / visual polish in P3** |
+| `notif` | `toggleCenter()`, `toggleDnd()`, `clearAll()`, `count()` | **DONE** |
+| `launcher` | Hikai routing to be redefined through HakuMenu Drun | **P3 PLANNED** |
+| `hakumenu` | center-origin menu contract | **P3 PLANNED** |
+| `power` | native surface contract | **P3/P4 PLANNED** |
+| `wallpaper` | native carousel contract | **P3 PLANNED** |
 
 Command form remains:
 
@@ -118,35 +146,37 @@ This is now the preferred architecture: hardware/system state belongs in a share
 
 ### 2.3 Top-bar composition
 
-Current layout:
+Baseline layout:
 
 | Area | Modules | Current status |
 |---|---|---|
 | Left | Logo → Workspaces → WindowTitle | Implemented |
-| Physical center | conditional Cava + `CenterModule` | N11 **IMPLEMENTED / VERIFY** |
-| Right | Tray → Settings → Recorder → Clock → Notification | Notification remains a stub |
+| Physical center | conditional Cava + `CenterModule` | Implemented; keep the stable fallback visual silhouette in P3 |
+| Right | Tray → Settings → Recorder → Clock → Notification | Implemented; Notification is native |
 
-Not mounted:
+Not mounted by default:
 
-- `MonitorGroup.qml` — functional drawer backed by ref-counted `SysStats`, intentionally not in the layout;
-- `MusicGroup.qml` — obsolete placeholder; native MPRIS is now handled by `Media` + `CenterModule`.
+- `MonitorGroup.qml` — functional drawer/service-backed implementation may exist, but Dashboard P3 uses a separate monitor card contract;
+- obsolete Music placeholder — native MPRIS is handled through `Media` / center components and will also feed the Dashboard MPRIS card.
+
+**P3 rule:** do not reintroduce the abandoned TopBar-center collar/notch/shoulder redesign. P3 may fix centering, input, OSD, and HakuMenu triggering without changing the base center silhouette.
 
 ### 2.4 Current shell-side integration
 
-The classic/Hikai boundary already exists:
+The Classic/Hikai boundary is already established:
 
 - `haku_backend_lib.sh` owns backend state and common QS helpers;
-- `haku_backend.sh` switches `classic ↔ hikai`, stops the other stack, runs a health check, and rolls back if QS fails;
-- `qs_supervisor.sh` restarts QS and falls back to Classic after a crash loop;
-- `session_start.sh --early` starts the selected backend at session startup;
-- manager guards prevent classic Waybar/taskbar/edge/rounded/cava/desktop-icon processes from reappearing in Hikai;
-- `launcher.sh` and `notif.sh` already act as facades, but their Hikai IPC targets do not exist yet;
-- `haku_pick.sh` is implemented, but no production caller uses it yet;
+- `haku_backend.sh` switches `classic ↔ hikai`, stops the opposite stack, verifies health, and rolls back on failure;
+- `qs_supervisor.sh` handles Quickshell crash/restart fallback;
+- `session_start.sh --early` starts the selected backend;
+- manager guards prevent Classic Waybar/taskbar/edge/rounded/cava/desktop-icon processes from reappearing in Hikai;
+- `notif.sh` routes to native Hikai notification IPC while Classic retains its Classic notification path;
+- Hikai startup/verification treats native Quickshell as the owner of `org.freedesktop.Notifications` and does not intentionally keep swaync alive;
+- `launcher.sh` remains an external facade; P3 will route its Hikai path into HakuMenu's Drun tab rather than a second unrelated launcher UI;
+- `haku_pick.sh` remains available for generic picker-style workflows;
 - Super+Esc remains the backend-independent emergency escape to Classic.
 
-`swaync` is still intentionally allowed in Hikai through `QS_ALLOW_SWAYNC=1` until native notifications are ready.
-
----
+Future P3/P4 work extends these boundaries rather than bypassing them with direct compositor-specific UI commands.
 
 ## 3. Feature inventory — corrected against current code
 
@@ -436,30 +466,45 @@ The core is real and usable, but the library should **not** be marked globally D
 
 Treat current flare code as **stable shared infrastructure**, then finish L3 before building large panel surfaces in P3.
 
-### 3.14 Notifications — **PARTIAL fallback only**
+### 3.14 Notifications — **DONE core / P3 visual polish**
 
-Current state:
+At `a7b6f0e7` native Hikai notifications are committed:
 
-- top-bar `NotificationGroup` is a visual stub;
-- no QS `NotificationServer`;
-- no notification history;
-- no DND state owned by QS;
-- no notification center;
-- no `notif` IPC target;
-- `swaync` is intentionally kept alive as the temporary backend.
+- Quickshell owns `org.freedesktop.Notifications` in Hikai;
+- notification history/store is native;
+- popup and Notification Center are native Quickshell surfaces;
+- replacement, timeout, remote close, DND and Clear All have runtime evidence from P2;
+- `notif` IPC exists;
+- Classic keeps its separate Classic notification route;
+- swaync is no longer required as the Hikai notification backend.
 
-This is the largest missing core Hikai feature and is P2.
+P3 is **not** a notification-protocol rewrite. It only applies the approved shell geometry/style polish:
 
-### 3.15 Launcher, HakuMenu, power, wallpaper — **PLANNED**
+- RoundedScreen/frame attachment;
+- popup Flare presentation;
+- Notification Center spacing/height;
+- primary `Clear` treatment;
+- any small runtime hardening found during P3 regression tests.
 
-No production QML modules exist under:
+### 3.15 Native P3 shell surfaces — **PLANNED from mockup-locked spec**
 
-- `modules/launcher/`;
-- `modules/hakumenu/`;
-- `modules/power/`;
-- `modules/wallpaper/`.
+The current P3 source-of-truth surfaces are:
 
-`launcher.sh` already expects a `launcher` IPC target in Hikai. `UiState.activePanel` already provides the in-process one-panel-at-a-time state primitive and Logo already toggles `hakumenu`, but no panel consumes it.
+- **Navigation** — radial Logo-origin controller with Dashboard / Sidebar / Settings;
+- **Dashboard** — avatar + Clock + MPRIS + Calendar + ROM/RAM/CPU/GPU cards, with intentionally reserved empty space;
+- **Sidebar** — immediate hover expansion from the Navigation Sidebar sector;
+- **Settings** — intentionally a stub during P3;
+- **HakuMenu** — separate center-origin shell surface with General / Drun / Theme;
+- **Wallpaper** — center-selected stacked carousel, not the old full-width dual-front Flare concept;
+- **remaining native migration** — Power / Clipboard / any remaining direct Hikai rofi caller, one feature at a time.
+
+Important semantic split:
+
+```text
+Navigation != HakuMenu
+```
+
+The Logo owns Navigation. The TopBar center interaction owns HakuMenu. Do not merge their state, content or geometry.
 
 ### 3.16 Classic-parity surfaces — **PLANNED / selective porting**
 
@@ -487,35 +532,42 @@ Current gaps:
 
 ---
 
-## 4. Roadmap v2 — implementation order from this baseline
-
-The old M0–M7 labels mixed already-finished work with future work and caused the master plan to drift. From this re-baseline, use **P0–P6** for new planning. Old commit messages may keep their historical M labels.
-
-Priority order:
+## 4. Roadmap v3 — implementation order from the P2-complete baseline
 
 ```text
-P0 Freeze/stabilize current baseline
-  ↓
-P1 Top-bar + flare + Tray QML-menu hardening
-  ↓
-Tray full QML + Flare / shared large-panel primitive (implemented; runtime verification open)
-  ↓
-P2 Native notifications
-  ↓
-P3 Launcher / HakuMenu / power / wallpaper / picker migration
-  ↓
-P4 Remaining Classic-parity surfaces
-  ↓
-P5 Packaging / doctor / distro integration / release verification
-  ↓
-P6 Optional polish and experimental features
+P0  Baseline/runtime stabilization                       DONE for current P2 baseline
+P1  TopBar / Tray / Flare foundation                    DONE core; residual audits are non-blocking
+P2  Native notifications                                DONE
+P3  Mockup-locked native shell surfaces                 CURRENT MAJOR MILESTONE
+P4  Remaining Classic-parity surfaces                   PLANNED
+P5  Packaging / doctor / distro / release verification  PLANNED
+P6  Optional polish / experimental work                 OPTIONAL
 ```
 
-The Tray panel primitive is implemented ahead of native notifications so Notification Center can reuse its ownership/input model. P2 and the remaining P3 features may share primitives, but do not start both large feature families simultaneously before P0 is green.
+P3 is intentionally executed as **small atomic commits**. Every accepted sub-part becomes a fallback point before the next dependent sub-part starts.
 
----
+High-level P3 dependency order:
 
-## 5. P0 — Freeze and stabilize the current baseline — **IN PROGRESS**
+```text
+baseline cleanup / RoundedScreen foundation
+→ Navigation
+→ Dashboard
+→ Sidebar
+→ Settings stub
+→ HakuMenu shell
+→ HakuMenu General
+→ HakuMenu Drun
+→ HakuMenu Theme stub
+→ Wallpaper carousel
+→ Notification / OSD / tooltip / tray frame polish
+→ remaining native migration
+→ cross-WM + scale verification
+→ cleanup + canonical docs
+```
+
+Do not parallelize dependent visual foundations in one dirty tree.
+
+## 5. P0 — Freeze and stabilize the current baseline — **DONE for P2 baseline**
 
 ### Goal
 
@@ -632,7 +684,7 @@ and, on the deployed system:
 
 ---
 
-## 6. P1 — Top-bar and flare hardening — **IMPLEMENTED / VERIFY**
+## 6. P1 — Top-bar and flare hardening — **DONE core / light audit backlog**
 
 The 2026-10-08 Clock/Tray closeout fixed component-only tooltip activation and verified Clock hover, left click, scroll, reset, hide/restore, and clean reload on one Niri output at scale 1.0. The subsequent Tray milestone routes both short and long usable DBusMenus through a shared QML + Flare panel. See `P1_STATUS.md` and `TRAY_FULL_QML_FLARE_REPORT.md` for runtime matrices. T1–T13 as a whole, fractional scale, multi-monitor, and hover performance remain VERIFY.
 
@@ -790,218 +842,959 @@ Decision:
 
 ---
 
-## 7. P2 — Native notifications and control center
+## 7. P2 — Native notifications and control center — **DONE**
 
 ### Goal
 
-Remove the largest remaining dependency on the Classic shell stack: `swaync`.
+Replace the Hikai swaync dependency with a native Quickshell notification server, popup stack, history/control center and IPC contract while preserving Classic behavior.
 
-### P2.1 Notification ownership transition
+### Delivered baseline
 
-Hard rule: QS must successfully own `org.freedesktop.Notifications` **before** Hikai stops allowing swaync.
+At commit `a7b6f0e7`:
 
-Transition order:
+- Hikai owns `org.freedesktop.Notifications` through Quickshell;
+- startup restores notification history before enabling the native server;
+- popup and Notification Center are native;
+- DND and Clear All exist;
+- replacement-id semantics are handled;
+- timeout/expire handling exists;
+- remote close handling exists;
+- `notif.toggleCenter`, `toggleDnd`, `clearAll`, and `count` IPC functions exist;
+- backend verification rejects swaync in Hikai;
+- Classic retains its Classic notification path;
+- switching `Hikai → Classic → Hikai` was part of the P2 runtime verification evidence.
 
-1. implement QS `NotificationServer`;
-2. prove `notify-send` reaches QS;
-3. prove replacement/update/close semantics work;
-4. implement popup UI;
-5. implement history/control center;
-6. implement DND state;
-7. implement `notif` IPC facade target;
-8. only then remove `QS_ALLOW_SWAYNC=1` and restore swaync as a violation in `haku_backend.sh --verify`.
+### P2 follow-up policy
 
-Never create a deployment state where both servers race for the same D-Bus name.
+P2 is not reopened as a large infrastructure milestone during P3.
 
-### P2.2 Notification data model
+If P3 finds notification defects, fix them as small isolated commits. P3 may change presentation/attachment but should preserve the native data model and protocol ownership unless a concrete regression proves otherwise.
 
-Minimum fields:
+### P2 acceptance — closed
 
-- id;
-- app name / desktop entry when available;
-- summary;
-- body;
-- icon/image;
-- urgency;
-- timestamp;
-- timeout;
-- actions;
-- read/dismissed state as needed by the UI.
+P2 remains accepted while all of the following stay true:
 
-Keep rendering separate from the notification model.
+- `notify-send` reaches native Hikai notifications;
+- replacement does not duplicate the same active notification;
+- timeout/close semantics work;
+- DND suppresses popup appropriately;
+- history/Center remains usable;
+- `notif` IPC works;
+- Hikai verification treats swaync as forbidden;
+- Classic notification behavior is unchanged.
 
-### P2.3 Popup behavior
+## 8. P3 — Mockup-locked native shell surfaces — **CURRENT**
 
-Requirements:
+### Goal
 
-- multiple notifications queue cleanly;
-- replacement id updates existing notification;
-- expiration works;
-- critical notification policy is explicit;
-- DND suppresses popup but not history unless intentionally configured otherwise;
-- multi-monitor placement policy is explicit and stable;
-- notifications do not steal keyboard focus.
+Build the next Hikai shell layer from the latest seven Paint mockups while preserving the stable P2 baseline and creating a Git fallback point after every accepted sub-part.
 
-### P2.4 Control center
-
-Minimum:
-
-- open/close from top-bar Notification module;
-- history list;
-- clear all;
-- DND toggle;
-- empty state;
-- action buttons where supplied;
-- closes reliably on outside action / state toggle according to panel policy.
-
-Reuse Flare/large-panel infrastructure where practical; do not duplicate corner/hugging math.
-
-### P2.5 IPC contract
-
-Implement:
+Authoritative P3 mockups:
 
 ```text
-notif.toggleCenter()
-notif.toggleDnd()
-notif.clearAll()
-notif.count() -> int/string suitable for CLI output
+base.png
+navigation.png
+dashboard.png
+sidebar.png
+setting.png
+hakumenu.png
+wallpaper-change.png
 ```
 
-`src/core/util/notif.sh` must work unchanged or with a minimal documented contract update.
+If an older P3 mockup conflicts with these, the seven files above win. AI-generated concept images are not authoritative.
 
-### P2 acceptance
-
-- `notify-send` appears in QS without swaync;
-- notification actions work;
-- DND works;
-- clear/count/toggle work through `notif.sh`;
-- Hikai `--verify` again treats swaync as forbidden;
-- Classic notifications remain unchanged;
-- crash/reload behavior does not silently lose D-Bus ownership without fallback visibility.
+The abandoned TopBar-center collar/notch/shoulder experiment is explicitly out of scope.
 
 ---
 
-## 8. P3 — Launcher, HakuMenu, power, wallpaper, and picker migration
+### P3.0 — Git safety and RoundedScreen foundation
 
-### Goal
+#### P3.0.1 Atomic-commit rule
 
-Remove Hikai's remaining dependency on rofi for normal shell interaction.
+Every accepted unit follows:
 
-### P3.0 Large-panel primitive first — **Tray primitive IMPLEMENTED / VERIFY**
+```text
+implement
+→ static checks
+→ focused runtime check
+→ screenshot/evidence where visual
+→ review
+→ commit
+→ only then start the next dependent unit
+```
 
-`FlarePanelWindow` now provides the reusable large-panel host for Tray. Notification Center and later panels should reuse its ownership and input contract. Fractional-scale, multi-monitor, and cross-compositor runtime verification remain open.
+Commit subjects should be narrow:
+
+```text
+p3(frame): lock RoundedScreen chassis
+p3(navigation): implement three-region radial visual
+p3(dashboard): add mpris control card
+p3(hakumenu): add drun interaction
+p3(wallpaper): add carousel navigation
+```
+
+Do not create a multi-feature `P3` mega-commit. Do not amend an accepted checkpoint after beginning the next task; make a new fix commit instead.
+
+Recommended milestone tags:
+
+```text
+p3-v2-baseline
+p3-v2-navigation-pass
+p3-v2-hakumenu-pass
+p3-v2-wallpaper-pass
+p3-v2-shell-polish-pass
+p3-v2-final
+```
+
+#### P3.0.2 Remove superseded experiments
+
+From the clean fallback baseline, do not restore:
+
+- TopBar center collar / shoulder / knee / rail-carve experiments;
+- the old full-width Wallpaper dual-front reveal;
+- stale debug geometry from those experiments.
+
+Commit only if cleanup is actually needed:
+
+```text
+p3(baseline): remove superseded visual experiments
+```
+
+#### P3.0.3 RoundedScreen chassis
+
+`base.png` defines the shell frame relationship.
 
 Requirements:
 
-- transparent fixed-size `PanelWindow` below/around the bar rather than runtime window resizing;
-- `ExclusionMode.Ignore`;
-- full outside-click input capture while the menu is open, followed by an empty input mask during close morph so desktop clicks are unblocked;
-- safe multi-monitor ownership;
-- no duplicated flare geometry;
-- verify the seam with TopBar at 1.0x, 1.25x, and 1.5x scale.
+- frame follows the physical output perimeter;
+- no left/right/bottom edge gap;
+- corners are continuous;
+- TopBar ON must not make the RoundedScreen top rail disappear;
+- the top frame/rail is visually stronger than side/bottom where configured;
+- TopBar and RoundedScreen remain separate layers instead of faking one geometry by hiding the other.
 
-Also finish the opt-in flare demo and `docs/flare.md` as the acceptance example for this reusable primitive.
+Runtime matrix:
 
-#### P3.0a Tray long-menu / interaction overlay — **IMPLEMENTED / VERIFY**
+```text
+Rounded ON + TopBar ON
+Rounded ON + TopBar OFF
+Rounded OFF + TopBar ON
+TopBar hide → show
+Rounded OFF → ON
+Quickshell reload
+```
 
-The Tray implementation now uses the reusable window/input primitive for menus that cannot safely live inside the 160 px tooltip area:
+Commit:
 
-- tall DBusMenu content with a bounded, scrollable viewport;
-- transparent outside-click capture that closes menu/submenu state without blocking the rest of the desktop after close;
-- keyboard focus and navigation policy (at minimum close/escape, directional/submenu navigation where implemented, activate, and scroll);
-- correct ownership when switching between tray items or monitors;
-- no Hyprland-only focus dependency: any `HyprlandFocusGrab` support is an optimization behind a generic behavior contract;
-- tooltip → tray menu → submenu transitions reuse Flare geometry/state rather than opening unrelated platform popups.
+```text
+p3(frame): lock RoundedScreen chassis
+```
 
-The overlay may be shared by Launcher/HakuMenu/Power/other large panels, but Tray must not create a second incompatible full-screen click-catcher. Define one ownership/input model and reuse it.
+#### P3.0.4 Shared frame geometry
 
-### P3.1 Launcher
+One per-output provider owns equivalent metrics:
 
-Implement `modules/launcher/` with at least:
+```text
+frameTopY
+frameTopThickness
+frameInnerTopY
+frameInnerLeftX
+frameInnerRightX
+frameInnerBottomY
+cornerRadius
+roundedEnabled
+```
 
-- `drun` mode;
-- emoji mode;
-- keyboard-first filtering;
-- launch and close behavior;
-- one panel active at a time through `UiState`;
-- `launcher.open(mode)` IPC.
+Surfaces consume these values instead of rebuilding `Theme.topBarHeight + N` locally.
 
-`src/core/util/launcher.sh` is the external facade and should not need compositor-specific logic.
+Commit:
 
-### P3.2 HakuMenu
+```text
+p3(geometry): expose shared frame bounds
+```
 
-Logo already toggles `UiState.toggle("hakumenu")`.
+Add/reuse one bounded attachment helper for TopBar-origin surfaces, then commit separately:
 
-Build the actual panel around existing HakuSpace script/actions instead of copying their implementation into QML. QML should be the UI/orchestration layer; shell scripts remain the action layer unless there is a strong reason to replace them.
+```text
+p3(geometry): standardize frame attachment
+```
 
-### P3.3 Power menu
+---
 
-Provide a native Hikai power surface for shutdown/reboot/logout/lock/suspend actions as supported by existing HakuSpace scripts.
+### P3.1 — Navigation
 
-Require a deliberate confirmation policy for destructive actions; preserve Classic behavior.
+Reference: `navigation.png`.
 
-### P3.4 Wallpaper picker
+Navigation is the temporary radial Logo-origin controller. It is **not HakuMenu**.
 
-Build the Hikai wallpaper browser on the current wallpaper tooling rather than creating a second wallpaper engine.
+#### P3.1.1 State/lifecycle
 
-If the existing scripts need machine-readable enumeration, add one stable JSON/list contract and consume it from QS.
+Explicit logical states:
 
-### P3.5 Clipboard menu
+```text
+closed
+open
+handoff-dashboard
+handoff-sidebar
+handoff-settings
+```
 
-Move the user-facing clipboard selection path away from direct `rofi -dmenu` in Hikai. Reuse `haku_pick` if a simple textual selector is sufficient; use a dedicated panel only if previews/actions justify it.
+Requirements:
 
-### P3.6 Migrate direct `rofi -dmenu` call sites
+- Logo opens Navigation;
+- close/reopen is deterministic;
+- Escape closes;
+- no duplicate instance;
+- correct output ownership;
+- focus/input cleanup after close/reload;
+- one-large-surface ownership is respected.
 
-Current scan finds **15 direct calls** in these scripts:
+Commit:
 
-- `src/core/app/taskbar/taskbar_manager.sh` — 1;
-- `src/core/sys/shutdown.sh` — 1;
-- `src/core/sys/exit.sh` — 1;
-- `src/core/util/clipboard_menu.sh` — 1;
-- `src/core/util/gen_shortcut.sh` — 1;
-- `src/core/util/waybar_manager.sh` — 1;
-- `src/core/theme/rofi_theme_switcher.sh` — 1;
-- `src/core/util/record.sh` — 2;
-- `src/core/util/shell_switcher.sh` — 2;
-- `src/core/theme/change_theme.sh` — 4.
+```text
+p3(navigation): add explicit navigation state model
+```
 
-Migration policy:
+#### P3.1.2 Radial visual
 
-- generic textual choice → `haku_pick.sh`;
-- password prompt → `haku_pick.sh --password`;
-- fixed-list selection that forbids custom text → `--no-custom`;
-- launcher/emoji → launcher IPC, not generic picker;
-- shutdown/power → power panel where appropriate;
-- rofi-theme-only tools may be hidden/disabled in Hikai instead of ported;
-- Classic still uses rofi through the facade and must remain behavior-compatible.
+Visible regions:
 
-After migration, add a CI/precommit check that rejects new direct `rofi -dmenu` usage from Hikai-capable paths unless explicitly allowlisted.
+```text
+Dashboard
+Sidebar
+Settings
+```
 
-### P3.7 Finish picker request options
+Requirements:
 
-Make Hikai honor the request fields already sent by `haku_pick.sh` where they still make sense:
+- reads as one circular/radial controller;
+- no generic rectangular popup;
+- visible segmentation follows the mockup;
+- internal hitboxes may be simplified for robust pointer/keyboard use;
+- keyboard access exists even if pointer selection is primary.
 
-- initial selection;
-- requested line count/height policy;
-- width/height bounds.
+Commit:
 
-Do not copy rofi pixel semantics blindly if they conflict with the native shell layout; document the mapping.
+```text
+p3(navigation): implement three-region radial visual
+```
+
+---
+
+### P3.2 — Dashboard
+
+Reference: `dashboard.png`.
+
+Dashboard is a real shell surface. Do not fill its intentionally empty lower/large area with invented widgets.
+
+#### P3.2.1 Dashboard shell
+
+Implement page geometry and the top widget-cluster layout placeholder only.
+
+Commit:
+
+```text
+p3(dashboard): add mockup-locked dashboard shell
+```
+
+#### P3.2.2 Avatar
+
+When Dashboard is active, the Navigation visual origin becomes a circular avatar.
+
+Clicking the avatar starts the avatar selection/change flow.
+
+User avatar data lives under:
+
+```text
+~/.local/share/hakuspace/user/
+```
+
+Inspect existing project conventions before choosing the exact persisted filename; document it once chosen.
+
+Runtime checks:
+
+```text
+missing avatar
+valid avatar
+replacement
+non-square source
+reload/restart
+broken source fallback
+```
+
+Commit:
+
+```text
+p3(dashboard): add persistent dashboard avatar
+```
+
+#### P3.2.3 Clock card
+
+Reuse existing clock data/service rather than adding a second polling path.
+
+Commit:
+
+```text
+p3(dashboard): add clock card
+```
+
+#### P3.2.4 MPRIS card
+
+Contains:
+
+- media metadata;
+- thumbnail/artwork;
+- playback controls;
+- bounded text slots.
+
+Metadata length or artwork availability must not resize the card unexpectedly.
+
+Commit:
+
+```text
+p3(dashboard): add mpris control card
+```
+
+#### P3.2.5 Calendar card
+
+Contains calendar + month navigation. Month changes must not change outer card geometry.
+
+Commit:
+
+```text
+p3(dashboard): add calendar card
+```
+
+#### P3.2.6 Monitor card
+
+Display the mockup-defined categories exactly:
+
+```text
+ROM
+RAM
+CPU
+GPU
+```
+
+Prefer existing shared services / low-cost sources. Do not introduce needless high-frequency polling.
+
+Commit:
+
+```text
+p3(dashboard): add monitor information card
+```
+
+#### P3.2.7 Dashboard integration
+
+Only after all cards function:
+
+- normalize radii;
+- normalize gaps;
+- verify avatar/card spacing;
+- verify 1.0x and fractional scale;
+- ensure reserved Dashboard space remains empty.
+
+Commit:
+
+```text
+p3(dashboard): finalize mockup layout
+```
+
+---
+
+### P3.3 — Sidebar
+
+Reference: `sidebar.png`.
+
+Sidebar is a left-edge expansion reached from the Navigation Sidebar sector.
+
+#### P3.3.1 Hover handoff
+
+Required pointer state:
+
+```text
+Navigation open
+→ pointer enters Sidebar sector
+→ Sidebar expands immediately
+→ pointer travels through an invisible transition bridge
+→ Sidebar stays open while pointer is in sector ∪ bridge ∪ Sidebar
+→ close only after leaving that union
+```
+
+Do not add a noticeable artificial hover delay.
+
+Commit:
+
+```text
+p3(sidebar): add stable hover handoff
+```
+
+#### P3.3.2 Visual
+
+Requirements:
+
+- attached to the left RoundedScreen edge;
+- elongated rounded lobe rather than generic drawer;
+- option controls are circular dots;
+- plus action is circular.
+
+The mockup specifies shape, not the meaning of each dot.
+
+Commit:
+
+```text
+p3(sidebar): implement mockup visual
+```
+
+#### P3.3.3 Actions
+
+Wire only actions already specified elsewhere. Unknown dot/plus semantics remain explicit stubs/disabled states rather than guessed product behavior.
+
+Commit only if real actions are wired:
+
+```text
+p3(sidebar): wire specified sidebar actions
+```
+
+---
+
+### P3.4 — Settings stub
+
+Reference: `setting.png`.
+
+Settings is intentionally a **stub during P3**.
+
+Implement only:
+
+- centered inner Settings surface;
+- stable/equal radius family;
+- `Setting` header/control;
+- approved stub text such as `still working rn...`.
+
+Do not build a theme editor, monitor settings, daemon settings, or persistence framework here.
+
+Commit:
+
+```text
+p3(settings): add hikai settings stub
+```
+
+---
+
+### P3.5 — HakuMenu shell
+
+Reference: `hakumenu.png`.
+
+HakuMenu is a distinct top-center shell surface. It is not Navigation.
+
+Use the approved center interaction without redesigning the base TopBar-center silhouette.
+
+#### P3.5.1 Lifecycle
+
+States:
+
+```text
+closed
+general
+drun
+theme
+```
+
+Requirements:
+
+- continuous pointer handoff between center trigger and menu so hover does not flicker;
+- click/keyboard access remains possible;
+- Escape closes;
+- outside click closes when applicable;
+- opening another large panel closes/owns state consistently;
+- correct output ownership.
+
+Commit:
+
+```text
+p3(hakumenu): add center-triggered lifecycle
+```
+
+#### P3.5.2 Stable physical geometry
+
+Invariant:
+
+```text
+menuCenterX = outputWidth / 2
+```
+
+Do not derive menu position from changing MPRIS title width.
+
+Vertical origin is frame-derived. Outer menu bounds stay fixed across tabs. Use one radius family for outer menu, tab strip, list area and Theme state area.
+
+Commit:
+
+```text
+p3(hakumenu): lock centered equal-radius geometry
+```
+
+#### P3.5.3 Three tabs
+
+Exactly:
+
+```text
+General
+Drun
+Theme
+```
+
+Commit shell/tab structure before tab content:
+
+```text
+p3(hakumenu): add general drun theme tabs
+```
+
+---
+
+### P3.6 — HakuMenu General
+
+#### P3.6.1 Audit `hm_general.sh`
+
+Before binding UI, document its actual:
+
+- output format;
+- fields;
+- order;
+- empty/error behavior;
+- command cost.
+
+Do not invent data fields.
+
+If the script needs a small stable output contract, commit that change separately:
+
+```text
+p3(hakumenu): stabilize hm_general data contract
+```
+
+#### P3.6.2 General model
+
+Separate parsing/model logic from rendering.
+
+Commit:
+
+```text
+p3(hakumenu): add general data model
+```
+
+#### P3.6.3 General UI
+
+Render the parsed model in the HakuMenu main list region.
+
+Commit:
+
+```text
+p3(hakumenu): render general list
+```
+
+---
+
+### P3.7 — HakuMenu Drun
+
+Drun is the Hikai-native presentation replacing the interaction equivalent of `rofi -show drun`.
+
+#### P3.7.1 Application model
+
+Requirements:
+
+- application list;
+- search/filter;
+- stable ordering;
+- icon fallback;
+- action logic separated from delegate rendering.
+
+Commit:
+
+```text
+p3(hakumenu): add drun application model
+```
+
+#### P3.7.2 Interaction
+
+Requirements:
+
+- type to filter;
+- keyboard navigation;
+- Enter launches selected app;
+- pointer selection works;
+- launch closes HakuMenu cleanly;
+- Escape obeys the HakuMenu lifecycle.
+
+Commit:
+
+```text
+p3(hakumenu): add drun interaction
+```
+
+#### P3.7.3 Hikai launcher routing
+
+Route the Hikai launcher facade/IPC into HakuMenu Drun. Classic remains unchanged.
+
+Commit:
+
+```text
+p3(launcher): route hikai launcher to hakumenu drun
+```
+
+---
+
+### P3.8 — HakuMenu Theme stub
+
+Theme remains a stub in this P3 revision.
+
+When Theme is active:
+
+```text
+main list region + narrow right state region
+```
+
+For General/Drun the right state region is hidden. Outer HakuMenu bounds do not move.
+
+Commits:
+
+```text
+p3(hakumenu): add theme state-region layout
+p3(hakumenu): mark theme tab as stub
+```
+
+Do not build the real theme editor in this milestone.
+
+---
+
+### P3.9 — Wallpaper carousel
+
+Reference: `wallpaper-change.png`.
+
+This supersedes the previous full-width Flare / dual-front Wallpaper plan.
+
+#### P3.9.1 Model audit
+
+Document current:
+
+- wallpaper discovery;
+- image/video support;
+- selected/current state;
+- apply action;
+- thumbnail path;
+- monitor/output semantics.
+
+No visual rewrite in the audit step.
+
+#### P3.9.2 Fixed center selection slot
+
+The selected wallpaper occupies a stable physical center slot and does not drift while thumbnails load or aspect ratios differ.
+
+Commit:
+
+```text
+p3(wallpaper): add fixed center selection slot
+```
+
+#### P3.9.3 Stacked side carousel
+
+Implement overlapping/stacked side items around the center selection.
+
+**No large generic panel background** behind the carousel.
+
+Commit:
+
+```text
+p3(wallpaper): add stacked side carousel
+```
+
+#### P3.9.4 Navigation
+
+One source of truth:
+
+```text
+selectedIndex
+```
+
+Required inputs:
+
+```text
+Left
+Right
+mouse wheel
+```
+
+Item placement derives from `index - selectedIndex`.
+
+Commit:
+
+```text
+p3(wallpaper): add carousel navigation
+```
+
+#### P3.9.5 Apply
+
+```text
+Enter → apply selected wallpaper
+```
+
+Keep shell-side wallpaper execution in the existing action/service boundary.
+
+Commit:
+
+```text
+p3(wallpaper): apply selected item on enter
+```
+
+#### P3.9.6 Performance
+
+For large directories:
+
+- bounded/lazy thumbnail work;
+- stable placeholder;
+- selected index survives thumbnail loading;
+- no unbounded simultaneous decode/preview workload.
+
+Commit:
+
+```text
+p3(wallpaper): harden carousel thumbnail loading
+```
+
+---
+
+### P3.10 — Existing shell polish retained
+
+These surfaces are not redesigned by the seven new mockups; they are aligned to the RoundedScreen/frame contract.
+
+#### P3.10.1 Tooltip
+
+```text
+p3(anchor): attach tooltips to rounded frame
+```
+
+#### P3.10.2 Tray
+
+```text
+p3(anchor): attach tray menu to rounded frame
+```
+
+#### P3.10.3 Notification popup
+
+Preserve the native popup model; attach/polish as a borderless frame-related Flare toast.
+
+```text
+p3(anchor): attach notification popup to rounded frame
+```
+
+#### P3.10.4 Notification Center
+
+Prefer two commits if geometry and visual polish both change:
+
+```text
+p3(anchor): attach notification center to rounded frame
+p3(notifications): polish center spacing and clear action
+```
+
+Visual requirements:
+
+- roomier outer/header spacing;
+- taller history viewport;
+- `Clear` accent-filled with black text;
+- hover can increase label size without reallocating the header.
+
+#### P3.10.5 Level OSD
+
+Separate attachment from layout polish:
+
+```text
+p3(anchor): attach level osd to rounded frame
+p3(osd): stabilize compact centered layout
+```
+
+Requirements:
+
+- compact padding;
+- physical X center does not move between `0%` and `100%`;
+- fixed percentage slot;
+- volume and brightness share the same layout model.
+
+---
+
+### P3.11 — Remaining native migration
+
+Because Drun is now represented inside HakuMenu, do not build a second unrelated launcher panel.
+
+Remaining native migrations are handled one feature/caller family at a time, for example:
+
+```text
+Power
+Clipboard
+remaining direct Hikai rofi callers
+```
+
+For each:
+
+```text
+audit
+→ implement
+→ runtime verify
+→ confirm Classic unchanged
+→ commit
+```
+
+Do not globally delete rofi if Classic still legitimately uses it.
+
+---
+
+### P3.12 — Runtime verification
+
+Run final matrices on **committed code only**.
+
+Core surface matrix:
+
+```text
+Navigation
+Dashboard
+avatar replace/reload
+Sidebar hover handoff
+Settings stub
+HakuMenu General
+HakuMenu Drun
+HakuMenu Theme
+Wallpaper carousel
+Notification popup
+Notification Center
+OSD
+Tray
+tooltips
+```
+
+Lifecycle where applicable:
+
+```text
+open
+close
+reopen
+Escape
+outside click
+switch directly to another large surface
+reload Quickshell
+```
+
+WM matrix:
+
+```text
+Hyprland
+Niri
+MangoWM
+```
+
+Classic regression:
+
+```text
+Classic startup
+Classic launcher
+Classic notifications
+Classic → Hikai → Classic
+```
+
+Scale:
+
+```text
+1.0x
+at least one fractional scale
+```
+
+Commit compositor-specific fixes only when the defect is reproduced. Do not leak compositor-specific workarounds into shared UI code without evidence.
+
+---
+
+### P3.13 — Cleanup and docs
+
+Remove/disable temporary:
+
+- debug outlines/axes;
+- geometry probes;
+- experimental feature flags;
+- abandoned mockup variants;
+- dead imports/properties/logging.
+
+Commit:
+
+```text
+p3(cleanup): remove temporary diagnostics
+```
+
+Then synchronize canonical docs:
+
+```text
+HAKUSPACE_QUICKSHELL_PLAN.md
+QUICKSHELL_STYLE.md
+QUICKSHELL_TESTING.md
+P3 status/report
+```
+
+Commit:
+
+```text
+docs(p3): sync mockup-locked implementation
+```
+
+---
+
+### P3 visual-review gate
+
+Use only:
+
+```text
+PASS
+METRIC_TUNE_ONLY
+TOPOLOGY_WRONG
+FUNCTIONAL_FAIL
+```
+
+Rules:
+
+- `PASS` → commit immediately;
+- `METRIC_TUNE_ONLY` → freeze topology and tune at most 3 metrics in the next pass;
+- `TOPOLOGY_WRONG` → stop implementation and revise the local component plan before more editing;
+- `FUNCTIONAL_FAIL` → fix behavior before visual polish.
+
+If two consecutive metric-only rounds do not converge, stop tuning and revise the geometry model. Do not continue open-ended visual trial-and-error.
+
+---
 
 ### P3 acceptance
 
-- Super+R / launcher key works in Hikai;
-- emoji picker works;
-- Logo opens/closes HakuMenu;
-- power menu works;
-- wallpaper picker works;
-- clipboard selection works;
-- record/shell/theme flows no longer fail because rofi is forbidden in Hikai;
-- long tray menus scroll correctly, close on outside click/Escape, and do not require Hyprland-specific focus behavior;
-- tray menu ownership cannot conflict with Launcher/HakuMenu/Power overlay ownership;
-- no duplicate panel can remain open through `UiState`;
-- Classic paths remain unchanged from the user's perspective.
+P3 is complete only when:
 
----
+- stable fallback TopBar center is retained; cancelled collar work is absent;
+- RoundedScreen is continuous and supplies shared frame bounds;
+- Navigation has Dashboard / Sidebar / Settings;
+- Dashboard has avatar, Clock, MPRIS, Calendar, ROM/RAM/CPU/GPU cards and leaves unspecified space empty;
+- avatar persists under the HakuSpace user-data directory;
+- Sidebar opens immediately from Navigation hover without flicker and uses circular controls;
+- Settings is only the approved stub;
+- HakuMenu is distinct from Navigation, physically centered and stable across tabs;
+- HakuMenu General uses the real `hm_general.sh` contract;
+- HakuMenu Drun is the native Hikai launcher route;
+- HakuMenu Theme remains a stub with its right state region;
+- Wallpaper is the approved center-selected stacked carousel, with no large panel background;
+- wheel/arrows move Wallpaper selection and Enter applies it;
+- notification/tray/tooltip/OSD geometry follows the frame contract;
+- OSD remains centered from `0%` to `100%`;
+- large surfaces cannot create stale/duplicate ownership;
+- Hyprland, Niri and MangoWM smoke tests pass;
+- Classic regression checks pass;
+- 1.0x and fractional-scale checks pass;
+- static validation passes;
+- canonical docs match committed code;
+- final working tree is clean.
+
+Recommended final tag:
+
+```bash
+git tag p3-v2-final
+```
 
 ## 9. P4 — Remaining Classic-parity surfaces
 
@@ -1281,29 +2074,31 @@ Only concrete unresolved items. Do not add speculative refactors.
 
 ## 16. Definition of Done for the Hikai project
 
-Hikai can be considered release-ready when:
+The Hikai project is not complete merely because P3 is complete. Final project-level DONE requires:
 
-- backend switching/fallback is reliable;
-- TopBar is stable on all four WMs, with Labwc workspace limitation handled gracefully;
-- Hyprland/Niri/Mango workspace behavior is verified;
-- Dynamic Center, MPRIS/Cava, volume/brightness OSD, tray, settings, recorder, clock/calendar are stable;
-- QS owns notifications and swaync is no longer needed in Hikai;
-- launcher/HakuMenu/power/wallpaper/clipboard user paths no longer depend on forbidden rofi processes in Hikai;
-- selected parity surfaces are implemented or explicitly omitted;
-- no stale classic process appears in Hikai;
-- Classic remains fully recoverable;
-- install/update/rollback/doctor understand Hikai;
-- dependencies are packaged/documented;
-- release matrix passes on Hyprland, Niri, MangoWM, and Labwc with the documented Labwc exception;
-- README/core docs/Vietnamese docs match the code;
-- static tests, runtime tests, and manual visual checks are all recorded.
+- backend switching and crash fallback remain reliable;
+- supported WM workspace/window-title contracts are stable;
+- shared services avoid duplicate per-screen polling;
+- Tray, Notifications, OSD, Tooltip/Flare and RoundedScreen remain stable;
+- native Hikai Navigation / Dashboard / Sidebar / HakuMenu / Wallpaper behavior is complete according to the current canonical mockups;
+- required launcher/menu/power/clipboard paths no longer depend on forbidden Hikai rofi processes, while Classic is allowed to keep its Classic tooling where planned;
+- P4 parity decisions are resolved or explicitly waived;
+- packaging, doctor and distro/release verification are complete;
+- Hyprland, Niri and MangoWM release matrices pass, with Labwc handled according to its upstream support status;
+- Classic regression tests pass;
+- canonical user/developer docs match the shipping implementation;
+- repository and generated runtime state are free of abandoned debug/experimental paths.
 
----
+Optional P6 polish must not block release once all required milestones are green.
 
 ## 17. Immediate next action
 
-Finish the open P0 compositor matrix, interactive P1 checks, and remaining Tray full-QML runtime checks in `QUICKSHELL_TESTING.md`. The P1 baseline is recorded in `P1_STATUS.md`; the Tray migration and current acceptance matrix are recorded in `TRAY_FULL_QML_FLARE_REPORT.md`.
+After the repository is reset/fallback to the stable P2 baseline (`a7b6f0e7` or the chosen equivalent clean checkpoint):
 
-Do not mark P1 DONE from static checks or the Niri protocol probe alone. The tray short-menu input path, other WMs, fractional scales, multi-monitor behavior, hover performance, and remaining protocol fallback cases still need verification.
+1. commit these canonical docs separately;
+2. confirm no abandoned P3 center-collar / old Wallpaper dual-front code remains;
+3. tag/record the P3 baseline;
+4. start **P3.0 RoundedScreen + shared frame foundation**;
+5. commit each accepted unit before moving to the next dependency.
 
-P2 native notifications follows this Tray verification work and reuses the shared panel ownership/input primitive.
+Do not begin Dashboard/HakuMenu/Wallpaper in parallel before the underlying frame/ownership contract is accepted and committed.

@@ -15,6 +15,12 @@ Item {
     property real padX: 24
     property real padY: 16
     property real snap: 48
+    property int openDuration: HAnimation.normal
+    property int closeDuration: HAnimation.normal
+    property var openWidthCurve: HAnimation.spatialCurve
+    property var closeWidthCurve: HAnimation.spatialCurve
+    property var openHeightCurve: HAnimation.moduleCurve
+    property var closeHeightCurve: HAnimation.moduleCurve
     
     property real mStart: 0
     property real mEnd: 0
@@ -38,22 +44,26 @@ Item {
         }
     }
     
-    function updateTargetBounds() {
-        if (!shown || !anchorItem) return;
+    function anchorSpan() {
+        if (!anchorItem) return null;
         var t = anchorItem;
         var pt;
         try {
             var mapRoot = root;
             while(mapRoot.parent) mapRoot = mapRoot.parent;
             pt = t.mapToItem(mapRoot, 0, 0);
-        } catch(e) { return; }
-        
-        var aStart = pt.x;
+        } catch(e) { return null; }
         var tW = t.implicitWidth > 0 ? t.implicitWidth : t.width;
-        var aEnd = pt.x + tW;
+        return {start: pt.x, end: pt.x + tW};
+    }
+
+    function updateTargetBounds() {
+        if (!shown) return;
+        var anchor = anchorSpan();
+        if (!anchor) return;
         
         var res = FG.resolveSpan({
-            anchorStart: aStart, anchorEnd: aEnd, contentW: contentW, padX: padX, minW: minW, maxW: maxW,
+            anchorStart: anchor.start, anchorEnd: anchor.end, contentW: contentW, padX: padX, minW: minW, maxW: maxW,
             bounds: bounds, snap: snap
         });
         
@@ -63,17 +73,31 @@ Item {
         
         hugging = (eL <= bounds.start || eR >= bounds.end);
         
-        if (mHeight === 0 && eH > 0 && !animHeight.running) {
-            mStart = eL;
-            mEnd = eR;
+        // First open must morph both span and height from the anchor.  Snapping
+        // mStart/mEnd to the final span while mHeight is ~0 renders the two
+        // Flare ears before the body has formed.
+        if (mHeight <= 0.01 && eH > 0
+                && !animStart.running && !animEnd.running && !animHeight.running) {
+            mStart = anchor.start;
+            mEnd = anchor.end;
+            mHeight = 0;
             _lastExpected = {start: eL, end: eR, height: eH};
+
+            animStart.to = eL;
+            animEnd.to = eR;
             animHeight.to = eH;
+            animStart.duration = openDuration;
+            animEnd.duration = openDuration;
+            animHeight.duration = openDuration;
+            animStart.restart();
+            animEnd.restart();
             animHeight.restart();
             return;
         }
         
         var now = Date.now();
-        var isRetarget = FG.needsRetarget(_lastExpected, {start: eL, end: eR}, 2) || Math.abs(_lastExpected.height - eH) > 2;
+        var isRetarget = FG.needsRetarget(_lastExpected, {start: eL, end: eR}, 2) || Math.abs(_lastExpected.height - eH) > 2
+                         || animHeight.to !== eH;
         
         if (isRetarget) {
             if (now - _lastAnimTime >= 60) {
@@ -97,6 +121,7 @@ Item {
                 
                 if (Math.abs(eH - mHeight) > 0.5) {
                     animHeight.to = eH;
+                    animHeight.duration = openDuration;
                     animHeight.restart();
                 }
             } else {
@@ -110,7 +135,22 @@ Item {
             Qt.callLater(updateTargetBounds);
         } else {
             throttleTimer.stop();
+
+            // Close back into the real anchor span instead of collapsing a
+            // full-width surface vertically.  This keeps the Flare coherent
+            // in both directions and avoids detached ear frames on close.
+            var anchor = anchorSpan();
+            if (anchor) {
+                animStart.to = anchor.start;
+                animEnd.to = anchor.end;
+                animStart.duration = closeDuration;
+                animEnd.duration = closeDuration;
+                animStart.restart();
+                animEnd.restart();
+            }
+
             animHeight.to = 0;
+            animHeight.duration = closeDuration;
             animHeight.restart();
         }
     }
@@ -126,7 +166,7 @@ Item {
     onContentWChanged: { Qt.callLater(updateTargetBounds); }
     onContentHChanged: { Qt.callLater(updateTargetBounds); }
     
-    NumberAnimation { id: animStart; target: root; property: "mStart"; easing.bezierCurve: HAnimation.spatialCurve; onFinished: checkSettled() }
-    NumberAnimation { id: animEnd; target: root; property: "mEnd"; easing.bezierCurve: HAnimation.spatialCurve; onFinished: checkSettled() }
-    NumberAnimation { id: animHeight; target: root; property: "mHeight"; duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve; onFinished: checkSettled() }
+    NumberAnimation { id: animStart; target: root; property: "mStart"; easing.bezierCurve: root.shown ? root.openWidthCurve : root.closeWidthCurve; onFinished: checkSettled() }
+    NumberAnimation { id: animEnd; target: root; property: "mEnd"; easing.bezierCurve: root.shown ? root.openWidthCurve : root.closeWidthCurve; onFinished: checkSettled() }
+    NumberAnimation { id: animHeight; target: root; property: "mHeight"; duration: HAnimation.normal; easing.bezierCurve: root.shown ? root.openHeightCurve : root.closeHeightCurve; onFinished: checkSettled() }
 }

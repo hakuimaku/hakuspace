@@ -19,7 +19,7 @@ PanelWindow {
 
     screen: modelData
     anchors { top: true; bottom: true; left: true; right: true }
-    margins.top: Theme.topBarHeight
+    margins.top: FlareEdges.topOriginY
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "hakuspace-flare-panel"
     WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
