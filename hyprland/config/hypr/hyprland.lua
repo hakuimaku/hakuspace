@@ -62,4 +62,4 @@ require("config/layout")
 -- uncomment this line to load the plugin config file.
 -- disable this by default to avoid errors if you don't have any plugins installed.
 
-require("config/plugin")
+--require("config/plugin")
