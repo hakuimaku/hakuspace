@@ -142,17 +142,11 @@
 
     "hyprland/workspaces": {
         "all-outputs": true,
-        "active-only": true,
         "sort-by-number": true,
         "show-special": true,
         "format": "{icon}\n{windows}",
         "format-icons": {
-            "magic": "",
-            "1": "1",
-            "2": "2",
-            "3": "3",
-            "4": "4",
-            "5": "5"
+            "magic": ""
 	    },
         "format-window-separator": "\n",
         "window-rewrite-default": "",

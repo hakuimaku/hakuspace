@@ -51,9 +51,6 @@ blueman
 fcitx5
 fcitx5-bamboo
 fcitx5-configtool
-noto-fonts
-noto-fonts-emoji
-noto-fonts-cjk
 terminus-font-ttf
 ttf-jetbrains-mono-nerd
 rofi-emoji
