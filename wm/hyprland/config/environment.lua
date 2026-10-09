@@ -50,7 +50,7 @@ hl.env("VDPAU_DRIVER", "va_gl")
 hl.env("LIBVA_DRIVER_NAME", "iHD")
 
 -- Input method
---hl.env("GTK_IM_MODULE", "fcitx")
---hl.env("QT_IM_MODULE", "fcitx")
---hl.env("XMODIFIERS", "@im=fcitx")
---hl.env("SDL_IM_MODULE", "fcitx")
+hl.env("GTK_IM_MODULE", "fcitx")
+hl.env("QT_IM_MODULE", "fcitx")
+hl.env("XMODIFIERS", "@im=fcitx")
+hl.env("SDL_IM_MODULE", "fcitx")
