@@ -11,10 +11,7 @@ BACKUP_GLOB="$HOME/.backup/${BACKUP_PREFIX}"*
 # Rollback only considers backups created by HakuSpace, not unrelated folders
 # that may also exist under ~/.backup.
 print_rollback_header() {
-    echo ""
-    echo -e "${C_BOLD}${C_CYAN}--- HAKUSPACE ROLLBACK ---${C_RESET}"
-    echo "Restore files from a previous HakuSpace installer or updater backup."
-    echo ""
+    print_header ">>> CONFIG ROLLBACK <<<" "Restore files from a previous HakuSpace backup."
 }
 
 get_backup_dirs() {
@@ -251,4 +248,7 @@ fi
 
 restore_backup
 
-log_ok "Rollback completed. Reload your session or restart affected applications if necessary."
+echo ""
+print_divider
+log_ok "Rollback completed. Reload your session if necessary."
+print_divider
