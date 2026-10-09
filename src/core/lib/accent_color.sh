@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+ACCENT_MIN_LUMINANCE="${ACCENT_MIN_LUMINANCE:-0.22}"
+
 accent_color_or_fallback() {
     local color="${1:-}"
     local fallback="#ffffff"
@@ -13,29 +15,19 @@ accent_color_or_fallback() {
     local green=$((16#${color:3:2}))
     local blue=$((16#${color:5:2}))
 
-    local is_dark
-    is_dark=$(awk -v r="$red" -v g="$green" -v b="$blue" '
+    awk -v r="$red" -v g="$green" -v b="$blue" -v min="$ACCENT_MIN_LUMINANCE" '
         function srgb_to_linear(c) {
             c = c / 255.0
             return (c <= 0.03928) ? (c / 12.92) : ((c + 0.055) / 1.055) ^ 2.4
         }
-        BEGIN {
-            R = srgb_to_linear(r)
-            G = srgb_to_linear(g)
-            B = srgb_to_linear(b)
-            # WCAG relative luminance
-            L = 0.2126 * R + 0.7152 * G + 0.0722 * B
-            
-            # If L is low, the color is dark. A common threshold for contrast 
-            # against white vs black is 0.179 (or around there).
-            # We use 0.179 to determine if we should fallback to a lighter color.
-            print (L < 0.179) ? 1 : 0
+        function luminance(r, g, b) {
+            return 0.2126 * srgb_to_linear(r) + 0.7152 * srgb_to_linear(g) + 0.0722 * srgb_to_linear(b)
         }
-    ')
-
-    if [[ "$is_dark" == "1" ]]; then
-        printf '%s\n' "$fallback"
-    else
-        printf '%s\n' "${color,,}"
-    fi
+        BEGIN {
+            t = 0
+            while (t < 1 && luminance(r + (255 - r) * t, g + (255 - g) * t, b + (255 - b) * t) < min)
+                t += 0.02
+            printf "#%02x%02x%02x\n", r + (255 - r) * t + 0.5, g + (255 - g) * t + 0.5, b + (255 - b) * t + 0.5
+        }
+    '
 }
