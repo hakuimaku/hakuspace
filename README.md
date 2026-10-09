@@ -30,6 +30,8 @@ Fedora now supports Haku Space too! See [Fedora Guide](https://github.com/hakuim
 - 🕹️ Keybinding: [here](https://github.com/hakuimaku/hakuspace#-5)
 - 🐞 Troubleshooting: [here](https://github.com/hakuimaku/hakuspace#-8)
 
+See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372).
+
 Overview:
 - **HakuSpace** is a dotfiles project for **Arch Linux**, supporting **Hyprland**, **Niri**, and **MangoWM**.  
 - The main user interaction layer is built around **Rofi**, **Waybar**, and **SwayNC**, while most core behavior is powered by [custom scripts](https://github.com/hakuimaku/hakuspace/tree/main/common/local/bin).
@@ -44,7 +46,7 @@ Overview:
 * **Accent Color Sync:** Waybar, Rofi, Kitty, Swaync,...
 * **Smart Accent Color:** Automatically generates the accent color palette based on your current wallpaper.
 * **Flexible Waybar Layouts:** Support layouts: `top`, `left`, `coredge`, `minimal`, `full` (Will be extended more).
-* **Dockbar:** Another Waybar with only a `wlr/taskbar` module, looking like a Taskbar or Dock.
+* **Dockbar:** Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
 * **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
 * **Wallpaper Automation:** Wallpapers change automatically every 5 minutes (customizable in the `random_wallpaper.sh` script).
 
@@ -99,10 +101,10 @@ git clone https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 
-If you prefer the version I've tested (a little honestly), clone the **stable** release version `v2.1.8` (lastest):
+If you prefer the version I've tested (a little honestly), clone the **stable** release version `v2.1.9` (lastest):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.1.8 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
+git clone --depth 1 --branch v2.1.9 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 
@@ -218,6 +220,7 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 | SUPER + W | Toggle Dockbar |
 | SUPER + P | Screenshot |
 | SUPER + Z | Toggle Floating |
+| SUPER + V | Open Clipboard History |
 | SUPER + A/S | Focus Left/Right Window |
 | SUPER + Y | Wallpaper Select |
 | SUPPER + SHIFT + Y | Lively Wallpaper Select |
