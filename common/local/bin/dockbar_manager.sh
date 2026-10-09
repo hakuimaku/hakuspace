@@ -124,11 +124,19 @@ fi
 
 # Change Icon Size (Change the icon size in the dockbar configuration)
 if [[ $1 == "--icon-size" ]]; then
-    current_size=$(grep -oP '"icon-size": \K\d+' "$DOCKBAR_DIR/config")
+    current_size=$(grep -oP '"icon-size":\s*\K\d+' "$DOCKBAR_DIR/config" | head -n 1)
+    [[ -z "$current_size" ]] && current_size=52
+
     new_size=$(rofi -dmenu -p "Icon size (current: $current_size):" <<< "$current_size" -theme-str 'window {width: 40%; height: 40%;}' -theme-str 'entry { placeholder: "Type new size"; }')
+    
     if [[ -n "$new_size" && "$new_size" =~ ^[0-9]+$ ]]; then
-        sed -i "s/\"icon-size\": $current_size/\"icon-size\": $new_size/" "$DOCKBAR_DIR/config"
-        $HOME/.local/bin/dockbar_manager.sh --reload
+        sed -i -E "s/\"icon-size\": *[0-9]+/\"icon-size\": $new_size/g" "$DOCKBAR_DIR/config"
+        echo "Icon size updated to $new_size."
+        
+        sed -i -E "s/\"size\": *[0-9]+/\"size\": $new_size/g" "$DOCKBAR_DIR/config"
+        echo "Pinned app icon sizes updated to $new_size."
+        
+        "$HOME/.local/bin/dockbar_manager.sh" --reload
     fi
     exit 0
 fi
