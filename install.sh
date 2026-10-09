@@ -464,10 +464,6 @@ sudo systemctl disable getty@tty1.service
 
 xdg-mime default thunar.desktop inode/directory
 
-if [[ $WM == "hyprland" ]]; then
-    systemctl --user enable hypridle.service
-fi
-
 $HOME/.local/bin/gen-style.sh
 
 echo "✅ All services have been processed!"
