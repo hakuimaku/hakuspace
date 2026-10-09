@@ -410,7 +410,8 @@ if ask_yes_no "===> Do you want to backup and copy your config now?"; then
 
     if [[ $WM == "hyprland" ]]; then
         echo ">>> Deploying Hyprland configs..."
-        copy_dir_content "$SOURCE_WM_CONFIG/hypr" "$DEST_CONFIG/hypr"
+        copy_dir_content "$SOURCE_WM_CONFIG/hypr/config" "$DEST_CONFIG/hypr/config"
+        copy_file "$SOURCE_WM_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
     elif [[ $WM == "niri" ]]; then
         echo ">>> Deploying Niri configs..."
         copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
