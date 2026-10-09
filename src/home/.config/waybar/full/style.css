@@ -6,34 +6,23 @@
 
 * {
     font-weight: bold;
-    border-radius: 20px;
+    border-radius: 8px;
     transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
 window#waybar {
-    background-color: rgba(0, 0, 0, 0.9);
+    background-color: rgba(0, 0, 0, 0.5);
     color: @accent_color;
     transition: background-color 0.3s ease;
     border-radius: 0;
 }
 
-.modules-center {
-    background-color: transparent;
-    padding: 4px;
-    margin: 0;
-}
-
-.modules-left {
-    background-color: transparent;
-    padding: 4px;
-    margin: 0;
-
-}
-
+.modules-center,
+.modules-left,
 .modules-right {
     background-color: transparent;
     padding: 4px;
-    margin:0;
+    margin: 0 0 2px 0;
 }
 
 
@@ -43,6 +32,7 @@ window#waybar {
 #custom-monitor,
 #custom-settings,
 #custom-logo,
+#custom-music,
 #window,
 #mpris,
 #cava,
@@ -71,12 +61,12 @@ window#waybar {
 }
 
 #workspaces {
-    padding: 2px 6px;
+    padding: 2px 10px;
 }
 
 #workspaces button {
     background-color: @accent_color;
-    border-radius: 999px; 
+    border-radius: 4px; 
     padding: 0 6px;
     margin: 0 3px;
     min-width: 10px;
@@ -115,10 +105,12 @@ window#waybar {
 }
 
 #custom-monitor,
-#custom-settings {
-    border-top: 2px solid @accent_color;
-    border-radius: 0 0 20px 20px;
-    margin: 0 4px 0 4px;
+#custom-settings,
+#custom-logo {
+    color: #000000;
+    background-color: @accent_color;
+    border-radius: 4px;
+    margin: 2px 4px;
 }
 
 #cpu,
@@ -140,7 +132,7 @@ window#waybar {
 #custom-recorder:hover,
 #custom-monitor:hover,
 #custom-settings:hover,
-#custom-logo:hover,
+#custom-music:hover,
 #cpu:hover,
 #memory:hover,
 #temperature:hover,
@@ -153,23 +145,25 @@ window#waybar {
 #custom-notification:hover {
     color: #000000;
     background-color: @accent_color;
-    min-width: 100px;
+    min-width: 50px;
 }
 
 #custom-monitor:hover,
-#custom-settings:hover {
-    border-radius: 20px;
+#custom-settings:hover,
+#custom-logo:hover {
+    color: @accent_color;
+    background-color: #000000;
+    min-width: 40px;
 }
 
 #workspaces button:hover {
     min-width: 35px;
 }
 
-
 #clock:hover {
     color: #000000;
     background-color: @accent_color;
-    min-width: 100px;
+    padding: 0 28px;
 }
 
 /* ============================================================================== */
