@@ -19,8 +19,23 @@ run_nightlight() {
     fi
 }
 
+check_status() {
+    if pgrep "hyprsunset" > /dev/null || pgrep "gammastep" > /dev/null > /dev/null; then
+        echo "Night light mode is currently enabled"
+        exit 0
+    else
+        echo "Night light mode is currently disabled"
+        exit 1
+    fi
+}
+
+# Check for --check argument
+if [[ "$1" == "--check" ]]; then
+    check_status
+fi
+
 # Toggle
-if pgrep -x "hyprsunset" > /dev/null || pgrep -x "gammastep" > /dev/null; then
+if pgrep "hyprsunset" > /dev/null || pgrep "gammastep" > /dev/null > /dev/null; then
     pkill hyprsunset
     pkill gammastep
     echo "Night light mode disabled"

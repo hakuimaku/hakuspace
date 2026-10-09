@@ -89,7 +89,7 @@
                     "type": "toggle",
                     "active": true,
                     "command": "$HOME/.local/bin/nightlight_toggle.sh >/dev/null 2>&1",
-                    "update-command": "pgrep -x hyprsunset >/dev/null 2>&1 || pgrep -x gammastep >/dev/null 2>&1 && echo true || echo false"
+                    "update-command": "$HOME/.local/bin/nightlight_toggle.sh --check >/dev/null 2>&1 && echo true || echo false"
                 },
                 {
                     "label": "󰝚",
