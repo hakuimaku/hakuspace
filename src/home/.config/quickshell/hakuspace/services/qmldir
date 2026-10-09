@@ -4,6 +4,7 @@ singleton AppState 1.0 AppState.qml
 singleton Env 1.0 Env.qml
 singleton Theme 1.0 Theme.qml
 singleton UiState 1.0 UiState.qml
+singleton NotificationStore 1.0 Notifications.qml
 singleton WM 1.0 WM/WM.qml
 singleton SysStats 1.0 SysStats.qml
 singleton TooltipManager 1.0 TooltipManager.qml
