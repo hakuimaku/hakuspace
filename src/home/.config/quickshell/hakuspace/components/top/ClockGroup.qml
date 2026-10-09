@@ -1,34 +1,69 @@
 import QtQuick
 import Quickshell
 import "../../services"
-import "../"
+import ".."
 
 TopModule {
     id: root
     
-    Timer {
-        interval: 1000
-        running: true
-        repeat: true
-        onTriggered: updateTime()
+    SystemClock {
+        id: sysClock
     }
     
-    property string timeText: ""
-    property string dateText: ""
+    property int monthOffset: 0
     
-    function updateTime() {
-        var d = new Date();
-        timeText = d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
-        dateText = d.getDate().toString().padStart(2, '0') + "/" + (d.getMonth() + 1).toString().padStart(2, '0') + "/" + d.getFullYear();
+    // Clear default text/icon
+    text: ""
+    icon: ""
+    
+    // Override implicitWidth to fit our custom column
+    implicitWidth: Math.max(implicitHeight, customCol.implicitWidth + Theme.pad * 2 + (hovered ? 20 : 0))
+    
+    Column {
+        id: customCol
+        anchors.centerIn: parent
+        spacing: -2
+        
+        Text {
+            text: sysClock.date ? sysClock.date.toLocaleString(Qt.locale(), "HH:mm") : ""
+            font.family: Theme.fontFamily
+            font.pixelSize: Theme.fontSize - 2
+            font.weight: Font.Bold
+            color: root.hovered ? Theme.onAccentColor : Theme.fg
+            anchors.left: parent.left
+            anchors.leftMargin: -2
+            Behavior on color { ColorAnimation { duration: HAnimation.normal } }
+        }
+        
+        Text {
+            text: sysClock.date ? sysClock.date.toLocaleString(Qt.locale(), "dd/MM/yyyy") : ""
+            font.family: Theme.fontFamily
+            font.pixelSize: Theme.fontSize - 4
+            font.weight: Font.Normal
+            color: root.hovered ? Theme.onAccentColor : Theme.fg
+            anchors.right: parent.right
+            anchors.rightMargin: -2
+            Behavior on color { ColorAnimation { duration: HAnimation.normal } }
+        }
     }
     
-    Component.onCompleted: updateTime()
-    
-    text: " " + timeText + "   " + dateText
-    
-    MouseArea {
-        anchors.fill: parent
-        onClicked: console.log("Clock clicked!")
-        cursorShape: Qt.PointingHandCursor
+    onRightClicked: monthOffset = 0
+    onScrolled: (delta) => {
+        if (delta > 0) monthOffset++;
+        else monthOffset--;
     }
+    
+    function generateCalendar(date, offset) {
+        if (!date) return "";
+        var targetDate = new Date(date.getFullYear(), date.getMonth() + offset, 1);
+        var res = targetDate.toLocaleString(Qt.locale(), "MMMM yyyy") + "\n\n";
+        res += "Current Date: " + date.toLocaleString(Qt.locale(), "dd/MM/yyyy") + "\n";
+        if (offset !== 0) {
+            res += "Viewing: " + targetDate.toLocaleString(Qt.locale(), "MM/yyyy") + "\n";
+        }
+        res += "(Rich grid calendar will be added in later polish)";
+        return res;
+    }
+    
+    tooltip: generateCalendar(sysClock.date, monthOffset)
 }

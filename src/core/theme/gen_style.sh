@@ -238,22 +238,22 @@ render_quickshell() {
         --argjson fontSize "${FONT_SIZE}" \
         --arg fgDim "${ACCENT_DIM}" \
         '{
-            preset: "ink",
+            preset: "irunu",
             accent: $accent,
             font: $font,
             fontSize: $fontSize,
-            bg: "rgba(0, 0, 0, 0.7)",
-            surface: "rgba(32, 32, 32, 0.6)",
+            bg: "#000000",
+            surface: "#000000",
             surfaceHi: $accent,
             border: "transparent",
             fg: $accent,
             fgDim: $fgDim,
             fgMuted: "rgba(255, 255, 255, 0.5)",
             onAccent: "#000000",
-            radius: 12,
+            radius: 16,
             borderWidth: 0,
             gap: 4,
-            pad: 10
+            pad: 12
         }' > "$THEME_RENDER_DIR/quickshell.json.tmp"; then
         mv "$THEME_RENDER_DIR/quickshell.json.tmp" "$THEME_RENDER_DIR/quickshell.json"
     fi

@@ -2,6 +2,7 @@
 
 echo "Probing Picker IPC..."
 mkfifo /tmp/pp
+cat /tmp/pp &
 qs -c hakuspace ipc call picker open "/tmp/pp" '{"prompt":"Probe","items":["a","b"]}'
 
 echo "Waiting a bit..."

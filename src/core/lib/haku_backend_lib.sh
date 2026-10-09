@@ -39,7 +39,7 @@ haku_qs_mode() {
 
 # Check if quickshell is running
 haku_qs_alive() {
-    pgrep -x qs >/dev/null 2>&1 || pgrep -x quickshell >/dev/null 2>&1
+    pgrep -f '^(/[^ ]*/)?(qs|quickshell)( [^ ]+)* -c hakuspace( |$)' >/dev/null 2>&1
 }
 
 # Get runtime dir
