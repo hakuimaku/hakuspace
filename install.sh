@@ -237,8 +237,8 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
     for folder in "$SOURCE_CONFIG"/*/; do
         [[ -d "$folder" ]] || continue
         folder_name="$(basename "$folder")"
-        # Deloy config not in the list of ONCE_CONFIGS and SKIP_CONFIGS
-        if [[ " ${ONCE_CONFIGS[*]} " == *" $folder "* || " ${SKIP_CONFIGS[*]} " == *" $folder "* ]]; then
+        # Deloy config with skip config in the list of ONCE_CONFIGS and SKIP_CONFIGS
+        if [[ " ${ONCE_CONFIGS[*]} " == *"$folder_name"* || " ${SKIP_CONFIGS[*]} " == *"$folder_name"* ]]; then
             continue
         fi
         copy_dir_content "$SOURCE_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
