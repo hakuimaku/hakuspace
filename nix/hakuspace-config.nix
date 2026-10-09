@@ -22,8 +22,14 @@ in
 
         enableZshShell = lib.mkOption {
             type = lib.types.bool;
-            default = true;
+            default = false;
             description = "Enable Zsh with Hakuspace default configuration and set as default shell";
+        };
+
+        enableFishShell = lib.mkOption {
+            type = lib.types.bool;
+            default = true;
+            description = "Enable Fish with Starship and Hakuspace default configuration and set as default shell";
         };
     };
 
@@ -166,8 +172,7 @@ in
         # Zsh Shell Configuration Block
         (lib.mkIf cfg.enableZshShell {
             environment.shells = with pkgs; [ zsh ];
-            users.defaultUserShell = lib.mkForce pkgs.zsh;
-            
+            users.defaultUserShell = pkgs.zsh;
             programs.zsh = {
                 enable = true;
                 enableCompletion = true;
@@ -227,6 +232,20 @@ in
                     export AGNOSTER_DIR_FG="#010101"
                 '';
             };
+        })
+
+        # Fish Shell & Starship Configuration Block
+        (lib.mkIf cfg.enableFishShell {
+            programs.fish.enable =  true;
+            programs.starship.enable = true;
+            users.defaultUserShell = pkgs.fish;
+
+            environment.systemPackages = with pkgs; [
+                eza
+                lazygit
+                zoxide
+                direnv
+            ];
         })
     ]);
 }
