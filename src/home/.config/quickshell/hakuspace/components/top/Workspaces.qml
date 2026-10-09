@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import "../"
+import "../base"
 import "../../services"
 import "../../services/WM"
 
@@ -10,31 +11,49 @@ TopModule {
     color: "transparent"
     tooltip: ""
     
+    property string screenName: ""
+    property var items: WM.workspacesFor(screenName)
+    
     property int dot: 20
     property int gap: 8
     property int activeW: 50
     
-    property var ids: WM.ids || []
-    property int activeId: WM.activeId
-    property int activeIdx: ids.indexOf(activeId)
-    property int n: ids.length
+    visible: WM.supported && items.length > 0
+    implicitWidth: visible ? totalWidth + Theme.pad * 2 : 0
+    
+    property int activeIdx: {
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].active || items[i].focused) {
+                // Prefer globally focused if available
+                if (items[i].focused) return i;
+            }
+        }
+        for (var j = 0; j < items.length; j++) {
+            if (items[j].active) return j;
+        }
+        return -1;
+    }
     
     function slotX(index) {
-        var x = index * (dot + gap);
-        if (activeIdx !== -1 && index > activeIdx) {
-            x += (activeW - dot);
+        var x = 0;
+        for (var i = 0; i < index; i++) {
+            x += (i === activeIdx ? activeW : dot) + gap;
+            if (items[i].special) x += gap;
         }
         return x;
     }
     
     property int totalWidth: {
-        if (n === 0) return 0;
-        var w = n * dot + Math.max(0, n - 1) * gap;
-        if (activeIdx !== -1) w += (activeW - dot);
+        var w = 0;
+        for (var i = 0; i < items.length; i++) {
+            w += (i === activeIdx ? activeW : dot);
+            if (i < items.length - 1) {
+                w += gap;
+                if (items[i].special) w += gap;
+            }
+        }
         return w;
     }
-    
-    implicitWidth: totalWidth + Theme.pad * 2
     
     Behavior on implicitWidth {
         NumberAnimation { duration: HAnimation.spatial; easing.bezierCurve: HAnimation.spatialCurve }
@@ -48,7 +67,8 @@ TopModule {
     }
     
     onActiveIdxChanged: retargetTimer.restart()
-    onNChanged: retargetTimer.restart()
+    onItemsChanged: retargetTimer.restart()
+    onScreenNameChanged: retargetTimer.restart()
     
     Item {
         id: container
@@ -56,31 +76,101 @@ TopModule {
         height: root.dot
         anchors.centerIn: parent
         
-        // 1. Base dots
         Repeater {
-            model: root.n
+            model: root.items
             
-            Rectangle {
-                property int wsId: root.ids[index]
-                property bool isOccupied: WM.occupied.indexOf(wsId) !== -1
+            Item {
+                id: cell
+                property var ws: modelData
+                property bool isActive: index === root.activeIdx
                 
-                width: root.dot
+                property real targetWidth: isActive ? root.activeW : (mouseArea.containsMouse ? root.dot + 8 : root.dot)
+                
+                width: targetWidth
                 height: root.dot
-                radius: root.dot / 2
+                x: isActive ? root.slotX(index) : root.slotX(index) + root.dot / 2 - targetWidth / 2
                 
-                x: root.slotX(index)
+                Behavior on targetWidth { NumberAnimation { duration: HAnimation.spatial; easing.bezierCurve: HAnimation.spatialCurve } }
+                Behavior on x { NumberAnimation { duration: HAnimation.spatial; easing.bezierCurve: HAnimation.spatialCurve } }
                 
-                color: isOccupied ? Theme.accent : Theme.fgMuted
-                opacity: isOccupied ? 0.6 : 0.4
-                
-                Behavior on x {
-                    NumberAnimation { duration: HAnimation.spatial; easing.bezierCurve: HAnimation.spatialCurve }
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: parent.width
+                    height: root.dot
+                    radius: root.dot / 2
+                    
+                    color: ws.special ? "transparent" : (ws.occupied || !WM.caps.occupied ? Theme.accent : Theme.fgMuted)
+                    border.width: ws.special ? 1 : 0
+                    border.color: Theme.accent
+                    
+                    opacity: ws.special ? 1.0 : (mouseArea.containsMouse ? 0.9 : (ws.occupied ? 0.6 : (!WM.caps.occupied ? 0.5 : 0.4)))
+                    
+                    Behavior on color { ColorAnimation { duration: HAnimation.effects; easing.bezierCurve: HAnimation.effectsCurve } }
+                    Behavior on opacity { NumberAnimation { duration: HAnimation.effects; easing.bezierCurve: HAnimation.effectsCurve } }
+                    
+                    SequentialAnimation on opacity {
+                        running: ws.urgent
+                        loops: Animation.Infinite
+                        NumberAnimation { to: 1.0; duration: 400 }
+                        NumberAnimation { to: 0.2; duration: 400 }
+                    }
                 }
-                Behavior on color {
-                    ColorAnimation { duration: HAnimation.effects; easing.bezierCurve: HAnimation.effectsCurve }
+                
+                MouseArea {
+                    id: mouseArea
+                    anchors.fill: parent
+                    anchors.margins: -4
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    
+                    property real lastScroll: 0
+                    
+                    onClicked: (mouse) => {
+                        if (mouse.button === Qt.LeftButton) {
+                            WM.activate(ws.key);
+                        } else if (mouse.button === Qt.RightButton) {
+                            WM.secondary(ws.key);
+                        }
+                    }
+                    
+                    onWheel: (wheel) => {
+                        var now = Date.now();
+                        if (now - lastScroll < 150) return;
+                        lastScroll = now;
+                        
+                        var step = wheel.angleDelta.y > 0 ? -1 : 1;
+                        WM.cycle(step, root.screenName);
+                    }
                 }
-                Behavior on opacity {
-                    NumberAnimation { duration: HAnimation.effects; easing.bezierCurve: HAnimation.effectsCurve }
+                
+                HTooltip {
+                    target: cell
+                    enabled: mouseArea.containsMouse
+                    text: {
+                        var lines = [ws.name];
+                        if (WM.caps.windowCount && ws.windows > 0) {
+                            var title = ws.focusedTitle || "";
+                            if (title.length > 40) title = title.substring(0, 39) + "…";
+                            lines.push(ws.windows + " windows" + (title ? " · " + title : ""));
+                        }
+                        
+                        var uniqueOutputs = {};
+                        var c = 0;
+                        for (var i = 0; i < WM.workspaces.length; i++) {
+                            if (WM.workspaces[i].output && !uniqueOutputs[WM.workspaces[i].output]) {
+                                uniqueOutputs[WM.workspaces[i].output] = true;
+                                c++;
+                            }
+                        }
+                        if (c > 1 && ws.output) {
+                            lines.push("Output: " + ws.output);
+                        }
+                        if (ws.urgent) {
+                            lines.push("Urgent");
+                        }
+                        return lines.join("\n");
+                    }
                 }
             }
         }
@@ -137,40 +227,6 @@ TopModule {
                     start = root.slotX(root.activeIdx);
                     end = start + root.activeW;
                 }
-            }
-        }
-        
-        // Indicators are retargeted from root
-        // 3. Interactions
-        
-        MouseArea {
-            anchors.fill: parent
-            anchors.margins: -4
-            
-            function getIndexAt(mx) {
-                // Approximate clicking since they animate, we use current active layout
-                for (var i = 0; i < root.n; i++) {
-                    var sx = root.slotX(i);
-                    var w = (i === root.activeIdx) ? root.activeW : root.dot;
-                    if (mx >= sx - root.gap/2 && mx <= sx + w + root.gap/2) return i;
-                }
-                return -1;
-            }
-            
-            onClicked: (mouse) => {
-                var idx = getIndexAt(mouse.x);
-                if (idx !== -1) {
-                    WM.activate(root.ids[idx]);
-                }
-            }
-            
-            onWheel: (wheel) => {
-                if (!WM.supported || root.n === 0) return;
-                var step = wheel.angleDelta.y > 0 ? -1 : 1;
-                var nextIdx = root.activeIdx + step;
-                if (nextIdx < 0) nextIdx = 0;
-                if (nextIdx >= root.n) nextIdx = root.n - 1;
-                WM.activate(root.ids[nextIdx]);
             }
         }
     }
