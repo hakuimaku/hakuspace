@@ -5,7 +5,6 @@
  / /___/ /_/ / /_/ / |/ |/ / /__  
 /_____/\__,_/_.___/|__/|__/\___/  
 -->
- 
 
 <labwc_config>
 <!--
@@ -43,7 +42,7 @@
 
     <!-- <font><theme> can be defined without an attribute to set all places -->
     <theme>
-        <!-- <name>Numix</name> -->
+        <name>hakulab</name>
         <fallbackAppIcon>labwc</fallbackAppIcon>
         <titlebar>
             <layout>icon:iconify,max,close</layout>
@@ -55,39 +54,11 @@
         <dropShadows>yes</dropShadows>
         <dropShadowsOnTiled>yes</dropShadowsOnTiled>
 
-        <!-- Script gen_style.sh will auto-generate font settings, please do not edit -->
-        <!-- BEGIN GENERATED FONTS -->
-        <font place="ActiveWindow">
-            <name>monospace</name>
-            <size>12</size>
-            <slant>normal</slant>
-            <weight>normal</weight>
-        </font>
-        <font place="InactiveWindow">
-            <name>monospace</name>
-            <size>12</size>
-            <slant>normal</slant>
-            <weight>normal</weight>
-        </font>
-        <font place="MenuHeader">
-            <name>monospace</name>
-            <size>12</size>
-            <slant>normal</slant>
-            <weight>normal</weight>
-        </font>
-        <font place="MenuItem">
-            <name>monospace</name>
-            <size>12</size>
-            <slant>normal</slant>
-            <weight>normal</weight>
-        </font>
-        <font place="OnScreenDisplay">
-            <name>monospace</name>
-            <size>12</size>
-            <slant>normal</slant>
-            <weight>normal</weight>
-        </font>
-        <!-- END GENERATED FONTS -->
+        <font place="ActiveWindow"><name>monospace</name><size>12</size><slant>normal</slant><weight>normal</weight></font>
+        <font place="InactiveWindow"><name>monospace</name><size>12</size><slant>normal</slant><weight>normal</weight></font>
+        <font place="MenuHeader"><name>monospace</name><size>12</size><slant>normal</slant><weight>normal</weight></font>
+        <font place="MenuItem"><name>monospace</name><size>12</size><slant>normal</slant><weight>normal</weight></font>
+        <font place="OnScreenDisplay"><name>monospace</name><size>12</size><slant>normal</slant><weight>normal</weight></font>
     </theme>
 
     <windowSwitcher preview="yes" outlines="yes" unshade="yes">

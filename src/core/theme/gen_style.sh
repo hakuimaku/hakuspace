@@ -175,10 +175,9 @@ EOF
 }
 
 render_labwc() {
-    [[ -f "$THEME_LABWC_RC" && -f "$THEME_LABWC_OVERRIDE" ]] || return 0
-
-    local theme_block
-    theme_block="# BEGIN GENERATED THEME
+    if [[ -f "$THEME_LABWC_OVERRIDE" ]]; then
+        local theme_block
+        theme_block="# BEGIN GENERATED THEME
 window.active.border.color: ${ACCENT_COLOR}
 window.inactive.border.color: #000000
 window.active.label.text.color: ${ACCENT_COLOR}
@@ -194,24 +193,26 @@ osd.label.text.color: ${ACCENT_COLOR}
 osd.window-switcher.style-classic.item.active.border.color: ${ACCENT_COLOR}
 osd.window-switcher.style-thumbnail.item.active.border.color: ${ACCENT_COLOR}
 # END GENERATED THEME"
-
-    if grep -q "# BEGIN GENERATED THEME" "$THEME_LABWC_OVERRIDE"; then
-        awk -v block="$theme_block" '/# BEGIN GENERATED THEME/ { print block; skip=1; next } /# END GENERATED THEME/ { skip=0; next } !skip { print }' \
-            "$THEME_LABWC_OVERRIDE" > "${THEME_LABWC_OVERRIDE}.tmp" && mv "${THEME_LABWC_OVERRIDE}.tmp" "$THEME_LABWC_OVERRIDE"
+        if grep -q "# BEGIN GENERATED THEME" "$THEME_LABWC_OVERRIDE"; then
+            awk -v block="$theme_block" '/# BEGIN GENERATED THEME/ { print block; skip=1; next } /# END GENERATED THEME/ { skip=0; next } !skip { print }' \
+                "$THEME_LABWC_OVERRIDE" > "${THEME_LABWC_OVERRIDE}.tmp" && cat "${THEME_LABWC_OVERRIDE}.tmp" > "$THEME_LABWC_OVERRIDE" && rm -f "${THEME_LABWC_OVERRIDE}.tmp"
+        fi
     fi
 
-    local labwc_font_size=$((FONT_SIZE - 2))
-    (( labwc_font_size < 8 )) && labwc_font_size=8
-    export GEN_FONT_BLOCK="        <!-- BEGIN GENERATED FONTS -->
-        <font place=\"ActiveWindow\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
-        <font place=\"InactiveWindow\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
-        <font place=\"MenuHeader\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
-        <font place=\"MenuItem\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
-        <font place=\"OnScreenDisplay\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
-        <!-- END GENERATED FONTS -->"
-    if grep -q "<!-- BEGIN GENERATED FONTS -->" "$THEME_LABWC_RC"; then
-        awk '/<!-- BEGIN GENERATED FONTS -->/ { print ENVIRON["GEN_FONT_BLOCK"]; skip=1; next } /<!-- END GENERATED FONTS -->/ { skip=0; next } !skip { print }' \
-            "$THEME_LABWC_RC" > "${THEME_LABWC_RC}.tmp" && mv "${THEME_LABWC_RC}.tmp" "$THEME_LABWC_RC"
+    if [[ -f "$THEME_LABWC_RC" ]]; then
+        local labwc_font_size=$((FONT_SIZE - 2))
+        (( labwc_font_size < 8 )) && labwc_font_size=8
+        export GEN_FONT_BLOCK="        <!-- BEGIN GENERATED FONTS -->
+            <font place=\"ActiveWindow\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
+            <font place=\"InactiveWindow\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
+            <font place=\"MenuHeader\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
+            <font place=\"MenuItem\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
+            <font place=\"OnScreenDisplay\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
+            <!-- END GENERATED FONTS -->"
+        if grep -q "<!-- BEGIN GENERATED FONTS -->" "$THEME_LABWC_RC"; then
+            awk '/<!-- BEGIN GENERATED FONTS -->/ { print ENVIRON["GEN_FONT_BLOCK"]; skip=1; next } /<!-- END GENERATED FONTS -->/ { skip=0; next } !skip { print }' \
+                "$THEME_LABWC_RC" > "${THEME_LABWC_RC}.tmp" && cat "${THEME_LABWC_RC}.tmp" > "$THEME_LABWC_RC" && rm -f "${THEME_LABWC_RC}.tmp"
+        fi
     fi
 }
 

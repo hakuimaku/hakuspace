@@ -1,5 +1,8 @@
 {
-    "include": [ "$HOME/hakucfg/config/dockbar_pin_apps"],
+    "include": [
+        "$HOME/hakucfg/config/dockbar_pin_apps",
+        "$HOME/.local/state/hakuspace/dockbar-theme"
+    ],
     "name": "dockbar",
     "layer": "top",
     "position": "bottom",
@@ -25,7 +28,6 @@
     "wlr/taskbar": {
         "format": "{icon}",
         "tooltip-format": "{title} {app_id}",
-        "icon-size": 40,
         "on-click": "activate",
         "on-click-middle": "close",
         "on-click-right": "minimize",

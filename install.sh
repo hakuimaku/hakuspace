@@ -27,6 +27,7 @@ source "./scripts/functions.sh"
 
 print_header
 select_window_manager
+select_deploy_mode
 
 # ============================================================================
 # BLOCK 1: CHECK AND INSTALL DEPENDENCIES
@@ -234,26 +235,37 @@ log_info "Do NOT skip this step in the first time installation hakuspace"
 if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
 
     echo ">>> Deploying configs..."
-    for folder in "$SOURCE_CONFIG"/*/; do
-        [[ -d "$folder" ]] || continue
-        folder_name="$(basename "$folder")"
-        # Deloy config with skip config in the list of ONCE_CONFIGS and SKIP_CONFIGS
-        if [[ " ${ONCE_CONFIGS[*]} " == *"$folder_name"* || " ${SKIP_CONFIGS[*]} " == *"$folder_name"* ]]; then
-            continue
-        fi
-        copy_dir_content "$SOURCE_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
-    done
-    copy_file "$SOURCE_CONFIG/hypr/hypridle.conf" "$DEST_CONFIG/hypr/hypridle.conf"
-    copy_file "$SOURCE_CONFIG/hypr/hyprlock.conf" "$DEST_CONFIG/hypr/hyprlock.conf"
-    copy_file "$SOURCE_CONFIG/hypr/hyprlock_tiny.conf" "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
+    for item in "$SOURCE_CONFIG"/*; do
+        [[ -e "$item" ]] || continue
+        item_name="$(basename "$item")"
+        
+        is_skipped=0
+        for once in "${ONCE_CONFIGS[@]}"; do
+            [[ "$once" == "$item" ]] && { is_skipped=1; break; }
+        done
+        for skip in "${SKIP_CONFIGS[@]}"; do
+            [[ "$skip" == "$item" ]] && { is_skipped=1; break; }
+        done
+        [[ $is_skipped -eq 1 ]] && continue
 
-    # Once configs (Thunar, gtk-3.0, xfce4, mpv, btop)
+        deploy_config_item "$item" "$DEST_CONFIG/$item_name"
+    done
+    
+    deploy_config_item "$SOURCE_CONFIG/hypr/hypridle.conf" "$DEST_CONFIG/hypr/hypridle.conf"
+    deploy_config_item "$SOURCE_CONFIG/hypr/hyprlock.conf" "$DEST_CONFIG/hypr/hyprlock.conf"
+    deploy_config_item "$SOURCE_CONFIG/hypr/hyprlock_tiny.conf" "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
+
+    # Once configs (Thunar, gtk-3.0, xfce4, mpv, btop, cava, mimeapps.list)
     # Which will be deployed only once and not overwritten in future runs (update.sh)
     echo ">>> Deploying Once configs..."
-    for folder in "${ONCE_CONFIGS[@]}"; do
-        [[ -d "$folder" ]] || continue
-        folder_name="$(basename "$folder")"
-        copy_dir_content "$folder" "$DEST_CONFIG/$folder_name"
+    for item in "${ONCE_CONFIGS[@]}"; do
+        [[ -e "$item" ]] || continue
+        item_name="$(basename "$item")"
+        if [[ -d "$item" ]]; then
+            copy_dir_content "$item" "$DEST_CONFIG/$item_name"
+        else
+            copy_file "$item" "$DEST_CONFIG/$item_name"
+        fi
     done
 
     # Loop through selected WMs
@@ -264,21 +276,24 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
         case "$WM_NAME" in
             "hyprland")
                 echo ">>> Deploying Hyprland configs..."
-                # Hyprland will copy content in hypr/ instead of hypr dir for not overriting hyprlock and hypridle configs
-                copy_dir_content "$WM_DIR_PATH/config" "$DEST_CONFIG/hypr/config"
-                copy_file "$WM_DIR_PATH/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
+                # Hyprland will symlink content in hypr/ instead of hypr dir for not overriting hyprlock and hypridle configs
+                deploy_config_item "$WM_DIR_PATH/config" "$DEST_CONFIG/hypr/config"
+                deploy_config_item "$WM_DIR_PATH/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
                 ;;
             "niri")
                 echo ">>> Deploying Niri configs..."
-                copy_dir_content "$WM_DIR_PATH" "$DEST_CONFIG/niri"
+                deploy_config_item "$WM_DIR_PATH" "$DEST_CONFIG/niri"
                 ;;
             "mango")
                 echo ">>> Deploying Mango configs..."
-                copy_dir_content "$WM_DIR_PATH" "$DEST_CONFIG/mango"
+                deploy_config_item "$WM_DIR_PATH" "$DEST_CONFIG/mango"
                 ;;
             "labwc")
                 echo ">>> Deploying Labwc configs..."
-                copy_dir_content "$WM_DIR_PATH" "$DEST_CONFIG/labwc"
+                deploy_config_item "$WM_DIR_PATH" "$DEST_CONFIG/labwc"
+
+                # Deploy hakulab theme for labwc, ONCE_CONFIGS
+                deploy_config_item "$HOME_SRC_DIR/.themes/hakulab" "$DEST_CONFIG/.themes/hakulab"
                 ;;
             *)
                 log_warn "Unknown WM: $WM_NAME. Skipping WM config deployment."
@@ -288,17 +303,13 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
 
     echo ">>> Deploying Thunar gtk.css theme..."
     backup_dir "$DEST_CONFIG/gtk-3.0"
-    copy_file "$SOURCE_CONFIG/gtk-3.0/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css" 1
+    deploy_config_item "$SOURCE_CONFIG/gtk-3.0/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css" 1
 
     echo ">>> Deploying starship.toml (starship configuration)..."
-    copy_file "$SOURCE_CONFIG/starship.toml" "$DEST_CONFIG/starship.toml"
+    deploy_config_item "$SOURCE_CONFIG/starship.toml" "$DEST_CONFIG/starship.toml"
 
     echo ">>> Deploying .nanorc (nano configuration)..."
-    copy_file "$HOME_SRC_DIR/.nanorc" "$HOME/.nanorc"
-
-    # mimeapps.list only deployed once, update.sh do not deploy it again
-    echo ">>> Deploying mimeapps.list..."
-    copy_file "$SOURCE_CONFIG/mimeapps.list" "$DEST_CONFIG/mimeapps.list"
+    deploy_config_item "$HOME_SRC_DIR/.nanorc" "$HOME/.nanorc"
 
 
     log_ok "Configurations deployed finished."
@@ -307,23 +318,21 @@ else
 fi
 
 # ============================================================================
-# BLOCK 5: BACKUP AND COPY LOCAL BIN
+# BLOCK 5: SETUP HAKUSPACE SCRIPTS
 # ============================================================================
-step_title "5 - SETUP LOCAL BIN SCRIPTS"
+step_title "5 - SETUP HAKUSPACE SCRIPTS"
 
-log_info "Backing up existing ~/.local/bin and copying new scripts from hakuspace/src/home/.local/bin"
+log_info "Backing up existing HakuSpace scripts and deploying them to ~/.local/share/hakuspace"
 log_info "Do NOT skip this step in the first time installation hakuspace"
 
 if ask_yes_no "===> Do you want to setup hakuspace scripts now?"; then
-    if [[ -d "$SOURCE_BIN" ]]; then
-        copy_dir_content "$SOURCE_BIN" "$DEST_BIN"
-        chmod +x ~/.local/bin/*
-        log_ok "local/bin deployment completed."
+    if deploy_hakuspace_scripts; then
+        log_ok "HakuSpace script deployment completed."
     else
-        log_error "Not found directory: $SOURCE_BIN"
+        log_error "HakuSpace script deployment failed."
     fi
 else
-    log_skip "Skipping local/bin deployment."
+    log_skip "Skipping HakuSpace script deployment."
 fi
 
 # ============================================================================
@@ -347,6 +356,15 @@ fi
 # BLOCK 7: FINAL SETUP: MAKE SOMETHING WORK
 # ============================================================================
 step_title "7 - FINAL SETUP: MAKE SOMETHING WORK"
+
+# Check if local/state/hakuspace exists, if not, deploy it
+if [[ ! -d "$HOME/.local/state/hakuspace/dockbar-theme" || ! -d "$HOME/.local/state/hakuspace/rofi-theme.rasi" ]]; then
+    log_info "Local state directory ~/.local/state/hakuspace does not exist. Deploying it now..."
+    deploy_config_item "$HOME_SRC_DIR/.local/state/hakuspace" "$HOME/.local/state/hakuspace"
+    log_ok "Local state directory deployed."
+else
+    log_skip "Local state directory ~/.local/state/hakuspace already exists. Skipping deployment."
+fi
 
 # Gen style first time
 echo ""

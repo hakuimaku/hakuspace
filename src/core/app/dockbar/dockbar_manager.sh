@@ -12,6 +12,9 @@ DOCKBAR_DIR="$HOME/.config/waybar/dockbar"
 DOCKBAR_PIN_APPS="$HOME/hakucfg/config/dockbar_pin_apps"
 AUTOHIDE_SCRIPT="$HOME/.local/bin/dockbar_autohide.py"
 
+STATE_DIR="$HOME/.local/state/hakuspace"
+STATE_FILE="$STATE_DIR/dockbar-theme"
+
 mkdir -p "$STATE_DIR"
 
 # Ensure state files exist and contain valid values (0 or 1)
@@ -143,10 +146,10 @@ fi
 
 # Exclusive Mode Toggle
 if [[ $1 == "--exclusive" ]]; then
-    if grep -q '"exclusive": true' "$DOCKBAR_DIR/config"; then
-        sed -i 's/"exclusive": true/"exclusive": false/' "$DOCKBAR_DIR/config"
+    if grep -q '"exclusive": true' "$STATE_FILE"; then
+        sed -i 's/"exclusive": true/"exclusive": false/' "$STATE_FILE"
     else
-        sed -i 's/"exclusive": false/"exclusive": true/' "$DOCKBAR_DIR/config"
+        sed -i 's/"exclusive": false/"exclusive": true/' "$STATE_FILE"
     fi
     "$HOME/.local/bin/dockbar_manager.sh" --reload
     exit 0
@@ -154,13 +157,13 @@ fi
 
 # Change Icon Size
 if [[ $1 == "--icon-size" ]]; then
-    current_size=$(grep -oP '"icon-size":\s*\K\d+' "$DOCKBAR_DIR/config" | head -n 1)
+    current_size=$(grep -oP '"icon-size":\s*\K\d+' "$STATE_FILE" | head -n 1)
     [[ -z "$current_size" ]] && current_size=52
 
     new_size=$(rofi -dmenu -p "Icon size (current: $current_size):" <<< "$current_size" -theme-str 'window {width: 40%; height: 40%;}' -theme-str 'entry { placeholder: "Type new size"; }')
     
     if [[ -n "$new_size" && "$new_size" =~ ^[0-9]+$ ]]; then
-        sed -i -E "s/\"icon-size\": *[0-9]+/\"icon-size\": $new_size/g" "$DOCKBAR_DIR/config"
+        sed -i -E "s/\"icon-size\": *[0-9]+/\"icon-size\": $new_size/g" "$STATE_FILE"
         echo "Icon size updated to $new_size."
         
         if [[ -f "$DOCKBAR_PIN_APPS" ]]; then

@@ -11,4 +11,4 @@ configuration {
     window-format: "{w} | {c} | {t}";
 }
 
-@theme "line"
+@import "~/.local/state/hakuspace/rofi-theme.rasi"

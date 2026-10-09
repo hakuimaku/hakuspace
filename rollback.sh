@@ -115,7 +115,12 @@ build_managed_destinations() {
     add_managed_destination "$DEST_CONFIG/niri"
     add_managed_destination "$DEST_CONFIG/mango"
     add_managed_destination "$DEST_CONFIG/labwc"
-    add_managed_destination "$DEST_BIN"
+    while IFS= read -r -d '' source_item; do
+        item_name="$(basename "$source_item")"
+        [[ "$item_name" == "README.md" ]] && continue
+        add_managed_destination "$DEST_BIN/$item_name"
+    done < <(find "$SOURCE_CORE" -type f -print0)
+    
     add_managed_destination "$HOME/.nanorc"
 }
 
@@ -125,6 +130,31 @@ clear_managed_destinations() {
     # Move current files into a rollback backup before restoring old files so
     # the rollback itself can be undone if the selected backup is unsuitable.
     for destination in "${MANAGED_DESTINATIONS[@]}"; do
+        if [[ ! -e "$destination" && ! -L "$destination" ]]; then
+            continue
+        fi
+
+        if [[ -d "$destination" && ! -L "$destination" ]]; then
+            # Clean inner deep symlinks first to avoid garbage rollback backups
+            while IFS= read -r -d '' link; do
+                local target
+                target="$(readlink "$link")"
+                if [[ "$target" == *"/hakuspace/src/"* ]]; then
+                    rm -f "$link"
+                fi
+            done < <(find "$destination" -type l -print0)
+            
+            # If the directory is now empty, just remove it
+            rmdir "$destination" 2>/dev/null && continue
+        elif [[ -L "$destination" ]]; then
+            local target
+            target="$(readlink "$destination")"
+            if [[ "$target" == *"/hakuspace/src/"* ]]; then
+                rm -f "$destination"
+                continue
+            fi
+        fi
+
         if [[ -e "$destination" || -L "$destination" ]]; then
             backup_item "$destination"
         fi
@@ -140,10 +170,33 @@ restore_item() {
     relative_path="${source_item#$SELECTED_BACKUP/}"
     destination="$HOME/$relative_path"
 
-    if [[ -d "$source_item" && ! -L "$source_item" ]]; then
-        copy_dir_content "$source_item" "$destination" 1
+    # Prevent symlink dereferencing by removing HakuSpace symlinks first
+    if [[ -L "$destination" ]]; then
+        local target
+        target="$(readlink "$destination")"
+        if [[ "$target" == *"/hakuspace/src/"* ]]; then
+            rm -f "$destination"
+        fi
+    fi
+
+    if [[ -L "$source_item" ]]; then
+        ensure_dir "$(dirname "$destination")"
+        ln -sfn "$(readlink "$source_item")" "$destination"
+    elif [[ -d "$source_item" ]]; then
+        ensure_dir "$destination"
+        (
+            shopt -s dotglob nullglob
+            for item in "$source_item"/*; do
+                restore_item "$item"
+            done
+        )
     else
-        copy_file "$source_item" "$destination" 1
+        ensure_dir "$(dirname "$destination")"
+        # Force remove if it's still a symlink to prevent cp dereferencing
+        if [[ -L "$destination" ]]; then
+            rm -f "$destination"
+        fi
+        cp -f "$source_item" "$destination"
     fi
 
     ((restored_count++))

@@ -44,6 +44,7 @@ ONCE_CONFIGS=(
     "$SOURCE_CONFIG/mpv"
     "$SOURCE_CONFIG/btop"
     "$SOURCE_CONFIG/cava"
+    "$SOURCE_CONFIG/mimeapps.list"
 )
 
 # Skip configs (to be skipped during install.sh and update.sh)
@@ -56,6 +57,6 @@ SKIP_CONFIGS=(
     "$SOURCE_CONFIG/gtk-3.0"
 )
     
-# Bin Directories
-SOURCE_BIN="$HOME_SRC_DIR/.local/bin"
+# HakuSpace script directories
+SOURCE_CORE="$SOURCE_DIR/core"
 DEST_BIN="$HOME/.local/bin"

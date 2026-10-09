@@ -26,8 +26,8 @@ STATE_DIR="${THEME_ROOT}/state"
 THEME_STATE_FILE="${STATE_DIR}/state.env"
 
 THEME_BTOP_DIR="${HOME}/.config/btop/themes"
-THEME_LABWC_RC="${HOME}/.config/labwc/rc.xml"
-THEME_LABWC_OVERRIDE="${HOME}/.config/labwc/themerc-override"
+# THEME_LABWC_RC="${HOME}/.local/state/hakuspace/labwc-include.xml"
+THEME_LABWC_OVERRIDE="${HOME}/.themes/hakulab/labwc/themerc"
 
 # Default theme values.
 THEME_DEFAULT_ACCENT="#ffffff"
