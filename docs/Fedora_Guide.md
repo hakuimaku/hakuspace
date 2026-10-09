@@ -57,7 +57,7 @@ go install github.com/probeldev/niri-float-sticky@latest
 Install hyprland from the COPR repository `lionheartp/Hyprland`:
 ```bash
 sudo dnf copr enable lionheartp/Hyprland
-sudo dnf install hyprland hyprsunset
+sudo dnf install hyprland hyprsunset hyprland-guiutils
 ```
 
 ### A-3. Install Mango:
