@@ -29,6 +29,7 @@ local border_color = style.border_color
 hl.monitor({
     output   = "eDP-1",
     mode     = "1920x1080@60",
+    --mode     = "1280x720@60",
     position = "auto",
     scale    = "1",
 })
@@ -69,6 +70,7 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("~/.local/bin/random_wallpaper.sh")
     hl.exec_cmd("~/.local/bin/welcome")
 end)
+
 
 
 -------------------------------
@@ -211,9 +213,9 @@ hl.animation({ leaf = "border", enabled = true, duration = 1, speed = 10, bezier
 hl.animation({ leaf = "borderangle", enabled = true, duration = 1, speed = 30, bezier = "default", loop = true })
 
 -- Workspaces
-hl.animation({ leaf = "workspaces", enabled = true, duration = 1, speed = 8, bezier = "smoothzz", style = "slidevert" })
-hl.animation({ leaf = "workspacesIn", enabled = true, duration = 1, speed = 8, bezier = "smoothzz", style = "slidevert" })
-hl.animation({ leaf = "workspacesOut", enabled = true, duration = 1, speed = 8, bezier = "smoothzz", style = "slidevert" })
+hl.animation({ leaf = "workspaces", enabled = true, duration = 1, speed = 8, bezier = "smoothzz", style = "slide" })
+hl.animation({ leaf = "workspacesIn", enabled = true, duration = 1, speed = 8, bezier = "smoothzz", style = "slide" })
+hl.animation({ leaf = "workspacesOut", enabled = true, duration = 1, speed = 8, bezier = "smoothzz", style = "slide" })
 
 -- Special workspace
 hl.animation({ leaf = "specialWorkspace", enabled = true, duration = 1, speed = 6, bezier = "smoothzz", style = "slidevert" })
@@ -302,7 +304,7 @@ hl.config({
 
 hl.gesture({
     fingers = 3,
-    direction = "vertical",
+    direction = "horizontal",
     action = "workspace"
 })
 
@@ -314,9 +316,9 @@ hl.device({
 })
 
 
---------------------------------
----- WINDOWS AND WORKSPACES ----
---------------------------------
+---------------------------------------------
+---------- WINDOWS AND WORKSPACES -----------
+---------------------------------------------
 
 -- See https://wiki.hypr.land/Configuring/Basics/Window-Rules/
 -- and https://wiki.hypr.land/Configuring/Basics/Workspace-Rules/
@@ -379,23 +381,61 @@ hl.workspace_rule({ workspace = "3", persistent = true })
 hl.workspace_rule({ workspace = "4", persistent = true })
 hl.workspace_rule({ workspace = "5", persistent = true })
 
------------------------------------------------------------------
-hl.window_rule({
-    name = "float-calculator",
-    match = { class = "org.gnome.Calculator" },
 
-    float = true,
-    move = "10 55",
-    size = "600 800",
-})
-
-
-
+--------------------------------
+----------- OPACITY ------------
+--------------------------------
 hl.window_rule({
     name  = "opacity-for-certain-apps",
     match = { class = "(?i)nemo|kitty|code|jetbrains.*" },
 
-    opacity = 1,
+    opacity = 0.8,
+})
+
+-- Haku
+hl.window_rule({
+    name  = "opacity-haku",
+    match = { class = "seycmd|seyclock|seylavat|seycava" },
+
+    opacity = 0.7,
+})
+
+
+
+----------------------------------
+----------- ANIMATIONS -----------
+----------------------------------
+-- Animation for Rofi
+hl.layer_rule({
+    name = "rofi-slide",
+    match = { namespace = "rofi" },
+    animation = "slide top",
+    blur = true,
+})
+-- Animation for Waybar
+hl.layer_rule({
+    match = { namespace = "waybar" },
+    
+    animations = fade
+})
+-- Slide for Swaync
+hl.layer_rule({
+    name = "swaync-control-center",
+    match = { namespace = "swaync-control-center" },
+
+    animation = "slide right",
+})
+
+-------------------------------------------------
+----------- Floating window for apps ------------
+-------------------------------------------------
+hl.window_rule({
+    name  = "floating-imv",
+    match = { class = "imv" },
+
+    float = true,
+    center = true,
+    size  = "1280 720",
 })
 
 hl.window_rule({
@@ -408,34 +448,12 @@ hl.window_rule({
 })
 
 hl.window_rule({
-    name  = "floating-imv",
-    match = { class = "imv" },
+    name = "float-calculator",
+    match = { class = "org.gnome.Calculator" },
 
     float = true,
-    center = true,
-    size  = "1280 720",
-})
-
----------------------------------------------------------
-
-hl.layer_rule({
-    name = "rofi-slide",
-    match = { namespace = "rofi" },
-    animation = "slide top",
-    blur = true,
-})
-
-hl.layer_rule({
-    match = { namespace = "waybar" },
-    
-    animations = fade
-})
-
-hl.layer_rule({
-    name = "swaync-control-center",
-    match = { namespace = "swaync-control-center" },
-
-    animation = "slide right",
+    move = "10 55",
+    size = "600 800",
 })
 
 -- Browser popups like save, etc. should usually be floating
@@ -448,8 +466,9 @@ hl.window_rule({
     size  = "600 600",
 })
 
-
--- Cava Underbar
+---------------------------------
+--------- Cava Underbar ---------
+---------------------------------
 hl.window_rule({
     name = "cava-underbar",
     match = { class = "cavaunderbar" },
