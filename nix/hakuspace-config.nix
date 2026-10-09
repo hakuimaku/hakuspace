@@ -97,7 +97,7 @@ in
                 postBuild = ''
                     wrapProgram $out/bin/python3 \
                     --prefix GI_TYPELIB_PATH : "${lib.makeSearchPath "lib/girepository-1.0" [
-                        pango
+                        pango.out
                         harfbuzz
                         gtk3
                         gtk-layer-shell
