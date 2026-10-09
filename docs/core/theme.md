@@ -10,8 +10,8 @@ Whenever you change your wallpaper (whether you trigger it manually via `wallpap
 
 ### 1. Setting the Wallpaper (`wallpaper_set.sh`)
 Everything starts when you pick a new image. The system calls `wallpaper_set.sh`, which is responsible for physically displaying the wallpaper on your screen. 
-- If you select a static image (`.png`, `.jpg`), it uses `awww` to render it. 
-- If you pick a video wallpaper (`.mp4`, `.gif`), it seamlessly switches to using `mpvpaper`.
+- If you select a static image (`.png`, `.jpg`, `.gif`), it uses `awww` to render it. 
+- If you pick a video wallpaper (`.mp4`), it seamlessly switches to using `mpvpaper`.
 - This script also creates blurred cache versions of the wallpaper, which are used later for elements like the Niri overview backdrop or Rofi backgrounds.
 
 ### 2. Extracting the Colors (`get_accent_color.py`)
@@ -33,7 +33,7 @@ Once we have the perfect, validated Hex color code (e.g., `#ff6699`), it is hand
 ### 5. Applying the Changes Live (`apply_style.sh`)
 Generating the config files isn't enough; the applications need to know that their configs have changed. That's where `apply_style.sh` comes in.
 - This script wakes up all the relevant applications and tells them to reload their configurations on the fly.
-- For example, it sends a soft reload signal (`killall -SIGUSR2 waybar`) to Waybar so it updates without crashing or blinking out of existence. It sends similar reload signals to SwayNC, Kitty, and your Window Manager, ensuring the whole desktop transitions smoothly to the new theme in real-time!
+- For example, it calls `reload_config.sh` (to reload the Window Manager), and sends reload commands to SwayNC, Kitty, and Cava. Note that Waybar updates its CSS automatically via its own hot-reload mechanism.
 
 ## Customizing the Theming Engine
 
