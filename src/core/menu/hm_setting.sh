@@ -22,11 +22,21 @@ if [[ $# -eq 0 ]]; then
     IS_COLOR=""
     [[ "$CAVA_COLOR_STATUS" == "1" ]] && IS_COLOR="(Accent)" || IS_COLOR="(Black)"
 
+    CAVA_DYNAMIC_STATUS=$(cat "$STATE_DIR/cava_dynamic_state" 2>/dev/null || echo "0")
+    IS_CAVA_DYNAMIC=""
+    [[ "$CAVA_DYNAMIC_STATUS" == "1" ]] && IS_CAVA_DYNAMIC="(ON)" || IS_CAVA_DYNAMIC="(OFF)"
+
+    DYNAMIC_STATUS=$(cat "$STATE_DIR/rounded_screen_dynamic_state" 2>/dev/null || echo "1")
+    IS_DYNAMIC=""
+    [[ "$DYNAMIC_STATUS" == "1" ]] && IS_DYNAMIC="(ON)" || IS_DYNAMIC="(OFF)"
+
     cat <<INNEREOF
 󱂩  Taskbar App Name ($DOCK_APP_NAME)
 󱂩  Taskbar Icon Size Change ($DOCK_ICON_SIZE_TEXT)
 󰝚  Cava Top Toggle $IS_TOP
 󰝚  Cava Color Switch $IS_COLOR
+󰝚  Cava Dynamic Exclusive $IS_CAVA_DYNAMIC
+󰍹  Rounded Screen Dynamic Exclusive $IS_DYNAMIC
 󱁤  Settings Folder
 󱁤  HakuMenu General Tab
 󰖩  Wifi
@@ -44,6 +54,8 @@ case "$chosen" in
     *"Taskbar Icon Size Change"*) spawn $HOME/.local/bin/taskbar_manager.sh --icon-size ;;
     *"Cava Top Toggle"*) spawn $HOME/.local/bin/cava_manager.sh --top ;;
     *"Cava Color Switch"*) spawn $HOME/.local/bin/cava_manager.sh --color-switch ;;
+    *"Cava Dynamic Exclusive"*) spawn $HOME/.local/bin/cava_manager.sh --toggle-dynamic ;;
+    *"Rounded Screen Dynamic Exclusive"*) spawn $HOME/.local/bin/rounded_screen_manager.sh --toggle-dynamic ;;
     *"Settings Folder"*) spawn xdg-open "$HOME/hakucfg" ;;
     *"HakuMenu General Tab"*) spawn code $HOME/hakucfg/general-menu.sh ;;
     *"Wifi"*) spawn nm-connection-editor ;;
