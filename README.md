@@ -71,6 +71,8 @@ See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/
 
 > XDG Desktop Portal: GTK by default, but each WM will use its specific, recommended portal according to its official wiki (hyprland uses hyprland, niri uses gnome, and mangowm uses wlr).
 
+> Accent Color based on wallpaper using [python-colorthief](https://github.com/fengsp/color-thief-py)
+
 ---
 
 ## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Installation+Guide" alt="Typing SVG" />
