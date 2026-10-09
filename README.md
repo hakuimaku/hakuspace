@@ -44,16 +44,19 @@ Haku Space now supporting Fedora too! See [Fedora Guide](https://github.com/haku
 
 ## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Key+Features" alt="Typing SVG" />
 
+* **Control Center**: `~/hakuspace-control` this directory stores your custom configs so you don't have to touch the main ones, giving you much more freedom to customize.
 * **Accent Colors**: Synced across **Waybar**, **Rofi**, **Kitty**, **Swaync**,... giving your setup a **Super Clean** and **Cohesive Vibe**!
 * **Smart Accent Color:** Automatically generates the accent color palette based on your current wallpaper.
 * **Flexible Waybar Layouts:** Support layouts: `top`, `left`, `coredge`, `minimal`, `full`, `neon` (Will be extended more).
 * **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
 * **Wallpaper Automation:** Wallpapers change automatically every 5 minutes (customizable in the `random_wallpaper.sh` script).
 * **Dockbar:** Built-in, Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
-* **Desktop Icons** `(experimental)`: Built-in, Items in folder `~/Desktop` will be shown on Desktop.
+* **Desktop Icons** `(experimental)`: Built-in, Items in folder `~/Desktop` will be shown on Desktop (still bugs btw).
 
 > [!note]
 > My dotfiles are powered by scripts; if you're not using them, there's no impact on your performance!
+>
+> If you have any questions about **how to use** my dotfiles or want some tips, don't hesitate to reach out on [Discord](https://discord.gg/https://discord.gg/Juuun8sXsN)
 
 ---
 
@@ -106,10 +109,10 @@ git clone https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 
-If you prefer the version I've tested (a little honestly), clone the **stable** release version `v2.2.0` (lastest):
+If you prefer the version I've tested (a little honestly), clone the **stable** release version `v2.2.1` (lastest):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.2.0 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
+git clone --depth 1 --branch v2.2.1 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 
@@ -206,10 +209,7 @@ hyprpm reload
 ```
 Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 
-1) Uncomment the plugin loading line in `hyprland.lua` to load the plugin configuration on startup
-2) Make sure to set the correct permissions for the plugin binary (if needed) using `hl.permission` in `hyprland.lua`
-3) Uncomment `hl.exec_cmd("hyprpm reload -n")` in `autostart.lua` to automatically reload Hyprland when plugins are enabled/disabled
-4) Customize the plugin configuration in `plugin.lua` as needed
+See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 
 ---
 
@@ -252,6 +252,7 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 
 ## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Assets+located" alt="Typing SVG" />
 
+- Custom config (your personal changes): `~/hakuspace-control`
 - Icons: `~/.icons`
 - Themes: `~/.themes`
 - All hakuspace scripts: `~/.local/bin`
