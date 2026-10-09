@@ -1,7 +1,7 @@
 <div align="center">
 
 # Haku Space
-Arch / Fedora / NixOS dotfiles for Hyprland / Niri / MangoWM / Labwc
+Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 
 </div>
 
@@ -16,7 +16,7 @@ Arch / Fedora / NixOS dotfiles for Hyprland / Niri / MangoWM / Labwc
     <a href="https://github.com/hakuimaku/hakuspace"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/hakuimaku/hakuspace?style=for-the-badge&label=Repo%20Size&labelColor=%236f8fa0&color=%231f1f1f&logo=github&logoColor=%231f1f1f">
 </p>
 
-| <img width="1920" height="1080" alt="screenshot_2026-08-03_17-50-02" src="https://github.com/user-attachments/assets/8cc12f0f-d03f-47e7-9b09-85e16e40f3e2" /> | <img width="1920" height="1080" alt="screenshot_2026-08-03_17-59-18" src="https://github.com/user-attachments/assets/259dfd36-f46c-4366-ab8e-fa9ab6fc90bd" /> |
+| <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/b5b3915e-e3d1-453d-9075-fe8a163fd2ce" /> | <img width="1920" height="1080" alt="screenshot_2026-08-03_17-59-18" src="https://github.com/user-attachments/assets/259dfd36-f46c-4366-ab8e-fa9ab6fc90bd" /> |
 |--|--|
 | <img width="1920" height="1080" alt="screenshot_2026-07-16_10-57-36" src="https://github.com/user-attachments/assets/02050014-7041-4a92-aa94-cef9a00c0592" /> | <img width="1920" height="1080" alt="screenshot_2026-08-03_17-53-03" src="https://github.com/user-attachments/assets/2ffee716-eaa0-471f-bbbf-e6c341adf75f" /> |
 
@@ -33,7 +33,7 @@ Arch / Fedora / NixOS dotfiles for Hyprland / Niri / MangoWM / Labwc
 </div>
 
 - Multi-WM Support: Hyprland, Niri, MangoWM, Labwc with seamless switching between window managers.
-- Multi-Distro Support: Arch, Fedora, Nixos currently.
+- Multi-Distro Support: Have been tested on Arch, Fedora, Nixos.
 - DE-like Experience: Modular UI powered by Rofi, Waybar, SwayNC, and custom scripts.
 - Extensible: Highly customizable and easy to adapt to your own workflow.
 - See Guide for: [Arch Linux](https://github.com/hakuimaku/hakuspace#-3) | [NixOS](https://github.com/hakuimaku/hakuspace#-5) | [Fedora](https://github.com/hakuimaku/hakuspace/blob/main/docs/Fedora_Guide.md)
@@ -44,12 +44,12 @@ Arch / Fedora / NixOS dotfiles for Hyprland / Niri / MangoWM / Labwc
 
 * **Control Center**: `~/hakuspace-control` this directory stores your custom configs so you don't have to touch the main ones, giving you much more freedom to customize.
 * **Accent Colors**: Synced across **Waybar**, **Rofi**, **Kitty**, **Swaync**,... giving your setup a **Super Clean** and **Cohesive Vibe**!
-* **Smart Accent Color:** Automatically generates the accent color palette based on your current wallpaper.
+* **Smart Accent Color:** Automatically generates the accent color based on your current wallpaper.
 * **Flexible Waybar Layouts:** Support layouts: `top`, `left`, `coredge`, `minimal`, `full`, `neon` (Will be extended more).
 * **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
-* **Wallpaper Automation:** Wallpapers change automatically every 5 minutes (customizable WALL_INTERVAL in the `main_setting.sh`).
+* **Wallpaper Automation:** Wallpapers change automatically every 5 minutes.
 * **Dockbar:** Built-in, Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
-* **Desktop Icons** `(experimental)`: Built-in, Items in folder `~/Desktop` will be shown on Desktop (still bugs btw).
+* **Desktop Icons** *(experimental)*: Built-in, Items in folder `~/Desktop` will be shown on Desktop (still bugs btw).
 
 > [!note]
 > My dotfiles are powered by scripts; if you're not using them, there's no impact on your performance!
@@ -73,17 +73,16 @@ Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakus
 | Terminal | [Kitty](https://github.com/kovidgoyal/kitty) |
 | App Launcher | [Rofi](https://github.com/davatorium/rofi) |
 | Status Bar | [Waybar](https://github.com/alexays/waybar) |
-| Shell | [Zsh](https://ohmyz.sh/) |
+| Shell | [Fish](https://fishshell.com/) + [Starship](https://starship.rs/) |
 | File Manager | [Thunar](https://docs.xfce.org/xfce/thunar/start) |
 | Notifications & Control Center | [SwayNC](https://github.com/ErikReider/SwayNotificationCenter) |
 | Wallpaper | [Awww](https://codeberg.org/LGFae/awww) |
 | Idle Management | [Hypridle](https://github.com/hyprwm/hypridle) |
 | Screen Lock | [Hyprlock](https://github.com/hyprwm/hyprlock) |
-| Login Menu | [Ly](https://github.com/fairyglade/ly) |
 | Editor | [VS Code](https://code.visualstudio.com/) |
 | Browser | [Firefox](https://www.firefox.com/en-US/) |
 | Screen Recording | [Wl-screenrec](https://github.com/russelltg/wl-screenrec) |
-| Display Manager | [Ly](https://codeberg.org/fairyglade/ly#systemd) |
+| Display Manager (Default) | [Ly](https://codeberg.org/fairyglade/ly#systemd) |
 
 > XDG Desktop Portal: GTK by default, but each WM will use its specific, recommended portal according to its official wiki (hyprland uses hyprland, niri uses gnome, and mangowm/labwc uses wlr).
 
@@ -98,33 +97,28 @@ Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakus
 
 ### 0. Prerequisites:
 
-- You have completed the installation of Arch, Fedora, and NixOS (for derivative distros, please report any issues to me via: [Discord](https://discord.gg/Juuun8sXsN)).
-- You have installed and configured essential utilities such as Wi-Fi, Bluetooth, and necessary hardware drivers.
-- You are familiar with configuring the system via code, as my dotfiles do not feature a central graphical settings GUI.
+- You have completed the installation of Arch, Fedora, and NixOS (or derivative distros)
+- You have installed and configured essential utilities such as Wi-Fi, Bluetooth, Audio,... and necessary hardware drivers.
+- You are familiar with configuring the system via **code**, as my dotfiles do NOT have a central graphical settings GUI.
 
 ### 1. Clone the Dotfiles
-If you prefer to experience the **lastest changes** (Lastest Git), you can clone the main branch:
+- Stable Release (Recommended):
+```bash
+cd ~
+git clone --depth 1 --branch v2.2.3 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
+
+```
+- If you prefer to experience the **lastest changes**:
 ```bash
 cd ~
 git clone https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 
-If you prefer the version I've tested (a little honestly), clone the **stable** release version `v2.2.2` (lastest):
-```bash
-cd ~
-git clone --depth 1 --branch v2.2.2 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
-
-```
-
-Switch to the `hakuspace` directory:
-```bash
-cd hakuspace
-```
-
 ### 2. Run the Installation Script
 
 ```bash
+cd hakuspace
 chmod +x install.sh
 ./install.sh
 ```
@@ -132,11 +126,9 @@ chmod +x install.sh
 ### 3. Complete the Installation
 After running the installation script, restart your computer and log in to either **Hyprland**, **Niri**, **Mango** or **Labwc** to experience the new setup.
 
----
-
 ### 4. After Installation
 1) Change the GTK theme:
-- Go to `GTK Settings` in Rofi App Menu.
+- Go to `GTK Settings` in Rofi App Menu (SUPER + R).
 - Change the theme, icons, and mouse cursor for a better aesthetic.
 
 2) **Install additional packages**:
@@ -155,23 +147,7 @@ Grants the local root user permission to connect to and launch graphical (GUI) a
 
 
 ### 🔽 Update Haku Space to lastest version
-1. Get the lastest version
-- Git pull for the lastest git.
-``` bash
-cd ~/hakuspace
-git pull origin main
-```
-
-- Git fetch for the lastest stable release.
-``` bash
-cd ~/hakuspace
-git fetch --tags
-LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
-git checkout $LATEST_TAG
-```
-
-2. Update
-- Run `update.sh` script in hakuspace folder.
+Simply run `update.sh` script in hakuspace folder.
 ``` bash
 cd ~/hakuspace
 chmod +x update.sh
@@ -219,22 +195,20 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 See the main configuration file at [hakuspace-config.nix](https://github.com/hakuimaku/hakuspace/blob/main/nix/hakuspace-config.nix)
 
 * Simply clone this repository and run the `install.sh` script exactly as outlined [above](https://github.com/hakuimaku/hakuspace#-3).
-* You can use either method: online remote via [flake.nix](https://github.com/hakuimaku/hakuspace/blob/main/nix/flake.nix.example) or offline by directly importing `hakuspace-config.nix` into your `configuration.nix`.
+* You can use either method: online remote via [flake.nix](https://github.com/hakuimaku/hakuspace/blob/main/nix/flake.nix.example) or offline by directly importing `hakuspace-config.nix` into your `configuration.nix` (2 modes already have install flow in script `install.sh`).
 * `hakuspace-config.nix` does not set a display manager by default, as it may conflict with your existing display manager.
-* Two current options in `hakuspace-config.nix` that you can enable/disable in your `configuration.nix`:
+* 3 current options in `hakuspace-config.nix` that you can enable/disable in your `configuration.nix`:
 
 ```nix
 {
   hakuspace = {
     enable = true; # Enable the full hakuspace config
-    enableZshShell = true; # Enable Zsh shell, if you want to use it
+    enableZshShell = false; # Enable Zsh shell, legacy I don't use it anymore
+    enableFishShell = true; # Enable Fish shell
   };
 }
 
 ```
-
-> [!important]
-> If you encounter any issues while applying my `hakuspace-config.nix`, please open an issue or reach out via [Discord](https://discord.gg/Juuun8sXsN).
 
 ---
 
