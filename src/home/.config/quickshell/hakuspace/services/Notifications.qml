@@ -17,6 +17,37 @@ QtObject {
     property int _nextKey: 1
     property var _memory: null
     property bool _started: false
+    property bool dnd: false
+
+    onDndChanged: {
+        if (dnd) hidePopups()
+    }
+
+    function toggleDnd() { dnd = !dnd }
+
+    function hidePopups() {
+        records = records.map(function(record) {
+            return record.popupEligible ? Object.assign({}, record, { popupEligible: false }) : record
+        })
+    }
+
+    // ponytail: first available output until WM provides one reliable focused-output signal.
+    function popupScreen() {
+        return Quickshell.screens.length ? Quickshell.screens[0].name : ""
+    }
+
+    function popupForScreen(screenName) {
+        var target = popupScreen()
+        return records.filter(function(record) {
+            var originAvailable = false
+            for (var i = 0; i < Quickshell.screens.length; ++i)
+                if (Quickshell.screens[i].name === record.popupScreenName) originAvailable = true
+            return record.live && record.popupEligible && !record.dismissed && !dnd
+                && UiState.activePanel !== "notifications"
+                && (record.popupScreenName === screenName
+                    || (!originAvailable && screenName === target))
+        }).slice(-3).reverse()
+    }
 
     onRecordsChanged: {
         if (_memory) _memory.recordsJson = JSON.stringify(records)
@@ -26,7 +57,9 @@ QtObject {
         // The reloadable holder belongs to ShellRoot, where Quickshell can
         // match it to the preceding configuration generation.
         _memory = memory
-        records = JSON.parse(memory.recordsJson || "[]")
+        records = JSON.parse(memory.recordsJson || "[]").map(function(record) {
+            return Object.assign({}, record, { popupEligible: false })
+        })
         _nextKey = memory.nextKey || 1
         _started = true
         return server
@@ -70,7 +103,10 @@ QtObject {
             transient: notification.transient,
             actions: actions,
             live: true,
-            popupEligible: !notification.lastGeneration,
+            popupEligible: !notification.lastGeneration && !dnd
+                           && UiState.activePanel !== "notifications"
+                           && (previous ? previous.popupEligible : true),
+            popupScreenName: previous ? previous.popupScreenName : popupScreen(),
             read: previous ? previous.read : false,
             dismissed: previous ? previous.dismissed : false,
             expired: false,
@@ -178,7 +214,15 @@ QtObject {
         if (notification) notification.expire()
     }
 
+    function clearAll() {
+        if (records.length === 0) return
+        records = []
+        var keys = Object.keys(_handles)
+        for (var i = 0; i < keys.length; ++i) _handles[keys[i]].dismiss()
+    }
+
     property Timer expiryTimer: Timer {
+        // ponytail: hover does not pause this deadline; revisit during P2.5 timeout hardening.
         interval: 250
         repeat: true
         running: false

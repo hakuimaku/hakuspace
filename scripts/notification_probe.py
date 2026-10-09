@@ -48,11 +48,15 @@ ShellRoot {
             return JSON.stringify({screens: Quickshell.screens.length,
                                    started: NotificationStore._started,
                                    serverActive: NotificationStore.server.active,
+                                   dnd: NotificationStore.dnd,
+                                   popupCount: NotificationStore.popupForScreen(Quickshell.screens[0].name).length,
                                    count: NotificationStore.count,
                                    records: NotificationStore.records})
         }
         function dismiss(key: int) { NotificationStore.dismiss(key) }
         function expire(key: int) { NotificationStore.expire(key) }
+        function toggleDnd() { NotificationStore.toggleDnd() }
+        function clearAll() { NotificationStore.clearAll() }
         function reload() { Quickshell.reload(false) }
     }
 }
@@ -151,6 +155,17 @@ def run_inner():
                                  for r in state()["records"]), "timeout expiry", 4)
             print("PASS short timeout expires")
 
+            normal_default = int(command("notify-send", "-p", "--expire-time=-1",
+                                         "P2 default timeout"))
+            critical_default = int(command("notify-send", "-p", "-u", "critical",
+                                           "--expire-time=-1", "P2 critical default"))
+            wait_for(lambda: any(r["id"] == normal_default and r["closeReason"] == "Expired"
+                                 for r in state()["records"]), "default timeout expiry", 7)
+            assert next(r for r in state()["records"] if r["id"] == critical_default)["live"]
+            wait_for(lambda: any(r["id"] == critical_default and r["closeReason"] == "Expired"
+                                 for r in state()["records"]), "critical default expiry", 7)
+            print("PASS default and critical timeout policies")
+
             manual = int(command("notify-send", "-p", "-t", "0", "P2 manual expiry"))
             manual_record = wait_for(lambda: next((r for r in state()["records"]
                                                     if r["id"] == manual), None),
@@ -202,6 +217,25 @@ def run_inner():
             assert state()["count"] == before_reload["count"]
             assert {r["key"] for r in state()["records"]} == {r["key"] for r in before_reload["records"]}
             print("PASS reload rebinds live item without a new popup")
+
+            ipc("toggleDnd")
+            suppressed = int(command("notify-send", "-p", "-t", "0", "P2 DND"))
+            wait_for(lambda: any(r["id"] == suppressed for r in state()["records"]), "DND history")
+            assert state()["dnd"] and not next(r for r in state()["records"]
+                                                 if r["id"] == suppressed)["popupEligible"]
+            ipc("toggleDnd")
+            assert not next(r for r in state()["records"]
+                            if r["id"] == suppressed)["popupEligible"]
+            for index in range(4):
+                command("notify-send", "-p", "-t", "0", f"P2 stack {index}")
+            wait_for(lambda: state()["popupCount"] == 3, "three visible popups")
+            print("PASS DND history, no replay, and newest-three popup cap")
+
+            ipc("clearAll")
+            wait_for(lambda: state()["count"] == 0 and state()["records"] == [],
+                     "clear all")
+            ipc("clearAll")
+            print("PASS clear all is idempotent")
         except Exception:
             log.seek(0)
             print(log.read()[-4000:], file=sys.stderr)
