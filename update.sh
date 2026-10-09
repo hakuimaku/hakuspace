@@ -115,26 +115,6 @@ backup_item() {
     log_backup "$target -> $backup_target"
 }
 
-copy_dir_content() {
-    local src="$1"
-    local dst="$2"
-
-    if [[ ! -d "$src" ]]; then
-        log_warn "Source directory not found: $src"
-        return 1
-    fi
-
-    if [[ -e "$dst" || -L "$dst" ]]; then
-        backup_item "$dst"
-    fi
-
-    ensure_dir "$dst"
-    
-    cp -rf "$src"/. "$dst"/
-    log_copy "$src/. -> $dst/"
-    return 0
-}
-
 copy_file() {
     local src="$1"
     local dst="$2"
@@ -152,6 +132,26 @@ copy_file() {
 
     cp -f "$src" "$dst"
     log_copy "$src -> $dst"
+    return 0
+}
+
+copy_dir_content() {
+    local src="$1"
+    local dst="$2"
+
+    if [[ ! -d "$src" ]]; then
+        log_warn "Source directory not found: $src"
+        return 1
+    fi
+
+    if [[ -e "$dst" || -L "$dst" ]]; then
+        backup_item "$dst"
+    fi
+
+    ensure_dir "$dst"
+    
+    cp -rf "$src"/. "$dst"/
+    log_copy "$src/. -> $dst/"
     return 0
 }
 
@@ -467,6 +467,7 @@ DEST_BIN="$HOME/.local/bin"
 if ask_yes_no "===> Do you want to update hakuspace local/bin scripts now?"; then
     if [[ -d "$SOURCE_BIN" ]]; then
         copy_dir_content "$SOURCE_BIN" "$DEST_BIN"
+        chmod +x ~/.local/bin/*
         log_ok "local/bin update completed."
     else
         log_warn "Directory not found: $SOURCE_BIN"
@@ -480,7 +481,7 @@ check_control_dir
 
 # NixOS configuration update
 if command -v nixos-rebuild >/dev/null 2>&1; then
-    if ask_yes_no "===> NixOS configuration updated. Do you want to rebuild NixOS system now?"; then
+    if ask_yes_no "===> NixOS configuration updated. Do you want to rebuild NixOS system now? (maybe have some conflicts)"; then
         log_info "Rebuilding NixOS system..."
         sudo nixos-rebuild switch
         log_ok "NixOS system rebuilt successfully."
