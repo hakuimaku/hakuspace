@@ -120,7 +120,7 @@ hl.config({
 
 hl.config({
     misc = {
-        disable_autoreload = true, -- Save battery for me :(
+        disable_autoreload = false,
         middle_click_paste = true,
         force_default_wallpaper = 0,    -- Set to 0 or 1 to disable the anime mascot wallpapers
         disable_hyprland_logo   = true, -- If true disables the random hyprland logo
