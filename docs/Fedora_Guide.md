@@ -46,12 +46,6 @@ sudo dnf copr enable yalter/niri
 sudo dnf install niri gammastep
 ```
 
-Install niri-float-sticky (For Cava Underbar):
-```bash
-sudo dnf install golang
-go install github.com/probeldev/niri-float-sticky@latest
-```
-
 ### A-2. Install Hyprland:
 
 Install hyprland from the COPR repository `lionheartp/Hyprland`:
@@ -117,7 +111,7 @@ sudo dnf install starship
 
 - **Install core packages for my scripts**:
 ```bash
-sudo dnf install jq ImageMagick python3-gobject gtk-layer-shell
+sudo dnf install jq ImageMagick python3-gobject gtk-layer-shell vte
 
 sudo dnf install python3-pip
 pip install colorthief
