@@ -20,6 +20,7 @@ QtObject {
     
     property int radius: 16
     property int radiusSm: 8
+    property int tipHugRadius: 24
     property int borderWidth: 0
     property int gap: 4
     property int pad: 10
