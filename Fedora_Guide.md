@@ -65,6 +65,12 @@ sudo dnf install --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/t
 sudo dnf install mangowm gammastep
 ```
 
+### A-4. Install Labwc:
+
+```bash
+sudo dnf install labwc gammastep
+```
+
 ---
 
 ### B. Install XDG Desktop Portal and related packages:
@@ -92,16 +98,15 @@ sudo dnf install xdg-desktop-portal-wlr
 
 ### C. Install ly (Display Manager):
 
-> [!tip]
-> I see KDE Plasma can change WM/DE from the login screen, you can skip this step if you are using KDE Plasma.
-
 ```bash
 sudo dnf install ly
 ```
 
 > [!important]
 > If you want to use ly as your display manager, you need to enable it.
+> 
 > I recommend you to use `tty2` for ly, because `tty1` is used by the gdm (or other display manager) by default.
+> 
 > If you want to use ly on `tty1`, you need to disable gdm (or other display manager) first.
 
 Activate ly service:
@@ -156,7 +161,8 @@ sudo dnf install google-noto-sans-cjk-fonts google-noto-emoji-fonts google-noto-
 ```
 
 > [!important]
-> Install **nerd font** to see **icons** for my shell
+> Install **nerd font** to see **icons** for my shell.
+> 
 > Download **jetbrains nerd font** here: https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip
 
 ```bash
@@ -166,6 +172,7 @@ sudo cp -r ~/Downloads/JetBrainsMono ~/.local/share/fonts
 ```
 
 - **Install optional packages**:
+
 Zen Browser (`sneexy/zen-browser`):
 ```bash
 sudo dnf copr enable sneexy/zen-browser
