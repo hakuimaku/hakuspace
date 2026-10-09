@@ -65,14 +65,13 @@ A sleek overlay that frames your entire monitor with perfectly rounded corners a
 
 ### `rounded_screen.py` (The Overlay Engine)
 To bypass limitations in Wayland's layer-shell protocol (which doesn't let a single surface reserve exclusive space on all four edges without breaking other panels), this application uses a brilliant multi-window architecture:
-- **The Main Window:** Placed on the `OVERLAY` layer with an `exclusive_zone` of `-1`. It spans the entire physical screen, ignores all other panels (like Waybar), and draws the beautiful rounded corners and border.
-- **The 4 Invisible Dummy Edges:** Anchored to the top, bottom, left, and right, these invisible 4px windows sit on the `BOTTOM` layer with active exclusive zones. Because they are processed first by the compositor, they elegantly push other layer surfaces (like Waybar) inward. 
-- **The Result:** Waybar perfectly conforms to the inner edge of your new screen border, while the corners overlay everything seamlessly!
+- **The Main Window:** Placed on the `TOP` layer. It spans the entire physical screen and draws the beautiful rounded corners and border.
+- **Dynamic Mode:** You can toggle "Dynamic Mode" from the Haku Menu. When disabled, it anchors 4 invisible dummy edges to reserve exclusive space and forces itself across the screen using a negative exclusive zone. When enabled, it respects other panels' exclusive zones (like Waybar), allowing itself to be pushed inward dynamically for perfect layout integration.
 
 ### `rounded_screen_manager.sh` (The Controller)
 Manages the lifecycle of the Rounded Screen overlay.
-- **Toggling & Startup:** Controlled via `--toggle` and `--startup`. It hooks into the Haku Menu's Theme section and the Desktop Icons context menu.
-- **State Management:** Remembers if you had it turned on or off across reboots using `~/.local/state/hakuspace/rounded_screen_state`.
+- **Toggling & Startup:** Controlled via `--toggle`, `--startup`, and `--toggle-dynamic`. It hooks into the Haku Menu's Setting section.
+- **State Management:** Remembers if you had it turned on or off across reboots using `~/.local/state/hakuspace/rounded_screen_state` and `rounded_screen_dynamic_state`.
 
 ### Configuration
 You can customize the appearance by editing `~/hakucfg/config/rounded-screen.conf`.
@@ -105,18 +104,18 @@ Manages the lifecycle of the Edge Trigger overlay.
 
 ## Cava Underbar (`src/core/app/cava-layer`)
 
-If you like having an audio visualizer on your desktop, you've probably used `cava`. Normally, it runs inside a regular terminal window. HakuSpace takes it to the next level by embedding `cava` directly into the background of your screen, sitting just above your wallpaper but below your windows, acting as a dynamic "Underbar". It also features an "Overlay Mode" to make the visualizer sit above all other windows!
+If you like having an audio visualizer on your desktop, you've probably used `cava`. Normally, it runs inside a regular terminal window. HakuSpace takes it to the next level by embedding `cava` directly into the background of your screen, sitting just above your wallpaper but below your windows, acting as a dynamic "Underbar". It also features an "Top Mode" to make the visualizer sit above all other windows!
 
 ### `cava_layer.py` (The VTE Wrapper)
 This Python script uses `GtkLayerShell` and `VTE` (Virtual Terminal Emulator).
-- **Layer Shell Embedding:** It creates a borderless, completely transparent, and click-through terminal window. Depending on the settings, it renders either in the `BOTTOM` layer (under windows) or the `OVERLAY` layer (always on top).
+- **Layer Shell Embedding:** It creates a borderless, completely transparent, and click-through terminal window. Depending on the settings, it renders either in the `BOTTOM` layer (under windows) or the `TOP` layer (above windows).
 - **Theme Syncing:** It dynamically parses your `~/.config/kitty/kitty.conf` to extract your current foreground, background, and accent colors, ensuring the visualizer perfectly matches your overall system theme.
 - **Running Cava:** It quietly spawns the actual `cava` C-binary inside this invisible terminal window to process your audio streams.
 
 ### `cava_manager.sh` (The Process Controller)
 Because the Python script acts as a background daemon, it needs a manager to handle its lifecycle.
 - **Toggling:** You can use `cava_manager.sh toggle` (which is mapped in the Haku Menu's Theme tab) to spawn or gracefully kill the visualizer process and its PID file.
-- **Overlay Mode:** You can use `cava_manager.sh --overlay` to toggle the always-on-top overlay mode. The manager gracefully saves this state to `~/.local/state/haku/cava_overlay_state` and makes it accessible in the Haku Menu. If Cava is already running, it instantly restarts it in the new layer. If it is off, it smartly updates the state without turning Cava on unnecessarily.
+- **Top Mode & Dynamic Mode:** You can use `cava_manager.sh --top` to toggle the top layer mode, or `--toggle-dynamic` to toggle Dynamic Mode (which adapts to other panels' exclusive zones). The manager gracefully saves these states to `~/.local/state/hakuspace/cava_overlay_state` and `cava_dynamic_state` and makes them accessible in the Haku Menu.
 - **Live Reloading:** When you change your system's accent color (via `gen_style.sh`), you don't want the audio visualizer to stutter, drop frames, or restart. Calling `cava_manager.sh reload` sends a specific UNIX signal (`SIGUSR1`) to the Python daemon. The script intercepts this signal, re-reads the Kitty configuration, and instantly updates the visualizer's colors on the fly without ever interrupting the live audio stream!
 
 
