@@ -10,9 +10,10 @@ options="󱠩 Hibernate
 󰌑 Return"
 
 # Design rofi
-chosen=$(echo -e "$options" | rofi -dmenu -p "HakuOS" -i -theme-str 'window
+chosen=$(echo -e "$options" | rofi -dmenu -p "Shutdown" -i -theme-str 'window
 {
-    width: 600px;
+    width: 30%;
+    height: 50%;
 }')
 
 # List action
@@ -23,6 +24,6 @@ case $chosen in
     *"Power Off"*) systemctl poweroff ;;
     *"Sleep"*) systemctl suspend ;;
     *"Lock"*) hyprlock ;;
-    *"Exit"*) hyprctl dispatch exit ;;
+    *"Exit"*) hyprctl eval 'hl.dispatch(hl.dsp.exit())' ;;
     *"Return"*) ~/.local/bin/quick_settings.sh ;;
 esac
