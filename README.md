@@ -45,7 +45,9 @@ Use ly for login.
 
 <h2 style="color:#1abc9c;">🚀 Installation</h2>
 
-Follow these steps to install the Hakuspace desktop environment on your system. It is highly recommended to run this on a fresh Arch Linux installation.
+- Follow these steps to install the Hakuspace desktop environment on your system. It is highly recommended to run this on a fresh Arch Linux installation.
+
+- Read install.sh carefully before running it, and make sure to understand what it does. It will install packages, set up configurations, and make changes to your system.
 
 <h3 style="color:#ff8c00;">Step 1: Clone the Repository (Stable Release)</h3>
 
@@ -79,6 +81,22 @@ cd ~ && rm -rf hakuspace
 reboot
 ```
 
+---
+
+### Clone the latest git version (for development and bleeding edge features)
+
+```bash
+cd ~
+git clone https://github.com/hakuimaku/hakuspace.git
+cd hakuspace
+```
+
+Install:
+```bash
+chmod +x install.sh
+./install.sh
+```
+
 ### After installing **hakuspace** *(for lastest git, not for release v1.0.0)*
 You can immediately use the plugins that I have pre-configured. Simply install and enable them using the commands below (or tweak them as you like in `plugin.lua`).
 
@@ -96,6 +114,12 @@ hyprpm enable hyprexpo
 
 hyprpm reload
 ```
+Read Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
+
+1) Uncomment the plugin loading line in `hyprland.lua` to load the plugin configuration on startup
+2) Make sure to set the correct permissions for the plugin binary (if needed) using `hl.permission` in `hyprland.lua`
+3) Uncommnent `hl.exec_cmd("hyprpm reload -n")` in `autostart.lua` to automatically reload Hyprland when plugins are enabled/disabled
+4) Customize the plugin configuration in `plugin.lua` as needed
 
 
 ---
