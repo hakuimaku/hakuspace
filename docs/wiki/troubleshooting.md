@@ -9,7 +9,7 @@
 
 ## Cava is not displayed
 
-Install `cava` and `waybar-cava`, then check that audio is playing. Switch to another Waybar layout and back if the visualizer does not reload.
+Install `cava` and the Cava Underbar dependencies, then check that audio is playing. See [Cava Underbar](cava-underbar.md) for the complete dependency list and log location.
 
 ## Screen recording does not start
 

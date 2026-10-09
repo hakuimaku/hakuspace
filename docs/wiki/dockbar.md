@@ -40,13 +40,3 @@ For example:
 ```
 
 Replace `myapp` with the application command. Add `"image#myapp"` to the `modules` list so the icon appears.
-
-To change Dockbar layout, position, spacing, or behavior, edit the deployed Waybar Dockbar configuration at `~/.config/waybar/dockbar/config`. Common options include:
-
-- `position`: `top`, `bottom`, `left`, or `right`;
-- `exclusive`: whether Dockbar reserves screen space;
-- `icon-size`: the size of running-application icons;
-- `on-click`, `on-click-middle`, and `on-click-right` in `wlr/taskbar`.
-
-To change colors, padding, hover effects, or animations, edit `~/.config/waybar/dockbar/style.css`. These files are generated from HakuSpace defaults, so keep personal changes in the deployed files only if you understand that an update may replace them.
-
