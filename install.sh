@@ -193,7 +193,8 @@ select_window_manager() {
     echo -e "${C_BOLD}[1]${C_RESET} HYPRLAND"
     echo -e "${C_BOLD}[2]${C_RESET} NIRI"
     echo -e "${C_BOLD}[3]${C_RESET} MANGOWM"
-    echo -e "${C_BOLD}[4]${C_RESET} ALL (Niri, Mango, Hyprland)"
+    echo -e "${C_BOLD}[4]${C_RESET} LABWC"
+    echo -e "${C_BOLD}[5]${C_RESET} ALL (Niri, Mango, Hyprland, Labwc)"
     echo ""
     read -r -p ">>> Which Window Manager do you want to install?: " wm_choice
 
@@ -217,14 +218,19 @@ select_window_manager() {
             log_info "Selected: Mango"
             ;;
         4)
-            # Ordering here enforces the config copy order in Block 4
-            SELECTED_WMS=("niri" "mango" "hyprland")
-            SELECTED_WM_DIRS=("$HAKU_DIR/niri" "$HAKU_DIR/mango" "$HAKU_DIR/hyprland")
-            SELECTED_PKG_WMS=("$HAKU_DIR/niri/pkg-niri.txt" "$HAKU_DIR/mango/pkg-mango.txt" "$HAKU_DIR/hyprland/pkg-hyprland.txt")
+            SELECTED_WMS=("labwc")
+            SELECTED_WM_DIRS=("$HAKU_DIR/labwc")
+            SELECTED_PKG_WMS=("$HAKU_DIR/labwc/pkg-labwc.txt")
+            log_info "Selected: Labwc"
+            ;;
+        5)
+            SELECTED_WMS=("niri" "mango" "labwc" "hyprland")
+            SELECTED_WM_DIRS=("$HAKU_DIR/niri" "$HAKU_DIR/mango" "$HAKU_DIR/labwc" "$HAKU_DIR/hyprland")
+            SELECTED_PKG_WMS=("$HAKU_DIR/niri/pkg-niri.txt" "$HAKU_DIR/mango/pkg-mango.txt" "$HAKU_DIR/labwc/pkg-labwc.txt" "$HAKU_DIR/hyprland/pkg-hyprland.txt")
             log_info "Selected: All Window Managers"
             ;;
         *)
-            log_error "Invalid choice. Please run again and choose 1, 2, 3 or 4."
+            log_error "Invalid choice. Please run again and choose 1, 2, 3, 4 or 5."
             exit 1
             ;;
     esac
@@ -405,7 +411,6 @@ fi
 step_title "3 - INITIALIZE SYSTEM DIRECTORIES"
 
 FOLDERS=(
-    "$HOME/.local/bin"
     "$HOME/.config"
     "$HOME/.icons"
     "$HOME/.themes"
@@ -450,6 +455,9 @@ if ask_yes_no "===> Do you want to backup and copy your config now?"; then
         elif [[ $WM_NAME == "mango" ]]; then
             echo ">>> Deploying Mango configs..."
             copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
+        elif [[ $WM_NAME == "labwc" ]]; then
+            echo ">>> Deploying Labwc configs..."
+            copy_dir_content "$SOURCE_WM_CONFIG/labwc" "$DEST_CONFIG/labwc"
         else
             log_warn "Unknown WM: $WM_NAME. Skipping WM config deployment."
         fi
@@ -547,7 +555,8 @@ fi
 # ============================================================================
 step_title "8 - ENABLE SYSTEM SERVICES"
 
-if ask_yes_no "===> Do you want to enable ly service and disable getty now?"; then
+log_warn "Do NOT run this step if you are using a display manager (SDDM, LightDM, etc.) in tty1."
+if ask_yes_no "===> Do you want to enable ly service and disable getty in tty1 now?"; then
     sudo systemctl enable ly@tty1.service
     sudo systemctl disable getty@tty1.service
     log_ok "ly service enabled and getty disabled."
