@@ -16,3 +16,4 @@ configuration {
 }
 
 @import "~/.local/state/hakuspace/rofi-theme.rasi"
+@import "~/.local/state/hakuspace/theme/opaque/rofi.rasi"

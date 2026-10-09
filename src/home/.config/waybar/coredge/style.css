@@ -11,6 +11,7 @@
 }
 
 window#waybar {
+    border-radius: 0;
     background-color: transparent;
     color: @accent_color;
     transition: background-color 0.3s ease;
@@ -237,3 +238,5 @@ tooltip label {
     50% { opacity: 0.5; }
     100% { opacity: 1; }
 }
+
+@import url("../../.local/state/hakuspace/theme/opaque/waybar.css");

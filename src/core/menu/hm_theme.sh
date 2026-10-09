@@ -44,6 +44,11 @@ if [[ $# -eq 0 ]]; then
     EDGE_TRIGGER_TEXT="OFF"
     [[ "$EDGE_TRIGGER_STATUS" == "1" ]] && EDGE_TRIGGER_TEXT="ON"
 
+    # Opaque Theme
+    OPAQUE_STATUS=$(cat "$STATE_DIR/opaque_theme_state" 2>/dev/null || echo "0")
+    IS_OPAQUE=""
+    [[ "$OPAQUE_STATUS" == "1" ]] && IS_OPAQUE="(ON)" || IS_OPAQUE="(OFF)"
+
     cat <<EOF
   Change Theme
   Desktop ($DESKTOP_ICONS_TEXT)
@@ -51,6 +56,7 @@ if [[ $# -eq 0 ]]; then
 󰐃  Taskbar ($TASKBAR_TEXT)
   Rounded Screen ($ROUNDED_SCREEN_TEXT)
   Edge Trigger ($EDGE_TRIGGER_TEXT)
+  Opaque Theme Mode $IS_OPAQUE
 󰝚  Cava Underbar ($CAVA_TEXT) $IS_TOP
   Auto Random Wallpaper ($WALL_TEXT)
 󰏜  Change Wallpaper
@@ -68,6 +74,7 @@ case "$chosen" in
     *"Taskbar"*) spawn $HOME/.local/bin/taskbar_manager.sh --toggle ;;
     *"Rounded Screen"*) spawn $HOME/.local/bin/rounded_screen_manager.sh --toggle ;;
     *"Edge Trigger"*) spawn $HOME/.local/bin/edge_trigger_manager.sh --toggle ;;
+    *"Opaque Theme Mode"*) spawn $HOME/.local/bin/opaque_theme.sh --toggle ;;
     *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh ;;
     *"Auto Random Wallpaper"*) spawn $HOME/.local/bin/random_wallpaper.sh --toggle ;;
     *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;

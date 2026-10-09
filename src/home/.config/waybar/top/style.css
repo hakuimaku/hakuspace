@@ -187,3 +187,5 @@ tooltip label {
     50% { opacity: 0.5; }
     100% { opacity: 1; }
 }
+
+@import url("../../.local/state/hakuspace/theme/opaque/waybar.css");
