@@ -272,7 +272,9 @@ select_window_manager
 # ============================================================================
 step_title "1 - UPDATE PACKAGES FROM LIST"
 
-PKG_LABELS=("$WM" "CORE" "SERVICE" "OPTIONAL")
+wm_upper=$(echo "$WM" | tr '[:lower:]' '[:upper:]')
+
+PKG_LABELS=("$wm_upper" "CORE" "SERVICE" "OPTIONAL")
 PKG_FILES=("$PKG_WM" "$PKG_CORE" "$PKG_SERVICE" "$PKG_OPTIONAL")
 INSTALL_FLAGS=(0 0 0 0)
 
@@ -321,7 +323,6 @@ if [[ "$config_mode" == "1" ]]; then
     echo ">>> Deploying Common configs..."
     for folder in "$SOURCE_COMMON_CONFIG"/*/; do
         [[ -d "$folder" ]] || continue
-        local folder_name
         folder_name="$(basename "$folder")"
         copy_dir_content "$SOURCE_COMMON_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
     done

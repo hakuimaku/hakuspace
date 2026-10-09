@@ -403,7 +403,6 @@ if ask_yes_no "===> Do you want to backup and copy your config now?"; then
     echo ">>> Deploying Common configs..."
     for folder in "$SOURCE_COMMON_CONFIG"/*/; do
         [[ -d "$folder" ]] || continue
-        local folder_name
         folder_name="$(basename "$folder")"
         copy_dir_content "$SOURCE_COMMON_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
     done
