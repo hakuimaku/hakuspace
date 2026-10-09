@@ -1,17 +1,19 @@
 @import url("../../.local/state/haku_theme/colors.css");
 
+@define-color foreground_color rgba(255, 255, 255, 0.8);
+
 /* ==========================================
    THUNAR WINDOW CONFIGURATION
    ========================================== */
 
 .thunar {
-    background-color: rgba(0, 0, 0, 0.5);
-    box-shadow: 6px 6px 6px rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.7);
 }
 
 .thunar .view {
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: rgba(0, 0, 0, 0.3);
     border-radius: 12px;
+    color: @foreground_color;
 }
 
 .thunar headerbar {
@@ -22,6 +24,17 @@
     background-color: transparent;
     padding: 10px 0 0 10px;
     border-radius: 12px;
+}
+
+.thunar menubar > menuitem {
+    border-radius: 8px;
+    padding: 4px 12px;
+    color: @foreground_color;
+}
+
+.thunar menubar > menuitem:hover {
+    background-color: @accent_color;
+    color: #000000;
 }
 
 .thunar toolbar {
@@ -35,6 +48,7 @@
 .thunar toolbar button {
     border-radius: 8px;
     padding: 2px 10px;
+    color: @foreground_color;
 }
 
 .thunar toolbar button:hover {
@@ -92,6 +106,7 @@
     margin: 2px 0 2px 0;
     padding: 2px;
     box-shadow: 6px 6px 6px rgba(0, 0, 0, 0.3);
+    color: @foreground_color;
 }
 
 .thunar menu {
@@ -165,7 +180,7 @@
    ========================================== */
 
 menu, .popup {
-    background-color: rgba(22, 22, 22, 0.95);
+    background-color: rgba(14, 14, 14, 0.95);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -189,83 +204,14 @@ menu separator {
 }
 
 
-/* ==========================================
-   DIALOG CONFIGURATION
-   ========================================== */
-
-dialog {
-    background-color: rgba(30, 30, 30, 0.7);
-    border-radius: 16px;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
-    padding: 6px;
-}
-
-dialog headerbar {
-    background-color: transparent;
-    background-image: none;
-    border-style: none;
-    box-shadow: none;
-    padding: 8px;
-}
-
-dialog headerbar button {
-    border-radius: 8px;
-    padding: 4px 12px;
-}
-
-dialog stacksidebar {
-    background-color: rgba(0, 0, 0, 0.4);
-    border-radius: 12px;
-    margin: 10px;
-    padding: 6px;
-}
-
-dialog stacksidebar row {
-    padding: 8px 14px;
-    border-radius: 6px;
-    color: rgba(255, 255, 255, 0.6);
-    transition: all 120ms ease;
-}
-
-dialog stacksidebar row:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: #ffffff;
-}
-
-dialog stacksidebar row:selected {
-    background-color: @accent_color;
-    color: #000000;
-}
-
-
-dialog stack {
-    background-color: transparent;
-    padding: 12px 20px;
-}
-
-dialog combobox,
-dialog entry {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
-    border-style: none;
-    padding: 6px 10px;
-    color: #ffffff;
-    box-shadow: none;
-}
-
-dialog combobox button {
-    background-color: transparent;
-    border-style: none;
-}
-
-
 /* ====================================
    FILE CHOOSER POPUP
    ==================================== */
+
 filechooser placessidebar row {
     min-height: 38px;
     padding: 0px 8px;
-    margin: 2px 4px;
+    margin: 4px 4px;
     border-radius: 8px;
 }
 
