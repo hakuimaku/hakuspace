@@ -143,7 +143,6 @@
         }
     },
 
-    /* Note: You should configure timezone and locale to make the clock work properly. */
     "clock": {
         "timezone": "Asia/Ho_Chi_Minh",
         "locale": "vi_VN.UTF-8",
