@@ -20,7 +20,7 @@ if status is-interactive
     set -gx QT_QPA_PLATFORMTHEME qt6ct
     set -gx DOTNET_ROOT $HOME/.dotnet
 
-    # Abbrs
+    # Git tools
     abbr lg 'lazygit'
     abbr gd 'git diff'
     abbr ga 'git add .'
@@ -38,21 +38,29 @@ if status is-interactive
     abbr gco 'git checkout'
     abbr gsh 'git show'
 
+    # Lists, with eza
     abbr l 'ls'
     abbr ll 'ls -l'
     abbr la 'ls -a'
     abbr lla 'ls -la'
 
+    # Common commands
     abbr c 'clear'
     abbr h 'history'
     abbr haku '~/.local/bin/haku.sh'
     abbr menu '~/.local/bin/hakumenu.sh'
-    abbr openconfig '~/.local/bin/open_config.sh'
     abbr pacsize 'expac -H M "%m\t%n" $(\pacman -Qeq) | sort -h -r'
     abbr pacsizefull 'expac -H M "%m\t%n" | sort -h -r'
-    abbr nc 'sudo nix-env --profile /nix/var/nix/profiles/system --delete-generations +3 && sudo nix-store --gc'
-    abbr nrb 'sudo nixos-rebuild switch'
-    abbr nd 'cd /etc/nixos'
+
+    # Hakuspace tools
+    abbr hsdoctor '~/hakuspace/doctor.sh'
+    abbr hsupdate '~/hakuspace/update.sh'
+    abbr hsrepo 'cd ~/hakuspace/'
+
+    # NixOS
+    command -v nixos-rebuild &> /dev/null && abbr nbs 'sudo nixos-rebuild switch'
+    command -v nixos-rebuild &> /dev/null && abbr ndir 'cd /etc/nixos'
+    command -v nixos-rebuild &> /dev/null && abbr nc 'sudo nix-env --profile /nix/var/nix/profiles/system --delete-generations +3 && sudo nix-store --gc'
 
     test -r ~/hakucfg/config/shell.fish; and source ~/hakucfg/config/shell.fish
 end
