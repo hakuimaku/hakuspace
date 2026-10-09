@@ -16,12 +16,12 @@ local browser = "zen-browser"
 local mainMod = "SUPER" -- Sets "Windows" key as main modifier
 
 -- Plugin keybindings
-hl.bind(mainMod .. " + G", function() hl.plugin.hyprexpo.expo("toggle") end)
+--hl.bind(mainMod .. " + G", function() hl.plugin.hyprexpo.expo("toggle") end)
 
-hl.bind("ALT + TAB", function() hl.plugin.hymission.toggle() end)
-hl.bind("ALT + A", function() hl.plugin.hymission.toggle("forceall") end)
-hl.bind("ALT + S", function() hl.plugin.hymission.open("onlycurrentworkspace") end)
-hl.bind("ALT + Escape", function() hl.plugin.hymission.close() end)
+--hl.bind("ALT + TAB", function() hl.plugin.hymission.toggle() end)
+--hl.bind("ALT + A", function() hl.plugin.hymission.toggle("forceall") end)
+--hl.bind("ALT + S", function() hl.plugin.hymission.open("onlycurrentworkspace") end)
+--hl.bind("ALT + Escape", function() hl.plugin.hymission.close() end)
 
 -- Main keybindings
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
@@ -47,6 +47,7 @@ hl.bind(mainMod .. " + SHIFT + Y", hl.dsp.exec_cmd("$HOME/.local/bin/wallpaper_v
 hl.bind(mainMod .. " + T",     hl.dsp.exec_cmd("$HOME/.local/bin/cava_manager.sh --toggle"))
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh"))
 hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh --fullscreen"))
+hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd("$HOME/.local/bin/waybar_manager.sh --cycle"))
 
 
 -- Move focus with mainMod + arrow keys
