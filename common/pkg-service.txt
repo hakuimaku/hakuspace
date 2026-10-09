@@ -1,8 +1,3 @@
-# === Connectivity & system services ===
-network-manager-applet        # Tray applet for NetworkManager
-power-profiles-daemon         # Power profile switching (balanced/performance/power-saver)
-brightnessctl                 # Brightness control utility
-
 # === Session/login ===
 ly                            # TUI display/login manager (like sddm, gdm,...)
 uwsm                          # Universal Wayland Session Manager
