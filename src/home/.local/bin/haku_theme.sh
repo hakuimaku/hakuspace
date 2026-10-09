@@ -1,40 +1,40 @@
 #!/usr/bin/env bash
 
+# Haku Theme state and rendering model:
+# - ~/.local/state/hakuspace/state/state.env is the single source of truth for
+#   ACCENT_COLOR, FONT_FAMILY, and FONT_SIZE. It is loaded when this library is
+#   sourced and updated atomically by theme_save_state().
+
+# - ~/.local/state/hakuspace/theme/ contains generated CSS, conf, Lua, and KDL
+#   files. These files are one-way render outputs and must never be parsed back
+#   to recover theme values.
+
+# - Scripts source this library to share paths, defaults, and state handling.
+#   A script may modify ACCENT_COLOR, FONT_FAMILY, or FONT_SIZE, then call
+#   theme_save_state() before rendering the dependent theme files.
+
+# - Toggle and UI state files also live under the state directory, while
+#   application-specific generated files remain isolated in the theme directory.
+
+# - Keep defaults here so every theme-related script uses the same fallback
+#   values and does not maintain its own copy of the configuration contract.
+
 # Shared theme state and rendering paths.
 THEME_ROOT="${HOME}/.local/state/hakuspace"
 THEME_RENDER_DIR="${THEME_ROOT}/theme"
 THEME_STATE_DIR="${THEME_ROOT}/state"
 THEME_STATE_FILE="${THEME_STATE_DIR}/state.env"
+
 THEME_BTOP_DIR="${HOME}/.config/btop/themes"
 THEME_LABWC_RC="${HOME}/.config/labwc/rc.xml"
 THEME_LABWC_OVERRIDE="${HOME}/.config/labwc/themerc-override"
 
+# Default theme values.
 THEME_DEFAULT_ACCENT="#ffffff"
 THEME_DEFAULT_FONT="monospace"
 THEME_DEFAULT_SIZE="14"
 
-theme_migrate_legacy_state() {
-    local legacy_dir legacy_item item_name
-    for legacy_dir in "${HOME}/.local/state/haku-theme" "${HOME}/.local/state/haku_theme"; do
-        [[ -d "$legacy_dir" ]] || continue
-        for legacy_item in "$legacy_dir"/*; do
-            [[ -e "$legacy_item" ]] || continue
-            item_name="$(basename "$legacy_item")"
-            case "$item_name" in
-                state.env|desktop_icons_state|dockbar_*|idle_inhibit|waybar_current_mode)
-                    mv -n "$legacy_item" "$THEME_STATE_DIR/" 2>/dev/null || true
-                    ;;
-                *)
-                    mv -n "$legacy_item" "$THEME_RENDER_DIR/" 2>/dev/null || true
-                    ;;
-            esac
-        done
-        rmdir "$legacy_dir" 2>/dev/null || true
-    done
-}
-
 mkdir -p "$THEME_RENDER_DIR" "$THEME_STATE_DIR"
-theme_migrate_legacy_state
 
 # Load only the canonical state file; rendered files are never read back.
 theme_load_state() {
