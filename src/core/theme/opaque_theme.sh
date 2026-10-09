@@ -21,9 +21,11 @@ It ensures that the necessary configuration files are created or updated accordi
 
 Usage: $0 [--toggle|on|off]
 Options:
-    -h, --help  Show this help message and exit.
+    -h, --help     Show this help message and exit.
     -t, --toggle   Toggle the opaque theme on or off.
     -c, --check    Check the current state of the opaque theme.
+    on             Enable the opaque theme.
+    off            Disable the opaque theme.
 EOF
     exit 0
 fi
@@ -108,7 +110,7 @@ INNEREOF
 }
 
 apply_renderers() {
-    # Kitty and GTK are handled temporarily
+    # Kitty and GTK are disabled temporarily
     RENDERERS=(waybar rofi swaync)
     for renderer in "${RENDERERS[@]}"; do
         "render_${renderer}"
@@ -145,6 +147,28 @@ case "${1:-}" in
             echo "Opaque theme is currently ENABLED."
         else
             echo "Opaque theme is currently DISABLED."
+        fi
+        ;;
+    on)
+        if [[ "$IS_OPAQUE" == "0" ]]; then
+            echo "1" > "$OPAQUE_STATE_FILE"
+            IS_OPAQUE="1"
+            apply_renderers
+            $APPLY_STYLE
+            echo "Opaque theme enabled."
+        else
+            echo "Opaque theme is already enabled."
+        fi
+        ;;
+    off)
+        if [[ "$IS_OPAQUE" == "1" ]]; then  
+            echo "0" > "$OPAQUE_STATE_FILE"
+            IS_OPAQUE="0"
+            apply_renderers
+            $APPLY_STYLE
+            echo "Opaque theme disabled."
+        else
+            echo "Opaque theme is already disabled."
         fi
         ;;
     *)
