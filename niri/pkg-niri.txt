@@ -4,4 +4,4 @@ swayidle
 swaylock-effects
 gammastep
 xdg-desktop-portal-gnome
-imagemagick
+xwayland-satellite
