@@ -28,7 +28,15 @@ ShellRoot {
         reloadableId: "hakuspace-notification-records"
         property string recordsJson: "[]"
         property int nextKey: 1
-        onLoaded: NotificationStore.start(notificationMemory)
+        onLoaded: {
+            if (startDelay.interval > 0) startDelay.start()
+            else NotificationStore.start(notificationMemory)
+        }
+    }
+    Timer {
+        id: startDelay
+        interval: Number(Quickshell.env("HAKU_P2_PROBE_DELAY_MS") || 0)
+        onTriggered: NotificationStore.start(notificationMemory)
     }
     Variants {
         model: Quickshell.screens
@@ -38,6 +46,8 @@ ShellRoot {
         target: "notificationprobe"
         function state(): string {
             return JSON.stringify({screens: Quickshell.screens.length,
+                                   started: NotificationStore._started,
+                                   serverActive: NotificationStore.server.active,
                                    count: NotificationStore.count,
                                    records: NotificationStore.records})
         }
@@ -85,10 +95,21 @@ def run_inner():
             def state():
                 return json.loads(ipc("state"))
 
+            if int(os.environ.get("HAKU_P2_PROBE_DELAY_MS", "0")) > 0:
+                pending = wait_for(lambda: state() if not state()["started"] else None,
+                                   "uninitialized singleton")
+                assert not pending["serverActive"] and pending["records"] == []
+                assert subprocess.run(
+                    ["busctl", "--user", "status", "org.freedesktop.Notifications"],
+                    capture_output=True, check=False,
+                ).returncode != 0
+                print("PASS server inactive before state restore")
+
             wait_for(lambda: str(qs.pid) in command(
                 "busctl", "--user", "status", "org.freedesktop.Notifications"
             ), "Quickshell notification ownership")
             initial = state()
+            assert initial["started"] and initial["serverActive"]
             assert initial["count"] == 0 and initial["records"] == []
             assert initial["screens"] >= int(os.environ.get("HAKU_P2_EXPECT_SCREENS", "1"))
             print(f"PASS ownership and empty model on {initial['screens']} screen(s)")
@@ -163,11 +184,17 @@ def run_inner():
                 ipc("reload")
             except subprocess.CalledProcessError:
                 pass  # IPC connection may close while Quickshell reloads.
+            if int(os.environ.get("HAKU_P2_PROBE_DELAY_MS", "0")) > 0:
+                pending = wait_for(lambda: state() if not state()["started"] else None,
+                                   "reload waiting for restore")
+                assert not pending["serverActive"]
+                print("PASS reload server waits for restored state")
             wait_for(lambda: str(qs.pid) in command(
                 "busctl", "--user", "status", "org.freedesktop.Notifications"
             ), "ownership after reload")
             restored = wait_for(lambda: next((r for r in state()["records"]
-                                              if r["id"] == active), None), "retained item")
+                                              if r["id"] == active and state()["started"]), None),
+                                "retained item")
             assert restored["live"] and not restored["popupEligible"]
             assert len([r for r in state()["records"] if r["id"] == active]) == 1
             print(f"Reload count: {before_reload['count']} -> {state()['count']}")
