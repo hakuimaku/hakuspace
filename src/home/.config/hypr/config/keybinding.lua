@@ -41,6 +41,13 @@ hl.bind(mainMod .. " + K", hl.dsp.exec_cmd("$HOME/.local/bin/lock.sh"))
 hl.bind(mainMod .. " + D", hl.dsp.layout("colresize +0.1"))
 hl.bind(mainMod .. " + SHIFT + D", hl.dsp.layout("colresize -0.1"))
 
+-- Scroller layout keybindings
+hl.bind(mainMod .. " + SHIFT + A", hl.dsp.layout("swapcol l"))
+hl.bind(mainMod .. " + SHIFT + left", hl.dsp.layout("swapcol l"))
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.layout("swapcol r"))
+hl.bind(mainMod .. " + SHIFT + right", hl.dsp.layout("swapcol r"))
+hl.bind(mainMod .. " + SHIFT + D", hl.dsp.layout("consume"))
+
 -- Script keybindings
 hl.bind(mainMod .. " + V",    hl.dsp.exec_cmd("$HOME/.local/bin/clipboard_menu.sh"))
 hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("$HOME/.local/bin/clipboard_menu.sh --wipe"))
