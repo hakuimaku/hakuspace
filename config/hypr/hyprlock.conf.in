@@ -9,8 +9,6 @@
 # you can get started by copying this config to ~/.config/hypr/hyprlock.conf
 #
 
-$font = ${FONT_FAMILY}
-
 general {
     hide_cursor = false
 }
@@ -55,7 +53,7 @@ input-field {
     fade_on_empty = false
     rounding = 15
 
-    font_family = $font
+    font_family = ${FONT_FAMILY}
     placeholder_text = Input password...
     fail_text = $PAMFAIL
 
@@ -78,9 +76,9 @@ input-field {
 # TIME
 label {
     monitor =
-    text = $TIME # ref. https://wiki.hyprland.org/Hypr-Ecosystem/hyprlock/#variable-substitution
+    text = cmd[update:1000] date +"%H:%M" # update every second
     font_size = 90
-    font_family = $font
+    font_family = ${FONT_FAMILY}
 
     position = 0, 120
     halign = center
@@ -92,7 +90,7 @@ label {
     monitor =
     text = cmd[update:60000] date +"%A, %d %B %Y" # update every 60 seconds
     font_size = 25
-    font_family = $font
+    font_family = ${FONT_FAMILY}
 
     position = 0, 40
     halign = center

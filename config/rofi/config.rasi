@@ -1,5 +1,5 @@
 configuration {
-    font: "JetBrainsMono Nerd Font 20";
+    font: "Terminus (TTF) 20";
     modes: "drun,run,window";
     show-icons: true;
     terminal: "kitty";

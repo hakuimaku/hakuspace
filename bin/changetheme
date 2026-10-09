@@ -31,8 +31,4 @@ fi
 
 ~/.local/bin/updatetheme
 
-hyprctl reload
-pkill swaync && swaync &
-pkill waybar && waybar &
-
 notify-send "Hyprland Theme Updated" "Font: $font, Size: $size"
