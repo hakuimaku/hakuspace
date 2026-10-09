@@ -57,9 +57,10 @@ COMMON_DIR="$HAKU_DIR/common"
 BACKUP_TS="$(date +%Y-%m-%d_%H-%M-%S)"
 BACKUP_DIR="$HOME/Backup_$BACKUP_TS"
 
-WM=""
-WM_DIR=""
-PKG_WM=""
+# Arrays to handle multiple WMs
+SELECTED_WMS=()
+SELECTED_WM_DIRS=()
+SELECTED_PKG_WMS=()
 
 PKG_SERVICE="$COMMON_DIR/pkg-service.txt"
 PKG_CORE="$COMMON_DIR/pkg-core.txt"
@@ -81,13 +82,13 @@ log_skip()   { echo -e "${C_WHITE}[SKIP]${C_RESET}   $1"; }
 
 step_title() {
     echo ""
-    echo -e "${C_BOLD}${C_DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${C_RESET}"
+    echo -e "${C_BOLD}${C_DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${C_RESET}"
     echo -e "${C_BOLD}${C_BLUE}$1${C_RESET}"
-    echo -e "${C_BOLD}${C_DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${C_RESET}"
+    echo -e "${C_BOLD}${C_DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${C_RESET}"
 }
 
 # --------------------------------
-# Utility helpers (UPDATED TO MATCH UPDATER LOGIC)
+# Utility helpers
 # --------------------------------
 ask_yes_no() {
     local prompt="$1"
@@ -176,13 +177,13 @@ install_pkg_file() {
 
 print_header() {
     echo ""
-    echo -e "${C_BOLD}================================================================================================${C_RESET}"
+    echo -e "${C_BOLD}===================================================================${C_RESET}"
     echo -e "${C_BOLD}${C_CYAN}--- WELCOME TO HAKUSPACE - CONFIG INSTALLER ---${C_RESET}"
     echo "This script will help you set up your HakuSpace configuration"
     echo "It will install packages, copy configs with backup, and setup environment."
     echo "Please follow the prompts to complete the installation process."
     echo "Press CTRL+C to cancel at any time."
-    echo -e "${C_BOLD}================================================================================================${C_RESET}"
+    echo -e "${C_BOLD}===================================================================${C_RESET}"
     echo ""
 }
 
@@ -192,30 +193,38 @@ select_window_manager() {
     echo -e "${C_BOLD}[1]${C_RESET} HYPRLAND"
     echo -e "${C_BOLD}[2]${C_RESET} NIRI"
     echo -e "${C_BOLD}[3]${C_RESET} MANGOWM"
+    echo -e "${C_BOLD}[4]${C_RESET} ALL (Niri, Mango, Hyprland)"
     echo ""
     read -r -p ">>> Which Window Manager do you want to install?: " wm_choice
 
     case "$wm_choice" in
         1)
-            WM="hyprland"
-            WM_DIR="$HAKU_DIR/hyprland"
-            PKG_WM="$WM_DIR/pkg-hyprland.txt"
+            SELECTED_WMS=("hyprland")
+            SELECTED_WM_DIRS=("$HAKU_DIR/hyprland")
+            SELECTED_PKG_WMS=("$HAKU_DIR/hyprland/pkg-hyprland.txt")
             log_info "Selected: Hyprland"
             ;;
         2)
-            WM="niri"
-            WM_DIR="$HAKU_DIR/niri"
-            PKG_WM="$WM_DIR/pkg-niri.txt"
+            SELECTED_WMS=("niri")
+            SELECTED_WM_DIRS=("$HAKU_DIR/niri")
+            SELECTED_PKG_WMS=("$HAKU_DIR/niri/pkg-niri.txt")
             log_info "Selected: Niri"
             ;;
         3)
-            WM="mango"
-            WM_DIR="$HAKU_DIR/mango"
-            PKG_WM="$WM_DIR/pkg-mango.txt"
+            SELECTED_WMS=("mango")
+            SELECTED_WM_DIRS=("$HAKU_DIR/mango")
+            SELECTED_PKG_WMS=("$HAKU_DIR/mango/pkg-mango.txt")
             log_info "Selected: Mango"
             ;;
+        4)
+            # Ordering here enforces the config copy order in Block 4
+            SELECTED_WMS=("niri" "mango" "hyprland")
+            SELECTED_WM_DIRS=("$HAKU_DIR/niri" "$HAKU_DIR/mango" "$HAKU_DIR/hyprland")
+            SELECTED_PKG_WMS=("$HAKU_DIR/niri/pkg-niri.txt" "$HAKU_DIR/mango/pkg-mango.txt" "$HAKU_DIR/hyprland/pkg-hyprland.txt")
+            log_info "Selected: All Window Managers"
+            ;;
         *)
-            log_error "Invalid choice. Please run again and choose 1, 2 or 3."
+            log_error "Invalid choice. Please run again and choose 1, 2, 3 or 4."
             exit 1
             ;;
     esac
@@ -283,19 +292,25 @@ preflight_checks
 # ============================================================================
 step_title "1 - CHECK AND INSTALL DEPENDENCIES (yay, git, curl)"
 
-if ask_yes_no "===> Do you want to install yay now?"; then
-    git clone https://aur.archlinux.org/yay-bin.git /tmp/yay
-    (cd /tmp/yay && makepkg -si --noconfirm)
-    cd "$HOME" || exit 1
-    rm -rf /tmp/yay
-    log_ok "yay has been installed successfully."
+# Check if pacman is available (Arch Linux or Arch-based distros)
+if command -v pacman >/dev/null 2>&1; then
+    if ask_yes_no "===> Do you want to install yay now?"; then
+        git clone https://aur.archlinux.org/yay-bin.git /tmp/yay
+        (cd /tmp/yay && makepkg -si --noconfirm)
+        cd "$HOME" || exit 1
+        rm -rf /tmp/yay
+        log_ok "yay has been installed successfully."
+    else
+        log_warn "You need yay to proceed with package installation automatically."
+    fi
 else
-    log_warn "You need yay to proceed with package installation."
+    log_error "You're not on an Arch-based distro."
+    log_error "Please install the required packages manually."
 fi
+
 
 if ! command -v yay >/dev/null 2>&1; then
     log_error "yay is not installed. Please install yay first to run step 2."
-    log_error "If you're using another Distro, please install the packages manually."
 fi
 
 DEPENDENCIES=("git" "curl")
@@ -313,7 +328,7 @@ for pkg in "${DEPENDENCIES[@]}"; do
 done
 
 echo ""
-echo -e "${C_BOLD}================================================================================================${C_RESET}"
+echo -e "${C_BOLD}===================================================================${C_RESET}"
 echo -e "${C_GREEN}--- Everything is ready to install Config! ---${C_RESET}"
 
 # ============================================================================
@@ -321,17 +336,30 @@ echo -e "${C_GREEN}--- Everything is ready to install Config! ---${C_RESET}"
 # ============================================================================
 step_title "2 - INSTALL PACKAGES FROM LIST"
 
-wm_upper=$(echo "$WM" | tr '[:lower:]' '[:upper:]')
+PKG_LABELS=()
+PKG_FILES=()
 
-PKG_LABELS=("$wm_upper" "CORE" "SERVICE" "OPTIONAL")
-PKG_FILES=("$PKG_WM" "$PKG_CORE" "$PKG_SERVICE" "$PKG_OPTIONAL")
-INSTALL_FLAGS=(0 0 0 0)   # 1=install, 0=skip
+# Dynamically build lists for all selected WMs
+for i in "${!SELECTED_WMS[@]}"; do
+    wm_name="${SELECTED_WMS[$i]}"
+    wm_upper=$(echo "$wm_name" | tr '[:lower:]' '[:upper:]')
+    PKG_LABELS+=("$wm_upper")
+    PKG_FILES+=("${SELECTED_PKG_WMS[$i]}")
+done
+
+# Add common core, service, optional packages
+PKG_LABELS+=("CORE" "SERVICE" "OPTIONAL")
+PKG_FILES+=("$PKG_CORE" "$PKG_SERVICE" "$PKG_OPTIONAL")
+
+INSTALL_FLAGS=()
+for i in "${!PKG_LABELS[@]}"; do
+    INSTALL_FLAGS+=(0)
+done
 
 echo ":: Package lists:"
-echo "   [0] WM         : $wm_upper needs to install first to work properly."
-echo "   [1] CORE       : Core packages needed for the hakuspace to function properly. (Waybar, Rofi, Kitty, Thunar, etc.)"
-echo "   [2] SERVICE    : System service packages. If you currently have DE, you can skip this. (ly, xdg-desktop-portal, etc.)"
-echo "   [3] OPTIONAL   : Optional packages for customization. (Browser, Cava, etc.)"
+for i in "${!PKG_LABELS[@]}"; do
+    echo "   [$i] ${PKG_LABELS[$i]} : Package list from ${PKG_FILES[$i]}"
+done
 echo ""
 
 for i in "${!PKG_LABELS[@]}"; do
@@ -344,7 +372,6 @@ done
 
 echo ""
 echo ":: Install plan (1=install, 0=skip): [${INSTALL_FLAGS[*]}]"
-echo "   ${wm_upper}=${INSTALL_FLAGS[0]} CORE=${INSTALL_FLAGS[1]} SERVICE=${INSTALL_FLAGS[2]} OPTIONAL=${INSTALL_FLAGS[3]}"
 echo ""
 
 if command -v yay >/dev/null 2>&1; then
@@ -392,11 +419,10 @@ for folder in "${FOLDERS[@]}"; do
 done
 
 # ============================================================================
-# BLOCK 4: BACKUP AND COPY CONFIG (REFIXED UPGRADE WITH SELECTIVE MODE)
+# BLOCK 4: BACKUP AND COPY CONFIG
 # ============================================================================
 step_title "4 - BACKUP AND COPY CONFIG TO ~/.config"
 
-SOURCE_WM_CONFIG="$WM_DIR/config"
 SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
 DEST_CONFIG="$HOME/.config"
 
@@ -408,19 +434,26 @@ if ask_yes_no "===> Do you want to backup and copy your config now?"; then
         copy_dir_content "$SOURCE_COMMON_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
     done
 
-    if [[ $WM == "hyprland" ]]; then
-        echo ">>> Deploying Hyprland configs..."
-        copy_dir_content "$SOURCE_WM_CONFIG/hypr/config" "$DEST_CONFIG/hypr/config"
-        copy_file "$SOURCE_WM_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
-    elif [[ $WM == "niri" ]]; then
-        echo ">>> Deploying Niri configs..."
-        copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
-    elif [[ $WM == "mango" ]]; then
-        echo ">>> Deploying Mango configs..."
-        copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
-    else
-        log_warn "Unknown WM: $WM. Skipping WM config deployment."
-    fi
+    # Loop through selected WMs (hyprland will always be last if "ALL" was chosen)
+    for i in "${!SELECTED_WMS[@]}"; do
+        WM_NAME="${SELECTED_WMS[$i]}"
+        WM_DIR_PATH="${SELECTED_WM_DIRS[$i]}"
+        SOURCE_WM_CONFIG="$WM_DIR_PATH/config"
+
+        if [[ $WM_NAME == "hyprland" ]]; then
+            echo ">>> Deploying Hyprland configs..."
+            copy_dir_content "$SOURCE_WM_CONFIG/hypr/config" "$DEST_CONFIG/hypr/config"
+            copy_file "$SOURCE_WM_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
+        elif [[ $WM_NAME == "niri" ]]; then
+            echo ">>> Deploying Niri configs..."
+            copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
+        elif [[ $WM_NAME == "mango" ]]; then
+            echo ">>> Deploying Mango configs..."
+            copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
+        else
+            log_warn "Unknown WM: $WM_NAME. Skipping WM config deployment."
+        fi
+    done
 
     echo ">>> Deploying mimeapps.list..."
     copy_file "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/mimeapps.list"
@@ -524,7 +557,10 @@ fi
 
 # Set GNOME color scheme to dark and set Thunar as default file manager
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+log_ok "Set GNOME color scheme to dark."
+
 xdg-mime default thunar.desktop inode/directory
+log_ok "Set Thunar as default file manager."
 
 if [[ -x "$HOME/.local/bin/gen_style.sh" ]]; then
     "$HOME/.local/bin/gen_style.sh"

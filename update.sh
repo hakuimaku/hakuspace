@@ -56,9 +56,10 @@ COMMON_DIR="$HAKU_DIR/common"
 BACKUP_TS="$(date +%Y-%m-%d_%H-%M-%S)"
 BACKUP_DIR="$HOME/Backup_$BACKUP_TS"
 
-WM=""
-WM_DIR=""
-PKG_WM=""
+# Arrays to handle multiple WMs
+SELECTED_WMS=()
+SELECTED_WM_DIRS=()
+SELECTED_PKG_WMS=()
 
 PKG_SERVICE="$COMMON_DIR/pkg-service.txt"
 PKG_CORE="$COMMON_DIR/pkg-core.txt"
@@ -77,9 +78,9 @@ log_skip()   { echo -e "${C_WHITE}[SKIP]${C_RESET}   $1"; }
 
 step_title() {
     echo ""
-    echo -e "${C_BOLD}${C_DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${C_RESET}"
+    echo -e "${C_BOLD}${C_DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${C_RESET}"
     echo -e "${C_BOLD}${C_BLUE}$1${C_RESET}"
-    echo -e "${C_BOLD}${C_DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${C_RESET}"
+    echo -e "${C_BOLD}${C_DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${C_RESET}"
 }
 
 # --------------------------------
@@ -172,11 +173,11 @@ install_pkg_file() {
 
 print_header() {
     echo ""
-    echo -e "${C_BOLD}================================================================================================${C_RESET}"
+    echo -e "${C_BOLD}===================================================================${C_RESET}"
     echo -e "${C_BOLD}${C_CYAN}--- HAKUSPACE - DOTFILES UPDATER ---${C_RESET}"
     echo "This script will update your dotfiles from the repository and apply them to your system."
     echo "Prefer to check release notes | commit history before updating."
-    echo -e "${C_BOLD}================================================================================================${C_RESET}"
+    echo -e "${C_BOLD}===================================================================${C_RESET}"
     echo ""
 }
 
@@ -186,14 +187,40 @@ select_window_manager() {
     echo -e "${C_BOLD}[1]${C_RESET} HYPRLAND"
     echo -e "${C_BOLD}[2]${C_RESET} NIRI"
     echo -e "${C_BOLD}[3]${C_RESET} MANGOWM"
+    echo -e "${C_BOLD}[4]${C_RESET} ALL (Niri, Mango, Hyprland)"
     echo ""
     read -r -p ">>> Which Window Manager config do you want to update?: " wm_choice
 
     case "$wm_choice" in
-        1) WM="hyprland"; WM_DIR="$HAKU_DIR/hyprland"; PKG_WM="$WM_DIR/pkg-hyprland.txt"; log_info "Selected: Hyprland" ;;
-        2) WM="niri"; WM_DIR="$HAKU_DIR/niri"; PKG_WM="$WM_DIR/pkg-niri.txt"; log_info "Selected: Niri" ;;
-        3) WM="mango"; WM_DIR="$HAKU_DIR/mango"; PKG_WM="$WM_DIR/pkg-mango.txt"; log_info "Selected: Mango" ;;
-        *) log_error "Invalid choice. Exiting."; exit 1 ;;
+        1) 
+            SELECTED_WMS=("hyprland")
+            SELECTED_WM_DIRS=("$HAKU_DIR/hyprland")
+            SELECTED_PKG_WMS=("$HAKU_DIR/hyprland/pkg-hyprland.txt")
+            log_info "Selected: Hyprland" 
+            ;;
+        2) 
+            SELECTED_WMS=("niri")
+            SELECTED_WM_DIRS=("$HAKU_DIR/niri")
+            SELECTED_PKG_WMS=("$HAKU_DIR/niri/pkg-niri.txt")
+            log_info "Selected: Niri" 
+            ;;
+        3) 
+            SELECTED_WMS=("mango")
+            SELECTED_WM_DIRS=("$HAKU_DIR/mango")
+            SELECTED_PKG_WMS=("$HAKU_DIR/mango/pkg-mango.txt")
+            log_info "Selected: Mango" 
+            ;;
+        4)
+            # Niri > Mango > Hyprland
+            SELECTED_WMS=("niri" "mango" "hyprland")
+            SELECTED_WM_DIRS=("$HAKU_DIR/niri" "$HAKU_DIR/mango" "$HAKU_DIR/hyprland")
+            SELECTED_PKG_WMS=("$HAKU_DIR/niri/pkg-niri.txt" "$HAKU_DIR/mango/pkg-mango.txt" "$HAKU_DIR/hyprland/pkg-hyprland.txt")
+            log_info "Selected: All Window Managers"
+            ;;
+        *) 
+            log_error "Invalid choice. Exiting."
+            exit 1 
+            ;;
     esac
 }
 
@@ -225,8 +252,9 @@ cp "$0" "$BACKUP_SCRIPT"
 echo "Select update mode:"
 echo -e "${C_BOLD}[1]${C_RESET} LATEST (Pull from main branch - Experimental)"
 echo -e "${C_BOLD}[2]${C_RESET} STABLE (Checkout latest release tag - Recommended)"
+echo -e "${C_BOLD}[0]${C_RESET} SKIP (Do not update repository)"
 echo ""
-read -r -p ">>> Choose mode (1/2): " update_mode
+read -r -p ">>> Choose mode (1/2/0): " update_mode
 
 REPO_CHANGED=0
 
@@ -250,6 +278,8 @@ elif [[ "$update_mode" == "2" ]]; then
         log_ok "Repository updated to STABLE ($LATEST_TAG)."
     fi
     REPO_CHANGED=1
+elif [[ "$update_mode" == "0" ]]; then
+    log_skip "Skipping repository update."
 else
     log_error "Invalid choice. Skipping repository update."
 fi
@@ -270,35 +300,40 @@ select_window_manager
 # ============================================================================
 # BLOCK 1: UPDATE PACKAGES
 # ============================================================================
-step_title "1 - UPDATE PACKAGES FROM LIST"
+step_title "1 - UPDATE PACKAGES FROM LIST (AUTO)"
 
-wm_upper=$(echo "$WM" | tr '[:lower:]' '[:upper:]')
+PKG_LABELS=()
+PKG_FILES=()
 
-PKG_LABELS=("$wm_upper" "CORE" "SERVICE" "OPTIONAL")
-PKG_FILES=("$PKG_WM" "$PKG_CORE" "$PKG_SERVICE" "$PKG_OPTIONAL")
-INSTALL_FLAGS=(0 0 0 0)
+# Dynamically build lists for all selected WMs
+for i in "${!SELECTED_WMS[@]}"; do
+    wm_name="${SELECTED_WMS[$i]}"
+    wm_upper=$(echo "$wm_name" | tr '[:lower:]' '[:upper:]')
+    PKG_LABELS+=("$wm_upper")
+    PKG_FILES+=("${SELECTED_PKG_WMS[$i]}")
+done
 
-echo ">>> Package lists:"
+# Add common core, service, optional packages
+PKG_LABELS+=("CORE" "SERVICE" "OPTIONAL")
+PKG_FILES+=("$PKG_CORE" "$PKG_SERVICE" "$PKG_OPTIONAL")
+
+echo ">>> Package lists to be updated automatically:"
 for i in "${!PKG_LABELS[@]}"; do
     echo "  - ${PKG_LABELS[$i]}: ${PKG_FILES[$i]}"
 done
-
-echo ":: Package lists to update:"
-for i in "${!PKG_LABELS[@]}"; do
-    if ask_yes_no "===> Update packages for ${PKG_LABELS[$i]}?"; then
-        INSTALL_FLAGS[$i]=1
-    else
-        INSTALL_FLAGS[$i]=0
-    fi
-done
+echo ""
 
 if command -v yay >/dev/null 2>&1; then
-    for i in "${!PKG_LABELS[@]}"; do
-        if [[ "${INSTALL_FLAGS[$i]}" -eq 1 ]]; then
-            install_pkg_file "${PKG_LABELS[$i]}" "${PKG_FILES[$i]}"
-        fi
-    done
-    log_ok "Package update processing finished."
+    if ask_yes_no "===> Do you want to install/update packages now?"; then
+        for i in "${!PKG_LABELS[@]}"; do
+            label="${PKG_LABELS[$i]}"
+            file="${PKG_FILES[$i]}"
+            install_pkg_file "$label" "$file"
+        done
+        log_ok "All package installations/updates completed."
+    else
+        log_skip "Skipping package installation/update."
+    fi
 else
     log_error "yay is not installed. Please install yay manually."
 fi
@@ -308,13 +343,12 @@ fi
 # ============================================================================
 step_title "2 - BACKUP AND UPDATE CONFIG IN ~/.config"
 
-SOURCE_WM_CONFIG="$WM_DIR/config"
 SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
 DEST_CONFIG="$HOME/.config"
 
 echo ""
-echo "[1]. FULL COPY, like a fresh install (WM + Common + Zsh)"
-echo "[2]. SELECTIVE COPY, choose which configs to update (Recommended)"
+echo "[1]. FULL COPY, copy entire the config folder (if you lazy or unsure)"
+echo "[2]. SELECTIVE COPY, choose which configs to update (if you know what's changed)"
 echo "[0]. SKIP config update"
 echo ""
 
@@ -327,19 +361,26 @@ if [[ "$config_mode" == "1" ]]; then
         copy_dir_content "$SOURCE_COMMON_CONFIG/$folder_name" "$DEST_CONFIG/$folder_name"
     done
 
-    if [[ $WM == "hyprland" ]]; then
-        echo ">>> Deploying Hyprland configs..."
-        copy_dir_content "$SOURCE_WM_CONFIG/hypr/config" "$DEST_CONFIG/hypr/config"
-        copy_file "$SOURCE_WM_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
-    elif [[ $WM == "niri" ]]; then
-        echo ">>> Deploying Niri configs..."
-        copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
-    elif [[ $WM == "mango" ]]; then
-        echo ">>> Deploying Mango configs..."
-        copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
-    else
-        log_warn "Unknown WM: $WM. Skipping WM config deployment."
-    fi
+    # Loop through selected WMs
+    for i in "${!SELECTED_WMS[@]}"; do
+        WM_NAME="${SELECTED_WMS[$i]}"
+        WM_DIR_PATH="${SELECTED_WM_DIRS[$i]}"
+        SOURCE_WM_CONFIG="$WM_DIR_PATH/config"
+
+        if [[ $WM_NAME == "hyprland" ]]; then
+            echo ">>> Deploying Hyprland configs..."
+            copy_dir_content "$SOURCE_WM_CONFIG/hypr/config" "$DEST_CONFIG/hypr/config"
+            copy_file "$SOURCE_WM_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
+        elif [[ $WM_NAME == "niri" ]]; then
+            echo ">>> Deploying Niri configs..."
+            copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
+        elif [[ $WM_NAME == "mango" ]]; then
+            echo ">>> Deploying Mango configs..."
+            copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
+        else
+            log_warn "Unknown WM: $WM_NAME. Skipping WM config deployment."
+        fi
+    done
 
     echo ">>> Deploying mimeapps.list..."
     copy_file "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/mimeapps.list"
@@ -383,23 +424,29 @@ elif [[ "$config_mode" == "2" ]]; then
     fi
         
     # 4. WM configs
-    if [[ $WM == "hyprland" ]]; then
-        if ask_yes_no "   -> [Detected: Hyprland] Do you want to deploy Hyprland configs?"; then
-            echo "   >>> Deploying Hyprland configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG/hypr/config" "$DEST_CONFIG/hypr/config"
-            copy_file "$SOURCE_WM_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
-        fi   
-    elif [[ $WM == "niri" ]]; then
-        if ask_yes_no "   -> [Detected: Niri] Do you want to deploy Niri configs?"; then
-            echo "   >>> Deploying Niri configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
-        fi   
-    elif [[ $WM == "mango" ]]; then
-        if ask_yes_no "   -> [Detected: Mango] Do you want to deploy Mango configs?"; then
-            echo "   >>> Deploying Mango configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
+    for i in "${!SELECTED_WMS[@]}"; do
+        WM_NAME="${SELECTED_WMS[$i]}"
+        WM_DIR_PATH="${SELECTED_WM_DIRS[$i]}"
+        SOURCE_WM_CONFIG="$WM_DIR_PATH/config"
+
+        if [[ $WM_NAME == "hyprland" ]]; then
+            if ask_yes_no "   -> Do you want to deploy Hyprland configs?"; then
+                echo "   >>> Deploying Hyprland configs..."
+                copy_dir_content "$SOURCE_WM_CONFIG/hypr/config" "$DEST_CONFIG/hypr/config"
+                copy_file "$SOURCE_WM_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
+            fi   
+        elif [[ $WM_NAME == "niri" ]]; then
+            if ask_yes_no "   -> Do you want to deploy Niri configs?"; then
+                echo "   >>> Deploying Niri configs..."
+                copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
+            fi   
+        elif [[ $WM_NAME == "mango" ]]; then
+            if ask_yes_no "   -> Do you want to deploy Mango configs?"; then
+                echo "   >>> Deploying Mango configs..."
+                copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
+            fi
         fi
-    fi
+    done
 
     log_ok "Configurations updated successfully."
 else
@@ -432,5 +479,5 @@ echo -e "${C_MAGENTA}Backup folder for this update: $BACKUP_DIR${C_RESET}"
 
 echo ""
 if [[ "$config_mode" == "1" ]]; then
-    log_warn "Note: You chose FULL COPY. If your Thunar bookmarks are missing, restore them from $BACKUP_DIR/.config/gtk-3.0/bookmarks"
+    log_warn "Note: You chose FULL COPY. If your Thunar bookmarks are missing and some your personal configs, restore them from $BACKUP_DIR/.config"
 fi
