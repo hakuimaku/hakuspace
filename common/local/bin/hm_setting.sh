@@ -43,7 +43,7 @@ case "$chosen" in
     *"Wifi"*) spawn nm-connection-editor ;;
     *"Bluetooth"*) spawn blueman-manager ;;
     *"Disk Manager"*) spawn gparted ;;
-    *"Storage Manager"*) spawn code --class ncdu -e sudo ncdu / ;;
+    *"Storage Manager"*) spawn kitty --class ncdu -e sudo ncdu / ;;
     *"Audio Control"*) spawn pavucontrol ;;
     *"Menu General Tab"*) spawn code $HOME/.local/bin/hm_general.sh ;;
     *"Menu Theme Tab"*) spawn code $HOME/.local/bin/hm_theme.sh ;;
