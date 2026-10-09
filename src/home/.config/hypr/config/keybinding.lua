@@ -36,7 +36,7 @@ hl.bind(mainMod .. " + SHIFT + A", hl.dsp.layout("swapcol l"))
 hl.bind(mainMod .. " + SHIFT + left", hl.dsp.layout("swapcol l"))
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.layout("swapcol r"))
 hl.bind(mainMod .. " + SHIFT + right", hl.dsp.layout("swapcol r"))
-hl.bind(mainMod .. " + SHIFT + D", hl.dsp.layout("consume"))
+hl.bind(mainMod .. " + SHIFT + Z", hl.dsp.layout("consume"))
 
 -- Script keybindings
 hl.bind(mainMod .. " + V",    hl.dsp.exec_cmd("$HOME/.local/bin/clipboard_menu.sh"))
@@ -113,56 +113,27 @@ hl.bind(mainMod .. " + space", function()
     }))
 end, { description = "Switch focus between tiled and floating windows" })
 
--- Performance mode keybinding: Press SUPER + F1 to toggle eye-candy
+-- Center-focused mode keybinding: big gaps_out, small gaps_in
+local centerfocused_mode = false
 hl.bind(mainMod .. " + F1", function ()
-    local game_mode = (hl.get_config("animations.enabled") == false)
-
-    if game_mode then
+    if centerfocused_mode == true then
         hl.exec_cmd("hyprctl reload")
-        return
-    end
-    
-    hl.config({
-        general = {
-            gaps_in = 0, gaps_out = 0, -- Disable gaps  
-            border_size = 0,
-        },
-
-        animations = {
-            enabled = false, -- Disable animations
-        },
-        
-        -- Disable blur, shadow and window rounding
-        decoration = {
-            shadow = { enabled = false },
-            blur = { enabled = false },
-            rounding = 0,
-        }
-    })
-end)
-
--- Maximize mode keybinding: no gap, no border radius
-local maximize_mode = false
-hl.bind(mainMod .. " + F2", function ()
-    if maximize_mode == true then
-        hl.exec_cmd("hyprctl reload")
-        maximize_mode = false
+        centerfocused_mode = false
         return
     else
         hl.config({
             general = {
-                gaps_in = 0, gaps_out = 0,
+                gaps_in = 10, gaps_out = 80,
             },
     
             decoration = {
-                rounding = 0,
 
                 shadow = {
-                    offset = { 0, 0 },
+                    offset = { 6, 4 },
                 },
             }
         })
-        maximize_mode = true
+        centerfocused_mode = true
     end
 end)
 
@@ -225,3 +196,33 @@ end)
 hl.bind(mainMod .. " + minus", function()
     zoom(-0.5)
 end)
+
+-- Move All Windows In Current Workspace To Another 
+local function moveWindowsCurrentWorkspace(ws, f)
+    local cws = hl.get_active_workspace()
+    local windows = hl.get_windows({ workspace = cws })
+
+    for _,w in pairs(windows) do
+        hl.dispatch(
+            hl.dsp.window.move({
+                window = w ,
+                workspace = ws ,
+                follow = f
+            })
+        )
+    end
+end
+
+for i = 1, 10 do
+    local key = i % 10
+    hl.bind("SUPER+SHIFT+ALT+" .. key, function()
+        moveWindowsCurrentWorkspace(i, true)
+    end)
+end
+
+for i = 1, 10 do
+    local key = i % 10
+    hl.bind("SUPER+CTRL+ALT+" .. key, function()
+        moveWindowsCurrentWorkspace(i, false)
+    end)
+end
