@@ -19,6 +19,7 @@ spawn-at-startup "blueman-applet"
 spawn-at-startup "fcitx5" "-d"
 spawn-at-startup "awww-daemon"
 spawn-at-startup "awww-daemon" "-n" "awww-daemon-backdrop"
+spawn-at-startup "sh" "-c" "$HOME/.local/bin/wallpaper_resume.sh"
 
 spawn-at-startup "sh" "-c" "$HOME/.local/bin/rounded_screen_manager.sh --startup" // Run rounded screen if state is true
 spawn-at-startup "sh" "-c" "$HOME/.local/bin/edge_trigger_manager.sh --startup" // Run edge trigger if state is true
