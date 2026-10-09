@@ -18,9 +18,9 @@ Fedora now supports Haku Space too! See [Fedora Guide](https://github.com/hakuim
     <a href="https://github.com/hakuimaku/hakuspace"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/hakuimaku/hakuspace?style=for-the-badge&label=Repo%20Size&labelColor=%2368818f&color=%231f1f1f&logo=github&logoColor=%231f1f1f">
 </p>
 
-| <img width="1920" height="1080" alt="screenshot_2026-07-16_10-54-36" src="https://github.com/user-attachments/assets/50b76a8d-c18b-481e-9c00-8f0c4058a3b3" /> | <img width="1920" height="1080" alt="screenshot_2026-07-16_10-55-31" src="https://github.com/user-attachments/assets/5ff87ffb-89bd-458e-9b0d-8ed959aa4e26" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-07-27_16-18-17" src="https://github.com/user-attachments/assets/765518c1-7473-4820-b660-7ea9d7b52380" /> | <img width="1920" height="1080" alt="screenshot_2026-07-16_10-55-31" src="https://github.com/user-attachments/assets/5ff87ffb-89bd-458e-9b0d-8ed959aa4e26" /> |
 |--|--|
-| <img width="1920" height="1080" alt="screenshot_2026-07-16_10-57-36" src="https://github.com/user-attachments/assets/02050014-7041-4a92-aa94-cef9a00c0592" /> | <img width="1920" height="1080" alt="screenshot_2026-07-08_20-00-14" src="https://github.com/user-attachments/assets/f3e86070-14a3-4abd-8b99-c3c68ffb71dc" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-07-16_10-57-36" src="https://github.com/user-attachments/assets/02050014-7041-4a92-aa94-cef9a00c0592" /> | <img width="1920" height="1080" alt="screenshot_2026-07-27_16-21-05" src="https://github.com/user-attachments/assets/fb2bf14c-8c01-4138-b834-dc0b8ed35bbd" /> |
 
 ## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Welcome+to+Haku+Space" alt="Typing SVG" />
 
@@ -32,19 +32,20 @@ Fedora now supports Haku Space too! See [Fedora Guide](https://github.com/hakuim
 
 Overview:
 - **HakuSpace** is a dotfiles project for **Arch Linux**, supporting **Hyprland**, **Niri**, and **MangoWM**.  
-- The main user interaction layer is built around **Rofi**, **Waybar**, and **SwayNC**, while most core behavior is powered by custom scripts in `hakuspace/common/local/bin`.  
+- The main user interaction layer is built around **Rofi**, **Waybar**, and **SwayNC**, while most core behavior is powered by [custom scripts](https://github.com/hakuimaku/hakuspace/tree/main/common/local/bin).
+- Haku Space can run on **any distro** as long as you install all the **core packages**
 - It has grown into a DE-like experience, though it is still actively evolving.  
-- Designed to be easy to extend and customize for your own workflow.
+- Designed to be easy to **extend and customize** for your own workflow.
 
 ---
 
 ## <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Key+Features" alt="Typing SVG" />
 
-* **Smart Accent Colors:** Automatically generates the accent color palette based on your current wallpaper.
-* **Flexible Waybar Layouts:** Supports two standard layouts: **Left** and **Top**.
+* **Accent Color Sync:** Waybar, Rofi, Kitty, Swaync,...
+* **Smart Accent Color:** Automatically generates the accent color palette based on your current wallpaper.
+* **Flexible Waybar Layouts:** Support layouts: `top`, `left`, `coredge`, `minimal` (Will be extended more).
 * **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
 * **Wallpaper Automation:** Wallpapers change automatically every 5 minutes (customizable in the `random_wallpaper.sh` script).
-* **Unified Aesthetic:** Handcrafted and polished configurations for Waybar, Rofi, Swaync and Thunar theme *100% beautiful for real. :)*
 
 ---
 
@@ -53,6 +54,8 @@ Overview:
 <div align="center">
   
 See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/main/common/pkg-core.txt) | [pkg-service](https://github.com/hakuimaku/hakuspace/blob/main/common/pkg-service.txt) | [pkg-optional](https://github.com/hakuimaku/hakuspace/blob/main/common/pkg-optional.txt)
+
+Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakuspace/blob/main/hyprland/pkg-hyprland.txt) | [pkg-niri](https://github.com/hakuimaku/hakuspace/blob/main/niri/pkg-niri.txt) | [pkg-mango](https://github.com/hakuimaku/hakuspace/blob/main/mango/pkg-mango.txt)
 
 </div>
 
@@ -91,14 +94,14 @@ See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/
 If you prefer to experience the **lastest changes** (Lastest Git), you can clone the main branch:
 ```bash
 cd ~
-git clone https://github.com/hakuimaku/hakuspace.git
+git clone https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 
-If you prefer the version I've tested, clone the **stable** release version `v2.1.6` (lastest):
+If you prefer the version I've tested, clone the **stable** release version `v2.1.7` (lastest):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.1.6 https://github.com/hakuimaku/hakuspace.git
+git clone --depth 1 --branch v2.1.7 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 
@@ -215,6 +218,10 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 | SUPER + A/S | Focus Left/Right Window |
 | SUPER + Y | Wallpaper Select |
 | SUPPER + SHIFT + Y | Lively Wallpaper Select |
+| SUPER + SHIFT + C | Cycle Waybar Mode |
+| SUPER + Z | Cycle Hyprland Layout (Only Hyprland ofc) |
+| SUPER + W | Hyprland Toggle Floating |
+| SUPER + Z | Other WM Toggle Floating |
 
 ---
 
@@ -227,8 +234,7 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 - Wallpapers: `~/Pictures/Wallpapers`
 - Lively wallpapers: `~/Videos/Wallpapers`
 - Lively wallpaper thumbnail: in folder Preview `~/Videos/Wallpapers/Preview` and add image .jpg/.png (same name with video) to make the thumbnail appear in rofi select menu if you want to use lively wallpaper
-- Haku Theme for waybar, rofi,... (includes accent_color, font, font size): `~/.local/state/haku_theme`
-- State files for  waybar current mode: `~/.local/state/haku_theme`
+- State file & Haku Theme for waybar, rofi,... (includes accent_color, font, font size): `~/.local/state/haku_theme`
 
 ---
 
@@ -266,7 +272,7 @@ systemctl --user disable swaync.service
 # <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=32&pause=4000&color=68818F&center=false&vCenter=false&repeat=true&width=900&lines=Contributing" alt="Typing SVG" />
 
 - This is a personal dotfiles configuration. Feel free to fork and adapt it to your needs!
-- tiktok / See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372)
+- Tiktok / See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372)
 
 ---
 
