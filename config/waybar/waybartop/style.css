@@ -17,10 +17,11 @@ window#waybar {
 }
 
 .modules-left, .modules-center, .modules-right {
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.3);
     border-radius: 20px;
     padding: 4px;
-    margin: 2px;
+    margin: 8px;
+    box-shadow: 4px 4px 4px #000000;
 }
 
 

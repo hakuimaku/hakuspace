@@ -459,7 +459,7 @@ hl.window_rule({
     no_blur = true,
     no_focus = true,
     no_shadow = true,
-    opacity = 0.7,
+    opacity = 0.5,
     size = "1920 60",
     move = "0 0",
 })
