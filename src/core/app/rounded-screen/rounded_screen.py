@@ -177,7 +177,12 @@ def main():
     main_win = Gtk.Window()
     main_win.set_title("Rounded Screen Main")
     GtkLayerShell.init_for_window(main_win)
-    GtkLayerShell.set_layer(main_win, GtkLayerShell.Layer.TOP)
+    
+    if not DYNAMIC_POSITION:
+        GtkLayerShell.set_layer(main_win, GtkLayerShell.Layer.OVERLAY)
+    else:
+        GtkLayerShell.set_layer(main_win, GtkLayerShell.Layer.TOP)
+        
     GtkLayerShell.set_namespace(main_win, "rounded-screen")
     main_win.set_wmclass("rounded-screen", "rounded-screen")
     
@@ -188,6 +193,8 @@ def main():
     
     if not DYNAMIC_POSITION:
         GtkLayerShell.set_exclusive_zone(main_win, -1)
+    else:
+        GtkLayerShell.set_exclusive_zone(main_win, 0)
     
     screen = main_win.get_screen()
     visual = screen.get_rgba_visual()
