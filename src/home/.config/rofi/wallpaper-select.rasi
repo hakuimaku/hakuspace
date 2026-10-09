@@ -9,11 +9,11 @@
 // Theme: wallpaper-select.rasi, use for wallpaper selection
 
 @import "../../.local/state/hakuspace/theme/rofi-style.rasi"
+@import "../../.local/state/hakuspace/theme/rofi-wallpaper-select.rasi"
 
 
 /* ===== GLOBAL VARIABLES ===== */
 * {
-    font:                "JetBrainsMono Nerd Font 11";
     background:          rgba(0, 0, 0, 0.7);
     foreground:          #dfdfdf;
     background-color:    transparent;
