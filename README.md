@@ -36,7 +36,7 @@ Arch / Fedora / NixOS dotfiles for Hyprland / Niri / MangoWM / Labwc
 - Multi-Distro Support: Arch, Fedora, Nixos currently.
 - DE-like Experience: Modular UI powered by Rofi, Waybar, SwayNC, and custom scripts.
 - Extensible: Highly customizable and easy to adapt to your own workflow.
-- See Guide for: [Arch Linux](https://github.com/hakuimaku/hakuspace#-3) | [NixOS](https://github.com/hakuimaku/hakuspace#-5) | [Fedora](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md)
+- See Guide for: [Arch Linux](https://github.com/hakuimaku/hakuspace#-3) | [NixOS](https://github.com/hakuimaku/hakuspace#-5) | [Fedora](https://github.com/hakuimaku/hakuspace/blob/main/docs/Fedora_Guide.md)
 
 ---
 
@@ -62,9 +62,9 @@ Arch / Fedora / NixOS dotfiles for Hyprland / Niri / MangoWM / Labwc
 
 <div align="center">
   
-See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/main/common/pkg-core.txt) | [pkg-service](https://github.com/hakuimaku/hakuspace/blob/main/common/pkg-service.txt) | [pkg-optional](https://github.com/hakuimaku/hakuspace/blob/main/common/pkg-optional.txt)
+See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/main/src/packages/pkg-core.txt) | [pkg-service](https://github.com/hakuimaku/hakuspace/blob/main/src/packages/pkg-service.txt) | [pkg-optional](https://github.com/hakuimaku/hakuspace/blob/main/src/packages/pkg-optional.txt)
 
-Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakuspace/blob/main/wm/pkg-hyprland.txt) | [pkg-niri](https://github.com/hakuimaku/hakuspace/blob/main/wm/pkg-niri.txt) | [pkg-mango](https://github.com/hakuimaku/hakuspace/blob/main/wm/pkg-mango.txt) | [pkg-labwc](https://github.com/hakuimaku/hakuspace/blob/main/wm/pkg-labwc.txt)
+Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakuspace/blob/main/src/packages/pkg-hyprland.txt) | [pkg-niri](https://github.com/hakuimaku/hakuspace/blob/main/src/packages/pkg-niri.txt) | [pkg-mango](https://github.com/hakuimaku/hakuspace/blob/main/src/packages/pkg-mango.txt) | [pkg-labwc](https://github.com/hakuimaku/hakuspace/blob/main/src/packages/pkg-labwc.txt)
 
 </div>
 
@@ -94,7 +94,7 @@ Specific packages for each WM: [pkg-hyprland](https://github.com/hakuimaku/hakus
 ## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=6f8fa0&center=false&vCenter=false&repeat=true&width=900&lines=Installation+Guide" alt="Typing SVG" />
 
 > [!tip]
-> For Fedora users, you should follow the [Fedora Guide](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md)
+> For Fedora users, you should follow the [Fedora Guide](https://github.com/hakuimaku/hakuspace/blob/main/docs/Fedora_Guide.md)
 
 ### 0. Prerequisites:
 
@@ -240,7 +240,7 @@ See the main configuration file at [hakuspace-config.nix](https://github.com/hak
 
 ## <img src="https://readme-typing-svg.demolab.com?font=Inconsolata&weight=600&size=32&pause=4000&color=6f8fa0&center=false&vCenter=false&repeat=true&width=900&lines=Keybinding" alt="Typing SVG" />
 
-- See more keybinding in: [Hyprland](https://github.com/hakuimaku/hakuspace/blob/main/hyprland/config/hypr/config/keybinding.lua) | [Niri](https://github.com/hakuimaku/hakuspace/blob/main/niri/config/niri/keybinds.kdl) | [MangoWM](https://github.com/hakuimaku/hakuspace/blob/main/mango/config/mango/bind.conf) | [Labwc](https://github.com/hakuimaku/hakuspace/blob/main/labwc/config/labwc/rc.xml) 
+- See more keybinding in: [Hyprland](https://github.com/hakuimaku/hakuspace/blob/main/src/wm/hyprland/config/keybinding.lua) | [Niri](https://github.com/hakuimaku/hakuspace/blob/main/src/wm/niri/keybinds.kdl) | [MangoWM](https://github.com/hakuimaku/hakuspace/blob/main/src/wm/mango/bind.conf) | [Labwc](https://github.com/hakuimaku/hakuspace/blob/main/src/wm/labwc/rc.xml) 
 - Hotkeys:
 
 | Bind | Function |
