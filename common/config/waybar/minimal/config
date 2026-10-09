@@ -84,8 +84,7 @@
         "format-icons": ["", "", "", "", "", "", "", "", ""],
         "on-scroll-up": "brightnessctl set 1%+",
         "on-scroll-down": "brightnessctl set 1%-",
-        "on-click": "hyprsunset --temperature 3500",
-        "on-click-right": "pkill hyprsunset",
+        "on-click": "$HOME/.local/bin/nightlight_toggle.sh",
         "tooltip-format": "Brightness: {percent}%"
     },
 
