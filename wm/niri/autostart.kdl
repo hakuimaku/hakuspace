@@ -17,6 +17,7 @@ spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
 spawn-at-startup "nm-applet" "--indicator"
 spawn-at-startup "blueman-applet"
 spawn-at-startup "sway-audio-idle-inhibit"
+spawn-at-startup "fcitx5" "-d"
 spawn-at-startup "awww-daemon"
 spawn-at-startup "awww-daemon" "-n" "awww-daemon-backdrop"
 spawn-at-startup "sh" "-c" "$HOME/.local/bin/waybar_manager.sh" // Run waybar
