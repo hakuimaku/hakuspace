@@ -29,7 +29,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 
 <div align="center">
 
-[Installation](#installation-guide) ─ [Update](#update-haku-space) ─ [Packages](#programs) ─ [Keybinding](#keybinding) ─ [Troubleshooting](#troubleshooting)
+[Installation](#installation-guide) ─ [Update](#update-haku-space) ─ [Packages](#programs) ─ [Keybinding](#keybinding) ─ [Troubleshooting](#troubleshooting) ─ [Docs](#documentation) ─ [Contributing](#contributing) ─ [Credits](#credits)
 
 *Need help or want to chat? Join our Discord server or follow us on TikTok for showcase videos!*
 
@@ -55,6 +55,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 * **Wallpaper Automation:** Wallpapers change automatically every 5 minutes.
 * **Taskbar:** Built-in, Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
 * **Desktop Icons**: Built-in, Items in folder `~/Desktop` will be shown on Desktop.
+* **Rounded Screen Corners**: Built-in, Rounded corners for your screen, with a smooth and elegant look.
 
 > [!note]
 > My dotfiles are powered by scripts; if you're not using them, there's no impact on your performance!
@@ -108,7 +109,7 @@ Specific packages for each WM: [pkg-hyprland](src/packages/pkg-hyprland.txt) | [
 - Stable Release (Recommended):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.3.2 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
+git clone --depth 1 --branch v26.09-1 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 - If you prefer to experience the **lastest changes**:
@@ -173,11 +174,14 @@ If multiple backups are available, the newest one is selected by pressing Enter.
 - Remove all scripts located in `~/.local/bin`.
 - Delete the auto-generated files in `~/.local/state/hakuspace`.
 - If necessary, you can also remove the icons and themes inside `~/.icons` and `~/.themes`.
-- Review `pkg-core.txt`, `pkg-service.txt`, `pkg-optional.txt` (in hakuspace/common) and `pkg-WM.txt` (in hakuspace/WM) to uninstall any unnecessary packages.
+- Review `pkg-core.txt`, `pkg-service.txt`, `pkg-optional.txt` and `pkg-WM.txt` (in `src/packages/`) to uninstall any unnecessary packages.
 
 ---
 
 ## NixOS Configuration
+
+> [!important]
+> I've not maintained the NixOS version. Every bugs will not be fixed.
 
 See the main configuration file at [hakuspace-config.nix](nix/hakuspace-config.nix)
 
@@ -203,7 +207,7 @@ See the main configuration file at [hakuspace-config.nix](nix/hakuspace-config.n
 
 > [!important]
 > Nixpkgs I use is stable, which still install **hypridle** v0.1.7.
-> Please install **hyprilde** unstable nixpkgs for v0.1.8 (to use my [idle_inhibit.sh](src/home/.local/share/hakuspace/sys/idle_inhibit.sh) script).
+> Please install **hyprilde** unstable nixpkgs for v0.1.8 (to use my [idle_inhibit.sh](src/core/sys/idle_inhibit.sh) script).
 
 ---
 
@@ -272,7 +276,7 @@ See more in `~/hakucfg/wm/hyprland-custom.lua` or [here](src/home/hakucfg/wm/hyp
 ## Assets Located
 
 - Custom config (your personal changes): `~/hakucfg`
-- Theme files for waybar, rofi,...: `~/.local/state/hakuspace/theme`; canonical state: `~/.local/state/hakuspace/state/state.env`
+- Hakuspace state folder: `~/.local/state/hakuspace`
 - Icons: `~/.icons`
 - Themes: `~/.themes`
 - All hakuspace scripts: `~/.local/bin`

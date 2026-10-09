@@ -28,11 +28,11 @@ if [[ $# -eq 0 ]]; then
 
     cat <<EOF
   Change Theme
+  Desktop ($DESKTOP_ICONS_TEXT)
+󱂩  Taskbar ($TASKBAR_TEXT)
+  Rounded Screen ($ROUNDED_SCREEN_TEXT)
 󰝚  Cava Underbar ($CAVA_TEXT)
   Auto Random Wallpaper ($WALL_TEXT)
-󱂩  Toggle Taskbar ($TASKBAR_TEXT)
-  Show Desktop Icons ($DESKTOP_ICONS_TEXT)
-  Rounded Screen ($ROUNDED_SCREEN_TEXT)
 󰏜  Change Wallpaper
 󱜏  Change Lively Wallpaper
 󱛹  Kill Lively Wallpaper
