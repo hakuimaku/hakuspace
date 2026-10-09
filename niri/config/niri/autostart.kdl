@@ -18,13 +18,12 @@ spawn-at-startup "nm-applet" "--indicator"
 spawn-at-startup "blueman-applet"
 spawn-at-startup "sway-audio-idle-inhibit"
 spawn-at-startup "awww-daemon"
-spawn-at-startup "sh" "-c" "~/.local/bin/waybar_toggle.sh"
+spawn-at-startup "sh" "-c" "~/.local/bin/waybar_toggle.sh --start"
 
 
 // Optional
 spawn-at-startup "fcitx5" "-d"
 spawn-at-startup "gammastep" "-O" "4200K"
-spawn-at-startup "sh" "-c" "~/.local/bin/random_wallpaper.sh"
 spawn-at-startup "sh" "-c" "~/.local/bin/welcome.sh"
 
 // For Cava Underbar
