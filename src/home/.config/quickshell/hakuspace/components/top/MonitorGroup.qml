@@ -16,6 +16,7 @@ HDrawer {
     trigger: TopModule {
         icon: root.open ? "" : ""
         isAccent: true
+        tooltip: "System Monitor"
         onClicked: root.open = !root.open
     }
     

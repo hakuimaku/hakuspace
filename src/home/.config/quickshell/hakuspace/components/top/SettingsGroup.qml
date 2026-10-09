@@ -111,12 +111,11 @@ Row {
                     anchors.fill: parent
                     acceptedButtons: Qt.LeftButton
                     hoverEnabled: true
-                    onEntered: blTooltipTimer.start()
-                    onExited: { blTooltipTimer.stop(); blTooltip.active = false; }
+                    onEntered: blTooltip.active = true
+                    onExited: blTooltip.active = false
                     onClicked: root.exec("nohup " + Env.binDir + "/nightlight_toggle.sh >/dev/null 2>&1 &")
                     onWheel: (wheel) => root.exec("brightnessctl set " + (wheel.angleDelta.y > 0 ? "1%+" : "1%-"))
                 }
-                Timer { id: blTooltipTimer; interval: 400; onTriggered: blTooltip.active = true }
                 HTooltip { id: blTooltip; target: blItem; text: "Brightness: " + root.backlight + "%" }
             }
             
@@ -146,8 +145,8 @@ Row {
                     anchors.fill: parent
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                     hoverEnabled: true
-                    onEntered: volTooltipTimer.start()
-                    onExited: { volTooltipTimer.stop(); volTooltip.active = false; }
+                    onEntered: volTooltip.active = true
+                    onExited: volTooltip.active = false
                     onClicked: (mouse) => {
                         if (mouse.button === Qt.RightButton) {
                             root.exec("pavucontrol")
@@ -157,7 +156,6 @@ Row {
                     }
                     onWheel: (wheel) => root.exec("wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ " + (wheel.angleDelta.y > 0 ? "1%+" : "1%-"))
                 }
-                Timer { id: volTooltipTimer; interval: 400; onTriggered: volTooltip.active = true }
                 HTooltip { id: volTooltip; target: volItem; text: root.muted ? "Volume: Muted" : ("Volume: " + root.volume + "%") }
             }
             
@@ -193,10 +191,9 @@ Row {
                     id: batMA
                     anchors.fill: parent
                     hoverEnabled: true
-                    onEntered: batTooltipTimer.start()
-                    onExited: { batTooltipTimer.stop(); batTooltip.active = false; }
+                    onEntered: batTooltip.active = true
+                    onExited: batTooltip.active = false
                 }
-                Timer { id: batTooltipTimer; interval: 400; onTriggered: batTooltip.active = true }
                 HTooltip { id: batTooltip; target: batItem; text: "Battery: " + batItem.capacity + "%" + (batItem.isCharging ? " (Charging)" : "") }
             }
         }

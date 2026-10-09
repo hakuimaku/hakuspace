@@ -43,10 +43,12 @@ TopModule {
     
     icon: isRecording ? "" : ""
     text: (isRecording && recordTime !== "") ? " " + recordTime + " " : ""
+    tooltip: isRecording ? "Recording Time: " + recordTime : "Screen Recorder"
     
-    borderWidth: isRecording ? 1 : 0
-    borderColor: Theme.accent
+    borderWidth: 0
+    isAccent: isRecording
     blink: isRecording
+    blinkDuration: 500
     
     Process {
         id: recordProc

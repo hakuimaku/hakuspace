@@ -11,6 +11,7 @@ TopModule {
     property string cavaOutput: ""
 
     text: cavaOutput
+    tooltip: "Audio Visualizer"
     
     // Fallback if cava is not found or fails
     property bool hasError: false
