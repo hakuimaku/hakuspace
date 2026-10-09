@@ -70,8 +70,6 @@ mode-switcher {
     background-color:    transparent;
     border-radius:       12px;
     spacing:             10px;
-    border:              4px;
-    border-color:        @accent;
 }
 
 button {
@@ -89,7 +87,7 @@ button selected {
 
 /* ===== LISTVIEW ===== */
 listview {
-    margin:              8px;
+    margin:              20px 20px 20px 0;
     scrollbar:           true;
     cycle:               true;
     dynamic:             true;
