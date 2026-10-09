@@ -596,17 +596,17 @@ if ask_yes_no "===> Do you want to setup hakuspace config now?"; then
 
         if [[ $WM_NAME == "hyprland" ]]; then
             echo ">>> Deploying Hyprland configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG/config" "$DEST_CONFIG/config"
-            copy_file "$SOURCE_WM_CONFIG/hyprland.lua" "$DEST_CONFIG/hyprland.lua"
+            copy_dir_content "$SOURCE_WM_CONFIG/config" "$DEST_CONFIG/hypr/config"
+            copy_file "$SOURCE_WM_CONFIG/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua"
         elif [[ $WM_NAME == "niri" ]]; then
             echo ">>> Deploying Niri configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG/niri" "$DEST_CONFIG/niri"
+            copy_dir_content "$SOURCE_WM_CONFIG" "$DEST_CONFIG/niri"
         elif [[ $WM_NAME == "mango" ]]; then
             echo ">>> Deploying Mango configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG/mango" "$DEST_CONFIG/mango"
+            copy_dir_content "$SOURCE_WM_CONFIG" "$DEST_CONFIG/mango"
         elif [[ $WM_NAME == "labwc" ]]; then
             echo ">>> Deploying Labwc configs..."
-            copy_dir_content "$SOURCE_WM_CONFIG/labwc" "$DEST_CONFIG/labwc"
+            copy_dir_content "$SOURCE_WM_CONFIG" "$DEST_CONFIG/labwc"
         else
             log_warn "Unknown WM: $WM_NAME. Skipping WM config deployment."
         fi
@@ -767,7 +767,7 @@ fi
 check_control_dir
 
 # NixOS configuration update
-if [[ command -v nixos-rebuild >/dev/null 2>&1 ]]; then
+if command -v nixos-rebuild >/dev/null 2>&1; then
     if ask_yes_no "===> NixOS configuration updated. Do you want to rebuild NixOS system now?"; then
         sudo nixos-rebuild switch
     else
