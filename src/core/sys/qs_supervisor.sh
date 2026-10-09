@@ -30,6 +30,10 @@ while true; do
     fi
 
     # Run quickshell
+    if haku_qs_alive; then
+        echo "[$(date -Iseconds)] Quickshell already running, waiting..." >> "$LOG_FILE"
+        while haku_qs_alive; do sleep 1; done
+    fi
     echo "[$(date -Iseconds)] Starting quickshell..." >> "$LOG_FILE"
     qs -c hakuspace >> "$LOG_FILE" 2>&1
     

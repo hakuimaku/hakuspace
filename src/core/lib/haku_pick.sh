@@ -70,22 +70,24 @@ else
 
     mkfifo "$FIFO"
     
-    if ! timeout 3 qs -c hakuspace ipc call picker open "$FIFO" "$(cat "$REQ_JSON")"; then
-        echo "Error: Failed to open IPC picker"
+    if ! timeout 3 qs -c hakuspace ipc call picker open "$FIFO" "$(cat "$REQ_JSON")" 2> >(tee -a "$RUNTIME_DIR/qs.log" >&2); then
+        echo "Error: Failed to open IPC picker" >&2
         exit 1
     fi
 
     exec 3<> "$FIFO"
     
+    
     # Wait for response
     while true; do
-        if read -t 1 -u 3 result; then
+        if IFS= read -r -t 1 -u 3 result; then
             if [[ "$result" == "__CANCEL__" ]]; then
                 exit 1
             fi
             echo "$result"
             exit 0
         fi
+        
         
         if ! haku_qs_alive; then
             exit 1

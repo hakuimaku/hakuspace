@@ -44,42 +44,38 @@ PanelWindow {
         inputField.text = "";
         listView.currentIndex = 0;
         visible = true;
-        inputField.forceActiveFocus();
+        console.log("[picker] Picker.open visible set to true for fifo:", fifo);
+    }
+    function finish(line) {
+        if (!currentFifo) return;
+        var f = currentFifo;
+        currentFifo = "";
+        visible = false;
+        
+        console.log("[picker] finish called with line:", line, "fifo:", f);
+        writer.environment = { "HAKU_PICK_TEXT": line };
+        writer.command = ["sh", "-c", "printf '%s\\n' \"$HAKU_PICK_TEXT\" > \"$1\"", "_", f];
+        writer.running = true;
+    }
+
+    function submit(text) {
+        finish(text);
     }
     
     function cancel() {
-        if (currentFifo) {
-            cancelWriter.command = ["sh", "-c", 'printf "%s
-" "__CANCEL__" > "$1"', "_", currentFifo];
-            cancelWriter.running = true;
-            visible = false;
-            currentFifo = "";
-        }
-    }
-    
-    function submit(text) {
-        if (!currentFifo) return;
-        writer.command = ["sh", "-c", 'cat > "$1"', "_", currentFifo];
-        writer.running = true;
-        writer.write(text + "\n");
-;
-        visible = false;
-        currentFifo = "";
+        finish("__CANCEL__");
     }
     
     onVisibleChanged: {
         if (!visible && currentFifo) {
             cancel();
+        } else if (visible) {
+            inputField.forceActiveFocus();
         }
     }
     
     Process {
         id: writer
-        stdinEnabled: true
-    }
-    
-    Process {
-        id: cancelWriter
     }
     
     MouseArea {
