@@ -1,5 +1,13 @@
 #!/bin/bash
 
+exit() {
+    if pgrep -x "Hyprland" > /dev/null; then
+        hyprctl eval 'hl.dispatch(hl.dsp.exit())'
+    elif pgrep -x "niri" > /dev/null; then
+        pkill niri
+    fi
+}
+
 # List options
 options="󱠩 Hibernate
  Reboot
@@ -16,12 +24,11 @@ chosen=$(echo -e "$options" | rofi -dmenu -p "Shutdown" -i -theme-str 'window
 }')
 
 # List action
-# Note: You should config hibernate manually
 case $chosen in 
     *"Hibernate"*) systemctl hibernate ;;
     *"Reboot"*) systemctl reboot ;;
     *"Power Off"*) systemctl poweroff ;;
     *"Sleep"*) systemctl suspend ;;
-    *"Lock"*) swaylock ;;
-    *"Exit"*) pkill niri ;;
+    *"Lock"*) hyprlock ;;
+    *"Exit"*) exit ;;
 esac

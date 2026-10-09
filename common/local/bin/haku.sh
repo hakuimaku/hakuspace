@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if ! pgrep -x "Hyprland" > /dev/null; then
+    notify-send "Error: Hyprland is not running!"
+    exit 1
+fi
+
 FONT_CLOCK=10
 FONT_GENERAL=12
 FONT_TERMINAL=15

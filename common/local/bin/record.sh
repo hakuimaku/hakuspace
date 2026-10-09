@@ -8,6 +8,8 @@ fi
 
 PID_FILE="/tmp/recording_pid"
 TIME_FILE="/tmp/recording_time"
+
+# Customize the save directory for recordings
 SAVE_DIR="$HOME/Videos" 
 mkdir -p "$SAVE_DIR"
 
@@ -59,7 +61,7 @@ start_recording() {
     esac
 
     echo $! > "$PID_FILE"
-    notify-send -u critical "Recording System" "$MSG" -i video-display -t 3000
+    notify-send "Recording System" "$MSG" -i video-display
     
     SEC=0
     while [ -f "$PID_FILE" ] && ps -p $(cat "$PID_FILE") > /dev/null; do
