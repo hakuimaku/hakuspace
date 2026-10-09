@@ -8,6 +8,12 @@
 // HakuSpace Rofi Theme
 // Theme: wallpaper-select.rasi, use for wallpaper selection
 
+configuration {
+    hover-select: true;
+    me-select-entry: "";
+    me-accept-entry: "MousePrimary";
+}
+
 @import "../../.local/state/hakuspace/theme/rofi-style.rasi"
 @import "../../.local/state/hakuspace/theme/rofi-wallpaper-select.rasi"
 
