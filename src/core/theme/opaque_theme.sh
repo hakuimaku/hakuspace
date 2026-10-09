@@ -39,6 +39,26 @@ IS_OPAQUE=$(cat "$OPAQUE_STATE_FILE" 2>/dev/null || echo "0")
 render_waybar() {
     if [[ "$IS_OPAQUE" == "1" ]]; then
         cat > "$OPAQUE_DIR/waybar.css" <<'INNEREOF'
+.modules-left,
+.modules-center,
+.modules-right {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+#hworkspaces,
+#musics,
+#clocks,
+#utilities,
+#tools,
+#trays,
+#adjusters,
+#monitors {
+    padding: 0;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
 window#waybar {
     background-color: #000000;
     background: #000000;

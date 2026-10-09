@@ -23,7 +23,7 @@
         "group/clocks"
     ],
     "modules-right": [
-        "group/monitor",
+        "group/monitors",
         "group/adjusters",
         "group/trays",
         "group/tools"
@@ -90,7 +90,7 @@
         ]
     },
 
-    "group/monitor": {
+    "group/monitors": {
         "orientation": "horizontal",
         "drawer": {
             "transition-duration": 1000,
