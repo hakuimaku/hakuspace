@@ -21,9 +21,9 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
     <a href="https://github.com/hakuimaku/hakuspace"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/hakuimaku/hakuspace?style=for-the-badge&label=Repo%20Size&labelColor=%23000000&color=%23212121&logo=github&logoColor=%23FFFFFF"></a>
 </p>
 
-| <img width="1920" height="1080" alt="screenshot_2026-08-29_14-26-24" src="https://github.com/user-attachments/assets/1e0dc63a-22ee-482a-9902-9d458bb67e35" /> | <img width="1920" height="1080" alt="screenshot_2026-08-25_06-52-48" src="https://github.com/user-attachments/assets/c3ca125c-12f5-49d8-afd3-1aa68b64c8fe" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-09-23_15-47-52" src="https://github.com/user-attachments/assets/184e6d0c-41ac-4087-b9d7-e0e94a77563f" /> | <img width="1920" height="1080" alt="screenshot_2026-09-23_15-48-42" src="https://github.com/user-attachments/assets/97abc9d3-bfe7-4ba5-9dcc-35036e15f98f" /> |
 |--|--|
-| <img width="1920" height="1080" alt="screenshot_2026-09-16_19-18-37" src="https://github.com/user-attachments/assets/7998befa-a213-4b9b-9e18-23c886073306" /> | <img width="1920" height="1080" alt="screenshot_2026-09-16_19-17-46" src="https://github.com/user-attachments/assets/e7694a36-05d9-4730-931c-8e4716fd0aa1" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-09-23_15-52-55" src="https://github.com/user-attachments/assets/b87cd87d-f9da-4e32-8b0d-5b948dd55c19" /> | <img width="1920" height="1080" alt="screenshot_2026-09-23_15-43-51" src="https://github.com/user-attachments/assets/aba0fcdd-b063-451a-bf1f-7c77e879c0a8" /> |
 
 ## Welcome to Haku Space
 
