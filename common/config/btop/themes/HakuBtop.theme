@@ -1,0 +1,13 @@
+# Generated - do not edit
+# Minimal accent mapping (edit keys as you like)
+theme[main_bg]="#000000"
+theme[main_fg]="#c0c0c0"
+
+theme[title]="#ffffff"
+theme[hi_fg]="#ffffff"
+theme[selected_fg]="#ffffff"
+theme[proc_misc]="#ffffff"
+theme[cpu_box]="#ffffff"
+theme[mem_box]="#ffffff"
+theme[net_box]="#ffffff"
+theme[disk_box]="#ffffff"
