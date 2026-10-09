@@ -8,14 +8,14 @@
 //================================================
 
 overview {
-    zoom 0.5
+    zoom 0.6
     backdrop-color "#262626"
 
     workspace-shadow {
-        softness 40
-        spread 10
+        softness 60
+        spread 12
         offset x=0 y=10
-        color "#00000050"
+        color "#000000ee"
     }
 }
 

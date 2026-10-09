@@ -7,6 +7,12 @@
 //                                                  
 //============================================
 
+// Niri overview backdrop image
+layer-rule {
+    match namespace="awww-daemon-backdrop"
+    place-within-backdrop true
+}
+
 // Opacity for inactive windows
 window-rule {
     match is-active=false
