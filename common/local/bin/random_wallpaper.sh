@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 WALL_DIR="$HOME/Pictures/Wallpapers"
-BACKDROP_DIR="$WALL_DIR/temp"
+BACKDROP_DIR="/tmp"
 INTERVAL=300
 STATE_FILE="/tmp/random_wallpaper_status"
 
