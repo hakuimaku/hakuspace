@@ -4,6 +4,7 @@ import Quickshell.Wayland
 import "../services"
 import "flare" as Flare
 import "hakumenu" as HakuMenu
+import "motion" as Motion
 
 PanelWindow {
     id: root
@@ -161,45 +162,55 @@ PanelWindow {
                 radius: Theme.radius
                 color: menu.controlBg
 
-                Row {
+                readonly property var modes: [
+                    { key: "general", label: "General" },
+                    { key: "drun", label: "Drun" },
+                    { key: "theme", label: "Theme" }
+                ]
+                readonly property int selectedIndex: ["general", "drun", "theme"].indexOf(UiState.hakuMenuMode)
+
+                Item {
+                    id: tabLane
                     anchors.fill: parent
                     anchors.margins: Theme.gap
-                    spacing: Theme.gap
+                    readonly property real spacing: Theme.gap
+                    readonly property real slotWidth: (width - spacing * 2) / 3
+
+                    Motion.SelectionPill {
+                        z: 0
+                        shown: modeSwitcher.selectedIndex >= 0
+                        targetIndex: modeSwitcher.selectedIndex
+                        slotCount: modeSwitcher.modes.length
+                        slotSpacing: tabLane.spacing
+                    }
 
                     Repeater {
-                        model: [
-                            { key: "general", label: "General" },
-                            { key: "drun", label: "Drun" },
-                            { key: "theme", label: "Theme" }
-                        ]
+                        model: modeSwitcher.modes
 
-                        Rectangle {
+                        Motion.MorphButton {
                             required property var modelData
-                            readonly property bool selected: UiState.hakuMenuMode === modelData.key
-                            width: (modeSwitcher.width - Theme.gap * 4) / 3
-                            height: modeSwitcher.height - Theme.gap * 2
+                            required property int index
+                            z: 1
+                            x: index * (tabLane.slotWidth + tabLane.spacing)
+                            width: tabLane.slotWidth
+                            height: tabLane.height
                             radius: Theme.radiusSm
-                            color: selected
-                                ? Theme.accent
-                                : (tabMouse.containsMouse ? menu.controlHoverBg : "transparent")
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: modelData.label
-                                color: parent.selected ? Theme.onAccentColor : Theme.fg
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontSize
-                            }
-
-                            MouseArea {
-                                id: tabMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    UiState.setHakuMenuQuery("")
-                                    UiState.setHakuMenuMode(parent.modelData.key)
-                                }
+                            selected: UiState.hakuMenuMode === modelData.key
+                            selectedOverridesHover: true
+                            idleColor: "transparent"
+                            hoverColor: menu.controlHoverBg
+                            pressedColor: menu.controlHoverBg
+                            selectedColor: "transparent"
+                            foregroundColor: Theme.fg
+                            hoverForegroundColor: Theme.fg
+                            pressedForegroundColor: Theme.fg
+                            selectedForegroundColor: Theme.onAccentColor
+                            hoverScaleDelta: 0.004
+                            pressScaleDelta: 0.018
+                            text: modelData.label
+                            onClicked: {
+                                UiState.setHakuMenuQuery("")
+                                UiState.setHakuMenuMode(modelData.key)
                             }
                         }
                     }
@@ -216,15 +227,23 @@ PanelWindow {
                 UiState.setHakuMenuMode(modes[next])
             }
 
-            Rectangle {
+            Motion.MorphButton {
                 id: searchBox
                 x: modeSwitcher.x + modeSwitcher.width + Theme.gap * 2
                 width: menu.searchWidth
                 height: menu.topRowHeight
                 radius: Theme.radius
-                color: searchHover.hovered || searchInput.activeFocus
-                    ? menu.controlHoverBg
-                    : menu.controlBg
+                interactive: false
+                externalHovered: searchHover.hovered
+                focused: searchInput.activeFocus
+                idleColor: menu.controlBg
+                hoverColor: menu.controlHoverBg
+                focusColor: menu.controlHoverBg
+                foregroundColor: Theme.fg
+                hoverForegroundColor: Theme.fg
+                focusForegroundColor: Theme.fg
+                hoverScaleDelta: 0
+                pressScaleDelta: 0
 
                 Text {
                     anchors.left: parent.left

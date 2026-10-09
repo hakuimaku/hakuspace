@@ -278,6 +278,11 @@ Commit:
 p3(hakumenu): lock centered equal-radius geometry
 ```
 
+Gate:
+- physical center X and height remain stable;
+- General may use the approved 95%-of-standard width while Drun/Theme use standard width;
+- tab-to-tab width changes morph with the dedicated resize curve, not the shell-open bounce.
+
 ### H3
 General/Drun/Theme tab shell.
 
@@ -288,9 +293,26 @@ p3(hakumenu): add general drun theme tabs
 ```
 
 Gate:
-- outer bounds do not move across tabs;
 - state area hidden except Theme;
 - no TopBar-center silhouette redesign.
+
+### H4
+Shared Hikai interactive-motion foundation and first migration.
+
+Commits:
+
+```text
+p3(motion): add shared button morph primitives
+p3(motion): migrate hakumenu tray and notifications
+```
+
+Gate:
+- `ButtonMotion`, `MorphButton`, `MorphIconButton`, `SelectionPill` exist as reusable primitives;
+- HakuMenu tabs use one moving selection pill;
+- HakuMenu General/Drun rows and search focus have no instant interactive colour jumps;
+- Tray rows/Back and Notification action buttons use the same motion profile;
+- hover/press motion does not alter layout size;
+- ordinary buttons do not reuse HakuMenu's bouncy open curve.
 
 ---
 

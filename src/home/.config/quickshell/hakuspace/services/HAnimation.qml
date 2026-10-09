@@ -22,6 +22,18 @@ QtObject {
     property int hakuMenuResizeDuration: 240
     property list<real> hakuMenuResizeCurve: [0.7, 1.0, 0.6, 0.98]
     property real hakuMenuBounceHeadroom: 0.04
+
+    // Shared Hikai interactive-state motion. Keep these calmer than shell-open motion.
+    property int buttonHoverDuration: 140
+    property int buttonPressDuration: 80
+    property int buttonReleaseDuration: 170
+    property int buttonSelectDuration: 220
+    property int buttonFocusDuration: 160
+    property list<real> buttonHoverCurve: [0.20, 0.80, 0.20, 1.0, 1, 1]
+    property list<real> buttonPressCurve: [0.40, 0.00, 0.20, 1.0, 1, 1]
+    property list<real> buttonReleaseCurve: [0.16, 1.08, 0.30, 1.0, 1, 1]
+    property list<real> buttonSelectCurve: [0.16, 1.00, 0.30, 1.0, 1, 1]
+    property list<real> buttonFocusCurve: [0.20, 0.80, 0.20, 1.0, 1, 1]
     
     // Six control values drive the asymmetric workspace and flare motion.
     property list<real> spatialCurve: [0.5, 1.21, 0.22, 1, 1, 1]

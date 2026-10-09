@@ -36,6 +36,7 @@ Item {
             id: dndButton
             width: Theme.fontSize * 5.3
             text: NotificationStore.dnd ? "DND On" : "DND Off"
+            selected: NotificationStore.dnd
             activeFocusOnTab: true
             Accessible.role: Accessible.Button
             Accessible.name: "Toggle Do Not Disturb"
@@ -47,6 +48,12 @@ Item {
             id: clearButton
             width: Theme.fontSize * 4
             text: "Clear"
+            idleColor: Theme.accent
+            foregroundColor: Theme.onAccentColor
+            hoverColor: Qt.darker(Theme.accent, 1.10)
+            pressedColor: Qt.darker(Theme.accent, 1.18)
+            hoverForegroundColor: Theme.onAccentColor
+            pressedForegroundColor: Theme.onAccentColor
             activeFocusOnTab: true
             Accessible.role: Accessible.Button
             Accessible.name: "Clear all notifications"

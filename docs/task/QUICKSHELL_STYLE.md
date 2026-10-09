@@ -166,11 +166,11 @@ Theme
 
 Geometry rules:
 
-- outer bounds do not shift between tabs;
+- physical center X and height stay stable; General uses the approved compact width (95% of standard), while Drun/Theme use standard width and morph between widths;
 - tab strip/list/state blocks use one radius family;
 - vertical origin is derived from RoundedScreen/frame attachment;
 - Theme alone shows the narrow right state region;
-- General/Drun hide that region without moving the outer menu.
+- General/Drun hide that region; the menu remains centered while width follows the approved tab-width morph.
 
 Data/content rules:
 
@@ -285,17 +285,26 @@ The new P3 mockups do not cancel these established style directions:
 
 | Token | Value | Use |
 |---|---|---|
-| `fast` / `normal` / `slow` | 100 / 220 / 400 ms | hover, colour and opacity changes; module width; flare height |
-| `spatial` | 250 ms | position/size of the workspace indicator and its dots |
-| `effects` | 150 ms | colours/opacity inside workspaces and crossfade of flare content |
+| `fast` / `normal` / `slow` | 100 / 220 / 400 ms | generic short/normal/slow transitions |
+| `spatial` / `effects` | 350 / 200 ms | workspace/flare geometry and effect transitions |
 | `trailFactor` | 1.5 | trailing edge duration multiplier (workspace worm, flare morph) |
-| `moduleCurve` | `[0.16, 1.0, 0.3, 1.0]` | module width/colour animations, flare height |
-| `tooltipCurve` | `[0.4, 0.0, 0.2, 1.0]` | defined, currently unused by the flare |
-| `shellCurve` | `[0.16, 1.0, 0.3, 1.0]` | defined for drawers/layers |
-| `spatialCurve` | `[0.38, 1.21, 0.22, 1.0]` | workspace worm and flare edges (control point y = 1.21 for a slight overshoot) |
-| `effectsCurve` | `[0.34, 0.8, 0.34, 1.0]` | workspace colours/opacity |
+| `moduleCurve` | `[0.16, 1.0, 0.3, 1.0]` | module motion |
+| `tooltipCurve` | `[0.4, 0.0, 0.2, 1.0]` | tooltip-specific curve token |
+| `shellCurve` | `[0.16, 1.0, 0.3, 1.0]` | drawers/layers |
+| `spatialCurve` | `[0.5, 1.21, 0.22, 1, 1, 1]` | workspace/flare spatial overshoot |
+| `effectsCurve` | `[0.56, 0.8, 0.34, 1, 1, 1]` | workspace/flare effects |
+| `buttonHoverDuration` | 140 ms | ordinary hover transition |
+| `buttonPressDuration` | 80 ms | press/compress feedback |
+| `buttonReleaseDuration` | 170 ms | soft release/return |
+| `buttonSelectDuration` | 220 ms | selected-state and moving-pill morph |
+| `buttonFocusDuration` | 160 ms | focus/search-field transition |
+| `buttonHoverCurve` | `[0.20, 0.80, 0.20, 1.0, 1, 1]` | restrained hover |
+| `buttonPressCurve` | `[0.40, 0.00, 0.20, 1.0, 1, 1]` | quick press |
+| `buttonReleaseCurve` | `[0.16, 1.08, 0.30, 1.0, 1, 1]` | very small release overshoot |
+| `buttonSelectCurve` | `[0.16, 1.00, 0.30, 1.0, 1, 1]` | calm selection morph |
+| `buttonFocusCurve` | `[0.20, 0.80, 0.20, 1.0, 1, 1]` | focus transition |
 
-> **VERIFY:** the curves are written with 4 numbers; Qt's `easing.bezierCurve` takes control points plus the end point (groups of 6, ending `…, 1, 1`). Confirm they are really applied.
+HakuMenu shell-open motion remains a separate profile: ordinary controls must not reuse the bouncy HakuMenu opening curve.
 
 ---
 
@@ -309,7 +318,7 @@ The new P3 mockups do not cancel these established style directions:
 - **Dashboard:** avatar + four mockup-defined cards; reserved empty space stays empty.
 - **Sidebar:** left-attached rounded lobe with circular options; immediate hover handoff from Navigation.
 - **Settings:** large centered stub only; no settings framework in P3.
-- **HakuMenu:** physical-center shell surface with General/Drun/Theme; stable outer bounds; Theme-only state rail.
+- **HakuMenu:** physical-center shell surface with General/Drun/Theme; stable center/height with approved width morph (General 95% of standard width); Theme-only state rail. Tabs use a moving selection pill and shared button motion.
 - **Wallpaper:** centered selected item with stacked side carousel; no large background panel and no dual-front reveal.
 - **Notification popup:** native P2 model, borderless HakuSpace/Flare visual treatment.
 - **Notification Center:** native P2 behavior, P3 spacing/height/primary-Clear polish.
@@ -319,6 +328,9 @@ The new P3 mockups do not cancel these established style directions:
 
 ## 5. Rules for new components
 
+- **No instant interactive state changes:** visible hover, press, selection, focus and toggle changes in Hikai use the shared motion tokens/primitives unless correctness or accessibility requires an immediate response.
+- **Motion must not move layout:** hover/press/select effects stay inside stable control bounds and must not change implicit size or push neighboring controls. Surface resize is reserved for explicit shell morphs such as the approved HakuMenu width transition.
+- Prefer `components/motion/ButtonMotion.qml`, `MorphButton.qml`, `MorphIconButton.qml` and `SelectionPill.qml` over copy-pasted per-component hover/press `Behavior` blocks.
 - Take colours from `Theme` and durations/curves from `HAnimation` unless an existing documented hard-coded exception applies.
 - Centralize Flare geometry in the shared Flare library; do not reimplement flare maths in each panel.
 - Centralize RoundedScreen/frame geometry per output; do not copy frame-offset arithmetic into individual surfaces.
