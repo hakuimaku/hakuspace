@@ -41,7 +41,7 @@ in
         # Zsh Shell
         programs.zsh.enable = lib.mkDefault true;
         environment.shells = with pkgs; [ zsh ];
-        users.defaultUserShell = lib.mkIf cfg.enableDefaultShell (lib.mkDefault pkgs.zsh);
+        users.defaultUserShell = lib.mkIf cfg.enableDefaultShell (lib.mkForce pkgs.zsh);
 
         # Thunar File Manager
         programs.xfconf.enable = lib.mkDefault true;
