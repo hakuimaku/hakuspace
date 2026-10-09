@@ -176,7 +176,10 @@ PanelWindow {
                 readonly property real safeSpan: Math.max(0, 2 * Math.min(parent.width / 2 - leftModules.width - Theme.gap,
                                                                           parent.width / 2 - rightModules.width - Theme.gap))
                 readonly property real cavaSlotWidth: cavaModule.hoverSafeWidth
-                readonly property bool showCava: CenterState.centerMode === "media" && Cava.available && Cava.audioVisible
+                readonly property bool hakuMenuActive: UiState.activePanel === "hakumenu"
+                                                           && UiState.hakuMenuScreenName === root.modelData.name
+                readonly property bool showCava: !hakuMenuActive
+                                                  && CenterState.centerMode === "media" && Cava.available && Cava.audioVisible
                                                   && safeSpan >= cavaSlotWidth + Theme.gap + Theme.fontSize * 3
                 opacity: CenterState.osdVisible || CenterState.osdExpansion > 0 ? 0 : 1
                 enabled: !CenterState.osdVisible && CenterState.osdExpansion === 0
@@ -200,6 +203,7 @@ PanelWindow {
 
                 TopModules.CenterModule {
                     id: centerModule
+                    screenName: root.modelData.name
                     maximumWidth: Math.max(0, centerCluster.safeSpan
                                              - (cavaSlot.width > 0 ? cavaSlot.width + centerCluster.spacing : 0))
                 }

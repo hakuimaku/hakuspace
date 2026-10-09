@@ -5,19 +5,27 @@ import "../base"
 Item {
     id: root
     property real maximumWidth: 0
+    property string screenName: ""
     property bool hovered: false
     property bool initialized: false
     readonly property string mode: CenterState.centerMode
+    readonly property bool hakuMenuActive: UiState.activePanel === "hakumenu"
+                                                && UiState.hakuMenuScreenName === screenName
+    readonly property string breadcrumb: hakuMenuActive ? UiState.hakuMenuBreadcrumb : ""
     property string displayedMode: "idle"
-    readonly property bool active: mode !== "idle" && maximumWidth >= Theme.fontSize * 3
-    readonly property bool mediaMode: displayedMode === "media"
+    readonly property bool active: (hakuMenuActive || mode !== "idle") && maximumWidth >= Theme.fontSize * 3
+    readonly property bool mediaMode: !hakuMenuActive && displayedMode === "media"
     readonly property string icon: displayedMode === "recording" ? "●" : (Media.playing ? "󰐊" : "󰏤")
     readonly property string caption: displayedMode === "recording" ? "REC"
                                       : (Media.artist ? Media.title + " · " + Media.artist : Media.title)
+    property string displayedBreadcrumb: ""
+    property real breadcrumbOffset: 0
+    readonly property string shownCaption: hakuMenuActive ? displayedBreadcrumb : caption
 
     implicitHeight: Theme.fontSize * 1.8
     implicitWidth: Math.min(Theme.fontSize * 26,
-                            iconBox.width + label.implicitWidth + content.spacing + Theme.pad * 2)
+                            (hakuMenuActive ? 0 : iconBox.width + content.spacing)
+                            + label.implicitWidth + Theme.pad * 2)
                    + (hovered ? Theme.pad * 2 : 0)
     Behavior on implicitWidth {
         NumberAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve }
@@ -29,6 +37,7 @@ Item {
 
     Component.onCompleted: {
         displayedMode = mode
+        displayedBreadcrumb = breadcrumb
         initialized = true
     }
     onModeChanged: {
@@ -41,6 +50,20 @@ Item {
             stateTransition.restart()
         }
     }
+    onBreadcrumbChanged: {
+        if (!initialized || !hakuMenuActive) {
+            displayedBreadcrumb = breadcrumb
+            return
+        }
+        breadcrumbTransition.restart()
+    }
+    onHakuMenuActiveChanged: {
+        breadcrumbTransition.stop()
+        displayedBreadcrumb = breadcrumb
+        content.opacity = 1
+        breadcrumbOffset = 0
+    }
+
     onActiveChanged: {
         if (!active) {
             stateTransition.stop()
@@ -58,6 +81,48 @@ Item {
         NumberAnimation { target: content; property: "opacity"; to: 1; duration: HAnimation.fast }
     }
 
+    SequentialAnimation {
+        id: breadcrumbTransition
+        ParallelAnimation {
+            NumberAnimation {
+                target: content
+                property: "opacity"
+                to: 0
+                duration: HAnimation.fast
+                easing.bezierCurve: HAnimation.moduleCurve
+            }
+            NumberAnimation {
+                target: root
+                property: "breadcrumbOffset"
+                to: -4
+                duration: HAnimation.fast
+                easing.bezierCurve: HAnimation.moduleCurve
+            }
+        }
+        ScriptAction {
+            script: {
+                root.displayedBreadcrumb = root.breadcrumb
+                root.breadcrumbOffset = 4
+            }
+        }
+        ParallelAnimation {
+            NumberAnimation {
+                target: content
+                property: "opacity"
+                to: 1
+                duration: HAnimation.fast
+                easing.bezierCurve: HAnimation.moduleCurve
+            }
+            NumberAnimation {
+                target: root
+                property: "breadcrumbOffset"
+                to: 0
+                duration: HAnimation.fast
+                easing.bezierCurve: HAnimation.moduleCurve
+            }
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
         radius: Theme.radiusSm
@@ -67,20 +132,24 @@ Item {
 
     Row {
         id: content
-        anchors.fill: parent
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        height: parent.height
+        transform: Translate { y: root.hakuMenuActive ? root.breadcrumbOffset : 0 }
         anchors.leftMargin: Theme.pad
         anchors.rightMargin: Theme.pad
-        spacing: root.mediaMode ? Theme.pad * 1.5 : Theme.gap
+        spacing: root.hakuMenuActive ? 0 : (root.mediaMode ? Theme.pad * 1.5 : Theme.gap)
 
         Item {
             id: iconBox
             anchors.verticalCenter: parent.verticalCenter
-            width: root.mediaMode ? Theme.fontSize * 1.55 : iconLabel.implicitWidth
+            width: root.hakuMenuActive ? 0 : (root.mediaMode ? Theme.fontSize * 1.55 : iconLabel.implicitWidth)
             height: root.mediaMode ? width : iconLabel.implicitHeight
 
             Rectangle {
                 anchors.fill: parent
-                visible: root.mediaMode
+                visible: root.mediaMode && !root.hakuMenuActive
                 radius: width / 2
                 color: Theme.accent
                 scale: root.hovered ? 1.06 : 1
@@ -89,7 +158,7 @@ Item {
             Text {
                 id: iconLabel
                 anchors.centerIn: parent
-                text: root.icon
+                text: root.hakuMenuActive ? "" : root.icon
                 color: root.mediaMode ? Theme.onAccentColor : Theme.accent
                 font.family: Theme.fontFamily
                 font.pixelSize: root.mediaMode ? Theme.fontSize + 3 : Theme.fontSize
@@ -101,7 +170,7 @@ Item {
             id: label
             anchors.verticalCenter: parent.verticalCenter
             width: Math.max(0, content.width - iconBox.width - content.spacing)
-            text: root.caption
+            text: root.shownCaption
             color: root.hovered ? Theme.onAccentColor : Theme.fg
             font.family: Theme.fontFamily
             font.pixelSize: root.mediaMode ? Theme.fontSize - 1 : Theme.fontSize
@@ -114,7 +183,7 @@ Item {
 
     MouseArea {
         anchors.fill: parent
-        enabled: root.active
+        enabled: root.active && !root.hakuMenuActive
         hoverEnabled: true
         onEntered: {
             root.hovered = true

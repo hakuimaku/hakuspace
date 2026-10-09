@@ -9,17 +9,55 @@ QtObject {
     property var notificationPanel: null
     property string hakuMenuMode: "closed"
     property string hakuMenuScreenName: ""
+    property string hakuMenuQuery: ""
+    property string hakuMenuSelectionLabel: ""
+    readonly property string hakuMenuTabLabel: hakuMenuMode === "general" ? "General"
+                                                   : hakuMenuMode === "drun" ? "Drun"
+                                                   : hakuMenuMode === "theme" ? "Theme"
+                                                   : ""
+    readonly property string hakuMenuBreadcrumb: hakuMenuSelectionLabel.length > 0
+                                                  ? hakuMenuTabLabel + " → " + hakuMenuSelectionLabel
+                                                  : hakuMenuTabLabel
 
-    function openHakuMenu(screenName) {
+    function openHakuMenu(screenName, mode) {
         hakuMenuScreenName = screenName
-        hakuMenuMode = "general"
+        hakuMenuMode = (mode === "drun" || mode === "theme" || mode === "general") ? mode : "general"
+        hakuMenuQuery = ""
+        hakuMenuSelectionLabel = ""
         activePanel = "hakumenu"
+    }
+
+    function setHakuMenuMode(mode) {
+        if (mode !== "general" && mode !== "drun" && mode !== "theme") return
+        if (activePanel !== "hakumenu") return
+        hakuMenuMode = mode
+        hakuMenuSelectionLabel = ""
+    }
+
+    function setHakuMenuSelectionLabel(label) {
+        if (activePanel !== "hakumenu") return
+        hakuMenuSelectionLabel = label || ""
+    }
+
+    function setHakuMenuQuery(query) {
+        hakuMenuQuery = query
+        if (activePanel !== "hakumenu" || query.length === 0) return
+
+        var nextMode = query.charAt(0) === ">" ? "general"
+                     : query.charAt(0) === "~" ? "theme"
+                     : "drun"
+        if (hakuMenuMode !== nextMode) {
+            hakuMenuMode = nextMode
+            hakuMenuSelectionLabel = ""
+        }
     }
 
     function closeHakuMenu() {
         if (activePanel === "hakumenu") activePanel = ""
         hakuMenuMode = "closed"
         hakuMenuScreenName = ""
+        hakuMenuQuery = ""
+        hakuMenuSelectionLabel = ""
     }
 
     function closeHakuMenuIfScreen(screenName) {
@@ -76,6 +114,8 @@ QtObject {
         if (activePanel !== "hakumenu") {
             hakuMenuMode = "closed"
             hakuMenuScreenName = ""
+            hakuMenuQuery = ""
+            hakuMenuSelectionLabel = ""
         }
     }
     

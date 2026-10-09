@@ -62,6 +62,15 @@ ShellRoot {
     }
 
     IpcHandler {
+        target: "launcher"
+        enabled: true
+        function open(mode: string) {
+            if (mode !== "drun" || Quickshell.screens.length === 0) return
+            UiState.openHakuMenu(Quickshell.screens[0].name, "drun")
+        }
+    }
+
+    IpcHandler {
         target: "notif"
         function toggleCenter() {
             if (!NotificationStore._started || Quickshell.screens.length === 0) return
