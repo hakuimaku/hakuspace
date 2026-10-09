@@ -41,6 +41,9 @@ in
         # Hardware Graphics for Wayland Compositors
         hardware.graphics.enable = lib.mkDefault true;
 
+        # Clean temporary files on boot
+        boot.tmp.cleanOnBoot = lib.mkDefault true;
+
         # Programs ================================================
         nixpkgs.config.allowUnfree = lib.mkDefault true;
         programs.firefox.enable = lib.mkDefault true;
@@ -79,20 +82,30 @@ in
 
         # Packages ================================================
         environment.systemPackages = with pkgs; [
+            # Script python needed
             (python3.withPackages (ps: with ps; [
                 colorthief
                 pygobject3
             ]))
-            pulseaudio
-            gtk3
-            pango
             gobject-introspection
+            gtk3
             gtk-layer-shell
+            pango
+            harfbuzz
+            gdk-pixbuf
+            atk
+            cairo
+
+            # Common Utilities
+            gsettings-desktop-schemas
             glib
+            pulseaudio
             libnotify
             networkmanagerapplet
             playerctl
             file
+
+            # Core packages
             git
             rofi
             waybar
