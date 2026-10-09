@@ -1,0 +1,13 @@
+#!/bin/bash
+
+WM=$(echo "$XDG_CURRENT_DESKTOP" | tr '[:upper:]' '[:lower:]')
+
+if [ "$WM" = "hyprland" ]; then
+    hyprctl dispatch dpms "$1"
+elif [ "$WM" = "niri" ]; then
+    if [ "$1" = "on" ]; then
+        niri msg action power-on-monitors
+    else
+        niri msg action power-off-monitors
+    fi
+fi
