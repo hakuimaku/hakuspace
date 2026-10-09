@@ -9,10 +9,10 @@
 }
 
 .notification {
-    background: rgba(0, 0, 0, 1);
+    background: rgba(0, 0, 0, 0.8);
     border-radius: 20px;
     padding: 10px;
-    box-shadow: 0 0 5px #000000;
+    box-shadow: 5px 5px 5px #000000;
     color: @accent_color;
 }
 
@@ -36,18 +36,16 @@
     color: @accent_color;
 }
 
-.notification-action {
-    color: #11111b;
-    background: @accent_color;
-    border-radius: 5px;
-}
 
-/* --- CONTROL CENTER --- */
+/* ============================================================================== */
+/* =============================== CONTROL CENTER =============================== */
+/* ============================================================================== */
 .control-center {
-    background: rgba(0, 0, 0, 1);
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 15px;
-    box-shadow: 0 0 10px #000000;
+    box-shadow: 10px 10px 10px #000000;
     margin: 3px;
+    padding: 6px;
     color: @accent_color;
 }
 
@@ -57,18 +55,13 @@
 
 .control-center-clear-all {
     transition: all 1s ease;
-}
-
-.control-center-clear-all:hover {
-    min-width: 150px;
-    transition: all 400ms ease;
-    background: @accent_color;
-    color: #000000;
+    box-shadow: 4px 4px 4px #000000;
 }
 
 .control-center-dnd {
     background: @accent_color;
     border-radius: 10px;
+    box-shadow: 4px 4px 4px #000000;
 }
 
 
@@ -95,12 +88,17 @@
     border-radius: 20px;
 }
 
+.widget-notifications {
+    box-shadow: 5px 5px 5px 5px #000000;
+}
+
 .widget-menubar {
-    background: #000000;
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 10px;
-    padding: 4px 6px;
+    padding: 8px 8px;
+    margin: 20px;
     color: @accent_color;
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.55);
+    box-shadow: 8px 8px 8px #000000;
 }
 
 .widget-menubar > box > .menu-button-bar {
@@ -152,7 +150,7 @@
 .widget-volume scale trough,
 .widget-backlight scale trough {
     background: rgba(255, 255, 255, 0.12);
-    min-height: 5px;
+    min-height: 6px;
     border-radius: 999px;
 }
 
@@ -183,3 +181,21 @@
     color: @accent_color;
 }
 
+
+
+/* ============================================================================== */
+/* =================================== HOVER ==================================== */
+/* ============================================================================== */
+
+.control-center-clear-all:hover {
+    min-width: 150px;
+    transition: all 400ms ease;
+    background: rgba(255, 255, 255, 0.293);
+}
+
+.control-center-dnd:hover,
+.widget-dnd > switch:checked:hover,
+.widget-dnd > switch:hover {
+    background: rgba(255, 255, 255, 0.293);
+    transition: all 400ms ease;
+}

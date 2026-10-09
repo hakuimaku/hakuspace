@@ -17,7 +17,7 @@ window#waybar {
 }
 
 .modules-left, .modules-center, .modules-right {
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.5);
     border-radius: 12px;
     padding: 4px;
     margin: 8px;
@@ -197,6 +197,14 @@ window#waybar {
 
 #clock:hover {
     min-height: 140px;
+}
+
+
+#pulseaudio-slider:hover,
+#backlight-slider:hover {
+    background-color: rgba(96, 96, 96, 0.8);
+    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+    min-height: 100px;
 }
 
 /* ============================================================================== */
