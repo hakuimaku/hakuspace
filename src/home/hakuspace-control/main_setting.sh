@@ -2,7 +2,7 @@
 
 # This script is used to set up the main settings for all hakuspace's scripts.
 # DO NOT EDIT THIS LINE :v, used for check main_setting.sh up-to-date when run update.sh
-SETTING_VERSION="2.2.2"
+SETTING_VERSION="2.2.7"
 echo "Hakuspace Control Settings Version: $SETTING_VERSION"
 
 # General Settings
@@ -15,8 +15,6 @@ SCREENSHOT_DIR="$HOME/Pictures/Screenshots"
 # Wallpaper Settings
 WALL_DIR="$HOME/Pictures/Wallpapers"
 WALL_MPV_DIR="$HOME/Videos/Wallpapers" # For lively wallpaper videos
-PREVIEW_DIR="$WALL_MPV_DIR/Preview" # For lively wallpaper thumbnail previews
-BACKDROP_DIR="$HOME/.cache" # For Niri only
 WALL_INTERVAL=300 # Interval in seconds for random wallpaper changes
 ACCENT_COLOR_BASED_ON_WALLPAPER=true
 AWWW_OPTS="--transition-type random --transition-step 90 --transition-fps 60" # Options for awww transition
@@ -25,7 +23,7 @@ AWWW_OPTS="--transition-type random --transition-step 90 --transition-fps 60" # 
 SCREENREC_SAVE_DIR="$HOME/Videos"
 #REC_COMMAND="$HOME/.cargo/bin/wl-screenrec" # If you install wl-screenrec by cargo, uncomment the following line and comment the next one
 REC_COMMAND="wl-screenrec" # Default command for wl-screenrec, ensure it's in your PATH
-REC_OPTS="--max-fps 60 --codec avc --encode-pixfmt nv12" # wl-screenrec options, you can customize them as needed
+REC_OPTS="--max-fps 60" # wl-screenrec options, you can customize them as needed
 
 # Waybar Theme Settings
 # Add your custom Waybar modes here, e.g., ("custom1" "custom2")
