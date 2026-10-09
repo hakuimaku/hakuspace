@@ -2,8 +2,8 @@
 /* TASKBAR STYLES                                  */
 /* ============================================================================== */
 
-@import url("../../../.local/state/hakuspace/theme/colors.css");
-@import url("../../../.local/state/hakuspace/theme/fonts.css");
+@import url("../../.local/state/hakuspace/theme/colors.css");
+@import url("../../.local/state/hakuspace/theme/fonts.css");
 
 * {
     font-weight: bold;
@@ -46,9 +46,11 @@ window#waybar {
     background-color: transparent;
     transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
     border-bottom: 3px solid transparent;
+    opacity: 0.8;
 }
 
 #taskbar button.active {
+    color: @accent_color;
     background-color: rgba(50, 50, 50, 0.5);
     transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
@@ -56,6 +58,7 @@ window#waybar {
     margin-left: 18px;
     margin-right: 18px;
     border-radius: 8px 8px 0 0;
+    opacity: 1;
 }
 
 #taskbar button.minimized {
@@ -142,4 +145,4 @@ tooltip label {
     }
 }
 
-@import url("../../../.local/state/hakuspace/theme/opaque/waybar.css");
+@import url("../../.local/state/hakuspace/theme/opaque/waybar.css");

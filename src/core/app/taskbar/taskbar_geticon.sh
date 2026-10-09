@@ -30,7 +30,7 @@ fi
 CURRENT_THEME="${CURRENT_ICON_THEME}:${CURRENT_GTK_THEME}"
 
 if [ -f "$CACHE_FILE" ]; then
-    CACHE_THEME=$(head -n 1 "$CACHE_FILE" | grep "^# THEME:" | cut -d':' -f2 | tr -d ' ')
+    CACHE_THEME=$(head -n 1 "$CACHE_FILE" | grep "^# THEME:" | cut -d':' -f2- | tr -d ' ')
     if [ "$CURRENT_THEME" != "$CACHE_THEME" ]; then
         rm -f "$CACHE_FILE"
         rm -rf "${CACHE_DIR:?}"/*
