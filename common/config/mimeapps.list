@@ -1,0 +1,13 @@
+[Default Applications]
+application/x-theme=code.desktop
+text/plain=code.desktop
+inode/directory=thunar.desktop
+x-scheme-handler/file=thunar.desktop
+
+[Added Associations]
+application/x-theme=code.desktop;
+text/plain=code.desktop;
+application/schema+json=code.desktop;
+application/x-shellscript=code.desktop;kitty-open.desktop;
+inode/directory=thunar.desktop;
+x-scheme-handler/file=thunar.desktop;
