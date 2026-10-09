@@ -2,5 +2,5 @@
 return {
     font_family = "JetBrainsMono Nerd Font",
     font_size = 16,
-    border_color = "rgba(dededdff)",
+    border_color = "rgba(ffffffff)",
 }
