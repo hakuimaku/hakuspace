@@ -56,7 +56,7 @@ in
                 enable = lib.mkDefault true;
                 syntaxHighlight = true;
                 nanorc = ''
-                    set tabsize 4
+                    set tabsize 2
                     set tabstospaces
                     set mouse
                 '';
@@ -65,6 +65,8 @@ in
             # Desktop Environment / Window Manager
             programs.hyprland.enable = lib.mkDefault true;
             programs.niri.enable = lib.mkDefault true;
+            programs.mango.enable = lib.mkDefault true;
+            programs.labwc.enable = lib.mkDefault true;
 
             # Packages ================================================
             environment.systemPackages = with pkgs; [
@@ -130,8 +132,6 @@ in
                 gparted
                 btop
                 pavucontrol
-                mangowc
-                labwc
             ];
 
             fonts = {
