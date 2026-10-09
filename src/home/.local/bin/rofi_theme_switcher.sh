@@ -2,14 +2,15 @@
 
 CONFIG_DIR="$HOME/.config/rofi"
 CONFIG_FILE="$CONFIG_DIR/config.rasi"
+THEME_DIR="$CONFIG_DIR/themes"
 USER_THEME_DIR="$HOME/hakucfg/config/rofi"
 
 # Check and build available theme list
 themes_default=""
 themes_user=""
 
-if [ -d "$CONFIG_DIR" ]; then
-    themes_default=$(find "$CONFIG_DIR" -maxdepth 1 -name "*.rasi" ! -name "config.rasi" -exec basename {} .rasi \;)
+if [ -d "$THEME_DIR" ]; then
+    themes_default=$(find "$THEME_DIR" -maxdepth 1 -name "*.rasi" ! -name "config.rasi" -exec basename {} .rasi \;)
 fi
 
 if [ -d "$USER_THEME_DIR" ]; then
@@ -26,7 +27,7 @@ if [ -z "$themes" ]; then
 fi
 
 # Select theme using rofi
-selected_theme=$(echo "$themes" | rofi -dmenu -p "Select Theme:" -theme-str 'window { width: 30%; height: 50%; }')
+selected_theme=$(echo "$themes" | rofi -dmenu -p "Select Theme:" -theme-str 'mainbox { children: [ inputbar, content-area]; } window { width: 35%; height: 35%; }' -i)
 
 # Link theme if selected and update config.rasi
 if [ -n "$selected_theme" ]; then
