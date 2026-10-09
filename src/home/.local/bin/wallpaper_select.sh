@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Include WALL_DIR & ACCENT_COLOR_BASED_ON_WALLPAPER
-[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakucfg/setting.sh" ] && source "$HOME/hakucfg/setting.sh"
 
 WALL_DIR=${WALL_DIR:-$HOME/Pictures/Wallpapers}
 ACCENT_COLOR_BASED_ON_WALLPAPER=${ACCENT_COLOR_BASED_ON_WALLPAPER:-true}

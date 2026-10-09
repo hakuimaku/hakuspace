@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
 
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+        cat <<'EOF'
+Usage: wallpaper_set.sh WALLPAPER
+Set the current wallpaper using the available wallpaper backend.
+
+Arguments:
+    WALLPAPER           Path to the wallpaper file
+    -h, --help          Show this help message
+EOF
+        exit 0
+fi
+
 # Include AWWW_OPTS
-[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakucfg/setting.sh" ] && source "$HOME/hakucfg/setting.sh"
 
 AWWW_OPTS=${AWWW_OPTS:-"--transition-type random --transition-step 90 --transition-fps 60"}
 
@@ -42,7 +54,14 @@ make_niri_backdrop() {
 # Input Validation
 if [[ -z "$WALLPAPER" ]]; then
     echo "Error: No wallpaper path provided." >&2
-    echo "Usage: $0 /path/to/wallpaper" >&2
+        cat <<'EOF' >&2
+Usage: wallpaper_set.sh WALLPAPER
+Set the current wallpaper using the available wallpaper backend.
+
+Arguments:
+    WALLPAPER           Path to the wallpaper file
+    -h, --help          Show this help message
+EOF
     exit 1
 fi
 

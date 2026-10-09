@@ -23,7 +23,7 @@ hakuspace (root)
     ├── home/                  # Versioned home-directory configuration templates
     │   ├── .config/           # Application and window-manager defaults
     │   ├── .local/bin/        # Managed user scripts
-    │   ├── hakuspace-control/ # Default custom-control templates
+    │   ├── hakucfg/ # Default custom-control templates
     │   └── .nanorc            # Nano configuration
     └── packages/              # Package lists grouped by purpose and WM
 ```
@@ -38,12 +38,12 @@ Repository source                  Deployed user configuration
 src/home/.config/*        --copy--> ~/.config/*
 src/home/.local/bin/*     --copy--> ~/.local/bin/*
 src/home/.nanorc          --copy--> ~/.nanorc
-src/home/hakuspace-control/*
-                           --copy--> ~/hakuspace-control/*
+src/home/hakucfg/*
+                           --copy--> ~/hakucfg/*
 ```
 
 - `src/home/` contains versioned base defaults. Later installation or update operations may replace deployed copies of these files.
-- `~/hakuspace-control/` is the primary location for user-specific settings supported by the configuration templates.
+- `~/hakucfg/` is the primary location for user-specific settings supported by the configuration templates.
 - `~/.config` and `~/.local` may contain unrelated user or application files. HakuSpace manages only the destinations deployed by its scripts.
 - Editing a deployed file does not update the repository. Editing a repository file does not affect the running session until it is deployed.
 
@@ -53,7 +53,7 @@ See [Dotfiles Copy Management](dotfiles-copy-management.md) for copy semantics, 
 
 ### `install.sh`
 
-The first-time setup entry point. It can install dependencies and packages, create required directories, deploy base configuration and selected window-manager files, initialize once-only configurations, deploy scripts, initialize `~/hakuspace-control`, and perform optional system setup.
+The first-time setup entry point. It can install dependencies and packages, create required directories, deploy base configuration and selected window-manager files, initialize once-only configurations, deploy scripts, initialize `~/hakucfg`, and perform optional system setup.
 
 Existing managed destinations are backed up under `~/.backup/` before they are copied over.
 

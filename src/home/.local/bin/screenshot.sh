@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Include SCREENSHOT_DIR
-[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakucfg/setting.sh" ] && source "$HOME/hakucfg/setting.sh"
 
 SCREENSHOT_DIR=${SCREENSHOT_DIR:-"$HOME/Pictures/Screenshots"}
 mkdir -p "$SCREENSHOT_DIR"
@@ -11,9 +11,14 @@ file="${SCREENSHOT_DIR}/screenshot_${timestamp}.png"
 
 usage() {
     cat <<'EOF'
-Usage:
-    screenshot.sh              # Select region
-    screenshot.sh --fullscreen # Fullscreen
+Usage: screenshot.sh [OPTION]
+Capture a screenshot and copy it to the clipboard.
+
+Options:
+    --fullscreen        Capture the full screen
+    -h, --help          Show this help message
+
+With no option, select a screen region.
 EOF
 }
 

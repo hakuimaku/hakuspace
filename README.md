@@ -42,7 +42,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 
 ## Key Features
 
-* **Control Center**: `~/hakuspace-control` this directory stores your custom configs so you don't have to touch the main ones, giving you much more freedom to customize.
+* **Control Center**: `~/hakucfg` this directory stores your custom configs so you don't have to touch the main ones, giving you much more freedom to customize.
 * **Accent Colors**: Synced across **Waybar**, **Rofi**, **Kitty**, **Swaync**,... giving your setup a **Super Clean** and **Cohesive Vibe**!
 * **Smart Accent Color:** Automatically generates the accent color based on your current wallpaper.
 * **Flexible Waybar Layouts:** Support 7 styles: `top`, `left`, `coredge`, `minimal`, `full`, `neon`, `island`.
@@ -222,7 +222,7 @@ hyprpm reload
 ```
 Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 
-See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
+See more in `~/hakucfg/wm/hyprland-custom.lua` for guide.
 
 ---
 
@@ -266,7 +266,7 @@ See more in `~/hakuspace-control/hyprland-custom.lua` for guide.
 
 ## Assets Located
 
-- Custom config (your personal changes): `~/hakuspace-control`
+- Custom config (your personal changes): `~/hakucfg`
 - State file & Haku Theme for waybar, rofi,... (includes accent_color, font, font size): `~/.local/state/haku_theme`
 - Icons: `~/.icons`
 - Themes: `~/.themes`

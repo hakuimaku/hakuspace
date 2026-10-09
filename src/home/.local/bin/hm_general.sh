@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-CUSTOM_SCRIPT="$HOME/hakuspace-control/hakumenu-general-custom.sh"
+CUSTOM_SCRIPT="$HOME/hakucfg/general-menu.sh"
 
 # Check if a custom script exists and is executable
 if [[ -f "$CUSTOM_SCRIPT" ]]; then

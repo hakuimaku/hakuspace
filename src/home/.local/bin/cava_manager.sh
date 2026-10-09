@@ -9,6 +9,26 @@ LOGFILE="/tmp/cava-layer.log"
  
 log() { echo "[cava-layer-toggle] $*"; }
 err() { echo "[cava-layer-toggle] $*" >&2; }
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+        cat <<'EOF'
+Usage: cava_manager.sh [COMMAND] [OPTION]
+Manage the cava layer process.
+
+Commands:
+    start               Start the cava layer
+    stop                Stop the cava layer
+    toggle              Toggle the cava layer
+
+Options:
+    -p, --config PATH   Forward configuration to cava_layer.py
+    -H, --height VALUE  Forward layer height to cava_layer.py
+    -F, --font-size N   Forward font size to cava_layer.py
+    -n, --app-name NAME Forward application name to cava_layer.py
+    -h, --help          Show this help message
+EOF
+        exit 0
+fi
  
 check_dependencies() {
     local missing=()

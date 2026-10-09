@@ -3,16 +3,29 @@
 # Manage Waybar modes via symlinks, Rofi selection, and mode cycling.
 
 # Include WAYBAR_MODE_USER
-[ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
+[ -f "$HOME/hakucfg/setting.sh" ] && source "$HOME/hakucfg/setting.sh"
 
 WAYBAR_DIR="$HOME/.config/waybar"
-USER_WAYBAR_DIR="$HOME/hakuspace-control/waybar"
+USER_WAYBAR_DIR="$HOME/hakucfg/waybar"
 STATE_FILE="$HOME/.local/state/haku_theme/waybar_current_mode"
 CURRENT_STATE="top"
 WAYBAR_MODES_DEAULT=("top" "neon" "island" "coredge" "full" "minimal" "left")
 
 # WAYBAR_MODES_DEAULT + WAYBAR_MODE_USER
 WAYBAR_MODES=("${WAYBAR_MODES_DEAULT[@]}" "${WAYBAR_MODE_USER[@]}")
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+        cat <<'EOF'
+Usage: waybar_manager.sh [OPTION]
+Select and manage the active Waybar mode.
+
+Options:
+    --cycle             Switch to the next Waybar mode
+    --select            Select a Waybar mode with Rofi
+    -h, --help          Show this help message
+EOF
+        exit 0
+fi
 
 # Init state file if missing
 if [[ -f "$STATE_FILE" ]]; then

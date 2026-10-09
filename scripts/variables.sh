@@ -28,9 +28,9 @@ PKG_LABWC="$SOURCE_DIR/packages/pkg-labwc.txt"
 ARCHIVE_REPO_URL="https://github.com/hakuimaku/hakuspace-archive.git"
 ARCHIVE_DIR="$HOME/hakuspace-archive"
 
-# hakuspace-control directory
-HAKUSPACE_CONTROL_DIR="$HOME_SRC_DIR/hakuspace-control"
-DEST_CONTROL_DIR="$HOME/hakuspace-control"
+# User custom configuration directory
+HAKUSPACE_CUSTOM_DIR="$HOME_SRC_DIR/hakucfg"
+DEST_CUSTOM_DIR="$HOME/hakucfg"
 
 # Config Directories
 SOURCE_CONFIG="$HOME_SRC_DIR/.config"

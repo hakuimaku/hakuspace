@@ -8,7 +8,7 @@ AUTOHIDE_STATE="$STATE_DIR/dockbar_autohide_state"
 MANUAL_STATE="$STATE_DIR/dockbar_manual_state"
 
 DOCKBAR_DIR="$HOME/.config/waybar/dockbar"
-DOCKBAR_PIN_APPS="$HOME/hakuspace-control/dockbar_pin_apps"
+DOCKBAR_PIN_APPS="$HOME/hakucfg/config/dockbar_pin_apps"
 AUTOHIDE_SCRIPT="$HOME/.local/bin/dockbar_autohide.py"
 
 mkdir -p "$STATE_DIR"
@@ -47,19 +47,21 @@ run_autohide_script() {
 }
 
 # Display help message
-if [[ $1 == "--help" ]]; then
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     cat <<'EOF'
 Usage: dockbar_manager.sh [OPTION]
+Manage the dockbar and its auto-hide behavior.
+
 Options:
-    --startup         Restore previous state at boot (add to your autostart)
-    --reload          Reload the dockbar
-    --toggle          Toggle the dockbar on/off (Manual mode)
-    --exclusive       Toggle exclusive mode in the dockbar configuration
-    --icon-size       Change the icon size in the dockbar configuration
-    --auto-hide       Toggle auto-hide mode
-    --trigger-show    Internal use: Show dockbar (Triggered by Python)
-    --trigger-hide    Internal use: Hide dockbar (Triggered by Python)
-    --help            Display this help message
+    --startup           Restore previous state at boot
+    --reload            Reload the dockbar
+    --toggle            Toggle the dockbar on/off
+    --exclusive         Toggle exclusive mode
+    --icon-size         Change the icon size
+    --auto-hide         Toggle auto-hide mode
+    --trigger-show      Internal: show dockbar
+    --trigger-hide      Internal: hide dockbar
+    -h, --help          Show this help message
 EOF
     exit 0
 fi

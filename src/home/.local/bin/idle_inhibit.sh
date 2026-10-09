@@ -54,12 +54,16 @@ is_audio_playing() {
 }
 
 # Handle help argument
-if [[ "$1" == "--help" ]]; then
-    echo "Idle Inhibit Script: Handles screen idle prevention based on state file and audio playback."
-    echo "Usage: $0 [--check | --toggle | --help]"
-    echo "  --check    Check if the screen is forced to stay on"
-    echo "  --toggle   Toggle the state of the screen (prevents or allows it to turn off)"
-    echo "  --help     Show this help message"
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+        cat <<'EOF'
+Usage: idle_inhibit.sh [OPTION]
+Control screen idle prevention based on state and audio playback.
+
+Options:
+    --check             Check whether idle is inhibited
+    --toggle            Toggle idle inhibition
+    -h, --help          Show this help message
+EOF
     exit 0
 fi
 

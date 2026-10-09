@@ -2,6 +2,18 @@
 
 # This script manages the clipboard history using cliphist and rofi.
 
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+        cat <<'EOF'
+Usage: clipboard_menu.sh [OPTION]
+Manage clipboard history with cliphist and rofi.
+
+Options:
+    --wipe              Clear all clipboard history
+    -h, --help          Show this help message
+EOF
+        exit 0
+fi
+
 # Clear clipboard by adding argument "wipe"
 if [ "$1" = "--wipe" ]; then
     cliphist wipe

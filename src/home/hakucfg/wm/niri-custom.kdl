@@ -29,7 +29,7 @@ binds {
 // focus ring width
 layout {
     focus-ring {
-        on
+        off
         width 3
     }
 }
