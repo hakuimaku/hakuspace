@@ -26,6 +26,7 @@
     
     "widgets": [
         "menubar",
+        "buttons-grid",
         "volume",
         "backlight",
         "mpris",
@@ -51,6 +52,45 @@
         "backlight": {
             "label": "󰖨"
         },
+        "buttons-grid": {
+            "actions": [
+                {
+                    "label": "󰖩",
+                    "type": "toggle",
+                    "active": true,
+                    "command": "sh -c '[[ $SWAYNC_TOGGLE_STATE == true ]] && nmcli radio wifi on || nmcli radio wifi off'",
+                    "update-command": "sh -c '[[ $(nmcli radio wifi) == \"enabled\" ]] && echo true || echo false'"
+                },
+                {
+                    "label": "󰂯",
+                    "type": "toggle",
+                    "active": true,
+                    "command": "sh -c '[[ $SWAYNC_TOGGLE_STATE == true ]] && bluetoothctl power on || bluetoothctl power off'",
+                    "update-command": "bluetoothctl show | grep -q 'Powered: yes' && echo true || echo false"
+                },
+                {
+                    "label": "󰝟",
+                    "type": "toggle",
+                    "active": true,
+                    "command": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+                    "update-command": "wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q 'muted' && echo true || echo false"
+                },
+                {
+                    "label": "",
+                    "type": "toggle",
+                    "active": true,
+                    "command": "~/.local/bin/cava_manager.sh --toggle >dev/null 2>&1",
+                    "update-command": "cat /tmp/cava_underbar_status | grep -q '1' && echo true || echo false"
+                },
+                {
+                    "label": " ",
+                    "type": "toggle",
+                    "active": true,
+                    "command": "~/.local/bin/random_wallpaper.sh >/dev/null 2>&1",
+                    "update-command": "cat /tmp/random_wallpaper_status | grep -q '1' && echo true || echo false"
+                }
+            ]
+        },
         "menubar": {
             "menu#power-buttons": {
                 "label": "",
@@ -62,11 +102,11 @@
                     },
                     {
                         "label": "   Lock",
-                        "command": "hyprlock"
+                        "command": "~/.local/bin/lock.sh"
                     },
                     {
-                        "label": "   Logout",
-                        "command": "loginctl terminate-session ${XDG_SESSION_ID-}"
+                        "label": "   Exit",
+                        "command": "~/.local/bin/exit.sh"
                     },
                     {
                         "label": "   Shut down",
