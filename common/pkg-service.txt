@@ -1,9 +1,5 @@
 # === Connectivity & system services ===
-networkmanager                # Main network management daemon (Wi-Fi/Ethernet/VPN)
 network-manager-applet        # Tray applet for NetworkManager
-bluez                         # Core Bluetooth protocol stack
-bluez-utils                   # Bluetooth CLI tools (including bluetoothctl)
-blueman                       # GUI Bluetooth manager
 power-profiles-daemon         # Power profile switching (balanced/performance/power-saver)
 brightnessctl                 # Brightness control utility
 
