@@ -175,12 +175,13 @@ class CavaLayerApp:
     script only positions and hosts it.
     """
 
-    def __init__(self, config_path, window_height=80, font_size=5, app_name="cava-layer", top=False):
+    def __init__(self, config_path, window_height=80, font_size=5, app_name="cava-layer", top=False, dynamic=False):
         self.config_path = os.path.expanduser(config_path)
         self.window_height = window_height
         self.font_size = font_size
         self.app_name = app_name
         self.top = top
+        self.dynamic = dynamic
         self.cava_pid = None
 
         # Bar colors always track ~/.config/kitty/kitty.conf (following its
@@ -229,7 +230,10 @@ class CavaLayerApp:
 
         for edge in (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.LEFT, GtkLayerShell.Edge.RIGHT):
             GtkLayerShell.set_margin(self.window, edge, 0)
-        GtkLayerShell.set_exclusive_zone(self.window, -1)
+            
+        if not self.dynamic:
+            GtkLayerShell.set_exclusive_zone(self.window, -1)
+            
         GtkLayerShell.set_keyboard_mode(self.window, GtkLayerShell.KeyboardMode.NONE)
 
         self.window.set_size_request(-1, self.window_height)
@@ -388,6 +392,12 @@ def parse_args():
         action='store_true',
         help="Run the bar in the TOP layer (instead of OVERLAY, but still above windows)."
     )
+    parser.add_argument(
+        '-d', '--dynamic',
+        dest='dynamic',
+        action='store_true',
+        help="Dynamic position (affected by waybar/panels exclusive zones instead of ignoring them)."
+    )
     return parser.parse_args()
 
 
@@ -399,6 +409,7 @@ def main():
         font_size=args.font_size,
         app_name=args.app_name,
         top=args.top,
+        dynamic=args.dynamic,
     )
 
     def signal_handler(sig, frame):
