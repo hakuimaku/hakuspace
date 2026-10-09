@@ -99,11 +99,32 @@ in
                     pygobject3
                     ]))
                 ];
-                buildInputs = [ makeWrapper ];
+                buildInputs = [
+                    makeWrapper
+                ];
                 postBuild = ''
                     wrapProgram $out/bin/python3 \
-                    --prefix GI_TYPELIB_PATH : "${lib.getDev pango}/lib/girepository-1.0:${lib.getDev harfbuzz}/lib/girepository-1.0:${gtk3}/lib/girepository-1.0:${gtk-layer-shell}/lib/girepository-1.0:/run/current-system/sw/lib/girepository-1.0" \
-                    --prefix LD_LIBRARY_PATH : "${pango}/lib:${harfbuzz}/lib:${gtk3}/lib:${gdk-pixbuf}/lib:${librsvg}/lib:/run/current-system/sw/lib"
+                    --prefix GI_TYPELIB_PATH : "${lib.makeSearchPath "lib/girepository-1.0" [
+                        pango
+                        harfbuzz
+                        gtk3
+                        gtk-layer-shell
+                        gdk-pixbuf
+                        librsvg
+                        atk
+                        cairo
+                        glib
+                    ]}" \
+                    --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [
+                        pango
+                        harfbuzz
+                        gtk3
+                        gdk-pixbuf
+                        librsvg
+                        atk
+                        cairo
+                        glib
+                    ]}"
                 '';
             })
             gobject-introspection
