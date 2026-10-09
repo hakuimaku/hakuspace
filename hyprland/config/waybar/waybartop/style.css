@@ -40,7 +40,7 @@ window#waybar {
 #clock,
 #power-profiles-daemon {
     margin: 1px;
-    padding: 0 4px;
+    padding: 0 6px;
     transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
     min-width: 50px;
 }
@@ -51,6 +51,14 @@ window#waybar {
     transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
     min-width: 0px;
 }
+
+#niri-workspaces {
+    margin: 1px;
+    padding: 0 4px;
+    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 0px;
+}
+
 
 #tray {
     margin: 4px;
@@ -64,7 +72,7 @@ window#waybar {
     background: none;
 }
 #backlight-slider trough {
-    min-width: 60px;
+    min-width: 100px;
     border-radius: 5px;
     background: rgba(203, 203, 203, 0.5);
 }
@@ -82,7 +90,7 @@ window#waybar {
     box-shadow: none;
 }
 #pulseaudio-slider trough {
-    min-width: 60px;
+    min-width: 100px;
     min-height: 10px;
     border-radius: 5px;
     background: rgba(203, 203, 203, 0.5);
@@ -99,15 +107,15 @@ window#waybar {
 #workspaces button {
     color: @accent_color;
     padding: 0 12px;
-    transition: all 0.7s cubic-bezier(0, 0.5, 0.35, 1);
+    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
     margin: 2px;
 }
 
 #workspaces button.active {
     color: #000000;
     background-color: @accent_color;
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 70px;
+    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 100px;
 }
 
 #workspaces button.empty {
@@ -161,20 +169,40 @@ window#waybar {
 #memory { color: @accent_color; }
 
 #cpu { color: @accent_color; }
+
+
 /* ============================================================================== */
 /* HOVER EFFECTS                                   */
 /* ============================================================================== */
 #custom-haku:hover,
 #power-profiles-daemon:hover,
-#workspaces button:hover,
-#pulseaudio:hover,
-#backlight:hover,
 #battery:hover,
 #custom-notification:hover {
     color: #000000;
     background-color: @accent_color;
     transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
     min-width: 100px;
+}
+
+#workspaces button:hover {
+    background-color: transparent;
+    border-color: @accent_color;
+    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 100px;
+}
+
+#workspaces button.active:hover {
+    color: @accent_color;
+    background-color: transparent;
+    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+    min-width: 100px;
+}
+
+#workspaces button.empty:hover {
+    color: #000000;
+    background-color: transparent;
+    border-color: transparent;
+    min-width: 0;
 }
 
 #clock:hover {
@@ -187,14 +215,9 @@ window#waybar {
 #pulseaudio:hover,
 #backlight:hover {
     color: @accent_color;
-    background-color: #000000;
+    background-color: transparent;
 }
 
-#pulseaudio-slider:hover,
-#backlight-slider:hover {
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 150px;
-}
 /* ============================================================================== */
 /* TOOLTIPS                                     */
 /* ============================================================================== */
