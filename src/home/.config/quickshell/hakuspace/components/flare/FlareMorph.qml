@@ -21,6 +21,11 @@ Item {
     property var closeWidthCurve: HAnimation.spatialCurve
     property var openHeightCurve: HAnimation.moduleCurve
     property var closeHeightCurve: HAnimation.moduleCurve
+    // Width retargets while already open (for example HakuMenu tab-size changes)
+    // use their own calmer profile. Initial opening remains a vertical slide.
+    property int retargetDuration: HAnimation.normal
+    property var retargetWidthCurve: HAnimation.spatialCurve
+    property var _activeWidthCurve: openWidthCurve
     
     property real mStart: 0
     property real mEnd: 0
@@ -73,24 +78,19 @@ Item {
         
         hugging = (eL <= bounds.start || eR >= bounds.end);
         
-        // First open must morph both span and height from the anchor.  Snapping
-        // mStart/mEnd to the final span while mHeight is ~0 renders the two
-        // Flare ears before the body has formed.
+        // Initial open keeps the established HakuMenu slide-down motion:
+        // resolve the final horizontal span immediately, then animate only
+        // vertical reveal. Width animation is reserved for in-place retargets
+        // such as General <-> Drun/Theme resizing.
         if (mHeight <= 0.01 && eH > 0
                 && !animStart.running && !animEnd.running && !animHeight.running) {
-            mStart = anchor.start;
-            mEnd = anchor.end;
+            mStart = eL;
+            mEnd = eR;
             mHeight = 0;
             _lastExpected = {start: eL, end: eR, height: eH};
 
-            animStart.to = eL;
-            animEnd.to = eR;
             animHeight.to = eH;
-            animStart.duration = openDuration;
-            animEnd.duration = openDuration;
             animHeight.duration = openDuration;
-            animStart.restart();
-            animEnd.restart();
             animHeight.restart();
             return;
         }
@@ -104,17 +104,18 @@ Item {
                 _lastAnimTime = now;
                 _lastExpected = {start: eL, end: eR, height: eH};
                 
-                var goingLeft = eL < mStart;
-                var durs = FG.durations(goingLeft, HAnimation.normal, HAnimation.trailFactor);
-                
+                // Already-open width changes use the dedicated retarget profile.
+                // This keeps tab-size morphs gentle without changing first-open motion.
+                _activeWidthCurve = retargetWidthCurve;
+
                 if (Math.abs(eL - mStart) > 0.5) {
-                    animStart.duration = durs.startMs;
+                    animStart.duration = retargetDuration;
                     animStart.to = eL;
                     animStart.restart();
                 }
                 
                 if (Math.abs(eR - mEnd) > 0.5) {
-                    animEnd.duration = durs.endMs;
+                    animEnd.duration = retargetDuration;
                     animEnd.to = eR;
                     animEnd.restart();
                 }
@@ -140,6 +141,7 @@ Item {
             // full-width surface vertically.  This keeps the Flare coherent
             // in both directions and avoids detached ear frames on close.
             var anchor = anchorSpan();
+            _activeWidthCurve = closeWidthCurve;
             if (anchor) {
                 animStart.to = anchor.start;
                 animEnd.to = anchor.end;
@@ -166,7 +168,7 @@ Item {
     onContentWChanged: { Qt.callLater(updateTargetBounds); }
     onContentHChanged: { Qt.callLater(updateTargetBounds); }
     
-    NumberAnimation { id: animStart; target: root; property: "mStart"; easing.bezierCurve: root.shown ? root.openWidthCurve : root.closeWidthCurve; onFinished: checkSettled() }
-    NumberAnimation { id: animEnd; target: root; property: "mEnd"; easing.bezierCurve: root.shown ? root.openWidthCurve : root.closeWidthCurve; onFinished: checkSettled() }
+    NumberAnimation { id: animStart; target: root; property: "mStart"; easing.bezierCurve: root._activeWidthCurve; onFinished: checkSettled() }
+    NumberAnimation { id: animEnd; target: root; property: "mEnd"; easing.bezierCurve: root._activeWidthCurve; onFinished: checkSettled() }
     NumberAnimation { id: animHeight; target: root; property: "mHeight"; duration: HAnimation.normal; easing.bezierCurve: root.shown ? root.openHeightCurve : root.closeHeightCurve; onFinished: checkSettled() }
 }
