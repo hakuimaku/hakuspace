@@ -14,8 +14,20 @@ def saturation(c):
 def score(c):
     return brightness(c) * (0.5 + saturation(c))
 
-colors = ColorThief(sys.argv[1]).get_palette(color_count=5)
-vivid_colors = [color for color in colors if saturation(color) >= MIN_SATURATION]
-brightest = max(vivid_colors or colors, key=score)
+def choose_color(colors, mode):
+    if mode in ("legacy", "brightest"):
+        return max(colors, key=brightness)
+    if mode == "dominant":
+        return colors[0]
+    if mode == "saturated":
+        return max(colors, key=saturation)
+    if mode == "vivid":
+        vivid_colors = [color for color in colors if saturation(color) >= MIN_SATURATION]
+        return max(vivid_colors or colors, key=score)
+    raise ValueError(f"Unknown accent color mode: {mode}")
 
-print("#%02x%02x%02x" % brightest)
+colors = ColorThief(sys.argv[1]).get_palette(color_count=5)
+mode = sys.argv[2] if len(sys.argv) > 2 else "vivid"
+accent = choose_color(colors, mode)
+
+print("#%02x%02x%02x" % accent)
