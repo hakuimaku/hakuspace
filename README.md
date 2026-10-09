@@ -33,7 +33,7 @@ Haku Space now supporting Fedora too! See [Fedora Guide](https://github.com/haku
 
 See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372).
 
-**Join my Discord channel to get more help!** [Discord btw](https://discord.gg/g5RsNKRHn).
+**Join my Discord channel to get more help!** [Discord btw](https://discord.gg/Juuun8sXsN).
 
 - **HakuSpace** is a dotfiles project for **Arch Linux**, supporting **Hyprland**, **Niri**, **MangoWM** and **Labwc**.
 - My dotfiles support **Multi-WM**, which means you can easily switch to a new wm whenever you get bored!
@@ -285,7 +285,7 @@ Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 - Some features might still be missing since I only tested this setup for **my personal use**. If you need more than what's provided, you'll need to install and configure those parts manually.
 - If you don't want to use certain apps (like `wl-screenrec`, `thunar`, `ly` etc.), you can easily remove and replace them with alternatives. However, some apps are deeply integrated into my scripts or configs, so removing them may break functionality or cause those scripts/configs to stop working.
 - If you find that **the script isn't working**, run it directly in the terminal to see what the error is.
-- If you encounter any **issues** during installation or configuration, just ask me in some video on my [Tiktok](https://www.tiktok.com/@hakuimaku2372), open an issue on GitHub or Join my [Discord](https://discord.gg/g5RsNKRHn) to get more help!. I will do my best to help you out.
+- If you encounter any **issues** during installation or configuration, just ask me in some video on my [Tiktok](https://www.tiktok.com/@hakuimaku2372), open an issue on GitHub or Join my [Discord](https://discord.gg/https://discord.gg/Juuun8sXsN) to get more help!. I will do my best to help you out.
 
 If you're using **Fedora**:
 - Swaync service may automatically start on Fedora. Which can **cause issues when startup**. To fix this, you can disable the Swaync service by running the following command:
@@ -299,7 +299,7 @@ systemctl --user disable swaync.service
 
 - This is a personal dotfiles configuration. Feel free to fork and adapt it to your needs!
 - Tiktok / See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372)
-- Discord: [hakuspace-dots](https://discord.gg/g5RsNKRHn)
+- Discord: [hakuspace-dots](https://discord.gg/https://discord.gg/Juuun8sXsN)
 
 ---
 
