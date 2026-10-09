@@ -157,6 +157,11 @@ window#waybar {
     background-color: rgba(255, 255, 255, 0.2);
 }
 
+#workspaces button.overview {
+    background-color: @accent_color;
+    min-width: 30px;
+    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+}
 
 /* ============================================================================== */
 /* SPECIFIC MODULES                                 */
