@@ -10,6 +10,7 @@ source "$SCRIPT_DIR/haku_theme.sh"
 WAYBAR_DIR="$HOME/.config/waybar"
 USER_WAYBAR_DIR="$HOME/hakucfg/config/waybar"
 STATE_FILE="$STATE_DIR/waybar_current_mode"
+STATUS_FILE="$STATE_DIR/waybar_manual_state"
 CURRENT_STATE="top"
 WAYBAR_MODES_DEAULT=("top" "left" "island" "neon" "coredge" "minimal" "legacy")
 
@@ -37,6 +38,14 @@ if [[ -f "$STATE_FILE" ]]; then
 else
     mkdir -p "$(dirname "$STATE_FILE")"
     echo "top" > "$STATE_FILE"
+fi
+
+# Init status file if missing
+if [[ -f "$STATUS_FILE" ]]; then
+    WAYBAR_STATUS=$(cat "$STATUS_FILE")
+else
+    WAYBAR_STATUS="1"
+    echo "1" > "$STATUS_FILE"
 fi
 
 # Link selected mode files to main config directory
@@ -77,13 +86,16 @@ restart_waybar() {
 toggle_waybar() {
     if pgrep -x waybar >/dev/null; then
         pkill -x waybar
+        echo "0" > "$STATUS_FILE"
     else
         waybar &
+        echo "1" > "$STATUS_FILE"
     fi
 }
 
 # Handle --reload argument.
 if [[ "$1" == "--reload" ]]; then
+    [[ "$WAYBAR_STATUS" == "0" ]] && exit 0
     restart_waybar
     exit 0
 fi
@@ -96,6 +108,7 @@ fi
 
 # Handle --cycle argument to toggle through the MODES array
 if [[ "$1" == "--cycle" ]]; then
+    [[ "$WAYBAR_STATUS" == "0" ]] && exit 0
     current_idx=-1
     for i in "${!WAYBAR_MODES[@]}"; do
         if [[ "${WAYBAR_MODES[$i]}" == "$CURRENT_STATE" ]]; then
@@ -117,6 +130,7 @@ fi
 
 # Handle --select argument via Rofi
 if [[ "$1" == "--select" ]]; then
+    [[ "$WAYBAR_STATUS" == "0" ]] && exit 0
     choice=$(printf "%s\n" "${WAYBAR_MODES[@]}" | rofi -dmenu -p "Waybar" -i -theme-str 'mainbox { children: [ inputbar, content-area]; } window { width: 40%; height: 40%; } entry { placeholder: " Select Mode"; }')
     [[ -z "$choice" ]] && exit 0
 
@@ -134,5 +148,5 @@ fi
 
 # Auto-start Waybar if not running
 if ! pgrep -x waybar >/dev/null; then
-    waybar &
+    [[ "$WAYBAR_STATUS" == "1" ]] && waybar &
 fi
