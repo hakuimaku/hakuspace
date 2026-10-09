@@ -1,10 +1,6 @@
 #!/bin/bash
 set -u
 
-# ======================================================================================
-# HAKUSPACE INSTALLER (UPGRADED MODE - REFIXED BY TENSEY)
-# ======================================================================================
-
 cat << 'EOF'
 
 
@@ -68,6 +64,9 @@ PKG_OPTIONAL="$COMMON_DIR/pkg-optional.txt"
 
 ARCHIVE_REPO_URL="https://github.com/hakuimaku/hakuspace-archive.git"
 ARCHIVE_DIR="$HOME/hakuspace-archive"
+
+HAKUSPACE_CONTROL_DIR="$HAKU_DIR/hakuspace-control"
+DEST_CONTROL_DIR="$HOME/hakuspace-control"
 
 # --------------------------------
 # Logging helpers
@@ -274,6 +273,31 @@ deploy_assets_from_archive_repo() {
     chmod +x "$ARCHIVE_DIR/setup.sh"
     log_info "Running archive setup script..."
     (cd "$ARCHIVE_DIR" && ./setup.sh)
+}
+
+# Check ~/hakuspace-control directory:
+# main_setting.sh is existing
+# mango-custom.conf is existing
+# niri-custom.kdl is existing
+# hyprland-custom.lua is existing
+check_control_dir() {
+    if [[ ! -d "$HAKUSPACE_CONTROL_DIR" ]]; then
+        log_warn "hakuspace-control directory not found. Creating..."
+        mkdir -p "$HAKUSPACE_CONTROL_DIR"
+    fi
+
+    local required_files=(
+        "main_setting.sh"
+        "mango-custom.conf"
+        "niri-custom.kdl"
+        "hyprland-custom.lua"
+    )
+    for file in "${required_files[@]}"; do
+        if [[ ! -f "$DEST_CONTROL_DIR/$file" ]]; then
+            log_warn "$file not found in hakuspace-control. Creating default..."
+            copy_file "$HAKUSPACE_CONTROL_DIR/$file" "$DEST_CONTROL_DIR/$file"
+        fi
+    done
 }
 
 # ======================================================================================
@@ -604,6 +628,7 @@ else
     log_warn "Thunar is not installed. Skipping setting default file manager."
 fi
 
+# Gen style first time
 if [[ -x "$HOME/.local/bin/gen_style.sh" ]]; then
     "$HOME/.local/bin/gen_style.sh"
     log_ok "Executed gen_style.sh"
@@ -611,6 +636,9 @@ else
     log_warn "Not executable or missing: $HOME/.local/bin/gen_style.sh"
     log_warn "Check if the script exists and has execute permissions in ~/.local/bin/"
 fi
+
+# Init HakuSpace Control
+check_control_dir
 
 echo ""
 echo -e "${C_GREEN}All services have been processed!${C_RESET}"

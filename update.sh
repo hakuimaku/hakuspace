@@ -61,6 +61,9 @@ PKG_SERVICE="$COMMON_DIR/pkg-service.txt"
 PKG_CORE="$COMMON_DIR/pkg-core.txt"
 PKG_OPTIONAL="$COMMON_DIR/pkg-optional.txt"
 
+HAKUSPACE_CONTROL_DIR="$HAKU_DIR/hakuspace-control"
+DEST_CONTROL_DIR="$HOME/hakuspace-control"
+
 # --------------------------------
 # Logging helpers
 # --------------------------------
@@ -224,6 +227,31 @@ select_window_manager() {
             exit 1 
             ;;
     esac
+}
+
+# Check ~/hakuspace-control directory:
+# main_setting.sh is existing
+# mango-custom.conf is existing
+# niri-custom.conf is existing
+# hyprland-custom.conf is existing
+check_control_dir() {
+    if [[ ! -d "$HAKUSPACE_CONTROL_DIR" ]]; then
+        log_warn "hakuspace-control directory not found. Creating..."
+        mkdir -p "$HAKUSPACE_CONTROL_DIR"
+    fi
+
+    local required_files=(
+        "main_setting.sh"
+        "mango-custom.conf"
+        "niri-custom.kdl"
+        "hyprland-custom.lua"
+    )
+    for file in "${required_files[@]}"; do
+        if [[ ! -f "$DEST_CONTROL_DIR/$file" ]]; then
+            log_warn "$file not found in hakuspace-control. Creating default..."
+            copy_file "$HAKUSPACE_CONTROL_DIR/$file" "$DEST_CONTROL_DIR/$file"
+        fi
+    done
 }
 
 # ======================================================================================
@@ -469,6 +497,9 @@ if ask_yes_no "===> Do you want to update your local/bin scripts now?"; then
 else
     log_skip "Skipping local/bin update."
 fi
+
+# Init HakuSpace Control
+check_control_dir
 
 # Final message
 echo ""
