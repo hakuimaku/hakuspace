@@ -69,9 +69,6 @@ in
         programs.mango.enable = lib.mkDefault true;
         programs.labwc.enable = lib.mkDefault true;
 
-        # Waybar
-        programs.waybar.enable = lib.mkDefault true;
-
         # Polkit Authentication Agent
         security.polkit.enable = lib.mkDefault true;
 
@@ -91,6 +88,7 @@ in
             file
             git
             rofi
+            waybar
             kitty
             swaynotificationcenter
             fastfetch
