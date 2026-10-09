@@ -51,11 +51,11 @@ Use ly for login.
 
 <h3 style="color:#ff8c00;">Step 1: Clone the Repository (Stable Release)</h3>
 
-Clone the official `v1.0.0` stable release
+Clone the official `v1.0.1` stable release
 
 ```bash
 cd ~
-git clone --depth 1 --branch v1.0.0 https://github.com/hakuimaku/hakuspace.git
+git clone --depth 1 --branch v1.0.1 https://github.com/hakuimaku/hakuspace.git
 ```
 
 Switch to the cloned directory:
