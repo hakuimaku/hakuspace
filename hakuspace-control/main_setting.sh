@@ -33,12 +33,6 @@ WAYBAR_MODE_USER=()
 # Rofi Theme Settings
 # You just add your theme "name.rasi" to the ~/hakuspace-control/rofi folder, and switch to it in Haku Menu (Theme tab)
 
-# Gen Style script (gen_style.sh)
-# Defaults variables
-DEFAULT_ACCENT="#ffffff"
-DEFAULT_FONT="monospace"
-DEFAULT_SIZE="14"
-
 # Haku Idle Space Settings (haku.sh)
 HAKU_CLOCK_FONT_SIZE=10
 HAKU_GENERAL_FONT_SIZE=11
