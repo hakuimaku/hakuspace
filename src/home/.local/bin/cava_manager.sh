@@ -19,13 +19,15 @@ Commands:
     start               Start the cava layer
     stop                Stop the cava layer
     toggle              Toggle the cava layer
+    reload              Live-reload font/colors from the kitty config
+                        (no restart, no interruption to cava itself)
 
 Options:
-    -p, --config PATH   Forward configuration to cava_layer.py
-    -H, --height VALUE  Forward layer height to cava_layer.py
-    -F, --font-size N   Forward font size to cava_layer.py
-    -n, --app-name NAME Forward application name to cava_layer.py
-    -h, --help          Show this help message
+    -p, --config PATH       Forward configuration to cava_layer.py
+    -H, --height VALUE      Forward layer height to cava_layer.py
+    -F, --font-size N       Forward font size to cava_layer.py (default: 5)
+    -n, --app-name NAME     Forward application name to cava_layer.py
+    -h, --help              Show this help message
 EOF
         exit 0
 fi
@@ -134,6 +136,22 @@ toggle() {
         start "$@"
     fi
 }
+
+reload() {
+    if ! is_running; then
+        log "Not running; nothing to reload."
+        return 0
+    fi
+
+    local pid
+    pid="$(cat "$PIDFILE")"
+    if kill -USR1 "$pid" 2>/dev/null; then
+        log "Sent reload signal (pid=$pid)."
+    else
+        err "Failed to signal pid=$pid."
+        return 1
+    fi
+}
  
 case "${1:-}" in
     start)
@@ -146,6 +164,9 @@ case "${1:-}" in
     toggle)
         shift
         toggle "$@"
+        ;;
+    reload)
+        reload
         ;;
     *)
         # No explicit subcommand: treat everything (including -p/-H/-F flags,
