@@ -22,12 +22,12 @@ if [[ $# -eq 0 ]]; then
 󱁤  Open Overall Configuration
 󰖩  Wifi
 󰂯  Bluetooth
-  Disk Manager
-󰋊  Storage Manager
-󰓃  Audio Control
-  HakuMenu General Tab
-  HakuMenu Theme Tab
-  HakuMenu Setting Tab
+󰋊  Disk Manager
+󰃢  Storage Manager
+  Audio Control
+  Menu General Tab
+  Menu Theme Tab
+  Menu Setting Tab
 EOF
     exit 0
 fi
@@ -43,9 +43,9 @@ case "$chosen" in
     *"Disk Manager"*) spawn gparted ;;
     *"Storage Manager"*) spawn kitty --class ncdu -e sudo ncdu / ;;
     *"Audio Control"*) spawn pavucontrol ;;
-    *"HakuMenu General Tab"*) spawn code $HOME/.local/bin/hm_general.sh ;;
-    *"HakuMenu Theme Tab"*) spawn code $HOME/.local/bin/hm_theme.sh ;;
-    *"HakuMenu Setting Tab"*) spawn code $HOME/.local/bin/hm_setting.sh ;;
+    *"Menu General Tab"*) spawn code $HOME/.local/bin/hm_general.sh ;;
+    *"Menu Theme Tab"*) spawn code $HOME/.local/bin/hm_theme.sh ;;
+    *"Menu Setting Tab"*) spawn code $HOME/.local/bin/hm_setting.sh ;;
 esac
 
 exit 0

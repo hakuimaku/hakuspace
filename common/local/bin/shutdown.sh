@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # List options
-options="󱠩 Hibernate
+options="󰤄 Hibernate
  Reboot
- Power Off
+󰤆 Power Off
 󰒲 Sleep
 󱅞 Lock
 󰩈 Exit"
