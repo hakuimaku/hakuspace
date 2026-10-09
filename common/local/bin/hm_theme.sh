@@ -17,7 +17,7 @@ if [[ $# -eq 0 ]]; then
 󰸉  Change Wallpaper
   Change Lively Wallpaper
 󰃾  Kill Lively Wallpaper
-  Waybar Left & Top Toggle
+  Waybar Mode Select
   Change Theme (Font/Size/Color)
 EOF
     exit 0
@@ -30,7 +30,7 @@ case "$chosen" in
     *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
     *"Change Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh ;;
     *"Kill Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_video_select.sh --exit ;;
-    *"Waybar Left & Top Toggle"*) spawn $HOME/.local/bin/waybar_manager.sh ;;
+    *"Waybar Mode Select"*) spawn $HOME/.local/bin/waybar_manager.sh --select ;;
     *"Change Theme"*) spawn $HOME/.local/bin/change_theme.sh ;;
 esac
 
