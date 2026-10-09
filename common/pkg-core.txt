@@ -6,6 +6,11 @@ swaync                        # Notification daemon + notification center
 kitty                         # GPU-accelerated terminal emulator
 awww                          # Wallpaper utility
 mpvpaper                      # Video wallpaper renderer for Wayland
+hyprlock                      # Screen locker
+hypridle                      # Idle management and screen blanking
+grim                          # Screenshot utility for Wayland
+slurp                         # Select a region of the screen for screenshots
+swappy                        # Screenshot editor for Wayland
 
 # === Core CLI/system utilities ===
 socat                         # Multipurpose relay/socket utility

@@ -1,8 +1,3 @@
 hyprland
-hyprlock
-hypridle
 hyprsunset
-grim
-slurp
-swappy
 xdg-desktop-portal-hyprland
