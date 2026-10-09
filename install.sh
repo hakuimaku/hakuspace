@@ -298,6 +298,9 @@ check_control_dir() {
             copy_file "$HAKUSPACE_CONTROL_DIR/$file" "$DEST_CONTROL_DIR/$file"
         fi
     done
+
+    mkdir -p "$DEST_CONTROL_DIR/waybar"
+    mkdir -p "$DEST_CONTROL_DIR/rofi"
 }
 
 # ======================================================================================
