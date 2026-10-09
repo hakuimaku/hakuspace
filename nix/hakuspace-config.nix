@@ -38,6 +38,8 @@ in
             # Programs ================================================
             nixpkgs.config.allowUnfree = lib.mkDefault true;
             programs.firefox.enable = lib.mkDefault true;
+            services.power-profiles-daemon.enable = lib.mkDefault true;
+            services.displayManager.ly.enable = lib.mkDefault true;
 
             # Thunar File Manager
             programs.xfconf.enable = lib.mkDefault true;
@@ -68,6 +70,9 @@ in
             programs.mango.enable = lib.mkDefault true;
             programs.labwc.enable = lib.mkDefault true;
 
+            # Waybar
+            programs.waybar.enable = lib.mkDefault true;
+
             # Packages ================================================
             environment.systemPackages = with pkgs; [
                 (python3.withPackages (ps: with ps; [
@@ -76,17 +81,13 @@ in
                 ]))
                 gtk3
                 pango
-                gdk-pixbuf
-                atk
-                harfbuzz
                 gobject-introspection
                 gtk-layer-shell
                 glib
                 libnotify
+                playerctl
                 file
                 git
-                vscode
-                waybar
                 rofi
                 kitty
                 swaynotificationcenter
@@ -132,6 +133,7 @@ in
                 gparted
                 btop
                 pavucontrol
+                vscode
             ];
 
             fonts = {
