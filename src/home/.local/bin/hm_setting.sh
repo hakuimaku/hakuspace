@@ -18,7 +18,6 @@ if [[ $# -eq 0 ]]; then
     DOCK_ICON_SIZE_TEXT+="px"
 
     cat <<EOF
-  Help
 󱂩  Dockbar Auto-hide Toggle ($DOCK_TEXT)
 󱂩  Dockbar Exclusive Toggle ($DOCK_EXCLUSIVE_TEXT)
 󱂩  Dockbar Icon Size Change ($DOCK_ICON_SIZE_TEXT)
@@ -35,7 +34,6 @@ fi
 
 chosen="$*"
 case "$chosen" in
-    *"Help"*) spawn xdg-open https://github.com/hakuimaku/hakuspace/blob/main/docs/wiki/README.md ;;
     *"Dockbar Auto-hide Toggle"*) spawn $HOME/.local/bin/dockbar_manager.sh --auto-hide ;;
     *"Dockbar Exclusive Toggle"*) spawn $HOME/.local/bin/dockbar_manager.sh --exclusive ;;
     *"Dockbar Icon Size Change"*) spawn $HOME/.local/bin/dockbar_manager.sh --icon-size ;;

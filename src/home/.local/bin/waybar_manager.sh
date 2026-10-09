@@ -66,6 +66,11 @@ restart_waybar() {
         fi
     fi
 
+    # Make sure linked config files exist before restarting Waybar
+    if [[ ! -f "$WAYBAR_DIR/config" ]] || [[ ! -f "$WAYBAR_DIR/style.css" ]]; then
+        link_mode "$CURRENT_STATE"
+    fi
+
     if pgrep -fx waybar >/dev/null; then
         pkill -fx waybar
         sleep 0.2
