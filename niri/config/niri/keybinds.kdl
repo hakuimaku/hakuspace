@@ -11,12 +11,12 @@ binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
     // Custom Script Launchers
-    Mod+V hotkey-overlay-title="Clipboard Menu" { spawn "sh" "-c" "~/.local/bin/clip_menu.sh"; }
-    Mod+Shift+V hotkey-overlay-title="Wipe Clipboard" { spawn "sh" "-c" "~/.local/bin/clip_menu.sh --wipe"; }
-    Mod+F11 hotkey-overlay-title="Record Screen" { spawn "sh" "-c" "~/.local/bin/record.sh"; }
-    Mod+Tab hotkey-overlay-title="Haku Menu" { spawn "sh" "-c" "~/.local/bin/hakumenu.sh"; }
-    Mod+Y hotkey-overlay-title="Wallpaper Select" { spawn "sh" "-c" "~/.local/bin/wallselect.sh"; }
-    Mod+Shift+Y hotkey-overlay-title="Lively Wallpaper Select" { spawn "sh" "-c" "~/.local/bin/wallmpvselect.sh"; }
+    Mod+V hotkey-overlay-title="Clipboard Menu" { spawn "sh" "-c" "$HOME/.local/bin/clipboard_menu.sh"; }
+    Mod+Shift+V hotkey-overlay-title="Wipe Clipboard" { spawn "sh" "-c" "$HOME/.local/bin/clipboard_menu.sh --wipe"; }
+    Mod+F11 hotkey-overlay-title="Record Screen" { spawn "sh" "-c" "$HOME/.local/bin/record.sh"; }
+    Mod+Tab hotkey-overlay-title="Haku Menu" { spawn "sh" "-c" "$HOME/.local/bin/hakumenu.sh"; }
+    Mod+Y hotkey-overlay-title="Wallpaper Select" { spawn "sh" "-c" "$HOME/.local/bin/wallpaper_select.sh"; }
+    Mod+Shift+Y hotkey-overlay-title="Lively Wallpaper Select" { spawn "sh" "-c" "$HOME/.local/bin/wallpaper_video_select.sh"; }
 
     // Application Launchers
     Mod+Q hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }

@@ -35,7 +35,7 @@ environment {
     _JAVA_AWT_WM_NONREPARENTING "1"
 
     // SDL Applications
-    SDL_VIDEODRIVER "wayland"
+    SDL_VIDEODRIVER "wayland,x11"
 
     // CLUTTER Applications
     CLUTTER_BACKEND "wayland"
