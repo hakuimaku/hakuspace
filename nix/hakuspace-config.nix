@@ -91,15 +91,27 @@ in
         # Packages ================================================
         environment.systemPackages = with pkgs; [
             # Script python needed
-            (python3.withPackages (ps: with ps; [
-                colorthief
-                pygobject3
-            ]))
+            (pkgs.symlinkJoin {
+                name = "python3-dockbar";
+                paths = [
+                    (python3.withPackages (ps: with ps; [
+                    colorthief
+                    pygobject3
+                    ]))
+                ];
+                buildInputs = [ makeWrapper ];
+                postBuild = ''
+                    wrapProgram $out/bin/python3 \
+                    --prefix GI_TYPELIB_PATH : "${lib.getDev pango}/lib/girepository-1.0:${lib.getDev harfbuzz}/lib/girepository-1.0:${gtk3}/lib/girepository-1.0:${gtk-layer-shell}/lib/girepository-1.0:/run/current-system/sw/lib/girepository-1.0" \
+                    --prefix LD_LIBRARY_PATH : "${pango}/lib:${harfbuzz}/lib:${gtk3}/lib:${gdk-pixbuf}/lib:${librsvg}/lib:/run/current-system/sw/lib"
+                '';
+            })
             gobject-introspection
             gtk3
             gtk-layer-shell
-            pango.dev
+            pango
             harfbuzz
+            librsvg
             gdk-pixbuf
             atk
             cairo
