@@ -232,35 +232,31 @@ osd.window-switcher.style-thumbnail.item.active.border.color: ${ACCENT_COLOR}
 }
 
 render_quickshell() {
-    cat > "$THEME_RENDER_DIR/quickshell.json" <<JSON
-{
-    "preset": "ink",
-    "accent": "${ACCENT_COLOR}",
-    "fontFamily": "${FONT_FAMILY}",
-    "fontSize": ${FONT_SIZE},
-    "colors": {
-        "bg": "rgba(0, 0, 0, 0.7)",
-        "surface": "rgba(32, 32, 32, 0.6)",
-        "surfaceHi": "${ACCENT_COLOR}",
-        "border": "transparent",
-        "fg": "${ACCENT_COLOR}",
-        "fgDim": "${ACCENT_DIM}",
-        "fgMuted": "rgba(255, 255, 255, 0.5)",
-        "onAccent": "#000000"
-    },
-    "shape": {
-        "radius": 12,
-        "radiusSm": 8,
-        "borderWidth": 0,
-        "gap": 4,
-        "pad": 10
-    },
-    "effects": {
-        "shadow": true,
-        "blur": true
-    }
-}
-JSON
+    if jq -n \
+        --arg accent "${ACCENT_COLOR}" \
+        --arg font "${FONT_FAMILY}" \
+        --argjson fontSize "${FONT_SIZE}" \
+        --arg fgDim "${ACCENT_DIM}" \
+        '{
+            preset: "ink",
+            accent: $accent,
+            font: $font,
+            fontSize: $fontSize,
+            bg: "rgba(0, 0, 0, 0.7)",
+            surface: "rgba(32, 32, 32, 0.6)",
+            surfaceHi: $accent,
+            border: "transparent",
+            fg: $accent,
+            fgDim: $fgDim,
+            fgMuted: "rgba(255, 255, 255, 0.5)",
+            onAccent: "#000000",
+            radius: 12,
+            borderWidth: 0,
+            gap: 4,
+            pad: 10
+        }' > "$THEME_RENDER_DIR/quickshell.json.tmp"; then
+        mv "$THEME_RENDER_DIR/quickshell.json.tmp" "$THEME_RENDER_DIR/quickshell.json"
+    fi
 }
 RENDERERS=(colors fonts hyprland rofi kitty btop newtab niri mango labwc quickshell)
 for renderer in "${RENDERERS[@]}"; do

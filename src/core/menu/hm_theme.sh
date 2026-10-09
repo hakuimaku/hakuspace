@@ -54,13 +54,14 @@ if [[ $# -eq 0 ]]; then
     IS_OPAQUE=""
     [[ "$OPAQUE_STATUS" == "1" ]] && IS_OPAQUE="(ON)" || IS_OPAQUE="(OFF)"
 
-    # Haku Shell
+    # Hikai Backend
     BACKEND_STATUS=$(cat "$STATE_DIR/shell_backend" 2>/dev/null || echo "classic")
+    
 
     cat <<EOF
   Change Theme
 󰆧  Haku Space ($HAKU_SHELL_TEXT)
-󰆧  Haku Shell ($BACKEND_STATUS)
+󰆧  Hikai Backend ($BACKEND_STATUS)
 󰝚  Cava Underbar ($CAVA_TEXT) $IS_TOP
   Desktop ($DESKTOP_ICONS_TEXT)
 󰅹  Waybar ($WAYBAR_TEXT)
@@ -80,7 +81,7 @@ chosen="$*"
 case "$chosen" in
     *"Change Theme"*) spawn $HOME/.local/bin/change_theme.sh ;;
     *"Haku Space"*) spawn $HOME/.local/bin/haku_space_mode.sh --toggle ;;
-    *"Haku Shell"*) spawn $HOME/.local/bin/haku_backend.sh --toggle ;;
+    *"Hikai Backend"*) spawn $HOME/.local/bin/haku_backend.sh --toggle ;;
     *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh ;;
     *"Desktop"*) spawn $HOME/.local/bin/desktop_icons_manager.sh --toggle ;;
     *"Waybar"*) spawn $HOME/.local/bin/waybar_manager.sh --toggle ;;

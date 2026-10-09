@@ -53,7 +53,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 * **Flexible Waybar Layouts**: Support 7 styles: `top`, `left`, `coredge`, `minimal`, `neon`, `island`, `legacy`.
 * **Wallpaper Automation**: Wallpapers change automatically every 5 minutes.
 * **Taskbar**: Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
-* **Haku Shell**, Include aesthetic features: 
+* **Haku Space**, Include aesthetic features: 
   * **Unique Cava Underbar**: *Built-in*, Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
   * **Desktop Icons**: *Built-in*, Items in folder `~/Desktop` will be shown on Desktop.
   * **Rounded Screen Corners**: *Built-in*, Rounded corners for your screen, with a smooth and elegant look.

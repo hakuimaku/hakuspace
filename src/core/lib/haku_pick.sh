@@ -70,7 +70,10 @@ else
 
     mkfifo "$FIFO"
     
-    haku_qs_ipc picker open "$REQ_JSON" "$FIFO"
+    if ! timeout 3 qs -c hakuspace ipc call picker open "$FIFO" "$(cat "$REQ_JSON")"; then
+        echo "Error: Failed to open IPC picker"
+        exit 1
+    fi
 
     exec 3<> "$FIFO"
     

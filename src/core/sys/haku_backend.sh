@@ -29,7 +29,7 @@ start_classic_stack() {
 set_backend() {
     local target="$1"
     
-    if [[ "$target" != "classic" && "$target" != "hikai" ]]; then
+    if [[ "$target" != "classic" && "$target" != $QS_BACKEND_NAME ]]; then
         echo "Invalid backend: $target"
         return 1
     fi
@@ -37,22 +37,32 @@ set_backend() {
     echo "$target" > "$BACKEND_STATE_FILE"
     local runtime_dir="$(haku_runtime_dir)"
     
-    if [[ "$target" == "hikai" ]]; then
+    if [[ "$target" == $QS_BACKEND_NAME ]]; then
+        echo "Killing classic stack..."
         kill_classic_stack
         
+        # Bật Haku Space Mode (aesthetic modules) khi sang Hikai
+        
         # Wait for D-Bus name to be released (simple delay)
+        echo "Waiting for D-Bus release..."
         sleep 0.5
         
         # Start supervisor
-        setsid -f ~/.local/bin/qs_supervisor.sh >/dev/null 2>&1
+        if ! pgrep -f qs_supervisor.sh >/dev/null 2>&1; then
+            echo "Starting qs_supervisor.sh..."
+            setsid -f ~/.local/bin/qs_supervisor.sh >/dev/null 2>&1
+        fi
         
         # Health check
+        echo "Waiting for quickshell IPC health check..."
         local retries=5
         local success=0
         for ((i=0; i<retries; i++)); do
+            echo -n "."
             sleep 1
             if qs -c hakuspace ipc call shell ping 2>/dev/null | grep -q "pong"; then
                 success=1
+                echo " [OK]"
                 break
             fi
         done
@@ -60,9 +70,17 @@ set_backend() {
         if [[ $success -eq 1 ]]; then
             notify-send -a "HakuSpace" -i "info" "Backend Switched" "Successfully switched to hikai backend."
         else
-            echo "Hikai failed to start. Rolling back to classic."
+            echo "Quickshell failed to start. Rolling back to classic."
             echo "classic" > "$BACKEND_STATE_FILE"
             kill_quickshell
+            
+            # Wait for QS to exit
+            local wait_retries=10
+            for ((j=0; j<wait_retries; j++)); do
+                if ! haku_qs_alive; then break; fi
+                sleep 0.5
+            done
+            
             start_classic_stack
         fi
         
@@ -76,13 +94,13 @@ set_backend() {
 
 kill_quickshell() {
     pkill -f qs_supervisor.sh
-    qs -c hakuspace quit 2>/dev/null || pkill -x qs || pkill -x quickshell
+    qs -c hakuspace kill 2>/dev/null || pkill -x qs || pkill -x quickshell
 }
 
 verify_backend() {
     local current="$(haku_backend_get)"
     echo "Current backend: $current"
-    if [[ "$current" == "hikai" ]]; then
+    if [[ "$current" == $QS_BACKEND_NAME ]]; then
         local violations=""
         for proc in waybar taskbar swaync rofi edge_trigger.py rounded_screen.py cava_layer.py desktop_icons.py; do
             if [[ "$proc" == *.py ]]; then
@@ -114,7 +132,7 @@ case "${1:-}" in
         ;;
     -t|--toggle)
         if haku_backend_is "classic"; then
-            set_backend "hikai"
+            set_backend $QS_BACKEND_NAME
         else
             set_backend "classic"
         fi

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Supervisor for Hikai backend
+# Supervisor for Quickshell backend
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_backend_lib.sh"
@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/haku_backend_lib.sh"
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     cat <<'EOF'
 Usage: qs_supervisor.sh
-Supervisor for the Hikai backend. Keeps hikai running and falls back on crash loop.
+Supervisor for the Quickshell backend. Keeps quickshell running and falls back on crash loop.
 
 Options:
     -h, --help          Show this help message
@@ -24,21 +24,20 @@ CRASH_WINDOW=60
 CRASH_TIMESTAMPS=()
 
 while true; do
-    # Only run if backend is hikai
-    if ! haku_backend_is "hikai"; then
+    # Only run if backend is quickshell
+    if ! haku_backend_is $QS_BACKEND_NAME; then
         exit 0
     fi
 
-    # Run hikai
-    export QML_XHR_ALLOW_FILE_READ=1
-    echo "[$(date -Iseconds)] Starting hikai..." >> "$LOG_FILE"
+    # Run quickshell
+    echo "[$(date -Iseconds)] Starting quickshell..." >> "$LOG_FILE"
     qs -c hakuspace >> "$LOG_FILE" 2>&1
     
     EXIT_CODE=$?
-    echo "[$(date -Iseconds)] Hikai exited with code $EXIT_CODE" >> "$LOG_FILE"
+    echo "[$(date -Iseconds)] Quickshell exited with code $EXIT_CODE" >> "$LOG_FILE"
 
     # If backend was changed during execution, exit normally
-    if ! haku_backend_is "hikai"; then
+    if ! haku_backend_is $QS_BACKEND_NAME; then
         exit 0
     fi
 

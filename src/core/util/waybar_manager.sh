@@ -18,7 +18,7 @@ WAYBAR_MODES_DEAULT=("top" "left" "island" "neon" "coredge" "minimal" "legacy")
 # WAYBAR_MODES_DEAULT + WAYBAR_MODE_USER
 WAYBAR_MODES=("${WAYBAR_MODES_DEAULT[@]}" "${WAYBAR_MODE_USER[@]}")
 
-if haku_backend_is "quickshell"; then
+if haku_qs_mode; then
     if [[ "${1:-}" == "--toggle" ]]; then
         current=$(cat "$STATUS_FILE" 2>/dev/null || echo "1")
         if [[ "$current" == "1" ]]; then

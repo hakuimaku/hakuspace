@@ -48,7 +48,7 @@ EOF
     exit 0
 fi
 
-if haku_backend_is "quickshell"; then
+if haku_qs_mode; then
     if [[ $1 == "--toggle" ]]; then
         if [[ $(cat "$ROUNDED_SCREEN_STATE" 2>/dev/null || echo "0") == "1" ]]; then
             echo "0" > "$ROUNDED_SCREEN_STATE"

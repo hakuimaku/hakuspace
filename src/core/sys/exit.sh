@@ -10,7 +10,7 @@ EXIT_APP_LIST_DEFAULT=(
     "code" "code-url-handler" "zen" "zen-bin" "firefox" "chromium" "kitty" "slurp"
     "waybar" "taskbar" "hypridle" "swaync" "sway-audio-idle-inhibit"
     "awww-daemon" "gammastep" "polkit-mate" "hyprsunset" "agy"
-    "qemu" "java" "quickshell" "qs" "qs_supervisor.sh"
+    "qemu" "java" "qs -c hakuspace" "quickshell" "qs_supervisor.sh"
 )
 APP_LIST=("${EXIT_APP_LIST_DEFAULT[@]}" "${EXIT_APP_LIST_USER[@]}" )
 APP_PATTERN=$(IFS="|" ; echo "${APP_LIST[*]}")
