@@ -106,6 +106,7 @@ in
                         atk
                         cairo
                         glib
+                        gobject-introspection
                     ]}" \
                     --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [
                         pango
