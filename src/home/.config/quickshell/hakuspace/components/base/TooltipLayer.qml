@@ -39,6 +39,7 @@ Item {
         contentKey: root.menuShown ? root.menuHandle : (TooltipManager.current ? TooltipManager.current.target : null)
         maxWidth: root.menuShown ? 320 : root.maxTooltipWidth
         horizontalPadding: root.horizontalPadding
+        contentFadeDuration: 0
     }
 
     Component {

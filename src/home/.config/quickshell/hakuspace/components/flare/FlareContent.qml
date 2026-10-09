@@ -12,8 +12,19 @@ Item {
     property real naturalHeight: 0
     
     property bool shown: false
+    property int fadeDuration: HAnimation.effects
     property bool useA: true
+    property bool displayA: true
     property var lastKey: null
+    property var measuredItem: null
+    readonly property var activeLoader: useA ? loaderA : loaderB
+    readonly property bool ready: shown && activeLoader.status === Loader.Ready
+                                  && activeLoader.item === measuredItem
+                                  && isFinite(naturalWidth) && naturalWidth > 0
+                                  && isFinite(naturalHeight) && naturalHeight > 0
+
+    onReadyChanged: { if (ready) displayA = useA }
+    Component.onCompleted: { if (shown) syncActive() }
 
     function applyProps(item) {
         if (!item || !contentProps) return
@@ -23,6 +34,7 @@ Item {
     }
 
     function syncActive() {
+        if (!shown) return
         var activeLoader = useA ? loaderA : loaderB
         if (activeLoader.sourceComponent !== contentComponent)
             activeLoader.sourceComponent = contentComponent
@@ -33,36 +45,44 @@ Item {
     onShownChanged: {
         if (shown) {
             hideTimer.stop()
-            syncActive()
-        }
+            measuredItem = null
+            Qt.callLater(syncActive)
+        } else hideTimer.restart()
     }
 
-    onContentComponentChanged: syncActive()
+    onContentComponentChanged: {
+        measuredItem = null
+        Qt.callLater(syncActive)
+    }
     
     onContentPropsChanged: {
-        var activeLoader = useA ? loaderA : loaderB;
-        applyProps(activeLoader.item)
-        Qt.callLater(updateSize)
+        measuredItem = null
+        Qt.callLater(syncActive)
     }
     
     onContentKeyChanged: {
-        hideTimer.stop();
+        if (shown) hideTimer.stop();
+        measuredItem = null;
         if (contentKey !== lastKey) {
             useA = !useA;
             lastKey = contentKey;
         }
         
-        syncActive()
+        Qt.callLater(syncActive)
     }
     
     function updateSize() {
         var activeLoader = useA ? loaderA : loaderB;
-        if (activeLoader.item) {
-            naturalWidth = activeLoader.item.implicitWidth || 0;
-            naturalHeight = activeLoader.item.implicitHeight || 0;
-        } else {
-            naturalWidth = 0; naturalHeight = 0;
+        if (activeLoader.status !== Loader.Ready || !activeLoader.item) return;
+        var width = activeLoader.item.implicitWidth;
+        var height = activeLoader.item.implicitHeight;
+        if (!isFinite(width) || width <= 0 || !isFinite(height) || height <= 0) {
+            measuredItem = null;
+            return;
         }
+        naturalWidth = width;
+        naturalHeight = height;
+        measuredItem = activeLoader.item;
     }
     
     function settle(isShown) {
@@ -85,8 +105,11 @@ Item {
         anchors.centerIn: parent
         onImplicitWidthChanged: Qt.callLater(root.updateSize)
         onImplicitHeightChanged: Qt.callLater(root.updateSize)
-        opacity: useA ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: HAnimation.effects } }
+        opacity: displayA ? 1 : 0
+        Behavior on opacity {
+            enabled: root.fadeDuration > 0 && loaderA.item && loaderB.item
+            NumberAnimation { duration: root.fadeDuration }
+        }
         onOpacityChanged: { if (opacity === 0) sourceComponent = null; }
         onLoaded: {
             if (useA) root.applyProps(item)
@@ -99,8 +122,11 @@ Item {
         anchors.centerIn: parent
         onImplicitWidthChanged: Qt.callLater(root.updateSize)
         onImplicitHeightChanged: Qt.callLater(root.updateSize)
-        opacity: !useA ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: HAnimation.effects } }
+        opacity: !displayA ? 1 : 0
+        Behavior on opacity {
+            enabled: root.fadeDuration > 0 && loaderA.item && loaderB.item
+            NumberAnimation { duration: root.fadeDuration }
+        }
         onOpacityChanged: { if (opacity === 0) sourceComponent = null; }
         onLoaded: {
             if (!useA) root.applyProps(item)

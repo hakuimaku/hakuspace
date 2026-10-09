@@ -10,7 +10,7 @@ PanelWindow {
     readonly property int maxVisible: 3
     readonly property real popupWidth: 350
     readonly property real gap: Theme.gap * 2
-    readonly property real topOffset: Theme.topBarHeight + Theme.gap * 2
+    readonly property real topOffset: FlareEdges.topOriginY
     readonly property int fitCount: Math.max(0, Math.min(maxVisible,
         Math.floor((modelData.height - topOffset - Theme.pad) / (Theme.fontSize * 12 + gap))))
     readonly property var popups: NotificationStore.popupForScreen(modelData.name).slice(0, fitCount)

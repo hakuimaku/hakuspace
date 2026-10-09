@@ -16,7 +16,7 @@ PanelWindow {
 
     screen: modelData
     anchors { top: true; right: true }
-    margins.top: Theme.topBarHeight
+    margins.top: FlareEdges.topOriginY
     margins.right: 0
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "hakuspace-notification-center"
@@ -25,7 +25,7 @@ PanelWindow {
     exclusiveZone: 0
     color: "transparent"
     implicitWidth: Math.max(0, Math.min(420, modelData.width - Theme.pad * 2))
-    implicitHeight: Math.min(modelData.height - Theme.topBarHeight - Theme.pad,
+    implicitHeight: Math.min(modelData.height - FlareEdges.topOriginY - Theme.pad,
                              Math.max(220, flare.naturalContentHeight + 16 + Theme.tipHugRadius))
     visible: panelOpen || closing
     mask: Region {
@@ -66,7 +66,7 @@ PanelWindow {
         anchorItem: anchorProxy
         shown: root.panelOpen
         content: centerComponent
-        contentProps: ({ maxHeight: Math.max(0, root.modelData.height - Theme.topBarHeight
+        contentProps: ({ maxHeight: Math.max(0, root.modelData.height - FlareEdges.topOriginY
                                               - Theme.pad * 2 - Theme.tipHugRadius),
                          maxWidth: Math.max(0, root.width - 50) })
         contentKey: "notifications"

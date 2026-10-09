@@ -9,11 +9,26 @@ Item {
     property real end: 0
     property real currentHeight: 0
     property var bounds: ({start: 0, end: 1920})
-    property real r: 20
+    property real r: 24
     property real rf: Theme.tipHugRadius
+    property real bottomRadius: r
     property color surfaceColor: Theme.barColor
     // Cover the antialiased join at fractional body coordinates without moving the outer curve.
     readonly property real seamOverlap: 2
+
+    // Morph the top ears geometrically from a flat edge into their final arcs.
+    // Do not fade/gate the ears: that leaves a short body-only interval.
+    // Do not scale a completed ear shape either: near zero that collapses into
+    // the detached sharp tips visible during opening.
+    property real earMorphHeightFactor: 1.5
+    readonly property real earMorphProgress: {
+        if (r <= 0) return 1;
+        var span = Math.max(1, r * earMorphHeightFactor);
+        var t = Math.max(0, Math.min(1, currentHeight / span));
+        return t * t * (3 - 2 * t); // smoothstep
+    }
+    readonly property real earStartRadius: r * factors.kS * earMorphProgress
+    readonly property real earEndRadius: r * factors.kE * earMorphProgress
 
     default property alias content: body.data
     
@@ -27,29 +42,51 @@ Item {
         width: Math.max(0, root.end - root.start)
         height: root.currentHeight
         color: root.surfaceColor
-        bottomLeftRadius: p.radiusStart
-        bottomRightRadius: p.radiusEnd
+        bottomLeftRadius: root.bottomRadius * root.factors.kS
+        bottomRightRadius: root.bottomRadius * root.factors.kE
         clip: true
     }
 
     Shape {
-        x: p.earStart.u; y: p.earStart.v
-        width: r + root.seamOverlap; height: r
+        id: leftEar
+        readonly property real er: root.earStartRadius
+        x: root.start - er
+        y: 0
+        width: er + root.seamOverlap
+        height: er
         preferredRendererType: Shape.CurveRenderer
-        transformOrigin: Item.TopRight
-        scale: p.earStart.scale
-        visible: scale > 0
-        ShapePath { fillColor: root.surfaceColor; strokeColor: "transparent"; PathSvg { path: "M 0 0 L " + (r + root.seamOverlap) + " 0 L " + (r + root.seamOverlap) + " " + r + " L " + r + " " + r + " A " + r + " " + r + " 0 0 0 0 0 Z" } }
+        visible: er > 0.01
+        ShapePath {
+            fillColor: root.surfaceColor
+            strokeColor: "transparent"
+            PathSvg {
+                path: "M 0 0 L " + (leftEar.er + root.seamOverlap) + " 0 "
+                      + "L " + (leftEar.er + root.seamOverlap) + " " + leftEar.er + " "
+                      + "L " + leftEar.er + " " + leftEar.er + " "
+                      + "A " + leftEar.er + " " + leftEar.er + " 0 0 0 0 0 Z"
+            }
+        }
     }
 
     Shape {
-        x: p.earEnd.u - root.seamOverlap; y: p.earEnd.v
-        width: r + root.seamOverlap; height: r
+        id: rightEar
+        readonly property real er: root.earEndRadius
+        x: root.end - root.seamOverlap
+        y: 0
+        width: er + root.seamOverlap
+        height: er
         preferredRendererType: Shape.CurveRenderer
-        transformOrigin: Item.TopLeft
-        scale: p.earEnd.scale
-        visible: scale > 0
-        ShapePath { fillColor: root.surfaceColor; strokeColor: "transparent"; PathSvg { path: "M 0 0 L " + (r + root.seamOverlap) + " 0 A " + r + " " + r + " 0 0 0 " + root.seamOverlap + " " + r + " L 0 " + r + " Z" } }
+        visible: er > 0.01
+        ShapePath {
+            fillColor: root.surfaceColor
+            strokeColor: "transparent"
+            PathSvg {
+                path: "M 0 0 L " + (rightEar.er + root.seamOverlap) + " 0 "
+                      + "A " + rightEar.er + " " + rightEar.er + " 0 0 0 "
+                      + root.seamOverlap + " " + rightEar.er + " "
+                      + "L 0 " + rightEar.er + " Z"
+            }
+        }
     }
 
     Shape {

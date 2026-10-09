@@ -14,7 +14,7 @@ PanelWindow {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
-    implicitHeight: Theme.topBarHeight + Theme.levelOsdHeight + Theme.tipRadius
+    implicitHeight: FlareEdges.topOriginY + Theme.levelOsdHeight + Theme.tipRadius
     color: "transparent"
     // The overlay is visual only and must not capture pointer input.
     mask: Region {}
@@ -27,7 +27,7 @@ PanelWindow {
     Rectangle {
         id: osdBackground
         x: root.spanStart + Theme.gap
-        y: Theme.topBarHeight + Theme.gap
+        y: FlareEdges.topOriginY + Theme.gap
         width: Math.max(0, root.spanWidth - Theme.gap * 2)
         height: Math.max(0, Theme.levelOsdHeight * CenterState.osdExpansion - Theme.gap * 2)
         radius: Math.min(Theme.tipRadius, height / 2)
