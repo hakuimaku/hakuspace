@@ -14,11 +14,11 @@ if [[ $# -eq 0 ]]; then
     CAVA_TEXT="OFF"
     [[ "$CAVA_STATUS" == "1" ]] && CAVA_TEXT="ON"
 
-    DOCKBAR_STATUS=$(cat "$THEME_STATE_DIR/dockbar_manual_state" 2>/dev/null || echo "0")
+    DOCKBAR_STATUS=$(cat "$STATE_DIR/dockbar_manual_state" 2>/dev/null || echo "0")
     DOCKBAR_TEXT="OFF"
     [[ "$DOCKBAR_STATUS" == "1" ]] && DOCKBAR_TEXT="ON"
 
-    DESKTOP_ICONS_STATUS=$(cat "$THEME_STATE_DIR/desktop_icons_state" 2>/dev/null || echo "0")
+    DESKTOP_ICONS_STATUS=$(cat "$STATE_DIR/desktop_icons_state" 2>/dev/null || echo "0")
     DESKTOP_ICONS_TEXT="OFF"
     [[ "$DESKTOP_ICONS_STATUS" == "1" ]] && DESKTOP_ICONS_TEXT="ON"
 

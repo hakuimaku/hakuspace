@@ -22,8 +22,8 @@
 # Shared theme state and rendering paths.
 THEME_ROOT="${HOME}/.local/state/hakuspace"
 THEME_RENDER_DIR="${THEME_ROOT}/theme"
-THEME_STATE_DIR="${THEME_ROOT}/state"
-THEME_STATE_FILE="${THEME_STATE_DIR}/state.env"
+STATE_DIR="${THEME_ROOT}/state"
+THEME_STATE_FILE="${STATE_DIR}/state.env"
 
 THEME_BTOP_DIR="${HOME}/.config/btop/themes"
 THEME_LABWC_RC="${HOME}/.config/labwc/rc.xml"
@@ -34,7 +34,7 @@ THEME_DEFAULT_ACCENT="#ffffff"
 THEME_DEFAULT_FONT="monospace"
 THEME_DEFAULT_SIZE="14"
 
-mkdir -p "$THEME_RENDER_DIR" "$THEME_STATE_DIR"
+mkdir -p "$THEME_RENDER_DIR" "$STATE_DIR"
 
 # Load only the canonical state file; rendered files are never read back.
 theme_load_state() {

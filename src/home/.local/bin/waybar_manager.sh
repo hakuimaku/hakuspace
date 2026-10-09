@@ -9,7 +9,7 @@ source "$SCRIPT_DIR/haku_theme.sh"
 
 WAYBAR_DIR="$HOME/.config/waybar"
 USER_WAYBAR_DIR="$HOME/hakucfg/config/waybar"
-STATE_FILE="$THEME_STATE_DIR/waybar_current_mode"
+STATE_FILE="$STATE_DIR/waybar_current_mode"
 CURRENT_STATE="top"
 WAYBAR_MODES_DEAULT=("top" "neon" "island" "coredge" "full" "minimal" "left")
 
