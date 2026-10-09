@@ -13,7 +13,7 @@ animations {
     slowdown 1.7
 
     //================================================================
-    // Window Open Animations - type "-/" for don't want to use the animation
+    // Window Open Animations - type "/-" for don't want to use the animation
     // Top left corner open animation
     window-open {
         duration-ms 200
@@ -101,7 +101,7 @@ animations {
     }
 
     //================================================================
-    // Window Close Animations - type "-/" for don't want to use the animation
+    // Window Close Animations - type "/-" for don't want to use the animation
     // Top left corner close animation
     window-close {
         duration-ms 200
