@@ -31,16 +31,25 @@
         "rotate": 0,
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
         "calendar": {
-            "mode": "month",
-            "on-scroll": 1,
-            "format": {
-                "months": "<span color='#ffead3'><b>{}</b></span>",
-                "days": "<span color='#ecc6d9'><b>{}</b></span>",
-                "weeks": "<span color='#99ffdd'><b>W{}</b></span>",
-                "weekdays": "<span color='#ffcc66'><b>{}</b></span>",
-                "today": "<span color='#FF003C'><b><u>{}</u></b></span>"
-            }
-        }
+                    "mode"          : "month",
+                    "mode-mon-col"  : 4,
+                    "weeks-pos"     : "right",
+                    "on-scroll"     : 1,
+                    "format": {
+                              "months":     "<span color='#ffead3'><b>{}</b></span>",
+                              "days":       "<span color='#ecc6d9'><b>{}</b></span>",
+                              "weeks":      "<span color='#99ffdd'><b>W{}</b></span>",
+                              "weekdays":   "<span color='#ffcc66'><b>{}</b></span>",
+                              "today":      "<span color='#ff6699'><b><u>{}</u></b></span>"
+                              }
+                    },
+        "actions":  {
+                    "on-click-right": "mode",
+                    "on-scroll-up": "tz_up",
+                    "on-scroll-down": "tz_down",
+                    "on-scroll-up": "shift_up",
+                    "on-scroll-down": "shift_down"
+                    }
     },
 
     "group/hardware": {
@@ -52,6 +61,7 @@
         },
         "modules": [
             "tray",
+            "power-profiles-daemon",
             "battery",
             "network"
         ]
@@ -111,6 +121,18 @@
         },
         "tooltip-format": "Battery: {capacity}%\nPower: {power}W\n{timeTo}",
         "tooltip": true
+    },
+
+    "power-profiles-daemon": {
+        "format": "{icon}",
+        "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
+        "tooltip": true,
+        "format-icons": {
+            "default": "",
+            "performance": "",
+            "balanced": "󰗑",
+            "power-saver": ""
+        }
     },
 
     "network": {
