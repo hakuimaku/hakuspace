@@ -3,6 +3,7 @@
 
 import os
 import sys
+import json
 import subprocess
 import gi
 import cairo
@@ -39,6 +40,13 @@ SAFE_ZONES = {
     GtkLayerShell.Edge.LEFT: (0.0, 0.0, 0.25, 1.0),
 }
 
+# Hyprland grabs ALL pointer input for any layer surface with exclusive
+# keyboard-interactivity (rofi included), regardless of input region.
+# This is a known, still-open Hyprland bug (works fine on sway/niri) — the
+# guard window's enter-notify simply never fires there. As a workaround,
+# only on Hyprland we poll the compositor's own cursor position via hyprctl
+# instead of waiting for a pointer event on our surface.
+IS_HYPRLAND = bool(os.environ.get('HYPRLAND_INSTANCE_SIGNATURE'))
 
 last_trigger_times = {
     GtkLayerShell.Edge.TOP: 0,
@@ -87,12 +95,14 @@ def kill_rofi():
 def cleanup_guard(edge):
     guard_data = active_guards[edge]
     if guard_data:
-        if guard_data['window']:
+        if guard_data.get('window'):
             guard_data['window'].destroy()
-        if guard_data['liveness_id']:
+        if guard_data.get('liveness_id'):
             GLib.source_remove(guard_data['liveness_id'])
-        if guard_data['timeout_id']:
+        if guard_data.get('timeout_id'):
             GLib.source_remove(guard_data['timeout_id'])
+        if guard_data.get('cursor_poll_id'):
+            GLib.source_remove(guard_data['cursor_poll_id'])
         active_guards[edge] = None
 
 def on_guard_triggered(widget, event, edge):
@@ -100,6 +110,36 @@ def on_guard_triggered(widget, event, edge):
     kill_rofi()
     cleanup_guard(edge)
     return False
+
+def check_cursor_hyprland(edge, safe_rect):
+    # Hyprland-only fallback: ask the compositor directly for the cursor
+    # position instead of relying on a pointer event reaching our surface.
+    guard_data = active_guards.get(edge)
+    if not guard_data:
+        return False  # guard already torn down elsewhere, stop polling
+
+    x0, y0, w, h = safe_rect
+    try:
+        result = subprocess.run(
+            ['hyprctl', 'cursorpos', '-j'],
+            capture_output=True, text=True, check=True
+        )
+        pos = json.loads(result.stdout)
+        cx, cy = pos.get('x'), pos.get('y')
+    except Exception as e:
+        print(f"Error reading cursor position via hyprctl: {e}")
+        return True  # transient error, keep polling rather than kill blindly
+
+    if cx is None or cy is None:
+        return True
+
+    if not (x0 <= cx < x0 + w and y0 <= cy < y0 + h):
+        print(f"Cursor left safe zone for edge {edge} (Hyprland poll), killing rofi.")
+        kill_rofi()
+        cleanup_guard(edge)
+        return False
+
+    return True
 
 def check_rofi_alive(edge):
     guard_data = active_guards.get(edge)
@@ -127,49 +167,60 @@ def setup_guard(edge):
     cleanup_guard(edge)
     
     screen_w, screen_h = get_screen_geometry()
-    
-    win = Gtk.Window()
-    GtkLayerShell.init_for_window(win)
-    GtkLayerShell.set_layer(win, GtkLayerShell.Layer.OVERLAY)
-    GtkLayerShell.set_exclusive_zone(win, -1)
-    
-    # Anchor to all edges to be fullscreen
-    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.TOP, True)
-    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.BOTTOM, True)
-    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.LEFT, True)
-    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.RIGHT, True)
-    
-    # Transparent background
-    screen = win.get_screen()
-    visual = screen.get_rgba_visual()
-    if visual:
-        win.set_visual(visual)
-    win.set_app_paintable(True)
-    win.connect("draw", lambda w, cr: False)
-    
-    # Set input shape: fullscreen minus safe zone
-    full_rect = cairo.RectangleInt(0, 0, screen_w, screen_h)
-    full_region = cairo.Region(full_rect)
-    
-    safe_x, safe_y, safe_w, safe_h = compute_safe_rect_px(edge, screen_w, screen_h)
-    safe_rect = cairo.RectangleInt(safe_x, safe_y, safe_w, safe_h)
-    safe_region = cairo.Region(safe_rect)
-    
-    full_region.subtract(safe_region)
-    win.input_shape_combine_region(full_region)
-    
-    win.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK)
-    win.connect("enter-notify-event", on_guard_triggered, edge)
-    
-    win.show_all()
-    
+    safe_rect = compute_safe_rect_px(edge, screen_w, screen_h)
+
+    win = None
+    cursor_poll_id = None
+
+    if IS_HYPRLAND:
+        # Skip the layer-shell overlay entirely: on Hyprland it would never
+        # receive input while rofi holds it, so it'd just be dead weight.
+        # Poll the cursor position instead (see check_cursor_hyprland).
+        cursor_poll_id = GLib.timeout_add(120, check_cursor_hyprland, edge, safe_rect)
+    else:
+        win = Gtk.Window()
+        GtkLayerShell.init_for_window(win)
+        GtkLayerShell.set_layer(win, GtkLayerShell.Layer.OVERLAY)
+        GtkLayerShell.set_exclusive_zone(win, -1)
+
+        # Anchor to all edges to be fullscreen
+        GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.TOP, True)
+        GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.BOTTOM, True)
+        GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.LEFT, True)
+        GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.RIGHT, True)
+
+        # Transparent background
+        screen = win.get_screen()
+        visual = screen.get_rgba_visual()
+        if visual:
+            win.set_visual(visual)
+        win.set_app_paintable(True)
+        win.connect("draw", lambda w, cr: False)
+
+        # Set input shape: fullscreen minus safe zone
+        full_rect = cairo.RectangleInt(0, 0, screen_w, screen_h)
+        full_region = cairo.Region(full_rect)
+
+        safe_x, safe_y, safe_w, safe_h = safe_rect
+        safe_cairo_rect = cairo.RectangleInt(safe_x, safe_y, safe_w, safe_h)
+        safe_region = cairo.Region(safe_cairo_rect)
+
+        full_region.subtract(safe_region)
+        win.input_shape_combine_region(full_region)
+
+        win.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK)
+        win.connect("enter-notify-event", on_guard_triggered, edge)
+
+        win.show_all()
+
     liveness_id = GLib.timeout_add(200, check_rofi_alive, edge)
     timeout_id = GLib.timeout_add_seconds(60, force_cleanup_guard, edge)
-    
+
     active_guards[edge] = {
         'window': win,
         'liveness_id': liveness_id,
-        'timeout_id': timeout_id
+        'timeout_id': timeout_id,
+        'cursor_poll_id': cursor_poll_id
     }
     
     return False
