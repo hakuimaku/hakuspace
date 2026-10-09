@@ -20,6 +20,7 @@
 
     "clock": {
         "format": " {:%H:%M} ",
+        "format-alt": " {:%A, %d %B %Y} ",
         "interval": 1,
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
         "calendar": {
@@ -41,7 +42,8 @@
                     "on-scroll-down": "tz_down",
                     "on-scroll-up": "shift_up",
                     "on-scroll-down": "shift_down"
-                    }
+                    },
+        "on-click-right": "~/.local/bin/hakumenu.sh"
     },
 
     "group/bar": {
@@ -52,7 +54,7 @@
             "click-to-reveal": true
         },
         "modules": [
-            "custom/haku",
+            "custom/bar",
             "backlight",
             "backlight/slider",
             "pulseaudio",
@@ -194,7 +196,7 @@
         "escape": true
     },
 
-    "custom/haku": {
+    "custom/bar": {
         "format": "󰣇 ",
         "tooltip-format": "Have a nice day!",
         "tooltip": true
