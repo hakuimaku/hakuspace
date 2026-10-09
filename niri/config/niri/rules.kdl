@@ -63,28 +63,14 @@ window-rule {
     default-column-width { proportion 0.65; }
 }
 
-
-// Rules for cava underbar
+// Rules for xdg-desktop-portal-gtk
 window-rule {
-    match app-id=r#"cavaunderbar"#
+    match app-id=r#"xdg-desktop-portal-gtk"#
 
     open-floating true
-    
-    default-floating-position x=0 y=0 relative-to="top-left"
-    min-width 1920
-    max-height 70
-    opacity 0.5
-
-    background-effect {
-        xray false
-        blur false
-        noise 0
-        saturation 1
-    }
-
-    shadow {
-        off
-    }
+    default-floating-position x=0 y=0
+    min-width 400
+    min-height 600
 }
 
 // Rules for specific layers
@@ -123,16 +109,6 @@ layer-rule {
     }
 }
 
-// Rules for xdg-desktop-portal-gtk
-window-rule {
-    match app-id=r#"xdg-desktop-portal-gtk"#
-
-    open-floating true
-    default-floating-position x=0 y=0
-    min-width 400
-    min-height 600
-}
-
 // Rules for hakuspace
 window-rule {
     match app-id=r#"seycava"#
@@ -146,4 +122,29 @@ window-rule {
     match app-id=r#"seycmd"#
 
     default-column-width { proportion 0.6; }
+}
+
+// Rules for cava underbar
+window-rule {
+    match app-id=r#"cavaunderbar"#
+
+    open-floating true
+    open-focused false
+    
+    default-floating-position x=0 y=-52 relative-to="top"
+    min-width 1920
+    min-height 70
+    max-height 70
+    opacity 0.6
+
+    background-effect {
+        xray false
+        blur false
+        noise 0
+        saturation 1
+    }
+
+    shadow {
+        off
+    }
 }
