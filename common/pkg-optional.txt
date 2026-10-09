@@ -1,0 +1,22 @@
+# === Monitoring / system tools ===
+ncdu                          # Disk usage analyzer (interactive TUI)
+btop                          # Resource monitor (CPU/RAM/disk/network)
+pavucontrol                   # PulseAudio/PipeWire volume control GUI
+gparted                       # Disk partition editor GUI
+
+# === Recording / transfer ===
+wl-screenrec-git              # Wayland screen recorder (AUR)
+rsync                         # Fast incremental file sync/copy
+wget                          # Command-line downloader
+
+# === Terminal visuals / fun tools ===
+chafa                         # Render images/videos as terminal graphics
+cmatrix                       # Matrix-style terminal animation
+lavat-git                     # Lava-lamp terminal animation (AUR)
+cava                          # Audio spectrum visualizer
+pipes.sh                      # Animated pipes in terminal
+tty-clock                     # Terminal clock
+
+# === Applications ===
+zen-browser-bin               # Zen Browser prebuilt binary package (AUR)
+visual-studio-code-bin        # VS Code prebuilt binary package (AUR)
