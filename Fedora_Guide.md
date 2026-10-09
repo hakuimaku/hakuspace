@@ -40,7 +40,12 @@ go install github.com/probeldev/niri-float-sticky@latest
 
 ### B. Install XDG Desktop Portal and related packages:
 ```bash
-sudo dnf install xdg-desktop-portal xdg-desktop-portal-gnome xdg-desktop-portal-gtk xdg-utils mate-polkit gnome-keyring
+sudo dnf install xdg-desktop-portal xdg-desktop-portal-gtk xdg-utils mate-polkit gnome-keyring
+```
+
+For Niri:
+```bash
+sudo dnf install xdg-desktop-portal-gnome
 ```
 
 ### C. Install ly (Display Manager):
