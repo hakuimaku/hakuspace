@@ -82,11 +82,6 @@ layout {
         inactive-color "gray"
         urgent-color "blue"
     }
-
-    // For waybar, Cava Underbar feature
-    struts {
-        top 50
-    }
 }
 
 gestures {
