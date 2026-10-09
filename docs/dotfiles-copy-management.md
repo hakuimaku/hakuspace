@@ -1,5 +1,7 @@
 # HakuSpace Dotfiles Copy Management
 
+See Vietnamese translation: [Quản lý sao chép dotfiles](../vietnamese/VN_dotfiles-copy-management.md)
+
 This document explains how HakuSpace installs, updates, and rolls back user configuration files. HakuSpace uses a **copy-based deployment model**. It does not use GNU Stow, symbolic links, Git worktrees, or a live synchronization process.
 
 This is the detailed companion to the [HakuSpace Architecture](architecture.md) document.
@@ -39,7 +41,8 @@ Entries under `src/home/.config/` are copied to matching entries under `~/.confi
 
 - General application directories and files are copied to matching paths under `~/.config/`.
 - `hypr/`, `niri/`, `mango/`, and `labwc/` are deployed through dedicated branches because the selected window manager determines which parts are copied.
-- Hyprland can deploy `hypr/config`, `hyprland.lua`, `hypridle.conf`, `hyprlock.conf`, and `hyprlock_tiny.conf` separately.
+- Hyprland can deploy `hypr/config` and `hyprland.lua` separately.
+- `hypridle.conf`, `hyprlock.conf`, and `hyprlock_tiny.conf` are always copied regardless of the selected window manager because they are core configuration files for `hypridle` and `hyprlock`. Their default configuration location matches Hyprland's `~/.config/hypr/`, so they require special handling.
 - `gtk-3.0/gtk.css` is deployed as a specific file. The existing `gtk-3.0` directory is backed up with `backup_dir` before that file is copied.
 - `starship.toml`, `mimeapps.list`, and other top-level configuration files are copied to matching paths.
 

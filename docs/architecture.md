@@ -1,5 +1,7 @@
 # HakuSpace Architecture
 
+See Vietnamese translation: [Kiến trúc HakuSpace](VN_architecture.md)
+
 This document is the high-level entry point for the HakuSpace repository. It describes the repository layout, ownership boundaries, and the responsibilities of the main scripts.
 
 For the complete explanation of copy-based deployment, backup helpers, managed destinations, and rollback behavior, see [Dotfiles Copy Management](dotfiles-copy-management.md).
