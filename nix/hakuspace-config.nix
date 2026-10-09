@@ -12,13 +12,14 @@ let
     cfg = config.hakuspace;
 in
 {
+    # Options ================================================
     options.hakuspace = {
         enable = lib.mkOption {
             type = lib.types.bool;
             default = true;
             description = "Enable Hakuspace NixOS base configuration";
         };
-        
+
         enableDefaultShell = lib.mkOption {
             type = lib.types.bool;
             default = true;
@@ -39,7 +40,8 @@ in
 
         # Zsh Shell
         programs.zsh.enable = lib.mkDefault true;
-        users.defaultUserShell = lib.mkDefault (if cfg.enableDefaultShell then pkgs.zsh else pkgs.bash);
+        environment.shells = with pkgs; [ zsh ];
+        users.defaultUserShell = lib.mkIf cfg.enableDefaultShell (lib.mkDefault pkgs.zsh);
 
         # Thunar File Manager
         programs.xfconf.enable = lib.mkDefault true;
