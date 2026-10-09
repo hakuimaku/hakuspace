@@ -17,6 +17,7 @@ QtObject {
     property string accent: "#ffffff"
     property string onAccentColor: "#000000"
     property string inkBg: "#111111"
+    property string workspaceDot: "#424242"
     
     property color barColor: AppState.opaqueThemeState ? root.inkBg : root.bg
     
