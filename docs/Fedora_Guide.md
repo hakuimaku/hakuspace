@@ -9,7 +9,8 @@
 ---
 
 ## Before Installation
-If you don't want to install weak dependency packages:
+- Weak dependencies are packages that are not strictly required when installing a package. Follow my installation guide, weak dependencies are the bloatware, not useful.
+- If you don't want to install weak dependency packages:
 ```bash
 sudo nano /etc/dnf/dnf.conf
 ```
@@ -20,7 +21,7 @@ install_weak_deps=False
 
 > See more information: [here](https://docs.fedoraproject.org/en-US/packaging-guidelines/WeakDependencies/#_weak_dependencies)
 > 
-> After installation, you can remove this line from `/etc/dnf/dnf.conf` to install weak dependency packages again.
+> After installation, you can remove that line from `/etc/dnf/dnf.conf` to install weak dependency packages again.
 
 ---
 
@@ -97,35 +98,11 @@ sudo dnf install xdg-desktop-portal-wlr
 
 ---
 
-### C. Install ly (Display Manager):
+### C. Install Haku Space **Core** packages:
 
+- **Install the following packages for Haku Space** (`scottames/awww`, `solopasha/hyprland`, `atim/starship`):
 ```bash
-sudo dnf install ly
-```
-
-> [!important]
-> If you want to use ly as your display manager, you need to enable it.
-> 
-> I recommend you to use `tty2` for ly, because `tty1` is used by the gdm (or other display manager) by default.
-> 
-> If you want to use ly on `tty1`, you need to disable gdm (or other display manager) first.
-
-Activate ly service:
-
-```bash
-sudo systemctl enable ly@tty2.service
-sudo systemctl disable getty@tty2.service
-```
-
-How to switch between display managers: `ctrl + alt + f1` for gdm, `ctrl + alt + f2` for ly.
-
----
-
-### D. Install Haku Space **Core** packages:
-
-- **Install the following packages for Haku Space** (`scottames/awww`, `solopasha/hyprland`):
-```bash
-sudo dnf install waybar rofi swaync kitty fastfetch zsh
+sudo dnf install waybar rofi swaync kitty fastfetch fish direnv zoxide eza
 
 sudo dnf copr enable scottames/awww
 sudo dnf install awww
@@ -133,6 +110,9 @@ sudo dnf install awww
 sudo dnf copr enable solopasha/hyprland
 sudo dnf install mpvpaper hypridle hyprlock
 sudo dnf install nwg-look
+
+sudo dnf copr enable atim/starship
+sudo dnf install starship
 ```
 
 - **Install core packages for my scripts**:
@@ -167,6 +147,7 @@ sudo dnf install google-noto-sans-cjk-fonts google-noto-emoji-fonts google-noto-
 > Download **jetbrains nerd font** here: https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip
 
 ```bash
+# Make sure you install that font located in ~/Downloads/JetBrainsMono.zip
 unzip ~/Downloads/JetBrainsMono.zip -d ~/Downloads/JetBrainsMono
 mkdir -p ~/.local/share/fonts
 sudo cp -r ~/Downloads/JetBrainsMono ~/.local/share/fonts
@@ -193,21 +174,8 @@ sudo dnf install code
 
 ## 3. Install Haku Space Configurations
 
-Clone my Haku Space repository to your home directory:
-```bash
-git clone https://github.com/hakuimaku/hakuspace.git ~/hakuspace
-cd ~/hakuspace
-```
+Simply follow the instructions in the [Installation Guide](https://github.com/hakuimaku/hakuspace#-3)
 
-Run the installation script to set up Haku Space configurations:
-```bash
-chmod +x install.sh
-./install.sh
-```
-
-> [!tip]
-> Follow the prompts to complete the installation process.
-> Skip step 1, 2.
-> In step 8, you can **skip** `enable ly service and disable getty` if **you already activated the ly service [above](https://github.com/hakuimaku/hakuspace/blob/main/Fedora_Guide.md#c-install-ly-display-manager)**.
+---
 
 Restart your computer to apply the changes and start using Haku Space on Fedora!
