@@ -1,7 +1,7 @@
 systemctl --user --no-block start labwc-session.target
 dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP >/dev/null 2>&1 &
 systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP >/dev/null 2>&1 &
-/usr/lib/mate-polkit/polkit-mate-authentication-agent-1 >/dev/null 2>&1 &
+(sleep 0.2; ~/.local/bin/polkit_start.sh >/dev/null 2>&1 &)
 awww-daemon >/dev/null 2>&1 &
 swaync >/dev/null 2>&1 &
 fcitx5 -d >/dev/null 2>&1 &

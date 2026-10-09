@@ -306,7 +306,7 @@
         <action name="Execute" command="thunar" />
         </keybind>
         <keybind key="W-b">
-        <action name="Execute" command="zen-browser" />
+        <action name="Execute" command="firefox" />
         </keybind>
         <keybind key="W-n">
         <action name="Execute" command="swaync-client -t -sw" />
