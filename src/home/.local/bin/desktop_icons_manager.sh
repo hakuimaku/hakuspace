@@ -17,7 +17,6 @@ if [[ ! -f "$DESKTOP_ICONS_STATE" ]] || ! grep -qxE '0|1' "$DESKTOP_ICONS_STATE"
 fi
 
 launch_desktop_icons() {
-    export GI_TYPELIB_PATH="/run/current-system/sw/lib/girepository-1.0:$GI_TYPELIB_PATH"
     python3 "$DESKTOP_MANAGER_BIN" &
 }
 

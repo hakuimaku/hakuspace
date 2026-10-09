@@ -43,7 +43,6 @@ kill_dockbar() {
 }
 
 run_autohide_script() {
-    export GI_TYPELIB_PATH="/run/current-system/sw/lib/girepository-1.0:$GI_TYPELIB_PATH"
     python3 "$AUTOHIDE_SCRIPT" &
 }
 
