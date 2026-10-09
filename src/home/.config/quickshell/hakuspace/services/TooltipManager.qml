@@ -1,6 +1,7 @@
 pragma Singleton
 import QtQuick
 import QtQuick.Window
+import "."
 
 Item {
     id: root
@@ -9,11 +10,55 @@ Item {
     property bool shown: false
     property bool warm: false
     property var activeBar: null
+
+    function dismiss() {
+        showTimer.stop();
+        graceTimer.stop();
+        warmTimer.stop();
+        shown = false;
+        warm = false;
+        current = null;
+        activeBar = null;
+    }
+
+    function release(target) {
+        if (current && current.target === target) dismiss();
+    }
+
+    function targetVisible(target) {
+        if (!target) return false;
+        try {
+            var p = target;
+            while (p) {
+                if (p.visible === false) return false;
+                p = p.parent;
+            }
+            return true;
+        } catch (e) { return false; }
+    }
+
+    Connections {
+        target: root.current ? root.current.target : null
+        function onVisibleChanged() {
+            if (root.current && !root.targetVisible(root.current.target)) root.dismiss();
+        }
+    }
+
+    Connections {
+        target: UiState
+        function onActivePanelChanged() {
+            if (UiState.activePanel !== "") root.dismiss();
+        }
+    }
     
     Timer {
         id: showTimer
         interval: 400
-        onTriggered: root.shown = true
+        onTriggered: {
+            if (root.current && root.targetVisible(root.current.target) && UiState.activePanel === "")
+                root.shown = true;
+            else root.dismiss();
+        }
     }
     
     // A short grace period prevents flicker between nearby targets.
@@ -35,7 +80,7 @@ Item {
     
     // Associate each tooltip with the top-level bar containing its target.
     function show(target, text, component, props) {
-        if (!target) return;
+        if (!target || !targetVisible(target) || UiState.activePanel !== "") return;
         
         var newText = text !== undefined ? text : "";
         var newComp = component !== undefined ? component : null;

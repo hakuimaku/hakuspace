@@ -24,7 +24,7 @@ QtObject {
     
     // Keep the last valid radius and thickness when a config field is missing.
     property FileView roundedConfView: FileView {
-        path: Quickshell.env("HOME") + "/hakucfg/config/rounded-screen.conf"
+        path: Env.roundedScreenConfig
         watchChanges: true
         printErrors: false
         onFileChanged: this.reload()

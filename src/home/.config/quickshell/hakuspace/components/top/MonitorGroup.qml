@@ -25,18 +25,18 @@ HDrawer {
         TopModule { 
             text: SysStats.cpu + "%"
             icon: ""
-            color: hovered ? Theme.surfaceHi : "rgba(32,32,32,0.6)"
+            color: hovered ? Theme.surfaceHi : Theme.surface
         }
         TopModule { 
             text: SysStats.ram + "%"
             icon: ""
-            color: hovered ? Theme.surfaceHi : "rgba(32,32,32,0.6)"
+            color: hovered ? Theme.surfaceHi : Theme.surface
         }
         TopModule { 
             text: SysStats.temp + "°C"
             icon: ""
             visible: SysStats.hasTemp
-            color: hovered ? Theme.surfaceHi : "rgba(32,32,32,0.6)"
+            color: hovered ? Theme.surfaceHi : Theme.surface
         }
     }
 }

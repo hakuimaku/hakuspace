@@ -14,21 +14,21 @@ QtObject {
     readonly property bool shouldRun: Media.playing && CenterState.baseMode === "media" && available
     property bool stoppingForPolicy: false
 
-    function resetActivity() {
+    function resetSoundDetection() {
         showTimer.stop()
         silenceTimer.stop()
         soundPresent = false
-        audioVisible = false
     }
 
-    // Require sustained sound before showing bars; hide after brief silence.
+    // Require sustained sound before showing bars. Brief silence resets detection,
+    // but a visible visualizer stays until MPRIS has stopped playing for 5 seconds.
     function observePeak(peak) {
         if (!shouldRun) return
         if (peak >= soundThreshold) {
             silenceTimer.stop()
             if (!soundPresent) {
                 soundPresent = true
-                showTimer.restart()
+                if (!audioVisible) showTimer.restart()
             } else if (!audioVisible && !showTimer.running) {
                 showTimer.restart()
             }
@@ -41,13 +41,20 @@ QtObject {
     function syncProcess() {
         if (!shouldRun) {
             bars = ""
-            resetActivity()
+            resetSoundDetection()
+            if (audioVisible && Media.available && CenterState.centerMode === "media" && !Media.playing)
+                hideTimer.restart()
+            else {
+                hideTimer.stop()
+                audioVisible = false
+            }
             if (process.running) {
                 stoppingForPolicy = true
                 process.running = false
             }
-        } else if (!stoppingForPolicy && !process.running) {
-            process.running = true
+        } else {
+            hideTimer.stop()
+            if (!stoppingForPolicy && !process.running) process.running = true
         }
     }
 
@@ -66,14 +73,25 @@ QtObject {
     property Timer silenceTimer: Timer {
         interval: 500
         repeat: false
-        onTriggered: root.resetActivity()
+        onTriggered: root.resetSoundDetection()
+    }
+
+    property Timer hideTimer: Timer {
+        interval: 5000
+        repeat: false
+        onTriggered: {
+            if (!root.shouldRun) root.audioVisible = false
+        }
     }
 
     property Process process: Process {
-        command: ["cava", "-p", Env.home + "/.config/cava/config_waybar"]
+        command: ["cava", "-p", Env.cavaConfig]
         onRunningChanged: {
             if (!running && root.shouldRun && !root.stoppingForPolicy) {
                 root.bars = ""
+                root.resetSoundDetection()
+                root.hideTimer.stop()
+                root.audioVisible = false
                 root.available = false
             }
         }
@@ -101,7 +119,7 @@ QtObject {
         }
         onExited: {
             root.bars = ""
-            root.resetActivity()
+            root.resetSoundDetection()
             if (root.stoppingForPolicy) {
                 root.stoppingForPolicy = false
                 if (root.shouldRun) Qt.callLater(root.syncProcess)

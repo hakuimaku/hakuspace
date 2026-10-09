@@ -2,6 +2,8 @@
 
 Shared edge-hugging effect for tooltip and panel surfaces.
 
+Current status: L1 and L2 are implemented. L3 remains **IMPLEMENTED / VERIFY** for tooltip lifecycle, edge geometry at different radius/thickness and scale, and multi-monitor behavior. L4 is **PLANNED**; `FlareWindow.qml`, `FlareDemo.qml`, and `docs/flare.md` do not exist yet.
+
 ## 1. Purpose
 
 The flare algorithm is currently embedded in `TooltipLayer.qml`: span

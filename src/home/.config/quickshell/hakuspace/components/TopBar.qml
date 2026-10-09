@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Services.SystemTray
 import "../services"
 import "top" as TopModules
 import "base"
@@ -13,17 +14,130 @@ PanelWindow {
     
     property real barH: Theme.topBarHeight
     property real tipAreaH: 160
+    property var trayMenuItem: null
+    property Item trayMenuAnchor: null
+    property string lastTrayFallbackReason: ""
+    readonly property int trayRowCount: trayOpener.children.values.length
+    onTrayRowCountChanged: {
+        if (trayMenuItem && trayRowCount > 0) menuSettled.restart()
+    }
+
+    function closeTrayMenu() {
+        menuTimeout.stop()
+        menuSettled.stop()
+        trayMenuItem = null
+        trayMenuAnchor = null
+    }
+
+    function platformMenu(item, anchor, reason) {
+        lastTrayFallbackReason = reason
+        if (!item || !anchor) return
+        if (item.hasMenu) {
+            var point = anchor.mapToItem(null, 0, anchor.height)
+            item.display(root, point.x, point.y)
+        } else {
+            item.secondaryActivate()
+        }
+    }
+
+    function requestTrayMenu(item, anchor) {
+        if (UiState.trayMenu && UiState.trayMenu.item === item) {
+            UiState.closeTrayMenu()
+            return
+        }
+        if (trayMenuItem === item) {
+            closeTrayMenu()
+            return
+        }
+        closeTrayMenu()
+        if (UiState.activePanel !== "") UiState.activePanel = ""
+        UiState.closeTrayMenu()
+        if (!item || !item.hasMenu || !item.menu) {
+            platformMenu(item, anchor, "no menu handle")
+            return
+        }
+        TooltipManager.dismiss()
+        trayMenuItem = item
+        trayMenuAnchor = anchor
+        menuTimeout.restart()
+        if (trayRowCount > 0) menuSettled.restart()
+    }
+
+    function openTrayPanel() {
+        if (!trayMenuItem || !trayMenuAnchor) return
+        var item = trayMenuItem
+        var anchor = trayMenuAnchor
+        var x = anchor.mapToItem(null, 0, 0).x
+        closeTrayMenu()
+        UiState.openTrayMenu(item, item.menu, root.modelData.name, x, anchor.width)
+    }
+
+    function resolveTrayMenu() {
+        if (!trayMenuItem) return
+        var rows = trayOpener.children.values
+        if (!rows || rows.length === 0) return
+        menuTimeout.stop()
+        openTrayPanel()
+    }
+
+    QsMenuOpener {
+        id: trayOpener
+        menu: root.trayMenuItem ? root.trayMenuItem.menu : null
+    }
+
+    Timer {
+        id: menuSettled
+        interval: 100
+        onTriggered: root.resolveTrayMenu()
+    }
+
+    Timer {
+        id: menuTimeout
+        interval: 1500
+        onTriggered: {
+            if (!root.trayMenuItem) return
+            root.resolveTrayMenu()
+            if (!root.trayMenuItem) return
+            var item = root.trayMenuItem
+            var anchor = root.trayMenuAnchor
+            root.closeTrayMenu()
+            root.platformMenu(item, anchor, "root menu empty after 1500 ms")
+        }
+    }
+
+    Connections {
+        target: SystemTray.items
+        function onObjectRemovedPre(object, index) {
+            if (object === root.trayMenuItem) root.closeTrayMenu()
+            UiState.closeTrayMenuIfItem(object)
+        }
+    }
+
+    Connections {
+        target: UiState
+        function onActivePanelChanged() {
+            if (UiState.activePanel !== "") root.closeTrayMenu()
+        }
+    }
     
     anchors { top: true; left: true; right: true }
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "hakuspace-bar"
     
     exclusionMode: ExclusionMode.Normal
-    implicitHeight: barH + tipAreaH
+    // Edge-hugging Flare feet extend below the content body; keep that area inside the window.
+    implicitHeight: barH + tipAreaH + Theme.tipHugRadius
     exclusiveZone: Math.round(barH)
     
     color: "transparent"
     visible: AppState.waybarManualState
+    onVisibleChanged: {
+        if (!visible) {
+            if (TooltipManager.activeBar === root) TooltipManager.dismiss()
+            closeTrayMenu()
+            UiState.closeTrayMenuIfScreen(root.modelData.name)
+        }
+    }
     
     mask: Region { item: barBg }
 
@@ -60,7 +174,7 @@ PanelWindow {
                 readonly property real safeSpan: Math.max(0, 2 * Math.min(parent.width / 2 - leftModules.width - Theme.gap,
                                                                           parent.width / 2 - rightModules.width - Theme.gap))
                 readonly property real cavaSlotWidth: cavaModule.hoverSafeWidth
-                readonly property bool showCava: CenterState.centerMode === "media" && Cava.audioVisible
+                readonly property bool showCava: CenterState.centerMode === "media" && Cava.available && Cava.audioVisible
                                                   && safeSpan >= cavaSlotWidth + Theme.gap + Theme.fontSize * 3
                 opacity: CenterState.osdVisible || CenterState.osdExpansion > 0 ? 0 : 1
                 enabled: !CenterState.osdVisible && CenterState.osdExpansion === 0
@@ -95,7 +209,10 @@ PanelWindow {
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.verticalCenterOffset: Theme.topBarTopPadding / 2
                 spacing: Theme.gap
-                TopModules.TrayGroup {}
+                TopModules.TrayGroup {
+                    menuOpenItem: UiState.trayMenu ? UiState.trayMenu.item : root.trayMenuItem
+                    onMenuRequested: (item, anchor) => root.requestTrayMenu(item, anchor)
+                }
                 TopModules.SettingsGroup {}
                 TopModules.RecorderGroup {}
                 TopModules.ClockGroup {}
@@ -121,6 +238,8 @@ PanelWindow {
     }
 
     TooltipLayer {
+        id: tooltipLayer
         y: barBg.height
+        tipAreaHeight: root.tipAreaH
     }
 }

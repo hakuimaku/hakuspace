@@ -61,23 +61,20 @@ TopModule {
         }
     }
     
+    onClicked: requestTooltip()
     onRightClicked: monthOffset = 0
     onScrolled: (delta) => {
         if (delta > 0) monthOffset++;
         else monthOffset--;
     }
     
-    function generateCalendar(date, offset) {
-        if (!date) return "";
-        var targetDate = new Date(date.getFullYear(), date.getMonth() + offset, 1);
-        var res = targetDate.toLocaleString(Qt.locale(), "MMMM yyyy") + "\n\n";
-        res += "Current Date: " + date.toLocaleString(Qt.locale(), "dd/MM/yyyy") + "\n";
-        if (offset !== 0) {
-            res += "Viewing: " + targetDate.toLocaleString(Qt.locale(), "MM/yyyy") + "\n";
+    Component {
+        id: calendarComponent
+        CalendarGrid {
+            currentDate: sysClock.date
+            monthOffset: root.monthOffset
         }
-        res += "(Rich grid calendar will be added in later polish)";
-        return res;
     }
-    
-    tooltip: generateCalendar(sysClock.date, monthOffset)
+
+    tooltipComponent: calendarComponent
 }

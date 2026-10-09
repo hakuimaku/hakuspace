@@ -54,7 +54,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: root.hovered ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+        color: root.hovered ? Theme.hoverMuted : Theme.surface
         radius: Theme.radiusSm
         Behavior on color { ColorAnimation { duration: HAnimation.normal } }
     }
@@ -102,7 +102,7 @@ Item {
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSize + 3
                 font.weight: Font.Bold
-                color: Theme.fg
+                color: root.hovered ? Theme.accent : Theme.fg
                 anchors.verticalCenter: parent.verticalCenter
             }
             
@@ -117,7 +117,7 @@ Item {
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize * 0.75
                     font.weight: Font.Bold
-                    color: Theme.fgMuted
+                    color: root.hovered ? Theme.accent : Theme.fgMuted
                     width: implicitWidth
                 }
                 
@@ -127,7 +127,7 @@ Item {
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
                     font.weight: Font.Bold
-                    color: Theme.fg
+                    color: root.hovered ? Theme.accent : Theme.fg
                     width: implicitWidth
                     visible: root.activeTitle !== ""
                 }

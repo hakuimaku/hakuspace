@@ -14,6 +14,10 @@ Rectangle {
     property bool urgent: false
     property bool blink: false
     property string tooltip: ""
+    property Component tooltipComponent: null
+    property real iconFontSize: Theme.fontSize
+    property color foregroundColor: hovered ? Theme.onAccentColor
+                                            : (urgent ? "#ff3333" : (isAccent ? Theme.accent : Theme.fg))
     property int borderWidth: 0
     property string borderColor: "transparent"
     property int blinkDuration: HAnimation.normal
@@ -22,11 +26,13 @@ Rectangle {
     signal rightClicked()
     signal scrolled(int delta)
 
-    color: {
-        if (urgent) return "#ff3333";
-        if (isAccent) return hovered ? "#000000" : Theme.accent;
-        return hovered ? Theme.surfaceHi : "transparent";
+    function requestTooltip() {
+        if (root.tooltip === "" && !root.tooltipComponent) return;
+        if (!tooltipObj.active) tooltipObj.active = true;
+        else TooltipManager.show(root, root.tooltip, root.tooltipComponent);
     }
+
+    color: hovered ? Theme.surfaceHi : Theme.surface
     
     radius: Theme.radiusSm
     border.width: borderWidth
@@ -74,10 +80,9 @@ Rectangle {
             visible: root.icon !== ""
             text: root.icon
             font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.pixelSize: root.iconFontSize
             font.weight: Font.Bold
-            color: root.urgent ? "#ffffff" : (root.isAccent ? (root.hovered ? Theme.surfaceHi : Theme.onAccentColor)
-                                 : (root.hovered ? Theme.onAccentColor : Theme.fg))
+            color: root.foregroundColor
             Behavior on color { ColorAnimation { duration: HAnimation.normal } }
         }
         
@@ -88,8 +93,7 @@ Rectangle {
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSize
             font.weight: Font.Bold
-            color: root.urgent ? "#ffffff" : (root.isAccent ? (root.hovered ? Theme.surfaceHi : Theme.onAccentColor)
-                                 : (root.hovered ? Theme.onAccentColor : Theme.fg))
+            color: root.foregroundColor
             Behavior on color { ColorAnimation { duration: HAnimation.normal } }
         }
     }
@@ -100,9 +104,7 @@ Rectangle {
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         onEntered: {
             root.hovered = true
-            if (root.tooltip !== "") {
-                tooltipObj.active = true
-            }
+            root.requestTooltip()
         }
         onExited: {
             root.hovered = false
@@ -121,5 +123,6 @@ Rectangle {
         id: tooltipObj
         target: root
         text: root.tooltip
+        component: root.tooltipComponent
     }
 }

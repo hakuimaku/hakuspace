@@ -7,7 +7,7 @@ Rectangle {
     width: Math.max(implicitWidth, height)
     height: Theme.fontSize * 2
     radius: Theme.radiusSm
-    color: mouseArea.pressed ? Theme.surfaceHi : (mouseArea.containsMouse ? Theme.surface : "transparent")
+    color: mouseArea.containsMouse || mouseArea.pressed ? Theme.surfaceHi : Theme.surface
     
     property alias text: label.text
     signal clicked()
@@ -15,7 +15,7 @@ Rectangle {
     Text {
         id: label
         anchors.centerIn: parent
-        color: Theme.fg
+        color: mouseArea.containsMouse || mouseArea.pressed ? Theme.onAccentColor : Theme.fg
         font.family: Theme.font
         font.pixelSize: Theme.fontSize
     }

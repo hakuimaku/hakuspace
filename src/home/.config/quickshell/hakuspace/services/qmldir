@@ -10,6 +10,7 @@ singleton TooltipManager 1.0 TooltipManager.qml
 singleton FlareEdges 1.0 FlareEdges.qml
 singleton Audio 1.0 Audio.qml
 singleton Brightness 1.0 Brightness.qml
+singleton PpdProfile 1.0 PowerProfile.qml
 singleton Recorder 1.0 Recorder.qml
 singleton Media 1.0 Media.qml
 singleton CenterState 1.0 CenterState.qml

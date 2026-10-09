@@ -9,6 +9,8 @@ import "../"
 Row {
     id: root
     spacing: Theme.gap
+    property var menuOpenItem: null
+    signal menuRequested(var item, var anchor)
 
     Item { width: 4; height: 1; visible: SystemTray.items.length > 0 }
 
@@ -18,9 +20,11 @@ Row {
         TopModule {
             id: trayItem
             implicitWidth: implicitHeight
-            tooltip: modelData.tooltipTitle !== "" ? modelData.tooltipTitle : (modelData.title !== "" ? modelData.title : modelData.id)
+            tooltip: root.menuOpenItem === modelData ? ""
+                     : (modelData.tooltipTitle !== "" ? modelData.tooltipTitle
+                        : (modelData.title !== "" ? modelData.title : modelData.id))
 
-            color: hovered ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+            color: hovered ? Theme.hoverMuted : Theme.surface
 
             IconImage {
                 anchors.centerIn: parent
@@ -40,13 +44,15 @@ Row {
             }
 
             onClicked: {
-                modelData.activate();
+                if (modelData.onlyMenu) {
+                    if (modelData.hasMenu) root.menuRequested(modelData, trayItem)
+                    else modelData.secondaryActivate()
+                } else modelData.activate()
             }
 
             onRightClicked: {
                 if (modelData.hasMenu) {
-                    var map = trayItem.mapToItem(null, 0, trayItem.height);
-                    modelData.display(trayItem.Window.window, map.x, map.y);
+                    root.menuRequested(modelData, trayItem)
                 } else {
                     modelData.secondaryActivate();
                 }

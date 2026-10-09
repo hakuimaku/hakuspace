@@ -19,12 +19,18 @@ Item {
     onTextChanged: {
         if (active && (text.length > 0 || component)) {
             TooltipManager.show(target, text, component);
+        } else if (active) {
+            TooltipManager.release(target);
         }
     }
     
     onComponentChanged: {
         if (active && (text.length > 0 || component)) {
             TooltipManager.show(target, text, component);
+        } else if (active) {
+            TooltipManager.release(target);
         }
     }
+
+    Component.onDestruction: TooltipManager.release(target)
 }

@@ -1,7 +1,7 @@
 Logo 1.0 Logo.qml
 Workspaces 1.0 Workspaces.qml
-MusicGroup 1.0 MusicGroup.qml
 ClockGroup 1.0 ClockGroup.qml
+CalendarGrid 1.0 CalendarGrid.qml
 RecorderGroup 1.0 RecorderGroup.qml
 MonitorGroup 1.0 MonitorGroup.qml
 SettingsGroup 1.0 SettingsGroup.qml

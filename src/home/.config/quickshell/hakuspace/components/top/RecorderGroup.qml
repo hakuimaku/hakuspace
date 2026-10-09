@@ -1,5 +1,5 @@
 import QtQuick
-import Quickshell.Io
+import Quickshell
 import "../../services"
 import ".."
 
@@ -20,13 +20,5 @@ TopModule {
     blink: isRecording
     blinkDuration: 500
     
-    Process {
-        id: recordProc
-        command: ["bash", "-c", "nohup " + Env.binDir + "/record.sh >/dev/null 2>&1 &"]
-    }
-    
-    onClicked: {
-        recordProc.running = false
-        recordProc.running = true
-    }
+    onClicked: Quickshell.execDetached([Env.binDir + "/record.sh"])
 }

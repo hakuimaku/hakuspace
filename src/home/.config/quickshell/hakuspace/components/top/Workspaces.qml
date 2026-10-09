@@ -54,7 +54,7 @@ TopModule {
         return x;
     }
 
-    color: "transparent"
+    color: Theme.surface
     tooltip: ""
     visible: WM.supported && items.length > 0
     implicitWidth: visible ? totalWidth + Theme.pad * 2 : 0

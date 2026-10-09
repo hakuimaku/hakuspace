@@ -267,4 +267,3 @@ echo "Generated theme files in: $THEME_RENDER_DIR"
 echo "ACCENT_COLOR=$ACCENT_COLOR"
 echo "FONT_FAMILY=$FONT_FAMILY"
 echo "FONT_SIZE=$FONT_SIZE"
-

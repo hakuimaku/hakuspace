@@ -13,7 +13,7 @@ Row {
     property int backlight: Brightness.level
     property int volume: Audio.volume
     property bool muted: Audio.muted
-    property string ppd: ""
+    property string ppd: PpdProfile.profile
 
     Process {
         id: execProc
@@ -23,33 +23,6 @@ Row {
         execProc.command = ["bash", "-c", cmd];
         execProc.running = false;
         execProc.running = true;
-        ppdPoll.running = false;
-        ppdPoll.running = true;
-    }
-
-    Timer {
-        id: pollTimer
-        interval: 2000
-        repeat: true
-        running: true
-        onTriggered: {
-            if (!ppdPoll.running) ppdPoll.running = true;
-        }
-    }
-
-    Process {
-        id: ppdPoll
-        running: true
-        command: ["powerprofilesctl", "get"]
-        stdout: SplitParser {
-            onRead: data => {
-                if (!data) return;
-                var line = data.trim();
-                if (line === "performance" || line === "balanced" || line === "power-saver") {
-                    root.ppd = line;
-                }
-            }
-        }
     }
 
     
@@ -72,7 +45,7 @@ Row {
                 height: Theme.fontSize * 1.8
                 anchors.verticalCenter: parent.verticalCenter
                 visible: root.backlight >= 0
-                
+
                 Text {
                     id: iconTextBL
                     property var icons: ["", "", "", "", "", "", "", "", ""]
@@ -81,9 +54,7 @@ Row {
                     font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 2; font.weight: Font.Bold
                     color: Theme.onAccentColor
                     anchors.centerIn: parent
-                    opacity: blMA.containsMouse ? 0.6 : 1.0
                     scale: blMA.containsMouse ? 1.2 : 1.0
-                    Behavior on opacity { NumberAnimation { duration: HAnimation.normal } }
                     Behavior on scale { NumberAnimation { duration: HAnimation.normal } }
                 }
                 MouseArea {
@@ -93,7 +64,7 @@ Row {
                     hoverEnabled: true
                     onEntered: blTooltip.active = true
                     onExited: blTooltip.active = false
-                    onClicked: root.exec("nohup " + Env.binDir + "/nightlight_toggle.sh >/dev/null 2>&1 &")
+                    onClicked: Quickshell.execDetached([Env.binDir + "/nightlight_toggle.sh"])
                     onWheel: (wheel) => Brightness.change("brightnessctl set " + (wheel.angleDelta.y > 0 ? "1%+" : "1%-"))
                 }
                 HTooltip { id: blTooltip; target: blItem; text: "Brightness: " + root.backlight + "%" }
@@ -105,7 +76,7 @@ Row {
                 height: Theme.fontSize * 1.8
                 anchors.verticalCenter: parent.verticalCenter
                 visible: root.volume >= 0
-                
+
                 Text {
                     id: iconTextVol
                     property var icons: ["", "", ""]
@@ -114,9 +85,7 @@ Row {
                     font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 2; font.weight: Font.Bold
                     color: Theme.onAccentColor
                     anchors.centerIn: parent
-                    opacity: volMA.containsMouse ? 0.6 : 1.0
                     scale: volMA.containsMouse ? 1.2 : 1.0
-                    Behavior on opacity { NumberAnimation { duration: HAnimation.normal } }
                     Behavior on scale { NumberAnimation { duration: HAnimation.normal } }
                 }
                 MouseArea {
@@ -150,7 +119,7 @@ Row {
                 property int capacity: bat ? Math.round(bat.percentage * 100) : 0
                 
                 visible: isPresent
-                
+
                 Text {
                     id: iconTextBat
                     property var defIcons: ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]
@@ -160,9 +129,7 @@ Row {
                     font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 2; font.weight: Font.Bold
                     color: Theme.onAccentColor
                     anchors.centerIn: parent
-                    opacity: batMA.containsMouse ? 0.6 : 1.0
                     scale: batMA.containsMouse ? 1.2 : 1.0
-                    Behavior on opacity { NumberAnimation { duration: HAnimation.normal } }
                     Behavior on scale { NumberAnimation { duration: HAnimation.normal } }
                 }
                 MouseArea {
@@ -184,13 +151,6 @@ Row {
         icon: icons[root.ppd] || ""
         tooltip: "Power profile: " + root.ppd
         
-        onClicked: {
-            var profiles = ["performance", "balanced", "power-saver"];
-            var currIdx = profiles.indexOf(root.ppd);
-            if (currIdx !== -1) {
-                var next = profiles[(currIdx + 1) % 3];
-                root.exec("powerprofilesctl set " + next);
-            }
-        }
+        onClicked: PpdProfile.cycle()
     }
 }

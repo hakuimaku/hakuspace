@@ -61,7 +61,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: Theme.radiusSm
-        color: root.hovered ? Theme.surfaceHi : "transparent"
+        color: root.hovered ? Theme.surfaceHi : Theme.surface
         Behavior on color { ColorAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve } }
     }
 
@@ -90,7 +90,7 @@ Item {
                 id: iconLabel
                 anchors.centerIn: parent
                 text: root.icon
-                color: root.mediaMode ? Theme.barColor : Theme.accent
+                color: root.mediaMode ? Theme.onAccentColor : Theme.accent
                 font.family: Theme.fontFamily
                 font.pixelSize: root.mediaMode ? Theme.fontSize + 3 : Theme.fontSize
                 font.weight: Font.Bold
