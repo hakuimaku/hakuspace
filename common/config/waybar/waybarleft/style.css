@@ -1,0 +1,247 @@
+/* ============================================================================== */
+/* GLOBAL STYLES                                  */
+/* ============================================================================== */
+@import url("../../.local/state/haku_theme/colors.css");
+@import url("../../.local/state/haku_theme/fonts.css");
+
+* {
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 20px;
+}
+
+window#waybar {
+    background-color: rgba(0, 0, 0, 0.6);
+    color: @accent_color;
+    transition: background-color 0.3s ease;
+    border-radius: 12px;
+}
+
+.modules-left, .modules-center, .modules-right {
+    border-radius: 20px;
+    padding: 6px;
+}
+
+/* ============================================================================== */
+/* COMMON MODULE STYLES                               */
+/* ============================================================================== */
+#custom-haku,
+#window,
+#custom-recorder,
+#custom-notification,
+#pulseaudio,
+#backlight,
+#pulseaudio-slider,
+#backlight-slider,
+#battery,
+#tray,
+#clock,
+#power-profiles-daemon {
+    margin: 4px;
+    padding: 1px;
+    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
+    border-radius: 20px;
+    min-height: 30px;
+}
+
+#hyprland-workspaces {
+    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
+    border-radius: 20px;
+    min-height: 30px;
+}
+
+#niri-workspaces {
+    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
+    border-radius: 20px;
+    min-height: 30px;
+}
+
+#backlight-slider slider {
+    min-height: 0px;
+    min-width: 0px;
+    opacity: 0;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    background: none;
+}
+#backlight-slider trough {
+    min-height: 60px;
+    border-radius: 20px;
+    background: rgba(203, 203, 203, 0.5);
+}
+#backlight-slider highlight {
+    min-width: 10px;
+    border-radius: 20px;
+    background: @accent_color;
+}
+
+#pulseaudio-slider slider {
+    min-height: 0px;
+    min-width: 0px;
+    opacity: 0;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+}
+#pulseaudio-slider trough {
+    min-height: 60px;
+    border-radius: 20px;
+    background: rgba(203, 203, 203, 0.5);
+}
+#pulseaudio-slider highlight {
+    min-width: 10px;
+    border-radius: 20px;
+    background: @accent_color;
+}
+
+/* ============================================================================== */
+/* WORKSPACES                                    */
+/* ============================================================================== */
+#workspaces {
+    border-radius: 20px;
+}
+#workspaces button {
+    color: @accent_color;
+    padding: 2px 6px;
+    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+    margin: 2px;
+    border-radius: 20px;
+    min-height: 30px;
+}
+
+#workspaces button.active {
+    color: #000000;
+    background-color: @accent_color;
+    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+    min-height: 80px;
+}
+
+#workspaces button.empty {
+    color: rgba(0, 0, 0, 1);
+}
+
+/*
+#workspaces button:nth-child(1):not(.empty):not(.active) {
+    color: #ffffff;
+}
+
+#workspaces button:nth-child(2):not(.empty):not(.active) {
+    color: #ffffff;
+}
+
+#workspaces button:nth-child(3):not(.empty):not(.active) {
+    color: #ffffff;
+}
+
+#workspaces button:nth-child(4):not(.empty):not(.active) {
+    color: #ffffff;
+}
+
+#workspaces button:nth-child(5):not(.empty):not(.active) {
+    color: #ffffff;
+}
+*/
+/* ============================================================================== */
+/* SPECIFIC MODULES                                 */
+/* ============================================================================== */
+#window { color: @accent_color; }
+
+#clock { 
+    color: @accent_color;
+}
+
+#custom-recorder {
+    color: @accent_color;
+    border: 1px solid @accent_color;
+    animation: blink 1s infinite; 
+}
+
+#custom-notification {
+    color: @accent_color;
+    padding: 10px;
+    margin: 0 4px 8px 0;
+}
+
+#backlight { color: @accent_color; }
+
+#pulseaudio { color: @accent_color; }
+
+#battery { color: @accent_color; }
+
+#memory { color: @accent_color; }
+
+#cpu { color: @accent_color; }
+
+#custom-haku {
+    min-height: 30px;
+}
+
+
+/* ============================================================================== */
+/* HOVER EFFECTS                                   */
+/* ============================================================================== */
+#custom-haku:hover,
+#clock:hover,
+#power-profiles-daemon:hover,
+#pulseaudio:hover,
+#backlight:hover,
+#battery:hover,
+#custom-notification:hover {
+    color: #000000;
+    background-color: @accent_color;
+    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+    min-height: 60px;
+}
+
+#workspaces button:hover {
+    background-color: transparent;
+    border-color: @accent_color;
+    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+    min-height: 60px;
+}
+
+#workspaces button.active:hover {
+    color: @accent_color;
+    background-color: transparent;
+    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
+    min-height: 80px;
+}
+
+#workspaces button.empty:hover {
+    color: @accent_color;
+}
+
+#clock:hover {
+    min-height: 160px;
+}
+
+#pulseaudio:hover,
+#backlight:hover {
+    color: @accent_color;
+    background-color: transparent;
+}
+
+/* ============================================================================== */
+/* TOOLTIPS                                     */
+/* ============================================================================== */
+tooltip {
+    background: rgba(0, 0, 0, 1);
+    border-radius: 12px;
+    padding: 10px;
+}
+
+tooltip label {
+    color: @accent_color;
+    font-size: 16px;
+}
+
+/* ============================================================================== */
+/* ANIMATIONS                                    */
+/* ============================================================================== */
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+/* reload_trigger: 0 */
