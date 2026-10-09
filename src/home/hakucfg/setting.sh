@@ -10,6 +10,9 @@ if [[ "$1" == "--version" || "$1" == "-v" ]]; then
 fi
 
 # ====== General Settings ======
+# Show welcome message on startup :)
+WELCOME_MSG=true
+
 NIGHT_LIGHT_TEMPERATURE=4000
 SCREENSHOT_DIR="$HOME/Pictures/Screenshots"
 
