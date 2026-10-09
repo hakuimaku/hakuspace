@@ -18,8 +18,8 @@
 ## ✨ Key Features
 
 * **Smart Accent Colors:** Automatically generates the accent color palette based on your current wallpaper.
-* **Flexible Waybar Layouts:** Supports two standard layouts: **Left** and **Top**. *(Note: Niri currently only supports the Top layout).*
-* **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
+* **Flexible Waybar Layouts:** Supports two standard layouts: **Left** and **Top**.
+* **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar. *(Note: Niri does not support this feature.*
 * **Wallpaper Automation** Wallpapers change automatically every 5 minutes (customizable in the `random_wallpaper.sh` script).
 * **Unified Aesthetic:** Handcrafted and polished configurations for Waybar, Rofi, Swaync and Thunar theme *100% beautiful for real. :)*
 
@@ -30,10 +30,10 @@
 > **Prerequisites:** You need a pre-installed Arch Linux or an Arch-based Linux Distro (A fresh install is highly recommended). If you already have an existing WM or DE configuration, it is best to only reference the configs in HakuSpace rather than running the installation script directly over your system.
 
 ### 1. Clone the Stable Release (Recommended)
-Run the following commands to clone the stable release version `v2.0.1`:
+Run the following commands to clone the stable release version `v2.0.2`:
 ```bash
 cd ~
-git clone --depth 1 --branch v2.0.1 https://github.com/hakuimaku/hakuspace.git
+git clone --depth 1 --branch v2.0.2 https://github.com/hakuimaku/hakuspace.git
 
 ```
 
@@ -62,6 +62,7 @@ cd niri
 ### 3. Run the Installation Script
 
 ```bash
+chmod +x install.sh
 ./install.sh
 ```
 
@@ -71,6 +72,12 @@ After running the installation script, restart your computer and log in to eithe
 ### 5. Change GTK theme
 - Go to `GTK Settings` in Rofi App Menu.
 - Change the theme, icons, and mouse cursor for a better aesthetic.
+
+### 🔽 Update Haku Space to lastet version
+
+- First, you need to clone the latest version (or the latest git)
+- To update hakuspace, simply re-run the `install.sh` script, as it will automatically back up your existing files and apply the latest changes.
+- You can skip steps in `install.sh` to save time.
 
 ---
 
@@ -109,7 +116,7 @@ Read Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 - Lively wallpaper thumbnail: in folder Preview `~/Videos/Wallpapers/Preview` and add image .jpg/.png (same name with video) to appear thumbnail in rofi select menu if you want to use lively wallpaper
 
 ## 🎶 Just chill
-> Currently, `haku.sh` is only available for Hyprland.
+> Currently, **Just chill** is only available for **Hyprland**.
 - Open your terminal on Workspace 1 and type `haku.sh` for a little surprise. To close them, just append the 'clear' argument (e.g., `haku.sh clear`).
 - Cava Underbar: To toggle a Cava visualizer right below Waybar, select Cava Underbar from the Haku Menu. It automatically hides during fullscreen and reappears when you exit. To disable it completely, just toggle it again in the Haku Menu.
 
