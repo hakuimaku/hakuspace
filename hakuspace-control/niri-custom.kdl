@@ -13,6 +13,8 @@
 
 // After changes, please reload Niri by `niri msg action load-config-file` on terminal
 
+// See more in the Wiki: https://github.com/niri-wm/niri/wiki
+
 binds {
     Mod+Return { spawn "kitty"; }
 }
