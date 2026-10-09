@@ -159,13 +159,13 @@ sudo dnf install code
 ```
 
 > [!tip]
-> See more optional packages: [here](https://github.com/hakuimaku/hakuspace/blob/main/common/pkg-optional.txt)
+> See more optional packages: [here](../src/packages/pkg-optional.txt)
 
 ---
 
 ## 3. Install Haku Space Configurations
 
-Simply follow the instructions in the [Installation Guide](https://github.com/hakuimaku/hakuspace#-3)
+Simply follow the instructions in the [Installation Guide](../README.md#installation-guide)
 
 ---
 
