@@ -61,6 +61,8 @@ qt6-wayland
 chafa
 imagemagick
 grim
+slurp
+swappy
 python-colorthief
 python-pywal16
 cmatrix
