@@ -92,5 +92,14 @@ If configurations don't work:
 - tiktok: @hakuimaku2372
 
 ---
+*Themes, Icons and Wallpapers used in Haku Space:*
+- Theme: [BlackAndWhite](https://www.gnome-look.org/p/2010116)
+- Theme: [Magnetic-Dark](https://www.gnome-look.org/p/2093088)
+- Icons: [Tela-circle-black](https://www.gnome-look.org/p/1359276)
+- Mouse Cursor: [lliurex-cursors](https://www.gnome-look.org/p/999908)
+- Wallpapers Artists:
+  - [zrxrevolutionz](https://www.deviantart.com/zrxrevolutionz)
+  - [かづいせ](https://www.pixiv.net/en/users/1031168)
+  - [airfish](https://www.pixiv.net/en/users/67512705)
 
-**Happy Ricing! 🎨**
+# **Happy Ricing! 🎨**
