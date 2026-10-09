@@ -881,3 +881,11 @@ Runtime feedback removed the delayed center-card appearance from W9.1. The selec
 ### W9.3 — Soft blurred card shadow
 
 Runtime feedback confirmed the compact W9.1 shadow footprint was preferable, but the flat Rectangle still read as a hard offset block. W9.3 replaces that block with one `QtQuick.Effects.MultiEffect` shadow per card. Cards remain square with no border or rounding; only a modest soft blur/vertical offset is used, with the center card slightly stronger than side cards. Motion trails remain the lightweight cached-image approximation from W9 and are intentionally unchanged.
+
+### W11.2 — center click apply + rapid-navigation performance
+
+- Center wallpaper now has the same apply action as Enter/Return; accepted apply requests close through the existing animated close lifecycle.
+- Navigation transition shortened to 190 ms and input coalescing widened to 85 ms.
+- Geometry/opacity Behaviors are active only for the bounded prefetch window instead of every wallpaper delegate in the active model.
+- During rapid navigation, side-card blurred shadows are suspended and only the two nearest side cards draw a single motion trail; the richer two-trail presentation remains for the one-shot opening reel.
+- Backend/model/cache contracts are unchanged.

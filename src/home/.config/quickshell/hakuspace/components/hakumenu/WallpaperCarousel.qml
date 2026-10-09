@@ -60,10 +60,14 @@ Item {
     property real closeOpacity: 1.0
     property double lastNavigationMs: 0
     signal closeAnimationFinished()
+    signal applyAccepted()
     readonly property bool closing: openPhase === "closing"
     readonly property bool interactionReady: visible && openPhase === "ready"
-    readonly property int navigationDuration: 230
-    readonly property int navigationMinInterval: 55
+    // Keep navigation responsive without allowing key/touchpad spam to keep
+    // dozens of geometry animations alive at once. A shorter transition plus
+    // a slightly wider coalescing window materially lowers scene-graph load.
+    readonly property int navigationDuration: 190
+    readonly property int navigationMinInterval: 85
     readonly property int closeGatherDuration: 250
     readonly property int closeZoomDuration: 340
     readonly property int openingDuration: 640
@@ -162,6 +166,14 @@ Item {
         applyProcess.errorOutput = ""
         applyProcess.command = [Env.binDir + "/wallpaper_ctl.sh", command, target]
         applyProcess.running = true
+        return true
+    }
+
+    // Keyboard and pointer activation share one acceptance path so Enter and
+    // clicking the physical center card have identical apply/close semantics.
+    function acceptSelected() {
+        if (!applySelected()) return false
+        applyAccepted()
         return true
     }
 
@@ -567,8 +579,13 @@ Item {
             readonly property int trailSign: root.openPhase === "opening"
                                                 ? 1
                                                 : (root.navigationDirection >= 0 ? 1 : -1)
-            readonly property bool trailVisible: deckActive && inMotionDeck && !isCenter
-                                                  && (root.openPhase === "opening" || root.navigationMotionActive)
+            // Opening can afford the full reel trail. During rapid navigation
+            // only the two nearest side cards keep a trail; farther cards move
+            // without duplicate texture draws, which prevents GPU fill-rate
+            // spikes when arrows/wheel are spammed.
+            readonly property bool trailVisible: deckActive && !isCenter
+                                                  && ((root.openPhase === "opening" && inMotionDeck)
+                                                      || (root.navigationMotionActive && depth <= 2))
             // W9.2: the hero card now participates in the opening fade from
             // frame one instead of waiting for the reel to settle. The later
             // circular reveal pass (W10) can replace this presentation without
@@ -637,7 +654,11 @@ Item {
                 blurMax: 32
                 // The hero shadow appears only after the circular reveal has
                 // reached the card corners; side-card shadows stay unchanged.
-                visible: !card.isCenter || !card.heroRevealActive
+                // Side-card blur is visually expendable while the deck is in
+                // fast navigation motion. Suppress those expensive effects
+                // temporarily and restore them as soon as the motion settles.
+                visible: (!card.isCenter || !card.heroRevealActive)
+                         && (!root.navigationMotionActive || card.isCenter)
             }
 
             // Directional image trails approximate motion blur without a live
@@ -654,7 +675,7 @@ Item {
                 asynchronous: true
                 cache: true
                 smooth: true
-                opacity: card.trailVisible ? 0.09 : 0.0
+                opacity: card.trailVisible && root.openPhase === "opening" ? 0.09 : 0.0
                 visible: opacity > 0 && status === Image.Ready
             }
 
@@ -777,26 +798,36 @@ Item {
                 maskSpreadAtMax: 0.0
             }
 
+            MouseArea {
+                anchors.fill: parent
+                z: 500
+                enabled: card.isCenter && root.interactionReady
+                acceptedButtons: Qt.LeftButton
+                cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                onClicked: root.acceptSelected()
+            }
+
             Behavior on x {
-                enabled: root.openPhase === "ready"
+                enabled: root.openPhase === "ready" && card.deckActive && card.inPrefetchWindow
                 NumberAnimation {
                     duration: root.navigationDuration
                     easing.type: Easing.OutCubic
                 }
             }
             Behavior on y {
-                enabled: root.openPhase === "ready"
+                enabled: root.openPhase === "ready" && card.deckActive && card.inPrefetchWindow
                 NumberAnimation { duration: root.navigationDuration; easing.type: Easing.OutCubic }
             }
             Behavior on width {
-                enabled: root.openPhase === "ready"
+                enabled: root.openPhase === "ready" && card.deckActive && card.inPrefetchWindow
                 NumberAnimation { duration: root.navigationDuration; easing.type: Easing.OutCubic }
             }
             Behavior on height {
-                enabled: root.openPhase === "ready"
+                enabled: root.openPhase === "ready" && card.deckActive && card.inPrefetchWindow
                 NumberAnimation { duration: root.navigationDuration; easing.type: Easing.OutCubic }
             }
             Behavior on opacity {
+                enabled: root.openPhase === "ready" && card.deckActive && card.inPrefetchWindow
                 NumberAnimation { duration: root.navigationDuration; easing.type: Easing.OutCubic }
             }
         }
