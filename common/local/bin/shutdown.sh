@@ -1,21 +1,5 @@
 #!/bin/bash
 
-hexit() {
-    if pgrep -x "Hyprland" > /dev/null; then
-        hyprctl eval 'hl.dispatch(hl.dsp.exit())'
-    elif pgrep -x "niri" > /dev/null; then
-        pkill niri
-    fi
-}
-
-hlock() {
-    if pgrep -x "Hyprland" > /dev/null; then
-        hyprlock
-    elif pgrep -x "niri" > /dev/null; then
-        swaylock
-    fi
-}
-
 # List options
 options="󱠩 Hibernate
  Reboot
@@ -37,6 +21,6 @@ case $chosen in
     *"Reboot"*) systemctl reboot ;;
     *"Power Off"*) systemctl poweroff ;;
     *"Sleep"*) systemctl suspend ;;
-    *"Lock"*) hlock ;;
-    *"Exit"*) hexit ;;
+    *"Lock"*) ~/.local/bin/lock.sh ;;
+    *"Exit"*) ~/.local/bin/exit.sh ;;
 esac
