@@ -1,0 +1,14 @@
+{
+    "mpris": {
+        "format": "  / {title} ",
+        "format-paused": "  / <i>{title}</i> ",
+        "title-len": 25
+    },
+
+    "cava": {
+        "cava_config": "$HOME/.config/cava/config_waybar",
+        "input_delay": 0,
+        "bar_delimiter": 0,
+        "format-icons" : ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█" ]
+    }
+}

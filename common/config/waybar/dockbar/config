@@ -29,6 +29,9 @@
             "seycava",
             "seylavat",
             "seyclock"
-        ]
+        ],
+        "app_ids-mapping": {
+            "seycmd": "kitty"
+        }
     }
 }
