@@ -45,9 +45,9 @@ hl.animation({ leaf = "workspacesIn", enabled = true, duration = 1, speed = 8, b
 hl.animation({ leaf = "workspacesOut", enabled = true, duration = 1, speed = 8, bezier = "smoothzz", style = "slidevert" })
 
 -- Special workspace
-hl.animation({ leaf = "specialWorkspace", enabled = true, duration = 1, speed = 6, bezier = "smoothzz", style = "slidevert" })
-hl.animation({ leaf = "specialWorkspaceIn", enabled = true, duration = 1, speed = 6, bezier = "smoothzz", style = "slidevert" })
-hl.animation({ leaf = "specialWorkspaceOut", enabled = true, duration = 1, speed = 8, bezier = "smoothzz", style = "slidevert" })
+hl.animation({ leaf = "specialWorkspace", enabled = true, duration = 1, speed = 6, bezier = "smoothzz", style = "fade" })
+hl.animation({ leaf = "specialWorkspaceIn", enabled = true, duration = 1, speed = 6, bezier = "smoothzz", style = "fade" })
+hl.animation({ leaf = "specialWorkspaceOut", enabled = true, duration = 1, speed = 8, bezier = "smoothzz", style = "fade" })
 
 -- Others
 hl.animation({ leaf = "zoomFactor", enabled = true, duration = 1, speed = 6, bezier = "smoothzz" })
