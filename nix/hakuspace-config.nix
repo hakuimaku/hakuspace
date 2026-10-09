@@ -138,6 +138,7 @@ in
             networkmanagerapplet
             playerctl
             file
+            go
 
             # Core packages
             git
