@@ -1,14 +1,17 @@
 import QtQuick
 import Quickshell
+import Quickshell.Wayland
 import "../services"
 import "top" as TopModules
 
 PanelWindow {
     id: root
-    property var modelData
+    required property var modelData
     screen: modelData
     
     anchors { top: true; left: true; right: true }
+    WlrLayershell.layer: WlrLayer.Top
+    exclusionMode: ExclusionMode.Normal
     implicitHeight: Math.max(30, Theme.fontSize * 2.3)
     color: AppState.opaqueThemeState ? "#000000" : Theme.bg
     visible: AppState.waybarManualState

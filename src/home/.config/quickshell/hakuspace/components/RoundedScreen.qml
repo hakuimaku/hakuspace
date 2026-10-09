@@ -1,17 +1,19 @@
 import QtQuick
 import Quickshell
+import Quickshell.Wayland
 import "../services"
 
 PanelWindow {
     id: root
-    property var modelData
+    required property var modelData
     screen: modelData
 
     anchors { top: true; bottom: true; left: true; right: true }
     color: "transparent"
     
-    exclusionMode: ExclusionMode.Normal
-    aboveWindows: !AppState.roundedScreenDynamicState
+    exclusionMode: AppState.roundedScreenDynamicState ? ExclusionMode.Normal : ExclusionMode.Ignore
+    WlrLayershell.layer: AppState.roundedScreenDynamicState ? WlrLayer.Top : WlrLayer.Overlay
+    
     
     mask: Region {}
     
@@ -21,8 +23,8 @@ PanelWindow {
         id: canvas
         anchors.fill: parent
         
-        property int r: Theme.radius > 0 ? Theme.radius : 12
-        property int t: Theme.borderWidth
+        property int r: AppState.roundedScreenRadius > 0 ? AppState.roundedScreenRadius : 20
+        property int t: AppState.roundedScreenThickness >= 0 ? AppState.roundedScreenThickness : 4
         
         onPaint: {
             var ctx = getContext("2d");
@@ -62,6 +64,7 @@ PanelWindow {
             
             if (t > 0) {
                 ctx.strokeStyle = "#000000";
+                ctx.lineWidth = t * 2;
                 
                 ctx.beginPath();
                 ctx.moveTo(r, 0);
@@ -81,8 +84,9 @@ PanelWindow {
         onWidthChanged: requestPaint()
         onHeightChanged: requestPaint()
         Connections {
-            target: Theme
-            function onRadiusChanged() { canvas.requestPaint() }
+            target: AppState
+            function onRoundedScreenRadiusChanged() { canvas.requestPaint() }
+            function onRoundedScreenThicknessChanged() { canvas.requestPaint() }
         }
     }
 }

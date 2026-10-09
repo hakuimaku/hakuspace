@@ -81,7 +81,7 @@ from gi.repository import Vte
 }
  
 is_running() {
-    if haku_backend_is "quickshell"; then
+    if haku_qs_mode; then
         [[ "$(cat "$STATE_DIR/cava_layer_state" 2>/dev/null)" == "1" ]]
         return $?
     fi
@@ -94,7 +94,7 @@ start() {
         return 0
     fi
     
-    if haku_backend_is "quickshell"; then
+    if haku_qs_mode; then
         echo "1" > "$STATE_DIR/cava_layer_state"
         echo "1" > "$PIDFILE" # Dummy PID for compat
         log "Started (QS mode)"
@@ -137,7 +137,7 @@ stop() {
         return 0
     fi
     
-    if haku_backend_is "quickshell"; then
+    if haku_qs_mode; then
         echo "0" > "$STATE_DIR/cava_layer_state"
         rm -f "$PIDFILE"
         log "Stopped (QS mode)"

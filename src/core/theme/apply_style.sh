@@ -26,9 +26,6 @@ fi
 
 if haku_backend_is "classic"; then
     swaync-client --reload-config --reload-css >/dev/null 2>&1 || true
-else
-    # QML automatically watches JSON, but we can call a reload hook if needed
-    haku_qs_ipc shell reload >/dev/null 2>&1 || true
 fi
 
 for s in /tmp/kitty-*; do

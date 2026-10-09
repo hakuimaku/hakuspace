@@ -79,7 +79,7 @@ else
     
     # Wait for response
     while true; do
-        if read -t 1 -u 3 result; then
+        if IFS= read -r -t 1 -u 3 result; then
             if [[ "$result" == "__CANCEL__" ]]; then
                 exit 1
             fi

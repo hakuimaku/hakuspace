@@ -11,6 +11,11 @@ else
     source "$HOME/.local/bin/haku_theme.sh"
 fi
 
+if [[ ! -f "$STATE_DIR/haku_space_state" ]] && [[ -f "$STATE_DIR/haku_shell_state" ]]; then
+    cp "$STATE_DIR/haku_shell_state" "$STATE_DIR/haku_space_state"
+    rm -f "$STATE_DIR/haku_shell_state"
+fi
+
 SHELL_MODE_STATE="$STATE_DIR/haku_space_state"
 
 if [[ ! -f "$SHELL_MODE_STATE" ]] || ! grep -qxE '0|1' "$SHELL_MODE_STATE"; then

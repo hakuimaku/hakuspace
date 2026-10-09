@@ -55,13 +55,13 @@ ensure_symlink "$TASKBAR_REAL_DIR/config" "$TASKBAR_CONFIG"
 ensure_symlink "$TASKBAR_REAL_DIR/style.css" "$TASKBAR_STYLE"
 
 launch_taskbar() {
-    if haku_backend_is "quickshell"; then return 0; fi
+    if haku_qs_mode; then return 0; fi
     "$TASKBAR_BIN" -c "$TASKBAR_CONFIG" -s "$TASKBAR_STYLE" >/dev/null 2>&1 &
     disown
 }
 
 is_taskbar_running() {
-    if haku_backend_is "quickshell"; then
+    if haku_qs_mode; then
         [[ $(cat "$MANUAL_STATE") == "1" ]]
         return $?
     fi
@@ -69,7 +69,7 @@ is_taskbar_running() {
 }
 
 kill_taskbar() {
-    if haku_backend_is "quickshell"; then return 0; fi
+    if haku_qs_mode; then return 0; fi
     if pgrep -x "taskbar" >/dev/null; then
         pkill -x "taskbar"
         for _ in $(seq 1 20); do

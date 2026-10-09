@@ -40,7 +40,7 @@ EOF
     exit 0
 fi
 
-if haku_backend_is "quickshell"; then
+if haku_qs_mode; then
     echo "Desktop icons are not supported in Quickshell backend yet."
     exit 0
 fi

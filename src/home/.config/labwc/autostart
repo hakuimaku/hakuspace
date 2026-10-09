@@ -1,7 +1,7 @@
 systemctl --user --no-block start labwc-session.target
 dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP >/dev/null 2>&1 &
 systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP >/dev/null 2>&1 &
-swaync >/dev/null 2>&1 &
+$HOME/.local/bin/session_start.sh --early >/dev/null 2>&1 &
 fcitx5 -d >/dev/null 2>&1 &
 wl-paste --type text --watch cliphist store >/dev/null 2>&1 &
 wl-paste --type image --watch cliphist store >/dev/null 2>&1 &
