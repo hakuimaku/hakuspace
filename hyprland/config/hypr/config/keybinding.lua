@@ -27,7 +27,7 @@ local mainMod = "SUPER" -- Sets "Windows" key as main modifier
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
-hl.bind(mainMod .. " + W", hl.dsp.window.float({ action = "toggle" }))
+hl.bind(mainMod .. " + Z", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
 hl.bind(mainMod .. " + SLASH", hl.dsp.exec_cmd("rofi -modi emoji -show emoji"))
@@ -51,7 +51,8 @@ hl.bind(mainMod .. " + SHIFT + Y", hl.dsp.exec_cmd("$HOME/.local/bin/wallpaper_v
 hl.bind(mainMod .. " + T",     hl.dsp.exec_cmd("$HOME/.local/bin/cava_manager.sh --toggle"))
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh"))
 hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh --fullscreen"))
-hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd("$HOME/.local/bin/waybar_manager.sh --cycle"))
+hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("$HOME/.local/bin/waybar_manager.sh --cycle"))
+hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("$HOME/.local/bin/dockbar_manager.sh --toggle"))
 
 
 -- Move focus with mainMod + arrow keys
@@ -98,7 +99,7 @@ hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = tr
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
 
 -- Minimize windows to a special workspace with mainMod + X. Press again to restore.
-hl.bind(mainMod .. " + X", function ()
+hl.bind(mainMod .. " + M", function ()
     if hl.get_workspace("special:minimized") then
         hl.dispatch(hl.dsp.window.move({ workspace = hl.get_active_workspace(), window = "tag:minimized" }))
         hl.dispatch(hl.dsp.window.clear_tags({ window = "tag:minimized" }))
@@ -137,7 +138,7 @@ hl.bind(mainMod .. " + F1", function ()
 end)
 
 -- Cycle layouts
-hl.bind(mainMod .. " + Z", function ()
+hl.bind(mainMod .. " + X", function ()
     local layouts     = { "scrolling", "dwindle", "master" }
     local workspace   = hl.get_active_workspace()
 	if hl.get_active_special_workspace() then
