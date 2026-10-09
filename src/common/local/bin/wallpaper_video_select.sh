@@ -11,7 +11,7 @@ SET_WALLPAPER_SCRIPT="$HOME/.local/bin/wallpaper_set.sh"
 GET_ACCENT_COLOR_SCRIPT="$HOME/.local/bin/get_accent_color.py"
 
 if [[ $1 == "--exit" ]]; then
-    if ! pgrep -x "mpvpaper" > /dev/null; then
+    if ! pgrep "mpvpaper" > /dev/null; then
         notify-send "Lively Wallpaper is not running"
         exit 1
     fi
@@ -57,7 +57,7 @@ list_walls() {
             thumb="video-x-generic"
         fi
 
-        echo -e "$file\0icon\x1f$thumb\n"
+        echo -e "$file\0icon\x1f$thumb"
     done
 }
 
