@@ -14,6 +14,18 @@ in
       aagl.module # Game
     ];
 
+  environment.systemPackages = with pkgs; [
+    prismlauncher
+    modrinth-app
+  ];
+
   nix.settings = aagl.nixConfig; # Set up Cachix
   programs.honkers-railway-launcher.enable = true;
+
+  programs.steam = {
+    enable = true;
+    remotePlay.openFirewall = true;
+    dedicatedServer.openFirewall = true;
+    localNetworkGameTransfers.openFirewall = true;
+  };
 }
