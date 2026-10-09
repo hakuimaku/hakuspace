@@ -44,7 +44,7 @@ hl.monitor({
 
 -- hl.permission("/usr/(bin|local/bin)/grim", "screencopy", "allow")
 -- hl.permission("/usr/(lib|libexec|lib64)/xdg-desktop-portal-hyprland", "screencopy", "allow")
-hl.permission("/usr/(bin|local/bin)/hyprpm", "plugin", "allow")
+-- hl.permission("/usr/(bin|local/bin)/hyprpm", "plugin", "allow")
 
 
 
@@ -57,5 +57,6 @@ dofile(config_dir .. "keybinding.lua")
 dofile(config_dir .. "windowrule.lua")
 
 -- Load plugin configuration
-local plugin_file = config_dir .. "plugin.lua"
-pcall(function() dofile(plugin_file) end)
+-- Uncomment the following lines if you want to load plugin.lua:
+
+--pcall(dofile, config_dir .. "plugin.lua")

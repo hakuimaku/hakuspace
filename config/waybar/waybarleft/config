@@ -229,7 +229,7 @@
         "format-icons": {
             "default": ""
         },
-        "on-click": "~/.local/bin/hakumenu",
+        "on-click": "~/.local/bin/hakumenu.sh",
         "tooltip-format": "Have a nice day!",
         "tooltip": true
     },

@@ -14,8 +14,10 @@ local browser = "zen-browser"
 ---------------------
 
 local mainMod = "SUPER" -- Sets "Windows" key as main modifier
--- Bind keys to Hyprland actions and commands
+
+-- Hyprexpo plugin keybindings
 hl.bind(mainMod .. " + GRAVE", function() hl.plugin.hyprexpo.expo("toggle") end)
+
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
@@ -24,7 +26,7 @@ hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu))
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd([[grim -g "$(slurp)" - | tee ~/Pictures/Screenshots/$(date +'%Y%m%d_%H%M%S').png | wl-copy && swappy -f -]]))
 hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd([[grim - | tee ~/Pictures/Screenshots/$(date +'%Y%m%d_%H%M%S').png | wl-copy && swappy -f -]]))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
-hl.bind(mainMod .. " + period", hl.dsp.exec_cmd("rofi -modi emoji -show emoji"))
+hl.bind(mainMod .. " + SLASH", hl.dsp.exec_cmd("rofi -modi emoji -show emoji"))
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ toggle = true }))
 hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ toggle = false }))
 hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("hyprsunset --temperature 3000"))
@@ -32,14 +34,14 @@ hl.bind(mainMod .. " + SHIFT + L", hl.dsp.exec_cmd("pkill hyprsunset"))
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("swaync-client -t -sw"))
 
 -- Script keybindings
-hl.bind(mainMod .. " + V",    hl.dsp.exec_cmd("~/.local/bin/clip_menu"))
-hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("~/.local/bin/clip_menu --wipe"))
-hl.bind(mainMod .. " + F11",   hl.dsp.exec_cmd("~/.local/bin/record"))
-hl.bind(mainMod .. " + TAB",   hl.dsp.exec_cmd("~/.local/bin/hakumenu"))
-hl.bind(mainMod .. " + A",     hl.dsp.exec_cmd("~/.local/bin/waybar_toggle"))
-hl.bind(mainMod .. " + Y",     hl.dsp.exec_cmd("~/.local/bin/wallselect"))
-hl.bind(mainMod .. " + SHIFT + Y", hl.dsp.exec_cmd("~/.local/bin/wallmpvselect"))
-hl.bind(mainMod .. " + T",     hl.dsp.exec_cmd("~/.local/bin/cava_manager --toggle"))
+hl.bind(mainMod .. " + V",    hl.dsp.exec_cmd("~/.local/bin/clip_menu.sh"))
+hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("~/.local/bin/clip_menu.sh --wipe"))
+hl.bind(mainMod .. " + F11",   hl.dsp.exec_cmd("~/.local/bin/record.sh"))
+hl.bind(mainMod .. " + TAB",   hl.dsp.exec_cmd("~/.local/bin/hakumenu.sh"))
+hl.bind(mainMod .. " + A",     hl.dsp.exec_cmd("~/.local/bin/waybar_toggle.sh"))
+hl.bind(mainMod .. " + Y",     hl.dsp.exec_cmd("~/.local/bin/wallselect.sh"))
+hl.bind(mainMod .. " + SHIFT + Y", hl.dsp.exec_cmd("~/.local/bin/wallmpvselect.sh"))
+hl.bind(mainMod .. " + T",     hl.dsp.exec_cmd("~/.local/bin/cava_manager.sh --toggle"))
 
 
 -- Move focus with mainMod + arrow keys
