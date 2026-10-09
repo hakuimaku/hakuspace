@@ -6,7 +6,7 @@
 
 /* ===== GLOBAL VARIABLES ===== */
 * {
-    background:          rgba(0, 0, 0, 0.7);
+    background:          rgba(0, 0, 0, 0.9);
     foreground:          #dfdfdf;
     modebar-bg:          rgba(27, 27, 27, 0.5);
     background-color:    transparent;
