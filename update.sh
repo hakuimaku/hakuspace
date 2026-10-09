@@ -468,12 +468,15 @@ if ask_yes_no "===> Do you want to update hakuspace configs now?"; then
     echo ">>> Deploying Thunar gtk.css theme..."
     copy_file "$SOURCE_COMMON_CONFIG/gtk.css" "$DEST_CONFIG/gtk-3.0/gtk.css"
 
+    echo ">>> Deploying .nanorc (nano configuration)..."
+    copy_file "$SOURCE_COMMON_CONFIG/.nanorc" "$HOME/.nanorc"
+
     if ! command -v nixos-rebuild >/dev/null 2>&1; then
         echo ">>> Deploying .zshrc (zsh configuration)..."
         copy_file "$SOURCE_COMMON_CONFIG/.zshrc" "$HOME/.zshrc"
-
-        echo ">>> Deploying .nanorc (nano configuration)..."
-        copy_file "$SOURCE_COMMON_CONFIG/.nanorc" "$HOME/.nanorc"
+    else
+        touch "$HOME/.zshrc"
+        log_warn "NixOS detected. Skipping .zshrc deployment. Manage these files via NixOS configuration."
     fi
 
     log_ok "Configurations deployed successfully."
