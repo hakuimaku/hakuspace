@@ -33,8 +33,9 @@ hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("swaync-client -t -sw"))
 
 -- Script keybindings
 hl.bind(mainMod .. " + V",    hl.dsp.exec_cmd("~/.local/bin/clip_menu"))
+hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("~/.local/bin/clip_menu --wipe"))
 hl.bind(mainMod .. " + F11",   hl.dsp.exec_cmd("~/.local/bin/record"))
-hl.bind(mainMod .. " + TAB",   hl.dsp.exec_cmd("~/.local/bin/quick_settings"))
+hl.bind(mainMod .. " + TAB",   hl.dsp.exec_cmd("~/.local/bin/hakumenu"))
 hl.bind(mainMod .. " + A",     hl.dsp.exec_cmd("~/.local/bin/waybar_toggle"))
 hl.bind(mainMod .. " + K",     hl.dsp.exec_cmd("~/.local/bin/display_select"))
 hl.bind(mainMod .. " + Y",     hl.dsp.exec_cmd("~/.local/bin/wallselect"))
@@ -81,4 +82,3 @@ hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = tr
 hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
-
