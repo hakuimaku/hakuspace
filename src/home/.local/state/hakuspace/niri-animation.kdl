@@ -4,8 +4,7 @@ animations {
     //========================================================================//
     //                          Window Open Animations                        //
     //========================================================================//
-    // Window Open Animations - type "/-" for don't want to use the animation
-    // WindowOpen-LeftTopCorner
+    // WindowOpen-OpenTopLeftCorner
     window-open {
         duration-ms 200
         curve "ease-out-quad"
@@ -48,7 +47,7 @@ animations {
         "
     }
 
-    // WindowOpen-CenterCircular
+    // WindowOpen-OpenCenterCircular
     /-window-open {
         duration-ms 200
         curve "ease-out-quad"
@@ -94,7 +93,7 @@ animations {
     //========================================================================//
     //                         Window Close Animations                        //
     //========================================================================//
-    // WindowClose-LeftTopCorner
+    // WindowClose-CloseTopLeftCorner
     window-close {
         duration-ms 200
         curve "ease-out-quad"
@@ -137,7 +136,7 @@ animations {
         "
     }
 
-    // WindowClose-CenterCircular
+    // WindowClose-CloseCenterCircular
     /-window-close {
         duration-ms 200
         curve "ease-out-quad"
