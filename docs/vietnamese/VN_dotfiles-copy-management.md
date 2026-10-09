@@ -1,17 +1,17 @@
-# Quản lý sao chép Dotfiles của HakuSpace
+# Quản lý dotfiles bằng cách sao chép
 
-Tài liệu này giải thích cách HakuSpace cài đặt, cập nhật và rollback các file cấu hình người dùng. HakuSpace sử dụng **mô hình triển khai bằng cách sao chép**. Nó không sử dụng GNU Stow, symbolic link, Git worktree hay cơ chế đồng bộ trực tiếp.
+Tài liệu này giải thích cách HakuSpace cài đặt, cập nhật và rollback các file cấu hình của bạn. HakuSpace dùng **mô hình triển khai bằng cách sao chép**: các file được chép từ repository vào thư mục home, không dùng GNU Stow, symbolic link, Git worktree hay cơ chế đồng bộ trực tiếp.
 
-Đây là tài liệu chi tiết bổ sung cho tài liệu [Kiến trúc HakuSpace](../architecture.md).
+Đây là tài liệu chi tiết bổ sung cho [tài liệu tổng quan về HakuSpace](VN_architecture.md).
 
-Repository là nguồn của các mặc định được quản lý bằng phiên bản. Thư mục home của người dùng chứa các bản sao độc lập của những mặc định đó, cùng với các file do người dùng sở hữu và trạng thái do ứng dụng tạo ra.
+Repository là nguồn của các cấu hình mặc định được quản lý bằng phiên bản. Thư mục home của bạn chứa các bản sao độc lập, cùng với những file riêng và dữ liệu do ứng dụng tạo ra.
 
 ## 1. Mô hình cốt lõi
 
 Repository lưu bố cục thư mục home nền trong `src/home/`:
 
 ```text
-Repository                         Thư mục home của người dùng
+Repository                         Thư mục home của bạn
 -----------                        ----------------------------
 src/home/.config/*       --copy--> ~/.config/*
 src/home/.local/bin/*    --copy--> ~/.local/bin/*
@@ -20,27 +20,27 @@ src/home/hakuspace-control/*
                            --copy--> ~/hakuspace-control/*
 ```
 
-File đã được sao chép có inode riêng và có thể được chỉnh sửa độc lập với nguồn trong repository. Chỉnh sửa file đã triển khai không chỉnh sửa Git checkout. Tương tự, chỉnh sửa file trong repository không thay đổi cấu hình desktop đang hoạt động cho đến khi một thao tác install hoặc update sao chép file đó lần nữa.
+Mỗi file được sao chép có inode riêng nên bạn có thể sửa nó độc lập với file nguồn trong repository. Sửa bản đã cài không làm thay đổi Git checkout. Ngược lại, sửa file trong repository cũng chưa thay đổi desktop đang chạy cho đến khi bạn chạy install hoặc update để chép file đó lần nữa.
 
 Mô hình này có hai khu vực sở hữu quan trọng:
 
-- **Cấu hình nền**: các mặc định được quản lý bằng phiên bản trong `src/home/`. Repository duy trì các file này và một lần cài đặt hoặc cập nhật sau có thể thay thế chúng.
-- **Cấu hình tùy chỉnh**: các thiết lập riêng của người dùng trong `~/hakuspace-control/`. Cấu hình nền được thiết kế để nạp hoặc tham chiếu đến thư mục này, nhờ đó các thiết lập cá nhân có thể tồn tại qua những thay đổi của cấu hình nền.
+- **Cấu hình nền**: các mặc định được quản lý bằng phiên bản trong `src/home/`. Repository duy trì các file này, vì vậy lần cài đặt hoặc cập nhật sau có thể thay thế bản đã cài.
+- **Cấu hình tùy chỉnh**: các thiết lập riêng của bạn trong `~/hakuspace-control/`. Cấu hình nền được thiết kế để nạp hoặc tham chiếu đến thư mục này, nhờ đó thiết lập cá nhân có thể tồn tại qua những thay đổi của cấu hình nền.
 
-Đây là một ranh giới có chủ đích. Nên tùy chỉnh cấu hình trong `~/hakuspace-control/` khi file nền tương ứng hỗ trợ cơ chế override đó. Chỉnh sửa trực tiếp file nền đã triển khai trong `~/.config` hoặc `~/.local/bin` có thể bị ghi đè ở lần triển khai sau.
+Đây là ranh giới được đặt ra có chủ ý. Khi file nền hỗ trợ override, bạn nên đặt phần tùy chỉnh trong `~/hakuspace-control/`. Nếu sửa trực tiếp file nền đã cài trong `~/.config` hoặc `~/.local/bin`, thay đổi đó có thể bị ghi đè ở lần triển khai sau.
 
-## 2. Thế nào là một đích được quản lý
+## 2. HakuSpace quản lý những đường dẫn nào?
 
-Installer và updater triển khai một tập hợp đích đã được xác định. Chúng không sở hữu toàn bộ thư mục home.
+Installer và updater chỉ triển khai một danh sách đường dẫn đã xác định. HakuSpace không quản lý toàn bộ thư mục home của bạn.
 
 ### Các đích cấu hình
 
 Các mục trong `src/home/.config/` được sao chép sang các mục tương ứng dưới `~/.config/`, với xử lý riêng cho các thư mục window manager:
 
 - Các thư mục và file ứng dụng thông thường được sao chép sang đường dẫn tương ứng dưới `~/.config/`.
-- `hypr/`, `niri/`, `mango/` và `labwc/` được triển khai qua các nhánh riêng vì window manager được chọn quyết định phần nào được sao chép.
+- `hypr/`, `niri/`, `mango/` và `labwc/` được xử lý riêng vì window manager bạn chọn quyết định phần nào được sao chép.
 - Hyprland có thể triển khai riêng `hypr/config`, `hyprland.lua`.
-- `hypridle.conf`, `hyprlock.conf` và `hyprlock_tiny.conf` luôn được copy không phụ thuộc vào window manager, vì nó là các file cấu hình lõi cho `hypridle` và `hyprlock` (chúng nó có default location cho config file trùng với `~/.config/hypr/` của Hyprland nên cần xử lý đặc biệt).
+- `hypridle.conf`, `hyprlock.conf` và `hyprlock_tiny.conf` luôn được copy dù bạn chọn window manager nào. Đây là các file cấu hình lõi cho `hypridle` và `hyprlock`, đồng thời vị trí mặc định của chúng trùng với `~/.config/hypr/` của Hyprland nên cần xử lý riêng.
 - `gtk-3.0/gtk.css` được triển khai như một file cụ thể. Thư mục `gtk-3.0` hiện có sẽ được sao lưu bằng `backup_dir` trước khi file đó được sao chép.
 - `starship.toml`, `mimeapps.list` và các file cấu hình cấp cao khác được sao chép vào đường dẫn tương ứng.
 
@@ -54,7 +54,7 @@ Installer và updater cũng triển khai `src/home/.nanorc` sang `~/.nanorc`.
 
 ### Các file nằm ngoài ranh giới này
 
-Các script không chủ động quản lý mọi file trong `~/.config` hoặc `~/.local`. Ví dụ, thư mục ứng dụng không nằm trong danh sách triển khai của repository vẫn thuộc quyền sở hữu của người dùng. Rollback cũng tuân theo ranh giới này: chỉ xóa các đích được quản lý và giữ lại các mục không liên quan.
+Các script không quản lý mọi file trong `~/.config` hoặc `~/.local`. Ví dụ, thư mục của ứng dụng không nằm trong danh sách triển khai vẫn thuộc về bạn. Rollback cũng giữ đúng ranh giới này: chỉ xóa các đường dẫn được quản lý và giữ lại những mục không liên quan.
 
 ## 3. Helper sao chép và sao lưu dùng chung
 
@@ -82,7 +82,7 @@ Hành vi dùng chung nằm trong `scripts/functions.sh`, còn các đường d�
 4. Sao chép nội dung source vào destination bằng `cp -rf SOURCE_DIR/. DESTINATION_DIR/`.
 5. Ghi log thao tác sao chép.
 
-Điểm quan trọng là đây là **hợp nhất nội dung sau khi sao lưu**, không phải thuật toán đồng bộ tại chỗ. Trong các thao tác install/update thông thường, destination hiện có được chuyển đi trước khi sao chép, nên thư mục đích bắt đầu ở trạng thái sạch. Trong rollback, các đích cũng được xóa rõ ràng trước khi khôi phục với cùng mục đích.
+Điểm quan trọng: đây là **hợp nhất nội dung sau khi sao lưu**, không phải thuật toán đồng bộ tại chỗ. Trong install/update thông thường, destination hiện có được chuyển đi trước khi sao chép nên thư mục đích bắt đầu ở trạng thái sạch. Rollback cũng xóa rõ ràng các đường dẫn hiện tại trước khi khôi phục vì lý do tương tự.
 
 ### `backup_item`
 
@@ -124,9 +124,9 @@ Bản sao lưu chứa các đích đã được chuyển hoặc sao chép trư�
 
 Tên bản sao lưu có dấu thời gian để dễ sắp xếp. `rollback.sh` liệt kê chúng theo thứ tự từ điển đảo ngược, nhờ đó timestamp mới nhất đứng trước khi định dạng timestamp không thay đổi.
 
-## 5. `install.sh`: triển khai lần đầu
+## 5. `install.sh`: cài đặt lần đầu
 
-`install.sh` là entry point thiết lập tổng quát. Ngoài triển khai cấu hình, nó có thể cài package, tạo thư mục, triển khai tài nguyên, khởi tạo `hakuspace-control` và thực hiện thiết lập hệ thống tùy chọn.
+`install.sh` là điểm bắt đầu cho việc thiết lập. Ngoài chép cấu hình, script có thể cài package, tạo thư mục, chép tài nguyên, khởi tạo `hakuspace-control` và thực hiện một số thiết lập hệ thống tùy chọn.
 
 Luồng liên quan đến dotfiles là:
 
@@ -142,7 +142,7 @@ Luồng liên quan đến dotfiles là:
 
 Với các đích thông thường, helper sao chép sẽ sao lưu target hiện có trước khi sao chép. Kết quả là một bản sao độc lập được triển khai trong thư mục home và một bản sao khôi phục trong `~/.backup/`.
 
-Do đó, lần cài đặt đầu tiên có thể giữ lại các file đã tồn tại trước khi cài HakuSpace. Tuy nhiên, người dùng nên xem kỹ các prompt mà mình chấp nhận vì quá trình cài đặt còn thực hiện các thiết lập package và hệ thống ngoài việc triển khai dotfiles.
+Vì vậy, lần cài đầu tiên có thể giữ lại các file đã tồn tại trên máy. Bạn vẫn nên đọc kỹ từng prompt trước khi xác nhận, vì quá trình cài đặt còn thực hiện các thiết lập package và hệ thống ngoài việc chép dotfiles.
 
 ## 6. `update.sh`: cập nhật repository và cấu hình
 
@@ -150,7 +150,7 @@ Do đó, lần cài đặt đầu tiên có thể giữ lại các file đã t�
 
 ### Giai đoạn cập nhật repository
 
-Người dùng có thể chọn:
+Bạn có thể chọn:
 
 - **Latest**: chuyển sang branch main và pull từ remote.
 - **Stable**: fetch tag và checkout tag release mới nhất hiện có.
@@ -171,13 +171,13 @@ Updater sau đó sẽ:
 7. Sao chép các script cục bộ được quản lý sang `~/.local/bin/`.
 8. Tùy chọn thực hiện cập nhật cấu hình NixOS và rebuild.
 
-Một lần cập nhật thông thường có thể ghi đè các chỉnh sửa trực tiếp vào file nền được quản lý vì những file này được repository kiểm soát có chủ đích. Nên chuyển thiết lập tùy chỉnh sang `~/hakuspace-control` hoặc một vị trí do người dùng sở hữu được hỗ trợ trước khi cập nhật.
+Một lần update thông thường có thể ghi đè các chỉnh sửa trực tiếp vào file nền, vì repository cố ý kiểm soát những file này. Trước khi update, bạn nên chuyển thiết lập riêng sang `~/hakuspace-control` hoặc một vị trí được hỗ trợ khác thuộc quyền sở hữu của bạn.
 
 Mỗi lần cập nhật tạo một bản sao lưu có timestamp riêng trong `~/.backup/`. Nhờ đó, rollback sau này có thể chọn trạng thái tồn tại trước một lần cập nhật cụ thể.
 
 ## 7. `rollback.sh`: dọn dẹp và khôi phục có chọn lọc
 
-Rollback không được triển khai như việc sao chép mù lên toàn bộ home hiện tại. Mục đích của nó là đưa các đích được quản lý về trạng thái được ghi trong bản sao lưu đã chọn, đồng thời tránh các file người dùng không liên quan.
+Rollback không chép mù lên toàn bộ thư mục home hiện tại. Mục đích là đưa các đường dẫn được quản lý về trạng thái trong bản sao lưu bạn chọn, đồng thời không đụng đến file riêng không liên quan.
 
 ### Giai đoạn chọn bản sao lưu
 
@@ -218,7 +218,7 @@ Bản sao lưu đã chọn được sao chép vào thư mục home với việc 
 
 ### Hệ quả quan trọng
 
-Một bản sao lưu đại diện cho trạng thái trước đó được ghi lại bởi một thao tác install hoặc update. Nếu một đích được quản lý không có trong bản sao lưu, rollback sẽ không tạo lại đích đó. Vì rollback xóa danh sách các đích được quản lý trước khi khôi phục, đích đó có thể tiếp tục không tồn tại sau thao tác. Đây là chủ ý: nó ngăn các file cũ tồn tại sau rollback, nhưng cũng có nghĩa là người dùng cần chọn bản sao lưu tương ứng với trạng thái triển khai mong muốn.
+Một bản sao lưu đại diện cho trạng thái trước đó được ghi lại bởi một lần install hoặc update. Nếu một đường dẫn được quản lý không có trong bản sao lưu, rollback sẽ không tạo lại đường dẫn đó. Vì rollback xóa các đường dẫn được quản lý trước khi khôi phục, đường dẫn đó có thể tiếp tục không tồn tại sau thao tác. Đây là chủ ý: cách này ngăn file cũ tồn tại sau rollback, nhưng bạn cần chọn đúng bản sao lưu tương ứng với trạng thái mình muốn.
 
 ## 8. Vòng đời ví dụ
 
@@ -242,13 +242,13 @@ Nếu không muốn dùng bản cập nhật, rollback về mặt khái niệm s
 5. Khôi phục các file như .nanorc nếu có
 ```
 
-Repository vẫn không thay đổi trong suốt quá trình. Rollback chỉ thay đổi các bản sao đã triển khai trong thư mục home của người dùng.
+Repository vẫn không thay đổi trong suốt quá trình. Rollback chỉ thay đổi các bản sao đã triển khai trong thư mục home của bạn.
 
 ## 9. Quy tắc tùy chỉnh
 
-Hãy tuân theo các quy tắc sau để tránh mất thiết lập cá nhân:
+Bạn nên làm theo các quy tắc sau để tránh mất thiết lập cá nhân:
 
-- Xem `src/home/` là input nền được quản lý bằng phiên bản, không phải thư mục cấu hình đang hoạt động.
+- Xem `src/home/` là nguồn cấu hình nền được quản lý bằng phiên bản, không phải thư mục cấu hình đang hoạt động.
 - Đặt các override cá nhân được hỗ trợ trong `~/hakuspace-control`.
 - Lường trước việc các chỉnh sửa trực tiếp vào file được quản lý trong `~/.config` và `~/.local/bin` sẽ bị thay thế bởi install hoặc update.
 - Kiểm tra hành vi của `ONCE_CONFIGS`. Chúng được khởi tạo khi cài đặt nhưng bị bỏ qua trong các lần cập nhật thông thường.
@@ -261,10 +261,10 @@ Hãy tuân theo các quy tắc sau để tránh mất thiết lập cá nhân:
 ### Ưu điểm
 
 - Sử dụng các file thông thường và tool shell tiêu chuẩn.
-- Không yêu cầu người dùng biết về symbolic link hoặc một dotfiles manager đặc biệt.
+- Không yêu cầu bạn phải biết về symbolic link hoặc một dotfiles manager đặc biệt.
 - Giữ các mặc định của repository portable và dễ kiểm tra.
 - Tạo các điểm khôi phục có timestamp trước khi triển khai các đích được quản lý.
-- Cho phép cấu hình người dùng không liên quan cùng tồn tại trong các thư mục home tương tự.
+- Cho phép các cấu hình không liên quan của bạn cùng tồn tại trong những thư mục home tương tự.
 - Làm rõ ranh giới giữa nền và tùy chỉnh.
 
 ### Đánh đổi
