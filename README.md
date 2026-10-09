@@ -9,10 +9,10 @@
 
 | Screenshot Capture | Description |
 |---|-----|
-| <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/e6bc1dd5-98f9-46e5-936b-c1091d976957" /> | Overview |
-| <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/1a7516c8-d7f8-40b2-a3ba-fa6dbf2ba437" /> | Haku Menu |
-| <img width="1920" height="1080" alt="20260527_205351" src="https://github.com/user-attachments/assets/451e4be1-0ff0-42ad-8e91-75937a4c5171" /> | `haku` - Haku Space |
-| <img width="1920" height="1080" alt="20260527_205402" src="https://github.com/user-attachments/assets/c514ac48-42f4-48f8-a62c-d5d5c3f0773d" /> | Swaync |
+| <img width="1920" height="1080" alt="20260530_173100" src="https://github.com/user-attachments/assets/29746f0f-35d1-43ac-8c60-d3aa90b0c495" /> | Overview |
+| <img width="1920" height="1080" alt="20260530_173019" src="https://github.com/user-attachments/assets/c89ea89e-5a59-4b94-9175-3df800409bc8" /> | Haku Menu |
+| <img width="1920" height="1080" alt="20260530_172950" src="https://github.com/user-attachments/assets/536d84f7-cdb0-4b14-9f5b-275933c3807d" /> | `haku` - Haku Space |
+| <img width="1920" height="1080" alt="20260530_173137" src="https://github.com/user-attachments/assets/3ab29fee-6c45-4c78-a497-42d3a99f4d31" /> | Swaync |
 
 
 ---
@@ -100,6 +100,6 @@ If configurations don't work:
   - [zrxrevolutionz](https://www.deviantart.com/zrxrevolutionz)
   - [かづいせ](https://www.pixiv.net/en/users/1031168)
   - [airfish](https://www.pixiv.net/en/users/67512705)
-- Fastfetch logo - I couldn't find the artist, I found it on [Internet](https://store.line.me/stickershop/product/5198750/en)
+- Fastfetch logo (Old, I was used it before) - I couldn't find the artist, I found it on [Internet](https://store.line.me/stickershop/product/5198750/en)
 
 # **Happy Ricing! 🎨**
