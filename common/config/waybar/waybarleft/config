@@ -165,8 +165,8 @@
     },
 
     "custom/logo": {
-        "format": " 󰣇 ",
-        "on-click": "~/.local/bin/hakumenu.sh",
+        "format": "󰮯",
+        "on-click": "$HOME/.local/bin/hakumenu.sh",
         "tooltip-format": "Have a nice day!",
         "tooltip": true
     },
