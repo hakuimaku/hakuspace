@@ -1,128 +1,135 @@
 #!/usr/bin/env bash
 
-# MangoWM Floating Window is above waybar, not a good news :(
-if [[ $XDG_CURRENT_DESKTOP == "mango" ]]; then
-    echo "Cava Underbar is not supported on MangoWM."
-    notify-send "Cava Underbar is not supported on MangoWM."
-    exit 1
-fi
-
-APP_CLASS="cavaunderbar"
-STATE_FILE="/tmp/cava_underbar_status" # 1 = user wants ON, 0 = user wants OFF
-HIDDEN_FILE="/tmp/cava_underbar_hidden_by_fs" # 1 = daemon hid it due to fullscreen
-LOCK_FILE="/tmp/cava_underbar.lock" # make sure only one daemon is running
-
-need() { command -v "$1" >/dev/null 2>&1 || { echo "$1 is required"; exit 1; }; }
-
-need kitty
-need cava
-need jq
-
-[[ ! -f "$STATE_FILE" ]] && echo "0" > "$STATE_FILE"
-[[ ! -f "$HIDDEN_FILE" ]] && echo "0" > "$HIDDEN_FILE"
-
-# Check 
-float_sticky() {
-    local cmd="niri-float-sticky"
-    local binary_path=""
-
-    # Check potential binary locations dynamically
-    if command -v "$cmd" >/dev/null 2>&1; then
-        binary_path="$cmd"
-    elif [[ -x "$HOME/go/bin/$cmd" ]]; then
-        binary_path="$HOME/go/bin/$cmd"
-    else
-        echo "Warning: $cmd not found. Window may not float/stick." >&2
-        notify-send "Warning Cava Underbar" "$cmd not found. Window may not float/stick."
-        return 1
+# This script is a simple wrapper around cava-layer.py to manage its lifecycle (start/stop/toggle)
+ 
+SCRIPT_PATH="${CAVA_LAYER_PATH:-$HOME/.local/bin/cava-layer.py}"
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+PIDFILE="/tmp/cava-layer.pid"
+LOGFILE="/tmp/cava-layer.log"
+ 
+log() { echo "[cava-layer-toggle] $*"; }
+err() { echo "[cava-layer-toggle] $*" >&2; }
+ 
+check_dependencies() {
+    local missing=()
+ 
+    command -v python3 >/dev/null 2>&1 || missing+=("python3")
+    command -v cava    >/dev/null 2>&1 || missing+=("cava")
+ 
+    if [ ! -f "$SCRIPT_PATH" ]; then
+        missing+=("cava-layer.py not found at $SCRIPT_PATH (set CAVA_LAYER_PATH to override)")
     fi
-
-    "$binary_path" -app-id "$APP_CLASS" &
-}
-
-run_cava() {
-    pgrep -f "$APP_CLASS" >/dev/null && return 0
-
-    kitty --class="$APP_CLASS" \
-            -o background_opacity=0 \
-            -o background=#000000 \
-            -o font_size=5 \
-            -o window_padding_width=0 \
-            -o window_margin_width=0 \
-            -o hide_window_decorations=yes \
-            -e cava -p ~/.config/cava/config_underbar &
-
-    if [[ "${XDG_CURRENT_DESKTOP,,}" == *"niri"* ]]; then
-        float_sticky
+ 
+    # PyGObject itself
+    if command -v python3 >/dev/null 2>&1; then
+        python3 -c "import gi" >/dev/null 2>&1 || missing+=("python3-gi (PyGObject)")
+ 
+        # GtkLayerShell typelib
+        python3 -c "
+import gi
+gi.require_version('GtkLayerShell', '0.1')
+from gi.repository import GtkLayerShell
+" >/dev/null 2>&1 || missing+=("gtk-layer-shell (GtkLayerShell GObject Introspection typelib)")
+ 
+        # Vte typelib
+        python3 -c "
+import gi
+gi.require_version('Vte', '2.91')
+from gi.repository import Vte
+" >/dev/null 2>&1 || missing+=("vte3 (Vte-2.91 GObject Introspection typelib)")
+    fi
+ 
+    if [ "${#missing[@]}" -ne 0 ]; then
+        err "Missing dependencies:"
+        for m in "${missing[@]}"; do
+            err "  - $m"
+        done
+        err ""
+        err "Install hints:"
+        err "  Arch/Hyprland: sudo pacman -S cava python-gobject gtk-layer-shell vte3"
+        err "  Debian/Ubuntu: sudo apt install cava python3-gi gir1.2-gtklayershell-0.1 gir1.2-vte-2.91"
+        exit 1
     fi
 }
-
-stop_cava() {
-    pkill -f "$APP_CLASS" 2>/dev/null
+ 
+is_running() {
+    [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE" 2>/dev/null)" 2>/dev/null
 }
-
-toggle_cava() {
-    if pgrep -f "$APP_CLASS" >/dev/null; then
-        stop_cava
-        echo "0" > "$STATE_FILE"
-        echo "0" > "$HIDDEN_FILE"
-    else
-        run_cava
-        echo "1" > "$STATE_FILE"
-        echo "0" > "$HIDDEN_FILE"
-    fi
-}
-
-if [[ "$1" == "--toggle" ]]; then
-    toggle_cava
-    exit 0
-fi
-
-
-# Check fullscreen, work around for Hyprland's fullscreen behavior
-# Hyprland use pin cava_underbar window -> fullscreen window still shows it up
-echo "Cava Underbar daemon started, check fullscreen every second"
-
-if [[ "${XDG_CURRENT_DESKTOP,,}" != *"hyprland"* ]]; then
-    echo "Error: Cava Underbar daemon is designed to run exclusively on Hyprland."
-    exit 1
-fi
-
-get_fs() {
-    hyprctl activewindow -j 2>/dev/null | jq -r '.fullscreen // 0' 2>/dev/null
-}
-
-daemon_tick() {
-    local want_on fs hidden
-    want_on="$(cat "$STATE_FILE" 2>/dev/null || echo 0)"
-    hidden="$(cat "$HIDDEN_FILE" 2>/dev/null || echo 0)"
-    fs="$(get_fs)"
-    [[ -z "$fs" ]] && fs=0
-
-    # user wants OFF -> daemon never starts cava
-    [[ "$want_on" != "1" ]] && return 0
-
-    # fullscreen (mode 2 - maximized) => hide if running
-    if [[ "$fs" == "2" ]]; then
-        if pgrep -f "$APP_CLASS" >/dev/null; then
-        stop_cava
-        echo "1" > "$HIDDEN_FILE"
-        fi
+ 
+start() {
+    if is_running; then
+        log "Already running (pid=$(cat "$PIDFILE"))."
         return 0
     fi
-
-    # not fullscreen => only restore if daemon had hidden it
-    if [[ "$hidden" == "1" ]]; then
-        run_cava
-        echo "0" > "$HIDDEN_FILE"
+ 
+    check_dependencies
+ 
+    log "Starting: python3 $SCRIPT_PATH $*"
+    nohup python3 "$SCRIPT_PATH" "$@" >"$LOGFILE" 2>&1 &
+    local pid=$!
+    disown "$pid" 2>/dev/null || true
+    echo "$pid" > "$PIDFILE"
+ 
+    sleep 0.3
+    if ! kill -0 "$pid" 2>/dev/null; then
+        err "cava-layer exited immediately. Last log lines:"
+        tail -n 20 "$LOGFILE" >&2 2>/dev/null
+        rm -f "$PIDFILE"
+        exit 1
+    fi
+ 
+    log "Started (pid=$pid). Log: $LOGFILE"
+}
+ 
+stop() {
+    if ! is_running; then
+        log "Not running."
+        rm -f "$PIDFILE"
+        return 0
+    fi
+ 
+    local pid
+    pid="$(cat "$PIDFILE")"
+    log "Stopping (pid=$pid)..."
+    kill "$pid" 2>/dev/null
+ 
+    for _ in $(seq 1 20); do
+        kill -0 "$pid" 2>/dev/null || break
+        sleep 0.1
+    done
+ 
+    if kill -0 "$pid" 2>/dev/null; then
+        err "Process didn't exit gracefully, force killing."
+        kill -9 "$pid" 2>/dev/null
+    fi
+ 
+    rm -f "$PIDFILE"
+    log "Stopped."
+}
+ 
+toggle() {
+    if is_running; then
+        stop
+    else
+        start "$@"
     fi
 }
-
-# no --toggle => daemon only
-exec 9>"$LOCK_FILE"
-flock -n 9 || exit 0
-
-while true; do
-    daemon_tick
-    sleep 1
-done
+ 
+case "${1:-}" in
+    start)
+        shift
+        start "$@"
+        ;;
+    stop)
+        stop
+        ;;
+    toggle)
+        shift
+        toggle "$@"
+        ;;
+    *)
+        # No explicit subcommand: treat everything (including -p/-H/-F flags,
+        # or nothing at all) as arguments to a plain toggle.
+        toggle "$@"
+        ;;
+esac

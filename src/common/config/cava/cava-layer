@@ -1,0 +1,12 @@
+[general]
+bar_width = 6
+bar_spacing = 1
+
+[output]
+method = ncurses
+orientation = top
+
+[color]
+# Uncomment & comment one of the following lines to change the bar color
+foreground = black
+#foreground = white # based on wallpaper, best with dark wallpaper
