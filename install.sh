@@ -660,38 +660,43 @@ step_title "6 - SETUP OH MY ZSH AND PLUGINS"
 
 log_info "This step will install Oh My Zsh and its plugins (zsh-autosuggestions, zsh-syntax-highlighting) if not already installed."
 
-if ask_yes_no "===> Do you want to install Oh My Zsh now?"; then
-    if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
-        log_info "Installing Oh My Zsh..."
-        KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-    else
-        log_skip "Oh My Zsh already installed."
-    fi
-
-    ZSH_CUSTOM="$HOME/.oh-my-zsh/custom/plugins"
-
-    if [[ ! -d "$ZSH_CUSTOM/zsh-autosuggestions" ]]; then
-        log_info "Installing zsh-autosuggestions..."
-        git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/zsh-autosuggestions"
-    else
-        log_skip "zsh-autosuggestions already installed."
-    fi
-
-    if [[ ! -d "$ZSH_CUSTOM/zsh-syntax-highlighting" ]]; then
-        log_info "Installing zsh-syntax-highlighting..."
-        git clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/zsh-syntax-highlighting"
-    else
-        log_skip "zsh-syntax-highlighting already installed."
-    fi
-
-    if [[ "$SHELL" != "/usr/bin/zsh" ]]; then
-        log_info "Changing default shell to zsh..."
-        sudo chsh -s /usr/bin/zsh "$USER"
-    else
-        log_skip "Default shell is already zsh."
-    fi
-else
+if command -v nixos-rebuild >/dev/null 2>&1; then
+    log_warn "NixOS detected. This step is not required on NixOS."
     log_skip "Skipping Oh My Zsh installation."
+else
+    if ask_yes_no "===> Do you want to install Oh My Zsh now?"; then
+        if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
+            log_info "Installing Oh My Zsh..."
+            KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+        else
+            log_skip "Oh My Zsh already installed."
+        fi
+
+        ZSH_CUSTOM="$HOME/.oh-my-zsh/custom/plugins"
+
+        if [[ ! -d "$ZSH_CUSTOM/zsh-autosuggestions" ]]; then
+            log_info "Installing zsh-autosuggestions..."
+            git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/zsh-autosuggestions"
+        else
+            log_skip "zsh-autosuggestions already installed."
+        fi
+
+        if [[ ! -d "$ZSH_CUSTOM/zsh-syntax-highlighting" ]]; then
+            log_info "Installing zsh-syntax-highlighting..."
+            git clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/zsh-syntax-highlighting"
+        else
+            log_skip "zsh-syntax-highlighting already installed."
+        fi
+
+        if [[ "$SHELL" != "/usr/bin/zsh" ]]; then
+            log_info "Changing default shell to zsh..."
+            sudo chsh -s /usr/bin/zsh "$USER"
+        else
+            log_skip "Default shell is already zsh."
+        fi
+    else
+        log_skip "Skipping Oh My Zsh installation."
+    fi
 fi
 
 # ============================================================================
