@@ -39,7 +39,6 @@ in
         nixpkgs.config.allowUnfree = lib.mkDefault true;
         programs.firefox.enable = lib.mkDefault true;
         services.power-profiles-daemon.enable = lib.mkDefault true;
-        services.displayManager.ly.enable = lib.mkDefault true;
 
         # Thunar File Manager
         programs.xfconf.enable = lib.mkDefault true;
@@ -66,7 +65,7 @@ in
         # Desktop Environment / Window Manager
         programs.hyprland.enable = lib.mkDefault true;
         programs.niri.enable = lib.mkDefault true;
-        programs.mango.enable = lib.mkDefault true;
+        programs.mangowc.enable = lib.mkDefault true;
         programs.labwc.enable = lib.mkDefault true;
 
         # Polkit Authentication Agent
