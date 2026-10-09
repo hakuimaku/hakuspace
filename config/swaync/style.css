@@ -2,16 +2,22 @@
 @import url("../../.local/state/haku_theme/fonts.css");
 
 .notification-row {
+    transition: all 100ms ease;
     outline: none;
-    margin: 5px;
+    margin-bottom: 1px;
+    border-radius: 20px;
 }
 
 .notification {
     background: rgba(0, 0, 0, 1);
-    border: 1px solid #000000;
-    border-radius: 12px;
+    border-radius: 20px;
     padding: 10px;
     box-shadow: 0 0 5px #000000;
+    color: @accent_color;
+}
+
+.notification * {
+    color: @accent_color;
 }
 
 .notification-content .summary {
@@ -27,7 +33,7 @@
 }
 
 .notification-content .time {
-    color: #a6adc8;
+    color: @accent_color;
 }
 
 .notification-action {
@@ -42,41 +48,138 @@
     border-radius: 15px;
     box-shadow: 0 0 10px #000000;
     margin: 3px;
+    color: @accent_color;
+}
+
+.control-center * {
+    color: @accent_color;
+}
+
+.control-center-clear-all {
+    transition: all 1s ease;
+}
+
+.control-center-clear-all:hover {
+    min-width: 150px;
+    transition: all 400ms ease;
+    background: @accent_color;
+    color: #000000;
+}
+
+.control-center-dnd {
+    background: @accent_color;
+    border-radius: 10px;
+}
+
+
+.widget-dnd > switch {
+    background: @accent_color;
+    border-radius: 10px;
+}
+
+.widget-dnd > switch:checked {
+    background: @accent_color;
 }
 
 .widget-title {
     color: @accent_color;
     font-weight: bold;
-    font-size: 1.2rem;
 }
 
 .widget-label {
     color: @accent_color;
 }
 
-.widget-buttons-grid > flowbox > flowboxchild > button {
-    background: @accent_color;
+.widget-notifications,
+.widget-notifications * {
+    border-radius: 20px;
+}
+
+.widget-menubar {
+    background: #000000;
     border-radius: 10px;
-    margin: 3px;
-    border: 1px solid @accent_color;
-    color: #11111b; /* readable on accent */
+    padding: 4px 6px;
+    color: @accent_color;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.55);
 }
 
-.widget-buttons-grid > flowbox > flowboxchild > button:hover {
+.widget-menubar > box > .menu-button-bar {
+    align-items: center;
+}
+
+.widget-menubar > box > .menu-button-bar > .start,
+.widget-menubar > box > .menu-button-bar > .end {
+    gap: 6px;
+}
+
+.widget-menubar > box > .menu-button-bar > .widget-menubar-container > button,
+.widget-menubar > revealer button {
+    min-width: 100px;
     background: @accent_color;
-    color: #000000; /* ensure contrast */
+    border: 1px solid @accent_color;
+    border-radius: 8px;
+    color: #000000;
 }
 
-.widget-dnd {
+.widget-menubar > box > .menu-button-bar > .widget-menubar-container > button:hover,
+.widget-menubar > revealer button:hover {
+    background: shade(@accent_color, 1.08);
+    border: 1px solid shade(@accent_color, 1.08);
+    border-radius: 8px;
+    color: #000000;
+}
+
+.widget-menubar > box > .menu-button-bar > .widget-menubar-container > button label,
+.widget-menubar > revealer button label {
+    color: #000000;
+}
+
+.widget-label,
+.widget-label * {
     color: @accent_color;
 }
 
-.widget-dnd > switch {
-    background: @accent_color;
-    border-radius: 10px;
-    border: 1px solid @accent_color;
+.widget-dnd,
+.widget-dnd * {
+    color: @accent_color;
 }
 
-.widget-dnd > switch:checked {
-    background: @accent_color;
+.widget-volume,
+.widget-volume * {
+    color: @accent_color;
 }
+
+.widget-volume scale trough,
+.widget-backlight scale trough {
+    background: rgba(255, 255, 255, 0.12);
+    min-height: 5px;
+    border-radius: 999px;
+}
+
+.widget-volume scale highlight,
+.widget-backlight scale highlight,
+.widget-volume scale progress,
+.widget-backlight scale progress {
+    background: @accent_color;
+    border-radius: 999px;
+}
+
+.widget-volume scale slider,
+.widget-backlight scale slider {
+    background: @accent_color;
+    border: 1px solid rgba(0, 0, 0, 0.75);
+    min-height: 14px;
+    min-width: 14px;
+    border-radius: 999px;
+}
+
+.widget-backlight,
+.widget-backlight * {
+    color: @accent_color;
+}
+
+.widget-inhibitors,
+.widget-inhibitors * {
+    color: @accent_color;
+}
+

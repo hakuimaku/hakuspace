@@ -411,14 +411,23 @@ hl.window_rule({
     size  = "1280 720",
 })
 
+---------------------------------------------------------
+
 hl.layer_rule({
     name = "rofi-slide",
     match = { namespace = "rofi" },
     animation = "slide top",
-    ignore_alpha = 0.8,
     blur = true,
     blur_popups = true,
 })
+
+hl.layer_rule({
+    name = "swaync-control-center",
+    match = { namespace = "swaync-control-center" },
+
+    animation = "slide right",
+})
+
 
 -- Browser popups like save, etc. should usually be floating
 hl.window_rule({
