@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# MangoWM Floating Window is above waybar, sucks
+# MangoWM Floating Window is above waybar, not a good news :(
 if [[ $XDG_CURRENT_DESKTOP == "mango" ]]; then
     echo "Cava Underbar is not supported on MangoWM."
     notify-send "Cava Underbar is not supported on MangoWM."
@@ -55,6 +55,9 @@ toggle_cava() {
 
 # Check fullscreen, work around for Hyprland's fullscreen behavior
 # Hyprland use pin cava_underbar window -> fullscreen window still shows it up
+echo "Cava Underbar daemon started, check fullscreen every second"
+echo "Warning: Only run daemon once & only on HYPRLAND"
+
 get_fs() {
     hyprctl activewindow -j 2>/dev/null | jq -r '.fullscreen // 0' 2>/dev/null
 }

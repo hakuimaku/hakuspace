@@ -1,8 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+# This script toggles the Waybar mode between top and left, and handles auto-starting Waybar if it's not running.
+# Using a state file & linking method to switch between top and left configurations.
 
 DIR_LEFT="$HOME/.config/waybar/waybarleft"
 DIR_TOP="$HOME/.config/waybar/waybartop"
-STATE_FILE="/tmp/waybar_current_mode"
+STATE_FILE="$HOME/.local/state/haku_theme/waybar_current_mode"
 CURRENT_STATE=$(cat "$STATE_FILE")
 
 link_top() {

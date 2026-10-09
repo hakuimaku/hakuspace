@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 WALL_DIR="$HOME/Pictures/Wallpapers"
 BACKDROP_DIR="$WALL_DIR/temp"
@@ -53,9 +53,9 @@ run_wallpaper() {
             b=$(printf "%d" 0x${ACCENT:5:2})
             [[ $((r + g + b)) -lt 180 ]] && ACCENT="#ffffff"
 
-            ~/.local/bin/gen-style.sh "$ACCENT"
+            ~/.local/bin/gen_style.sh "$ACCENT"
             sleep 0.1
-            ~/.local/bin/apply-style.sh
+            ~/.local/bin/apply_style.sh
         fi
     done
 }

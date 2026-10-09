@@ -12,4 +12,4 @@ set -euo pipefail
 rofi -show "󰮫 General" \
   -p "Haku Menu - Search" \
   -i \
-  -modes "󰮫 General:~/.local/bin/hm-general.sh, Theme:~/.local/bin/hm-theme.sh, Setting:~/.local/bin/hm-setting.sh"
+  -modes "󰮫 General:~/.local/bin/hm_general.sh, Theme:~/.local/bin/hm_theme.sh, Setting:~/.local/bin/hm_setting.sh"

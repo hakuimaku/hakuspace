@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# This script handles DPMS (Display Power Management Signaling) commands for different window managers.
+
 WM=$(echo "$XDG_CURRENT_DESKTOP" | tr '[:upper:]' '[:lower:]')
 
 if [ "$WM" = "hyprland" ]; then

@@ -7,11 +7,13 @@ if [ "$1" = "--wipe" ]; then
     exit 0
 fi
 
+# Check if wl-paste is running, if not, start it with cliphist store
 if ! pgrep -x "wl-paste" > /dev/null; then
     wl-paste --type text --watch cliphist store &
     wl-paste --type image --watch cliphist store &
 fi
 
+# Show clipboard history using rofi and allow user to select an entry
 result=$(cliphist list | rofi -dmenu \
     -p "󰅌 Clipboard" \
     -theme-str "window { width: 50%; } \

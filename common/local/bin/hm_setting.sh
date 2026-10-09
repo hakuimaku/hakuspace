@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+
 spawn() { ( "$@" & ) >/dev/null 2>&1; disown; }
 
 if [[ $# -eq 0 ]]; then
@@ -23,9 +23,9 @@ case "$chosen" in
     *"Disk Manager"*) spawn gparted ;;
     *"Storage Manager"*) spawn kitty --class ncdu -e sudo ncdu / ;;
     *"Audio Control"*) spawn pavucontrol ;;
-    *"HakuMenu General Tab"*) spawn code ~/.local/bin/hm-general.sh ;;
-    *"HakuMenu Theme Tab"*) spawn code ~/.local/bin/hm-theme.sh ;;
-    *"HakuMenu Setting Tab"*) spawn code ~/.local/bin/hm-setting.sh ;;
+    *"HakuMenu General Tab"*) spawn code $HOME/.local/bin/hm_general.sh ;;
+    *"HakuMenu Theme Tab"*) spawn code $HOME/.local/bin/hm_theme.sh ;;
+    *"HakuMenu Setting Tab"*) spawn code $HOME/.local/bin/hm_setting.sh ;;
 esac
 
 exit 0

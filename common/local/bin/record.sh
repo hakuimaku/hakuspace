@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if ! command -v wl-screenrec &> /dev/null; then
     notify-send -u critical "Recording System" "Error: wl-screenrec is not installed!" -i dialog-error

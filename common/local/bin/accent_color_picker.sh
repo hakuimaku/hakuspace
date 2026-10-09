@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Check dependencies
 if ! command -v hyprpicker >/dev/null 2>&1; then
@@ -12,5 +12,5 @@ sleep 0.2
 # Main
 COLOR="$(hyprpicker)"
 
-~/.local/bin/gen-style.sh "$COLOR"
-~/.local/bin/apply-style.sh
+$HOME/.local/bin/gen_style.sh "$COLOR"
+$HOME/.local/bin/apply_style.sh

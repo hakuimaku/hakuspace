@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Check dependencies
 if ! command -v kitty &> /dev/null; then

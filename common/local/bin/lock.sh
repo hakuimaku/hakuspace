@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+# This script locks the screen using hyprlock, with different configurations based on the monitor resolution.
 
 # Check dependencies
 if ! command -v jq &> /dev/null; then

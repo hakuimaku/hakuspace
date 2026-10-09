@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+# This script handles exiting the current window manager
 
 if [[ $XDG_CURRENT_DESKTOP == "Hyprland" ]]; then
     hyprctl eval 'hl.dispatch(hl.dsp.exit())'

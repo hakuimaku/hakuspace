@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 WALL_DIR="$HOME/Videos/Wallpapers"
-BACKDROP_DIR="$HOME/Pictures/Wallpapers/temp"
+BACKDROP_DIR="/tmp"
 PREVIEW_DIR="$WALL_DIR/Preview"
 MONITOR="eDP-1" #Custom your monitor name
 
@@ -12,8 +12,8 @@ if [[ $1 == "--exit" ]]; then
     fi
     pkill mpvpaper
     # Reset accent to default
-    ~/.local/bin/gen-style.sh "#ffffff"
-    ~/.local/bin/apply-style.sh
+    ~/.local/bin/gen_style.sh "#ffffff"
+    ~/.local/bin/apply_style.sh
     notify-send "Lively Wallpaper exited"
     exit 1
 fi
@@ -24,8 +24,6 @@ set_wallpaper() {
     sleep 0.2
     mpvpaper -v -s -o "no-audio loop" "$MONITOR" "$wall" > /dev/null 2>&1 &
     if pgrep -x "niri" > /dev/null; then
-        BACKDROP_DIR="$HOME/Pictures/Wallpapers/temp"
-        mkdir -p "$BACKDROP_DIR"
         magick "${wall}[0]" -background black -alpha remove -set option:filter:blur 1.0 -blur 0x15 "$BACKDROP_DIR/backdrop.jpg"
         awww img -n "awww-daemon-backdrop" $BACKDROP_DIR/backdrop.jpg
     fi
@@ -99,10 +97,10 @@ if [ -n "$CHOICE" ]; then
     fi
 
     # 4. Generate theme files with the new accent color
-    ~/.local/bin/gen-style.sh "$ACCENT"
+    ~/.local/bin/gen_style.sh "$ACCENT"
 
     sleep 0.5
-    ~/.local/bin/apply-style.sh
+    ~/.local/bin/apply_style.sh
 fi
 
 exit 1
