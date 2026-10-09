@@ -3,6 +3,8 @@
 # Haku Space
 Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 
+*Haku (ハク) is the very highest Value, the manifestation of a wish. It means "the shape of a soul," "that which is irreplaceable.*
+
 </div>
 
 <p align="center">
@@ -18,7 +20,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 
 | <img width="1920" height="1080" alt="screenshot_2026-08-29_14-26-24" src="https://github.com/user-attachments/assets/1e0dc63a-22ee-482a-9902-9d458bb67e35" /> | <img width="1920" height="1080" alt="screenshot_2026-08-25_06-52-48" src="https://github.com/user-attachments/assets/c3ca125c-12f5-49d8-afd3-1aa68b64c8fe" /> |
 |--|--|
-| <img width="1920" height="1080" alt="screenshot_2026-08-25_07-03-04" src="https://github.com/user-attachments/assets/8c599b1a-6947-4ce3-a511-37645a0eda5b" /> | <img width="1920" height="1080" alt="screenshot_2026-08-25_07-04-51" src="https://github.com/user-attachments/assets/dd0abd39-a7e7-41dd-aaff-4f8422894622" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-09-16_19-18-37" src="https://github.com/user-attachments/assets/7998befa-a213-4b9b-9e18-23c886073306" /> | <img width="1920" height="1080" alt="screenshot_2026-09-16_19-17-46" src="https://github.com/user-attachments/assets/e7694a36-05d9-4730-931c-8e4716fd0aa1" /> |
 
 ## Welcome to Haku Space
 
@@ -103,7 +105,7 @@ Specific packages for each WM: [pkg-hyprland](src/packages/pkg-hyprland.txt) | [
 - Stable Release (Recommended):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.3.1 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
+git clone --depth 1 --branch v2.3.2 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 - If you prefer to experience the **lastest changes**:
