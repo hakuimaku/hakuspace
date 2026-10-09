@@ -97,14 +97,14 @@ sudo dnf install xdg-desktop-portal-wlr
 
 ### C. Package **cốt lõi** của HakuSpace
 
-- **Cài các package chính của HakuSpace** (`scottames/awww`, `solopasha/hyprland`, `atim/starship`):
+- **Cài các package chính của HakuSpace** (`scottames/awww`, `lionheartp/Hyprland`, `atim/starship`):
 ```bash
 sudo dnf install waybar rofi swaync kitty fastfetch fish direnv zoxide eza
 
 sudo dnf copr enable scottames/awww
 sudo dnf install awww
 
-sudo dnf copr enable solopasha/hyprland
+sudo dnf copr enable lionheartp/Hyprland
 sudo dnf install mpvpaper hypridle hyprlock
 sudo dnf install nwg-look
 
