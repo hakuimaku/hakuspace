@@ -3,14 +3,14 @@
 --------------------------
 ------- ANIMATIONS -------
 --------------------------
-hl.curve( "myBezier", {type = "bezier", points = { {0.05, 0.9}, {0.1, 1.1} } })
+hl.curve( "myBezier", {type = "bezier", points = { {0.05, 0.9}, {0.1, 1.05} } })
 hl.curve( "easeInOut", { type = "bezier", points = { {0.65, 0}, {0.35, 1} } })
 hl.curve( "smoothzz", { type = "bezier", points = { {0.1, 0.8}, {0.24, 1} } })
 
 -- Window
-hl.animation({ leaf = "windows", enabled = true, duration = 1, speed = 6, bezier = "myBezier", style = "gnomed" })
-hl.animation({ leaf = "windowsIn", enabled = true, duration = 1, speed = 6, bezier = "myBezier", style = "gnomed" })
-hl.animation({ leaf = "windowsOut", enabled = true, duration = 1, speed = 12, bezier = "myBezier", style = "gnomed" })
+hl.animation({ leaf = "windows", enabled = true, duration = 1, speed = 6, bezier = "myBezier", style = "popin 80%" })
+hl.animation({ leaf = "windowsIn", enabled = true, duration = 1, speed = 6, bezier = "myBezier", style = "popin 80%" })
+hl.animation({ leaf = "windowsOut", enabled = true, duration = 1, speed = 12, bezier = "myBezier", style = "popin 80%" })
 hl.animation({ leaf = "windowsMove", enabled = true, duration = 1, speed = 8, bezier = "myBezier" })
 
 -- Layer
@@ -35,9 +35,9 @@ hl.animation({ leaf = "border", enabled = true, duration = 1, speed = 10, bezier
 hl.animation({ leaf = "borderangle", enabled = true, duration = 1, speed = 30, bezier = "default", loop = true })
 
 -- Workspaces
-hl.animation({ leaf = "workspaces", enabled = true, duration = 1, speed = 10, bezier = "smoothzz", style = "slide" })
-hl.animation({ leaf = "workspacesIn", enabled = true, duration = 1, speed = 10, bezier = "smoothzz", style = "slide" })
-hl.animation({ leaf = "workspacesOut", enabled = true, duration = 1, speed = 10, bezier = "smoothzz", style = "slide" })
+hl.animation({ leaf = "workspaces", enabled = true, duration = 1, speed = 8, bezier = "smoothzz", style = "slidevert" })
+hl.animation({ leaf = "workspacesIn", enabled = true, duration = 1, speed = 8, bezier = "smoothzz", style = "slidevert" })
+hl.animation({ leaf = "workspacesOut", enabled = true, duration = 1, speed = 8, bezier = "smoothzz", style = "slidevert" })
 
 -- Special workspace
 hl.animation({ leaf = "specialWorkspace", enabled = true, duration = 1, speed = 6, bezier = "smoothzz", style = "slidevert" })

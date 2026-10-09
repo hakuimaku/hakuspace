@@ -15,9 +15,15 @@ local browser = "zen-browser"
 
 local mainMod = "SUPER" -- Sets "Windows" key as main modifier
 
--- Hyprexpo plugin keybindings
-hl.bind(mainMod .. " + GRAVE", function() hl.plugin.hyprexpo.expo("toggle") end)
+-- Plugin keybindings
+hl.bind(mainMod .. " + G", function() hl.plugin.hyprexpo.expo("toggle") end)
 
+hl.bind("ALT + TAB", function() hl.plugin.hymission.toggle() end)
+hl.bind("ALT + A", function() hl.plugin.hymission.toggle("forceall") end)
+hl.bind("ALT + S", function() hl.plugin.hymission.open("onlycurrentworkspace") end)
+hl.bind("ALT + Escape", function() hl.plugin.hymission.close() end)
+
+-- Main keybindings
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
@@ -38,7 +44,6 @@ hl.bind(mainMod .. " + V",    hl.dsp.exec_cmd("~/.local/bin/clip_menu.sh"))
 hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("~/.local/bin/clip_menu.sh --wipe"))
 hl.bind(mainMod .. " + F11",   hl.dsp.exec_cmd("~/.local/bin/record.sh"))
 hl.bind(mainMod .. " + TAB",   hl.dsp.exec_cmd("~/.local/bin/hakumenu.sh"))
-hl.bind(mainMod .. " + A",     hl.dsp.exec_cmd("~/.local/bin/waybar_toggle.sh"))
 hl.bind(mainMod .. " + Y",     hl.dsp.exec_cmd("~/.local/bin/wallselect.sh"))
 hl.bind(mainMod .. " + SHIFT + Y", hl.dsp.exec_cmd("~/.local/bin/wallmpvselect.sh"))
 hl.bind(mainMod .. " + T",     hl.dsp.exec_cmd("~/.local/bin/cava_manager.sh --toggle"))
@@ -50,6 +55,9 @@ hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))
 hl.bind(mainMod .. " + up",    hl.dsp.focus({ direction = "up" }))
 hl.bind(mainMod .. " + down",  hl.dsp.focus({ direction = "down" }))
 
+hl.bind(mainMod .. " + A",     hl.dsp.focus({ direction = "left" }))
+hl.bind(mainMod .. " + S",     hl.dsp.focus({ direction = "right" }))
+
 -- Switch workspaces with mainMod + [0-9]
 -- Move active window to a workspace with mainMod + SHIFT + [0-9]
 for i = 1, 10 do
@@ -59,8 +67,8 @@ for i = 1, 10 do
 end
 
 -- Example special workspace (scratchpad)
-hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special("magic"))
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }))
+hl.bind(mainMod .. " + GRAVE",         hl.dsp.workspace.toggle_special("magic"))
+hl.bind(mainMod .. " + SHIFT + GRAVE", hl.dsp.window.move({ workspace = "special:magic" }))
 
 -- Scroll through existing workspaces with mainMod + scroll
 hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "r-1" }))
