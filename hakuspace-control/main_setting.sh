@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 
 # This script is used to set up the main settings for all hakuspace's scripts.
-# DO NOT MOVE THIS FILE OR FOLDER, ~/hakuspace-control
-# Global variables
+# DO NOT EDIT THIS LINE :v, check main_setting.sh up-to-date when run update.sh
+SETTING_VERSION="2.2.2"
+echo "Hakuspace Control Settings Version: $SETTING_VERSION"
 
 # General Settings
 NIGHT_LIGHT_TEMPERATURE=4000
 SCREENSHOT_DIR="$HOME/Pictures/Screenshots"
 
-# Niri use screenshot built-in, but if you want to use my screenshot script, just add keybind for that
+# Niri use screenshot built-in, so SCREENSHOT_DIR is not used in Niri, you can customize it in ~/hakuspace-control/niri-custom.kdl
+# But if you want to use my screenshot script, just add keybind for that
 
 # Wallpaper Settings
 WALL_DIR="$HOME/Pictures/Wallpapers"
@@ -16,7 +18,8 @@ WALL_MPV_DIR="$HOME/Videos/Wallpapers" # For lively wallpaper videos
 PREVIEW_DIR="$WALL_MPV_DIR/Preview" # For lively wallpaper thumbnail previews
 BACKDROP_DIR="/tmp" # For Niri only
 WALL_INTERVAL=300 # Interval in seconds for random wallpaper changes
-ACCENT_COLOR_BASED_ON_WALLPAPER=true # true or false
+ACCENT_COLOR_BASED_ON_WALLPAPER=true
+AWWW_OPTS="--transition-type random --transition-step 90 --transition-fps 60" # Options for awww transition
 
 # Screen Recording Settings
 SCREENREC_SAVE_DIR="$HOME/Videos"

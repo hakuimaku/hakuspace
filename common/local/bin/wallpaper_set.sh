@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-# Include BACKDROP_DIR
+# Include BACKDROP_DIR & AWWW_OPTS
 [ -f "$HOME/hakuspace-control/main_setting.sh" ] && source "$HOME/hakuspace-control/main_setting.sh"
 
-# Fallback BACKDROP_DIR if not set
 BACKDROP_DIR=${BACKDROP_DIR:-/tmp}
+AWWW_OPTS=${AWWW_OPTS:-"--transition-type random --transition-step 90 --transition-fps 60"}
 
 WALLPAPER="${1:-}"
 
@@ -58,7 +58,7 @@ case "$MIME_TYPE" in
         pkill -x mpvpaper 2>/dev/null || true
 
         # Set static/animated image background using awww
-        if awww img "$WALLPAPER" --transition-type random --transition-step 90 --transition-fps 60; then
+        if awww img "$WALLPAPER" $AWWW_OPTS; then
             make_niri_backdrop
         else
             echo "Error: Failed to set image wallpaper using awww." >&2
