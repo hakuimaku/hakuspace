@@ -454,8 +454,6 @@ hl.window_rule({ match = { title = "hakunetcmd" }, size = "1270 1010", move = "3
 hl.window_rule({ match = { title = "hakunetcava" }, size = "290 1010", move = "1615 55" })
 
 -- Cava Underbar
-        hyprctl keyword windowrule "size 400 60, match:class $APP_CLASS"
-        hyprctl keyword windowrule "move 16 45, match:class $APP_CLASS"
 hl.window_rule({
     name = "cava-underbar",
     match = { class = "cava-underbar" },
