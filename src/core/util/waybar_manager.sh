@@ -60,12 +60,6 @@ link_mode() {
 }
 # Start or restart Waybar
 restart_waybar() {
-    if [[ "$XDG_CURRENT_DESKTOP" == "niri" ]]; then
-        if grep -q "1" /tmp/cava_underbar_status 2>/dev/null; then
-            $HOME/.local/bin/cava_manager.sh --toggle
-        fi
-    fi
-
     # Make sure linked config files exist before restarting Waybar
     if [[ ! -f "$WAYBAR_DIR/config" ]] || [[ ! -f "$WAYBAR_DIR/style.css" ]]; then
         link_mode "$CURRENT_STATE"
