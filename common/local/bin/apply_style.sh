@@ -23,11 +23,18 @@ fi
 # ---------------------------------------------------
 # 2) Reload apps
 # ---------------------------------------------------
-# hyprctl reload
-hyprctl reload >/dev/null 2>&1 || true
+# hyprland reload
+if pgrep -x Hyprland >/dev/null; then
+    hyprctl reload >/dev/null 2>&1 || true
+fi
 
 # Swaync reload
 swaync-client --reload-config --reload-css >/dev/null 2>&1 || true
+
+# Labwc reload
+if pgrep -x labwc >/dev/null; then
+    labwc --reconfigure
+fi
 
 # Kitty reload
 for s in /tmp/kitty-*; do

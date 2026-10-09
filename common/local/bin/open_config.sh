@@ -38,6 +38,10 @@ if [[ $XDG_CURRENT_DESKTOP == "mango" ]]; then
     paths+=("$HOME/.config/mango")
 fi
 
+if [[ $XDG_CURRENT_DESKTOP == "labwc" ]]; then
+    paths+=("$HOME/.config/labwc")
+fi
+
 # Keep only existing paths
 existing=()
 for p in "${paths[@]}"; do
