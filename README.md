@@ -38,6 +38,7 @@ Use ly for login.
 - Custom Hyprland configuration with animations and rules
 - Easy-to-use: Rofi menu, Nemo file manager, Waybar status bar, and more
 - Color will change based on your wallpaper
+- 2 mode Waybar Left or Top
 - **Easy to extend and customize to fit your needs**
 
 ---
