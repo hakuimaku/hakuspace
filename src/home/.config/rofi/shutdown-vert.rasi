@@ -1,0 +1,86 @@
+//     ____        _____ 
+//    / __ \____  / __(_)
+//   / /_/ / __ \/ /_/ / 
+//  / _, _/ /_/ / __/ /  
+// /_/ |_|\____/_/ /_/   
+//                      
+
+// HakuSpace Rofi Theme
+// Theme: shutdown.rasi, use for shutdown menu
+
+@import "../../.local/state/hakuspace/theme/rofi-style.rasi"
+
+/* ===== GLOBAL VARIABLES ===== */
+* {
+    font: "JetBrains Mono Nerd Font 20";
+    background:          rgba(0, 0, 0, 0.7);
+    foreground:          #dfdfdf;
+    background-color:    transparent;
+    text-color:          @foreground;
+
+    border-radius:       0;
+    margin:              0;
+    padding:             0;
+    spacing:             0;
+}
+
+/* ===== MAIN WINDOW ===== */
+window {
+    width: 120px;
+    height: 400px;
+    background-color: @background;
+    padding: 16px;
+    border-radius: 20px;
+}
+
+mainbox {
+    orientation: vertical;
+    spacing: 0;
+    children: [ content-area ];
+}
+
+/* ===== CONTENT AREA ===== */
+content-area {
+    children: [ listview ];
+    spacing: 0;
+    orientation: vertical;
+    spacing: 0;
+}
+
+/* ===== LISTVIEW ===== */
+listview {
+    spacing: 6px;
+    columns: 1;
+    lines: 6;
+    scrollbar: false;
+    cycle: true;
+    dynamic: true;
+    layout: vertical;
+}
+
+/* ===== ELEMENTS ===== */
+element {
+    orientation: vertical;
+    padding: 10px;
+    vertical-align: 0.5;
+}
+
+element-icon {
+    size: 0;
+}
+
+element-text {
+    horizontal-align: 0.45;
+    text-color: @accent;
+}
+
+/* ===== ELEMENT STATES ===== */
+element selected {
+    background-color: @accent;
+    border-radius: 12px;
+}
+
+element-text selected {
+    text-color: @background;
+    vertical-align: 0.5;
+}

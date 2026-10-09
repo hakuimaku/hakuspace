@@ -9,6 +9,10 @@ configuration {
     display-window: " 󰙀 Window ";
     sidebar-mode: true;
     window-format: "{w} | {c} | {t}";
+    hover-select: true;
+    kb-cancel: "Escape,MousePrimary";
+    me-select-entry: "";
+    me-accept-entry: "MousePrimary";
 }
 
 @import "~/.local/state/hakuspace/rofi-theme.rasi"

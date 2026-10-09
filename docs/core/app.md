@@ -96,7 +96,6 @@ Manages the lifecycle of the Edge Trigger overlay.
 - **State Management:** Remembers if you had it turned on or off across reboots using `~/.local/state/hakuspace/edge_trigger_state`.
 
 ### Configuration
-You can customize its behavior by editing `~/hakucfg/config/edge-trigger.conf`.
 - **`dwell_ms`**: Time in milliseconds the pointer must stay on the edge to trigger (default: 200).
 - **`cooldown_ms`**: Minimum time in milliseconds between consecutive triggers (default: 800).
 - **`edge_length_percent`**: The length of the trigger zone as a percentage of your screen width/height (default: 20).
