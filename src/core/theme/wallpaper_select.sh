@@ -14,11 +14,13 @@ source "$SCRIPT_DIR/accent_color.sh"
 
 ROFI_THEME="wallpaper-select.rasi"
 
-# argument -p to set position of rofi window
-if [[ "$1" == "-p" ]]; then
-  POSITION="-location $2"
+
+# argument --extend to set position of rofi window
+if [[ "$1" == "--extend" || "$1" == "-e" ]]; then
+  shift
+  EXTEND=("$@")
 else
-  POSITION=""
+  EXTEND=()
 fi
 
 list_walls() {
@@ -29,7 +31,7 @@ list_walls() {
     done
 }
 
-CHOICE=$(list_walls | rofi -dmenu -i $POSITION -p "Wallpaper" -theme "$ROFI_THEME")
+CHOICE=$(list_walls | rofi -dmenu -i "${EXTEND[@]}" -p "Wallpaper" -theme "$ROFI_THEME")
 
 if [ -n "$CHOICE" ]; then
     WALL="$WALL_DIR/$CHOICE"

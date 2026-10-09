@@ -107,6 +107,7 @@ rofiAnimation = hl.layer_rule({
 
     animation = "slide",
     blur = true,
+    ignore_alpha = 0.5,
 })
 -- Animation for Waybar
 waybarAnimation = hl.layer_rule({
