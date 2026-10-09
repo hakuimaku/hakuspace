@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/accent_color.sh"
+
 # This script generates theme files for:
 # waybar, swaync, hyprland, rofi, kitty, btop, labwc, and a newtab page for Zen browser.
 
@@ -64,14 +67,13 @@ if ! [[ "$FONT_SIZE" =~ ^[0-9]+$ ]] || [[ "$FONT_SIZE" -le 0 ]]; then
     FONT_SIZE="$DEFAULT_SIZE"
 fi
 
-# Check if accent color if too dark
-r=$(printf "%d" 0x${ACCENT_COLOR:1:2})
-g=$(printf "%d" 0x${ACCENT_COLOR:3:2})
-b=$(printf "%d" 0x${ACCENT_COLOR:5:2})
-if [ $((r + g + b)) -lt 180 ]; then
+# Check if accent color is too dark
+validated_accent="$(accent_color_or_fallback "$ACCENT_COLOR")"
+if [[ "$validated_accent" == "#ffffff" && "${ACCENT_COLOR,,}" != "#ffffff" ]]; then
     notify-send "Color ${ACCENT_COLOR} is too dark" "Generating color failed"
     exit 1
 fi
+ACCENT_COLOR="$validated_accent"
 
 # Convert accent to rgba(hex8)
 hex_to_rgba() {
