@@ -1,6 +1,6 @@
 # Quản lý dotfiles của tôi làm sao?
 
-Xem bản tiếng Anh [Management](../management.md).
+Xem bản tiếng Anh: [Management](../management.md).
 
 Đây là tài liệu bổ sung cho [Architecture](VN_architecture.md) để giải thích cách dotfiles được triển khai và quản lý trong thư mục home của bạn một cách an toàn nhất.
 
@@ -44,6 +44,7 @@ Ba script có vai trò khác nhau:
   - `~/.config/xfce4`
   - `~/.config/mpv`
   - `~/.config/btop`
+  - `~/.config/cava`
 
 > Bao gồm cả mimeapps.list
 
@@ -63,12 +64,12 @@ Ngoài `~/.config`, hai script còn xử lý `src/home/.local/bin` vào `~/.loca
 Một số cấu hình không đi qua vòng lặp cấu hình chung:
 
 - **Window manager**: bạn chọn Hyprland, Niri, Mango hoặc Labwc (hoặc tất cả). `install.sh` và `update.sh` chỉ triển khai WM đã chọn. Hyprland copy `config/` vào `~/.config/hypr/config` và copy riêng `hyprland.lua`; các WM còn lại copy vào thư mục tương ứng.
-- **Các file Hyprland dùng chung**: `hypridle.conf`, `hyprlock.conf` và `hyprlock_tiny.conf` được copy riêng vào `~/.config/hypr`, được dùng chung bởi tất cả WM thay vì chỉ Hyprland, phải xử lý đặt biệt vì chúng có đường dẫn mặc định trong `~/.config/hypr`. Nếu tôi cứ thể copy chúng thì 1 là config hyprland mất hết và 2 là nếu bạn dùng WM khác mà có các file cấu hình cho hyprland thì bạn sẽ nghĩ nó là bloat nên tôi đơn giản là không muốn:)
+- **Các file Hyprland dùng chung**: `hypridle.conf`, `hyprlock.conf` và `hyprlock_tiny.conf` được copy riêng vào `~/.config/hypr`, được dùng chung bởi tất cả WM thay vì chỉ Hyprland, phải xử lý đặt biệt vì chúng có đường dẫn mặc định trong `~/.config/hypr`. Nếu tôi cứ thế copy chúng thì 1 là config hyprland mất hết và 2 là nếu bạn dùng WM khác mà có các file cấu hình cho hyprland thì bạn sẽ nghĩ nó là bloat nên tôi đơn giản là không muốn:)
 - **GTK**: `gtk-3.0/gtk.css` được copy riêng, đây là file theme cho gtk3 app và file manager Thunar. Được xử lý đặc biệt bởi vì tôi không muốn bạn bị mất bookmark trong file manager.
 - **Các file đơn**: `starship.toml`, `.nanorc` được copy thủ công vào `~/.config` và `~/.nanorc`. Vì chỉ copy_file mới có thể giải quyết chúng.
 - **`mimeapps.list`**: chỉ được triển khai trong `install.sh`, không được `update.sh` ghi đè (là 1 dạng ONCE_CONFIGS nhưng nó là file nên tôi không để nó vào danh sách ONCE_CONFIGS).
 - **`~/hakucfg`**: cuối `install.sh` và `update.sh`, `check_control_dir` tạo thư mục cùng các file custom còn thiếu từ `src/home/hakucfg`. `setting.sh` chỉ được cập nhật khi phiên bản khác nhau và bạn đồng ý; việc này có thể ghi đè tùy chỉnh trong file đó. Các file custom hiện có khác không bị thay thế tự động.
-- **NixOS và dịch vụ hệ thống**: `install.sh` có thể triển khai cấu hình NixOS, đổi shell mặc định sang fish, bật dịch vụ `ly` và đặt Thunar làm file manager mặc định. `update.sh` có thể cập nhật/rebuild NixOS. Đây là thay đổi cấp hệ thống, không phải bản copy dotfile thông thường.
+- **NixOS**: `install.sh` có nhiệm vụ triển khai các file cấu hình NixOS từ `nix/` là `hakuspace-control.nix`, đây chỉ là file cấu hình NixOS cơ bản, chỉ chứa các programs và packages phục vụ cho HakuSpace. Nó không triển khai các file cấu hình NixOS khác, vì tôi không muốn can thiệp vào hệ thống của bạn. Các file cấu hình, script của HakuSpace vẫn theo cơ chế copy chứ không quản lý bằng Home Manager vì dotfiles không được quản lý bằng symbolic link.
 
 ## 3. Lưu trữ bản sao lưu
 

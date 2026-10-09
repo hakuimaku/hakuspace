@@ -1,6 +1,6 @@
 # How Are My Dotfiles Managed?
 
-See the English version [Management](./vietnamese/VN_management.md).
+See the Vietnamese version: [Management](./vietnamese/VN_management.md).
 
 This document supplements [Architecture](architecture.md) by explaining how dotfiles are deployed and managed safely in the home directory.
 
@@ -44,6 +44,7 @@ The three scripts have different roles:
   - `~/.config/xfce4`
   - `~/.config/mpv`
   - `~/.config/btop`
+  - `~/.config/cava`
 
 > `mimeapps.list` follows the same once-only behavior, but it is a file and is therefore not included in the `ONCE_CONFIGS` array.
 
@@ -68,7 +69,7 @@ Some configurations do not go through the general configuration loop:
 - **Individual files**: `starship.toml` and `.nanorc` are copied explicitly to their destinations. They require `copy_file` rather than the directory-copy path.
 - **`mimeapps.list`**: it is deployed only by `install.sh` and is not overwritten by `update.sh`. It behaves like an `ONCE_CONFIGS` entry, but it is a file and is not included in that array.
 - **`~/hakucfg`**: at the end of `install.sh` and `update.sh`, `check_control_dir` creates the directory and any missing custom files from `src/home/hakucfg`. `setting.sh` is updated only when its version differs and you agree; that update can overwrite custom changes in the file. Other existing custom files are not replaced automatically.
-- **NixOS and system services**: `install.sh` can deploy NixOS configuration, change the default shell to fish, enable the `ly` service, and set Thunar as the default file manager. `update.sh` can update and rebuild NixOS. These are system-level changes, not ordinary dotfile copies.
+- **NixOS**: `install.sh` deploys NixOS configuration files from `nix/`, specifically `hakuspace-control.nix`. This is a basic NixOS configuration file that contains only the programs and packages needed for HakuSpace. It does not deploy other NixOS configuration files, as HakuSpace does not want to interfere with your system. HakuSpace configuration files and scripts are still managed by copy rather than Home Manager, because dotfiles are not managed by symbolic links.
 
 ## 3. Backup Storage
 
