@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-spawn() { ( "$@" & ) >/dev/null 2>&1; disown; }
+spawn() { ( "$@" & ) >/dev/null 2>&1; }
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
 
@@ -20,8 +20,8 @@ EOF
 [[ -z "${choice:-}" ]] && exit 0
 
 case "$choice" in
-    *"Change Waybar Theme"*) spawn $HOME/.local/bin/waybar_manager.sh --select ;;
-    *"Change Rofi Theme"*) spawn $HOME/.local/bin/rofi_theme_switcher.sh ;;
+    *"Change Waybar Theme"*) spawn $HOME/.local/bin/waybar_manager.sh --select && exit 0;;
+    *"Change Rofi Theme"*) spawn $HOME/.local/bin/rofi_theme_switcher.sh && exit 0;;
     *"Change Font Size"*)
         new_size="$(printf '%s\n' "$FONT_SIZE" | rofi -dmenu -p "  Current: ${FONT_SIZE}px" -theme-str "entry { placeholder: \"Type font size here\"; } $ROFI_THEME_BASE height: 30%; }" -i)"
         [[ -z "${new_size:-}" ]] && exit 0

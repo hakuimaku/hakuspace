@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-spawn() { ( "$@" & ) >/dev/null 2>&1; disown; }
+spawn() { ( "$@" & ) >/dev/null 2>&1; }
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
 
