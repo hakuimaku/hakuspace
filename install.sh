@@ -251,6 +251,7 @@ if [[ $confirm == [yY] ]]; then
         fi
     done
     cp -f "$SOURCE_ROOT/fastfetch.jpg" "$HOME/Documents/"
+    cp -f "$SOURCE_ROOT/hakufetch.txt" "$HOME/Documents/"
     echo ":: Did copy fastfetch.jpg to $HOME/Documents/"
     cp -rf "$SOURCE_WALLPAPER"/. "$DEST_WALLPAPER/"
     echo ":: Did copy wallpapers to $DEST_WALLPAPER"
