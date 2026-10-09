@@ -71,18 +71,18 @@ See more information in: [pkg-core](https://github.com/hakuimaku/hakuspace/blob/
 > [!Important]
 > **Prerequisites:** You need a pre-installed Arch Linux or an Arch-based Linux Distro (A fresh install is highly recommended). If you already have an existing WM or DE configuration, it is best to only reference the configs in HakuSpace rather than running the installation script directly over your system.
 
-### 1. Clone the Stable Release
-Run the following commands to clone the stable release version `v2.1.1`:
-```bash
-cd ~
-git clone --depth 1 --branch v2.1.1 https://github.com/hakuimaku/hakuspace.git
-
-```
-
-If you prefer to experience the lastest changes (Lastest Git), you can clone the default branch instead:
+### 1. Clone the Dotfiles
+If you prefer to experience the **lastest changes** (Lastest Git), you can clone the main branch:
 ```bash
 cd ~
 git clone https://github.com/hakuimaku/hakuspace.git
+
+```
+
+If you prefer the version I've tested, clone the **stable** release version `v2.1.1` (lastest):
+```bash
+cd ~
+git clone --depth 1 --branch v2.1.1 https://github.com/hakuimaku/hakuspace.git
 
 ```
 
@@ -109,17 +109,10 @@ After running the installation script, restart your computer and log in to eithe
 - Change the theme, icons, and mouse cursor for a better aesthetic.
 
 2) **Install additional packages**:
-```bash
-yay -S waybar-cava
-```
-`waybar-cava` is a plugin for Waybar that provides a visualizer for audio output. My waybar top needs this to work properly (cava module).
 
-Or
-
-```bash
-yay -S waybar-git
-```
-`waybar-git` is a lastest git version of Waybar, which is supporting **mango/workspaces** module if you're using MangoWM.
+| waybar-git | waybar-cava |
+|------------|-------------|
+| `waybar-git` is a lastest git version of Waybar, which is supporting **mango/workspaces** module if you're using MangoWM. And fix `hyprland/workspaces` switching if you're using Hyprland. |  `waybar-cava` is a plugin for Waybar that provides a visualizer for audio output. My waybar top needs this to work properly (cava module). |
 
 3) Allow Local Root User to Access X/Xwayland Display
 ```bash
@@ -130,12 +123,21 @@ Grants the local root user permission to connect to and launch graphical (GUI) a
 
 ### 🔽 Update Haku Space to lastest version
 
-- First, you need to clone the lastest stable version (or git pull for the lastest git).
-- Check the release notes or the full changelog for details on what has changed. If you are using the latest git version, please check the commit history.
-- To update hakuspace, simply re-run the `install.sh` script, as it will automatically back up your existing files and apply the latest changes.
-- You can skip steps in `install.sh` to save time.
+- Git pull the lastest version.
+``` bash
+cd ~/hakuspace
+git pull origin main
+```
 
-> Well, if you want to update the whole dotfiles. just run the `install.sh` script again without skipping any steps. It will automatically back up your existing files and apply the latest changes.
+- Git fetch the lastest stable release.
+``` bash
+cd ~/hakuspace
+git fetch --tags
+LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+git checkout $LATEST_TAG
+```
+
+- Run `update.sh` script in hakuspace folder.
 
 ### 🗑 Uninstall Haku Space
 > (WM: The Window Manager you are currently using, e.g., hyprland, niri, mango).
@@ -222,7 +224,7 @@ My dotfiles bugs:
 
 ---
 
-See hakuspace-archive for the assets used in this project: [hakuspace-archive](https://github.com/hakuimaku/hakuspace-archive)
+See **hakuspace-archive** for the assets used in this project: [hakuspace-archive](https://github.com/hakuimaku/hakuspace-archive)
 
 *Themes, Icons and Wallpapers used in Haku Space:*
 - Theme: [Midnight-Gray](https://www.gnome-look.org/p/1273208)
