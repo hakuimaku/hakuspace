@@ -1,0 +1,98 @@
+//================================================================
+//          ___          _                 __  _           
+//         /   |  ____  (_)___ ___  ____ _/ /_(_)___  ____ 
+//        / /| | / __ \/ / __ `__ \/ __ `/ __/ / __ \/ __ \
+//       / ___ |/ / / / / / / / / / /_/ / /_/ / /_/ / / / /
+//      /_/  |_/_/ /_/_/_/ /_/ /_/\__,_/\__/_/\____/_/ /_/ 
+//                                                                 
+//================================================================
+
+
+animations {
+    on
+    slowdown 1.7
+
+    window-open {
+        duration-ms 200
+        curve "linear"
+        custom-shader r"
+            vec4 open_circle_tl(vec3 coords_geo, vec3 size_geo) {
+                vec3 coords_tex = niri_geo_to_tex * coords_geo;
+                vec4 color = texture2D(niri_tex, coords_tex.st);
+                
+                float dist = length(coords_tex.st);
+                
+                if (dist > niri_clamped_progress * 1.5)
+                    color = vec4(0.0);
+
+                return color;
+                }
+
+            vec4 open_color(vec3 coords_geo, vec3 size_geo) {
+                return open_circle_tl(coords_geo, size_geo);
+            }
+        "
+    }
+
+    window-close {
+        duration-ms 100
+        curve "linear"
+        custom-shader r"
+            vec4 close_circle_tl(vec3 coords_geo, vec3 size_geo) {
+                vec3 coords_tex = niri_geo_to_tex * coords_geo;
+                vec4 color = texture2D(niri_tex, coords_tex.st);
+                
+                float p = 1.0 - niri_clamped_progress;
+                
+                float dist = length(coords_tex.st);
+                
+                if (dist > p * 1.5)
+                    color = vec4(0.0);
+
+                return color;
+            }
+
+            vec4 close_color(vec3 coords_geo, vec3 size_geo) {
+                return close_circle_tl(coords_geo, size_geo);
+            }
+        "
+    }
+
+    horizontal-view-movement {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+    }
+
+    window-movement {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+    }
+
+    window-resize {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+    }
+
+    config-notification-open-close {
+        spring damping-ratio=0.6 stiffness=1000 epsilon=0.001
+    }
+
+    exit-confirmation-open-close {
+        spring damping-ratio=0.6 stiffness=500 epsilon=0.01
+    }
+
+    screenshot-ui-open {
+        duration-ms 200
+        curve "ease-out-quad"
+    }
+
+    overview-open-close {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+    }
+
+    recent-windows-close {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.001
+    }
+
+    workspace-switch {
+        spring damping-ratio=1.2 stiffness=1000 epsilon=0.0001
+    }
+}
+

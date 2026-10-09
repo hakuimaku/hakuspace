@@ -1,0 +1,101 @@
+//============================================
+//          ____        __                    
+//         / __ \__  __/ /__  _____
+//        / /_/ / / / / / _ \/ ___/
+//       / _, _/ /_/ / /  __(__  ) 
+//      /_/ |_|\__,_/_/\___/____/  
+//                                                  
+//============================================
+
+// Opacity for inactive windows
+window-rule {
+    match is-active=false
+    opacity 0.9
+}
+
+// Background effect for all windows
+window-rule {
+    match app-id=r#".*"#
+
+    background-effect {
+        xray true
+        blur true
+        noise 0.05
+        saturation 2
+    }
+}
+
+// Opacity and background effect for specific applications
+window-rule {
+    match app-id=r#"nemo"#
+    match app-id=r#"kitty"#
+    match app-id=r#"code"#
+    opacity 0.8
+
+    background-effect {
+        xray true
+        blur true
+        noise 0.05
+        saturation 2
+    }
+}
+
+// Rounded corners for all windows
+window-rule {
+    geometry-corner-radius 16
+    clip-to-geometry true
+}
+
+// Rules for specific applications
+window-rule {
+    match app-id=r#"zen$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"zen"#
+    match app-id=r#"code"#
+    open-maximized true
+}
+
+
+// Rules for cava underbar
+window-rule {
+    match app-id=r#"cavaunderbar"#
+
+    open-floating true
+    
+    default-floating-position x=0 y=0 relative-to="top-left"
+    min-width 1920
+    max-height 70
+    opacity 0.5
+
+    background-effect {
+        xray false
+        blur false
+        noise 0
+        saturation 1
+    }
+
+    shadow {
+        off
+    }
+}
+
+// Rules for specific layers
+layer-rule {
+    match namespace="waybar"
+    match namespace="rofi"
+
+    opacity 1.0
+
+    shadow {
+        on
+        softness 80
+        spread 10
+        offset x=0 y=0
+        draw-behind-window true
+        color "#00000064"
+    }
+}
+

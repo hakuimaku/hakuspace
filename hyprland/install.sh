@@ -12,17 +12,31 @@ cat << 'EOF'
 \_| |_/\__,_|_|\_\\__,_\____/| .__/ \__,_|\___\___|
                              | |                   
                              |_|                       
+
 EOF
 
 
 echo ""
 echo "================================================================================================"
-echo "--- WELCOME TO HAKUSPACE CONFIG INSTALLER ---"
+echo "--- WELCOME TO HAKUSPACE - HYPRLAND CONFIG INSTALLER ---"
 echo "This script will help you set up your HakuSpace configuration"
 echo "It will install necessary packages, copying config files and setting up Oh My Zsh with plugins."
 echo "Please follow the prompts to complete the installation process."
 echo "================================================================================================"
 echo ""
+
+HAKU_DIR="$HOME/hakuspace"
+HYPRLAND_DIR="$HAKU_DIR/hyprland"
+COMMON_DIR="$HAKU_DIR/common"
+
+# check ~/hakuspace
+if [ -d "$HAKU_DIR" ]; then
+    echo "XXX [ERROR] Not found directory $HAKU_DIR"
+    echo "Please make sure you have cloned the repository to $HOME"
+    exit 1
+else
+    echo ":: Found hakuspace directory in $HAKU_DIR"
+fi
 
 
 # ============================================================================
@@ -40,7 +54,6 @@ else
 fi
 
 DEPENDENCIES=("yay" "git" "curl")
-PKG_FILE="$HOME/hakuspace/pkg.txt"
 
 echo ""
 echo "--- 1. Check package dependencies ---"
@@ -58,8 +71,7 @@ for pkg in "${DEPENDENCIES[@]}"; do
         if [[ $confirm == [yY] ]]; then
             yay -S --noconfirm "$pkg"
         else
-            echo "You need to install $pkg."
-            exit 1
+            echo "You need to install $pkg to install packages from pkg-hyprland.txt"
         fi
     fi
 done
@@ -73,14 +85,16 @@ echo "--- Everything is ready to install Config! ---"
 
 
 # ============================================================================
-# ========= BLOCK 2: INSTALL PACKAGES FROM pkg.txt (IF USER CONFIRM) =========
+# ============= BLOCK 2: INSTALL PACKAGES FROM pkg-hyprland.txt ==============
 # ============================================================================
 
+PKG_FILE="$HYPRLAND_DIR/pkg-hyprland.txt"
+
 echo ""
-echo "--- 2. Ready to install packages from pkg.txt ---"
+echo "--- 2. Ready to install packages from pkg-hyprland.txt ---"
 
 echo ":: Ready to install packages..."
-read -p "===> Do you want to install packages from pkg.txt now? (y/n): " confirm
+read -p "===> Do you want to install packages from pkg-hyprland.txt now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
     if [[ ! -f "$PKG_FILE" ]]; then
         echo "XXX [ERROR] Not found file $PKG_FILE"
@@ -105,7 +119,6 @@ echo "--- 3. Ready to initialize system directories ---"
 # List of directories to create
 FOLDERS=(
     "$HOME/.local/bin"
-    "$HOME/.local/state/haku_theme"
     "$HOME/.config"
     "$HOME/.icons"
     "$HOME/.themes"
@@ -129,69 +142,84 @@ done
 # ================= BLOCK 4: BACKUP AND COPY CONFIG FILE =====================
 # ============================================================================
 
-# Define source and destination paths for config files
-SOURCE_CONFIG="$HOME/hakuspace/config"
+SOURCE_HYPR_CONFIG="$HYPRLAND_DIR/config" # include folder: hypr, waybar
+SOURCE_COMMON_CONFIG="$COMMON_DIR/config" # include folder: cava, fastfetch, gtk-3.0, kitty, rofi, swaync
 DEST_CONFIG="$HOME/.config"
 
 echo ""
 echo "--- 4. Ready to deploy config to ~/.config ---"
 
-# Copy config files from source to destination
-read -p "===> Do you want to backup and copy your current config now? (y/n): " confirm
-if [[ $confirm == [yY] ]]; then
-    if [ -d "$SOURCE_CONFIG" ]; then
-        echo ":: Ready to copy config files..."
-        # Make backup if destination config already exists
-        if [ -d "$DEST_CONFIG" ]; then
-            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-            echo ":: Ready to create backup for current config..."
-            mv "$DEST_CONFIG" "${DEST_CONFIG}_backup_$TIMESTAMP"
-            mkdir -p "$DEST_CONFIG"
-        fi
+deploy_config() {
+    local source_dir=$1
+    local dest_dir=$2
+    local timestamp=$(date +%Y%m%d_%H%M%S)
 
-        # Proceed with copying config files
-        cp -rf "$SOURCE_CONFIG"/. "$DEST_CONFIG/"
-        
-        echo ":: Copy (config files) completed to $DEST_CONFIG"
+    if [[ -d "$source_dir" ]]; then
+        for folder in "$source_dir"/*/; do
+            [ -d "$folder" ] || continue 
+            
+            local folder_name=$(basename "$folder")
+            local target_path="$dest_dir/$folder_name"
+
+            if [[ -d "$target_path" ]] || [[ -L "$target_path" ]]; then
+                echo "[-] Found existing $folder_name in $dest_dir. Backing up..."
+                mv "$target_path" "${target_path}_backup_${timestamp}"
+            fi
+
+            echo "[+] Copying $folder_name to $dest_dir..."
+            cp -r "$folder" "$dest_dir/"
+        done
     else
-        echo "XXX [ERROR] Not found directory $SOURCE_CONFIG"
-        echo "Please copy it manually (config files) to $DEST_CONFIG"
+        echo "[!] Source directory $source_dir does not exist. Skipping."
     fi
+}
+
+read -p "===> Do you want to backup and copy your current config now? (y/n): " confirm
+if [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]]; then
+    
+    echo ""
+    echo ">>> Deploying Common configs..."
+    deploy_config "$SOURCE_COMMON_CONFIG" "$DEST_CONFIG"
+    
+    echo ""
+    echo ">>> Deploying Hyprland configs..."
+    deploy_config "$SOURCE_HYPR_CONFIG" "$DEST_CONFIG"
+    
+    echo "===> Done! Configurations deployed successfully."
 else
-    echo "Skipping config backup."
+    echo "Skipping config backup and deployment."
 fi
 
 
 # ============================================================================================
-# ================= BLOCK 5: BACKUP AND COPY LOCAL FILES (BIN AND STATE) =====================
+# ================= BLOCK 5: BACKUP AND COPY LOCAL FILES (BIN / SCRIPTS) =====================
 # ============================================================================================
 
-# Define source and destination paths for local files (include bin and state folders)
-SOURCE_BIN="$HOME/hakuspace/local"
-DEST="$HOME/.local"
+SOURCE_BIN="$HYPRLAND_DIR/local/bin"
+DEST_BIN="$HOME/.local/bin"
 
 echo ""
-echo "--- 5. Ready to deploy local (bin and state) files to ~/.local ---"
+echo "--- 5. Ready to deploy local/bin files to ~/.local ---"
 
-read -p "===> Do you want to backup and copy your current local files now? (y/n): " confirm
+read -p "===> Do you want to backup and copy your current local/bin files now? (y/n): " confirm
 if [[ $confirm == [yY] ]]; then
     if [ -d "$SOURCE_BIN" ]; then
-        echo ":: Ready to copy local files (bin and state)..."
+        echo ":: Ready to copy local/bin files..."
         # Make backup if destination local already exists
-        if [ -d "$DEST" ]; then
+        if [ -d "$DEST_BIN" ]; then
             TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-            echo ":: Ready to create backup for current local files..."
-            mv "$DEST" "${DEST}_backup_$TIMESTAMP"
-            mkdir -p "$DEST"
+            echo ":: Ready to create backup for current local/bin files..."
+            mv "$DEST_BIN" "${DEST_BIN}_backup_$TIMESTAMP"
+            mkdir -p "$DEST_BIN"
         fi
 
         # Proceed with copying local files
-        cp -rf "$SOURCE_BIN"/. "$DEST/"
+        cp -rf "$SOURCE_BIN"/. "$DEST_BIN/"
         
-        echo ":: Copy (local files) completed to $DEST"
+        echo ":: Copy (local/bin files) completed to $DEST_BIN"
     else
         echo "XXX [ERROR] Not found directory $SOURCE_BIN"
-        echo "Please copy it manually (local files) to $DEST"
+        echo "Please copy it manually (local/bin files) to $DEST_BIN"
     fi
 else
     echo "Skipping local files backup."
@@ -250,11 +278,12 @@ fi
 # ========= BLOCK 7: BACKUP AND COPY OTHER FILES (.zshrc, .nanorc, wallpapers) ==========
 # =======================================================================================
 
-# Define source and destination paths for other files
+SOURCE_OTHER="$COMMON_DIR"
+SOURCE_WALLPAPER="$COMMON_DIR/Wallpapers"
+
 DEST_OTHER="$HOME"
-SOURCE_ROOT="$HOME/hakuspace"
 DEST_WALLPAPER="$HOME/Pictures/Wallpapers"
-SOURCE_WALLPAPER="$HOME/hakuspace/Wallpapers"
+
 
 echo ""
 echo "--- 7. Ready to deploy other files (like .nanorc and .zshrc) to home directory and wallpapers ---"
@@ -264,7 +293,7 @@ if [[ $confirm == [yY] ]]; then
     FILES_TO_COPY=(".nanorc" ".zshrc")
 
     for file in "${FILES_TO_COPY[@]}"; do
-        if [ -f "$SOURCE_ROOT/$file" ]; then
+        if [ -f "$SOURCE_OTHER/$file" ]; then
             # Make backup if destination file already exists
             if [ -f "$DEST_OTHER/$file" ]; then
                 mv "$DEST_OTHER/$file" "$DEST_OTHER/${file}.bak"
@@ -272,10 +301,10 @@ if [[ $confirm == [yY] ]]; then
             fi
             
             # Copy file from source to destination
-            cp -f "$SOURCE_ROOT/$file" "$DEST_OTHER/"
+            cp -f "$SOURCE_OTHER/$file" "$DEST_OTHER/"
             echo ":: Did copy $file to $DEST_OTHER"
         else
-            echo "!!! File not found: $file in $SOURCE_ROOT, skipping."
+            echo "!!! File not found: $file in $SOURCE_OTHER, skipping."
             echo "Please copy it manually ($file) to $DEST_OTHER"
         fi
     done
@@ -294,7 +323,7 @@ fi
 
 
 # Define source and destination paths for icons
-SOURCE_ICON="$HOME/hakuspace/icons"
+SOURCE_ICON="$COMMON_DIR/icons"
 DEST_ICON="$HOME/.icons"
 
 echo ""
@@ -348,7 +377,7 @@ fi
 # ==========================================================================
 
 # Define source and destination paths for themes
-SOURCE_THEME="$HOME/hakuspace/themes"
+SOURCE_THEME="$COMMON_DIR/themes"
 DEST_THEME="$HOME/.themes"
 
 echo ""
@@ -406,16 +435,13 @@ echo "--- 10. Enabling system services ---"
 
 sudo systemctl enable --now NetworkManager
 sudo systemctl enable --now bluetooth
-sudo systemctl --user enable hypridle.service
 sudo systemctl enable ly@tty1.service
 sudo systemctl disable getty@tty1.service
 
-SERVICES_EXTRA=("gvfsd")
-for srv in "${SERVICES_EXTRA[@]}"; do
-    if systemctl --user list-unit-files | grep -q "$srv"; then
-        systemctl --user enable "$srv"
-    fi
-done
+gsettings set org.cinnamon.desktop.default-applications.terminal exec 'kitty'
+gsettings set org.cinnamon.desktop.default-applications.terminal exec-arg ''
+
+$HOME/.local/bin/gen-style.sh
 
 echo "✅ All services have been processed!"
 

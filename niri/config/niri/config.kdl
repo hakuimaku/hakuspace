@@ -1,0 +1,10 @@
+prefer-no-csd
+
+include "autostart.kdl"
+include "keybinds.kdl"
+include "animations.kdl"
+include "settings.kdl"
+include "environment.kdl"
+include "rules.kdl"
+
+screenshot-path "~/Pictures/Screenshots/screenshot_%Y-%m-%d_%H-%M-%S.png"
