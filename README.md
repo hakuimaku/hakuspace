@@ -24,7 +24,7 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 
 <div align="center">
 
-[Installation](#installation-guide) ─ [Update](#update-haku-space) ─ [Packages](#programs) ─ [Keybinding](#keybinding) ─ [Troubleshooting](#troubleshooting) ─ [Wiki](docs/wiki/README.md)
+[Installation](#installation-guide) ─ [Update](#update-haku-space) ─ [Packages](#programs) ─ [Keybinding](#keybinding) ─ [Troubleshooting](#troubleshooting)
 
 *Need help or want to chat? Join our Discord server or follow us on TikTok for showcase videos!*
 
@@ -103,7 +103,7 @@ Specific packages for each WM: [pkg-hyprland](src/packages/pkg-hyprland.txt) | [
 - Stable Release (Recommended):
 ```bash
 cd ~
-git clone --depth 1 --branch v2.3.0 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
+git clone --depth 1 --branch v2.3.1 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 
 ```
 - If you prefer to experience the **lastest changes**:

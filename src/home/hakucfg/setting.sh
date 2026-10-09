@@ -2,7 +2,7 @@
 
 # This script is used to set up the main settings for all hakuspace's scripts.
 # DO NOT EDIT THIS LINE :v, used for checking setting.sh is up-to-date when run update.sh
-SETTING_VERSION="2.3.1-rc.1"
+SETTING_VERSION="2.3.1"
 
 if [[ "$1" == "--version" || "$1" == "-v" ]]; then
     echo "$SETTING_VERSION"
