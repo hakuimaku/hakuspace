@@ -79,13 +79,13 @@ in
             description = "mate-polkit authentication agent";
             wantedBy = [ "graphical-session.target" ];
             wants = [ "graphical-session.target" ];
-            after = [ "graphical-session.target" ];
+            after = [ "graphical-session.target" "polkit.service" "dbus.service" ];
             serviceConfig = {
-            Type = "simple";
-            ExecStart = "${pkgs.mate-polkit}/libexec/polkit-mate-authentication-agent-1";
-            Restart = "on-failure";
-            RestartSec = 1;
-            TimeoutStopSec = 10;
+                Type = "simple";
+                ExecStart = "${pkgs.mate-polkit}/libexec/polkit-mate-authentication-agent-1";
+                Restart = "on-failure";
+                RestartSec = 2;
+                TimeoutStopSec = 10;
             };
         };
 
