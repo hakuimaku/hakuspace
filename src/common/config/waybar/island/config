@@ -1,0 +1,236 @@
+{
+    "include": [
+        "$HOME/.config/waybar/module/workspace_module",
+        "$HOME/.config/waybar/module/notification_module",
+        "$HOME/.config/waybar/module/music_module",
+        "$HOME/.config/waybar/module/monitor_module"
+    ],
+    "layer": "top",
+    "position": "top",
+    "margin-bottom": 0,
+    "margin-left": 0,
+    "margin-right": 0,
+    "spacing": 0,
+    "tooltip": true,
+    "reload_style_on_change": true,
+
+    "modules-left": [
+        "group/utilities",
+        "group/hworkspaces",
+        "group/musics"
+    ],
+    "modules-center": [
+        "group/clocks"
+    ],
+    "modules-right": [
+        "group/monitor",
+        "group/adjusters",
+        "group/trays",
+        "group/tools"
+    ],
+
+    "group/musics": {
+        "orientation": "horizontal",
+        "drawer": {
+            "transition-duration": 1000,
+            "transition-left-to-right": true,
+            "click-to-reveal": true
+        },
+        "modules": [
+            "custom/cavaunderbar",
+            "cava",
+            "mpris"
+        ]
+    },
+
+    "group/clocks": {
+        "orientation": "horizontal",
+        "drawer": {
+            "transition-duration": 1000,
+            "transition-left-to-right": true,
+            "click-to-reveal": true
+        },
+        "modules": [
+            "clock"
+        ]
+    },
+    
+    "group/utilities": {
+        "orientation": "horizontal",
+        "modules": [
+            "custom/search",
+            "custom/setting"
+        ]
+    },
+
+    "group/tools": {
+        "orientation": "horizontal",
+        "modules": [
+            "power-profiles-daemon",
+            "custom/recorder",
+            "custom/recordertime",
+            "custom/power",
+            "custom/notification"
+        ]
+    },
+
+    "group/trays": {
+        "orientation": "horizontal",
+        "modules": [
+            "tray"
+        ]
+    },
+
+    "group/adjusters": {
+        "orientation": "horizontal",
+        "modules": [
+            "backlight",
+            "pulseaudio",
+            "battery"
+        ]
+    },
+
+    "group/monitor": {
+        "orientation": "horizontal",
+        "drawer": {
+            "transition-duration": 1000,
+            "transition-left-to-right": true,
+            "click-to-reveal": true
+        },
+        "modules": [
+            "custom/monitor",
+            "cpu",
+            "memory",
+            "temperature"
+        ]
+    },
+
+    "clock": {
+        "format": " {:%H:%M:%S, %d %B %Y} ",
+        "format-alt": " {:%A, %d %B %Y} ",
+        "interval": 1,
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+        "calendar": {
+                    "mode"          : "month",
+                    "mode-mon-col"  : 3,
+                    "weeks-pos"     : "right",
+                    "on-scroll"     : 1,
+                    "format": {
+                              "months":     "<span color='#ffead3'><b>{}</b></span>",
+                              "days":       "<span color='#ecc6d9'><b>{}</b></span>",
+                              "weeks":      "<span color='#99ffdd'><b>W{}</b></span>",
+                              "weekdays":   "<span color='#ffcc66'><b>{}</b></span>",
+                              "today":      "<span color='#ff6699'><b><u>{}</u></b></span>"
+                              }
+                    },
+        "actions":  {
+                    "on-click-right": "mode",
+                    "on-scroll-up": "tz_up",
+                    "on-scroll-down": "tz_down",
+                    "on-scroll-up": "shift_up",
+                    "on-scroll-down": "shift_down"
+                    }
+    },
+
+    "tray": {
+        "icon-size": 18,
+        "spacing": 10,
+        "show-passive-items": true
+    },
+
+    "power-profiles-daemon": {
+        "format": "{icon}",
+        "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
+        "tooltip": true,
+        "format-icons": {
+            "default": "",
+            "performance": "",
+            "balanced": "",
+            "power-saver": ""
+        }
+    },
+
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-muted": "󰝟 ",
+        "format-icons": {
+            "headphone": "󰋋",
+            "default": ["", "", ""]
+        },
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click-right": "pavucontrol",
+        "tooltip-format": "Volume: {volume}%"
+    },
+
+    "backlight": {
+        "format": "{icon} {percent}%",
+        "format-icons": ["", "", "", "", "", "", "", "", ""],
+        "on-scroll-up": "brightnessctl set 1%+",
+        "on-scroll-down": "brightnessctl set 1%-",
+        "on-click": "$HOME/.local/bin/nightlight_toggle.sh",
+        "tooltip-format": "Brightness: {percent}%"
+    },
+
+    "battery": {
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon} {capacity}%",
+        "format-icons": {
+            "default": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+            "charging": ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"],
+            "plugged": [""]
+        },
+        "tooltip-format": "Battery: {capacity}%\nPower: {power}W\n{timeTo}",
+        "tooltip": true
+    },
+
+    "custom/cavaunderbar": {
+        "format": "󰝚",
+        "tooltip-format": "Music Visualizer"
+    },
+
+    "custom/search": {
+        "format": "",
+        "tooltip-format": "Haku Menu",
+        "on-click": "exec $HOME/.local/bin/hakumenu.sh"
+    },
+
+    "custom/setting": {
+        "format": "",
+        "tooltip-format": "Setting folder",
+        "on-click": "exec xdg-open $HOME/hakuspace-control/"
+    },
+
+    "custom/power": {
+        "format" : "",
+        "tooltip-format": "Power Menu",
+        "on-click": "exec $HOME/.local/bin/shutdown.sh"
+    },
+
+    "custom/recorder": {
+        "format": "",
+        "on-click": "$HOME/.local/bin/record.sh",
+        "tooltip": true,
+        "tooltip-format": "Stop recording"
+    },
+
+    "custom/recordertime": {
+        "exec": "if [ -f /tmp/recording_time ]; then cat /tmp/recording_time; fi",
+        "interval": 1,
+        "format": "{text}",
+        "return-type": "plain",
+        "if-file-exists": "/tmp/recording_pid",
+        "hide-empty-text": true,
+        "on-click": "$HOME/.local/bin/record.sh",
+        "tooltip": true,
+        "tooltip-format": "Stop recording"
+    },
+
+    "custom/monitor": {
+        "format": " ",
+        "tooltip-format": "Click to show monitor stats",
+        "tooltip": true
+    }
+}
