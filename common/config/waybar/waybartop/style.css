@@ -45,6 +45,7 @@ window#waybar {
 /* ============================================================================== */
 #custom-monitor,
 #custom-bar,
+#custom-menu,
 #window,
 #mpris,
 #cava,
@@ -192,6 +193,7 @@ window#waybar {
 /* ============================================================================== */
 #custom-monitor:hover,
 #custom-bar:hover,
+#custom-menu:hover,
 #cpu:hover,
 #memory:hover,
 #temperature:hover,
