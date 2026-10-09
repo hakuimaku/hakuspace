@@ -42,13 +42,13 @@ window#waybar {
 }
 
 #custom-logo {
-    padding: 2px 20px;
+    padding: 6px 20px;
 }
 
 /* ============================================================================== */
 /* WORKSPACES                                                                     */
 /* ============================================================================== */
-#gworkspaces {
+#hworkspaces {
     margin: 0;
     padding: 0;
     background-color: transparent;
@@ -65,11 +65,13 @@ window#waybar {
     margin: 0 3px;
     min-width: 15px;
     min-height: 0;
+    opacity: 0.6;
 }
 
 #workspaces button.active {
     background-color: @accent_color; 
     min-width: 40px;
+    opacity: 1;
 }
 
 #workspaces button.empty {
@@ -80,7 +82,7 @@ window#waybar {
 
 #workspaces button.empty.active {
     background-color: @accent_color;
-    opacity: 1;
+    opacity: 0.6;
     min-width: 40px;
 }
 
@@ -188,8 +190,7 @@ window#waybar {
 tooltip {
     /* Dark tooltip background */
     background: rgba(0, 0, 0, 0.9);
-    border: 1px solid @accent_color;
-    border-radius: 10px;
+    border-radius: 8px;
     padding: 10px;
 }
 

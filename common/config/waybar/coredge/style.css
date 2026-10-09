@@ -7,6 +7,7 @@
 * {
     font-weight: bold;
     border-radius: 20px;
+    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
 window#waybar {
@@ -20,21 +21,18 @@ window#waybar {
 }
 
 .modules-right {
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.8);
     border-radius: 0 0 0 30px;
     padding: 4px 14px 4px 14px;
     margin: 0 0 4px 0;
     box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.4);
 }
-
-
 /* ============================================================================== */
 /* COMMON MODULE STYLES                               */
 /* ============================================================================== */
-#group-left,
+#custom-monitor,
 #custom-settings,
 #custom-logo,
-#custom-monitor,
 #window,
 #mpris,
 #cava,
@@ -47,78 +45,66 @@ window#waybar {
 #battery,
 #tray,
 #clock,
-#cpu,
-#memory,
-#temperature,
 #power-profiles-daemon {
-    margin: 4px;
-    padding: 0 8px;
-    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
+    margin: 1px;
+    padding: 0 10px;
     min-width: 20px;
 }
 
 /* ============================================================================== */
 /* WORKSPACES                                    */
 /* ============================================================================== */
-#gworkspaces {
-    margin: 0;
+#hworkspaces {
+    margin: 4px;
     padding: 0;
-    background-color: transparent;
+    background-color: rgba(0, 0, 0, 0.8);
 }
 
 #workspaces {
-    margin: 6px;
-    padding: 3px;
-    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
-    background-color: rgba(0, 0, 0, 0.7);
-    box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.4);
+    padding: 5px;
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.4);
 }
 
 #workspaces button {
-    background-color: rgba(255, 255, 255, 0.2);
-    border-radius: 999px;
-    padding: 0 12px;
-    margin: 3px;
-    min-width: 0;
+    background-color: @accent_color;
+    border-radius: 999px; 
+    padding: 0 6px;
+    margin: 0 3px;
+    min-width: 10px;
     min-height: 0;
-    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+    opacity: 0.6;
 }
 
 #workspaces button.active {
-    background-color: @accent_color;
-    min-width: 30px;
-    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+    background-color: @accent_color; 
+    min-width: 40px;
+    opacity: 1;
 }
 
 #workspaces button.empty {
-    background-color: rgba(255, 255, 255, 0.04);
+    background-color: @accent_color;
+    opacity: 0.2; 
 }
 
 #workspaces button.empty.active {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: @accent_color;
+    opacity: 0.6;
 }
 
 #workspaces button.overview {
-    background-color: @accent_color;
-    min-width: 30px;
-    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+    background-color: rgba(255, 255, 255, 0.1);
+    min-width: 40px;
 }
 
 /* ============================================================================== */
 /* SPECIFIC MODULES                                 */
 /* ============================================================================== */
 #custom-logo {
-    margin: 6px;
-    padding: 2px 12px;
-    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
-    background-color: rgba(0, 0, 0, 0.7);
-    box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.4);
-    border: 4px solid rgba(0, 0, 0, 0.7);
-}
-
-#clock { 
-    color: @accent_color; 
-    min-width: 200px;
+    background-color: rgba(0, 0, 0, 0.8);
+    min-width: 40px;
+    margin: 4px;
+    padding: 5px 10px;
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.4);
 }
 
 #custom-recorder {
@@ -130,22 +116,21 @@ window#waybar {
 #custom-monitor,
 #custom-settings {
     border-top: 2px solid @accent_color;
-    border-radius: 0 0 30px 30px;
-    margin: 4px 4px 4px 12px;
-    min-width: 40px;
+    border-radius: 0 0 20px 20px;
+    margin: 0 4px 0 4px;
 }
 
 #cpu,
 #memory,
 #temperature {
-    background-color: rgba(32, 32, 32, 0.8);
+    background-color: rgba(32, 32, 32, 0.6);
+    margin: 1px;
     padding: 0 12px;
-    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
     min-width: 20px;
 }
 
-#cpu {
-    margin: 4px 4px 4px 12px;
+#tray {
+    margin: 4px;
 }
 
 #backlight-slider slider {
@@ -192,7 +177,6 @@ window#waybar {
 #custom-recorder:hover,
 #custom-monitor:hover,
 #custom-settings:hover,
-#custom-logo:hover,
 #cpu:hover,
 #memory:hover,
 #temperature:hover,
@@ -205,19 +189,14 @@ window#waybar {
 #custom-notification:hover {
     color: #000000;
     background-color: @accent_color;
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
     min-width: 100px;
 }
 
 #custom-logo:hover {
-    border: 4px solid #000000;
-}
-
-#clock:hover {
+    min-width: 80px;
     color: #000000;
+    border: 4px solid rgba(0, 0, 0, 0.7);
     background-color: @accent_color;
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 230px;
 }
 
 #custom-monitor:hover,
@@ -225,16 +204,15 @@ window#waybar {
     border-radius: 20px;
 }
 
-
 #workspaces button:hover {
-    background-color: @accent_color;
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 20px;
+    min-width: 35px;
 }
 
-#workspaces button.active:hover {
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-width: 60px;
+
+#clock:hover {
+    color: #000000;
+    background-color: @accent_color;
+    min-width: 100px;
 }
 
 /* ============================================================================== */

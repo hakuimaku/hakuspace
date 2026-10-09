@@ -15,11 +15,9 @@
     "modules-center": [
         "custom/recorder",
         "clock",
-        "hyprland/workspaces",
-        "niri/workspaces",
-        "mango/workspaces",
+        "group/hworkspaces",
         "group/monitor",
-        "group/bar"
+        "group/settings"
     ],
 
     "clock": {
@@ -49,7 +47,7 @@
         "on-click-right": "swaync-client -t -sw"
     },
 
-    "group/bar": {
+    "group/settings": {
         "orientation": "horizontal",
         "drawer": {
             "transition-duration": 1000,
@@ -57,7 +55,7 @@
             "click-to-reveal": true
         },
         "modules": [
-            "custom/bar",
+            "custom/settings",
             "backlight",
             "pulseaudio",
             "battery",
@@ -149,8 +147,8 @@
     },
 
 
-    "custom/bar": {
-        "format": "󰮯 ",
+    "custom/settings": {
+        "format": " ",
         "tooltip-format": "Have a nice day!",
         "tooltip": true
     },

@@ -6,6 +6,7 @@
 
 * {
     font-weight: bold;
+    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
 window#waybar {
@@ -22,7 +23,7 @@ window#waybar {
 /* ============================================================================== */
 /* COMMON MODULE STYLES                               */
 /* ============================================================================== */
-#custom-bar,
+#custom-settings,
 #custom-logo,
 #window,
 #custom-recorder,
@@ -35,7 +36,6 @@ window#waybar {
 #power-profiles-daemon {
     margin: 4px;
     padding: 1px;
-    transition: all 1s cubic-bezier(0, 0.5, 0.35, 1);
     border-radius: 20px;
     min-height: 30px;
 }
@@ -43,6 +43,12 @@ window#waybar {
 /* ============================================================================== */
 /* WORKSPACES                                    */
 /* ============================================================================== */
+#vworkspaces {
+    margin: 0;
+    padding: 0;
+    background-color: transparent;
+}
+
 #workspaces {
     border-radius: 999px;
     padding: 8px 2px;
@@ -56,13 +62,11 @@ window#waybar {
     margin: 4px;
     min-width: 0;
     min-height: 0;
-    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
 #workspaces button.active {
     background-color: @accent_color;
-    padding: 16px 0;
-    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
+    padding: 12px 0;;
 }
 
 #workspaces button.empty {
@@ -76,7 +80,6 @@ window#waybar {
 #workspaces button.overview {
     background-color: @accent_color;
     min-height: 30px;
-    transition: all 0.8s cubic-bezier(0, 0.5, 0.35, 1);
 }
 
 /* ============================================================================== */
@@ -101,7 +104,7 @@ window#waybar {
     min-height: 30px;
 }
 
-#custom-bar,
+#custom-settings,
 #backlight,
 #pulseaudio {
     color: @accent_color;
@@ -114,7 +117,7 @@ window#waybar {
 /* HOVER EFFECTS                                   */
 /* ============================================================================== */
 #custom-recorder:hover,
-#custom-bar:hover,
+#custom-settings:hover,
 #custom-logo:hover,
 #clock:hover,
 #power-profiles-daemon:hover,
@@ -124,11 +127,10 @@ window#waybar {
 #custom-notification:hover {
     color: #000000;
     background-color: @accent_color;
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
     min-height: 60px;
 }
 
-#custom-bar:hover,
+#custom-settings:hover,
 #backlight:hover,
 #pulseaudio:hover {
     border-radius: 20px;
@@ -136,13 +138,6 @@ window#waybar {
 }
 
 #workspaces button:hover {
-    background-color: @accent_color;
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
-    min-height: 40px;
-}
-
-#workspaces button.active:hover {
-    transition: all 0.4s cubic-bezier(0, 0.5, 0.35, 1);
     min-height: 40px;
 }
 

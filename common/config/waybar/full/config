@@ -15,9 +15,7 @@
     "reload_style_on_change": true,
 
     "modules-left": [
-        "hyprland/workspaces",
-        "niri/workspaces",
-        "mango/workspaces",
+        "group/hworkspaces",
         "cava",
         "mpris"
     ],

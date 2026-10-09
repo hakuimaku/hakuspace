@@ -21,12 +21,10 @@
     "modules-center": [
         "custom/recorder",
         "clock",
-        "custom/menu",
-        "hyprland/workspaces",
-        "niri/workspaces",
-        "mango/workspaces",
+        "custom/logo",
+        "group/hworkspaces",
         "group/monitor",
-        "group/bar"
+        "group/settings"
     ],
     "modules-right": [
         "backlight",
@@ -62,7 +60,7 @@
                     }
     },
 
-    "group/bar": {
+    "group/settings": {
         "orientation": "horizontal",
         "drawer": {
             "transition-duration": 1000,
@@ -70,7 +68,7 @@
             "click-to-reveal": true
         },
         "modules": [
-            "custom/bar",
+            "custom/settings",
             "battery",
             "power-profiles-daemon",
             "tray"
@@ -171,9 +169,9 @@
         "tooltip-format": "Stop recording"
     },
 
-    "custom/bar": {
-        "format": "󰮯 ",
-        "tooltip-format": "Have a nice day!",
+    "custom/settings": {
+        "format": " ",
+        "tooltip-format": "Click to show settings",
         "tooltip": true
     },
 
@@ -183,9 +181,9 @@
         "tooltip": true
     },
 
-    "custom/menu": {
-        "format": "󰍜 ",
-        "tooltip-format": "Click to show menu",
+    "custom/logo": {
+        "format": "󰮯 ",
+        "tooltip-format": "Have a nice day!",
         "tooltip": true,
         "on-click": "$HOME/.local/bin/hakumenu.sh"
     }

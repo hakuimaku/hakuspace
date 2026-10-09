@@ -1,4 +1,18 @@
 {
+    "group/hworkspaces": {
+        "orientation": "horizontal",
+        "modules": [
+            "ext/workspaces"
+        ]
+    },
+
+    "group/vworkspaces": {
+        "orientation": "vertical",
+        "modules": [
+            "ext/workspaces"
+        ]
+    },
+
     "niri/workspaces": {
         "format": "{icon}",
         "format-icons": {
@@ -30,5 +44,16 @@
         "on-click-right": "toggle",
         "overview-label": "    ",
         "hide-empty": true
+    },
+
+
+    "ext/workspaces": {
+        "format": "{icon}",
+        "on-click": "activate",
+        "format-icons": {
+            "active": "",
+            "default": ""
+        },
+        "sort-by-id": true
     }
 }
