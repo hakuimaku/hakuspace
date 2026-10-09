@@ -25,8 +25,8 @@ binds {
     // Application Launchers
     Mod+Q            hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
     Mod+R            hotkey-overlay-title="Run Application Menu: rofi" { spawn "rofi" "-show" "drun"; }
-    Mod+E            hotkey-overlay-title="Open File Manager: thunar" { spawn "thunar"; }
-    Mod+B            hotkey-overlay-title="Open Browser: firefox" { spawn "firefox"; }
+    Mod+E            hotkey-overlay-title="Open File Manager" { spawn "sh" "-c" "xdg-open \"$HOME\""; }
+    Mod+B            hotkey-overlay-title="Open Browser" { spawn "xdg-open" "https:"; }
     Mod+Slash        hotkey-overlay-title="Open Emoji Menu" { spawn "rofi" "-modi" "emoji" "-show" "emoji"; }
     Mod+N            hotkey-overlay-title="Open Notification Center" { spawn "swaync-client" "-t" "-sw"; }
 

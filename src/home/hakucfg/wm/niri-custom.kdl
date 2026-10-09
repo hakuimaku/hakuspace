@@ -18,6 +18,10 @@
 // Example
 binds {
     Mod+Return { spawn "kitty"; }
+
+    // If you have issues with open default web in browser
+    // Set your default browser:
+    // Mod+B { spawn "your browser"; }
 }
 
 // More rounded corner

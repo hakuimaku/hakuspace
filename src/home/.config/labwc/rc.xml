@@ -303,10 +303,10 @@
         <action name="Execute" command="kitty" />
         </keybind>
         <keybind key="W-e">
-        <action name="Execute" command="thunar" />
+        <action name="Execute" command="sh -c 'xdg-open &quot;$HOME&quot;'" />
         </keybind>
         <keybind key="W-b">
-        <action name="Execute" command="firefox" />
+        <action name="Execute" command="xdg-open https:" />
         </keybind>
         <keybind key="W-n">
         <action name="Execute" command="swaync-client -t -sw" />
