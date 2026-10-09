@@ -11,7 +11,6 @@ if [[ $# -eq 0 ]]; then
     # The format is: "Menu Item" followed by the action to be performed when selected.
     cat <<'EOF'
   App Menu
-  Help
   Code Editor
   Browser
   Screen Record
@@ -27,9 +26,8 @@ fi
 chosen="$*"
 case "$chosen" in
     *"App Menu"*) spawn rofi -show drun ;;
-    *"Help"*) spawn xdg-open https://github.com/hakuimaku/hakuspace/blob/main/docs/wiki/README.md ;;
     *"Code Editor"*) spawn code ;;
-    *"Browser"*) spawn xdg-open https: ;;
+    *"Browser"*) spawn "$HOME/.local/bin/open_browser.sh" ;;
     *"Screen Record"*) spawn $HOME/.local/bin/record.sh ;;
     *"Local Send"*) spawn localsend ;;
     *"File Manager"*) spawn xdg-open $HOME ;;
