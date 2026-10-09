@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 
 # This script is a simple wrapper around cava-layer.py to manage its lifecycle (start/stop/toggle)
- 
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/haku_theme.sh"
+
 SCRIPT_PATH="${CAVA_LAYER_PATH:-$HOME/.local/bin/cava_layer.py}"
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 PIDFILE="/tmp/cava-layer.pid"
 LOGFILE="/tmp/cava-layer.log"
+
+OVERLAY_STATE_FILE="$STATE_DIR/cava_overlay_state"
  
 log() { echo "[cava-layer-toggle] $*"; }
 err() { echo "[cava-layer-toggle] $*" >&2; }
@@ -21,6 +26,7 @@ Commands:
     toggle              Toggle the cava layer
     reload              Live-reload font/colors from the kitty config
                         (no restart, no interruption to cava itself)
+    -o, --overlay       Toggle the overlay mode (saves state and restarts)
 
 Options:
     -p, --config PATH       Forward configuration to cava_layer.py
@@ -82,8 +88,13 @@ start() {
  
     check_dependencies
  
-    log "Starting: python3 $SCRIPT_PATH $*"
-    nohup python3 "$SCRIPT_PATH" "$@" >"$LOGFILE" 2>&1 &
+    local overlay_flag=""
+    if [[ "$(cat "$OVERLAY_STATE_FILE" 2>/dev/null || echo "0")" == "1" ]]; then
+        overlay_flag="--overlay"
+    fi
+
+    log "Starting: python3 $SCRIPT_PATH $overlay_flag $*"
+    nohup python3 "$SCRIPT_PATH" $overlay_flag "$@" >"$LOGFILE" 2>&1 &
     local pid=$!
     disown "$pid" 2>/dev/null || true
     echo "$pid" > "$PIDFILE"
@@ -133,6 +144,22 @@ toggle() {
     fi
 }
 
+toggle_overlay() {
+    mkdir -p "$STATE_DIR"
+    local current_state=$(cat "$OVERLAY_STATE_FILE" 2>/dev/null || echo "0")
+    if [[ "$current_state" == "1" ]]; then
+        echo "0" > "$OVERLAY_STATE_FILE"
+        log "Overlay mode disabled."
+    else
+        echo "1" > "$OVERLAY_STATE_FILE"
+        log "Overlay mode enabled."
+    fi
+    if is_running; then
+        stop
+        start
+    fi
+}
+
 reload() {
     if ! is_running; then
         log "Not running; nothing to reload."
@@ -163,6 +190,9 @@ case "${1:-}" in
         ;;
     reload)
         reload
+        ;;
+    -o|--overlay)
+        toggle_overlay
         ;;
     *)
         # No explicit subcommand: treat everything (including -p/-H/-F flags,
