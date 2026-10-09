@@ -9,7 +9,7 @@ mpvpaper                      # Video wallpaper
 hyprlock                      # Screen locker
 hypridle                      # Idle management
 hyprpicker                    # Color picker
-zsh                           # Shell
+fish                          # Shell
 
 # === Hakuspace scripts needed ===
 jq                            # Command-line JSON processor
@@ -18,6 +18,12 @@ python-colorthief             # Extract dominant color palette from images (Func
 python-gobject                # Python bindings for GObject
 gtk-layer-shell               # GTK library for layer shell protocol
 wlr-randr                     # Wayland output management utility
+
+# === Fish Shell and related tools ===
+starship                      # Cross-shell prompt
+direnv                        # Environment variable manager
+zoxide                        # Fast directory jumper
+eza                           # Modern replacement for ls
 
 # ==== Utility tools ===
 wl-clipboard                  # Wayland clipboard tools (wl-copy/wl-paste)
