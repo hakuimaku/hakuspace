@@ -126,7 +126,7 @@ sudo dnf install nwg-look
 
 - **Install core packages for my scripts**:
 ```bash
-sudo dnf install jq ImageMagick
+sudo dnf install jq ImageMagick python3-gobject gtk-layer-shell
 
 sudo dnf install python3-pip
 pip install colorthief
