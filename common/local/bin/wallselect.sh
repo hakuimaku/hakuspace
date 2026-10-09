@@ -1,6 +1,7 @@
 #!/bin/bash
 
 WALL_DIR="$HOME/Pictures/Wallpapers"
+BACKDROP_DIR="$WALL_DIR/temp"
 
 list_walls() {
     cd "$WALL_DIR" || exit
@@ -19,8 +20,8 @@ set_wallpaper() {
 
     if [[ $XDG_CURRENT_DESKTOP == "niri" ]]; then
         mkdir -p "$WALL_DIR/temp"
-        magick "$wall" -blur 0x15 "$WALL_DIR/temp/backdrop.jpg"
-        awww img -n "awww-daemon-backdrop" "$WALL_DIR/temp/backdrop.jpg"
+        magick "${wall}[0]" -background black -alpha remove -set option:filter:blur 1.0 -blur 0x15 "$BACKDROP_DIR/backdrop.jpg"
+        awww img -n "awww-daemon-backdrop" "$BACKDROP_DIR/backdrop.jpg"
     fi
 }
 
