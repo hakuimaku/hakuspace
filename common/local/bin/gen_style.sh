@@ -8,8 +8,6 @@ mkdir -p "$STATE_DIR"
 # Labwc
 LABWC_RC="$HOME/.config/labwc/rc.xml"
 LABWC_OVERRIDE="$HOME/.config/labwc/themerc-override"
-mkdir -p "$(dirname "$LABWC_OVERRIDE")"
-touch "$LABWC_OVERRIDE"
 
 # Defaults
 DEFAULT_ACCENT="#ffffff"
@@ -189,7 +187,7 @@ EOF
 
 
 # Labwc theme
-if pgrep -x labwc >/dev/null; then
+if [[ -f "$LABWC_RC" && -f "$LABWC_OVERRIDE" ]]; then
     # Labwc theme override
     GEN_BLOCK="# BEGIN GENERATED THEME
 window.active.border.color: ${ACCENT_COLOR}
@@ -215,7 +213,8 @@ osd.window-switcher.style-thumbnail.item.active.border.color: ${ACCENT_COLOR}
             !skip { print }
         ' "$LABWC_OVERRIDE" > "$LABWC_OVERRIDE.tmp" && mv "$LABWC_OVERRIDE.tmp" "$LABWC_OVERRIDE"
     else
-        echo -e "\n$GEN_BLOCK" >> "$LABWC_OVERRIDE"
+        echo "[ERROR] NOT FOUND # BEGIN GENERATED THEME in $LABWC_OVERRIDE"
+        notify-send "[ERROR] NOT FOUND # BEGIN GENERATED THEME in $LABWC_OVERRIDE" "Labwc theme update failed"
     fi
 
     # Labwc rc.xml (font)
