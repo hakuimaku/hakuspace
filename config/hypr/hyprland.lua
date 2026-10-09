@@ -66,6 +66,7 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("sway-audio-idle-inhibit")
     hl.exec_cmd("~/.local/bin/waybar_toggle")
     hl.exec_cmd("~/.local/bin/cava_manager")
+    hl.exec_cmd("~/.local/bin/random_wallpaper.sh")
     hl.exec_cmd("~/.local/bin/welcome")
 end)
 
