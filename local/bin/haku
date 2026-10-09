@@ -30,17 +30,16 @@ if [[ "$1" == "clear" ]]; then
 fi
 
 sleep 0.05
-hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakuclock\" --class \"seyclock\" -o font_size=$FONT_CLOCK sh -c \"tty-clock -c -C 7 -r -b\"')"
+
+hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakucava\" --class \"seycava\" -o font_size=$FONT_GENERAL sh -c \"cava\"')"
 sleep 0.1
-hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakumatrix\" --class \"seymatrix\" -o font_size=$FONT_GENERAL sh -c \"cmatrix -C white -b -u11\"')"
+hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakulavat\" --class \"seylavat\" -o font_size=$FONT_GENERAL sh -c \"lavat -c blue -k blue -r1\"')"
+sleep 0.1
+hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakuclock\" --class \"seyclock\" -o font_size=$FONT_CLOCK sh -c \"tty-clock -c -C 4 -r -b\"')"
 sleep 0.1
 hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakucmd\" --class \"seycmd\" -o font_size=$FONT_TERMINAL --hold fastfetch')"
 sleep 0.1
-hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakupipes\" --class \"seypipes\" -o font_size=$FONT_GENERAL sh -c \"pipes.sh -t 1 -c 7\"')"
-sleep 0.1
-hyprctl dispatch "hl.dsp.exec_cmd('kitty --title \"hakulavat\" --class \"seylavat\" -o font_size=$FONT_GENERAL sh -c \"lavat -r1\"')"
-sleep 0.1
 
-sleep 1
+sleep 0.5
 echo "My address: $MY_ADDR"
 hyprctl eval 'hl.dispatch(hl.dsp.exec_cmd("kill -9 '$MY_ADDR'"))'

@@ -54,10 +54,6 @@ if [ -n "$CHOICE" ]; then
     # 4. Generate theme files with the new accent color
     ~/.local/bin/gen-style.sh "$ACCENT"
 
-    sleep 0.5
-    # 5) Apply/reload
+    sleep 0.1
     ~/.local/bin/apply-style.sh
-
-    sleep 0.5
-    notify-send "Wallpaper + Accent updated!" "$CHOICE, Accent: $ACCENT"
 fi

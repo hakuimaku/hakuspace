@@ -37,7 +37,6 @@ hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("~/.local/bin/clip_menu --wip
 hl.bind(mainMod .. " + F11",   hl.dsp.exec_cmd("~/.local/bin/record"))
 hl.bind(mainMod .. " + TAB",   hl.dsp.exec_cmd("~/.local/bin/hakumenu"))
 hl.bind(mainMod .. " + A",     hl.dsp.exec_cmd("~/.local/bin/waybar_toggle"))
-hl.bind(mainMod .. " + K",     hl.dsp.exec_cmd("~/.local/bin/display_select"))
 hl.bind(mainMod .. " + Y",     hl.dsp.exec_cmd("~/.local/bin/wallselect"))
 hl.bind(mainMod .. " + SHIFT + Y", hl.dsp.exec_cmd("~/.local/bin/wallmpvselect"))
 hl.bind(mainMod .. " + T",     hl.dsp.exec_cmd("~/.local/bin/cava_manager --toggle"))
@@ -82,3 +81,4 @@ hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = tr
 hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
+

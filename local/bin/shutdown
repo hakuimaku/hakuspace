@@ -18,7 +18,7 @@ chosen=$(echo -e "$options" | rofi -dmenu -p "HakuOS" -i -theme-str 'window
 # List action
 # Note: You should config hibernate manually
 case $chosen in 
-    *"Hibernate"*) notify-send 'Warning' 'Hibernate not configured' ;;
+    *"Hibernate"*) systemctl hibernate ;;
     *"Reboot"*) systemctl reboot ;;
     *"Power Off"*) systemctl poweroff ;;
     *"Sleep"*) systemctl suspend ;;
