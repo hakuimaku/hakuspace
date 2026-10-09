@@ -46,7 +46,7 @@ make_cache_img() {
     local is_successfull=1
 
     # Make Niri backdrop
-    if [[ "${XDG_CURRENT_DESKTOP:-}" == "niri" ]] || pgrep -x "niri" >/dev/null 2>&1; then
+    if command -v "niri" >/dev/null 2>&1; then
         mkdir -p "$CACHE_DIR"
         if magick "${WALLPAPER}[0]" -background black -alpha remove -set option:filter:blur 1.0 -blur 0x15 "$CACHE_DIR/backdrop.jpg" 2>/dev/null; then
             awww img -n "awww-daemon-backdrop" "$CACHE_DIR/backdrop.jpg"
