@@ -13,6 +13,7 @@
 
 /* ===== GLOBAL VARIABLES ===== */
 * {
+    font:                "JetBrainsMono Nerd Font 11";
     background:          rgba(0, 0, 0, 0.7);
     foreground:          #dfdfdf;
     background-color:    transparent;
