@@ -39,12 +39,13 @@ Item {
         end: morph.mEnd
         currentHeight: morph.mHeight
         bounds: root.wBounds
-        r: 20
+        r: Theme.tipRadius
         rf: Theme.tipHugRadius
-        surfaceColor: Theme.bg
+        surfaceColor: Theme.barColor
         
         FlareContent {
             id: contentItem
+            shown: root.shown
             anchors.centerIn: parent
             contentComponent: root.content
             contentProps: root.contentProps

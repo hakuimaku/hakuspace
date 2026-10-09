@@ -11,8 +11,33 @@ Item {
     property real naturalWidth: 0
     property real naturalHeight: 0
     
+    property bool shown: false
     property bool useA: true
     property var lastKey: null
+    
+    onShownChanged: {
+        if (shown) {
+            hideTimer.stop();
+            var activeLoader = useA ? loaderA : loaderB;
+            if (!activeLoader.item && contentComponent) {
+                activeLoader.sourceComponent = contentComponent;
+                if (activeLoader.item) {
+                    for (var k in contentProps) activeLoader.item[k] = contentProps[k];
+                }
+                Qt.callLater(updateSize);
+            }
+        }
+    }
+    
+    onContentPropsChanged: {
+        var activeLoader = useA ? loaderA : loaderB;
+        if (activeLoader.item) {
+            for (var k in contentProps) {
+                activeLoader.item[k] = contentProps[k];
+            }
+            Qt.callLater(updateSize);
+        }
+    }
     
     onContentKeyChanged: {
         hideTimer.stop();
@@ -44,10 +69,6 @@ Item {
     }
     
     function settle(isShown) {
-        var inactiveLoader = useA ? loaderB : loaderA;
-        if (inactiveLoader.opacity === 0) {
-            inactiveLoader.sourceComponent = null;
-        }
         if (!isShown) {
             hideTimer.restart();
         }
@@ -67,6 +88,7 @@ Item {
         anchors.centerIn: parent
         opacity: useA ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: HAnimation.effects } }
+        onOpacityChanged: { if (opacity === 0) sourceComponent = null; }
         onLoaded: {
             if (useA && root.contentProps) {
                 for (var k in root.contentProps) item[k] = root.contentProps[k];
@@ -80,6 +102,7 @@ Item {
         anchors.centerIn: parent
         opacity: !useA ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: HAnimation.effects } }
+        onOpacityChanged: { if (opacity === 0) sourceComponent = null; }
         onLoaded: {
             if (!useA && root.contentProps) {
                 for (var k in root.contentProps) item[k] = root.contentProps[k];

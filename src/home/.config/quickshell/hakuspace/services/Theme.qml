@@ -18,8 +18,11 @@ QtObject {
     property string onAccentColor: "#000000"
     property string inkBg: "#111111"
     
+    property color barColor: AppState.opaqueThemeState ? root.inkBg : root.bg
+    
     property int radius: 16
     property int radiusSm: 8
+    property int tipRadius: 20
     property int tipHugRadius: 24
     property int borderWidth: 0
     property int gap: 4

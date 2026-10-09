@@ -16,34 +16,50 @@ TopModule {
     text: ""
     icon: ""
     
-    // Override implicitWidth to fit our custom column
-    implicitWidth: Math.max(implicitHeight, customCol.implicitWidth + Theme.pad * 2 + (hovered ? 20 : 0))
+    // Override implicitWidth to fit our custom row
+    implicitWidth: Math.max(implicitHeight, contentRow.implicitWidth + Theme.pad * 2 + (hovered ? 20 : 0))
     
-    Column {
-        id: customCol
+    Row {
+        id: contentRow
         anchors.centerIn: parent
-        spacing: -2
+        spacing: 16
         
         Text {
-            text: sysClock.date ? sysClock.date.toLocaleString(Qt.locale(), "HH:mm") : ""
+            text: sysClock.date ? sysClock.date.toLocaleString(Qt.locale(), "HH:mm") : "" 
             font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize - 2
+            font.pixelSize: Theme.fontSize
             font.weight: Font.Bold
             color: root.hovered ? Theme.onAccentColor : Theme.fg
-            anchors.left: parent.left
-            anchors.leftMargin: -2
+            anchors.verticalCenter: parent.verticalCenter
             Behavior on color { ColorAnimation { duration: HAnimation.normal } }
         }
-        
-        Text {
-            text: sysClock.date ? sysClock.date.toLocaleString(Qt.locale(), "dd/MM/yyyy") : ""
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize - 4
-            font.weight: Font.Normal
-            color: root.hovered ? Theme.onAccentColor : Theme.fg
-            anchors.right: parent.right
-            anchors.rightMargin: -2
-            Behavior on color { ColorAnimation { duration: HAnimation.normal } }
+
+        Column {
+            id: customCol
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: -2
+            
+            Text {
+                text: sysClock.date ? sysClock.date.toLocaleString(Qt.locale(), "dddd") : ""
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSize - 2
+                font.weight: Font.Bold
+                color: root.hovered ? Theme.onAccentColor : Theme.fg
+                anchors.left: parent.left
+                anchors.leftMargin: - 2
+                Behavior on color { ColorAnimation { duration: HAnimation.normal } }
+            }
+            
+            Text {
+                text: sysClock.date ? sysClock.date.toLocaleString(Qt.locale(), "dd/MM/yyyy") : ""
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSize - 4
+                font.weight: Font.Normal
+                color: root.hovered ? Theme.onAccentColor : Theme.fg
+                anchors.right: parent.right
+                anchors.rightMargin: - 4
+                Behavior on color { ColorAnimation { duration: HAnimation.normal } }
+            }
         }
     }
     

@@ -26,6 +26,18 @@ Item {
     property var _lastExpected: ({start: 0, end: 0, height: 0})
     property real _lastAnimTime: 0
     
+    Timer {
+        id: throttleTimer
+        interval: 60
+        onTriggered: updateTargetBounds()
+    }
+    
+    function checkSettled() {
+        if (!animStart.running && !animEnd.running && !animHeight.running) {
+            root.settled(root.shown);
+        }
+    }
+    
     function updateTargetBounds() {
         if (!shown || !anchorItem) return;
         var t = anchorItem;
@@ -61,33 +73,35 @@ Item {
         }
         
         var now = Date.now();
-        if (FG.needsRetarget(_lastExpected, {start: eL, end: eR}, 2) && (now - _lastAnimTime >= 60)) {
-            _lastAnimTime = now;
-            _lastExpected = {start: eL, end: eR, height: eH};
-            
-            var goingLeft = eL < mStart;
-            var durs = FG.durations(goingLeft, HAnimation.normal, HAnimation.trailFactor);
-            
-            if (Math.abs(eL - mStart) > 0.5) {
-                animStart.duration = durs.startMs;
-                animStart.to = eL;
-                if (!animStart.running) animStart.restart();
+        var isRetarget = FG.needsRetarget(_lastExpected, {start: eL, end: eR}, 2) || Math.abs(_lastExpected.height - eH) > 2;
+        
+        if (isRetarget) {
+            if (now - _lastAnimTime >= 60) {
+                _lastAnimTime = now;
+                _lastExpected = {start: eL, end: eR, height: eH};
+                
+                var goingLeft = eL < mStart;
+                var durs = FG.durations(goingLeft, HAnimation.normal, HAnimation.trailFactor);
+                
+                if (Math.abs(eL - mStart) > 0.5) {
+                    animStart.duration = durs.startMs;
+                    animStart.to = eL;
+                    animStart.restart();
+                }
+                
+                if (Math.abs(eR - mEnd) > 0.5) {
+                    animEnd.duration = durs.endMs;
+                    animEnd.to = eR;
+                    animEnd.restart();
+                }
+                
+                if (Math.abs(eH - mHeight) > 0.5) {
+                    animHeight.to = eH;
+                    animHeight.restart();
+                }
+            } else {
+                throttleTimer.restart();
             }
-            
-            if (Math.abs(eR - mEnd) > 0.5) {
-                animEnd.duration = durs.endMs;
-                animEnd.to = eR;
-                if (!animEnd.running) animEnd.restart();
-            }
-            
-            if (Math.abs(eH - mHeight) > 0.5) {
-                animHeight.to = eH;
-                if (!animHeight.running) animHeight.restart();
-            }
-        } else if (animStart.running || animEnd.running || animHeight.running) {
-            animStart.to = eL;
-            animEnd.to = eR;
-            animHeight.to = eH;
         }
     }
     
@@ -95,10 +109,13 @@ Item {
         if (shown) {
             Qt.callLater(updateTargetBounds);
         } else {
+            throttleTimer.stop();
             animHeight.to = 0;
             animHeight.restart();
         }
     }
+    
+    onAnchorItemChanged: { Qt.callLater(updateTargetBounds); }
     
     Connections {
         target: shown && anchorItem ? anchorItem : null
@@ -109,7 +126,7 @@ Item {
     onContentWChanged: { Qt.callLater(updateTargetBounds); }
     onContentHChanged: { Qt.callLater(updateTargetBounds); }
     
-    NumberAnimation { id: animStart; target: root; property: "mStart"; easing.bezierCurve: HAnimation.spatialCurve; onFinished: root.settled(root.shown) }
-    NumberAnimation { id: animEnd; target: root; property: "mEnd"; easing.bezierCurve: HAnimation.spatialCurve; onFinished: root.settled(root.shown) }
-    NumberAnimation { id: animHeight; target: root; property: "mHeight"; duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve; onFinished: root.settled(root.shown) }
+    NumberAnimation { id: animStart; target: root; property: "mStart"; easing.bezierCurve: HAnimation.spatialCurve; onFinished: checkSettled() }
+    NumberAnimation { id: animEnd; target: root; property: "mEnd"; easing.bezierCurve: HAnimation.spatialCurve; onFinished: checkSettled() }
+    NumberAnimation { id: animHeight; target: root; property: "mHeight"; duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve; onFinished: checkSettled() }
 }
