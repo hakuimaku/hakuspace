@@ -14,7 +14,7 @@ set_wallpaper() {
         --transition-step 90 \
         --transition-fps 60
 
-    if pgrep -x "niri" > /dev/null; then
+    if [[ $XDG_CURRENT_DESKTOP == "niri" ]]; then
         mkdir -p "$BACKDROP_DIR"
         magick "$wall" -blur 0x15 "$BACKDROP_DIR/backdrop.jpg"
         awww img -n "awww-daemon-backdrop" "$BACKDROP_DIR/backdrop.jpg"

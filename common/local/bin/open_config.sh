@@ -24,11 +24,11 @@ paths=(
 )
 
 # Add WM-specific configs only if running
-if pgrep -x Hyprland >/dev/null 2>&1; then
+if [[ $XDG_CURRENT_DESKTOP == "Hyprland" ]]; then
     paths+=("$HOME/.config/hypr")
 fi
 
-if pgrep -x niri >/dev/null 2>&1; then
+if [[ $XDG_CURRENT_DESKTOP == "niri" ]]; then
     paths+=("$HOME/.config/niri")
 fi
 
