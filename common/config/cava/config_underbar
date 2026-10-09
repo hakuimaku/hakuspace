@@ -9,5 +9,5 @@ orientation = top
 [color]
 # Uncomment & Comment one of the following lines to change the color of the cava underbar
 
-foreground = '#000000' # black
+foreground = black
 #foreground = blue # based on wallpaper, best with dark wallpaper
