@@ -1,9 +1,12 @@
 #!/bin/bash
+set -u
 
-# Copy config, bin, .zshrc and .nanorc files will backup current config
-# The backup will be created in the same location with a timestamp suffix (e.g., .config_backup_20240601_123456).
-# This way, you can easily restore your previous configuration if needed.
+# ======================================================================================
+# HAKUSPACE INSTALLER (CLEANED - COPY MODE + COLOR LOGS)
+# ======================================================================================
+
 cat << 'EOF'
+
 
  _   _       _          _____                      
 | | | |     | |        /  ___|                     
@@ -16,122 +19,326 @@ cat << 'EOF'
 
 EOF
 
+# --------------------------------
+# Color setup
+# --------------------------------
+if [[ -t 1 ]]; then
+    C_RESET='\033[0m'
+    C_BOLD='\033[1m'
+    C_DIM='\033[2m'
 
-echo ""
-echo "================================================================================================"
-echo "--- WELCOME TO HAKUSPACE - CONFIG INSTALLER ---"
-echo "This script will help you set up your HakuSpace configuration"
-echo "It will install necessary packages, copying config files and setting up Oh My Zsh with plugins."
-echo "Please follow the prompts to complete the installation process."
-echo "================================================================================================"
-echo ""
+    C_BLUE='\033[34m'
+    C_GREEN='\033[32m'
+    C_YELLOW='\033[33m'
+    C_RED='\033[31m'
+    C_CYAN='\033[36m'
+    C_MAGENTA='\033[35m'
+    C_WHITE='\033[37m'
+else
+    C_RESET=''
+    C_BOLD=''
+    C_DIM=''
 
+    C_BLUE=''
+    C_GREEN=''
+    C_YELLOW=''
+    C_RED=''
+    C_CYAN=''
+    C_MAGENTA=''
+    C_WHITE=''
+fi
+
+# --------------------------------
+# Global paths / variables
+# --------------------------------
 HAKU_DIR="$HOME/hakuspace"
 COMMON_DIR="$HAKU_DIR/common"
 PKG_COMMON="$COMMON_DIR/pkg-common.txt"
 
-echo "Current directory: $PWD"
-echo ""
-echo "[1]. HYPRLAND"
-echo "[2]. NIRI"
-echo ""
-read -p ">>> Which Window Manager do you want to install?: " wm_choice
-if [[ $wm_choice == "1" ]]; then
-    echo "You have chosen to install Hyprland - HakuSpace Config."
-    WM_DIR="$HAKU_DIR/hyprland"
-    PKG_WM="$WM_DIR/pkg-hyprland.txt"
-    WM="hyprland"
-elif [[ $wm_choice == "2" ]]; then
-    echo "You have chosen to install Niri - HakuSpace Config."
-    WM_DIR="$HAKU_DIR/niri"
-    PKG_WM="$WM_DIR/pkg-niri.txt"
-    WM="niri"
-else
-    echo "Invalid choice. Please run the script again and choose either 1 or 2."
-    exit 1
-fi
+BACKUP_TS="$(date +%Y-%m-%d_%H-%M-%S)"
+BACKUP_DIR="$HOME/Backup_$BACKUP_TS"
 
-# Check HAKU_DIR == $PWD
-if [[ "$PWD" != "$HAKU_DIR" ]]; then
+WM=""
+WM_DIR=""
+PKG_WM=""
+
+# --------------------------------
+# Logging helpers
+# --------------------------------
+log_info()   { echo -e "${C_BLUE}[INFO]${C_RESET}   $1"; }
+log_ok()     { echo -e "${C_GREEN}[OK]${C_RESET}     $1"; }
+log_warn()   { echo -e "${C_YELLOW}[WARN]${C_RESET}   $1"; }
+log_error()  { echo -e "${C_RED}[ERROR]${C_RESET}  $1"; }
+log_backup() { echo -e "${C_MAGENTA}[BACKUP]${C_RESET} $1"; }
+log_copy()   { echo -e "${C_CYAN}[COPY]${C_RESET}   $1"; }
+log_skip()   { echo -e "${C_WHITE}[SKIP]${C_RESET}   $1"; }
+
+step_title() {
     echo ""
-    echo "!!! Please run this script from the HakuSpace directory: $HAKU_DIR"
+    echo -e "${C_BOLD}${C_DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${C_RESET}"
+    echo -e "${C_BOLD}${C_BLUE}$1${C_RESET}"
+    echo -e "${C_BOLD}${C_DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${C_RESET}"
+}
+
+# --------------------------------
+# Utility helpers
+# --------------------------------
+ask_yes_no() {
+    local prompt="$1"
+    local answer
+    read -r -p "$prompt (y/n): " answer
+    [[ "$answer" =~ ^[yY]([eE][sS])?$ ]]
+}
+
+ensure_dir() {
+    local dir="$1"
+    if [[ ! -d "$dir" ]]; then
+        mkdir -p "$dir"
+        log_ok "Created directory: $dir"
+    else
+        log_skip "Directory already exists: $dir"
+    fi
+}
+
+backup_item() {
+    local target="$1"
+
+    [[ -e "$target" || -L "$target" ]] || return 0
+
+    local rel="${target#$HOME/}"
+    local backup_target="$BACKUP_DIR/$rel"
+    mkdir -p "$(dirname "$backup_target")"
+
+    mv "$target" "$backup_target"
+    log_backup "$target -> $backup_target"
+}
+
+copy_dir_content() {
+    local src="$1"
+    local dst="$2"
+
+    if [[ ! -d "$src" ]]; then
+        log_warn "Source directory not found: $src"
+        return 1
+    fi
+
+    ensure_dir "$dst"
+    cp -rf "$src"/. "$dst"/
+    log_copy "$src/. -> $dst/"
+    return 0
+}
+
+copy_file_with_backup() {
+    local src="$1"
+    local dst="$2"
+
+    if [[ ! -f "$src" ]]; then
+        log_warn "Source file not found: $src"
+        return 1
+    fi
+
+    ensure_dir "$(dirname "$dst")"
+
+    if [[ -e "$dst" || -L "$dst" ]]; then
+        backup_item "$dst"
+    fi
+
+    cp -f "$src" "$dst"
+    log_copy "$src -> $dst"
+    return 0
+}
+
+copy_config_folders_with_backup() {
+    local source_dir="$1"
+    local dest_dir="$2"
+
+    if [[ ! -d "$source_dir" ]]; then
+        log_warn "Source directory does not exist: $source_dir"
+        return 1
+    fi
+
+    ensure_dir "$dest_dir"
+
+    for folder in "$source_dir"/*/; do
+        [[ -d "$folder" ]] || continue
+
+        local folder_name
+        folder_name="$(basename "$folder")"
+        local target_path="$dest_dir/$folder_name"
+
+        if [[ -e "$target_path" || -L "$target_path" ]]; then
+            backup_item "$target_path"
+        fi
+
+        cp -r "$folder" "$dest_dir/"
+        log_copy "$folder -> $dest_dir/"
+    done
+}
+
+extract_archives_if_needed() {
+    local source_dir="$1"
+    local dest_dir="$2"
+    local kind="$3"
+
+    if [[ ! -d "$source_dir" ]]; then
+        log_error "Not found directory $source_dir"
+        return 1
+    fi
+
+    ensure_dir "$dest_dir"
+
+    shopt -s nullglob
+    local archives=("$source_dir"/*.tar.gz)
+    shopt -u nullglob
+
+    if [[ ${#archives[@]} -eq 0 ]]; then
+        log_warn "No .tar.gz $kind found in $source_dir"
+        return 0
+    fi
+
+    for archive in "${archives[@]}"; do
+        local archive_name base_name temp_archive
+        archive_name="$(basename "$archive")"
+        base_name="${archive_name%.tar.gz}"
+        temp_archive="$dest_dir/$archive_name"
+
+        cp -f "$archive" "$temp_archive"
+
+        if [[ -d "$dest_dir/$base_name" ]]; then
+            log_skip "Skip extract $archive_name (already exists: $dest_dir/$base_name)"
+            rm -f "$temp_archive"
+            continue
+        fi
+
+        if tar -xzf "$temp_archive" -C "$dest_dir"; then
+            log_copy "Extracted $archive_name to $dest_dir"
+        else
+            log_error "Failed to extract $archive_name"
+        fi
+
+        rm -f "$temp_archive"
+    done
+}
+
+print_header() {
+    echo ""
+    echo -e "${C_BOLD}================================================================================================${C_RESET}"
+    echo -e "${C_BOLD}${C_CYAN}--- WELCOME TO HAKUSPACE - CONFIG INSTALLER ---${C_RESET}"
+    echo "This script will help you set up your HakuSpace configuration"
+    echo "It will install packages, copy configs with backup, and setup environment."
+    echo "Please follow the prompts to complete the installation process."
+    echo -e "${C_BOLD}================================================================================================${C_RESET}"
+    echo ""
+}
+
+select_window_manager() {
     echo "Current directory: $PWD"
-    exit 1
-fi
+    echo ""
+    echo -e "${C_BOLD}[1]${C_RESET} HYPRLAND"
+    echo -e "${C_BOLD}[2]${C_RESET} NIRI"
+    echo ""
+    read -r -p ">>> Which Window Manager do you want to install?: " wm_choice
+
+    case "$wm_choice" in
+        1)
+            WM="hyprland"
+            WM_DIR="$HAKU_DIR/hyprland"
+            PKG_WM="$WM_DIR/pkg-hyprland.txt"
+            log_info "Selected: Hyprland"
+            ;;
+        2)
+            WM="niri"
+            WM_DIR="$HAKU_DIR/niri"
+            PKG_WM="$WM_DIR/pkg-niri.txt"
+            log_info "Selected: Niri"
+            ;;
+        *)
+            log_error "Invalid choice. Please run again and choose 1 or 2."
+            exit 1
+            ;;
+    esac
+}
+
+preflight_checks() {
+    if [[ "$PWD" != "$HAKU_DIR" ]]; then
+        echo ""
+        log_error "Please run this script from: $HAKU_DIR"
+        log_error "Current directory: $PWD"
+        exit 1
+    fi
+
+    mkdir -p "$BACKUP_DIR"
+    log_ok "Backup directory initialized: $BACKUP_DIR"
+}
+
+# ======================================================================================
+# MAIN
+# ======================================================================================
+
+print_header
+select_window_manager
+preflight_checks
 
 # ============================================================================
-# ========= BLOCK 1: CHECK AND INSTALL DEPENDENCIES (yay, git, curl) =========
+# BLOCK 1: CHECK AND INSTALL DEPENDENCIES
 # ============================================================================
-read -p "===> Do you want to install yay now? (y/n): " confirm
-if [[ $confirm == [yY] ]]; then
+step_title "1 - CHECK AND INSTALL DEPENDENCIES (yay, git, curl)"
+
+if ask_yes_no "===> Do you want to install yay now?"; then
     git clone https://aur.archlinux.org/yay-bin.git /tmp/yay
     (cd /tmp/yay && makepkg -si --noconfirm)
-    cd "$HOME"
+    cd "$HOME" || exit 1
     rm -rf /tmp/yay
-    echo ":: yay has been installed successfully!"
+    log_ok "yay has been installed successfully."
 else
-    echo "You need to install yay to proceed with package installation."
+    log_warn "You need yay to proceed with package installation."
+fi
+
+if ! command -v yay >/dev/null 2>&1; then
+    log_error "yay is not installed. Please install yay first."
+    exit 1
 fi
 
 DEPENDENCIES=("yay" "git" "curl")
-
-echo ""
-echo "--- 1. Check package dependencies ---"
-if ! command -v yay &> /dev/null; then
-    echo "XXX [ERROR] yay is not installed. Please install yay to proceed."
-    exit 1
-fi
 for pkg in "${DEPENDENCIES[@]}"; do
-    if command -v "$pkg" &> /dev/null; then
-        echo ":: [OK] $pkg DONE!"
+    if command -v "$pkg" >/dev/null 2>&1; then
+        log_ok "$pkg exists."
     else
-        echo "XXX [ERROR] $pkg DOES NOT EXIST!"
-        
-        read -p "===> Do you want to install $pkg now? (y/n): " confirm
-        if [[ $confirm == [yY] ]]; then
+        log_warn "$pkg not found."
+        if ask_yes_no "===> Install $pkg now?"; then
             yay -S --noconfirm "$pkg"
         else
-            echo "You need to install $pkg to install packages from $PKG_WM"
+            log_warn "You need $pkg for full installer flow."
         fi
     fi
 done
 
 echo ""
-echo ""
-echo "================================================================================================"
-echo "--- Everything is ready to install Config! ---"
-
-
-
+echo -e "${C_BOLD}================================================================================================${C_RESET}"
+echo -e "${C_GREEN}--- Everything is ready to install Config! ---${C_RESET}"
 
 # ============================================================================
-# ============= BLOCK 2: INSTALL PACKAGES FROM pkg-hyprland.txt ==============
+# BLOCK 2: INSTALL PACKAGES
 # ============================================================================
+step_title "2 - INSTALL PACKAGES FROM LIST"
 
-echo ""
-echo "--- 2. Ready to install packages from $PKG_WM ---"
+echo ":: Ready to install packages from:"
+echo "   - $PKG_WM"
+echo "   - $PKG_COMMON"
 
-echo ":: Ready to install packages..."
-read -p "===> Do you want to install packages from $PKG_WM now? (y/n): " confirm
-if [[ $confirm == [yY] ]]; then
+if ask_yes_no "===> Do you want to install package lists now?"; then
     yay -S --noconfirm - < "$PKG_WM"
     yay -S --noconfirm - < "$PKG_COMMON"
-    
-    echo "-------------------------------------------"
-    echo ":: All packages from the list have been processed!"
+    log_ok "All packages from the lists have been processed."
 else
-    echo "Skipping package installation."
+    log_skip "Skipping package installation."
 fi
 
-
 # ============================================================================
-# ========= BLOCK 3: CREATE NECESSARY DIRECTORIES (IF NOT EXIST) =============
+# BLOCK 3: CREATE NECESSARY DIRECTORIES
 # ============================================================================
+step_title "3 - INITIALIZE SYSTEM DIRECTORIES"
 
-echo ""
-echo "--- 3. Ready to initialize system directories ---"
-
-# List of directories to create
 FOLDERS=(
     "$HOME/.local/bin"
     "$HOME/.config"
@@ -143,319 +350,160 @@ FOLDERS=(
 )
 
 for folder in "${FOLDERS[@]}"; do
-    if [ ! -d "$folder" ]; then
-        mkdir -p "$folder"
-        echo ":: Created directory: $folder"
-    else
-        echo ":: Directory already exists: $folder"
-    fi
+    ensure_dir "$folder"
 done
 
-
-
 # ============================================================================
-# ================= BLOCK 4: BACKUP AND COPY CONFIG FILE =====================
+# BLOCK 4: BACKUP AND COPY CONFIG
 # ============================================================================
+step_title "4 - BACKUP AND COPY CONFIG TO ~/.config"
 
 SOURCE_WM_CONFIG="$WM_DIR/config"
 SOURCE_COMMON_CONFIG="$COMMON_DIR/config"
 DEST_CONFIG="$HOME/.config"
 
-echo ""
-echo "--- 4. Ready to deploy config to ~/.config ---"
-
-deploy_config() {
-    local source_dir=$1
-    local dest_dir=$2
-    local timestamp=$(date +%Y%m%d_%H%M%S)
-
-    if [[ -d "$source_dir" ]]; then
-        for folder in "$source_dir"/*/; do
-            [ -d "$folder" ] || continue 
-            
-            local folder_name=$(basename "$folder")
-            local target_path="$dest_dir/$folder_name"
-
-            if [[ -d "$target_path" ]] || [[ -L "$target_path" ]]; then
-                echo "[-] Found existing $folder_name in $dest_dir. Backing up..."
-                mv "$target_path" "${target_path}_backup_${timestamp}"
-            fi
-
-            echo "[+] Copying $folder_name to $dest_dir..."
-            cp -r "$folder" "$dest_dir/"
-        done
-    else
-        echo "[!] Source directory $source_dir does not exist. Skipping."
-    fi
-}
-
-read -p "===> Do you want to backup and copy your current config now? (y/n): " confirm
-if [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]]; then
-    
-    echo ""
+if ask_yes_no "===> Do you want to backup and copy your current config now?"; then
     echo ">>> Deploying Common configs..."
-    deploy_config "$SOURCE_COMMON_CONFIG" "$DEST_CONFIG"
-    
-    echo ""
-    echo ">>> Deploying $WM configs..."
-    deploy_config "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
+    copy_config_folders_with_backup "$SOURCE_COMMON_CONFIG" "$DEST_CONFIG"
 
-    echo ""
+    echo ">>> Deploying $WM configs..."
+    copy_config_folders_with_backup "$SOURCE_WM_CONFIG" "$DEST_CONFIG"
+
     echo ">>> Deploying mimeapps.list..."
-    if [[ -f "$SOURCE_COMMON_CONFIG/mimeapps.list" ]]; then
-        cp -f "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/"
-        echo ":: Copied mimeapps.list to $HOME/.config/"
-    else
-        echo "!!! mimeapps.list not found in $SOURCE_COMMON_CONFIG. Please copy it manually to $HOME/.config/"
-    fi
-    
-    echo "===> Done! Configurations deployed successfully."
+    copy_file_with_backup "$SOURCE_COMMON_CONFIG/mimeapps.list" "$HOME/.config/mimeapps.list"
+
+    log_ok "Configurations deployed successfully."
 else
-    echo "Skipping config backup and deployment."
+    log_skip "Skipping config deployment."
 fi
 
-
-# ============================================================================================
-# ================= BLOCK 5: BACKUP AND COPY LOCAL FILES (BIN / SCRIPTS) =====================
-# ============================================================================================
+# ============================================================================
+# BLOCK 5: BACKUP AND COPY LOCAL BIN
+# ============================================================================
+step_title "5 - BACKUP AND COPY ~/.local/bin"
 
 SOURCE_BIN="$COMMON_DIR/local/bin"
 DEST_BIN="$HOME/.local/bin"
 
-echo ""
-echo "--- 5. Ready to deploy local/bin files to ~/.local ---"
-
-read -p "===> Do you want to backup and copy your current local/bin files now? (y/n): " confirm
-if [[ $confirm == [yY] ]]; then
-    if [ -d "$SOURCE_BIN" ]; then
-        echo ":: Ready to copy local/bin files..."
-        # Make backup if destination local already exists
-        if [ -d "$DEST_BIN" ]; then
-            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-            echo ":: Ready to create backup for current local/bin files..."
-            mv "$DEST_BIN" "${DEST_BIN}_backup_$TIMESTAMP"
-            mkdir -p "$DEST_BIN"
-        fi
-
-        # Proceed with copying local files
-        cp -rf "$SOURCE_BIN"/. "$DEST_BIN/"
-        
-        echo ":: Copy (local/bin files) completed to $DEST_BIN"
+if ask_yes_no "===> Do you want to backup and copy your local/bin now?"; then
+    if [[ -d "$SOURCE_BIN" ]]; then
+        backup_item "$DEST_BIN"
+        ensure_dir "$DEST_BIN"
+        copy_dir_content "$SOURCE_BIN" "$DEST_BIN"
+        log_ok "local/bin deployment completed."
     else
-        echo "XXX [ERROR] Not found directory $SOURCE_BIN"
-        echo "Please copy it manually (local/bin files) to $DEST_BIN"
+        log_error "Not found directory: $SOURCE_BIN"
     fi
 else
-    echo "Skipping local files backup."
+    log_skip "Skipping local/bin deployment."
 fi
 
-# ===========================================================================================
-# ================= BLOCK 6: INSTALL OH MY ZSH AND PLUGINS (IF USER CONFIRM) ================
-# ===========================================================================================
+# ============================================================================
+# BLOCK 6: INSTALL OH MY ZSH + PLUGINS
+# ============================================================================
+step_title "6 - SETUP OH MY ZSH AND PLUGINS"
 
-# Install Oh My Zsh and plugins
-echo ""
-echo "--- 6. Setup Oh My Zsh and Plugins ---"
-
-if ! command -v zsh &> /dev/null; then
-    echo ":: Zsh is missing. Do you want to install zsh now? (y/n): "
-    read -r confirm
-    if [[ $confirm == [yY] ]]; then
+if ! command -v zsh >/dev/null 2>&1; then
+    if ask_yes_no ":: Zsh is missing. Install zsh now?"; then
         yay -S --noconfirm zsh
     fi
 fi
 
-read -p "===> Do you want to install Oh My Zsh now? (y/n): " confirm
-if [[ $confirm == [yY] ]]; then
-    if [ ! -d "$HOME/.oh-my-zsh" ]; then
-        echo ":: Installing Oh My Zsh..."
+if ask_yes_no "===> Do you want to install Oh My Zsh now?"; then
+    if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
+        log_info "Installing Oh My Zsh..."
         sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
     else
-        echo ":: Oh My Zsh already installed."
+        log_skip "Oh My Zsh already installed."
     fi
 
     ZSH_CUSTOM="$HOME/.oh-my-zsh/custom/plugins"
 
-    # zsh-autosuggestions
-    if [ ! -d "$ZSH_CUSTOM/zsh-autosuggestions" ]; then
-        echo ":: Installing zsh-autosuggestions..."
+    if [[ ! -d "$ZSH_CUSTOM/zsh-autosuggestions" ]]; then
+        log_info "Installing zsh-autosuggestions..."
         git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/zsh-autosuggestions"
+    else
+        log_skip "zsh-autosuggestions already installed."
     fi
 
-    # zsh-syntax-highlighting
-    if [ ! -d "$ZSH_CUSTOM/zsh-syntax-highlighting" ]; then
-        echo ":: Installing zsh-syntax-highlighting..."
+    if [[ ! -d "$ZSH_CUSTOM/zsh-syntax-highlighting" ]]; then
+        log_info "Installing zsh-syntax-highlighting..."
         git clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/zsh-syntax-highlighting"
+    else
+        log_skip "zsh-syntax-highlighting already installed."
     fi
 
-    # Change default shell to Zsh (Need to enter sudo password)
-    if [ "$SHELL" != "/usr/bin/zsh" ]; then
-        echo "Changing default shell to Zsh..."
-        sudo chsh -s /usr/bin/zsh $USER
+    if [[ "$SHELL" != "/usr/bin/zsh" ]]; then
+        log_info "Changing default shell to zsh..."
+        sudo chsh -s /usr/bin/zsh "$USER"
+    else
+        log_skip "Default shell is already zsh."
     fi
 else
-    echo "Skipping Oh My Zsh installation."
+    log_skip "Skipping Oh My Zsh installation."
 fi
 
-
-# =======================================================================================
-# ========= BLOCK 7: BACKUP AND COPY OTHER FILES (.zshrc, .nanorc, wallpapers) ==========
-# =======================================================================================
+# ============================================================================
+# BLOCK 7: BACKUP AND COPY DOTFILES + WALLPAPERS
+# ============================================================================
+step_title "7 - BACKUP AND COPY DOTFILES + WALLPAPERS"
 
 SOURCE_OTHER="$COMMON_DIR"
 SOURCE_WALLPAPER="$COMMON_DIR/Wallpapers"
-
 DEST_OTHER="$HOME"
 DEST_WALLPAPER="$HOME/Pictures/Wallpapers"
 
-
-echo ""
-echo "--- 7. Ready to deploy other files (like .nanorc and .zshrc) to home directory and wallpapers ---"
-
-read -p "===> Do you want to backup and copy your other files now? (y/n): " confirm
-if [[ $confirm == [yY] ]]; then
+if ask_yes_no "===> Do you want to backup and copy dotfiles + wallpapers now?"; then
     FILES_TO_COPY=(".nanorc" ".zshrc")
 
     for file in "${FILES_TO_COPY[@]}"; do
-        if [ -f "$SOURCE_OTHER/$file" ]; then
-            # Make backup if destination file already exists
-            if [ -f "$DEST_OTHER/$file" ]; then
-                mv "$DEST_OTHER/$file" "$DEST_OTHER/${file}.bak"
-                echo ":: Did create backup for $file"
-            fi
-            
-            # Copy file from source to destination
-            cp -f "$SOURCE_OTHER/$file" "$DEST_OTHER/"
-            echo ":: Did copy $file to $DEST_OTHER"
-        else
-            echo "!!! File not found: $file in $SOURCE_OTHER, skipping."
-            echo "Please copy it manually ($file) to $DEST_OTHER"
-        fi
+        copy_file_with_backup "$SOURCE_OTHER/$file" "$DEST_OTHER/$file"
     done
-    # Copy wallpapers
-    cp -rf "$SOURCE_WALLPAPER"/. "$DEST_WALLPAPER/"
-    echo ":: Did copy wallpapers to $DEST_WALLPAPER"
+
+    if [[ -d "$SOURCE_WALLPAPER" ]]; then
+        copy_dir_content "$SOURCE_WALLPAPER" "$DEST_WALLPAPER"
+        log_ok "Wallpapers copied."
+    else
+        log_warn "Wallpapers folder not found: $SOURCE_WALLPAPER"
+    fi
 else
-    echo "Skipping other files backup."
+    log_skip "Skipping dotfiles/wallpapers deployment."
 fi
 
+# ============================================================================
+# BLOCK 8: COPY ICONS
+# ============================================================================
+step_title "8 - DEPLOY ICONS TO ~/.icons"
 
-
-# =========================================================================
-# ==================== BLOCK 8: BACKUP AND COPY ICONS =====================
-# =========================================================================
-
-
-# Define source and destination paths for icons
 SOURCE_ICON="$COMMON_DIR/icons"
 DEST_ICON="$HOME/.icons"
 
-echo ""
-echo "--- 8. Ready to deploy icons to ~/.icons ---"
-
-read -p "===> Do you want to backup and copy your icons now? (y/n): " confirm
-if [[ $confirm == [yY] ]]; then
-    if [ -d "$SOURCE_ICON" ]; then
-        shopt -s nullglob
-        ICON_ARCHIVES=("$SOURCE_ICON"/*.tar.gz)
-        if [ ${#ICON_ARCHIVES[@]} -eq 0 ]; then
-            echo "!!! No .tar.gz icons found in $SOURCE_ICON"
-        else
-            for archive in "${ICON_ARCHIVES[@]}"; do
-                archive_name=$(basename "$archive")
-                dest_archive="$DEST_ICON/$archive_name"
-                base_name="${archive_name%.tar.gz}"
-
-                cp -f "$archive" "$DEST_ICON/"
-
-                if [ -d "$DEST_ICON/$base_name" ]; then
-                    echo ":: Skip extract $archive_name (already exists: $DEST_ICON/$base_name)"
-                    rm -f "$dest_archive"
-                    continue
-                fi
-
-                tar -xzf "$dest_archive" -C "$DEST_ICON"
-                if [ $? -ne 0 ]; then
-                    echo "XXX [ERROR] Failed to extract $archive_name"
-                else
-                    echo ":: Extracted $archive_name to $DEST_ICON"
-                fi
-
-                rm -f "$dest_archive"
-            done
-        fi
-        shopt -u nullglob
-        echo ":: Copy (icons) completed to $DEST_ICON"
-    else
-        echo "XXX [ERROR] Not found directory $SOURCE_ICON"
-        echo "Please copy it manually (icons) to $DEST_ICON"
-    fi
+if ask_yes_no "===> Do you want to deploy icons now?"; then
+    extract_archives_if_needed "$SOURCE_ICON" "$DEST_ICON" "icons"
+    log_ok "Icons process completed."
 else
-    echo "Skipping icons backup."
+    log_skip "Skipping icons deployment."
 fi
 
+# ============================================================================
+# BLOCK 9: COPY THEMES
+# ============================================================================
+step_title "9 - DEPLOY THEMES TO ~/.themes"
 
-
-# ==========================================================================
-# ==================== BLOCK 9: BACKUP AND COPY THEMES ====================
-# ==========================================================================
-
-# Define source and destination paths for themes
 SOURCE_THEME="$COMMON_DIR/themes"
 DEST_THEME="$HOME/.themes"
 
-echo ""
-echo "--- 9. Ready to deploy themes to ~/.themes ---"
-
-read -p "===> Do you want to backup and copy your themes now? (y/n): " confirm
-if [[ $confirm == [yY] ]]; then
-    if [ -d "$SOURCE_THEME" ]; then
-        shopt -s nullglob
-        THEME_ARCHIVES=("$SOURCE_THEME"/*.tar.gz)
-        if [ ${#THEME_ARCHIVES[@]} -eq 0 ]; then
-            echo "!!! No .tar.gz themes found in $SOURCE_THEME"
-        else
-            for archive in "${THEME_ARCHIVES[@]}"; do
-                archive_name=$(basename "$archive")
-                dest_archive="$DEST_THEME/$archive_name"
-                base_name="${archive_name%.tar.gz}"
-
-                cp -f "$archive" "$DEST_THEME/"
-
-                if [ -d "$DEST_THEME/$base_name" ]; then
-                    echo ":: Skip extract $archive_name (already exists: $DEST_THEME/$base_name)"
-                    rm -f "$dest_archive"
-                    continue
-                fi
-
-                tar -xzf "$dest_archive" -C "$DEST_THEME"
-                if [ $? -ne 0 ]; then
-                    echo "XXX [ERROR] Failed to extract $archive_name"
-                else
-                    echo ":: Extracted $archive_name to $DEST_THEME"
-                fi
-
-                rm -f "$dest_archive"
-            done
-        fi
-        shopt -u nullglob
-        echo ":: Copy (themes) completed to $DEST_THEME"
-    else
-        echo "XXX [ERROR] Not found directory $SOURCE_THEME"
-        echo "Please copy it manually (themes) to $DEST_THEME"
-    fi
+if ask_yes_no "===> Do you want to deploy themes now?"; then
+    extract_archives_if_needed "$SOURCE_THEME" "$DEST_THEME" "themes"
+    log_ok "Themes process completed."
 else
-    echo "Skipping themes backup."
+    log_skip "Skipping themes deployment."
 fi
 
-
-# ==========================================================================
-# ==================== BLOCK 10: ENABLE SYSTEM SERVICES ====================
-# ==========================================================================
-
-# Enable service
-echo ""
-echo "--- 10. Enabling system services ---"
+# ============================================================================
+# BLOCK 10: ENABLE SERVICES
+# ============================================================================
+step_title "10 - ENABLE SYSTEM SERVICES"
 
 sudo systemctl enable --now NetworkManager
 sudo systemctl enable --now bluetooth
@@ -464,11 +512,15 @@ sudo systemctl disable getty@tty1.service
 
 xdg-mime default thunar.desktop inode/directory
 
-$HOME/.local/bin/gen-style.sh
+if [[ -x "$HOME/.local/bin/gen-style.sh" ]]; then
+    "$HOME/.local/bin/gen-style.sh"
+    log_ok "Executed gen-style.sh"
+else
+    log_warn "Not executable or missing: $HOME/.local/bin/gen-style.sh"
+fi
 
-echo "✅ All services have been processed!"
-
-# Final message
 echo ""
+echo -e "${C_GREEN}✅ All services have been processed!${C_RESET}"
 echo ""
-echo ">>>>>>>>>> All done! Please restart your pc to apply changes!"
+echo -e "${C_BOLD}${C_CYAN}>>>>>>>>>> All done! Please restart your pc to apply changes!${C_RESET}"
+echo -e "${C_MAGENTA}Backup folder for this run: $BACKUP_DIR${C_RESET}"
