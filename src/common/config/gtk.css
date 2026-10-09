@@ -189,8 +189,7 @@ menu menuitem {
 }
 
 menu menuitem:hover {
-    background-color: @accent_color;
-    color: #000000;
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 menu separator {
