@@ -65,8 +65,8 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("blueman-applet")
     hl.exec_cmd("hypridle")
     hl.exec_cmd("sway-audio-idle-inhibit")
-    hl.exec_cmd("~/.local/bin/welcome")
-    hl.exec_cmd("~/.local/bin/cava_manager")
+    hl.exec_cmd("/home/hakuimaku/.local/bin/cava_manager")
+    hl.exec_cmd("/home/hakuimaku/.local/bin/welcome")
 end)
 
 
@@ -97,7 +97,7 @@ hl.env("QT_IM_MODULE", "fcitx")
 
 -- Scale factor
 hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
-hl.env("QT_AUTO_SCREEN_SCALE_FACTOR", "0") -- Disable if you want to set a custom scale factor with QT_SCALE_FACTOR
+hl.env("QT_AUTO_SCREEN_SCALE_FACTOR", "1") -- Disable if you want to set a custom scale factor with QT_SCALE_FACTOR
 --hl.env("QT_SCALE_FACTOR", "1.25")
 
 
@@ -131,7 +131,7 @@ hl.config({
         gaps_in  = 5,
         gaps_out = 10,
 
-        border_size = 2,
+        border_size = 3,
 
         col = {
             active_border   = border_color,
@@ -186,12 +186,12 @@ hl.curve( "easeInOut", { type = "bezier", points = { {0.65, 0}, {0.35, 1} } })
 hl.animation({ leaf = "windows", enabled = true, duration = 1, speed = 6, bezier = "myBezier" })
 hl.animation({ leaf = "windowsIn", enabled = true, duration = 1, speed = 6, bezier = "myBezier" })
 hl.animation({ leaf = "windowsOut", enabled = true, duration = 1, speed = 10, bezier = "myBezier" })
-hl.animation({ leaf = "windowsMove", enabled = true, duration = 1, speed = 6, bezier = "easeInOut" })
+hl.animation({ leaf = "windowsMove", enabled = true, duration = 1, speed = 4, bezier = "easeInOut" })
 
 -- Layer
 hl.animation({ leaf = "layers", enabled = true, duration = 1, speed = 8, bezier = "myBezier" })
 hl.animation({ leaf = "layersIn", enabled = true, duration = 1, speed = 8, bezier = "myBezier" })
-hl.animation({ leaf = "layersOut", enabled = true, duration = 1, speed = 14, bezier = "myBezier" })
+hl.animation({ leaf = "layersOut", enabled = true, duration = 1, speed = 8, bezier = "myBezier" })
 
 -- Fade effects
 hl.animation({ leaf = "fade", enabled = true, duration = 1, speed = 10, bezier = "default" })
@@ -208,14 +208,14 @@ hl.animation({ leaf = "border", enabled = true, duration = 1, speed = 10, bezier
 hl.animation({ leaf = "borderangle", enabled = true, duration = 1, speed = 30, bezier = "default", loop = true })
 
 -- Workspaces
-hl.animation({ leaf = "workspaces", enabled = true, duration = 1, speed = 8, bezier = "myBezier", style = "slide" })
-hl.animation({ leaf = "workspacesIn", enabled = true, duration = 1, speed = 8, bezier = "myBezier" })
-hl.animation({ leaf = "workspacesOut", enabled = true, duration = 1, speed = 8, bezier = "myBezier" })
+hl.animation({ leaf = "workspaces", enabled = true, duration = 1, speed = 8, bezier = "myBezier", style = "slidevert" })
+hl.animation({ leaf = "workspacesIn", enabled = true, duration = 1, speed = 8, bezier = "myBezier", style = "slidevert" })
+hl.animation({ leaf = "workspacesOut", enabled = true, duration = 1, speed = 8, bezier = "myBezier", style = "slidevert" })
 
 -- Special workspace
 hl.animation({ leaf = "specialWorkspace", enabled = true, duration = 1, speed = 6, bezier = "myBezier", style = "slidevert" })
-hl.animation({ leaf = "specialWorkspaceIn", enabled = true, duration = 1, speed = 6, bezier = "myBezier" })
-hl.animation({ leaf = "specialWorkspaceOut", enabled = true, duration = 1, speed = 6, bezier = "myBezier" })
+hl.animation({ leaf = "specialWorkspaceIn", enabled = true, duration = 1, speed = 6, bezier = "myBezier", style = "slidevert" })
+hl.animation({ leaf = "specialWorkspaceOut", enabled = true, duration = 1, speed = 6, bezier = "myBezier", style = "slidevert" })
 
 -- Others
 hl.animation({ leaf = "zoomFactor", enabled = true, duration = 1, speed = 6, bezier = "myBezier" })
@@ -299,7 +299,7 @@ hl.config({
 
 hl.gesture({
     fingers = 3,
-    direction = "horizontal",
+    direction = "vertical",
     action = "workspace"
 })
 
@@ -373,23 +373,29 @@ local codeSpecialWorkspace = hl.window_rule({
 
     workspace = "special:magic",
 })
-codeSpecialWorkspace:set_enabled(false) -- Disable this rule for now, as it can be annoying if you don't know how to use the special workspace
+codeSpecialWorkspace:set_enabled(true) -- Disable this rule for now, as it can be annoying if you don't know how to use the special workspace
 
-hl.layer_rule({match = { namespace = "waybar" }, animations = fade})
+hl.layer_rule({
+    match = { namespace = "waybar" },
+    
+    animations = fade
+})
 
+-----------------------------------------------------------------
 hl.window_rule({
-    name  = "floating-nemo",
-    match = { class = "(?i)nemo" },
+    name = "float-calculator",
+    match = { class = "org.gnome.Calculator" },
 
     float = true,
-    center = true,
-    size  = "1280 720",
-    opacity = 0.9,
+    move = "10 55",
+    size = "600 800",
 })
+
+
 
 hl.window_rule({
     name  = "opacity-for-certain-apps",
-    match = { class = "(?i)nemo|code|kitty|jetbrains.*" },
+    match = { class = "(?i)nemo|kitty|code|jetbrains.*" },
 
     opacity = 0.8,
 })
@@ -419,7 +425,6 @@ hl.layer_rule({
     match = { namespace = "rofi" },
     animation = "slide top",
     blur = true,
-    blur_popups = true,
 })
 
 hl.layer_rule({
@@ -428,7 +433,6 @@ hl.layer_rule({
 
     animation = "slide right",
 })
-
 
 -- Browser popups like save, etc. should usually be floating
 hl.window_rule({
@@ -441,27 +445,6 @@ hl.window_rule({
 })
 
 
--- Haku Space - Global
-hl.window_rule({
-    name = "haku-space",
-    match = { class = "seyclock|seypipes|seycava|seycmd|seymatrix|seylavat" },
-
-    float = true,
-})
-
--- Haku Space - haku
-hl.window_rule({ match = { title = "hakuclock" }, size = "385 450", move = "15 55" })
-hl.window_rule({ match = { title = "hakupipes" }, size = "775 545", move = "15 520" })
-hl.window_rule({ match = { title = "hakumatrix" }, size = "375 450", move = "415 55" })
-hl.window_rule({ match = { title = "hakucmd" }, size = "1100 690", move = "805 55" })
-hl.window_rule({ match = { title = "hakulavat" }, size = "1100 305", move = "805 760" })
-
--- Haku Space - hakunet
-hl.window_rule({ match = { title = "hakunetclock" }, size = "300 450", move = "15 55" })
-hl.window_rule({ match = { title = "hakunetlavat" }, size = "300 550", move = "15 515" })
-hl.window_rule({ match = { title = "hakunetcmd" }, size = "1270 1010", move = "330 55" })
-hl.window_rule({ match = { title = "hakunetcava" }, size = "290 1010", move = "1615 55" })
-
 -- Cava Underbar
 hl.window_rule({
     name = "cava-underbar",
@@ -470,13 +453,10 @@ hl.window_rule({
     float = true,
     pin = true,
     border_size = 0,
-    rounding = 10,
-    rounding_power = 6,
-    no_anim = true,
     no_blur = true,
     no_focus = true,
     no_shadow = true,
-    opacity = 0.6,
-    size = "1920 100",
+    opacity = 0.7,
+    size = "1920 40",
     move = "0 0",
 })
