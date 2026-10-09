@@ -1,20 +1,31 @@
 #!/bin/bash
 
 WALL_DIR="$HOME/Pictures/Wallpapers"
+BACKDROP_DIR="$WALL_DIR/temp"
 INTERVAL=300
 STATE_FILE="/tmp/random_wallpaper_status"
 
 [[ ! -f "$STATE_FILE" ]] && echo "0" > "$STATE_FILE"
 
-run_wallpaper() {
-    if ! pgrep -x "awww-daemon" > /dev/null; then
-        awww-daemon &
-        sleep 1
-    fi
+set_wallpaper() {
+    local wall="$1"
+    awww img "$wall" \
+        --transition-type random \
+        --transition-step 90 \
+        --transition-fps 60
 
+    if pgrep -x "niri" > /dev/null; then
+        mkdir -p "$BACKDROP_DIR"
+        magick "$wall" -blur 0x15 "$BACKDROP_DIR/backdrop.jpg"
+        awww img -n "awww-daemon-backdrop" "$BACKDROP_DIR/backdrop.jpg"
+    fi
+}
+
+run_wallpaper() {
     while true; do
         for ((i=0; i<INTERVAL; i++)); do
             [[ "$(cat "$STATE_FILE" 2>/dev/null)" == "0" ]] && exit 0
+            echo "$((i))"
             sleep 1
         done
 
@@ -23,8 +34,8 @@ run_wallpaper() {
         WALL=$(find "$WALL_DIR" -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.gif" -o -name "*.webp" \) | shuf -n 1)
         
         if [ -n "$WALL" ]; then
-            awww img "$WALL" --transition-type random --transition-step 90 --transition-fps 60
-            
+            set_wallpaper "$WALL"
+
             ACCENT=$(python3 -c '
                 from colorthief import ColorThief
                 import sys
