@@ -36,15 +36,19 @@ PanelWindow {
                 spacing: Theme.gap
                 TopModules.Logo {}
                 TopModules.Workspaces {}
-                TopModules.MusicGroup {}
+                TopModules.CavaGroup {}
             }
             
             Row {
                 id: centerModules
                 anchors.centerIn: parent
                 spacing: Theme.gap
-                TopModules.RecorderGroup {}
-                TopModules.ClockGroup {}
+                TopModule {
+                    text: "Window Title"
+                    icon: ""
+                    isAccent: false
+                    // Placeholder for future window title module
+                }
             }
             
             Row {
@@ -52,9 +56,10 @@ PanelWindow {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Theme.gap
-                TopModules.MonitorGroup {}
-                TopModules.SettingsGroup {}
                 TopModules.TrayGroup {}
+                TopModules.SettingsGroup {}
+                TopModules.RecorderGroup {}
+                TopModules.ClockGroup {}
                 TopModules.NotificationGroup {}
             }
         }

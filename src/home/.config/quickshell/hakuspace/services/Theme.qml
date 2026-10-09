@@ -16,8 +16,9 @@ QtObject {
     property string surfaceHi: "#444444"
     property string accent: "#ffffff"
     property string onAccentColor: "#000000"
+    property string inkBg: "#111111"
     
-    property int radius: 12
+    property int radius: 16
     property int radiusSm: 8
     property int borderWidth: 0
     property int gap: 4

@@ -7,3 +7,4 @@ MonitorGroup 1.0 MonitorGroup.qml
 SettingsGroup 1.0 SettingsGroup.qml
 TrayGroup 1.0 TrayGroup.qml
 NotificationGroup 1.0 NotificationGroup.qml
+CavaGroup 1.0 CavaGroup.qml

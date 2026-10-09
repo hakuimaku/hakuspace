@@ -77,7 +77,6 @@ else
 
     exec 3<> "$FIFO"
     
-    
     # Wait for response
     while true; do
         if IFS= read -r -t 1 -u 3 result; then
@@ -87,7 +86,6 @@ else
             echo "$result"
             exit 0
         fi
-        
         
         if ! haku_qs_alive; then
             exit 1

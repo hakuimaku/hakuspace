@@ -1,0 +1,8 @@
+module services
+singleton HAnimation 1.0 HAnimation.qml
+singleton AppState 1.0 AppState.qml
+singleton Env 1.0 Env.qml
+singleton Theme 1.0 Theme.qml
+singleton UiState 1.0 UiState.qml
+singleton WM 1.0 WM/WM.qml
+singleton SysStats 1.0 SysStats.qml

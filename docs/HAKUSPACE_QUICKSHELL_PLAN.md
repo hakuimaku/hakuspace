@@ -22,7 +22,8 @@
 
 ### Goals
 - Add a **second backend** for HakuSpace named **Hikai** (using Quickshell). The old backend (`classic`) remains and is not replaced.
-- **Centralized Architecture:** In the `hikai` backend, **all modules (TopBar, RoundedScreen, Cava, Picker, Desktop Icons...) run together inside a single `qs` (Quickshell) process.** They are entirely independent and completely separated from Classic mode apps (similar to how the Python Rounded Screen is now drawn directly via QML inside the Hikai process).
+- **Centralized Architecture:** In the `hikai` backend, **all modules (TopBar, RoundedScreen, Cava, Picker, Desktop Icons...) run together inside a single `qs` (Quickshell) process.**
+  - **IMPORTANT CONCEPT NOTE:** In Hikai, `RoundedScreen.qml` is an integral, native part of the shell architecture itself. It is conceptually and technically separated from the standalone classic "mini-apps" (like the Python `rounded_screen.py` or `edge_trigger.py`). Hikai renders its own rounded corners natively within Quickshell.
 - The following Classic apps are **blocked and must not run** in Hikai: `waybar`, `taskbar`, `swaync`, `rofi`, and the 4 Python GTK layer-shell apps (`edge_trigger.py`, `rounded_screen.py`, `cava_layer.py`, `desktop_icons.py`).
 - Switch back and forth between the 2 backends on-the-fly (without logging out), and remember the choice across reboots.
 - More modern UI, with animations, unified theme matching the existing color pipeline.
@@ -345,3 +346,4 @@ docs/core/quickshell.md
 docs/vietnamese/VN_quickshell.md
 docs/quickshell-testing.md
 ```
+- Removed monitor module and drawer from TopBar layout per user request.

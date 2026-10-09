@@ -1,19 +1,21 @@
 import QtQuick
 import Quickshell
-import Quickshell.Io
-import "../"
+import "../../services"
+import ".."
 
 TopModule {
-    text: "󰮯"
+    id: root
+    icon: "󰮯"
     isAccent: true
     
-    Process {
-        id: menuProc
-        command: ["sh", "-c", "hakumenu.sh"]
-        running: false
-    }
+    // Circular
+    implicitWidth: implicitHeight
+    radius: height / 2
+    
+    tooltip: "Have a nice day!\n(HakuMenu will be added in M4)"
     
     onClicked: {
-        menuProc.running = true;
+        console.log("Logo clicked, toggling hakumenu");
+        UiState.toggle("hakumenu");
     }
 }

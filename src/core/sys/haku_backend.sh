@@ -42,7 +42,6 @@ set_backend() {
         echo "Killing classic stack..."
         kill_classic_stack
         
-        
         # Wait for D-Bus name to be released (simple delay)
         echo "Waiting for D-Bus release..."
         sleep 0.5
@@ -96,9 +95,8 @@ kill_quickshell() {
     pkill -f qs_supervisor.sh
     qs -c hakuspace kill 2>/dev/null
     sleep 0.2
-    if pgrep -f "qs.*hakuspace" >/dev/null 2>&1 || pgrep -f "quickshell.*hakuspace" >/dev/null 2>&1; then
-        pkill -f "qs.*hakuspace"
-        pkill -f "quickshell.*hakuspace"
+    if pgrep -f '^(/[^ ]*/)?(qs|quickshell)( [^ ]+)* -c hakuspace( |$)' >/dev/null 2>&1; then
+        pkill -f '^(/[^ ]*/)?(qs|quickshell)( [^ ]+)* -c hakuspace( |$)'
     fi
 }
 

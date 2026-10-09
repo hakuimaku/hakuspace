@@ -1,9 +1,41 @@
 import QtQuick
 import "../"
-Row {
-    spacing: 2
-    TopModule { text: ""; isAccent: true }
-    TopModule { text: "12% " }
-    TopModule { text: "45% " }
-    TopModule { text: "50°C " }
+import "../base"
+import "../../services"
+
+HDrawer {
+    id: root
+    leftToRight: false
+    open: false
+    
+    onOpenChanged: {
+        if (open) SysStats.acquire()
+        else SysStats.release()
+    }
+
+    trigger: TopModule {
+        icon: root.open ? "" : ""
+        isAccent: true
+        onClicked: root.open = !root.open
+    }
+    
+    Row {
+        spacing: Theme.gap
+        TopModule { 
+            text: SysStats.cpu + "%"
+            icon: ""
+            color: hovered ? Theme.surfaceHi : "rgba(32,32,32,0.6)"
+        }
+        TopModule { 
+            text: SysStats.ram + "%"
+            icon: ""
+            color: hovered ? Theme.surfaceHi : "rgba(32,32,32,0.6)"
+        }
+        TopModule { 
+            text: SysStats.temp + "°C"
+            icon: ""
+            visible: SysStats.hasTemp
+            color: hovered ? Theme.surfaceHi : "rgba(32,32,32,0.6)"
+        }
+    }
 }
