@@ -79,6 +79,7 @@ if [[ $XDG_CURRENT_DESKTOP == "Hyprland" ]]; then
     elif [[ $LAYOUT == "dwindle" ]]; then
         clock
         cmd
+        hyprctl eval 'hl.dispatch(hl.dsp.window.move({ direction = "left", window = "class:seycmd" }))'
         hyprctl eval 'hl.dispatch(hl.dsp.focus({ window = "class:seyclock" }))'
         lavat
         hyprctl eval 'hl.dispatch(hl.dsp.window.move({ direction = "right", window = "class:seylavat" }))'
