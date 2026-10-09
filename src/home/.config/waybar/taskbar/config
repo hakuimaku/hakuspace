@@ -1,7 +1,7 @@
 {
     "include": [
         "$HOME/.config/waybar/module/notification_module",
-        "$HOME/hakucfg/config/taskbar_pin_apps",
+        "$HOME/hakucfg/config/taskbar-pin-apps",
         "$HOME/.local/state/hakuspace/taskbar-theme"
     ],
     "name": "taskbar",
