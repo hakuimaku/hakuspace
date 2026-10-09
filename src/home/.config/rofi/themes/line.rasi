@@ -53,7 +53,7 @@ inputbar {
 }
 
 prompt {
-    padding:             10px;
+    padding:             10px 30px 10px 25px;
     background-color:    @accent;
     text-color:          @background;
     border-radius:       12px 12px 0 0;
@@ -79,10 +79,12 @@ mode-switcher {
 }
 
 button {
+    font:                "JetBrainsMono Nerd Font 18";
     padding:             8px 14px;
     background-color:    transparent;
     text-color:          @accent;
     border-radius:       0 0 12px 12px;
+    horizontal-align:    0.45;
 }
 
 button selected {

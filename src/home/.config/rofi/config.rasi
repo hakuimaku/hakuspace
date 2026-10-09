@@ -4,9 +4,9 @@ configuration {
     terminal: "kitty";
     drun-display-format: "{icon} {name}";
     disable-history: false;
-    display-drun: "  Apps ";
-    display-run: "  Run ";
-    display-window: " 󰙀 Window ";
+    display-drun: "󰾍";
+    display-run: "";
+    display-window: "󰜎";
     sidebar-mode: true;
     window-format: "{w} | {c} | {t}";
     kb-cancel: "Escape,MouseSecondary";

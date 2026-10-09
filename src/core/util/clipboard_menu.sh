@@ -30,8 +30,7 @@ fi
 # Show clipboard history using rofi and allow user to select an entry
 result=$(cliphist list | rofi -dmenu \
     -p "󰅌 Clipboard" \
-    -theme-str "window { width: 50%; } \
-                listview { lines: 10; }")
+    -theme option-menu.rasi)
 
 if [ ! -z "$result" ]; then
     echo "$result" | cliphist decode | wl-copy

@@ -6,10 +6,10 @@ source "$SCRIPT_DIR/haku_theme.sh"
 
 GEN="$HOME/.local/bin/gen_style.sh"
 APPLY="$HOME/.local/bin/apply_style.sh"
-ROFI_THEME_BASE='mainbox { children: [ inputbar, content-area]; } window { width: 40%;'
+
 
 prompt="Change Theme - Choose an option:"
-choice="$(cat <<EOF | rofi -dmenu -p "$prompt" -theme-str "$ROFI_THEME_BASE height: 40%; }" -i
+choice="$(cat <<EOF | rofi -dmenu -p "$prompt" -theme option-menu.rasi -i
   Change Waybar Theme
   Change Rofi Theme
   Change Font
@@ -23,8 +23,10 @@ case "$choice" in
     *"Change Waybar Theme"*) spawn $HOME/.local/bin/waybar_manager.sh --select && exit 0;;
     *"Change Rofi Theme"*) spawn $HOME/.local/bin/rofi_theme_switcher.sh && exit 0;;
     *"Change Font Size"*)
-        new_size="$(printf '%s\n' "$FONT_SIZE" | rofi -dmenu -p "  Current: ${FONT_SIZE}px" -theme-str "entry { placeholder: \"Type font size here\"; } $ROFI_THEME_BASE height: 30%; }" -i)"
-        [[ -z "${new_size:-}" ]] && exit 0
+        size_choices="10px\n12px\n14px\n16px\n18px"
+        new_size_selection="$(printf '%b\n' "$size_choices" | rofi -dmenu -p "  Current: ${FONT_SIZE}px" -theme option-menu.rasi -i)"
+        [[ -z "${new_size_selection:-}" ]] && exit 0
+        new_size="${new_size_selection//px/}"
         [[ "$new_size" =~ ^[0-9]+$ ]] || exit 0
         FONT_SIZE="$new_size"
         ;;
@@ -32,13 +34,13 @@ case "$choice" in
     *"Change Font"*)
         fonts="$(fc-list : family 2>/dev/null | sed 's/,.*//' | sort -u || true)"
         [[ -z "$fonts" ]] && { echo "No fonts found via fc-list" >&2; exit 1; }
-        new_font="$(printf '%s\n' "$fonts" | rofi -dmenu -p "  Current: ${FONT_FAMILY}" -theme-str "$ROFI_THEME_BASE height: 40%; }" -i)"
+        new_font="$(printf '%s\n' "$fonts" | rofi -dmenu -p "  Current: ${FONT_FAMILY}" -theme option-menu.rasi -i)"
         [[ -z "${new_font:-}" ]] && exit 0
         FONT_FAMILY="$new_font"
         ;;
 
     *"Change Accent Color"*)
-        accent_choice="$(cat <<'EOF' | rofi -dmenu -p "  Current: ${ACCENT_COLOR}" -theme-str "entry { placeholder: \"Type hex color here #xxxxxx\"; } $ROFI_THEME_BASE height: 50%; }" -i
+        accent_choice="$(cat <<'EOF' | rofi -dmenu -p "  Current: ${ACCENT_COLOR}" -theme option-menu.rasi -i
 Pick Color   [Press Enter]
 Slate Blue   #7288AE
 Green        #A2CB8B

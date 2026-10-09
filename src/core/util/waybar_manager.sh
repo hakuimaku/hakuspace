@@ -131,7 +131,7 @@ fi
 # Handle --select argument via Rofi
 if [[ "$1" == "--select" ]]; then
     [[ "$WAYBAR_STATUS" == "0" ]] && exit 0
-    choice=$(printf "%s\n" "${WAYBAR_MODES[@]}" | rofi -dmenu -p "Waybar" -i -theme-str 'mainbox { children: [ inputbar, content-area]; } window { width: 40%; height: 40%; } entry { placeholder: " Select Mode"; }')
+    choice=$(printf "%s\n" "${WAYBAR_MODES[@]}" | rofi -dmenu -p "Waybar" -i -theme option-menu.rasi)
     [[ -z "$choice" ]] && exit 0
 
     if [[ "$choice" != "$CURRENT_STATE" ]]; then

@@ -47,7 +47,7 @@ if [[ $1 == "-m" || $1 == "--menu" ]]; then
         exit 1
     fi
 
-    SELECTED=$(printf "%s\n" "${ALL_FILES[@]}" | rofi -dmenu -i -p "Add Shortcut" -theme-str 'window {width: 70%;}')
+    SELECTED=$(printf "%s\n" "${ALL_FILES[@]}" | rofi -dmenu -i -p "Add Shortcut" -theme option-menu.rasi)
     
     if [ -n "$SELECTED" ]; then
         bash "$0" -a "$SELECTED"

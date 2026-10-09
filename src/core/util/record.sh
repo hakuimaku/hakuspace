@@ -159,7 +159,7 @@ stop_recording() {
 
 start_recording() {
     options="󰑊 Only Sound\n󰍬 Micro and Sound\n󰔊 No Sound"
-    chosen=$(echo -e "$options" | rofi -dmenu -i -p "Select Mode:" -theme-str "window { width: 35%; }")
+    chosen=$(echo -e "$options" | rofi -dmenu -i -p "Select Mode:" -theme option-menu.rasi)
     if [ -z "$chosen" ]; then exit 0; fi
 
     FILENAME="recording_$(date +%Y%m%d_%H%M%S).mp4"
@@ -183,7 +183,7 @@ start_recording() {
             ;;
         *"Micro and Sound")
             # Filter for physical mics only
-            AUDIO_DEVICE=$(pactl list short sources | awk '{print $2}' | grep -viE '\.monitor$' | rofi -dmenu -i -p "Select Mic/Source:" -theme-str "window { width: 70%; }")
+            AUDIO_DEVICE=$(pactl list short sources | awk '{print $2}' | grep -viE '\.monitor$' | rofi -dmenu -i -p "Select Mic/Source:" -theme option-menu.rasi)
             if [ -z "$AUDIO_DEVICE" ]; then exit 0; fi
 
             lock_pipewire_rate
