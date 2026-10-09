@@ -19,7 +19,7 @@ spawn-at-startup "blueman-applet"
 spawn-at-startup "sway-audio-idle-inhibit"
 spawn-at-startup "awww-daemon"
 spawn-at-startup "awww-daemon" "-n" "awww-daemon-backdrop"
-spawn-at-startup "sh" "-c" "~/.local/bin/waybar_toggle.sh" "--start"
+spawn-at-startup "sh" "-c" "~/.local/bin/waybar_toggle.sh"
 
 
 // Optional
