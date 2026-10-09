@@ -21,6 +21,7 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("hypridle")
     hl.exec_cmd("sway-audio-idle-inhibit")
     hl.exec_cmd("$HOME/.local/bin/waybar_manager.sh")
+    hl.exec_cmd("$HOME/.local/bin/dockbar_manager.sh --startup")
     hl.exec_cmd("$HOME/.local/bin/cava_manager.sh") -- Run cava underbar daemon
     hl.exec_cmd("$HOME/.local/bin/welcome.sh")
 end)
