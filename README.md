@@ -7,12 +7,12 @@
 
 <h2 style="color:#1abc9c;">OVERVIEW</h2>
 
-| Screenshot Capture | Description |
-|---|-----|
-| <img width="1920" height="1080" alt="20260530_173100" src="https://github.com/user-attachments/assets/29746f0f-35d1-43ac-8c60-d3aa90b0c495" /> | Overview |
-| <img width="1920" height="1080" alt="20260530_173019" src="https://github.com/user-attachments/assets/c89ea89e-5a59-4b94-9175-3df800409bc8" /> | Haku Menu |
-| <img width="1920" height="1080" alt="20260530_172950" src="https://github.com/user-attachments/assets/536d84f7-cdb0-4b14-9f5b-275933c3807d" /> | `haku` - Haku Space |
-| <img width="1920" height="1080" alt="20260530_173137" src="https://github.com/user-attachments/assets/3ab29fee-6c45-4c78-a497-42d3a99f4d31" /> | Swaync |
+| <img width="1920" height="1080" alt="20260616_122304" src="https://github.com/user-attachments/assets/debf37dc-2d41-4bec-9c64-897940990a0e" /> | <img width="1920" height="1080" alt="20260616_122449" src="https://github.com/user-attachments/assets/68673d63-0735-4be8-83a5-0ff68807f498" /> |
+|---|---|
+| <img width="1920" height="1080" alt="20260616_121854" src="https://github.com/user-attachments/assets/0e71b444-2709-4120-8b3c-8eca03d9ba4c" /> | <img width="1920" height="1080" alt="20260616_122126" src="https://github.com/user-attachments/assets/0743854f-a7d0-4217-a85e-784f75e7ca75" /> |
+| <img width="1920" height="1080" alt="20260616_121922" src="https://github.com/user-attachments/assets/05c24625-b900-4798-a7a7-142588bc3f07" /> | <img width="1920" height="1080" alt="20260616_122629" src="https://github.com/user-attachments/assets/12b079ca-4ce6-42dc-83f0-95b34ea5873b" /> |
+
+> Note: Some wallpapers shown in the overview screenshots are not included in the dotfiles
 
 
 ---
@@ -82,7 +82,7 @@ If configurations don't work:
 2. Verify file permissions with `ls -la ~/.local/bin`
 3. Check config file paths are correctly set
 4. Review individual config files for syntax errors
-5. If module clock on waybar doesn't work. Make sure you have set Timezone, Locale for Arch linux
+5. **If module clock on waybar doesn't work. Make sure you have set Timezone, Locale for Arch linux (And change in waybar config too)**
 6. Lively Wallpaper by SUPER SHIFT + Y didn't have thumbnail?
    > Create folder Preview (~/Videos/Wallpapers/Preview) and add image .jpg/.png (same name with video) to appear thumbnail in rofi select menu
 
