@@ -34,12 +34,12 @@ cava() {
 }
 
 lavat() {
-    spawn kitty --title "hakulavat" --class "seylavat" -o font_size=$HAKU_GENERAL_FONT_SIZE sh -c "lavat -c blue -k blue -r1"
+    spawn kitty --title "hakulavat" --class "seylavat" -o font_size=$HAKU_GENERAL_FONT_SIZE sh -c "lavat -c white -k white -r1"
     sleep 0.2
 }
 
 clock() {
-    spawn kitty --title "hakuclock" --class "seyclock" -o font_size=$HAKU_CLOCK_FONT_SIZE sh -c "tty-clock -c -C 4 -r -b"
+    spawn kitty --title "hakuclock" --class "seyclock" -o font_size=$HAKU_CLOCK_FONT_SIZE sh -c "tty-clock -c -C 7 -r -b"
     sleep 0.2
 }
 

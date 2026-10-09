@@ -5,4 +5,4 @@ overshoot = 100
 max_height = 100
 
 [color]
-foreground = blue
+foreground = white
