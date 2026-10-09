@@ -7,14 +7,12 @@
 * {
     font-size: 14px;
     font-weight: bold;
-    border-radius: 20px;
 }
 
 window#waybar {
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.8);
     color: @accent_color;
     transition: background-color 0.3s ease;
-    border-radius: 12px;
 }
 
 .modules-left, .modules-center, .modules-right {
@@ -25,7 +23,7 @@ window#waybar {
 /* ============================================================================== */
 /* COMMON MODULE STYLES                               */
 /* ============================================================================== */
-#custom-haku,
+#custom-bar,
 #window,
 #custom-recorder,
 #custom-notification,
@@ -173,7 +171,7 @@ window#waybar {
 
 #cpu { color: @accent_color; }
 
-#custom-haku {
+#custom-bar {
     min-height: 30px;
 }
 
@@ -181,7 +179,7 @@ window#waybar {
 /* ============================================================================== */
 /* HOVER EFFECTS                                   */
 /* ============================================================================== */
-#custom-haku:hover,
+#custom-bar:hover,
 #clock:hover,
 #power-profiles-daemon:hover,
 #pulseaudio:hover,
