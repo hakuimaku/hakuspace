@@ -102,8 +102,8 @@ daemon_tick() {
     # user wants OFF -> daemon never starts cava
     [[ "$want_on" != "1" ]] && return 0
 
-    # fullscreen (mode 1 or 2) => hide if running
-    if [[ "$fs" != "0" ]]; then
+    # fullscreen (mode 2 - maximized) => hide if running
+    if [[ "$fs" == "2" ]]; then
         if pgrep -f "$APP_CLASS" >/dev/null; then
         stop_cava
         echo "1" > "$HIDDEN_FILE"
