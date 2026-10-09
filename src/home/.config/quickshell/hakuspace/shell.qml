@@ -11,6 +11,18 @@ import "modules/picker"
 ShellRoot {
     id: root
 
+    PersistentProperties {
+        id: notificationMemory
+        reloadableId: "hakuspace-notification-records"
+        property string recordsJson: "[]"
+        property int nextKey: 1
+        // Keep the existing swaync path active until the P2 cutover.
+        onLoaded: {
+            if (Quickshell.env("QS_ALLOW_SWAYNC") !== "1")
+                NotificationStore.start(notificationMemory)
+        }
+    }
+
     Picker {
         id: pickerWindow
     }
