@@ -22,22 +22,26 @@ is_audio_playing() {
     return $?
 }
 
-# Handle the check logic
+# Handle help argument
+if [[ "$1" == "--help" ]]; then
+    echo "Idle Inhibit Script: Handles screen idle prevention based on state file and audio playback."
+    echo "Usage: $0 [--check | --toggle | --help]"
+    echo "  --check    Check if the screen is forced to stay on"
+    echo "  --toggle   Toggle the state of the screen (prevents or allows it to turn off)"
+    echo "  --help     Show this help message"
+    exit 0
+fi
+
+# Handle the check logic for the state file
 if [[ "$1" == "--check" ]]; then
     if [[ -f "$STATE_FILE" ]] && [[ "$(cat "$STATE_FILE")" == "1" ]]; then
-        echo "Hypridle: Prevented (State File)"
+        echo "Hypridle: Forced Prevented (Screen cannot turn off)"
         echo "State: $(cat "$STATE_FILE")"
-        exit 1
-    fi
-
-    if is_audio_playing; then
-        echo "Hypridle: Prevented (Audio Playing)"
-        echo "Audio is currently playing."
-        exit 1
+        exit 0
     fi
 
     echo "Hypridle: Allowed (Screen can turn off)"
-    exit 0
+    exit 1
 fi
 
 # Handle the toggle logic
@@ -51,9 +55,11 @@ if [[ "$1" == "--toggle" ]]; then
     if [[ "$CURRENT_STATE" == "1" ]]; then
         echo "0" > "$STATE_FILE"
         echo "Hypridle: Allowed (Screen can turn off)"
+        notify-send "Hypridle" "Allowed (Screen can turn off)"
     else
         echo "1" > "$STATE_FILE"
-        echo "Hypridle: Prevented (Screen will stay on)"
+        echo "Hypridle: Forced Prevented (Screen cannot turn off)"
+        notify-send "Hypridle" "Forced Prevented (Screen cannot turn off)"
     fi
     exit 0
 fi
