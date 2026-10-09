@@ -70,7 +70,7 @@ case "$choice" in
 
     "  Change color")
         accent_choice="$(
-        cat <<'EOF' | rofi -dmenu -p "  Current: ${ACCENT}" -i
+        cat <<'EOF' | rofi -dmenu -p "  Current: ${ACCENT}" -theme-str 'entry { placeholder: "Type hex color here #xxxxxx"; }' -i
 Slate Blue   #7288AE
 Green        #A2CB8B
 Peach        #FFB399
@@ -84,7 +84,7 @@ EOF
     [[ -z "${accent_choice:-}" ]] && exit 0
     
     if [[ "$accent_choice" == "Custom       (type hex in prompt)" ]]; then
-        custom_hex="$(printf '%s\n' "$ACCENT" | rofi -dmenu -p "Hex (#RRGGBB)" -i)"
+        custom_hex="$(printf '%s\n' "$ACCENT" | rofi -dmenu -p "Hex (#RRGGBB)" -theme-str 'entry { placeholder: "Type hex color here #xxxxxx"; }' -i)"
         [[ -z "${custom_hex:-}" ]] && exit 0
         custom_hex="$(printf '%s' "$custom_hex" | tr -cd '#0-9a-fA-F')"
         [[ "$custom_hex" =~ ^#[0-9a-fA-F]{6}$ ]] || exit 0
