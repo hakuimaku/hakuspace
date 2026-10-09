@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script manages Haku Shell Mode (combining Rounded Screen dynamic, Cava dynamic, Opaque Theme and Edge Trigger).
+# This script manages Haku Space Mode (combining Rounded Screen dynamic, Cava dynamic, Opaque Theme and Edge Trigger).
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -f "$SCRIPT_DIR/haku_theme.sh" ]]; then
@@ -11,7 +11,7 @@ else
     source "$HOME/.local/bin/haku_theme.sh"
 fi
 
-SHELL_MODE_STATE="$STATE_DIR/haku_shell_state"
+SHELL_MODE_STATE="$STATE_DIR/haku_space_state"
 
 if [[ ! -f "$SHELL_MODE_STATE" ]] || ! grep -qxE '0|1' "$SHELL_MODE_STATE"; then
     echo "0" > "$SHELL_MODE_STATE"
@@ -43,7 +43,7 @@ turn_on() {
     fi
 
     echo "1" > "$SHELL_MODE_STATE"
-    echo "Haku Shell Mode enabled."
+    echo "Haku Space Mode enabled."
 }
 
 turn_off() {
@@ -68,7 +68,7 @@ turn_off() {
     fi
 
     echo "0" > "$SHELL_MODE_STATE"
-    echo "Haku Shell Mode disabled."
+    echo "Haku Space Mode disabled."
 }
 
 toggle() {
@@ -93,9 +93,9 @@ case "${1:-}" in
     -c|--check)
         current_state=$(cat "$SHELL_MODE_STATE" 2>/dev/null || echo "0")
         if [[ "$current_state" == "1" ]]; then
-            echo "Haku Shell Mode is currently ENABLED."
+            echo "Haku Space Mode is currently ENABLED."
         else
-            echo "Haku Shell Mode is currently DISABLED."
+            echo "Haku Space Mode is currently DISABLED."
         fi
         ;;
     *)

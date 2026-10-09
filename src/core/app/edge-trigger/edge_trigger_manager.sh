@@ -5,6 +5,8 @@
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
+source "$SCRIPT_DIR/haku_backend_lib.sh"
+
 EDGE_TRIGGER_STATE="$STATE_DIR/edge_trigger_state"
 
 EDGE_TRIGGER_BIN="$HOME/.local/bin/edge_trigger.py"
@@ -46,6 +48,23 @@ Options:
     -h, --help          Show this help message
 EOF
     exit 0
+fi
+
+if haku_backend_is "quickshell"; then
+    if [[ $1 == "--toggle" ]]; then
+        if [[ $(cat "$EDGE_TRIGGER_STATE" 2>/dev/null || echo "0") == "1" ]]; then
+            echo "0" > "$EDGE_TRIGGER_STATE"
+            echo "Edge trigger disabled (QS)"
+        else
+            echo "1" > "$EDGE_TRIGGER_STATE"
+            echo "Edge trigger enabled (QS)"
+        fi
+        exit 0
+    elif [[ $1 == "--reload" || "${1:-}" == "--startup" || -z "${1:-}" ]]; then
+        exit 0
+    else
+        exit 0
+    fi
 fi
 
 # Toggle edge trigger on/off
