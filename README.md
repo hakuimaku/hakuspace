@@ -19,8 +19,8 @@
 
 * **Smart Accent Colors:** Automatically generates the accent color palette based on your current wallpaper.
 * **Flexible Waybar Layouts:** Supports two standard layouts: **Left** and **Top**.
-* **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar. *(Note: Niri does not support this feature.*)
-* **Wallpaper Automation** Wallpapers change automatically every 5 minutes (customizable in the `random_wallpaper.sh` script).
+* **Unique Cava Underbar:** Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar. *(Note: Niri does not support this feature).*
+* **Wallpaper Automation:** Wallpapers change automatically every 5 minutes (customizable in the `random_wallpaper.sh` script).
 * **Unified Aesthetic:** Handcrafted and polished configurations for Waybar, Rofi, Swaync and Thunar theme *100% beautiful for real. :)*
 
 ---
@@ -37,14 +37,14 @@ git clone --depth 1 --branch v2.0.2 https://github.com/hakuimaku/hakuspace.git
 
 ```
 
-If you prefer to experience the latest changes (Latest Git), you can clone the default branch instead:
+If you prefer to experience the lastest changes (Lastest Git), you can clone the default branch instead:
 ```bash
 cd ~
 git clone https://github.com/hakuimaku/hakuspace.git
 
 ```
 
-Swith to the `hakuspace` directory:
+Switch to the `hakuspace` directory:
 ```bash
 cd hakuspace
 ```
@@ -75,7 +75,7 @@ After running the installation script, restart your computer and log in to eithe
 
 ### 🔽 Update Haku Space to lastest version
 
-- First, you need to clone the latest version (or the latest git)
+- First, you need to clone the lastest stable version (or the lastest git)
 - To update hakuspace, simply re-run the `install.sh` script, as it will automatically back up your existing files and apply the latest changes.
 - You can skip steps in `install.sh` to save time.
 
@@ -99,7 +99,7 @@ hyprpm enable hyprexpo
 
 hyprpm reload
 ```
-Read Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
+Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 
 1) Uncomment the plugin loading line in `hyprland.lua` to load the plugin configuration on startup
 2) Make sure to set the correct permissions for the plugin binary (if needed) using `hl.permission` in `hyprland.lua`
@@ -113,7 +113,7 @@ Read Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
 - Fastfetch logo: `~/.config/fastfetch/`
 - Wallpapers: `~/Pictures/Wallpapers`
 - Lively wallpapers: `~/Videos/Wallpapers`
-- Lively wallpaper thumbnail: in folder Preview `~/Videos/Wallpapers/Preview` and add image .jpg/.png (same name with video) to appear thumbnail in rofi select menu if you want to use lively wallpaper
+- Lively wallpaper thumbnail: in folder Preview `~/Videos/Wallpapers/Preview` and add image .jpg/.png (same name with video) to make the thumbnail appear in rofi select menu if you want to use lively wallpaper
 
 ## 🎶 Just chill
 > Currently, **Just chill** is only available for **Hyprland**.
