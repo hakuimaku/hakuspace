@@ -17,3 +17,4 @@ singleton Media 1.0 Media.qml
 singleton CenterState 1.0 CenterState.qml
 singleton Cava 1.0 Cava.qml
 singleton Avatar 1.0 Avatar.qml
+singleton Clock 1.0 Clock.qml
