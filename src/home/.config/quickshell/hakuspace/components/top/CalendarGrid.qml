@@ -191,20 +191,24 @@ Item {
 
                 Rectangle {
                     anchors.centerIn: parent
-                    width: Math.min(parent.width - 2, root.cellHeight)
-                    height: width
-                    radius: width / 2
+                    readonly property real markerDiameter: Math.min(parent.width - 2, Math.max(16, root.cellHeight - 2))
+                    width: markerDiameter
+                    height: markerDiameter
+                    radius: markerDiameter / 2
                     visible: parent.today
-                    color: Theme.surface
-                    border.width: 1
-                    border.color: Theme.accent
+                    color: Theme.accent
+                    border.width: 0
                 }
                 Text {
                     anchors.centerIn: parent
                     text: parent.day > 0 && parent.day <= root.daysInMonth ? parent.day : ""
-                    color: parent.today ? Theme.accent : Theme.fg
+                    color: parent.today ? Theme.onAccentColor : Theme.fg
                     font.family: Theme.fontFamily
-                    font.pixelSize: Math.min(Math.max(11, root.cellHeight > 22 ? Theme.fontSize : (Theme.fontSize - 1)), root.cellHeight - 2)
+                    font.pixelSize: {
+                        if (root.cellHeight > 24) return Theme.fontSize
+                        if (root.cellHeight >= 20) return Theme.fontSize - 1
+                        return Math.max(10, root.cellHeight - 5)
+                    }
                     font.weight: parent.today ? Font.Bold : Font.Normal
                 }
             }

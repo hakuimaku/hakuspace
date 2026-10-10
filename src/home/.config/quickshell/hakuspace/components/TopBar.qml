@@ -13,7 +13,7 @@ PanelWindow {
     screen: modelData
 
     property real barH: Theme.topBarHeight
-    property real tipAreaH: 160
+    property real tipAreaH: 180
     property var trayMenuItem: null
     property Item trayMenuAnchor: null
     property string lastTrayFallbackReason: ""

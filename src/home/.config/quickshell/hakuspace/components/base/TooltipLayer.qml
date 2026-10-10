@@ -6,7 +6,7 @@ import "../flare"
 Item {
     id: root
     width: parent.width
-    property real tipAreaHeight: 160
+    property real tipAreaHeight: 180
     height: tipAreaHeight
     readonly property real maxTooltipWidth: Math.min(500, Math.max(0, width - FlareEdges.thickness * 2))
     readonly property real horizontalPadding: 22

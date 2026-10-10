@@ -69,6 +69,8 @@ TopModule {
         CalendarGrid {
             currentDate: Clock.date
             monthOffset: root.monthOffset
+            maxHeight: 180
+            preferredCellHeight: 22
         }
     }
 

@@ -33,7 +33,7 @@
 
 ### 1.2 Typography rules for dense modules
 
-- **Clock:** keep the existing compact stacked time / weekday / date presentation unless a later approved mockup replaces it.
+- **Clock & Calendar tooltip:** keep the existing compact stacked time / weekday / date presentation unless a later approved mockup replaces it. In the calendar grid (TopBar tooltip and Dashboard widget), the current day indicator follows the primary active treatment: solid accent background (`Theme.accent`) with black text (`Theme.onAccentColor` / `#000000`), preserving comfortable breathing room (~3–4px clearance) around the day text with no row overlap.
 - **Settings group:** icon-dense, values belong in tooltips/secondary surfaces.
 - Use `Theme.fontFamily`; existing module labels use the current weight rules unless a mockup explicitly calls for a different hierarchy.
 
