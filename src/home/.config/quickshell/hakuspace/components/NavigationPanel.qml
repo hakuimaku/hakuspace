@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import "../services"
 import "flare" as Flare
+import "sidebar" as Sidebar
 
 Item {
     id: root
@@ -30,7 +31,7 @@ Item {
     readonly property real outerSectorRadius: circleRadius - 7
     readonly property real innerSectorRadius: Math.max(14, circleRadius * 0.18)
     readonly property real hubDiameter: Math.max(18, circleRadius * 0.28)
-    readonly property real backingCurveRadius: circleRadius + shellPadding + Math.max(Theme.radiusSm, 12)
+    readonly property real backingCurveRadius: circleRadius + shellPadding + 60
 
     // Navigation lives in one Overlay so exclusive zones cannot move it, while
     // the backing contour aligns to the shared RoundedScreen frame geometry.
@@ -39,7 +40,7 @@ Item {
     readonly property var frameBounds: FlareEdges.getBounds(modelData.width)
     // Keep the steady-state backing tight around the radial controller.
     readonly property real shellPadding: 4
-    readonly property real flareExtraRight: 8
+    readonly property real flareExtraRight: flareExtraBottom - frameThickness
     readonly property real flareExtraBottom: 8
     readonly property real circleDiameter: Math.max(146, Theme.fontSize * 10.5)
     readonly property real circleRadius: circleDiameter / 2
@@ -57,9 +58,130 @@ Item {
     readonly property real controllerX: shellX + shellPadding
     readonly property real controllerY: shellY + shellPadding
     readonly property real safeRadius: circularShellDiameter + 100
+    readonly property real sidebarSafeMargin: 100
+    readonly property real sidebarSafeWidth: sidebarBodyWidth + sidebarSafeMargin
+    readonly property real sidebarSafeHeight: sidebarBodyY + sidebarBodyHeight + flareReach + sidebarSafeMargin
+
+    // Sidebar interaction geometry:
+    readonly property bool sidebarExpanded: UiState.navigationMode === "handoff-sidebar"
+    readonly property real sidebarControlDiameter: Math.max(32, Math.round(Theme.fontSize * 2.4))
+    readonly property real sidebarBodyPadding: Math.max(10, Theme.pad)
+    readonly property real sidebarBodyWidth: Math.max(56, sidebarControlDiameter + sidebarBodyPadding * 2)
+    readonly property real sidebarBodyHeight: Math.max(220, Math.round(circleDiameter * 1.6))
+    readonly property real sidebarBodyX: 0
+    readonly property real sidebarBodyY: Math.round(circularShellDiameter * 0.94)
+    readonly property real sidebarEarWidth: Math.max(32, Math.round(flareReach * 1.5))
+    readonly property real sidebarEarRadius: sidebarEarWidth + 100
+
+    // Bridge connects the lower-left radial sector to the sidebar body:
+    readonly property real bridgeX: 0
+    readonly property real bridgeY: Math.round(controllerY + circleRadius)
+    readonly property real bridgeWidth: Math.max(sidebarBodyWidth, Math.round(circleRadius + shellPadding))
+    readonly property real bridgeHeight: Math.max(1, (sidebarBodyY + Math.min(24, sidebarBodyHeight * 0.1)) - bridgeY)
+
+    // Region A = Navigation keep-alive region
+    function insideRegionA(x, y) {
+        return x >= 0 && y >= 0 && (x * x + y * y <= safeRadius * safeRadius)
+    }
+
+    function insideSidebarSafeZone(x, y) {
+        return sidebarExpanded
+            && x >= 0 && x <= sidebarSafeWidth
+            && y >= 0 && y <= sidebarSafeHeight
+    }
 
     function insideSafeZone(x, y) {
-        return x >= 0 && y >= 0 && (x * x + y * y <= safeRadius * safeRadius)
+        return insideRegionA(x, y) || insideSidebarSafeZone(x, y)
+    }
+
+    // Region B = Sidebar handoff union = Sidebar sector ∪ bridge ∪ Sidebar body
+    function insideSidebarSector(x, y) {
+        var dx = x - (controllerX + circleRadius)
+        var dy = y - (controllerY + circleRadius)
+        var hitRadius = circleRadius * 1.10
+        if (dx * dx + dy * dy > hitRadius * hitRadius) return false
+        var angle = normalizeAngle(Math.atan2(dy, dx) * 180 / Math.PI)
+        return angle >= 90 && angle < 215
+    }
+
+    function insideSidebarBridge(x, y) {
+        return x >= bridgeX && x <= (bridgeX + bridgeWidth)
+            && y >= bridgeY && y <= (bridgeY + bridgeHeight)
+    }
+
+    function insideSidebarBody(x, y) {
+        return x >= sidebarBodyX && x <= (sidebarBodyX + sidebarBodyWidth)
+            && y >= sidebarBodyY && y <= (sidebarBodyY + sidebarBodyHeight + flareReach)
+    }
+
+    function insideSidebarEar(x, y) {
+        if (!sidebarExpanded) return false
+        var earTop = sidebarBodyY + Math.max(0, surfaceHeight - sidebarBodyY)
+        return x >= sidebarBodyWidth && x <= (sidebarBodyWidth + sidebarEarWidth)
+            && y >= earTop && y <= (earTop + sidebarEarRadius)
+    }
+
+    function insideRegionB(x, y) {
+        return insideSidebarSector(x, y)
+            || insideSidebarBridge(x, y)
+            || insideSidebarBody(x, y)
+            || insideSidebarEar(x, y)
+    }
+
+    // Authoritative pointer-state evaluation for handoff and close decisions
+    function evaluatePointer(x, y) {
+        if (!panelOpen || closing) return
+
+        // 1. Direct interactive region of Sidebar (sector ∪ bridge ∪ body ∪ ear)
+        var inB = insideRegionB(x, y)
+        if (inB) {
+            root.selectedIndex = 1
+            root.hoveredIndex = 1
+            if (UiState.navigationMode !== "handoff-sidebar") {
+                if (insideSidebarSector(x, y)) {
+                    UiState.beginNavigationHandoff("sidebar")
+                }
+            }
+            return
+        }
+
+        // 2. Lateral safe boundary for Sidebar:
+        // When sidebar is open, moving > 100px away from the sidebar to the right closes it.
+        if (sidebarExpanded && y >= sidebarBodyY && x > sidebarSafeWidth) {
+            UiState.cancelNavigationHandoff()
+            UiState.closeNavigation()
+            return
+        }
+
+        // 3. Navigation circular controller area (Region A)
+        var inA = insideRegionA(x, y)
+        if (inA) {
+            // Check if pointer deliberately hovered another sector (Dashboard or Settings)
+            var lx = x - root.controllerX
+            var ly = y - root.controllerY
+            var idx = root.indexAt(lx, ly, true)
+            if (idx >= 0 && root.regions[idx].key !== "sidebar") {
+                root.selectedIndex = idx
+                root.hoveredIndex = idx
+                if (UiState.navigationMode === "handoff-sidebar") {
+                    UiState.cancelNavigationHandoff()
+                }
+            }
+            return
+        }
+
+        // 4. Within sidebar safe zone buffer (margin)
+        if (insideSidebarSafeZone(x, y)) {
+            root.selectedIndex = 1
+            root.hoveredIndex = 1
+            return
+        }
+
+        // 5. Outside all safe zones -> close both
+        if (sidebarExpanded) {
+            UiState.cancelNavigationHandoff()
+        }
+        UiState.closeNavigation()
     }
 
     // Logo geometry is captured when Navigation opens. Keeping this copy local
@@ -123,9 +245,9 @@ Item {
     // Dashboard: top; Sidebar: lower-left; Settings: lower-right.
     readonly property var regions: [
         { key: "dashboard", icon: "", startDeg: 215, endDeg: 320,
-          labelAngle: 270, labelRadius: 0.46, offsetX: -2, offsetY: 0 },
+          labelAngle: 270, labelRadius: 0.46, offsetX: -5, offsetY: 0 },
         { key: "sidebar", icon: "", startDeg: 90, endDeg: 215,
-          labelAngle: 150, labelRadius: 0.50, offsetX: 0, offsetY: 0 },
+          labelAngle: 150, labelRadius: 0.50, offsetX: -4, offsetY: 0 },
         { key: "settings", icon: "", startDeg: 320, endDeg: 450,
           labelAngle: 30, labelRadius: 0.50, offsetX: 0, offsetY: 0 }
     ]
@@ -184,8 +306,16 @@ Item {
 
     function selectIndex(index, updateHandoff) {
         if (index < 0 || index >= regions.length) return
+        if (selectedIndex === index && regions[index].key === "sidebar" && sidebarExpanded) {
+            UiState.cancelNavigationHandoff()
+            return
+        }
         selectedIndex = index
-        if (updateHandoff) UiState.beginNavigationHandoff(regions[index].key)
+        if (regions[index].key === "sidebar") {
+            if (updateHandoff) UiState.beginNavigationHandoff("sidebar")
+        } else if (UiState.navigationMode === "handoff-sidebar") {
+            UiState.cancelNavigationHandoff()
+        }
     }
 
     function moveSelection(delta) {
@@ -368,6 +498,7 @@ Item {
         visible: root.panelOpen || root.closing
 
         mask: Region {
+            // Navigation safe region (around radial controller)
             Region {
                 x: 0
                 y: 0
@@ -375,23 +506,31 @@ Item {
                 height: Math.min(navigationLayer.height, root.safeRadius)
                 bottomRightRadius: Math.min(width, height)
             }
+            // Sidebar safe region (when expanded)
+            Region {
+                x: 0
+                y: 0
+                width: root.sidebarExpanded ? Math.min(navigationLayer.width, root.sidebarSafeWidth) : 0
+                height: root.sidebarExpanded ? Math.min(navigationLayer.height, root.sidebarSafeHeight) : 0
+            }
         }
 
-        // Pointer-lifetime safe zone: pointer leaves the top-left quarter circle
-        // -> closes Navigation via existing animated close path.
+        // Authoritative pointer-lifetime evaluation for Navigation and Sidebar union:
+        // Evaluates Region A (Navigation keep-alive) and Region B (Sidebar sector ∪ bridge ∪ body).
         HoverHandler {
             id: safeZoneHover
             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
             onHoveredChanged: {
                 if (!hovered && root.panelOpen && !root.closing) {
+                    if (root.sidebarExpanded) {
+                        UiState.cancelNavigationHandoff()
+                    }
                     UiState.closeNavigation()
                 }
             }
             onPointChanged: {
                 if (!root.panelOpen || root.closing) return
-                if (!root.insideSafeZone(point.position.x, point.position.y)) {
-                    UiState.closeNavigation()
-                }
+                root.evaluatePointer(point.position.x, point.position.y)
             }
         }
 
@@ -421,6 +560,55 @@ Item {
             visible: root.panelOpen || root.closing
         }
 
+        // Invisible interaction bridge connecting Sidebar sector to Sidebar body.
+        MouseArea {
+            id: bridgeHit
+            x: root.bridgeX
+            y: root.bridgeY
+            width: root.bridgeWidth
+            height: root.bridgeHeight
+            enabled: root.panelOpen && root.sidebarExpanded
+            hoverEnabled: true
+            acceptedButtons: Qt.LeftButton
+            z: 24
+            onEntered: {
+                root.hoveredIndex = 1
+                root.selectedIndex = 1
+            }
+            onPositionChanged: mouse => {
+                root.hoveredIndex = 1
+                root.selectedIndex = 1
+                root.evaluatePointer(x + mouse.x, y + mouse.y)
+            }
+        }
+
+        // P3 Sidebar visual surface: attached flush to left edge with flare curve,
+        // morph opening/closing animation, and circular option controls.
+        Sidebar.SidebarSurface {
+            id: sidebarSurface
+            x: root.sidebarBodyX
+            y: root.sidebarBodyY
+            width: root.sidebarBodyWidth + root.sidebarEarWidth + 4
+            height: root.sidebarBodyHeight + root.flareReach
+            bodyWidth: root.sidebarBodyWidth
+            bodyHeight: root.sidebarBodyHeight
+            controlDiameter: root.sidebarControlDiameter
+            expanded: root.panelOpen && root.sidebarExpanded && !root.closing
+            rf: root.flareReach
+            frameThickness: root.frameThickness
+            topFlareY: Math.max(0, root.surfaceHeight - root.sidebarBodyY)
+            earWidth: root.sidebarEarWidth
+            earRadius: root.sidebarEarRadius
+            cornerRadius: Theme.radius + 8
+            surfaceColor: Theme.barColor
+            z: 5
+            onPointerMoved: (px, py) => {
+                root.hoveredIndex = 1
+                root.selectedIndex = 1
+                root.evaluatePointer(root.sidebarBodyX + px, root.sidebarBodyY + py)
+            }
+        }
+
         // Circular bulb is flush with the physical top-left corner. The
         // RoundedScreen border underneath provides the outer 4 px frame, while
         // navigationFlare joins from frameTop on the right/bottom.
@@ -435,6 +623,7 @@ Item {
             opacity: root.navigationRevealProgress
             scale: 0.92 + root.navigationRevealProgress * 0.08
             transformOrigin: Item.Center
+            z: 10
         }
 
         // Visual surrogate for the TopBar Logo while the radial surface owns it.
@@ -469,6 +658,10 @@ Item {
                 anchors.fill: parent
                 enabled: root.panelOpen && root.navigationRevealProgress > 0.82
                 cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                onClicked: {
+                    if (root.sidebarExpanded) UiState.cancelNavigationHandoff()
+                    UiState.closeNavigation()
+                }
             }
         }
 
@@ -494,6 +687,7 @@ Item {
             opacity: root.navigationRevealProgress
             scale: 0.72 + root.navigationRevealProgress * 0.28
             transformOrigin: Item.Center
+            z: 30
 
                 // Static dark ring beneath the three independently animated slices.
                 Rectangle {
@@ -641,19 +835,21 @@ Item {
                     function updateHover(px, py) {
                         var index = root.indexAt(localCircleX(px), localCircleY(py), true)
                         root.hoveredIndex = index
-                        if (index >= 0 && root.regions[index].key === "sidebar") {
-                            UiState.beginNavigationHandoff("sidebar")
-                        } else if (UiState.navigationMode === "handoff-sidebar") {
-                            UiState.cancelNavigationHandoff()
+                        if (index >= 0) {
+                            root.selectedIndex = index
+                            if (root.regions[index].key === "sidebar") {
+                                UiState.beginNavigationHandoff("sidebar")
+                            } else if (UiState.navigationMode === "handoff-sidebar") {
+                                UiState.cancelNavigationHandoff()
+                            }
                         }
                     }
 
                     onEntered: updateHover(mouseX, mouseY)
                     onPositionChanged: mouse => updateHover(mouse.x, mouse.y)
                     onExited: {
-                        root.hoveredIndex = -1
-                        if (UiState.navigationMode === "handoff-sidebar") {
-                            UiState.cancelNavigationHandoff()
+                        if (UiState.navigationMode !== "handoff-sidebar") {
+                            root.hoveredIndex = -1
                         }
                     }
                     onClicked: mouse => {
