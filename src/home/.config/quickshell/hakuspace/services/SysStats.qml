@@ -67,6 +67,9 @@ QtObject {
             }
         } else {
             statTimer.stop();
+            root._prevTotal = 0;
+            root._prevIdle = 0;
+            root._currentTotal = 0;
         }
     }
 
@@ -89,7 +92,7 @@ QtObject {
 
         stdout: SplitParser {
             onRead: data => {
-                if (!data) return;
+                if (!data || root.totalSubscribers === 0) return;
                 var line = data.trim();
                 var eqIdx = line.indexOf("=");
                 if (eqIdx === -1) return;

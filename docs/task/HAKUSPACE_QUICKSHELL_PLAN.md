@@ -1219,18 +1219,25 @@ p3(dashboard): add monitor information card
 
 #### P3.2.7 Dashboard integration
 
-Only after all cards function:
+Dashboard P3 implementation complete.
 
-- normalize radii;
-- normalize gaps;
-- verify avatar/card spacing;
-- verify 1.0x and fractional scale;
-- ensure reserved Dashboard space remains empty.
+Canonical architecture contract:
+- 45% × 45% final visual envelope attached to top-left corner
+- Flare attached surface (`DashboardFlareSurface.qml`)
+- 20px shell inset (`innerPadding = 20`)
+- 200px pointer safe zone (`dashboardSafeMargin = 200`)
+- Avatar: left-click Back to Navigation / right-click Change avatar
+- Clock: shared service (`Clock.qml`)
+- MPRIS: shared media (`Media.qml`) with controls and artwork fallback
+- Dynamic Widget Host (`DashboardWidgetHost.qml`), first widget: Calendar (`CalendarGrid.qml`)
+- Monitor (`DashboardMonitorCard.qml`): 2×2 layout (ROM / RAM / CPU / GPU)
+- GPU: reliable hardware utilization when available, otherwise `N/A` (never fake `0%` on unsupported hardware)
+- SysStats: subscriber-driven lifecycle, single 2000 ms timer, single non-shell process, CPU delta reset on subscriber zero
 
 Commit:
 
 ```text
-p3(dashboard): finalize mockup layout
+p3(dashboard): finalize dashboard integration
 ```
 
 ---
