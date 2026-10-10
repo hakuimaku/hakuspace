@@ -89,9 +89,12 @@ Style contract:
 
 Reference: `dashboard.png`.
 
-> [!NOTE] 2026-10-10 Dashboard layout override:
-> - outer shell = 45% output width × 45% output height;
-> - compact upper-left attached shell supersedes the older large reserved body;
+> [!NOTE] 2026-10-10 Dashboard layout & style override:
+> - final envelope remains 45% output width × 45% output height;
+> - outer background uses the shared HakuSpace Flare language (top-edge attached Flare surface);
+> - shell-level child inset is exactly 10 logical px;
+> - Avatar target is inset 10 px (final x=10, y=10);
+> - Navigation ↔ Dashboard uses one reversible morph driven by `dashboardMorphProgress` instead of instant visibility swap;
 > - lower-left region is a dynamic widget host (`DashboardWidgetHost`);
 > - Calendar is the first/default widget, not a shell-level fixed card.
 
