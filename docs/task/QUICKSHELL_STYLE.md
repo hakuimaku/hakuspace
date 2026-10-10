@@ -99,13 +99,23 @@ Dashboard contains only the currently defined top cluster:
 
 The large unspecified Dashboard area is intentionally reserved. Do not invent filler widgets.
 
+Avatar interaction contract:
+- Left-click avatar: leave Dashboard and return to radial Navigation (Navigation remains open on the same monitor).
+- Right-click avatar: open avatar file chooser without leaving Dashboard.
+- Chooser cancel: Dashboard remains open, avatar unchanged.
+- Chooser accepted: persist selected image into managed storage and update avatar in-place without reopening.
+- Escape while Dashboard is active: return to radial Navigation.
+
 Avatar data belongs under:
 
 ```text
 ~/.local/share/hakuspace/user/
 ```
 
-Exact persisted filename is an implementation decision that must be documented once chosen.
+Persisted filename scheme:
+- Manifest: `~/.local/share/hakuspace/user/avatar.path` storing strictly the basename (e.g. `avatar.png`, `avatar.jpg`, `avatar.jpeg`, `avatar.webp`).
+- Active image: `~/.local/share/hakuspace/user/<basename>`.
+Only one managed avatar image is active at any time. Supported image types are PNG, JPEG/JPG, and WebP.
 
 Card rules:
 

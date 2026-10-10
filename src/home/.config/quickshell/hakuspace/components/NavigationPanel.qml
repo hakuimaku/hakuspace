@@ -678,6 +678,11 @@ Item {
             onRequestReturnToNavigation: {
                 UiState.cancelNavigationHandoff()
             }
+            onFocusRequested: {
+                if (root.panelOpen) {
+                    keyHandler.forceActiveFocus()
+                }
+            }
         }
 
         // Circular bulb is flush with the physical top-left corner. The
