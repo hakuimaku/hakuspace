@@ -15,9 +15,8 @@ Item {
     property string displayedMode: "idle"
     readonly property bool active: (hakuMenuActive || mode !== "idle") && maximumWidth >= Theme.fontSize * 3
     readonly property bool mediaMode: !hakuMenuActive && displayedMode === "media"
-    readonly property string icon: displayedMode === "recording" ? "●" : (Media.playing ? "󰐊" : "󰏤")
-    readonly property string caption: displayedMode === "recording" ? "REC"
-                                      : (Media.artist ? Media.title + " · " + Media.artist : Media.title)
+    readonly property string icon: Media.playing ? "󰐊" : "󰏤"
+    readonly property string caption: Media.artist ? Media.title + " · " + Media.artist : Media.title
     property string displayedBreadcrumb: ""
     property real breadcrumbOffset: 0
     readonly property string shownCaption: hakuMenuActive ? displayedBreadcrumb : caption
@@ -201,6 +200,6 @@ Item {
     HTooltip {
         id: hoverTooltip
         target: root
-        text: root.mode === "media" ? (Media.artist ? Media.title + "\n" + Media.artist : Media.title) : root.caption
+        text: Media.artist ? Media.title + "\n" + Media.artist : Media.title
     }
 }

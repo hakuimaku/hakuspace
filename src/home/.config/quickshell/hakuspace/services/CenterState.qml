@@ -4,8 +4,8 @@ import QtQuick
 QtObject {
     id: root
     property string transientMode: ""
-    // Recording takes priority over media in the center slot.
-    readonly property string baseMode: Recorder.isRecording ? "recording" : (Media.available ? "media" : "idle")
+    // Center group is owned by media. Recording presentation lives exclusively in RecorderGroup.
+    readonly property string baseMode: Media.available ? "media" : "idle"
     readonly property string centerMode: baseMode
     readonly property bool osdVisible: transientMode !== ""
     property real osdExpansion: osdVisible ? 1 : 0
