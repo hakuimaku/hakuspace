@@ -11,13 +11,25 @@ PanelWindow {
     id: root
     required property var modelData
     screen: modelData
-    
+
     property real barH: Theme.topBarHeight
     property real tipAreaH: 160
     property var trayMenuItem: null
     property Item trayMenuAnchor: null
     property string lastTrayFallbackReason: ""
     readonly property int trayRowCount: trayOpener.children.values.length
+    readonly property bool navigationVisualActive: UiState.navigationVisualScreenName === root.modelData.name
+    // The Logo footprint stays fixed. Non-Logo left modules share one moving
+    // lane so current and future modules clear the Navigation surface together.
+    readonly property real navigationDiameter: Math.max(146, Theme.fontSize * 10.5)
+    readonly property real navigationShellWidth: navigationDiameter + 8
+    readonly property real navigationHoverOverflow: Math.ceil(navigationDiameter * 0.12)
+    readonly property real navigationClearEdge: navigationShellWidth
+                                                   + navigationHoverOverflow
+                                                   + Theme.gap
+    onNavigationVisualActiveChanged: {
+        if (navigationVisualActive && TooltipManager.activeBar === root) TooltipManager.dismiss()
+    }
     onTrayRowCountChanged: {
         if (trayMenuItem && trayRowCount > 0) menuSettled.restart()
     }
@@ -119,16 +131,16 @@ PanelWindow {
             if (UiState.activePanel !== "") root.closeTrayMenu()
         }
     }
-    
+
     anchors { top: true; left: true; right: true }
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "hakuspace-bar"
-    
+
     exclusionMode: ExclusionMode.Normal
     // Edge-hugging Flare feet extend below the content body; keep that area inside the window.
     implicitHeight: Math.max(barH, FlareEdges.topOriginY + tipAreaH + Theme.tipHugRadius)
     exclusiveZone: Math.round(barH)
-    
+
     color: "transparent"
     visible: AppState.waybarManualState
     onVisibleChanged: {
@@ -138,9 +150,10 @@ PanelWindow {
             UiState.closeTrayMenuIfScreen(root.modelData.name)
             UiState.closeNotificationsIfScreen(root.modelData.name)
             UiState.closeHakuMenuIfScreen(root.modelData.name)
+            UiState.closeNavigationIfScreen(root.modelData.name)
         }
     }
-    
+
     mask: Region { item: barBg }
 
     Rectangle {
@@ -150,31 +163,66 @@ PanelWindow {
         color: Theme.barColor
         border.width: Theme.borderWidth
         border.color: Theme.border
-        
+
         Item {
             anchors.fill: parent
             anchors.leftMargin: Theme.pad
             anchors.rightMargin: Theme.pad
-            
-            Row {
+
+            Item {
                 id: leftModules
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.verticalCenterOffset: Theme.topBarTopPadding / 2
-                spacing: Theme.gap
-                TopModules.Logo {}
-                TopModules.Workspaces { screenName: root.modelData.name }
-                TopModules.WindowTitle {}
+                width: movingLeftModules.x + movingLeftModules.width
+                height: Math.max(logoModule.height, movingLeftModules.height)
+
+                // Logo never participates in the horizontal displacement.
+                TopModules.Logo {
+                    id: logoModule
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    screenName: root.modelData.name
+                }
+
+                Row {
+                    id: movingLeftModules
+                    readonly property real baseX: logoModule.width + Theme.gap
+                    readonly property real navigationShift: root.navigationVisualActive
+                        ? Math.max(0, root.navigationClearEdge - Theme.pad - baseX)
+                        : 0
+                    x: baseX + navigationShift
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: Theme.gap
+                    opacity: 1.0
+                    enabled: true
+
+                    Behavior on x {
+                        NumberAnimation {
+                            duration: HAnimation.normal
+                            easing.bezierCurve: HAnimation.moduleCurve
+                        }
+                    }
+
+                    // Workspaces, WindowTitle and any future non-Logo left
+                    // modules belong in this row so they all clear Navigation.
+                    TopModules.Workspaces { screenName: root.modelData.name }
+                    TopModules.WindowTitle {}
+                }
             }
-            
+
             Row {
                 id: centerCluster
                 anchors.centerIn: parent
                 anchors.verticalCenterOffset: Theme.topBarTopPadding / 2
                 spacing: showCava ? Theme.gap : 0
                 Behavior on spacing { NumberAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve } }
-                readonly property real safeSpan: Math.max(0, 2 * Math.min(parent.width / 2 - leftModules.width - Theme.gap,
-                                                                          parent.width / 2 - rightModules.width - Theme.gap))
+                readonly property real safeSpan: Math.max(0, 2 * Math.min(parent.width / 2
+                                                                          - (leftModules.x + leftModules.width)
+                                                                          - Theme.gap,
+                                                                          parent.width / 2
+                                                                          - rightModules.width
+                                                                          - Theme.gap))
                 readonly property real cavaSlotWidth: cavaModule.hoverSafeWidth
                 readonly property bool hakuMenuActive: UiState.activePanel === "hakumenu"
                                                            && UiState.hakuMenuScreenName === root.modelData.name
@@ -208,7 +256,7 @@ PanelWindow {
                                              - (cavaSlot.width > 0 ? cavaSlot.width + centerCluster.spacing : 0))
                 }
             }
-            
+
             Row {
                 id: rightModules
                 anchors.right: parent.right
@@ -226,7 +274,7 @@ PanelWindow {
             }
         }
     }
-    
+
     Flare.FlareSurface {
         width: root.width
         y: FlareEdges.topOriginY

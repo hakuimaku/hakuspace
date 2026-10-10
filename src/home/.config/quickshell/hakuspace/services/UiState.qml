@@ -5,6 +5,16 @@ QtObject {
     id: root
 
     property string activePanel: ""
+    property string navigationMode: "closed"
+    property string navigationScreenName: ""
+    // Visual ownership intentionally outlives logical navigation state while
+    // the close morph finishes, so TopBar left modules do not reappear under
+    // an in-flight Navigation surface.
+    property string navigationVisualScreenName: ""
+    property real navigationAnchorX: 0
+    property real navigationAnchorY: 0
+    property real navigationAnchorWidth: 0
+    property real navigationAnchorHeight: 0
     property var trayMenu: null
     property var notificationPanel: null
     property string hakuMenuMode: "closed"
@@ -20,6 +30,60 @@ QtObject {
     readonly property string hakuMenuBreadcrumb: hakuMenuSelectionLabel.length > 0
                                                   ? hakuMenuTabLabel + " → " + hakuMenuSelectionLabel
                                                   : hakuMenuTabLabel
+
+
+    function openNavigation(screenName, anchorX, anchorWidth, anchorHeight, anchorY) {
+        navigationScreenName = screenName
+        navigationVisualScreenName = screenName
+        navigationAnchorX = Number.isFinite(anchorX) ? anchorX : 0
+        navigationAnchorY = Number.isFinite(anchorY) ? anchorY : Theme.topBarTopPadding
+        navigationAnchorWidth = Number.isFinite(anchorWidth) ? anchorWidth : 0
+        navigationAnchorHeight = Number.isFinite(anchorHeight) ? anchorHeight : navigationAnchorWidth
+        navigationMode = "open"
+        activePanel = "navigation"
+    }
+
+    function toggleNavigation(screenName, anchorX, anchorWidth, anchorHeight, anchorY) {
+        if (navigationMode !== "closed" && navigationScreenName === screenName) {
+            closeNavigation()
+            return
+        }
+        openNavigation(screenName, anchorX, anchorWidth, anchorHeight, anchorY)
+    }
+
+    function beginNavigationHandoff(target) {
+        if (activePanel !== "navigation") return
+        if (target !== "dashboard" && target !== "sidebar" && target !== "settings") return
+        navigationMode = "handoff-" + target
+    }
+
+    function cancelNavigationHandoff() {
+        if (activePanel === "navigation" && navigationMode.indexOf("handoff-") === 0)
+            navigationMode = "open"
+    }
+
+    function closeNavigation() {
+        if (activePanel === "navigation") activePanel = ""
+        navigationMode = "closed"
+        navigationScreenName = ""
+        navigationAnchorX = 0
+        navigationAnchorY = 0
+        navigationAnchorWidth = 0
+        navigationAnchorHeight = 0
+    }
+
+    function finishNavigationVisual(screenName) {
+        if (navigationVisualScreenName !== screenName) return
+        // A reopen on the same screen wins over a stale close-animation finish.
+        if (activePanel === "navigation" && navigationScreenName === screenName) return
+        navigationVisualScreenName = ""
+    }
+
+    function closeNavigationIfScreen(screenName) {
+        if (navigationScreenName === screenName) closeNavigation()
+        else if (navigationVisualScreenName === screenName && activePanel !== "navigation")
+            navigationVisualScreenName = ""
+    }
 
     function openHakuMenu(screenName, mode) {
         hakuMenuScreenName = screenName
@@ -155,6 +219,13 @@ QtObject {
     }
 
     onActivePanelChanged: {
+        if (activePanel !== "navigation") {
+            navigationMode = "closed"
+            navigationScreenName = ""
+            navigationAnchorX = 0
+            navigationAnchorWidth = 0
+            navigationAnchorHeight = 0
+        }
         if (activePanel !== "tray") trayMenu = null
         if (activePanel !== "notifications") notificationPanel = null
         if (activePanel !== "wallpaper") {

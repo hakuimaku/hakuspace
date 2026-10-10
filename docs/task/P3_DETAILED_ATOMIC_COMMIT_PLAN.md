@@ -110,8 +110,8 @@ p3(geometry): standardize frame attachment
 
 ## Navigation
 
-### N1
-Navigation lifecycle/state only. No final radial styling yet.
+### N1 — DONE
+Explicit per-screen Navigation lifecycle/state and Logo trigger.
 
 Commit:
 
@@ -119,7 +119,7 @@ Commit:
 p3(navigation): add explicit navigation state model
 ```
 
-### N2
+### N2 — DONE
 Three-region radial visual from `navigation.png`.
 
 Commit:
@@ -889,3 +889,19 @@ Runtime feedback confirmed the compact W9.1 shadow footprint was preferable, but
 - Geometry/opacity Behaviors are active only for the bounded prefetch window instead of every wallpaper delegate in the active model.
 - During rapid navigation, side-card blurred shadows are suspended and only the two nearest side cards draw a single motion trail; the richer two-trail presentation remains for the one-shot opening reel.
 - Backend/model/cache contracts are unchanged.
+
+### N3 — DONE / runtime accepted 2026-10-10
+Final Navigation integration and morph polish.
+
+Accepted contract:
+- one three-sector radial controller at the physical top-left; Dashboard / Sidebar / Settings map to explicit `handoff-*` states;
+- selected sector uses `Theme.accent`; hovered non-selected sector uses neutral gray, expands to 1.2x, and its icon expands to 1.4x;
+- sectors are rounded annular wedges with icons, dark separators, and no bright white outline;
+- a tight persistent Flare backing hugs the controller and aligns its right/bottom contour with shared `RoundedScreen` / `FlareEdges` geometry;
+- Navigation lives on `WlrLayer.Overlay` with `ExclusionMode.Ignore` and `exclusiveZone: 0`, so TopBar exclusive geometry cannot displace it;
+- Logo morphs into the Navigation hub on open. On close, sectors collapse into the hub first, then the Logo returns to its stable circular TopBar footprint while the Flare retracts into the RoundedScreen seam;
+- TopBar Logo layout stays fixed and is visually hidden while the Navigation proxy owns the morph; Workspaces, WindowTitle, and future non-Logo left modules slide right to clear the radial surface;
+- keyboard selection, Enter activation, Escape close, Logo toggle, per-screen ownership, rapid reopen, and Sidebar handoff were runtime-verified;
+- temporary `notify-send` activation probes were removed during final cleanup.
+
+Next: **P3 Sidebar S1 — stable pointer-state union / anti-flicker handoff**.

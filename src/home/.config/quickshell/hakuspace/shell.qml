@@ -48,6 +48,25 @@ ShellRoot {
         function quit() { Qt.quit(); }
     }
 
+
+    IpcHandler {
+        target: "navigation"
+        enabled: true
+        function open(screenName: string) {
+            for (var screen of Quickshell.screens) {
+                if (screen.name === screenName) {
+                    UiState.openNavigation(screenName, Theme.pad, Theme.fontSize * 1.8, Theme.topBarHeight, Theme.topBarTopPadding)
+                    return
+                }
+            }
+        }
+        function toggleDefault() {
+            if (Quickshell.screens.length > 0)
+                UiState.toggleNavigation(Quickshell.screens[0].name, Theme.pad, Theme.fontSize * 1.8, Theme.topBarHeight, Theme.topBarTopPadding)
+        }
+        function close() { UiState.closeNavigation() }
+    }
+
     IpcHandler {
         target: "hakumenu"
         function open(screenName: string) {
@@ -127,6 +146,12 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         TopBar {}
+    }
+
+
+    Variants {
+        model: Quickshell.screens
+        NavigationPanel {}
     }
 
     Variants {
