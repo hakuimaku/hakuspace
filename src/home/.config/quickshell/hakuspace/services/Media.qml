@@ -12,6 +12,11 @@ QtObject {
     property bool playing: available && selected.isPlaying
     property string title: available ? (selected.trackTitle || selected.identity || "Media") : ""
     property string artist: available ? selected.trackArtist : ""
+    property string artUrl: available ? (selected.trackArtUrl || "") : ""
+    property string album: available ? (selected.trackAlbum || "") : ""
+    property bool canTogglePlaying: available && selected.canTogglePlaying
+    property bool canGoPrevious: available && selected.canGoPrevious
+    property bool canGoNext: available && selected.canGoNext
 
     // The revision forces reevaluation when an existing MPRIS player changes.
     function choosePlayer(list, ignoredRevision) {
@@ -32,6 +37,14 @@ QtObject {
         if (selected && selected.canTogglePlaying) selected.togglePlaying()
     }
 
+    function previous() {
+        if (selected && selected.canGoPrevious) selected.previous()
+    }
+
+    function next() {
+        if (selected && selected.canGoNext) selected.next()
+    }
+
     property Instantiator watcher: Instantiator {
         model: Mpris.players
         delegate: QtObject {
@@ -41,6 +54,11 @@ QtObject {
                 function onPlaybackStateChanged() { root.revision++ }
                 function onTrackTitleChanged() { root.revision++ }
                 function onTrackArtistChanged() { root.revision++ }
+                function onTrackAlbumChanged() { root.revision++ }
+                function onTrackArtUrlChanged() { root.revision++ }
+                function onCanTogglePlayingChanged() { root.revision++ }
+                function onCanGoPreviousChanged() { root.revision++ }
+                function onCanGoNextChanged() { root.revision++ }
             }
         }
     }
