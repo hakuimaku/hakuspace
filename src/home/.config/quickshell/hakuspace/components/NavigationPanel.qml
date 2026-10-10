@@ -81,32 +81,6 @@ Item {
     readonly property real bridgeWidth: Math.max(sidebarBodyWidth, Math.round(circleRadius + shellPadding))
     readonly property real bridgeHeight: Math.max(1, (sidebarBodyY + Math.min(24, sidebarBodyHeight * 0.1)) - bridgeY)
 
-    // Dashboard geometry:
-    readonly property real dashboardCardGap: Math.max(10, Math.round(Theme.gap * 2.5))
-    readonly property real dashboardCol1Width: Math.max(240, Math.round(modelData.width * 0.135))
-    readonly property real dashboardCol2Width: Math.max(280, Math.round(modelData.width * 0.155))
-    readonly property real dashboardRow1Height: Math.max(90, Math.round(modelData.height * 0.095))
-    readonly property real dashboardRow2Height: Math.max(180, Math.round(modelData.height * 0.20))
-    readonly property real dashboardTopClusterX: controllerX + circleDiameter + dashboardCardGap * 1.5
-    readonly property real dashboardTopClusterY: controllerY
-    readonly property real dashboardTopClusterWidth: dashboardCol1Width + dashboardCardGap + dashboardCol2Width
-    readonly property real dashboardTopClusterHeight: dashboardRow1Height + dashboardCardGap + dashboardRow2Height
-    readonly property real dashboardTopClusterRight: dashboardTopClusterX + dashboardTopClusterWidth
-    readonly property real dashboardTopClusterBottom: dashboardTopClusterY + dashboardTopClusterHeight
-
-    readonly property real dashboardLeftX: frameThickness
-    readonly property real dashboardRightX: modelData.width - frameThickness - 8
-    readonly property real dashboardBottomY: modelData.height - frameThickness - 8
-    readonly property real dashboardLowerBodyTopY: Math.round(dashboardTopClusterBottom + dashboardCardGap * 2.5)
-    readonly property real dashboardShoulderX: Math.round(dashboardTopClusterRight + dashboardCardGap * 2)
-    readonly property real dashboardShoulderY: dashboardTopClusterY
-
-    readonly property real dashboardClusterWidth: Math.ceil(dashboardShoulderX)
-    readonly property real dashboardClusterHeight: Math.ceil(dashboardLowerBodyTopY)
-    readonly property real dashboardLowerBodyWidth: Math.ceil(dashboardRightX)
-    readonly property real dashboardLowerBodyHeight: Math.ceil(dashboardBottomY - dashboardLowerBodyTopY)
-    readonly property real dashboardShoulderWidth: Math.ceil(dashboardRightX - dashboardShoulderX)
-    readonly property real dashboardShoulderHeight: Math.ceil(dashboardLowerBodyTopY - dashboardShoulderY)
 
     // Region A = Navigation keep-alive region
     function insideRegionA(x, y) {
@@ -571,22 +545,22 @@ Item {
             Region {
                 x: 0
                 y: 0
-                width: root.dashboardExpanded ? root.dashboardClusterWidth : 0
-                height: root.dashboardExpanded ? root.dashboardClusterHeight : 0
+                width: root.dashboardExpanded ? dashboardSurface.maskClusterWidth : 0
+                height: root.dashboardExpanded ? dashboardSurface.maskClusterHeight : 0
             }
             // 2. Lower body
             Region {
                 x: 0
-                y: root.dashboardExpanded ? root.dashboardLowerBodyY : 0
-                width: root.dashboardExpanded ? root.dashboardLowerBodyWidth : 0
-                height: root.dashboardExpanded ? root.dashboardLowerBodyHeight : 0
+                y: root.dashboardExpanded ? dashboardSurface.maskLowerBodyY : 0
+                width: root.dashboardExpanded ? dashboardSurface.maskLowerBodyWidth : 0
+                height: root.dashboardExpanded ? dashboardSurface.maskLowerBodyHeight : 0
             }
             // 3. Right shoulder
             Region {
-                x: root.dashboardExpanded ? root.dashboardShoulderX : 0
-                y: root.dashboardExpanded ? root.dashboardShoulderY : 0
-                width: root.dashboardExpanded ? root.dashboardShoulderWidth : 0
-                height: root.dashboardExpanded ? root.dashboardShoulderHeight : 0
+                x: root.dashboardExpanded ? dashboardSurface.maskShoulderX : 0
+                y: root.dashboardExpanded ? dashboardSurface.maskShoulderY : 0
+                width: root.dashboardExpanded ? dashboardSurface.maskShoulderWidth : 0
+                height: root.dashboardExpanded ? dashboardSurface.maskShoulderHeight : 0
             }
         }
 
@@ -699,19 +673,6 @@ Item {
             circleDiameter: root.circleDiameter
             frameThickness: root.frameThickness
             frameTop: root.frameTop
-            cardGap: root.dashboardCardGap
-            col1Width: root.dashboardCol1Width
-            col2Width: root.dashboardCol2Width
-            row1Height: root.dashboardRow1Height
-            row2Height: root.dashboardRow2Height
-            topClusterX: root.dashboardTopClusterX
-            topClusterY: root.dashboardTopClusterY
-            leftX: root.dashboardLeftX
-            rightX: root.dashboardRightX
-            bottomY: root.dashboardBottomY
-            lowerBodyTopY: root.dashboardLowerBodyTopY
-            shoulderX: root.dashboardShoulderX
-            shoulderTopY: root.dashboardShoulderY
             expanded: root.panelOpen && root.dashboardExpanded && !root.closing
             z: 25
             onRequestReturnToNavigation: {
