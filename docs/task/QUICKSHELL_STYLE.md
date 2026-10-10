@@ -109,7 +109,11 @@ Dashboard contains the 45×45 upper-left attached cluster:
 - Clock card;
 - MPRIS card with controls + thumbnail;
 - Dynamic Widget Slot (`DashboardWidgetHost`, first widget: Calendar);
-- monitor card with `ROM`, `RAM`, `CPU`, `GPU`.
+- monitor card (`DashboardMonitorCard`) with 2×2 layout:
+  - `ROM`: used percentage of root filesystem `/` (`df -P /`)
+  - `RAM`: used memory percentage `(MemTotal - MemAvailable) / MemTotal * 100` (`/proc/meminfo`)
+  - `CPU`: delta-based `/proc/stat` busy percentage between samples
+  - `GPU`: reliable hardware utilization when available, otherwise `N/A` (subdued neutral track, no fake 0%)
 
 The area beyond the 45×45 shell and its 200px pointer safe zone remains transparent and pass-through.
 
