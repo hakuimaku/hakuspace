@@ -14,7 +14,7 @@ Rectangle {
         {
             key: "calendar",
             title: "Calendar",
-            component: calendarPlaceholderComponent
+            component: calendarWidgetComponent
         }
     ]
     property int currentIndex: 0
@@ -134,40 +134,10 @@ Rectangle {
     }
 
     Component {
-        id: calendarPlaceholderComponent
+        id: calendarWidgetComponent
 
-        Item {
+        DashboardCalendarWidget {
             anchors.fill: parent
-
-            Column {
-                anchors.centerIn: parent
-                spacing: 6
-
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: ""
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 28
-                    color: Theme.fgDim
-                }
-
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Calendar"
-                    color: Theme.fg
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(14, Theme.fontSize)
-                    font.weight: Font.Bold
-                }
-
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "placeholder"
-                    color: Theme.fgDim
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(10, Theme.fontSize - 3)
-                }
-            }
         }
     }
 }

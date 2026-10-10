@@ -1086,11 +1086,16 @@ p3(navigation): implement three-region radial visual
 
 Reference: `dashboard.png`.
 
-> [!NOTE] 2026-10-10 Dashboard layout & style override:
+> [!NOTE] 2026-10-10 D4.3 Dashboard runtime override:
 > - final envelope remains 45% output width × 45% output height;
 > - outer background uses the shared HakuSpace Flare language (top-edge attached Flare surface);
-> - shell-level child inset is exactly 10 logical px;
-> - Avatar target is inset 10 px (final x=10, y=10);
+> - shell-level child inset = 20 logical px;
+> - Avatar final target = (20, 20);
+> - Dashboard has a 200 logical px pointer safe zone beyond the visual shell;
+> - moving beyond that safe zone closes Dashboard/Navigation;
+> - the safe-zone strip is interaction-owned while Dashboard is open;
+> - areas beyond the safe zone remain pass-through;
+> - Flare attaches to the RoundedScreen/TopBar seam using the shared edge geometry (4 px border seam attachment);
 > - Navigation ↔ Dashboard uses one reversible morph driven by `dashboardMorphProgress` instead of instant visibility swap;
 > - lower-left region is a dynamic widget host (`DashboardWidgetHost`);
 > - Calendar is the first/default widget, not a shell-level fixed card.
