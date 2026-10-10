@@ -8,3 +8,5 @@ build/
 *.zip
 *.iso
 temp/
+
+docs/task/mockups/

@@ -18,16 +18,26 @@ TopModule {
 
     readonly property bool navigationVisualActive: UiState.navigationVisualScreenName === root.screenName
 
-    tooltip: UiState.activePanel === "navigation" ? "" : "Have a nice day!"
+    tooltip: ""
 
     // Hide only the TopBar visual while the Navigation proxy owns the morph;
     // the layout footprint remains reserved.
     visible: !navigationVisualActive
     enabled: !navigationVisualActive
 
-    onClicked: {
+    function triggerOpenNavigation() {
         TooltipManager.dismiss()
         var point = root.mapToItem(null, 0, 0)
-        UiState.toggleNavigation(root.screenName, point.x, root.width, root.height, point.y)
+        UiState.openNavigation(root.screenName, point.x, root.width, root.height, point.y)
+    }
+
+    onHoveredChanged: {
+        if (hovered && !navigationVisualActive) {
+            triggerOpenNavigation()
+        }
+    }
+
+    onClicked: {
+        triggerOpenNavigation()
     }
 }

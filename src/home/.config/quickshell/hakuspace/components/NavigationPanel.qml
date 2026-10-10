@@ -56,6 +56,11 @@ Item {
     readonly property real hoverOverflow: Math.ceil(circleDiameter * 0.12)
     readonly property real controllerX: shellX + shellPadding
     readonly property real controllerY: shellY + shellPadding
+    readonly property real safeRadius: circularShellDiameter + 100
+
+    function insideSafeZone(x, y) {
+        return x >= 0 && y >= 0 && (x * x + y * y <= safeRadius * safeRadius)
+    }
 
     // Logo geometry is captured when Navigation opens. Keeping this copy local
     // lets the Flare close back toward the Logo after UiState has already reset.
@@ -118,11 +123,11 @@ Item {
     // Dashboard: top; Sidebar: lower-left; Settings: lower-right.
     readonly property var regions: [
         { key: "dashboard", icon: "", startDeg: 215, endDeg: 320,
-          labelAngle: 270, labelRadius: 0.46 },
+          labelAngle: 270, labelRadius: 0.46, offsetX: -2, offsetY: 0 },
         { key: "sidebar", icon: "", startDeg: 90, endDeg: 215,
-          labelAngle: 150, labelRadius: 0.50 },
+          labelAngle: 150, labelRadius: 0.50, offsetX: 0, offsetY: 0 },
         { key: "settings", icon: "", startDeg: 320, endDeg: 450,
-          labelAngle: 30, labelRadius: 0.50 }
+          labelAngle: 30, labelRadius: 0.50, offsetX: 0, offsetY: 0 }
     ]
 
     function normalizeAngle(deg) {
@@ -363,13 +368,31 @@ Item {
         visible: root.panelOpen || root.closing
 
         mask: Region {
-            x: 0
-            y: 0
-            width: Math.min(navigationLayer.width,
-                            root.circularShellDiameter + root.hoverOverflow)
-            height: Math.min(navigationLayer.height,
-                             root.circularShellDiameter + root.hoverOverflow)
-            radius: Math.min(width, height) / 2
+            Region {
+                x: 0
+                y: 0
+                width: Math.min(navigationLayer.width, root.safeRadius)
+                height: Math.min(navigationLayer.height, root.safeRadius)
+                bottomRightRadius: Math.min(width, height)
+            }
+        }
+
+        // Pointer-lifetime safe zone: pointer leaves the top-left quarter circle
+        // -> closes Navigation via existing animated close path.
+        HoverHandler {
+            id: safeZoneHover
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            onHoveredChanged: {
+                if (!hovered && root.panelOpen && !root.closing) {
+                    UiState.closeNavigation()
+                }
+            }
+            onPointChanged: {
+                if (!root.panelOpen || root.closing) return
+                if (!root.insideSafeZone(point.position.x, point.position.y)) {
+                    UiState.closeNavigation()
+                }
+            }
         }
 
         // Persistent backing participates in the Logo morph and remains visible
@@ -446,7 +469,6 @@ Item {
                 anchors.fill: parent
                 enabled: root.panelOpen && root.navigationRevealProgress > 0.82
                 cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                onClicked: UiState.closeNavigation()
             }
         }
 
@@ -575,11 +597,13 @@ Item {
                         readonly property real baseSize: Math.max(19, Theme.fontSize * 1.35)
                         readonly property real hoverShift: hovered ? root.circleRadius * 0.035 : 0
                         readonly property real angleRad: modelData.labelAngle * Math.PI / 180
+                        readonly property real iconOffsetX: Number.isFinite(modelData.offsetX) ? modelData.offsetX : 0
+                        readonly property real iconOffsetY: Number.isFinite(modelData.offsetY) ? modelData.offsetY : 0
 
                         width: Math.max(40, Theme.fontSize * 3.0)
                         height: width
-                        x: root.iconCenterX(index) + Math.cos(angleRad) * hoverShift - width / 2
-                        y: root.iconCenterY(index) + Math.sin(angleRad) * hoverShift - height / 2
+                        x: root.iconCenterX(index) + Math.cos(angleRad) * hoverShift - width / 2 + iconOffsetX
+                        y: root.iconCenterY(index) + Math.sin(angleRad) * hoverShift - height / 2 + iconOffsetY
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         text: modelData.icon
@@ -617,13 +641,21 @@ Item {
                     function updateHover(px, py) {
                         var index = root.indexAt(localCircleX(px), localCircleY(py), true)
                         root.hoveredIndex = index
-                        if (index >= 0)
-                            UiState.beginNavigationHandoff(root.regions[index].key)
+                        if (index >= 0 && root.regions[index].key === "sidebar") {
+                            UiState.beginNavigationHandoff("sidebar")
+                        } else if (UiState.navigationMode === "handoff-sidebar") {
+                            UiState.cancelNavigationHandoff()
+                        }
                     }
 
                     onEntered: updateHover(mouseX, mouseY)
                     onPositionChanged: mouse => updateHover(mouse.x, mouse.y)
-                    onExited: root.hoveredIndex = -1
+                    onExited: {
+                        root.hoveredIndex = -1
+                        if (UiState.navigationMode === "handoff-sidebar") {
+                            UiState.cancelNavigationHandoff()
+                        }
+                    }
                     onClicked: mouse => {
                         var index = root.indexAt(localCircleX(mouse.x), localCircleY(mouse.y), true)
                         if (index >= 0) root.activateIndex(index)
