@@ -42,6 +42,11 @@ ShellRoot {
         target: "shell"
         enabled: true
         function ping(): string { return "pong"; }
+        function screenList(): string {
+            var list = [];
+            for (var s of Quickshell.screens) list.push(s.name);
+            return list.join(", ");
+        }
         function reload() {
             Quickshell.reload(false);
         }
@@ -65,6 +70,21 @@ ShellRoot {
                 UiState.toggleNavigation(Quickshell.screens[0].name, Theme.pad, Theme.fontSize * 1.8, Theme.topBarHeight, Theme.topBarTopPadding)
         }
         function close() { UiState.closeNavigation() }
+        function handoff(target: string) {
+            if (UiState.activePanel === "navigation") {
+                if (target === "" || target === "cancel") {
+                    UiState.cancelNavigationHandoff()
+                } else {
+                    UiState.beginNavigationHandoff(target)
+                }
+            }
+        }
+        function openDashboardDefault() {
+            if (Quickshell.screens.length > 0) {
+                UiState.openNavigation(Quickshell.screens[0].name, Theme.pad, Theme.fontSize * 1.8, Theme.topBarHeight, Theme.topBarTopPadding)
+                UiState.beginNavigationHandoff("dashboard")
+            }
+        }
     }
 
     IpcHandler {
