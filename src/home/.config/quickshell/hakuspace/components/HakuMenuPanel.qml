@@ -71,7 +71,7 @@ Item {
             end: morph.mEnd
             currentHeight: morph.mHeight
             bounds: morph.bounds
-            r: Theme.radius
+            r: Theme.tipGiantRadius
             rf: Theme.tipHugRadius
             bottomRadius: Theme.tipHugRadius
             surfaceColor: Theme.surface
