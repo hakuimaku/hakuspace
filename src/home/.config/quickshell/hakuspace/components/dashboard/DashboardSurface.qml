@@ -17,35 +17,60 @@ Item {
     property real frameThickness: FlareEdges.thickness
     property real frameTop: FlareEdges.topOriginY
     property bool expanded: false
+    property real morphProgress: 0.0
 
     signal requestReturnToNavigation()
     signal focusRequested()
 
-    readonly property real cardGap: Math.max(10, Math.round(Theme.gap * 2.5))
-    readonly property real cornerRadius: Theme.radius
-    readonly property real innerCornerRadius: Theme.tipHugRadius
+    readonly property bool isFullyOpen: morphProgress >= 0.999
 
-    // Canonical 45x45 Dashboard shell dimensions
+    // Canonical 10 logical px Dashboard shell inset
+    readonly property real innerPadding: 10
+    readonly property real cardGap: 10
+    readonly property real cornerRadius: Theme.radius
+    readonly property real flareRadius: Theme.tipRadius
+
+    // Canonical 45x45 Dashboard shell dimensions (at 1080p: 864 x 486)
     readonly property real dashboardWidth: Math.round(screenWidth * 0.45)
     readonly property real dashboardHeight: Math.round(screenHeight * 0.45)
 
-    // Avatar geometry: exactly matches Navigation origin and diameter
-    readonly property real avatarX: controllerX
-    readonly property real avatarY: controllerY
+    // Morph geometry interpolation:
+    // Start envelope corresponds to the compact Navigation controller origin
+    readonly property real startEnvelopeWidth: Math.round(controllerX + circleDiameter + innerPadding)
+    readonly property real startEnvelopeHeight: Math.round(controllerY + circleDiameter + innerPadding)
+    readonly property real currentEnvelopeWidth: startEnvelopeWidth + (dashboardWidth - startEnvelopeWidth) * morphProgress
+    readonly property real currentEnvelopeHeight: startEnvelopeHeight + (dashboardHeight - startEnvelopeHeight) * morphProgress
+
+    // Flare body bounds (ends before flare ear so final envelope stays <= 45% x 45%)
+    readonly property real finalBodyEnd: Math.max(0, dashboardWidth - flareRadius)
+    readonly property real currentBodyEnd: Math.max(0, currentEnvelopeWidth - flareRadius)
+    readonly property real currentBodyWidth: currentBodyEnd
+    readonly property real currentBodyHeight: currentEnvelopeHeight
+
+    // Avatar geometry:
+    // Glides smoothly from controller origin to (10, 10)
+    readonly property real finalAvatarX: innerPadding
+    readonly property real finalAvatarY: innerPadding
+    readonly property real avatarX: controllerX + (finalAvatarX - controllerX) * morphProgress
+    readonly property real avatarY: controllerY + (finalAvatarY - controllerY) * morphProgress
     readonly property real avatarDiameter: circleDiameter
+    readonly property real avatarOpacity: Math.min(1.0, morphProgress / 0.25)
 
-    // Content area geometry (to the right of Avatar)
-    readonly property real contentX: Math.round(avatarX + avatarDiameter + cardGap * 1.5)
-    readonly property real rightPadding: Math.max(12, Math.round(Theme.pad * 1.2))
-    readonly property real bottomPadding: Math.max(12, Math.round(Theme.pad * 1.2))
+    // Content area geometry (to the right of final Avatar)
+    readonly property real avatarRight: innerPadding + avatarDiameter
+    readonly property real contentX: avatarRight + cardGap
+    readonly property real rightPadding: innerPadding
+    readonly property real bottomPadding: innerPadding
 
-    readonly property real usableContentWidth: Math.max(100, dashboardWidth - contentX - rightPadding)
+    // Usable card layout columns
+    readonly property real usableContentWidth: Math.max(100, finalBodyEnd - contentX - rightPadding)
     readonly property real usableColWidth: Math.max(100, usableContentWidth - cardGap)
     readonly property real col1Width: Math.round(usableColWidth * 0.46)
     readonly property real col2Width: usableColWidth - col1Width
 
+    // Usable card layout rows
     readonly property real topClusterX: contentX
-    readonly property real topClusterY: controllerY
+    readonly property real topClusterY: innerPadding
     readonly property real row1Height: Math.round(dashboardHeight * 0.22)
     readonly property real row2Y: topClusterY + row1Height + cardGap
     readonly property real row2Height: Math.max(100, dashboardHeight - row2Y - bottomPadding)
@@ -56,9 +81,23 @@ Item {
     readonly property real topClusterRight: topClusterX + topClusterWidth
     readonly property real topClusterBottom: row2Y + row2Height
 
+    // Content reveal progress: cards fade in and translate 8px after shell begins opening
+    readonly property real contentRevealProgress: {
+        if (morphProgress <= 0.35) return 0.0
+        if (morphProgress >= 0.70) return 1.0
+        return (morphProgress - 0.35) / (0.70 - 0.35)
+    }
+
     // Input mask bounds exposed for NavigationPanel overlay mask union
-    readonly property real maskClusterWidth: dashboardWidth
-    readonly property real maskClusterHeight: dashboardHeight
+    readonly property real maskBodyWidth: currentBodyWidth
+    readonly property real maskBodyHeight: currentBodyHeight
+    readonly property real maskEarX: currentBodyEnd
+    readonly property real maskEarWidth: flareShell.earRadius
+    readonly property real maskEarHeight: flareShell.earRadius
+
+    // Legacy mask aliases for backwards compatibility
+    readonly property real maskClusterWidth: maskBodyWidth
+    readonly property real maskClusterHeight: maskBodyHeight
     readonly property real maskLowerBodyY: 0
     readonly property real maskLowerBodyWidth: 0
     readonly property real maskLowerBodyHeight: 0
@@ -67,41 +106,30 @@ Item {
     readonly property real maskShoulderWidth: 0
     readonly property real maskShoulderHeight: 0
 
-    opacity: expanded ? 1.0 : 0.0
-    visible: opacity > 0.001
+    visible: morphProgress > 0.001 || expanded
 
-    Behavior on opacity {
-        NumberAnimation {
-            duration: HAnimation.fast
-            easing.type: Easing.OutCubic
-        }
-    }
-
-    // 1. Dashboard Surface Body
-    // Compact 45x45 shell enclosing Avatar and cards; workarea remains transparent.
-    Rectangle {
-        id: outerShell
-        x: 0
-        y: 0
-        width: root.dashboardWidth
-        height: root.dashboardHeight
-        bottomRightRadius: root.cornerRadius
-        bottomLeftRadius: root.cornerRadius
-        topRightRadius: root.cornerRadius
-        topLeftRadius: 0
-        color: Theme.barColor
-        border.width: 1
-        border.color: Qt.lighter(Theme.hoverMuted, 1.25)
+    // 1. Dashboard Flare Surface (HakuSpace Flare visual language)
+    DashboardFlareSurface {
+        id: flareShell
+        bodyWidth: root.currentEnvelopeWidth
+        bodyHeight: root.currentEnvelopeHeight
+        flareRadius: root.flareRadius
+        screenWidth: root.screenWidth
+        screenHeight: root.screenHeight
+        surfaceColor: Theme.barColor
+        cornerRadius: root.cornerRadius + 8
         z: 1
     }
 
-    // 2. Avatar Placeholder (fixed at Navigation origin)
-    // 2. Avatar Component (fixed at Navigation origin)
+    // 2. Avatar Component
     DashboardAvatar {
         id: dashboardAvatar
         x: root.avatarX
         y: root.avatarY
         diameter: root.avatarDiameter
+        interactive: root.isFullyOpen
+        opacity: root.avatarOpacity
+        visible: opacity > 0.001
         z: 10
 
         onRequestBack: {
@@ -153,73 +181,82 @@ Item {
         }
     }
 
-    // 3. Cards
-    // Row 1: Clock | MPRIS
-    DashboardClockCard {
-        id: clockCard
-        x: root.contentX
-        y: root.topClusterY
-        width: root.col1Width
-        height: root.row1Height
-        z: 5
-    }
-
-    DashboardMediaCard {
-        id: mediaCard
-        x: root.contentX + root.col1Width + root.cardGap
-        y: root.topClusterY
-        width: root.col2Width
-        height: root.row1Height
-        z: 5
-    }
-
-    // Row 2: Dynamic Widget Host | Monitor
-    DashboardWidgetHost {
-        id: widgetHost
-        x: root.contentX
-        y: root.row2Y
-        width: root.col1Width
-        height: root.row2Height
-        z: 5
-    }
-
-    Rectangle {
-        id: monitorCardPlaceholder
-        x: root.contentX + root.col1Width + root.cardGap
-        y: root.row2Y
-        width: root.col2Width
-        height: root.row2Height
-        radius: root.cornerRadius
-        color: Theme.surface
-        border.width: 1
-        border.color: Qt.lighter(Theme.hoverMuted, 1.25)
-        clip: true
+    // 3. Cards container (reveals gently as shell expands)
+    Item {
+        id: cardsContainer
+        anchors.fill: parent
+        opacity: root.contentRevealProgress
+        visible: opacity > 0.001
+        enabled: root.isFullyOpen
+        transform: Translate {
+            x: Math.round(-8 * (1.0 - root.contentRevealProgress))
+            y: Math.round(-8 * (1.0 - root.contentRevealProgress))
+        }
         z: 5
 
-        Column {
-            anchors.centerIn: parent
-            spacing: 6
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: ""
-                font.family: Theme.fontFamily
-                font.pixelSize: 28
-                color: Theme.fgDim
-            }
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "Monitor"
-                color: Theme.fg
-                font.family: Theme.fontFamily
-                font.pixelSize: Math.max(14, Theme.fontSize)
-                font.weight: Font.Bold
-            }
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "ROM · RAM · CPU · GPU"
-                color: Theme.fgDim
-                font.family: Theme.fontFamily
-                font.pixelSize: Math.max(10, Theme.fontSize - 3)
+        // Row 1: Clock | MPRIS
+        DashboardClockCard {
+            id: clockCard
+            x: root.contentX
+            y: root.topClusterY
+            width: root.col1Width
+            height: root.row1Height
+        }
+
+        DashboardMediaCard {
+            id: mediaCard
+            x: root.contentX + root.col1Width + root.cardGap
+            y: root.topClusterY
+            width: root.col2Width
+            height: root.row1Height
+        }
+
+        // Row 2: Dynamic Widget Host | Monitor
+        DashboardWidgetHost {
+            id: widgetHost
+            x: root.contentX
+            y: root.row2Y
+            width: root.col1Width
+            height: root.row2Height
+        }
+
+        Rectangle {
+            id: monitorCardPlaceholder
+            x: root.contentX + root.col1Width + root.cardGap
+            y: root.row2Y
+            width: root.col2Width
+            height: root.row2Height
+            radius: root.cornerRadius
+            color: Theme.surface
+            border.width: 1
+            border.color: Qt.lighter(Theme.hoverMuted, 1.25)
+            clip: true
+
+            Column {
+                anchors.centerIn: parent
+                spacing: 6
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: ""
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 28
+                    color: Theme.fgDim
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "Monitor"
+                    color: Theme.fg
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Math.max(14, Theme.fontSize)
+                    font.weight: Font.Bold
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "ROM · RAM · CPU · GPU"
+                    color: Theme.fgDim
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Math.max(10, Theme.fontSize - 3)
+                }
             }
         }
     }

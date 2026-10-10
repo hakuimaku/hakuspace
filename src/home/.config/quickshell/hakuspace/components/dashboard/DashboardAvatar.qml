@@ -6,6 +6,7 @@ Item {
     id: root
 
     property real diameter: 148
+    property bool interactive: true
 
     signal requestBack()
     signal requestChangeAvatar()
@@ -99,7 +100,7 @@ Item {
         radius: width / 2
         color: "transparent"
         border.width: 2
-        border.color: avatarArea.hovered ? Theme.accent : Qt.lighter(Theme.hoverMuted, 1.45)
+        border.color: (root.interactive && avatarArea.hovered) ? Theme.accent : Qt.lighter(Theme.hoverMuted, 1.45)
         z: 20
 
         Behavior on border.color { ColorAnimation { duration: HAnimation.fast } }
@@ -109,12 +110,14 @@ Item {
     MouseArea {
         id: avatarArea
         anchors.fill: parent
-        hoverEnabled: true
+        hoverEnabled: root.interactive
+        enabled: root.interactive
         acceptedButtons: Qt.LeftButton | Qt.RightButton
-        cursorShape: Qt.PointingHandCursor
+        cursorShape: (root.interactive && avatarArea.hovered) ? Qt.PointingHandCursor : Qt.ArrowCursor
         z: 30
 
         onClicked: mouse => {
+            if (!root.interactive) return
             if (mouse.button === Qt.LeftButton) {
                 root.requestBack()
             } else if (mouse.button === Qt.RightButton) {
