@@ -3,9 +3,9 @@ import Quickshell
 import Quickshell.Wayland
 import "../services"
 
-// P3 Settings Stub Layer (T1)
+// P3 Settings Stub Layer (T2)
 // Standalone modal surface centered in the output.
-// Visual stub only to review silhouette, scale, radius, and base surface style.
+// Visual stub with restrained modal backdrop and subtle body outline.
 PanelWindow {
     id: root
     required property var modelData
@@ -48,6 +48,14 @@ PanelWindow {
         }
     }
 
+    // Dim modal backdrop behind Settings body
+    Rectangle {
+        id: backdrop
+        anchors.fill: parent
+        color: Theme.scrim
+        opacity: 0.22
+    }
+
     // Outside-dismiss layer: clicking outside the centered body closes Settings
     MouseArea {
         id: outsideDismiss
@@ -67,6 +75,17 @@ PanelWindow {
         color: Theme.surface
         border.color: Theme.border
         border.width: Theme.borderWidth
+
+        // Subtle 1 px body outline for dark backgrounds
+        Rectangle {
+            id: bodyOutline
+            anchors.fill: parent
+            radius: parent.radius
+            color: "transparent"
+            border.width: 1
+            border.color: Theme.fg
+            opacity: 0.12
+        }
 
         // Pointer absorber: prevents clicks inside the body from reaching outsideDismiss
         MouseArea {
