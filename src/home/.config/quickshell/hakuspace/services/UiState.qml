@@ -33,6 +33,8 @@ QtObject {
 
 
     function openNavigation(screenName, anchorX, anchorWidth, anchorHeight, anchorY) {
+        if (activePanel === "navigation" && navigationScreenName === screenName && navigationMode !== "closed")
+            return
         navigationScreenName = screenName
         navigationVisualScreenName = screenName
         navigationAnchorX = Number.isFinite(anchorX) ? anchorX : 0

@@ -13,18 +13,21 @@ Item {
     readonly property bool panelOpen: UiState.activePanel === "hakumenu"
         && UiState.hakuMenuMode !== "closed"
         && UiState.hakuMenuScreenName === modelData.name
+    property bool openedByTrigger: false
     readonly property real triggerHeight: 4
     readonly property real triggerWidth: modelData.width * 0.20
-    readonly property real maxMenuWidth: modelData.width * 0.40
-    readonly property real targetMenuWidth: UiState.hakuMenuMode === "general"
-                                                   ? modelData.width * 0.38
-                                                   : maxMenuWidth
-    readonly property real menuHeight: modelData.height * 0.40
+    readonly property real maxMenuWidth: modelData.width * 0.42
+    readonly property real targetMenuWidth: {
+        if (UiState.hakuMenuMode === "general") return modelData.width * 0.38
+        if (UiState.hakuMenuMode === "theme") return modelData.width * 0.42
+        return modelData.width * 0.40
+    }
+    readonly property real menuHeight: modelData.height * 0.45
     readonly property real menuTop: FlareEdges.topOriginY
     readonly property real bounceHeadroom: menuHeight * HAnimation.hakuMenuBounceHeadroom
     readonly property real windowWidth: Math.max(triggerWidth, maxMenuWidth + Theme.tipHugRadius * 2)
     readonly property real windowHeight: menuTop + menuHeight + bounceHeadroom
-    readonly property real triggerX: (windowWidth - triggerWidth) / 2
+    readonly property real triggerX: (modelData.width - triggerWidth) / 2
     readonly property bool contentReady: isFinite(menu.width) && menu.width > 0
                                          && isFinite(menu.height) && menu.height > 0
 
@@ -39,6 +42,7 @@ Item {
                 if (root.panelOpen) searchInput.forceActiveFocus()
             })
         } else {
+            openedByTrigger = false
             searchInput.focus = false
         }
     }
@@ -50,14 +54,13 @@ Item {
     PanelWindow {
         id: topVisualLayer
         screen: root.modelData
-        anchors { top: true; left: true }
-        margins.left: (root.modelData.width - root.windowWidth) / 2
+        anchors { top: true; left: true; right: true }
         WlrLayershell.layer: WlrLayer.Top
         WlrLayershell.namespace: "hakuspace-hakumenu-flare"
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
-        implicitWidth: root.windowWidth
+        implicitWidth: root.modelData.width
         implicitHeight: root.windowHeight
         color: "transparent"
         mask: Region {}
@@ -81,51 +84,45 @@ Item {
     PanelWindow {
         id: contentLayer
         screen: root.modelData
-        anchors { top: true; left: true }
-        margins.left: (root.modelData.width - root.windowWidth) / 2
+        anchors { top: true; bottom: true; left: true; right: true }
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "hakuspace-hakumenu-content"
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+        WlrLayershell.keyboardFocus: root.panelOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
-        implicitWidth: root.windowWidth
-        implicitHeight: root.windowHeight
         color: "transparent"
+
         mask: Region {
             Region {
-                x: root.triggerX
-                width: root.triggerWidth
-                height: root.triggerHeight
-            }
-            Region {
-                x: Math.min(root.triggerX, morph.mStart)
-                y: root.triggerHeight
-                width: Math.max(root.triggerX + root.triggerWidth, morph.mEnd) - x
-                height: root.panelOpen || morph.mHeight > 0 ? root.menuTop - y : 0
-            }
-            Region {
-                x: morph.mStart
-                y: root.menuTop
-                width: Math.max(0, morph.mEnd - morph.mStart)
-                height: morph.mHeight
-                radius: Theme.tipHugRadius
+                x: root.panelOpen || morph.mHeight > 0.01 ? 0 : root.triggerX
+                y: 0
+                width: root.panelOpen || morph.mHeight > 0.01 ? root.modelData.width : root.triggerWidth
+                height: root.panelOpen || morph.mHeight > 0.01 ? root.modelData.height : root.triggerHeight
             }
         }
 
-        // Opening and lifetime tracking are intentionally separate. Only the
-        // physical trigger opens the menu; this passive hover only closes an
-        // already-open menu when the pointer leaves the interactive layer.
-        HoverHandler {
-            id: lifecycleHover
-            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-            onHoveredChanged: {
-                if (!hovered && root.panelOpen) UiState.closeHakuMenu()
+        // Clicking outside the menu closes HakuMenu
+        MouseArea {
+            id: outsideDismiss
+            anchors.fill: parent
+            enabled: root.panelOpen
+            onClicked: UiState.closeHakuMenu()
+        }
+
+        Item {
+            id: fallbackKeyHandler
+            anchors.fill: parent
+            focus: root.panelOpen
+            Keys.onEscapePressed: event => {
+                UiState.closeHakuMenu()
+                event.accepted = true
             }
         }
 
         Item {
             id: triggerAnchor
             x: root.triggerX
+            y: 0
             width: root.triggerWidth
             height: root.triggerHeight
 
@@ -133,8 +130,21 @@ Item {
                 id: triggerHover
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                 onHoveredChanged: {
-                    if (hovered && !root.panelOpen)
+                    if (hovered && !root.panelOpen) {
+                        root.openedByTrigger = true
                         UiState.openHakuMenu(root.modelData.name)
+                    }
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                onEntered: {
+                    if (!root.panelOpen) {
+                        root.openedByTrigger = true
+                        UiState.openHakuMenu(root.modelData.name)
+                    }
                 }
             }
         }
@@ -150,7 +160,7 @@ Item {
             padX: 0
             padY: 0
             snap: 0
-            bounds: ({ start: 0, end: contentLayer.width })
+            bounds: ({ start: 0, end: root.modelData.width })
             openDuration: HAnimation.hakuMenuOpenDuration
             closeDuration: HAnimation.hakuMenuCloseDuration
             retargetDuration: HAnimation.hakuMenuResizeDuration
@@ -170,6 +180,21 @@ Item {
             clip: true
             visible: width > 0.01 && height > 0.01
 
+            // Absorb clicks so clicking inside the menu body does not dismiss
+            MouseArea {
+                anchors.fill: parent
+            }
+
+            HoverHandler {
+                id: surfaceHover
+                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                onHoveredChanged: {
+                    if (!hovered && root.panelOpen && root.openedByTrigger && morph.mHeight > 20 && !triggerHover.hovered) {
+                        UiState.closeHakuMenu()
+                    }
+                }
+            }
+
             Item {
                 id: menu
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -185,7 +210,7 @@ Item {
 
                 readonly property real innerPad: Theme.pad * 2
                 readonly property real innerWidth: Math.max(0, width - innerPad * 2)
-                readonly property real stateWidth: Theme.fontSize * 3.5
+                readonly property real stateWidth: Theme.fontSize * 3.5 + 10
                 readonly property bool showStateRegion: UiState.hakuMenuMode === "theme"
                 readonly property color controlBg: Qt.darker(Theme.hoverMuted, 1.75)
                 readonly property color controlHoverBg: Qt.darker(Theme.hoverMuted, 1.35)
@@ -310,11 +335,12 @@ Item {
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSize
                         clip: true
+                        focus: root.panelOpen
                         text: UiState.hakuMenuQuery
                         onTextEdited: UiState.setHakuMenuQuery(text)
-                        Keys.onEscapePressed: {
-                            UiState.setHakuMenuQuery("")
-                            focus = false
+                        Keys.onEscapePressed: event => {
+                            UiState.closeHakuMenu()
+                            event.accepted = true
                         }
                         Keys.onLeftPressed: event => {
                             menu.moveTab(-1)

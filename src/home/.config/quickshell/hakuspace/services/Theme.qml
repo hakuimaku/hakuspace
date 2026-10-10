@@ -36,8 +36,8 @@ QtObject {
     readonly property int topBarTopPadding: 4
     readonly property real topBarHeight: Math.max(30, fontSize * 2.3) + topBarTopPadding
     readonly property real levelOsdWidth: Math.max(240, fontSize * 22)
-    readonly property int levelOsdPadding: 16
-    readonly property real levelOsdHeight: Math.max(42, fontSize * 2.4 + 2 * (levelOsdPadding + gap))
+    readonly property int levelOsdPadding: 8
+    readonly property real levelOsdHeight: Math.max(36, fontSize * 2.4 + 2 * (levelOsdPadding + gap))
     
     // Convert rgba() to Qt-compatible #AARRGGBB before applying theme data.
     function parseColor(c) {
