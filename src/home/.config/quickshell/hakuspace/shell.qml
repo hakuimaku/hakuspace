@@ -64,18 +64,6 @@ ShellRoot {
             if (Quickshell.screens.length > 0)
                 UiState.toggleNavigation(Quickshell.screens[0].name, Theme.pad, Theme.fontSize * 1.8, Theme.topBarHeight, Theme.topBarTopPadding)
         }
-        function openDashboard() {
-            if (Quickshell.screens.length > 0) {
-                var screen = Quickshell.screens[0]
-                if (UiState.activePanel !== "navigation") {
-                    UiState.openNavigation(screen.name, Theme.pad, Theme.fontSize * 1.8, Theme.topBarHeight, Theme.topBarTopPadding)
-                }
-                UiState.beginNavigationHandoff("dashboard")
-            }
-        }
-        function returnToNavigation() {
-            UiState.cancelNavigationHandoff()
-        }
         function close() { UiState.closeNavigation() }
     }
 

@@ -72,6 +72,9 @@ Item {
     readonly property real sidebarSafeMargin: 100
     readonly property real sidebarSafeWidth: sidebarBodyWidth + sidebarSafeMargin
     readonly property real sidebarSafeHeight: sidebarBodyY + sidebarBodyHeight + flareReach + sidebarSafeMargin
+    readonly property real dashboardSafeMargin: 200
+    readonly property real dashboardSafeWidth: Math.round(modelData.width * 0.45) + dashboardSafeMargin
+    readonly property real dashboardSafeHeight: Math.round(modelData.height * 0.45) + dashboardSafeMargin
 
     // Sidebar interaction geometry:
     readonly property bool sidebarExpanded: UiState.navigationMode === "handoff-sidebar"
@@ -102,8 +105,14 @@ Item {
             && y >= 0 && y <= sidebarSafeHeight
     }
 
+    function insideDashboardSafeZone(x, y) {
+        return dashboardExpanded
+            && x >= 0 && x <= dashboardSafeWidth
+            && y >= 0 && y <= dashboardSafeHeight
+    }
+
     function insideSafeZone(x, y) {
-        return insideRegionA(x, y) || insideSidebarSafeZone(x, y)
+        return insideRegionA(x, y) || insideSidebarSafeZone(x, y) || insideDashboardSafeZone(x, y)
     }
 
     // Region B = Sidebar handoff union = Sidebar sector ∪ bridge ∪ Sidebar body
@@ -142,7 +151,17 @@ Item {
 
     // Authoritative pointer-state evaluation for handoff and close decisions
     function evaluatePointer(x, y) {
-        if (!panelOpen || closing || dashboardVisuallyActive) return
+        if (!panelOpen || closing) return
+
+        // 0. Dashboard safe boundary:
+        // When dashboard is open, moving > 200px away from the dashboard closes it.
+        if (dashboardExpanded) {
+            if (x > dashboardSafeWidth || y > dashboardSafeHeight) {
+                UiState.cancelNavigationHandoff()
+                UiState.closeNavigation()
+            }
+            return
+        }
 
         // 1. Direct interactive region of Sidebar (sector ∪ bridge ∪ body ∪ ear)
         var inB = insideRegionB(x, y)
@@ -549,41 +568,32 @@ Item {
                 height: (root.sidebarExpanded && !root.dashboardVisuallyActive)
                        ? Math.min(navigationLayer.height, root.sidebarSafeHeight) : 0
             }
-            // Dashboard regions (animated with morphProgress)
-            // 1. Flare main body
+            // Dashboard safe region (200px buffer outside dashboard bounds)
             Region {
                 x: 0
                 y: 0
-                width: root.dashboardVisuallyActive ? dashboardSurface.maskBodyWidth : 0
-                height: root.dashboardVisuallyActive ? dashboardSurface.maskBodyHeight : 0
-            }
-            // 2. Flare top-right ear
-            Region {
-                x: root.dashboardVisuallyActive ? dashboardSurface.maskEarX : 0
-                y: 0
-                width: root.dashboardVisuallyActive ? dashboardSurface.maskEarWidth : 0
-                height: root.dashboardVisuallyActive ? dashboardSurface.maskEarHeight : 0
+                width: root.dashboardVisuallyActive
+                       ? Math.min(navigationLayer.width, root.dashboardSafeWidth) : 0
+                height: root.dashboardVisuallyActive
+                       ? Math.min(navigationLayer.height, root.dashboardSafeHeight) : 0
             }
         }
 
-        // Authoritative pointer-lifetime evaluation for Navigation and Sidebar union:
-        // Evaluates Region A (Navigation keep-alive) and Region B (Sidebar sector ∪ bridge ∪ body).
+        // Authoritative pointer-lifetime evaluation for Navigation, Sidebar, and Dashboard:
+        // Evaluates Region A (Navigation), Region B (Sidebar), and Dashboard safe zone.
         HoverHandler {
             id: safeZoneHover
             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
             onHoveredChanged: {
                 if (!hovered && root.panelOpen && !root.closing) {
-                    if (root.dashboardVisuallyActive) {
-                        return
-                    }
-                    if (root.sidebarExpanded) {
+                    if (root.sidebarExpanded || root.dashboardExpanded) {
                         UiState.cancelNavigationHandoff()
                     }
                     UiState.closeNavigation()
                 }
             }
             onPointChanged: {
-                if (!root.panelOpen || root.closing || root.dashboardVisuallyActive) return
+                if (!root.panelOpen || root.closing) return
                 root.evaluatePointer(point.position.x, point.position.y)
             }
         }
@@ -699,7 +709,7 @@ Item {
             height: root.circularShellDiameter
             radius: width / 2
             color: Theme.barColor
-            opacity: (root.closing ? 1.0 : root.navigationRevealProgress) * Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35)
+            opacity: root.navigationRevealProgress * Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35)
             scale: 0.92 + root.navigationRevealProgress * 0.08
             transformOrigin: Item.Center
             visible: (root.panelOpen || root.closing) && opacity > 0.001
