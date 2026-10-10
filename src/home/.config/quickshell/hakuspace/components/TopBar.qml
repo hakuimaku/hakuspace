@@ -193,10 +193,9 @@ PanelWindow {
                         : 0
                     x: baseX + navigationShift
                     anchors.verticalCenter: parent.verticalCenter
-                    opacity: (root.navigationVisualActive && UiState.navigationMode === "handoff-dashboard") ? 0.0 : 1.0
-                    enabled: opacity > 0.001
-
-                    Behavior on opacity { NumberAnimation { duration: HAnimation.fast } }
+                    spacing: Theme.gap
+                    opacity: 1.0
+                    enabled: true
 
                     Behavior on x {
                         NumberAnimation {

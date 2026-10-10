@@ -7,6 +7,8 @@ Item {
 
     required property real screenWidth
     required property real screenHeight
+    width: screenWidth
+    height: screenHeight
     required property real controllerX
     required property real controllerY
     required property real circleRadius
@@ -17,9 +19,9 @@ Item {
 
     signal requestReturnToNavigation()
 
-    property real cardGap: Math.max(10, Math.round(Theme.gap * 2.5))
-    property real cornerRadius: Theme.radius
-    property real innerCornerRadius: Theme.tipHugRadius
+    readonly property real cardGap: Math.max(10, Math.round(Theme.gap * 2.5))
+    readonly property real cornerRadius: Theme.radius
+    readonly property real innerCornerRadius: Theme.tipHugRadius
 
     // Avatar geometry: exactly matches Navigation origin and diameter
     readonly property real avatarX: controllerX
@@ -27,12 +29,12 @@ Item {
     readonly property real avatarDiameter: circleDiameter
 
     // Top cluster geometry (to the right of Avatar)
-    property real topClusterX: controllerX + circleDiameter + cardGap * 1.5
-    property real topClusterY: controllerY
-    property real col1Width: Math.max(240, Math.round(screenWidth * 0.135))
-    property real col2Width: Math.max(280, Math.round(screenWidth * 0.155))
-    property real row1Height: Math.max(90, Math.round(screenHeight * 0.095))
-    property real row2Height: Math.max(180, Math.round(screenHeight * 0.20))
+    readonly property real topClusterX: controllerX + circleDiameter + cardGap * 1.5
+    readonly property real topClusterY: controllerY
+    readonly property real col1Width: Math.max(240, Math.round(screenWidth * 0.135))
+    readonly property real col2Width: Math.max(280, Math.round(screenWidth * 0.155))
+    readonly property real row1Height: Math.max(90, Math.round(screenHeight * 0.095))
+    readonly property real row2Height: Math.max(180, Math.round(screenHeight * 0.20))
 
     readonly property real topClusterWidth: col1Width + cardGap + col2Width
     readonly property real topClusterHeight: row1Height + cardGap + row2Height
@@ -40,12 +42,12 @@ Item {
     readonly property real topClusterBottom: topClusterY + topClusterHeight
 
     // Outer shell geometry: stepped mockup silhouette
-    property real leftX: frameThickness
-    property real rightX: screenWidth - frameThickness - 8
-    property real bottomY: screenHeight - frameThickness - 8
-    property real lowerBodyTopY: Math.round(topClusterBottom + cardGap * 2.5)
-    property real shoulderX: Math.round(topClusterRight + cardGap * 2)
-    property real shoulderTopY: topClusterY
+    readonly property real leftX: frameThickness
+    readonly property real rightX: screenWidth - frameThickness - 8
+    readonly property real bottomY: screenHeight - frameThickness - 8
+    readonly property real lowerBodyTopY: Math.round(topClusterBottom + cardGap * 2.5)
+    readonly property real shoulderX: Math.round(topClusterRight + cardGap * 2)
+    readonly property real shoulderTopY: topClusterY
 
     // Input mask bounds exposed for NavigationPanel overlay mask union
     readonly property real maskClusterWidth: Math.ceil(shoulderX)
