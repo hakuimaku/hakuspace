@@ -4,6 +4,7 @@ import Quickshell.Wayland
 import "../services"
 import "flare" as Flare
 import "sidebar" as Sidebar
+import "dashboard" as Dashboard
 
 Item {
     id: root
@@ -12,6 +13,7 @@ Item {
     readonly property bool panelOpen: UiState.activePanel === "navigation"
                                       && UiState.navigationMode !== "closed"
                                       && UiState.navigationScreenName === modelData.name
+    readonly property bool dashboardExpanded: panelOpen && UiState.navigationMode === "handoff-dashboard"
     property bool closing: false
     property int selectedIndex: 0
     property int hoveredIndex: -1
@@ -79,6 +81,33 @@ Item {
     readonly property real bridgeWidth: Math.max(sidebarBodyWidth, Math.round(circleRadius + shellPadding))
     readonly property real bridgeHeight: Math.max(1, (sidebarBodyY + Math.min(24, sidebarBodyHeight * 0.1)) - bridgeY)
 
+    // Dashboard geometry:
+    readonly property real dashboardCardGap: Math.max(10, Math.round(Theme.gap * 2.5))
+    readonly property real dashboardCol1Width: Math.max(240, Math.round(modelData.width * 0.135))
+    readonly property real dashboardCol2Width: Math.max(280, Math.round(modelData.width * 0.155))
+    readonly property real dashboardRow1Height: Math.max(90, Math.round(modelData.height * 0.095))
+    readonly property real dashboardRow2Height: Math.max(180, Math.round(modelData.height * 0.20))
+    readonly property real dashboardTopClusterX: controllerX + circleDiameter + dashboardCardGap * 1.5
+    readonly property real dashboardTopClusterY: controllerY
+    readonly property real dashboardTopClusterWidth: dashboardCol1Width + dashboardCardGap + dashboardCol2Width
+    readonly property real dashboardTopClusterHeight: dashboardRow1Height + dashboardCardGap + dashboardRow2Height
+    readonly property real dashboardTopClusterRight: dashboardTopClusterX + dashboardTopClusterWidth
+    readonly property real dashboardTopClusterBottom: dashboardTopClusterY + dashboardTopClusterHeight
+
+    readonly property real dashboardLeftX: frameThickness
+    readonly property real dashboardRightX: modelData.width - frameThickness - 8
+    readonly property real dashboardBottomY: modelData.height - frameThickness - 8
+    readonly property real dashboardLowerBodyTopY: Math.round(dashboardTopClusterBottom + dashboardCardGap * 2.5)
+    readonly property real dashboardShoulderX: Math.round(dashboardTopClusterRight + dashboardCardGap * 2)
+    readonly property real dashboardShoulderY: dashboardTopClusterY
+
+    readonly property real dashboardClusterWidth: Math.ceil(dashboardShoulderX)
+    readonly property real dashboardClusterHeight: Math.ceil(dashboardLowerBodyTopY)
+    readonly property real dashboardLowerBodyWidth: Math.ceil(dashboardRightX)
+    readonly property real dashboardLowerBodyHeight: Math.ceil(dashboardBottomY - dashboardLowerBodyTopY)
+    readonly property real dashboardShoulderWidth: Math.ceil(dashboardRightX - dashboardShoulderX)
+    readonly property real dashboardShoulderHeight: Math.ceil(dashboardLowerBodyTopY - dashboardShoulderY)
+
     // Region A = Navigation keep-alive region
     function insideRegionA(x, y) {
         return x >= 0 && y >= 0 && (x * x + y * y <= safeRadius * safeRadius)
@@ -130,7 +159,7 @@ Item {
 
     // Authoritative pointer-state evaluation for handoff and close decisions
     function evaluatePointer(x, y) {
-        if (!panelOpen || closing) return
+        if (!panelOpen || closing || dashboardExpanded) return
 
         // 1. Direct interactive region of Sidebar (sector ∪ bridge ∪ body ∪ ear)
         var inB = insideRegionB(x, y)
@@ -326,6 +355,11 @@ Item {
     function activateIndex(index) {
         if (index < 0 || index >= regions.length) return
         selectedIndex = index
+        if (regions[index].key === "dashboard") {
+            if (sidebarExpanded) UiState.cancelNavigationHandoff()
+            UiState.beginNavigationHandoff("dashboard")
+            return
+        }
         if (regions[index].key === "settings") {
             if (sidebarExpanded) UiState.cancelNavigationHandoff()
             UiState.openSettings(modelData.name)
@@ -420,6 +454,16 @@ Item {
         }
     }
 
+    onDashboardExpandedChanged: {
+        if (!dashboardExpanded && panelOpen) {
+            selectedIndex = 0
+            hoveredIndex = -1
+            Qt.callLater(function() {
+                if (root.panelOpen) keyHandler.forceActiveFocus()
+            })
+        }
+    }
+
     ParallelAnimation {
         id: openMorph
         NumberAnimation {
@@ -509,16 +553,40 @@ Item {
             Region {
                 x: 0
                 y: 0
-                width: Math.min(navigationLayer.width, root.safeRadius)
-                height: Math.min(navigationLayer.height, root.safeRadius)
+                width: root.dashboardExpanded ? 0 : Math.min(navigationLayer.width, root.safeRadius)
+                height: root.dashboardExpanded ? 0 : Math.min(navigationLayer.height, root.safeRadius)
                 bottomRightRadius: Math.min(width, height)
             }
             // Sidebar safe region (when expanded)
             Region {
                 x: 0
                 y: 0
-                width: root.sidebarExpanded ? Math.min(navigationLayer.width, root.sidebarSafeWidth) : 0
-                height: root.sidebarExpanded ? Math.min(navigationLayer.height, root.sidebarSafeHeight) : 0
+                width: (root.sidebarExpanded && !root.dashboardExpanded)
+                       ? Math.min(navigationLayer.width, root.sidebarSafeWidth) : 0
+                height: (root.sidebarExpanded && !root.dashboardExpanded)
+                       ? Math.min(navigationLayer.height, root.sidebarSafeHeight) : 0
+            }
+            // Dashboard regions (when expanded)
+            // 1. Top Cluster & Avatar
+            Region {
+                x: 0
+                y: 0
+                width: root.dashboardExpanded ? root.dashboardClusterWidth : 0
+                height: root.dashboardExpanded ? root.dashboardClusterHeight : 0
+            }
+            // 2. Lower body
+            Region {
+                x: 0
+                y: root.dashboardExpanded ? root.dashboardLowerBodyY : 0
+                width: root.dashboardExpanded ? root.dashboardLowerBodyWidth : 0
+                height: root.dashboardExpanded ? root.dashboardLowerBodyHeight : 0
+            }
+            // 3. Right shoulder
+            Region {
+                x: root.dashboardExpanded ? root.dashboardShoulderX : 0
+                y: root.dashboardExpanded ? root.dashboardShoulderY : 0
+                width: root.dashboardExpanded ? root.dashboardShoulderWidth : 0
+                height: root.dashboardExpanded ? root.dashboardShoulderHeight : 0
             }
         }
 
@@ -529,6 +597,9 @@ Item {
             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
             onHoveredChanged: {
                 if (!hovered && root.panelOpen && !root.closing) {
+                    if (root.dashboardExpanded) {
+                        return
+                    }
                     if (root.sidebarExpanded) {
                         UiState.cancelNavigationHandoff()
                     }
@@ -536,7 +607,7 @@ Item {
                 }
             }
             onPointChanged: {
-                if (!root.panelOpen || root.closing) return
+                if (!root.panelOpen || root.closing || root.dashboardExpanded) return
                 root.evaluatePointer(point.position.x, point.position.y)
             }
         }
@@ -564,7 +635,7 @@ Item {
             opacity: root.closing
                      ? Math.max(0.0, 1.0 - Math.max(0.0, root.closeFlareProgress - 0.72) / 0.28)
                      : 1.0
-            visible: root.panelOpen || root.closing
+            visible: (root.panelOpen || root.closing) && !root.dashboardExpanded
         }
 
         // Invisible interaction bridge connecting Sidebar sector to Sidebar body.
@@ -574,7 +645,7 @@ Item {
             y: root.bridgeY
             width: root.bridgeWidth
             height: root.bridgeHeight
-            enabled: root.panelOpen && root.sidebarExpanded
+            enabled: root.panelOpen && root.sidebarExpanded && !root.dashboardExpanded
             hoverEnabled: true
             acceptedButtons: Qt.LeftButton
             z: 24
@@ -600,7 +671,7 @@ Item {
             bodyWidth: root.sidebarBodyWidth
             bodyHeight: root.sidebarBodyHeight
             controlDiameter: root.sidebarControlDiameter
-            expanded: root.panelOpen && root.sidebarExpanded && !root.closing
+            expanded: root.panelOpen && root.sidebarExpanded && !root.closing && !root.dashboardExpanded
             rf: root.flareReach
             frameThickness: root.frameThickness
             topFlareY: Math.max(0, root.surfaceHeight - root.sidebarBodyY)
@@ -613,6 +684,38 @@ Item {
                 root.hoveredIndex = 1
                 root.selectedIndex = 1
                 root.evaluatePointer(root.sidebarBodyX + px, root.sidebarBodyY + py)
+            }
+        }
+
+        // P3 Dashboard visual surface: mockup-locked silhouette, placeholder avatar,
+        // and card placeholder bounds inside the existing navigation overlay.
+        Dashboard.DashboardSurface {
+            id: dashboardSurface
+            screenWidth: navigationLayer.width
+            screenHeight: navigationLayer.height
+            controllerX: root.controllerX
+            controllerY: root.controllerY
+            circleRadius: root.circleRadius
+            circleDiameter: root.circleDiameter
+            frameThickness: root.frameThickness
+            frameTop: root.frameTop
+            cardGap: root.dashboardCardGap
+            col1Width: root.dashboardCol1Width
+            col2Width: root.dashboardCol2Width
+            row1Height: root.dashboardRow1Height
+            row2Height: root.dashboardRow2Height
+            topClusterX: root.dashboardTopClusterX
+            topClusterY: root.dashboardTopClusterY
+            leftX: root.dashboardLeftX
+            rightX: root.dashboardRightX
+            bottomY: root.dashboardBottomY
+            lowerBodyTopY: root.dashboardLowerBodyTopY
+            shoulderX: root.dashboardShoulderX
+            shoulderTopY: root.dashboardShoulderY
+            expanded: root.panelOpen && root.dashboardExpanded && !root.closing
+            z: 25
+            onRequestReturnToNavigation: {
+                UiState.cancelNavigationHandoff()
             }
         }
 
@@ -630,6 +733,7 @@ Item {
             opacity: root.navigationRevealProgress
             scale: 0.92 + root.navigationRevealProgress * 0.08
             transformOrigin: Item.Center
+            visible: (root.panelOpen || root.closing) && !root.dashboardExpanded
             z: 10
         }
 
@@ -645,7 +749,7 @@ Item {
             border.width: root.logoMorphProgress > 0.45 ? 2 : 0
             border.color: Qt.lighter(Theme.hoverMuted, 1.55)
             z: 120
-            visible: root.panelOpen || root.closing
+            visible: (root.panelOpen || root.closing) && !root.dashboardExpanded
 
             Behavior on color { ColorAnimation { duration: HAnimation.fast } }
             Behavior on border.width { NumberAnimation { duration: HAnimation.fast } }
@@ -663,7 +767,7 @@ Item {
 
             MouseArea {
                 anchors.fill: parent
-                enabled: root.panelOpen && root.navigationRevealProgress > 0.82
+                enabled: root.panelOpen && root.navigationRevealProgress > 0.82 && !root.dashboardExpanded
                 cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                 onClicked: {
                     if (root.sidebarExpanded) UiState.cancelNavigationHandoff()
@@ -677,13 +781,20 @@ Item {
             anchors.fill: parent
             focus: root.panelOpen
 
-            Keys.onLeftPressed: event => { root.moveSelection(-1); event.accepted = true }
-            Keys.onUpPressed: event => { root.moveSelection(-1); event.accepted = true }
-            Keys.onRightPressed: event => { root.moveSelection(1); event.accepted = true }
-            Keys.onDownPressed: event => { root.moveSelection(1); event.accepted = true }
-            Keys.onReturnPressed: event => { root.activateSelected(); event.accepted = true }
-            Keys.onEnterPressed: event => { root.activateSelected(); event.accepted = true }
-            Keys.onEscapePressed: event => { UiState.closeNavigation(); event.accepted = true }
+            Keys.onLeftPressed: event => { if (!root.dashboardExpanded) root.moveSelection(-1); event.accepted = true }
+            Keys.onUpPressed: event => { if (!root.dashboardExpanded) root.moveSelection(-1); event.accepted = true }
+            Keys.onRightPressed: event => { if (!root.dashboardExpanded) root.moveSelection(1); event.accepted = true }
+            Keys.onDownPressed: event => { if (!root.dashboardExpanded) root.moveSelection(1); event.accepted = true }
+            Keys.onReturnPressed: event => { if (!root.dashboardExpanded) root.activateSelected(); event.accepted = true }
+            Keys.onEnterPressed: event => { if (!root.dashboardExpanded) root.activateSelected(); event.accepted = true }
+            Keys.onEscapePressed: event => {
+                if (root.dashboardExpanded) {
+                    UiState.cancelNavigationHandoff()
+                } else {
+                    UiState.closeNavigation()
+                }
+                event.accepted = true
+            }
         }
         Item {
             id: controller
@@ -694,6 +805,7 @@ Item {
             opacity: root.navigationRevealProgress
             scale: 0.72 + root.navigationRevealProgress * 0.28
             transformOrigin: Item.Center
+            visible: !root.dashboardExpanded
             z: 30
 
                 // Static dark ring beneath the three independently animated slices.
@@ -831,7 +943,7 @@ Item {
                     width: parent.width + root.shellPadding * 2
                     height: parent.height + root.shellPadding * 2
                     hoverEnabled: true
-                    enabled: root.panelOpen && root.navigationRevealProgress > 0.82
+                    enabled: root.panelOpen && root.navigationRevealProgress > 0.82 && !root.dashboardExpanded
                     acceptedButtons: Qt.LeftButton
                     cursorShape: root.hoveredIndex >= 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
                     z: 80
