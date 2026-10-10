@@ -117,12 +117,10 @@ Item {
 
     // Region B = Sidebar handoff union = Sidebar sector ∪ bridge ∪ Sidebar body
     function insideSidebarSector(x, y) {
-        var dx = x - (controllerX + circleRadius)
-        var dy = y - (controllerY + circleRadius)
-        var hitRadius = circleRadius * 1.10
-        if (dx * dx + dy * dy > hitRadius * hitRadius) return false
-        var angle = normalizeAngle(Math.atan2(dy, dx) * 180 / Math.PI)
-        return angle >= 90 && angle < 215
+        var lx = x - controllerX
+        var ly = y - controllerY
+        var idx = indexAt(lx, ly, true)
+        return idx >= 0 && regions[idx].key === "sidebar"
     }
 
     function insideSidebarBridge(x, y) {
@@ -273,19 +271,33 @@ Item {
     readonly property real logoProxyHeight: logoBaseHeight
                                              + (logoTargetSize - logoBaseHeight) * logoMorphProgress
     // Sector angles use canvas coordinates: 0° right, 90° down.
-    // Dashboard: top; Sidebar: lower-left; Settings: lower-right.
+    // Three equal 120° sectors:
+    // Sidebar: lower-left (90° -> 210°, center 150°);
+    // Dashboard: top (210° -> 330°, center 270°);
+    // Settings: lower-right (330° -> 450°, center 30°).
     readonly property var regions: [
-        { key: "dashboard", icon: "", startDeg: 215, endDeg: 320,
+        { key: "dashboard", icon: "", startDeg: 210, endDeg: 330,
           labelAngle: 270, labelRadius: 0.46, offsetX: -5, offsetY: 0 },
-        { key: "sidebar", icon: "", startDeg: 90, endDeg: 215,
+        { key: "sidebar", icon: "", startDeg: 90, endDeg: 210,
           labelAngle: 150, labelRadius: 0.50, offsetX: -4, offsetY: 0 },
-        { key: "settings", icon: "", startDeg: 320, endDeg: 450,
+        { key: "settings", icon: "", startDeg: 330, endDeg: 450,
           labelAngle: 30, labelRadius: 0.50, offsetX: 0, offsetY: 0 }
     ]
 
     function normalizeAngle(deg) {
         var a = deg % 360
         return a < 0 ? a + 360 : a
+    }
+
+    function angleInSector(angle, startDeg, endDeg) {
+        var a = normalizeAngle(angle)
+        var s = normalizeAngle(startDeg)
+        var e = normalizeAngle(endDeg)
+        if (s <= e) {
+            return a >= s && a < e
+        } else {
+            return a >= s || a < e
+        }
     }
 
     // Tight bounds keep hover expansion centered on the active sector.
@@ -330,9 +342,11 @@ Item {
         if (Math.sqrt(dx * dx + dy * dy) > hitRadius) return -1
 
         var angle = normalizeAngle(Math.atan2(dy, dx) * 180 / Math.PI)
-        if (angle >= 215 && angle < 320) return 0
-        if (angle >= 90 && angle < 215) return 1
-        return 2
+        for (var i = 0; i < regions.length; ++i) {
+            if (angleInSector(angle, regions[i].startDeg, regions[i].endDeg))
+                return i
+        }
+        return -1
     }
 
     function selectIndex(index, updateHandoff) {
