@@ -159,38 +159,13 @@ Item {
         z: 5
     }
 
-    Rectangle {
-        id: mprisCardPlaceholder
+    DashboardMediaCard {
+        id: mediaCard
         x: root.topClusterX + root.col1Width + root.cardGap
         y: root.topClusterY
         width: root.col2Width
         height: root.row1Height
-        radius: root.cornerRadius
-        color: Theme.surface
-        border.width: 1
-        border.color: Qt.lighter(Theme.hoverMuted, 1.25)
-        clip: true
         z: 5
-
-        Column {
-            anchors.centerIn: parent
-            spacing: 4
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "  Media / MPRIS"
-                color: Theme.fg
-                font.family: Theme.fontFamily
-                font.pixelSize: Math.max(14, Theme.fontSize)
-                font.weight: Font.Bold
-            }
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "placeholder"
-                color: Theme.fgDim
-                font.family: Theme.fontFamily
-                font.pixelSize: Math.max(10, Theme.fontSize - 3)
-            }
-        }
     }
 
     // Row 2: Calendar | Monitor
