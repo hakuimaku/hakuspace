@@ -23,6 +23,7 @@ QtObject {
     property string hakuMenuSelectionLabel: ""
     property string wallpaperScreenName: ""
     property bool wallpaperCloseRequested: false
+    property string settingsScreenName: ""
     readonly property string hakuMenuTabLabel: hakuMenuMode === "general" ? "General"
                                                    : hakuMenuMode === "drun" ? "Drun"
                                                    : hakuMenuMode === "theme" ? "Theme"
@@ -220,6 +221,20 @@ QtObject {
         if (trayMenu && trayMenu.screenName === screenName) closeTrayMenu()
     }
 
+    function openSettings(screenName) {
+        settingsScreenName = screenName
+        activePanel = "settings"
+    }
+
+    function closeSettings() {
+        if (activePanel === "settings") activePanel = ""
+        settingsScreenName = ""
+    }
+
+    function closeSettingsIfScreen(screenName) {
+        if (settingsScreenName === screenName) closeSettings()
+    }
+
     onActivePanelChanged: {
         if (activePanel !== "navigation") {
             navigationMode = "closed"
@@ -239,6 +254,9 @@ QtObject {
             hakuMenuScreenName = ""
             hakuMenuQuery = ""
             hakuMenuSelectionLabel = ""
+        }
+        if (activePanel !== "settings") {
+            settingsScreenName = ""
         }
     }
 
