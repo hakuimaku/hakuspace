@@ -85,7 +85,7 @@ Item {
     readonly property real sidebarBodyX: 0
     readonly property real sidebarBodyY: Math.round(circularShellDiameter * 0.94)
     readonly property real sidebarEarWidth: Math.max(32, Math.round(flareReach * 1.5))
-    readonly property real sidebarEarRadius: sidebarEarWidth + 100
+    readonly property real sidebarEarRadius: sidebarEarWidth + Theme.tipTitanRadius
 
     // Bridge connects the lower-left radial sector to the sidebar body:
     readonly property real bridgeX: 0

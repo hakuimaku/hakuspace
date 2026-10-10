@@ -26,6 +26,8 @@ QtObject {
     property int radiusSm: 8
     property int tipRadius: 20
     property int tipHugRadius: 24
+    property int tipGiantRadius: 48
+    property int tipTitanRadius: 96
     property int borderWidth: 0
     property int gap: 4
     property int pad: 10
