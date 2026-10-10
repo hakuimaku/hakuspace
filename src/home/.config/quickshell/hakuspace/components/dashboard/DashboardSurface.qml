@@ -24,11 +24,11 @@ Item {
 
     readonly property bool isFullyOpen: morphProgress >= 0.999
 
-    // Canonical 10 logical px Dashboard shell inset
-    readonly property real innerPadding: 10
+    // 20 logical px Dashboard shell inset (updated per user request)
+    readonly property real innerPadding: 20
     readonly property real cardGap: 10
     readonly property real cornerRadius: Theme.radius
-    readonly property real flareRadius: Theme.tipRadius
+    readonly property real flareRadius: Theme.tipRadius + 20
 
     // Canonical 45x45 Dashboard shell dimensions (at 1080p: 864 x 486)
     readonly property real dashboardWidth: Math.round(screenWidth * 0.45)
@@ -42,10 +42,15 @@ Item {
     readonly property real currentEnvelopeHeight: startEnvelopeHeight + (dashboardHeight - startEnvelopeHeight) * morphProgress
 
     // Flare body bounds (ends before flare ear so final envelope stays <= 45% x 45%)
+    property real bottomFlareReach: Theme.tipHugRadius
     readonly property real finalBodyEnd: Math.max(0, dashboardWidth - flareRadius)
     readonly property real currentBodyEnd: Math.max(0, currentEnvelopeWidth - flareRadius)
     readonly property real currentBodyWidth: currentBodyEnd
-    readonly property real currentBodyHeight: currentEnvelopeHeight
+
+    readonly property real finalBodyBottom: Math.max(0, dashboardHeight - bottomFlareReach)
+    readonly property real startBodyBottom: Math.max(0, startEnvelopeHeight - bottomFlareReach)
+    readonly property real usableBodyBottom: startBodyBottom + (finalBodyBottom - startBodyBottom) * morphProgress
+    readonly property real currentBodyHeight: usableBodyBottom
 
     // Avatar geometry:
     // Glides smoothly from controller origin to (10, 10)
@@ -73,7 +78,7 @@ Item {
     readonly property real topClusterY: innerPadding
     readonly property real row1Height: Math.round(dashboardHeight * 0.22)
     readonly property real row2Y: topClusterY + row1Height + cardGap
-    readonly property real row2Height: Math.max(100, dashboardHeight - row2Y - bottomPadding)
+    readonly property real row2Height: Math.max(100, finalBodyBottom - row2Y - bottomPadding)
 
     // Legacy helper aliases
     readonly property real topClusterWidth: col1Width + cardGap + col2Width
@@ -90,10 +95,13 @@ Item {
 
     // Input mask bounds exposed for NavigationPanel overlay mask union
     readonly property real maskBodyWidth: currentBodyWidth
-    readonly property real maskBodyHeight: currentBodyHeight
+    readonly property real maskBodyHeight: usableBodyBottom
     readonly property real maskEarX: currentBodyEnd
     readonly property real maskEarWidth: flareShell.earRadius
-    readonly property real maskEarHeight: flareShell.earRadius
+    readonly property real maskEarHeight: frameTop + flareShell.earRadius
+    readonly property real maskFootY: usableBodyBottom
+    readonly property real maskFootWidth: bottomFlareReach + frameThickness
+    readonly property real maskFootHeight: bottomFlareReach
 
     // Legacy mask aliases for backwards compatibility
     readonly property real maskClusterWidth: maskBodyWidth
@@ -113,6 +121,9 @@ Item {
         id: flareShell
         bodyWidth: root.currentEnvelopeWidth
         bodyHeight: root.currentEnvelopeHeight
+        frameThickness: root.frameThickness
+        frameTop: root.frameTop
+        bottomFlareReach: root.bottomFlareReach
         flareRadius: root.flareRadius
         screenWidth: root.screenWidth
         screenHeight: root.screenHeight
