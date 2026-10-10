@@ -5,11 +5,7 @@ import ".."
 
 TopModule {
     id: root
-    
-    SystemClock {
-        id: sysClock
-    }
-    
+
     property int monthOffset: 0
     
     text: ""
@@ -23,7 +19,7 @@ TopModule {
         spacing: 16
         
         Text {
-            text: sysClock.date ? sysClock.date.toLocaleString(Qt.locale(), "HH:mm") : "" 
+            text: Clock.date ? Clock.date.toLocaleString(Qt.locale(), "HH:mm") : ""
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSize
             font.weight: Font.Bold
@@ -38,7 +34,7 @@ TopModule {
             spacing: -2
             
             Text {
-                text: sysClock.date ? sysClock.date.toLocaleString(Qt.locale(), "dddd") : ""
+                text: Clock.date ? Clock.date.toLocaleString(Qt.locale(), "dddd") : ""
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSize - 2
                 font.weight: Font.Bold
@@ -49,7 +45,7 @@ TopModule {
             }
             
             Text {
-                text: sysClock.date ? sysClock.date.toLocaleString(Qt.locale(), "dd/MM/yyyy") : ""
+                text: Clock.date ? Clock.date.toLocaleString(Qt.locale(), "dd/MM/yyyy") : ""
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSize - 4
                 font.weight: Font.Normal
@@ -71,7 +67,7 @@ TopModule {
     Component {
         id: calendarComponent
         CalendarGrid {
-            currentDate: sysClock.date
+            currentDate: Clock.date
             monthOffset: root.monthOffset
         }
     }
