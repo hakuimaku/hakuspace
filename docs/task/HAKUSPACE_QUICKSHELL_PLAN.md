@@ -1086,6 +1086,12 @@ p3(navigation): implement three-region radial visual
 
 Reference: `dashboard.png`.
 
+> [!NOTE] 2026-10-10 Dashboard layout override:
+> - outer shell = 45% output width × 45% output height;
+> - compact upper-left attached shell supersedes the older large reserved body;
+> - lower-left region is a dynamic widget host (`DashboardWidgetHost`);
+> - Calendar is the first/default widget, not a shell-level fixed card.
+
 Dashboard is a real shell surface. Do not fill its intentionally empty lower/large area with invented widgets.
 
 #### P3.2.1 Dashboard shell
@@ -1164,14 +1170,15 @@ Commit:
 p3(dashboard): add mpris control card
 ```
 
-#### P3.2.5 Calendar card
+#### P3.2.5 Dynamic Widget Slot → Calendar widget (D5)
 
+Calendar is implemented as the first/default widget hosted inside `DashboardWidgetHost`.
 Contains calendar + month navigation. Month changes must not change outer card geometry.
 
 Commit:
 
 ```text
-p3(dashboard): add calendar card
+p3(dashboard): add calendar widget to host
 ```
 
 #### P3.2.6 Monitor card

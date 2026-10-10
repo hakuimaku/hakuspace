@@ -89,15 +89,21 @@ Style contract:
 
 Reference: `dashboard.png`.
 
-Dashboard contains only the currently defined top cluster:
+> [!NOTE] 2026-10-10 Dashboard layout override:
+> - outer shell = 45% output width × 45% output height;
+> - compact upper-left attached shell supersedes the older large reserved body;
+> - lower-left region is a dynamic widget host (`DashboardWidgetHost`);
+> - Calendar is the first/default widget, not a shell-level fixed card.
+
+Dashboard contains the 45×45 upper-left attached cluster:
 
 - circular avatar at the Navigation origin while Dashboard is active;
 - Clock card;
 - MPRIS card with controls + thumbnail;
-- Calendar card with month change controls;
+- Dynamic Widget Slot (`DashboardWidgetHost`, first widget: Calendar);
 - monitor card with `ROM`, `RAM`, `CPU`, `GPU`.
 
-The large unspecified Dashboard area is intentionally reserved. Do not invent filler widgets.
+The area outside the 45×45 shell remains transparent and pass-through.
 
 Avatar interaction contract:
 - Left-click avatar: leave Dashboard and return to radial Navigation (Navigation remains open on the same monitor).
