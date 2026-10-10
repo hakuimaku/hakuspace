@@ -25,35 +25,40 @@ Item {
     readonly property real cornerRadius: Theme.radius
     readonly property real innerCornerRadius: Theme.tipHugRadius
 
+    // Canonical 45x45 Dashboard shell dimensions
+    readonly property real dashboardWidth: Math.round(screenWidth * 0.45)
+    readonly property real dashboardHeight: Math.round(screenHeight * 0.45)
+
     // Avatar geometry: exactly matches Navigation origin and diameter
     readonly property real avatarX: controllerX
     readonly property real avatarY: controllerY
     readonly property real avatarDiameter: circleDiameter
 
-    // Top cluster geometry (to the right of Avatar)
-    readonly property real topClusterX: controllerX + circleDiameter + cardGap * 1.5
-    readonly property real topClusterY: controllerY
-    readonly property real col1Width: Math.max(240, Math.round(screenWidth * 0.135))
-    readonly property real col2Width: Math.max(280, Math.round(screenWidth * 0.155))
-    readonly property real row1Height: Math.max(90, Math.round(screenHeight * 0.095))
-    readonly property real row2Height: Math.max(180, Math.round(screenHeight * 0.20))
+    // Content area geometry (to the right of Avatar)
+    readonly property real contentX: Math.round(avatarX + avatarDiameter + cardGap * 1.5)
+    readonly property real rightPadding: Math.max(12, Math.round(Theme.pad * 1.2))
+    readonly property real bottomPadding: Math.max(12, Math.round(Theme.pad * 1.2))
 
+    readonly property real usableContentWidth: Math.max(100, dashboardWidth - contentX - rightPadding)
+    readonly property real usableColWidth: Math.max(100, usableContentWidth - cardGap)
+    readonly property real col1Width: Math.round(usableColWidth * 0.46)
+    readonly property real col2Width: usableColWidth - col1Width
+
+    readonly property real topClusterX: contentX
+    readonly property real topClusterY: controllerY
+    readonly property real row1Height: Math.round(dashboardHeight * 0.22)
+    readonly property real row2Y: topClusterY + row1Height + cardGap
+    readonly property real row2Height: Math.max(100, dashboardHeight - row2Y - bottomPadding)
+
+    // Legacy helper aliases
     readonly property real topClusterWidth: col1Width + cardGap + col2Width
     readonly property real topClusterHeight: row1Height + cardGap + row2Height
     readonly property real topClusterRight: topClusterX + topClusterWidth
-    readonly property real topClusterBottom: topClusterY + topClusterHeight
-
-    // Outer shell geometry: stepped mockup silhouette
-    readonly property real leftX: frameThickness
-    readonly property real rightX: screenWidth - frameThickness - 8
-    readonly property real bottomY: screenHeight - frameThickness - 8
-    readonly property real lowerBodyTopY: Math.round(topClusterBottom + cardGap * 2.5)
-    readonly property real shoulderX: Math.round(topClusterRight + cardGap * 2)
-    readonly property real shoulderTopY: topClusterY
+    readonly property real topClusterBottom: row2Y + row2Height
 
     // Input mask bounds exposed for NavigationPanel overlay mask union
-    readonly property real maskClusterWidth: Math.ceil(shoulderX)
-    readonly property real maskClusterHeight: Math.ceil(lowerBodyTopY)
+    readonly property real maskClusterWidth: dashboardWidth
+    readonly property real maskClusterHeight: dashboardHeight
     readonly property real maskLowerBodyY: 0
     readonly property real maskLowerBodyWidth: 0
     readonly property real maskLowerBodyHeight: 0
@@ -73,13 +78,13 @@ Item {
     }
 
     // 1. Dashboard Surface Body
-    // Solid background enclosing the Avatar and top cluster cards; the workarea remains transparent.
+    // Compact 45x45 shell enclosing Avatar and cards; workarea remains transparent.
     Rectangle {
         id: outerShell
         x: 0
         y: 0
-        width: Math.ceil(root.shoulderX)
-        height: Math.ceil(root.lowerBodyTopY)
+        width: root.dashboardWidth
+        height: root.dashboardHeight
         bottomRightRadius: root.cornerRadius
         bottomLeftRadius: root.cornerRadius
         topRightRadius: root.cornerRadius
@@ -148,11 +153,11 @@ Item {
         }
     }
 
-    // 3. Top Cluster Placeholder Cards
+    // 3. Cards
     // Row 1: Clock | MPRIS
     DashboardClockCard {
         id: clockCard
-        x: root.topClusterX
+        x: root.contentX
         y: root.topClusterY
         width: root.col1Width
         height: root.row1Height
@@ -161,52 +166,27 @@ Item {
 
     DashboardMediaCard {
         id: mediaCard
-        x: root.topClusterX + root.col1Width + root.cardGap
+        x: root.contentX + root.col1Width + root.cardGap
         y: root.topClusterY
         width: root.col2Width
         height: root.row1Height
         z: 5
     }
 
-    // Row 2: Calendar | Monitor
-    Rectangle {
-        id: calendarCardPlaceholder
-        x: root.topClusterX
-        y: root.topClusterY + root.row1Height + root.cardGap
+    // Row 2: Dynamic Widget Host | Monitor
+    DashboardWidgetHost {
+        id: widgetHost
+        x: root.contentX
+        y: root.row2Y
         width: root.col1Width
         height: root.row2Height
-        radius: root.cornerRadius
-        color: Theme.surface
-        border.width: 1
-        border.color: Qt.lighter(Theme.hoverMuted, 1.25)
-        clip: true
         z: 5
-
-        Column {
-            anchors.centerIn: parent
-            spacing: 4
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "  Calendar"
-                color: Theme.fg
-                font.family: Theme.fontFamily
-                font.pixelSize: Math.max(14, Theme.fontSize)
-                font.weight: Font.Bold
-            }
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "placeholder"
-                color: Theme.fgDim
-                font.family: Theme.fontFamily
-                font.pixelSize: Math.max(10, Theme.fontSize - 3)
-            }
-        }
     }
 
     Rectangle {
         id: monitorCardPlaceholder
-        x: root.topClusterX + root.col1Width + root.cardGap
-        y: root.topClusterY + root.row1Height + root.cardGap
+        x: root.contentX + root.col1Width + root.cardGap
+        y: root.row2Y
         width: root.col2Width
         height: root.row2Height
         radius: root.cornerRadius
@@ -218,10 +198,17 @@ Item {
 
         Column {
             anchors.centerIn: parent
-            spacing: 4
+            spacing: 6
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "  Monitor"
+                text: ""
+                font.family: Theme.fontFamily
+                font.pixelSize: 28
+                color: Theme.fgDim
+            }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "Monitor"
                 color: Theme.fg
                 font.family: Theme.fontFamily
                 font.pixelSize: Math.max(14, Theme.fontSize)
