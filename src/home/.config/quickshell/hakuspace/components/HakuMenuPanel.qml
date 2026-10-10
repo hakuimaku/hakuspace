@@ -36,7 +36,38 @@ Item {
 
     Component.onDestruction: UiState.closeHakuMenuIfScreen(modelData.name)
 
+    Timer {
+        id: closeGraceTimer
+        interval: HAnimation.fast
+        repeat: false
+        onTriggered: {
+            if (root.panelOpen && root.openedByTrigger) {
+                UiState.closeHakuMenu()
+            }
+        }
+    }
+
+    function insideSafeUnion(px, py) {
+        var leftBound = Math.min(morph.mStart, (modelData.width - root.targetMenuWidth) / 2, root.triggerX) - Theme.tipHugRadius
+        var rightBound = Math.max(morph.mEnd, (modelData.width + root.targetMenuWidth) / 2, root.triggerX + root.triggerWidth) + Theme.tipHugRadius
+        var topBound = 0
+        var bottomBound = root.menuTop + Math.max(morph.mHeight, root.menuHeight) + Theme.pad
+        return px >= leftBound && px <= rightBound && py >= topBound && py <= bottomBound
+    }
+
+    function evaluatePointer(px, py) {
+        if (!panelOpen || !openedByTrigger) return
+        if (insideSafeUnion(px, py)) {
+            closeGraceTimer.stop()
+        } else {
+            if (!closeGraceTimer.running) {
+                closeGraceTimer.start()
+            }
+        }
+    }
+
     onPanelOpenChanged: {
+        closeGraceTimer.stop()
         if (panelOpen) {
             Qt.callLater(function() {
                 if (root.panelOpen) searchInput.forceActiveFocus()
@@ -101,11 +132,34 @@ Item {
             }
         }
 
+        HoverHandler {
+            id: safeZoneHover
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            onHoveredChanged: {
+                if (!hovered && root.panelOpen && root.openedByTrigger) {
+                    if (!closeGraceTimer.running) {
+                        closeGraceTimer.start()
+                    }
+                }
+            }
+            onPointChanged: {
+                if (root.panelOpen) {
+                    root.evaluatePointer(point.position.x, point.position.y)
+                }
+            }
+        }
+
         // Clicking outside the menu closes HakuMenu
         MouseArea {
             id: outsideDismiss
             anchors.fill: parent
             enabled: root.panelOpen
+            hoverEnabled: true
+            onPositionChanged: mouse => {
+                if (root.panelOpen) {
+                    root.evaluatePointer(mouse.x, mouse.y)
+                }
+            }
             onClicked: UiState.closeHakuMenu()
         }
 
@@ -133,6 +187,11 @@ Item {
                     if (hovered && !root.panelOpen) {
                         root.openedByTrigger = true
                         UiState.openHakuMenu(root.modelData.name)
+                    }
+                }
+                onPointChanged: {
+                    if (root.panelOpen && root.openedByTrigger) {
+                        root.evaluatePointer(root.triggerX + point.position.x, point.position.y)
                     }
                 }
             }
@@ -188,9 +247,9 @@ Item {
             HoverHandler {
                 id: surfaceHover
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                onHoveredChanged: {
-                    if (!hovered && root.panelOpen && root.openedByTrigger && morph.mHeight > 20 && !triggerHover.hovered) {
-                        UiState.closeHakuMenu()
+                onPointChanged: {
+                    if (root.panelOpen && root.openedByTrigger) {
+                        root.evaluatePointer(contentSurface.x + point.position.x, contentSurface.y + point.position.y)
                     }
                 }
             }
