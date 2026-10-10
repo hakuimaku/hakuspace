@@ -231,44 +231,13 @@ Item {
             height: root.row2Height
         }
 
-        Rectangle {
-            id: monitorCardPlaceholder
+        DashboardMonitorCard {
+            id: monitorCard
             x: root.contentX + root.col1Width + root.cardGap
             y: root.row2Y
             width: root.col2Width
             height: root.row2Height
-            radius: root.cornerRadius
-            color: Theme.surface
-            border.width: 1
-            border.color: Qt.lighter(Theme.hoverMuted, 1.25)
-            clip: true
-
-            Column {
-                anchors.centerIn: parent
-                spacing: 6
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: ""
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 28
-                    color: Theme.fgDim
-                }
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Monitor"
-                    color: Theme.fg
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(14, Theme.fontSize)
-                    font.weight: Font.Bold
-                }
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "ROM · RAM · CPU · GPU"
-                    color: Theme.fgDim
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(10, Theme.fontSize - 3)
-                }
-            }
+            active: root.expanded
         }
     }
 }

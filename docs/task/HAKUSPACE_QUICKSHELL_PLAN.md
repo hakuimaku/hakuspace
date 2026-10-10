@@ -1200,7 +1200,16 @@ CPU
 GPU
 ```
 
-Prefer existing shared services / low-cost sources. Do not introduce needless high-frequency polling.
+Metric contract:
+- `ROM`: used percentage of root filesystem `/` (`df -P /`)
+- `RAM`: used memory percentage `(MemTotal - MemAvailable) / MemTotal * 100` (`/proc/meminfo`)
+- `CPU`: delta-based `/proc/stat` busy percentage between samples
+- `GPU`: reliable hardware utilization when available, otherwise `N/A` with neutral track (never fake `0%` on unsupported hardware)
+
+Architecture:
+- Headless backend `sysstats_snapshot.sh` emits compact key-value pairs (supports basic and `--extended` modes)
+- `SysStats.qml` singleton maintains single timer (2000 ms), zero `bash -c`, subscriber reference counting (`acquireExtended()` / `releaseExtended()`)
+- `DashboardMonitorCard.qml` subscribes only while Dashboard is active/expanded
 
 Commit:
 
