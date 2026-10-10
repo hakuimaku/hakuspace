@@ -1102,7 +1102,12 @@ p3(dashboard): add mockup-locked dashboard shell
 
 When Dashboard is active, the Navigation visual origin becomes a circular avatar.
 
-Clicking the avatar starts the avatar selection/change flow.
+Avatar interaction contract:
+- Left-click avatar: leave Dashboard and return to radial Navigation (Navigation remains open on the same monitor).
+- Right-click avatar: open avatar file chooser without leaving Dashboard.
+- Chooser cancel: Dashboard remains open, avatar unchanged.
+- Chooser accepted: persist selected image into managed storage and update avatar in-place without reopening.
+- Escape while Dashboard is active: return to radial Navigation.
 
 User avatar data lives under:
 
@@ -1110,7 +1115,10 @@ User avatar data lives under:
 ~/.local/share/hakuspace/user/
 ```
 
-Inspect existing project conventions before choosing the exact persisted filename; document it once chosen.
+Persisted filename scheme:
+- Manifest: `~/.local/share/hakuspace/user/avatar.path` storing strictly the basename (e.g. `avatar.png`, `avatar.jpg`, `avatar.jpeg`, `avatar.webp`).
+- Active image: `~/.local/share/hakuspace/user/<basename>`.
+Only one managed avatar image is active at any time. When replaced, previous managed avatar images with different extensions are cleaned up.
 
 Runtime checks:
 

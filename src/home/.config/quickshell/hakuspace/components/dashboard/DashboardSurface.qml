@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Shapes
+import QtQuick.Dialogs
 import "../../services"
 
 Item {
@@ -18,6 +19,7 @@ Item {
     property bool expanded: false
 
     signal requestReturnToNavigation()
+    signal focusRequested()
 
     readonly property real cardGap: Math.max(10, Math.round(Theme.gap * 2.5))
     readonly property real cornerRadius: Theme.radius
@@ -52,13 +54,13 @@ Item {
     // Input mask bounds exposed for NavigationPanel overlay mask union
     readonly property real maskClusterWidth: Math.ceil(shoulderX)
     readonly property real maskClusterHeight: Math.ceil(lowerBodyTopY)
-    readonly property real maskLowerBodyY: Math.floor(lowerBodyTopY)
-    readonly property real maskLowerBodyWidth: Math.ceil(rightX)
-    readonly property real maskLowerBodyHeight: Math.ceil(bottomY - lowerBodyTopY)
-    readonly property real maskShoulderX: Math.floor(shoulderX)
-    readonly property real maskShoulderY: Math.floor(shoulderTopY)
-    readonly property real maskShoulderWidth: Math.ceil(rightX - shoulderX)
-    readonly property real maskShoulderHeight: Math.ceil(lowerBodyTopY - shoulderTopY)
+    readonly property real maskLowerBodyY: 0
+    readonly property real maskLowerBodyWidth: 0
+    readonly property real maskLowerBodyHeight: 0
+    readonly property real maskShoulderX: 0
+    readonly property real maskShoulderY: 0
+    readonly property real maskShoulderWidth: 0
+    readonly property real maskShoulderHeight: 0
 
     opacity: expanded ? 1.0 : 0.0
     visible: opacity > 0.001
@@ -70,89 +72,55 @@ Item {
         }
     }
 
-    // 1. Mockup Outer Shell / Reserved Body
-    // The large body and right shoulder remain intentionally empty per spec.
-    Shape {
+    // 1. Dashboard Surface Body
+    // Solid background enclosing the Avatar and top cluster cards; the workarea remains transparent.
+    Rectangle {
         id: outerShell
-        anchors.fill: parent
-        preferredRendererType: Shape.CurveRenderer
+        x: 0
+        y: 0
+        width: Math.ceil(root.shoulderX)
+        height: Math.ceil(root.lowerBodyTopY)
+        bottomRightRadius: root.cornerRadius
+        bottomLeftRadius: root.cornerRadius
+        topRightRadius: root.cornerRadius
+        topLeftRadius: 0
+        color: Theme.barColor
+        border.width: 1
+        border.color: Qt.lighter(Theme.hoverMuted, 1.25)
         z: 1
-
-        ShapePath {
-            fillColor: Theme.barColor
-            strokeColor: Qt.lighter(Theme.hoverMuted, 1.25)
-            strokeWidth: 1
-
-            PathSvg {
-                path: "M " + (root.leftX + root.cornerRadius) + " " + root.lowerBodyTopY
-                    + " L " + (root.shoulderX - root.innerCornerRadius) + " " + root.lowerBodyTopY
-                    + " A " + root.innerCornerRadius + " " + root.innerCornerRadius + " 0 0 0 " + root.shoulderX + " " + (root.lowerBodyTopY - root.innerCornerRadius)
-                    + " L " + root.shoulderX + " " + (root.shoulderTopY + root.cornerRadius)
-                    + " A " + root.cornerRadius + " " + root.cornerRadius + " 0 0 1 " + (root.shoulderX + root.cornerRadius) + " " + root.shoulderTopY
-                    + " L " + (root.rightX - root.cornerRadius) + " " + root.shoulderTopY
-                    + " A " + root.cornerRadius + " " + root.cornerRadius + " 0 0 1 " + root.rightX + " " + (root.shoulderTopY + root.cornerRadius)
-                    + " L " + root.rightX + " " + (root.bottomY - root.cornerRadius)
-                    + " A " + root.cornerRadius + " " + root.cornerRadius + " 0 0 1 " + (root.rightX - root.cornerRadius) + " " + root.bottomY
-                    + " L " + (root.leftX + root.cornerRadius) + " " + root.bottomY
-                    + " A " + root.cornerRadius + " " + root.cornerRadius + " 0 0 1 " + root.leftX + " " + (root.bottomY - root.cornerRadius)
-                    + " L " + root.leftX + " " + (root.lowerBodyTopY + root.cornerRadius)
-                    + " A " + root.cornerRadius + " " + root.cornerRadius + " 0 0 1 " + (root.leftX + root.cornerRadius) + " " + root.lowerBodyTopY
-                    + " Z"
-            }
-        }
     }
 
     // 2. Avatar Placeholder (fixed at Navigation origin)
-    Rectangle {
-        id: avatarContainer
+    // 2. Avatar Component (fixed at Navigation origin)
+    DashboardAvatar {
+        id: dashboardAvatar
         x: root.avatarX
         y: root.avatarY
-        width: root.avatarDiameter
-        height: root.avatarDiameter
-        radius: width / 2
-        color: Theme.surface
-        border.width: 2
-        border.color: avatarHover.hovered ? Theme.accent : Qt.lighter(Theme.hoverMuted, 1.45)
-        clip: true
+        diameter: root.avatarDiameter
         z: 10
 
-        Behavior on border.color { ColorAnimation { duration: HAnimation.fast } }
-
-        Column {
-            anchors.centerIn: parent
-            spacing: 4
-
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "󰮯"
-                color: Theme.accent
-                font.family: Theme.fontFamily
-                font.pixelSize: Math.max(30, Math.round(root.avatarDiameter * 0.26))
-                font.weight: Font.Bold
-            }
-
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "Avatar"
-                color: Theme.fgDim
-                font.family: Theme.fontFamily
-                font.pixelSize: Math.max(10, Theme.fontSize - 2)
-                font.weight: Font.Medium
-            }
+        onRequestBack: {
+            root.requestReturnToNavigation()
         }
 
-        MouseArea {
-            id: avatarHover
-            anchors.fill: parent
-            hoverEnabled: true
-            acceptedButtons: Qt.LeftButton | Qt.RightButton
-            cursorShape: Qt.PointingHandCursor
+        onRequestChangeAvatar: {
+            avatarChooser.open()
+        }
+    }
 
-            onClicked: mouse => {
-                if (mouse.button === Qt.LeftButton) {
-                    root.requestReturnToNavigation()
-                }
-            }
+    FileDialog {
+        id: avatarChooser
+        title: "Select Avatar"
+        nameFilters: ["Image files (*.png *.jpg *.jpeg *.webp)", "All files (*)"]
+
+        onAccepted: {
+            var localPath = new URL(selectedFile).pathname
+            Avatar.setAvatar(localPath)
+            root.focusRequested()
+        }
+
+        onRejected: {
+            root.focusRequested()
         }
     }
 

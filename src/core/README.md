@@ -37,6 +37,7 @@ backend/desktop/     taskbar, Waybar and desktop shortcut operations
 backend/media/       recording lifecycle
 backend/system/      power, session-exit and login-shell operations
 backend/theme/       theme, Rofi-theme and wallpaper operations
+backend/user/        user profile and user-data operations
 backend/wm/          compositor-specific control logic
 ```
 
