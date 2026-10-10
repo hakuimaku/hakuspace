@@ -156,6 +156,11 @@ ShellRoot {
 
     Variants {
         model: Quickshell.screens
+        SettingsPanel {}
+    }
+
+    Variants {
+        model: Quickshell.screens
         TrayMenuPanel {}
     }
 

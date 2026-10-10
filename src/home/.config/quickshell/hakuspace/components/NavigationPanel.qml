@@ -324,6 +324,13 @@ Item {
     }
 
     function activateIndex(index) {
+        if (index < 0 || index >= regions.length) return
+        selectedIndex = index
+        if (regions[index].key === "settings") {
+            if (sidebarExpanded) UiState.cancelNavigationHandoff()
+            UiState.openSettings(modelData.name)
+            return
+        }
         selectIndex(index, true)
     }
 
