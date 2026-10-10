@@ -106,15 +106,14 @@ cmd_set() {
     local temp_file="$USER_DIR/.avatar_tmp.$$.$ext"
     local manifest_temp="$USER_DIR/.avatar.path.tmp.$$"
 
-    # Copy to temporary file first
-    if ! cp -p "$src" "$temp_file" 2>/dev/null; then
-        if ! cp "$src" "$temp_file"; then
-            rm -f "$temp_file"
-            umask "$saved_umask"
-            printf 'avatar_ctl.sh set: failed to copy source image: %s\n' "$src" >&2
-            return 1
-        fi
+    # Copy to temporary file and enforce 0600 permissions
+    if ! cp "$src" "$temp_file" 2>/dev/null; then
+        rm -f "$temp_file"
+        umask "$saved_umask"
+        printf 'avatar_ctl.sh set: failed to copy source image: %s\n' "$src" >&2
+        return 1
     fi
+    chmod 600 "$temp_file"
 
     # Atomically replace active avatar image
     if ! mv -f "$temp_file" "$target_path"; then
@@ -123,17 +122,18 @@ cmd_set() {
         printf 'avatar_ctl.sh set: failed to install avatar image: %s\n' "$target_path" >&2
         return 1
     fi
+    chmod 600 "$target_path"
 
-    # Atomically update avatar.path manifest
-    printf '%s\n' "$target_basename" > "$manifest_temp" && mv -f "$manifest_temp" "$MANIFEST_FILE"
-    local manifest_status=$?
-    rm -f "$manifest_temp" 2>/dev/null || true
-
-    if [[ $manifest_status -ne 0 ]]; then
+    # Atomically update avatar.path manifest with 0600 permissions
+    printf '%s\n' "$target_basename" > "$manifest_temp"
+    chmod 600 "$manifest_temp" 2>/dev/null || true
+    if ! mv -f "$manifest_temp" "$MANIFEST_FILE"; then
+        rm -f "$manifest_temp" 2>/dev/null || true
         umask "$saved_umask"
         printf 'avatar_ctl.sh set: failed to update manifest: %s\n' "$MANIFEST_FILE" >&2
         return 1
     fi
+    chmod 600 "$MANIFEST_FILE" 2>/dev/null || true
 
     # Safely remove previous avatar if different extension
     if [[ -n "$previous_basename" && "$previous_basename" != "$target_basename" ]]; then
@@ -153,6 +153,7 @@ usage() {
 main() {
     if [[ $# -lt 1 ]]; then
         usage
+        return 1
     fi
 
     local action="$1"
@@ -160,13 +161,18 @@ main() {
 
     case "$action" in
         current)
-            cmd_current "$@"
+            if [[ $# -ne 0 ]]; then
+                printf 'avatar_ctl.sh current: accepts no arguments\n' >&2
+                return 1
+            fi
+            cmd_current
             ;;
         set)
             cmd_set "$@"
             ;;
         *)
             usage
+            return 1
             ;;
     esac
 }

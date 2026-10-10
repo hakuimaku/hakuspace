@@ -1118,7 +1118,7 @@ User avatar data lives under:
 Persisted filename scheme:
 - Manifest: `~/.local/share/hakuspace/user/avatar.path` storing strictly the basename (e.g. `avatar.png`, `avatar.jpg`, `avatar.jpeg`, `avatar.webp`).
 - Active image: `~/.local/share/hakuspace/user/<basename>`.
-Only one managed avatar image is active at any time. When replaced, previous managed avatar images with different extensions are cleaned up.
+Only one managed avatar image is active at any time. When replaced, previous managed avatar images with different extensions are cleaned up. Persistence backend recognizes PNG, JPEG/JPG and WebP. A selected image is persisted only if the running Qt image stack can decode it.
 
 Runtime checks:
 

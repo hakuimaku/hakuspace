@@ -108,6 +108,29 @@ Item {
         }
     }
 
+    Image {
+        id: decodeProbe
+        visible: false
+        asynchronous: false
+        property string pendingLocalPath: ""
+
+        onStatusChanged: {
+            if (pendingLocalPath.length === 0) return
+            if (status === Image.Ready) {
+                var validPath = pendingLocalPath
+                pendingLocalPath = ""
+                source = ""
+                Avatar.setAvatar(validPath)
+                root.focusRequested()
+            } else if (status === Image.Error) {
+                pendingLocalPath = ""
+                source = ""
+                Avatar.reportDecodeError("Selected image cannot be decoded by Qt runtime")
+                root.focusRequested()
+            }
+        }
+    }
+
     FileDialog {
         id: avatarChooser
         title: "Select Avatar"
@@ -115,8 +138,9 @@ Item {
 
         onAccepted: {
             var localPath = new URL(selectedFile).pathname
-            Avatar.setAvatar(localPath)
-            root.focusRequested()
+            decodeProbe.pendingLocalPath = localPath
+            decodeProbe.source = ""
+            decodeProbe.source = selectedFile
         }
 
         onRejected: {

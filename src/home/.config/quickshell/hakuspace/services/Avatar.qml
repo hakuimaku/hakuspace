@@ -29,26 +29,33 @@ QtObject {
         setProc.running = true
     }
 
+    function reportDecodeError(msg) {
+        lastError = msg ? msg : "Image format not supported by runtime"
+    }
+
     Component.onCompleted: {
         refresh()
     }
 
     property Process queryProc: Process {
+        id: queryProc
+        property string queryOutput: ""
+
         command: [root.ctlScript, "current"]
         stdout: SplitParser {
             onRead: data => {
                 var p = data.trim()
-                if (p.length > 0) {
-                    root.path = p
-                    root.source = "file://" + p
-                } else {
-                    root.path = ""
-                    root.source = ""
-                }
+                if (p.length > 0) queryProc.queryOutput = p
             }
         }
+        onStarted: {
+            queryProc.queryOutput = ""
+        }
         onExited: (code, status) => {
-            if (code !== 0) {
+            if (code === 0 && queryProc.queryOutput.length > 0) {
+                root.path = queryProc.queryOutput
+                root.source = "file://" + queryProc.queryOutput
+            } else {
                 root.path = ""
                 root.source = ""
             }
