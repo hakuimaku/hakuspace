@@ -71,26 +71,23 @@ Item {
     readonly property real rightPadding: innerPadding
     readonly property real bottomPadding: innerPadding
 
-    // Compact card cluster layout: capped at ~580-600px on large outputs,
-    // leaving remaining right and bottom regions empty as drawn in the sketch.
-    readonly property real maxClusterWidth: 600
-    readonly property real availableContentWidth: Math.max(260, finalBodyEnd - contentX - rightPadding)
-    readonly property real clusterWidth: Math.min(maxClusterWidth, availableContentWidth)
+    // Card cluster expands across the full dashboard width with 20px right padding
+    readonly property real clusterWidth: Math.max(260, finalBodyEnd - contentX - rightPadding)
 
     // Two equal card columns inside cluster
     readonly property real colGap: cardGap
     readonly property real colWidth: Math.max(120, Math.floor((clusterWidth - colGap) / 2))
     readonly property real col1Width: colWidth
-    readonly property real col2Width: colWidth
+    readonly property real col2Width: Math.max(120, clusterWidth - col1Width - colGap)
 
-    // Usable card layout rows
+    // Usable card layout rows:
+    // Row 1 (Clock | Media) takes ~24% of dashboard height (e.g. 120-136px),
+    // Row 2 (Widget | Monitor) fills the rest down to 20px bottom padding.
     readonly property real topClusterX: contentX
     readonly property real topClusterY: innerPadding
-    readonly property real row1Height: Math.max(96, Math.min(120, Math.round(dashboardHeight * 0.22)))
+    readonly property real row1Height: Math.max(104, Math.min(136, Math.round(dashboardHeight * 0.24)))
     readonly property real row2Y: topClusterY + row1Height + cardGap
-    readonly property real availableRow2Height: Math.max(100, finalBodyBottom - row2Y - bottomPadding)
-    readonly property real maxRow2Height: 286
-    readonly property real row2Height: Math.min(maxRow2Height, availableRow2Height)
+    readonly property real row2Height: Math.max(160, finalBodyBottom - row2Y - bottomPadding)
 
     // Helper aliases
     readonly property real topClusterWidth: col1Width + cardGap + col2Width
@@ -262,5 +259,10 @@ Item {
             height: root.row2Height
             active: root.expanded
         }
+    }
+
+    // 4. Scoped hover tooltip layer for Dashboard elements
+    DashboardTooltipLayer {
+        id: tooltipLayer
     }
 }
