@@ -19,8 +19,16 @@ Item {
 
     Behavior on dashboardMorphProgress {
         NumberAnimation {
-            duration: HAnimation.normal
-            easing.bezierCurve: HAnimation.shellCurve
+            duration: root.dashboardExpanded ? HAnimation.dashboardOpenDuration : HAnimation.dashboardCloseDuration
+            easing.bezierCurve: root.dashboardExpanded ? HAnimation.dashboardOpenCurve : HAnimation.dashboardCloseCurve
+        }
+    }
+
+    onDashboardVisuallyActiveChanged: {
+        if (root.modelData && (UiState.navigationScreenName === root.modelData.name
+                               || UiState.navigationVisualScreenName === root.modelData.name
+                               || UiState.navigationScreenName === "")) {
+            UiState.dashboardVisuallyActive = dashboardVisuallyActive
         }
     }
     property bool closing: false
@@ -76,7 +84,7 @@ Item {
     readonly property real dashboardHeightRatio: 0.50
     readonly property real dashboardVisualWidth: Math.round(modelData.width * dashboardWidthRatio)
     readonly property real dashboardVisualHeight: Math.round(modelData.height * dashboardHeightRatio)
-    readonly property real dashboardSafeMargin: 200
+    readonly property real dashboardSafeMargin: 100
     readonly property real dashboardSafeWidth: dashboardVisualWidth + dashboardSafeMargin
     readonly property real dashboardSafeHeight: dashboardVisualHeight + dashboardSafeMargin
 
@@ -488,15 +496,15 @@ Item {
         id: openMorph
         NumberAnimation {
             target: root; property: "flareStart"; to: root.surfaceStart
-            duration: HAnimation.spatial; easing.bezierCurve: HAnimation.spatialCurve
+            duration: HAnimation.navigationOpenDuration; easing.bezierCurve: HAnimation.navigationOpenCurve
         }
         NumberAnimation {
             target: root; property: "flareEnd"; to: root.surfaceEnd
-            duration: HAnimation.spatial; easing.bezierCurve: HAnimation.spatialCurve
+            duration: HAnimation.navigationOpenDuration; easing.bezierCurve: HAnimation.navigationOpenCurve
         }
         NumberAnimation {
             target: root; property: "flareHeight"; to: root.flareTargetHeight
-            duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve
+            duration: HAnimation.navigationOpenDuration; easing.bezierCurve: HAnimation.navigationOpenCurve
         }
     }
 
@@ -511,8 +519,8 @@ Item {
             property: "closeCollapseProgress"
             from: 0.0
             to: 1.0
-            duration: Math.max(HAnimation.fast, 150)
-            easing.type: Easing.InOutCubic
+            duration: HAnimation.navigationCollapseDuration
+            easing.bezierCurve: HAnimation.navigationCloseCurve
         }
 
         // Once only the Logo hub remains, return it to the TopBar while the
@@ -525,23 +533,23 @@ Item {
                 property: "closeReturnProgress"
                 from: 0.0
                 to: 1.0
-                duration: HAnimation.normal
-                easing.bezierCurve: HAnimation.shellCurve
+                duration: HAnimation.navigationCloseDuration
+                easing.bezierCurve: HAnimation.navigationCloseCurve
             }
             NumberAnimation {
                 target: root
                 property: "closeFlareProgress"
                 from: 0.0
                 to: 1.0
-                duration: HAnimation.normal
-                easing.bezierCurve: HAnimation.shellCurve
+                duration: HAnimation.navigationCloseDuration
+                easing.bezierCurve: HAnimation.navigationCloseCurve
             }
             NumberAnimation {
                 target: root
                 property: "flareHeight"
                 to: 0.0
-                duration: HAnimation.normal
-                easing.type: Easing.InOutCubic
+                duration: HAnimation.navigationCloseDuration
+                easing.bezierCurve: HAnimation.navigationCloseCurve
             }
         }
 
@@ -856,7 +864,7 @@ Item {
                         Behavior on scale {
                             NumberAnimation {
                                 duration: HAnimation.buttonHoverDuration
-                                easing.type: Easing.OutCubic
+                                easing.bezierCurve: HAnimation.buttonHoverCurve
                             }
                         }
 
@@ -929,11 +937,11 @@ Item {
                         font.weight: hovered || selected ? Font.DemiBold : Font.Medium
                         z: 60
 
-                        Behavior on x { NumberAnimation { duration: HAnimation.buttonHoverDuration; easing.type: Easing.OutCubic } }
-                        Behavior on y { NumberAnimation { duration: HAnimation.buttonHoverDuration; easing.type: Easing.OutCubic } }
+                        Behavior on x { NumberAnimation { duration: HAnimation.buttonHoverDuration; easing.bezierCurve: HAnimation.buttonHoverCurve } }
+                        Behavior on y { NumberAnimation { duration: HAnimation.buttonHoverDuration; easing.bezierCurve: HAnimation.buttonHoverCurve } }
                         Behavior on color { ColorAnimation { duration: HAnimation.buttonHoverDuration } }
                         Behavior on font.pixelSize {
-                            NumberAnimation { duration: HAnimation.buttonHoverDuration; easing.type: Easing.OutCubic }
+                            NumberAnimation { duration: HAnimation.buttonHoverDuration; easing.bezierCurve: HAnimation.buttonHoverCurve }
                         }
                     }
                 }

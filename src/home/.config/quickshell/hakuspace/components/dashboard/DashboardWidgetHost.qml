@@ -6,7 +6,7 @@ Rectangle {
 
     radius: Theme.radius
     color: Theme.surface
-    border.width: 1
+    border.width: 0
     border.color: Qt.lighter(Theme.hoverMuted, 1.25)
     clip: true
 

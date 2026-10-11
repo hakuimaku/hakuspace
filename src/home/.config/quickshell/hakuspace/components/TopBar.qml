@@ -226,12 +226,21 @@ PanelWindow {
                 readonly property real cavaSlotWidth: cavaModule.hoverSafeWidth
                 readonly property bool hakuMenuActive: UiState.activePanel === "hakumenu"
                                                            && UiState.hakuMenuScreenName === root.modelData.name
-                readonly property bool showCava: !hakuMenuActive
+                readonly property bool dashboardActive: (UiState.dashboardVisuallyActive || UiState.navigationMode === "handoff-dashboard")
+                                                           && (UiState.navigationScreenName === ""
+                                                               || UiState.navigationScreenName === root.modelData.name
+                                                               || UiState.navigationVisualScreenName === root.modelData.name)
+                readonly property bool showCava: !hakuMenuActive && !dashboardActive
                                                   && CenterState.centerMode === "media" && Cava.available && Cava.audioVisible
                                                   && safeSpan >= cavaSlotWidth + Theme.gap + Theme.fontSize * 3
-                opacity: CenterState.osdVisible || CenterState.osdExpansion > 0 ? 0 : 1
-                enabled: !CenterState.osdVisible && CenterState.osdExpansion === 0
-                Behavior on opacity { NumberAnimation { duration: HAnimation.fast } }
+                opacity: (CenterState.osdVisible || CenterState.osdExpansion > 0 || dashboardActive) ? 0 : 1
+                enabled: !CenterState.osdVisible && CenterState.osdExpansion === 0 && !dashboardActive
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: HAnimation.fast
+                        easing.bezierCurve: HAnimation.effectsCurve
+                    }
+                }
 
                 Item {
                     id: cavaSlot

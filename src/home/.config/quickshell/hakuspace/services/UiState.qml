@@ -11,6 +11,7 @@ QtObject {
     // the close morph finishes, so TopBar left modules do not reappear under
     // an in-flight Navigation surface.
     property string navigationVisualScreenName: ""
+    property bool dashboardVisuallyActive: false
     property real navigationAnchorX: 0
     property real navigationAnchorY: 0
     property real navigationAnchorWidth: 0
@@ -61,14 +62,17 @@ QtObject {
     }
 
     function cancelNavigationHandoff() {
-        if (activePanel === "navigation" && navigationMode.indexOf("handoff-") === 0)
+        if (activePanel === "navigation" && navigationMode.indexOf("handoff-") === 0) {
             navigationMode = "open"
+            dashboardVisuallyActive = false
+        }
     }
 
     function closeNavigation() {
         if (activePanel === "navigation") activePanel = ""
         navigationMode = "closed"
         navigationScreenName = ""
+        dashboardVisuallyActive = false
         navigationAnchorX = 0
         navigationAnchorY = 0
         navigationAnchorWidth = 0
@@ -80,6 +84,7 @@ QtObject {
         // A reopen on the same screen wins over a stale close-animation finish.
         if (activePanel === "navigation" && navigationScreenName === screenName) return
         navigationVisualScreenName = ""
+        dashboardVisuallyActive = false
     }
 
     function closeNavigationIfScreen(screenName) {

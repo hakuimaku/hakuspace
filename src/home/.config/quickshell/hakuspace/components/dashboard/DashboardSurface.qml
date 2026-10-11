@@ -28,11 +28,11 @@ Item {
     readonly property bool isFullyOpen: morphProgress >= 0.98
 
     // 20 logical px Dashboard shell inset
-    readonly property real innerPadding: 20
+    readonly property real innerPadding: 24
     readonly property real railGap: 14
     readonly property real cardGap: 12
     readonly property real cornerRadius: Theme.radius
-    readonly property real flareRadius: Theme.tipRadius + 20
+    readonly property real flareRadius: Theme.tipGiantRadius
 
     // Canonical 50x50 Dashboard shell dimensions
     readonly property real dashboardWidth: targetWidth
@@ -58,7 +58,7 @@ Item {
 
     // Avatar column padding: 4px padding on left and right gives the column
     // extra breathing room and prevents the hovered avatar from crowding margins
-    readonly property real avatarColumnPadding: 4
+    readonly property real avatarColumnPadding: 8
 
     // Avatar geometry:
     // Glides smoothly from controller origin to (24, 20) with 4px left/right padding
@@ -67,7 +67,10 @@ Item {
     readonly property real avatarX: controllerX + (finalAvatarX - controllerX) * morphProgress
     readonly property real avatarY: controllerY + (finalAvatarY - controllerY) * morphProgress
     readonly property real avatarDiameter: circleDiameter
-    readonly property real avatarOpacity: Math.min(1.0, morphProgress / 0.25)
+    readonly property real avatarOpacity: {
+        var t = Math.min(1.0, morphProgress / 0.25)
+        return t * t * (3 - 2 * t)
+    }
 
     // Profile rail & content area geometry (wider column accommodating the 4px padding)
     readonly property real profileRailWidth: avatarDiameter + (avatarColumnPadding * 2)
@@ -99,12 +102,67 @@ Item {
     readonly property real topClusterRight: topClusterX + topClusterWidth
     readonly property real topClusterBottom: row2Y + row2Height
 
-    // Content reveal progress: cards fade in and translate 8px after shell begins opening
+    // Content reveal progress: cards fade in and translate smoothly after shell begins opening
     readonly property real contentRevealProgress: {
-        if (morphProgress <= 0.35) return 0.0
-        if (morphProgress >= 0.70) return 1.0
-        return (morphProgress - 0.35) / (0.70 - 0.35)
+        if (morphProgress <= 0.25) return 0.0
+        if (morphProgress >= 0.75) return 1.0
+        var t = (morphProgress - 0.25) / (0.75 - 0.25)
+        return t * t * (3 - 2 * t)
     }
+
+    // Dynamic widget morph properties coordinated with dashboard expansion & elastic bounce:
+    readonly property real cardMorphProgress: {
+        if (morphProgress <= 0.08) return 0.0
+        return (morphProgress - 0.08) / 0.92
+    }
+
+    // Card 1: Clock (Row 1, Col 1)
+    readonly property real clockCardTargetX: contentX
+    readonly property real clockCardTargetY: topClusterY
+    readonly property real clockCardX: isFullyOpen ? clockCardTargetX
+        : clockCardTargetX + (-28 * (1.0 - cardMorphProgress))
+    readonly property real clockCardY: isFullyOpen ? clockCardTargetY
+        : clockCardTargetY + (-20 * (1.0 - cardMorphProgress))
+    readonly property real clockCardScale: isFullyOpen ? 1.0
+        : Math.max(0.70, 0.70 + 0.30 * cardMorphProgress)
+    readonly property real clockCardOpacity: isFullyOpen ? 1.0
+        : Math.max(0.0, Math.min(1.0, (cardMorphProgress - 0.05) / 0.65))
+
+    // Card 2: Media (Row 1, Col 2)
+    readonly property real mediaCardTargetX: contentX + col1Width + cardGap
+    readonly property real mediaCardTargetY: topClusterY
+    readonly property real mediaCardX: isFullyOpen ? mediaCardTargetX
+        : mediaCardTargetX + (36 * (1.0 - cardMorphProgress))
+    readonly property real mediaCardY: isFullyOpen ? mediaCardTargetY
+        : mediaCardTargetY + (-20 * (1.0 - cardMorphProgress))
+    readonly property real mediaCardScale: isFullyOpen ? 1.0
+        : Math.max(0.70, 0.70 + 0.30 * cardMorphProgress)
+    readonly property real mediaCardOpacity: isFullyOpen ? 1.0
+        : Math.max(0.0, Math.min(1.0, (cardMorphProgress - 0.10) / 0.65))
+
+    // Card 3: WidgetHost (Row 2, Col 1)
+    readonly property real widgetHostTargetX: contentX
+    readonly property real widgetHostTargetY: row2Y
+    readonly property real widgetHostX: isFullyOpen ? widgetHostTargetX
+        : widgetHostTargetX + (-28 * (1.0 - cardMorphProgress))
+    readonly property real widgetHostY: isFullyOpen ? widgetHostTargetY
+        : widgetHostTargetY + (28 * (1.0 - cardMorphProgress))
+    readonly property real widgetHostScale: isFullyOpen ? 1.0
+        : Math.max(0.70, 0.70 + 0.30 * cardMorphProgress)
+    readonly property real widgetHostOpacity: isFullyOpen ? 1.0
+        : Math.max(0.0, Math.min(1.0, (cardMorphProgress - 0.15) / 0.65))
+
+    // Card 4: Monitor (Row 2, Col 2)
+    readonly property real monitorCardTargetX: contentX + col1Width + cardGap
+    readonly property real monitorCardTargetY: row2Y
+    readonly property real monitorCardX: isFullyOpen ? monitorCardTargetX
+        : monitorCardTargetX + (36 * (1.0 - cardMorphProgress))
+    readonly property real monitorCardY: isFullyOpen ? monitorCardTargetY
+        : monitorCardTargetY + (28 * (1.0 - cardMorphProgress))
+    readonly property real monitorCardScale: isFullyOpen ? 1.0
+        : Math.max(0.70, 0.70 + 0.30 * cardMorphProgress)
+    readonly property real monitorCardOpacity: isFullyOpen ? 1.0
+        : Math.max(0.0, Math.min(1.0, (cardMorphProgress - 0.20) / 0.65))
 
     // Input mask bounds exposed for NavigationPanel overlay mask union
     readonly property real maskBodyWidth: currentBodyWidth
@@ -217,53 +275,70 @@ Item {
         }
     }
 
-    // 3. Cards container (reveals gently as shell expands)
+    // 3. Cards container clipped to active dashboard morph envelope
     Item {
-        id: cardsContainer
-        anchors.fill: parent
-        opacity: root.contentRevealProgress
-        visible: opacity > 0.001
-        enabled: root.isFullyOpen
-        transform: Translate {
-            x: Math.round(-8 * (1.0 - root.contentRevealProgress))
-            y: Math.round(-8 * (1.0 - root.contentRevealProgress))
-        }
+        id: cardsClipper
+        x: 0
+        y: 0
+        width: root.currentEnvelopeWidth
+        height: root.currentEnvelopeHeight
+        clip: true
+        visible: root.morphProgress > 0.02
         z: 5
 
-        // Row 1: Clock | MPRIS
-        DashboardClockCard {
-            id: clockCard
-            x: root.contentX
-            y: root.topClusterY
-            width: root.col1Width
-            height: root.row1Height
-        }
+        Item {
+            id: cardsContainer
+            anchors.fill: parent
+            opacity: root.contentRevealProgress
+            enabled: root.isFullyOpen
 
-        DashboardMediaCard {
-            id: mediaCard
-            x: root.contentX + root.col1Width + root.cardGap
-            y: root.topClusterY
-            width: root.col2Width
-            height: root.row1Height
-            active: root.expanded
-        }
+            // Row 1: Clock | MPRIS
+            DashboardClockCard {
+                id: clockCard
+                x: root.clockCardX
+                y: root.clockCardY
+                width: root.col1Width
+                height: root.row1Height
+                scale: root.clockCardScale
+                opacity: root.clockCardOpacity
+                transformOrigin: Item.Center
+            }
 
-        // Row 2: Dynamic Widget Host | Monitor
-        DashboardWidgetHost {
-            id: widgetHost
-            x: root.contentX
-            y: root.row2Y
-            width: root.col1Width
-            height: root.row2Height
-        }
+            DashboardMediaCard {
+                id: mediaCard
+                x: root.mediaCardX
+                y: root.mediaCardY
+                width: root.col2Width
+                height: root.row1Height
+                scale: root.mediaCardScale
+                opacity: root.mediaCardOpacity
+                transformOrigin: Item.Center
+                active: root.expanded
+            }
 
-        DashboardMonitorCard {
-            id: monitorCard
-            x: root.contentX + root.col1Width + root.cardGap
-            y: root.row2Y
-            width: root.col2Width
-            height: root.row2Height
-            active: root.expanded
+            // Row 2: Dynamic Widget Host | Monitor
+            DashboardWidgetHost {
+                id: widgetHost
+                x: root.widgetHostX
+                y: root.widgetHostY
+                width: root.col1Width
+                height: root.row2Height
+                scale: root.widgetHostScale
+                opacity: root.widgetHostOpacity
+                transformOrigin: Item.Center
+            }
+
+            DashboardMonitorCard {
+                id: monitorCard
+                x: root.monitorCardX
+                y: root.monitorCardY
+                width: root.col2Width
+                height: root.row2Height
+                scale: root.monitorCardScale
+                opacity: root.monitorCardOpacity
+                transformOrigin: Item.Center
+                active: root.expanded
+            }
         }
     }
 

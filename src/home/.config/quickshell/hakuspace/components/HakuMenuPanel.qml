@@ -234,7 +234,7 @@ Item {
             y: root.menuTop
             width: Math.max(0, morph.mEnd - morph.mStart)
             height: morph.mHeight
-            radius: Math.min(Theme.radius, width / 2, height / 2)
+            radius: Math.min(Theme.tipHugRadius, width / 2, height / 2)
             color: Theme.surface
             clip: true
             visible: width > 0.01 && height > 0.01
@@ -359,7 +359,7 @@ Item {
                     y: menu.innerPad
                     width: menu.searchWidth
                     height: menu.topRowHeight
-                    radius: Theme.radius
+                    radius: Theme.tipHugRadius
                     interactive: false
                     externalHovered: searchHover.hovered
                     focused: searchInput.activeFocus

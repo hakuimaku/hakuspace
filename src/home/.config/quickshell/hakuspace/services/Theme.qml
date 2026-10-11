@@ -22,10 +22,10 @@ QtObject {
     
     property color barColor: AppState.opaqueThemeState ? root.inkBg : root.bg
     
-    property int radius: 16
-    property int radiusSm: 8
-    property int tipRadius: 20
-    property int tipHugRadius: 24
+    property int radius: 20
+    property int radiusSm: 12
+    property int tipRadius: 24
+    property int tipHugRadius: 28
     property int tipGiantRadius: 48
     property int tipTitanRadius: 96
     property int borderWidth: 0

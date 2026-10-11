@@ -26,13 +26,13 @@ Item {
         morphAnim.stop()
         if (expanded) {
             morphAnim.to = 1.0
-            morphAnim.duration = HAnimation.normal
-            morphAnim.easing.bezierCurve = HAnimation.shellCurve
+            morphAnim.duration = HAnimation.sidebarOpenDuration
+            morphAnim.easing.bezierCurve = HAnimation.sidebarOpenCurve
             morphAnim.start()
         } else {
             morphAnim.to = 0.0
-            morphAnim.duration = Math.max(HAnimation.fast, 160)
-            morphAnim.easing.type = Easing.InCubic
+            morphAnim.duration = HAnimation.sidebarCloseDuration
+            morphAnim.easing.bezierCurve = HAnimation.sidebarCloseCurve
             morphAnim.start()
         }
     }
@@ -139,9 +139,9 @@ Item {
             y: 20
             width: root.bodyWidth
             height: root.bodyHeight
-            opacity: Math.max(0, Math.min(1, (root.morphProgress - 0.20) / 0.80))
+            opacity: Math.max(0, Math.min(1, (root.morphProgress - 0.15) / 0.70))
             transform: Translate {
-                y: -20 * (1.0 - root.morphProgress)
+                y: -24 * (1.0 - root.morphProgress)
             }
 
             readonly property real controlX: Math.round((root.bodyWidth - root.controlDiameter) / 2)
@@ -159,6 +159,7 @@ Item {
                 color: Theme.surface
                 border.width: 2
                 border.color: Qt.lighter(Theme.hoverMuted, 1.75)
+                scale: Math.max(0.6, Math.min(1.06, 0.6 + 0.4 * root.morphProgress))
 
                 Rectangle {
                     anchors.centerIn: parent
@@ -180,6 +181,7 @@ Item {
                 color: Theme.surface
                 border.width: 2
                 border.color: Qt.lighter(Theme.hoverMuted, 1.75)
+                scale: Math.max(0.6, Math.min(1.06, 0.6 + 0.4 * root.morphProgress))
 
                 Rectangle {
                     anchors.centerIn: parent
@@ -201,6 +203,7 @@ Item {
                 color: Theme.surface
                 border.width: 2
                 border.color: Qt.lighter(Theme.hoverMuted, 1.75)
+                scale: Math.max(0.6, Math.min(1.06, 0.6 + 0.4 * root.morphProgress))
 
                 Text {
                     anchors.centerIn: parent
