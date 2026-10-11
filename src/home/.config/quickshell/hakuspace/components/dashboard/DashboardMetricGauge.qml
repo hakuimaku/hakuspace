@@ -11,6 +11,10 @@ Item {
     property real diameter: 68
     property real strokeWidth: 5
 
+    // Click toggle properties (% vs used value)
+    property string usedText: ""
+    property bool showUsed: false
+
     width: diameter
     height: diameter
 
@@ -69,9 +73,19 @@ Item {
         Text {
             id: valueText
             anchors.horizontalCenter: parent.horizontalCenter
-            text: root.available ? (Math.round(root.displayValue) + "%") : "N/A"
+            text: {
+                if (!root.available) return "N/A"
+                if (root.showUsed && root.usedText.length > 0) return root.usedText
+                return Math.round(root.displayValue) + "%"
+            }
             font.family: Theme.fontFamily
-            font.pixelSize: Math.max(11, Math.round(root.diameter * 0.19))
+            font.pixelSize: {
+                var baseSize = Math.max(11, Math.round(root.diameter * 0.19))
+                if (root.showUsed && root.usedText.length > 4) {
+                    return Math.max(9, Math.round(baseSize * 0.82))
+                }
+                return baseSize
+            }
             font.weight: Font.Bold
             color: root.available ? Theme.fg : Theme.fgDim
         }
@@ -84,6 +98,39 @@ Item {
             font.pixelSize: Math.max(9, Math.round(root.diameter * 0.15))
             font.weight: Font.Medium
             color: Theme.fgDim
+        }
+    }
+
+    MouseArea {
+        id: clickArea
+        anchors.fill: parent
+        hoverEnabled: true
+        cursorShape: root.available ? Qt.PointingHandCursor : Qt.ArrowCursor
+        acceptedButtons: Qt.LeftButton
+
+        function updateTooltip() {
+            if (!root.available) {
+                DashboardTooltip.show(root, root.title + ": Not available")
+                return
+            }
+            var pctStr = Math.round(root.displayValue) + "%"
+            var desc = root.title + ": " + (root.showUsed ? (root.usedText || pctStr) : pctStr)
+            if (root.usedText.length > 0 && !root.showUsed) {
+                desc += " (" + root.usedText + ")"
+            } else if (root.usedText.length > 0 && root.showUsed) {
+                desc += " (" + pctStr + ")"
+            }
+            desc += "\nClick to toggle % / used"
+            DashboardTooltip.show(root, desc)
+        }
+
+        onEntered: updateTooltip()
+        onExited: DashboardTooltip.hide(root)
+        onClicked: {
+            if (root.available) {
+                root.showUsed = !root.showUsed
+                updateTooltip()
+            }
         }
     }
 }

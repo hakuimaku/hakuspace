@@ -11,6 +11,7 @@ Item {
     property string sizeStr: ""
     property int percent: 0
     property bool available: true
+    property bool showUsed: false
 
     width: parent ? parent.width : 200
     height: 28
@@ -36,7 +37,7 @@ Item {
         // Progress bar track
         Rectangle {
             id: track
-            width: parent.width - label.width - percentText.width - (parent.spacing * 2)
+            width: parent.width - label.width - valueText.width - (parent.spacing * 2)
             height: 5
             radius: 2.5
             color: Theme.hoverMuted
@@ -61,17 +62,52 @@ Item {
             }
         }
 
-        // Percent text
+        // Value text (% or used)
         Text {
-            id: percentText
-            width: 34
+            id: valueText
+            width: Math.max(38, implicitWidth)
             horizontalAlignment: Text.AlignRight
             anchors.verticalCenter: parent.verticalCenter
-            text: root.available ? (root.percent + "%") : "N/A"
+            text: {
+                if (!root.available) return "N/A"
+                if (root.showUsed && root.usedStr.length > 0) return root.usedStr
+                return root.percent + "%"
+            }
             font.family: Theme.fontFamily
             font.pixelSize: Math.max(10, Theme.fontSize - 2)
             font.weight: Font.Bold
             color: root.available ? Theme.fg : Theme.fgDim
+        }
+    }
+
+    MouseArea {
+        id: rowArea
+        anchors.fill: parent
+        hoverEnabled: true
+        cursorShape: root.available ? Qt.PointingHandCursor : Qt.ArrowCursor
+        acceptedButtons: Qt.LeftButton
+
+        function updateTooltip() {
+            if (!root.available) return
+            var title = root.target === "/" ? "Root (/)" : root.target
+            var text = title
+            if (root.fstype) text += " • " + root.fstype
+            if (root.usedStr && root.sizeStr) {
+                text += "\n" + root.usedStr + " used of " + root.sizeStr + " (" + root.percent + "%)"
+            } else {
+                text += "\n" + root.percent + "% used"
+            }
+            text += "\nClick to toggle % / used"
+            DashboardTooltip.show(root, text)
+        }
+
+        onEntered: updateTooltip()
+        onExited: DashboardTooltip.hide(root)
+        onClicked: {
+            if (root.available) {
+                root.showUsed = !root.showUsed
+                updateTooltip()
+            }
         }
     }
 }

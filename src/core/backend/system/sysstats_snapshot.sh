@@ -86,6 +86,15 @@ if [[ $extended -eq 0 ]]; then
 fi
 
 # 4. Extended: Root filesystem and mounted storage devices
+cpu_freq_ghz="NA"
+if [[ -r /proc/cpuinfo ]]; then
+    freq=$(awk '/cpu MHz/ {sum+=$4; count++} END {if (count>0) printf "%.1f GHz", (sum/count)/1000}' /proc/cpuinfo 2>/dev/null || echo "")
+    if [[ -n "$freq" ]]; then
+        cpu_freq_ghz="$freq"
+    fi
+fi
+echo "CPU_FREQ_GHZ=$cpu_freq_ghz"
+
 root_used="NA"
 if df_out=$(df -P / 2>/dev/null); then
     pct=$(echo "$df_out" | awk 'NR==2 {gsub("%","",$5); print $5}')
@@ -111,11 +120,13 @@ echo "MOUNTS_JSON=$mounts_json"
 # 5. Extended: GPU utilization & VRAM
 gpu_percent="NA"
 gpu_mem_percent="NA"
+gpu_mem_used_str="NA"
 gpu_backend="unsupported"
 
 # Tier 1: /sys/class/drm/card*/device/gpu_busy_percent
 max_drm_gpu=-1
 drm_vram_pct=-1
+drm_vram_used_str="NA"
 shopt -s nullglob
 drm_files=(/sys/class/drm/card*/device/gpu_busy_percent)
 shopt -u nullglob
@@ -132,6 +143,12 @@ for f in "${drm_files[@]}"; do
                     v_total=$(cat "$dev_dir/mem_info_vram_total" 2>/dev/null || echo "0")
                     if [[ "$v_used" =~ ^[0-9]+$ && "$v_total" =~ ^[0-9]+$ ]] && [ "$v_total" -gt 0 ]; then
                         drm_vram_pct=$(( (v_used * 100) / v_total ))
+                        v_used_mb=$(( v_used / 1048576 ))
+                        if [ "$v_used_mb" -ge 1024 ]; then
+                            drm_vram_used_str=$(awk "BEGIN {printf \"%.1f GB\", $v_used / 1073741824}")
+                        else
+                            drm_vram_used_str="${v_used_mb} MB"
+                        fi
                     fi
                 fi
             fi
@@ -144,11 +161,13 @@ if [ "$max_drm_gpu" -ge 0 ]; then
     gpu_backend="drm"
     if [ "$drm_vram_pct" -ge 0 ] && [ "$drm_vram_pct" -le 100 ]; then
         gpu_mem_percent="$drm_vram_pct"
+        gpu_mem_used_str="$drm_vram_used_str"
     fi
 elif command -v nvidia-smi >/dev/null 2>&1; then
     # Tier 2: nvidia-smi
     max_nv_gpu=-1
     nv_vram_pct=-1
+    nv_vram_used_str="NA"
     if nv_out=$(nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null); then
         while IFS=',' read -r util used total; do
             u_val=$(echo "$util" | tr -d '[:space:]')
@@ -159,6 +178,11 @@ elif command -v nvidia-smi >/dev/null 2>&1; then
                     max_nv_gpu="$u_val"
                     if [[ "$m_used" =~ ^[0-9]+$ && "$m_total" =~ ^[0-9]+$ ]] && [ "$m_total" -gt 0 ]; then
                         nv_vram_pct=$(( (m_used * 100) / m_total ))
+                        if [ "$m_used" -ge 1024 ]; then
+                            nv_vram_used_str=$(awk "BEGIN {printf \"%.1f GB\", $m_used / 1024}")
+                        else
+                            nv_vram_used_str="${m_used} MB"
+                        fi
                     fi
                 fi
             fi
@@ -169,10 +193,12 @@ elif command -v nvidia-smi >/dev/null 2>&1; then
         gpu_backend="nvidia"
         if [ "$nv_vram_pct" -ge 0 ] && [ "$nv_vram_pct" -le 100 ]; then
             gpu_mem_percent="$nv_vram_pct"
+            gpu_mem_used_str="$nv_vram_used_str"
         fi
     fi
 fi
 
 echo "GPU_PERCENT=$gpu_percent"
 echo "GPU_MEM_PERCENT=$gpu_mem_percent"
+echo "GPU_MEM_USED_STR=$gpu_mem_used_str"
 echo "GPU_BACKEND=$gpu_backend"

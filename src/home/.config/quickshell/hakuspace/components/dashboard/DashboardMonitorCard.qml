@@ -69,7 +69,8 @@ Rectangle {
             width: pillText.implicitWidth + 14
             height: 20
             radius: 10
-            color: Theme.hoverMuted
+            color: pageMouse.containsMouse ? Qt.lighter(Theme.hoverMuted, 1.25) : Theme.hoverMuted
+            Behavior on color { ColorAnimation { duration: HAnimation.fast } }
 
             Text {
                 id: pillText
@@ -82,9 +83,14 @@ Rectangle {
             }
 
             MouseArea {
+                id: pageMouse
                 anchors.fill: parent
+                hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: root.togglePage()
+                acceptedButtons: Qt.LeftButton
+                onEntered: DashboardTooltip.show(pagePill, "Switch to " + (root.currentPage === "system" ? "GPU" : "System") + " view")
+                onExited: DashboardTooltip.hide(pagePill)
+                onClicked: { DashboardTooltip.dismiss(); root.togglePage() }
             }
         }
     }
@@ -96,11 +102,11 @@ Rectangle {
         anchors.topMargin: 2
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 76
+        height: 80
 
         Row {
             anchors.centerIn: parent
-            spacing: 10
+            spacing: 12
 
             // Left arrow button
             Rectangle {
@@ -127,22 +133,24 @@ Rectangle {
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     acceptedButtons: Qt.LeftButton
-                    onClicked: root.togglePage()
+                    onEntered: DashboardTooltip.show(prevBtn, "Toggle System / GPU view")
+                    onExited: DashboardTooltip.hide(prevBtn)
+                    onClicked: { DashboardTooltip.dismiss(); root.togglePage() }
                 }
             }
 
             // Gauge slot: crossfades System and GPU circular gauges
             Item {
                 id: gaugeSlot
-                width: 66 * 2 + 14
-                height: 66
+                width: 70 * 2 + 16
+                height: 70
                 anchors.verticalCenter: parent.verticalCenter
 
                 // System gauges: CPU & RAM
                 Row {
                     id: systemGauges
                     anchors.centerIn: parent
-                    spacing: 14
+                    spacing: 16
                     opacity: root.currentPage === "system" ? 1.0 : 0.0
                     visible: opacity > 0.001
 
@@ -158,7 +166,8 @@ Rectangle {
                         title: "CPU"
                         value: SysStats.cpu
                         available: true
-                        diameter: 66
+                        usedText: SysStats.cpuUsedStr
+                        diameter: 70
                     }
 
                     DashboardMetricGauge {
@@ -166,7 +175,8 @@ Rectangle {
                         title: "RAM"
                         value: SysStats.ram
                         available: true
-                        diameter: 66
+                        usedText: SysStats.ramUsedStr
+                        diameter: 70
                     }
                 }
 
@@ -174,7 +184,7 @@ Rectangle {
                 Row {
                     id: gpuGauges
                     anchors.centerIn: parent
-                    spacing: 14
+                    spacing: 16
                     opacity: root.currentPage === "gpu" ? 1.0 : 0.0
                     visible: opacity > 0.001
 
@@ -190,7 +200,8 @@ Rectangle {
                         title: "GPU"
                         value: SysStats.gpu
                         available: SysStats.hasGpu
-                        diameter: 66
+                        usedText: SysStats.hasGpu ? (SysStats.gpuBackend.toUpperCase()) : ""
+                        diameter: 70
                     }
 
                     DashboardMetricGauge {
@@ -198,7 +209,8 @@ Rectangle {
                         title: "VRAM"
                         value: SysStats.gpuMemoryPercent
                         available: SysStats.hasGpuMemory
-                        diameter: 66
+                        usedText: SysStats.gpuMemoryUsedStr
+                        diameter: 70
                     }
                 }
             }
@@ -228,7 +240,9 @@ Rectangle {
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     acceptedButtons: Qt.LeftButton
-                    onClicked: root.togglePage()
+                    onEntered: DashboardTooltip.show(nextBtn, "Toggle System / GPU view")
+                    onExited: DashboardTooltip.hide(nextBtn)
+                    onClicked: { DashboardTooltip.dismiss(); root.togglePage() }
                 }
             }
         }

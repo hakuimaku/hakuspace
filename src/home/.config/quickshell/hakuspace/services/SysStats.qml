@@ -26,6 +26,11 @@ QtObject {
     property bool hasGpuMemory: false
     property string gpuBackend: "unsupported"
 
+    // Formatted used value strings (for gauge/chart click toggle)
+    property string cpuUsedStr: ""
+    property string ramUsedStr: ""
+    property string gpuMemoryUsedStr: ""
+
     // Subscription tracking
     property int _basicSubscribers: 0
     property int _extendedSubscribers: 0
@@ -79,6 +84,9 @@ QtObject {
             root.mounts = [];
             root.hasMounts = false;
             root.hasGpuMemory = false;
+            root.cpuUsedStr = "";
+            root.ramUsedStr = "";
+            root.gpuMemoryUsedStr = "";
         }
     }
 
@@ -127,6 +135,9 @@ QtObject {
                             root._prevIdle = idle_time;
                         }
                         break;
+                    case "CPU_FREQ_GHZ":
+                        root.cpuUsedStr = (val !== "NA" && val !== "") ? val : "";
+                        break;
                     case "MEM_TOTAL_KB":
                         root._memTotal = parseInt(val) || 0;
                         break;
@@ -134,6 +145,8 @@ QtObject {
                         var memAvail = parseInt(val) || 0;
                         if (root._memTotal > 0) {
                             root.ram = Math.max(0, Math.min(100, Math.round(((root._memTotal - memAvail) / root._memTotal) * 100)));
+                            var usedKb = root._memTotal - memAvail;
+                            root.ramUsedStr = (usedKb / 1048576).toFixed(1) + " GB";
                         }
                         break;
                     case "TEMP_MILLIC":
@@ -206,6 +219,9 @@ QtObject {
                                 root.hasGpuMemory = false;
                             }
                         }
+                        break;
+                    case "GPU_MEM_USED_STR":
+                        root.gpuMemoryUsedStr = (val !== "NA" && val !== "") ? val : "";
                         break;
                     case "GPU_BACKEND":
                         root.gpuBackend = val;
