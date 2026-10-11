@@ -14,11 +14,18 @@ Rectangle {
     readonly property real artSize: Math.max(56, Math.min(76, root.height - 24))
     readonly property bool hasValidArt: Media.artUrl.length > 0 && artImage.status === Image.Ready
 
+    // Subtle Cava audio waveform rendered behind media content
+    DashboardCavaWave {
+        anchors.fill: parent
+        z: 1
+    }
+
     Row {
         id: cardRow
         anchors.fill: parent
         anchors.margins: Math.max(10, Math.round(Theme.pad * 1.1))
         spacing: Math.max(10, Math.round(Theme.pad * 1.1))
+        z: 5
 
         // Left: Fixed Artwork Slot
         Item {

@@ -6,6 +6,7 @@ QtObject {
     id: root
     property bool available: true
     property string bars: ""
+    property var levels: []
     property bool soundPresent: false
     property bool audioVisible: false
     readonly property int barCount: 12
@@ -41,6 +42,7 @@ QtObject {
     function syncProcess() {
         if (!shouldRun) {
             bars = ""
+            levels = []
             resetSoundDetection()
             if (audioVisible && Media.available && CenterState.centerMode === "media" && !Media.playing)
                 hideTimer.restart()
@@ -89,6 +91,7 @@ QtObject {
         onRunningChanged: {
             if (!running && root.shouldRun && !root.stoppingForPolicy) {
                 root.bars = ""
+                root.levels = []
                 root.resetSoundDetection()
                 root.hideTimer.stop()
                 root.audioVisible = false
@@ -100,8 +103,9 @@ QtObject {
                 if (!root.shouldRun) return
                 var values = data.trim().split(";").filter(value => value !== "")
                 if (values.length < root.barCount) return
-                var levels = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
+                var glyphLevels = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
                 var output = ""
+                var numericLevels = []
                 var peak = 0
                 for (var i = 0; i < root.barCount; ++i) {
                     var first = parseInt(values[i])
@@ -109,16 +113,21 @@ QtObject {
                     var second = values.length >= root.barCount * 2
                                ? parseInt(values[i + root.barCount]) : first
                     if (isNaN(first) || isNaN(second)) return
-                    peak = Math.max(peak, first, second)
-                    var index = Math.max(0, Math.min(7, Math.floor(Math.max(first, second) / 1000 * 7)))
-                    output += levels[index]
+                    var val = Math.max(first, second)
+                    peak = Math.max(peak, val)
+                    var norm = Math.max(0.0, Math.min(1.0, val / 1000.0))
+                    numericLevels.push(norm)
+                    var index = Math.max(0, Math.min(7, Math.floor(norm * 7)))
+                    output += glyphLevels[index]
                 }
                 root.bars = output
+                root.levels = numericLevels
                 root.observePeak(peak)
             }
         }
         onExited: {
             root.bars = ""
+            root.levels = []
             root.resetSoundDetection()
             if (root.stoppingForPolicy) {
                 root.stoppingForPolicy = false
