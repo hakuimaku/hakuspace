@@ -89,33 +89,41 @@ Style contract:
 
 Reference: `dashboard.png`.
 
-> [!NOTE] 2026-10-10 D4.3 Dashboard runtime override:
-> - final envelope remains 45% output width × 45% output height;
+> [!NOTE] 2026-10-10 D4.3 Dashboard runtime override (Superseded by Dashboard V2 - 2026-10-11):
+> - final envelope is 50% output width × 50% output height;
 > - outer background uses the shared HakuSpace Flare language (top-edge attached Flare surface);
 > - shell-level child inset = 20 logical px;
-> - Avatar final target = (20, 20);
-> - Dashboard has a 200 logical px pointer safe zone beyond the visual shell;
+> - Avatar final target = (20, 20) with hover visual enlargement (~1.08x scale);
+> - profile rail below avatar displays username/display name;
+> - Dashboard has a 200 logical px pointer safe zone beyond the 50% visual shell;
 > - moving beyond that safe zone closes Dashboard/Navigation;
 > - the safe-zone strip is interaction-owned while Dashboard is open;
 > - areas beyond the safe zone remain pass-through;
 > - Flare attaches to the RoundedScreen/TopBar seam using the shared edge geometry (4 px border seam attachment);
 > - Navigation ↔ Dashboard uses one reversible morph driven by `dashboardMorphProgress` instead of instant visibility swap;
-> - lower-left region is a dynamic widget host (`DashboardWidgetHost`);
-> - Calendar is the first/default widget, not a shell-level fixed card.
+> - upper card cluster remains compact (Clock, MPRIS with background Cava waveform, Calendar host with day hover, Monitor card);
+> - Monitor card features circular CPU/RAM or GPU/VRAM gauges switchable via left/right arrows, with persistent root and mounted storage rows underneath;
+> - lower/right empty region is intentionally reserved — cards do not stretch across the entire 50% envelope;
+> - scoped hover tooltips provide contextual information across Dashboard elements;
+> - Dynamic Widget Host remains; Calendar is the first/default widget.
 
-Dashboard contains the 45×45 upper-left attached cluster:
+Dashboard contains the 50×50 upper-left attached cluster:
 
-- circular avatar at the Navigation origin while Dashboard is active;
+- circular avatar at the Navigation origin while Dashboard is active, with hover enlargement;
+- profile rail below avatar with user identity;
 - Clock card;
-- MPRIS card with controls + thumbnail;
-- Dynamic Widget Slot (`DashboardWidgetHost`, first widget: Calendar);
-- monitor card (`DashboardMonitorCard`) with 2×2 layout:
-  - `ROM`: used percentage of root filesystem `/` (`df -P /`)
-  - `RAM`: used memory percentage `(MemTotal - MemAvailable) / MemTotal * 100` (`/proc/meminfo`)
-  - `CPU`: delta-based `/proc/stat` busy percentage between samples
-  - `GPU`: reliable hardware utilization when available, otherwise `N/A` (subdued neutral track, no fake 0%)
+- MPRIS card with controls + thumbnail + subtle Cava audio waveform background while playing;
+- Dynamic Widget Slot (`DashboardWidgetHost`, first widget: Calendar with day hover);
+- monitor card (`DashboardMonitorCard`) with circular gauge pages and mounted storage:
+  - System page: circular `CPU` gauge and circular `RAM` gauge
+  - GPU page: circular `GPU` gauge and circular `VRAM` gauge (or `N/A` with neutral track if unavailable)
+  - Left/right arrow buttons to switch between System and GPU gauge pages
+  - Storage rows underneath remain fixed across page changes:
+    - Root storage `/` (`df -P /`)
+    - Additional mounted disks/partitions (`/dev/...` block devices)
+- Scoped hover tooltips across interactive elements.
 
-The area beyond the 45×45 shell and its 200px pointer safe zone remains transparent and pass-through.
+The area beyond the 50×50 shell and its 200px pointer safe zone remains transparent and pass-through.
 
 Avatar interaction contract:
 - Left-click avatar: leave Dashboard and return to radial Navigation (Navigation remains open on the same monitor).

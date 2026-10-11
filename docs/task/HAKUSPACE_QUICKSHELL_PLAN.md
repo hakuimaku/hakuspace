@@ -491,7 +491,7 @@ P3 is **not** a notification-protocol rewrite. It only applies the approved shel
 The current P3 source-of-truth surfaces are:
 
 - **Navigation** — radial Logo-origin controller with Dashboard / Sidebar / Settings;
-- **Dashboard** — avatar + Clock + MPRIS + Calendar + ROM/RAM/CPU/GPU cards, with intentionally reserved empty space;
+- **Dashboard** — avatar + Clock + MPRIS (with shared Cava wave background) + Calendar + Monitor cards (circular CPU/RAM or GPU/VRAM gauges + mounted storage rows), with canonical 50% × 50% envelope and intentionally reserved empty space;
 - **Sidebar** — immediate hover expansion from the Navigation Sidebar sector;
 - **Settings** — intentionally a stub during P3;
 - **HakuMenu** — separate center-origin shell surface with General / Drun / Theme;
@@ -553,7 +553,7 @@ P6  Optional polish / experimental work                 OPTIONAL
 |---|---|---|---|
 | **P3.0** | RoundedScreen foundation | **DONE** | Single source of truth in `AppState.qml` (`t=4, r=20, c=#000000`), decoupled from classic conf (`64418615`) |
 | **P3.1** | Navigation radial controller | **DONE** | Equal 120° sectors (`7604c1f0`), Logo-origin radial controller |
-| **P3.2** | Dashboard | **DONE** | D1–D7 fully implemented, 45% shell, avatar persistence, widget host (`03b8453a`) |
+| **P3.2** | Dashboard | **DONE (superseded by V2)** | D1–D7 fully implemented in P3 (`03b8453a`); canonical Dashboard V2 advances to 50% × 50%, gauge pages, mount storage, cava wave, and hover tooltips (`DASHBOARD_V2_50X50_PLAN.md`) |
 | **P3.3** | Sidebar | **DONE** | Audited and accepted in `P3_SIDEBAR_FINAL_REPORT.md` (2026-10-11) |
 | **P3.4** | Settings stub | **DONE** | T1 stub panel with T2 backdrop separation (`11bfdb75`, `08dfef20`) |
 | **P3.5** | HakuMenu shell | **DONE** | Audited and accepted in `P3_HAKUMENU_FINAL_REPORT.md` (2026-10-11) |
@@ -1105,19 +1105,24 @@ fix(navigation): equalize radial sector geometry (7604c1f0)
 
 Reference: `dashboard.png`.
 
-> [!NOTE] 2026-10-10 D4.3 Dashboard runtime override:
-> - final envelope remains 45% output width × 45% output height;
+> [!NOTE] 2026-10-10 D4.3 Dashboard runtime override (Superseded by Dashboard V2 - 2026-10-11):
+> - historical P3 envelope was 45% × 45%; canonical Dashboard V2 envelope is 50% output width × 50% output height;
 > - outer background uses the shared HakuSpace Flare language (top-edge attached Flare surface);
 > - shell-level child inset = 20 logical px;
-> - Avatar final target = (20, 20);
-> - Dashboard has a 200 logical px pointer safe zone beyond the visual shell;
+> - Avatar final target = (20, 20) with hover enlargement effect (~1.08x scale);
+> - profile rail below avatar displays username/display name;
+> - Dashboard has a 200 logical px pointer safe zone beyond the visual shell (measured from the 50% × 50% visual edge);
 > - moving beyond that safe zone closes Dashboard/Navigation;
 > - the safe-zone strip is interaction-owned while Dashboard is open;
 > - areas beyond the safe zone remain pass-through;
 > - Flare attaches to the RoundedScreen/TopBar seam using the shared edge geometry (4 px border seam attachment);
 > - Navigation ↔ Dashboard uses one reversible morph driven by `dashboardMorphProgress` instead of instant visibility swap;
-> - lower-left region is a dynamic widget host (`DashboardWidgetHost`);
-> - Calendar is the first/default widget, not a shell-level fixed card.
+> - upper card cluster remains compact (Clock, MPRIS with background Cava waveform, Calendar host with day hover, Monitor card);
+> - Monitor card features circular CPU/RAM or GPU/VRAM gauges switchable via left/right arrows, with persistent root and mounted storage rows underneath;
+> - unsupported GPU/VRAM displays N/A, never fake 0%;
+> - lower/right empty region is intentionally reserved — cards do not stretch across the entire 50% envelope;
+> - scoped hover tooltips provide contextual information across Dashboard elements;
+> - Dynamic Widget Host remains; Calendar is the first/default widget.
 
 Dashboard is a real shell surface. Do not fill its intentionally empty lower/large area with invented widgets.
 
@@ -1240,18 +1245,20 @@ p3(dashboard): add monitor information card
 
 Dashboard P3 implementation complete.
 
-Canonical architecture contract:
-- 45% × 45% final visual envelope attached to top-left corner
+Historical P3 Dashboard baseline completed (superseded by Dashboard V2 - 50% × 50%):
+Canonical V2 architecture contract:
+- 50% × 50% final visual envelope attached to top-left corner
 - Flare attached surface (`DashboardFlareSurface.qml`)
 - 20px shell inset (`innerPadding = 20`)
-- 200px pointer safe zone (`dashboardSafeMargin = 200`)
-- Avatar: left-click Back to Navigation / right-click Change avatar
+- 200px pointer safe zone (`dashboardSafeMargin = 200` beyond 50% envelope)
+- Avatar: left-click Back to Navigation / right-click Change avatar / hover visual enlargement
+- Profile rail below Avatar with username/display name
 - Clock: shared service (`Clock.qml`)
-- MPRIS: shared media (`Media.qml`) with controls and artwork fallback
-- Dynamic Widget Host (`DashboardWidgetHost.qml`), first widget: Calendar (`CalendarGrid.qml`)
-- Monitor (`DashboardMonitorCard.qml`): 2×2 layout (ROM / RAM / CPU / GPU)
-- GPU: reliable hardware utilization when available, otherwise `N/A` (never fake `0%` on unsupported hardware)
-- SysStats: subscriber-driven lifecycle, single 2000 ms timer, single non-shell process, CPU delta reset on subscriber zero
+- MPRIS: shared media (`Media.qml`) with controls and shared Cava waveform background
+- Dynamic Widget Host (`DashboardWidgetHost.qml`), first widget: Calendar (`CalendarGrid.qml`) with day cell hover
+- Monitor (`DashboardMonitorCard.qml`): circular gauge pages (CPU/RAM and GPU/VRAM) + persistent mounted storage rows
+- GPU: reliable hardware utilization and VRAM when available, otherwise `N/A` (never fake `0%` on unsupported hardware)
+- SysStats: subscriber-driven lifecycle, single 2000 ms timer, single extended snapshot helper, root and mounted disk metrics
 
 Commit:
 
@@ -1881,7 +1888,7 @@ P3 is complete only when:
 - stable fallback TopBar center is retained; cancelled collar work is absent;
 - RoundedScreen is continuous and supplies shared frame bounds;
 - Navigation has Dashboard / Sidebar / Settings;
-- Dashboard has avatar, Clock, MPRIS, Calendar, ROM/RAM/CPU/GPU cards and leaves unspecified space empty;
+- Dashboard has avatar with hover enlargement, profile rail, Clock, MPRIS with Cava wave, Calendar with day hover, Monitor with gauge pages and mount storage, in a canonical 50% × 50% envelope leaving empty space intentionally uncrowded;
 - avatar persists under the HakuSpace user-data directory;
 - Sidebar opens immediately from Navigation hover without flicker and uses circular controls;
 - Settings is only the approved stub;
