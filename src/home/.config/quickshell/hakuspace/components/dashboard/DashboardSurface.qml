@@ -167,6 +167,7 @@ Item {
         x: root.avatarX
         y: root.avatarY + root.avatarDiameter + 14
         railWidth: root.avatarDiameter
+        railHeight: Math.max(0, (root.finalBodyBottom - root.bottomPadding) - (root.avatarY + root.avatarDiameter + 14))
         opacity: root.contentRevealProgress
         visible: opacity > 0.001
         z: 9
