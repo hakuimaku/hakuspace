@@ -16,6 +16,12 @@ Rectangle {
     // Presentation state: "system" (default) or "gpu"
     property string currentPage: "system"
 
+    // Responsive gauge, button, and spacing dimensions derived from card size
+    readonly property real gaugeAreaHeight: Math.max(92, Math.min(110, Math.round(root.height * 0.32)))
+    readonly property real gaugeDiameter: Math.max(74, Math.min(90, Math.floor(gaugeAreaHeight - 16), Math.floor((root.width - 120) / 2)))
+    readonly property real arrowBtnSize: Math.max(26, Math.min(30, Math.round(gaugeDiameter * 0.32)))
+    readonly property real gaugeGap: Math.max(14, Math.min(22, Math.round(root.width * 0.045)))
+
     function togglePage() {
         currentPage = (currentPage === "system") ? "gpu" : "system"
     }
@@ -45,7 +51,7 @@ Rectangle {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 32
+        height: 36
         anchors.topMargin: Math.max(6, Math.round(Theme.pad * 0.7))
         anchors.leftMargin: Math.max(12, Math.round(Theme.pad * 1.2))
         anchors.rightMargin: Math.max(12, Math.round(Theme.pad * 1.2))
@@ -56,7 +62,7 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             text: "Monitor"
             font.family: Theme.fontFamily
-            font.pixelSize: Math.max(12, Theme.fontSize - 1)
+            font.pixelSize: Math.max(13, Theme.fontSize)
             font.weight: Font.Bold
             color: Theme.fg
         }
@@ -67,8 +73,8 @@ Rectangle {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             width: pillText.implicitWidth + 14
-            height: 20
-            radius: 10
+            height: 22
+            radius: 11
             color: pageMouse.containsMouse ? Qt.lighter(Theme.hoverMuted, 1.25) : Theme.hoverMuted
             Behavior on color { ColorAnimation { duration: HAnimation.fast } }
 
@@ -77,7 +83,7 @@ Rectangle {
                 anchors.centerIn: parent
                 text: root.currentPage === "system" ? "System" : "GPU"
                 font.family: Theme.fontFamily
-                font.pixelSize: Math.max(10, Theme.fontSize - 3)
+                font.pixelSize: Math.max(10, Theme.fontSize - 2)
                 font.weight: Font.DemiBold
                 color: Theme.accent
             }
@@ -102,7 +108,7 @@ Rectangle {
         anchors.topMargin: 2
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 80
+        height: root.gaugeAreaHeight
 
         Row {
             anchors.centerIn: parent
@@ -111,9 +117,9 @@ Rectangle {
             // Left arrow button
             Rectangle {
                 id: prevBtn
-                width: 24
-                height: 24
-                radius: 12
+                width: root.arrowBtnSize
+                height: root.arrowBtnSize
+                radius: root.arrowBtnSize / 2
                 anchors.verticalCenter: parent.verticalCenter
                 color: prevMouse.containsMouse ? Theme.hoverMuted : "transparent"
                 Behavior on color { ColorAnimation { duration: HAnimation.fast } }
@@ -122,7 +128,7 @@ Rectangle {
                     anchors.centerIn: parent
                     text: "‹"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 17
+                    font.pixelSize: Math.round(root.arrowBtnSize * 0.65)
                     font.weight: Font.Bold
                     color: Theme.fg
                 }
@@ -142,15 +148,15 @@ Rectangle {
             // Gauge slot: crossfades System and GPU circular gauges
             Item {
                 id: gaugeSlot
-                width: 70 * 2 + 16
-                height: 70
+                width: root.gaugeDiameter * 2 + root.gaugeGap
+                height: root.gaugeDiameter
                 anchors.verticalCenter: parent.verticalCenter
 
                 // System gauges: CPU & RAM
                 Row {
                     id: systemGauges
                     anchors.centerIn: parent
-                    spacing: 16
+                    spacing: root.gaugeGap
                     opacity: root.currentPage === "system" ? 1.0 : 0.0
                     visible: opacity > 0.001
 
@@ -167,7 +173,7 @@ Rectangle {
                         value: SysStats.cpu
                         available: true
                         usedText: SysStats.cpuUsedStr
-                        diameter: 70
+                        diameter: root.gaugeDiameter
                     }
 
                     DashboardMetricGauge {
@@ -176,7 +182,7 @@ Rectangle {
                         value: SysStats.ram
                         available: true
                         usedText: SysStats.ramUsedStr
-                        diameter: 70
+                        diameter: root.gaugeDiameter
                     }
                 }
 
@@ -184,7 +190,7 @@ Rectangle {
                 Row {
                     id: gpuGauges
                     anchors.centerIn: parent
-                    spacing: 16
+                    spacing: root.gaugeGap
                     opacity: root.currentPage === "gpu" ? 1.0 : 0.0
                     visible: opacity > 0.001
 
@@ -201,7 +207,7 @@ Rectangle {
                         value: SysStats.gpu
                         available: SysStats.hasGpu
                         usedText: SysStats.hasGpu ? (SysStats.gpuBackend.toUpperCase()) : ""
-                        diameter: 70
+                        diameter: root.gaugeDiameter
                     }
 
                     DashboardMetricGauge {
@@ -210,7 +216,7 @@ Rectangle {
                         value: SysStats.gpuMemoryPercent
                         available: SysStats.hasGpuMemory
                         usedText: SysStats.gpuMemoryUsedStr
-                        diameter: 70
+                        diameter: root.gaugeDiameter
                     }
                 }
             }
@@ -218,9 +224,9 @@ Rectangle {
             // Right arrow button
             Rectangle {
                 id: nextBtn
-                width: 24
-                height: 24
-                radius: 12
+                width: root.arrowBtnSize
+                height: root.arrowBtnSize
+                radius: root.arrowBtnSize / 2
                 anchors.verticalCenter: parent.verticalCenter
                 color: nextMouse.containsMouse ? Theme.hoverMuted : "transparent"
                 Behavior on color { ColorAnimation { duration: HAnimation.fast } }
@@ -229,7 +235,7 @@ Rectangle {
                     anchors.centerIn: parent
                     text: "›"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 17
+                    font.pixelSize: Math.round(root.arrowBtnSize * 0.65)
                     font.weight: Font.Bold
                     color: Theme.fg
                 }
@@ -252,7 +258,7 @@ Rectangle {
     Rectangle {
         id: divider
         anchors.top: gaugeArea.bottom
-        anchors.topMargin: 6
+        anchors.topMargin: 8
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.leftMargin: 12
@@ -281,20 +287,20 @@ Rectangle {
     Item {
         id: storageSection
         anchors.top: divider.bottom
-        anchors.topMargin: 6
+        anchors.topMargin: 8
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.leftMargin: 12
         anchors.rightMargin: 12
-        anchors.bottomMargin: 6
+        anchors.bottomMargin: 8
         clip: true
 
         ListView {
             id: storageView
             anchors.fill: parent
             model: root.storageList
-            spacing: 2
+            spacing: 4
             clip: true
             boundsBehavior: Flickable.StopAtBounds
 

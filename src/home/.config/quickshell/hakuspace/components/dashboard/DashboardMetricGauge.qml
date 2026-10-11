@@ -9,7 +9,7 @@ Item {
     property bool available: true
     property color accentColor: Theme.accent
     property real diameter: 68
-    property real strokeWidth: 5
+    property real strokeWidth: Math.max(5, Math.round(diameter * 0.07))
 
     // Click toggle properties (% vs used value)
     property string usedText: ""
@@ -29,6 +29,7 @@ Item {
     onDisplayValueChanged: canvas.requestPaint()
     onAvailableChanged: canvas.requestPaint()
     onAccentColorChanged: canvas.requestPaint()
+    onStrokeWidthChanged: canvas.requestPaint()
 
     Canvas {
         id: canvas
@@ -80,9 +81,11 @@ Item {
             }
             font.family: Theme.fontFamily
             font.pixelSize: {
-                var baseSize = Math.max(11, Math.round(root.diameter * 0.19))
-                if (root.showUsed && root.usedText.length > 4) {
-                    return Math.max(9, Math.round(baseSize * 0.82))
+                var baseSize = Math.max(14, Math.round(root.diameter * 0.19))
+                if (root.showUsed && root.usedText.length > 5) {
+                    return Math.max(10, Math.round(baseSize * 0.72))
+                } else if (root.showUsed && root.usedText.length > 3) {
+                    return Math.max(11, Math.round(baseSize * 0.82))
                 }
                 return baseSize
             }
@@ -95,7 +98,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             text: root.title
             font.family: Theme.fontFamily
-            font.pixelSize: Math.max(9, Math.round(root.diameter * 0.15))
+            font.pixelSize: Math.max(10, Math.round(root.diameter * 0.12))
             font.weight: Font.Medium
             color: Theme.fgDim
         }

@@ -14,21 +14,21 @@ Item {
     property bool showUsed: false
 
     width: parent ? parent.width : 200
-    height: 28
+    height: 32
 
     Row {
         anchors.fill: parent
         anchors.verticalCenter: parent.verticalCenter
-        spacing: 8
+        spacing: 10
 
         // Mount point label
         Text {
             id: label
-            width: Math.min(68, Math.max(48, root.width * 0.26))
+            width: Math.min(84, Math.max(54, root.width * 0.24))
             anchors.verticalCenter: parent.verticalCenter
             text: root.target === "/" ? "Root /" : (root.target.lastIndexOf("/") > 0 ? root.target.substring(root.target.lastIndexOf("/") + 1) : root.target)
             font.family: Theme.fontFamily
-            font.pixelSize: Math.max(10, Theme.fontSize - 2)
+            font.pixelSize: Math.max(11, Theme.fontSize - 1)
             font.weight: Font.DemiBold
             color: root.available ? Theme.fg : Theme.fgDim
             elide: Text.ElideRight
@@ -38,8 +38,8 @@ Item {
         Rectangle {
             id: track
             width: parent.width - label.width - valueText.width - (parent.spacing * 2)
-            height: 5
-            radius: 2.5
+            height: 6
+            radius: 3
             color: Theme.hoverMuted
             anchors.verticalCenter: parent.verticalCenter
 
@@ -49,7 +49,7 @@ Item {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
                 width: root.available ? Math.round(parent.width * (Math.max(0, Math.min(100, root.percent)) / 100)) : 0
-                radius: 2.5
+                radius: 3
                 color: Theme.accent
                 visible: root.available
 
@@ -65,7 +65,7 @@ Item {
         // Value text (% or used)
         Text {
             id: valueText
-            width: Math.max(38, implicitWidth)
+            width: Math.max(42, implicitWidth)
             horizontalAlignment: Text.AlignRight
             anchors.verticalCenter: parent.verticalCenter
             text: {
@@ -74,7 +74,7 @@ Item {
                 return root.percent + "%"
             }
             font.family: Theme.fontFamily
-            font.pixelSize: Math.max(10, Theme.fontSize - 2)
+            font.pixelSize: Math.max(11, Theme.fontSize - 1)
             font.weight: Font.Bold
             color: root.available ? Theme.fg : Theme.fgDim
         }
