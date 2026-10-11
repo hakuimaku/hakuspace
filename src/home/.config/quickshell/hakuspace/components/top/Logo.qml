@@ -25,6 +25,19 @@ TopModule {
     visible: !navigationVisualActive
     enabled: !navigationVisualActive
 
+    // Disable color animation on Logo to guarantee immediate rock-solid Theme.accent
+    Behavior on color { enabled: false }
+
+    property real lastCloseTime: 0
+    Connections {
+        target: UiState
+        function onNavigationVisualScreenNameChanged() {
+            if (UiState.navigationVisualScreenName === "") {
+                root.lastCloseTime = Date.now()
+            }
+        }
+    }
+
     function triggerOpenNavigation() {
         TooltipManager.dismiss()
         var point = root.mapToItem(null, 0, 0)
@@ -32,7 +45,7 @@ TopModule {
     }
 
     onHoveredChanged: {
-        if (hovered && !navigationVisualActive) {
+        if (hovered && !navigationVisualActive && (Date.now() - lastCloseTime > 350)) {
             triggerOpenNavigation()
         }
     }

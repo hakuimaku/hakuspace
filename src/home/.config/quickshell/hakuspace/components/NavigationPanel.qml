@@ -45,6 +45,19 @@ Item {
         id: dashboardMorphAnim
         target: root
         property: "dashboardMorphProgress"
+        onFinished: {
+            if (root.closingFromDashboard) {
+                UiState.finishNavigationVisual(root.modelData.name)
+                Qt.callLater(function() {
+                    root.closing = false
+                    root.closingFromDashboard = false
+                    root.closeCollapseProgress = 0.0
+                    root.closeReturnProgress = 0.0
+                    root.closeFlareProgress = 0.0
+                    root.seedLogoGeometry()
+                })
+            }
+        }
     }
 
     onDashboardVisuallyActiveChanged: {
@@ -55,6 +68,7 @@ Item {
         }
     }
     property bool closing: false
+    property bool closingFromDashboard: false
     property int selectedIndex: 0
     property int hoveredIndex: -1
 
@@ -500,6 +514,7 @@ Item {
 
         if (panelOpen) {
             closing = false
+            closingFromDashboard = false
             closeCollapseProgress = 0.0
             closeReturnProgress = 0.0
             closeFlareProgress = 0.0
@@ -524,6 +539,7 @@ Item {
         // Ownership moving to another monitor does not animate the stale output.
         if (UiState.activePanel === "navigation") {
             closing = false
+            closingFromDashboard = false
             closeCollapseProgress = 0.0
             closeReturnProgress = 0.0
             closeFlareProgress = 0.0
@@ -533,7 +549,16 @@ Item {
             return
         }
 
+        var wasInDashboard = root.dashboardVisuallyActive || root.dashboardMorphProgress > 0.05
+        if (wasInDashboard) {
+            root.closingFromDashboard = true
+            root.closing = true
+            root.hoveredIndex = -1
+            return
+        }
+
         if (flareHeight > anchorBodyHeight + 0.5) {
+            closingFromDashboard = false
             closeCollapseProgress = 0.0
             closeReturnProgress = 0.0
             closeFlareProgress = 0.0
@@ -542,6 +567,7 @@ Item {
             closeMorph.start()
         } else {
             closing = false
+            closingFromDashboard = false
             closeCollapseProgress = 0.0
             closeReturnProgress = 0.0
             closeFlareProgress = 0.0
@@ -615,12 +641,15 @@ Item {
 
         onFinished: {
             UiState.finishNavigationVisual(root.modelData.name)
-            root.closing = false
-            root.closeCollapseProgress = 0.0
-            root.closeReturnProgress = 0.0
-            root.closeFlareProgress = 0.0
-            dashboardMorphAnim.stop()
-            root.dashboardMorphProgress = 0.0
+            Qt.callLater(function() {
+                root.closing = false
+                root.closeCollapseProgress = 0.0
+                root.closeReturnProgress = 0.0
+                root.closeFlareProgress = 0.0
+                root.dashboardMorphAnim.stop()
+                root.dashboardMorphProgress = 0.0
+                root.seedLogoGeometry()
+            })
         }
     }
 
@@ -706,9 +735,9 @@ Item {
                           ? root.backingCurveRadius * (1.0 - root.closeFlareProgress)
                           : root.backingCurveRadius
             surfaceColor: Theme.barColor
-            opacity: root.closing
+            opacity: root.closingFromDashboard ? 0.0 : (root.closing
                      ? Math.max(0.0, 1.0 - Math.max(0.0, root.closeFlareProgress - 0.72) / 0.28)
-                     : Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35)
+                     : Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35))
             visible: (root.panelOpen || root.closing) && opacity > 0.001
         }
 
@@ -799,7 +828,7 @@ Item {
             height: root.circularShellDiameter
             radius: width / 2
             color: Theme.barColor
-            opacity: root.navigationRevealProgress * Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35)
+            opacity: root.closingFromDashboard ? 0.0 : (root.navigationRevealProgress * Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35))
             scale: 0.92 + root.navigationRevealProgress * 0.08
             transformOrigin: Item.Center
             visible: (root.panelOpen || root.closing) && opacity > 0.001
@@ -820,7 +849,7 @@ Item {
             border.color: Qt.rgba(baseBorderColor.r, baseBorderColor.g, baseBorderColor.b,
                                   baseBorderColor.a * Math.max(0.0, Math.min(1.0, (root.logoMorphProgress - 0.1) / 0.9)))
             z: 120
-            opacity: Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.30)
+            opacity: root.closingFromDashboard ? 0.0 : Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.30)
             visible: (root.panelOpen || root.closing) && opacity > 0.001
 
             Text {
@@ -873,7 +902,7 @@ Item {
             width: root.circleDiameter
             height: root.circleDiameter
             readonly property real radialFadeProgress: Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.30)
-            opacity: root.navigationRevealProgress * radialFadeProgress
+            opacity: root.closingFromDashboard ? 0.0 : (root.navigationRevealProgress * radialFadeProgress)
             scale: (0.72 + root.navigationRevealProgress * 0.28) * (0.90 + 0.10 * radialFadeProgress)
             transformOrigin: Item.Center
             visible: opacity > 0.001
