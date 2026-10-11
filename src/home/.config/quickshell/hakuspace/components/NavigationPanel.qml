@@ -154,10 +154,10 @@ Item {
 
     // Sidebar interaction geometry:
     readonly property bool sidebarExpanded: UiState.navigationMode === "handoff-sidebar"
-    readonly property real sidebarControlDiameter: Math.max(32, Math.round(Theme.fontSize * 2.4))
-    readonly property real sidebarBodyPadding: Math.max(10, Theme.pad)
-    readonly property real sidebarBodyWidth: Math.max(56, sidebarControlDiameter + sidebarBodyPadding * 2)
-    readonly property real sidebarBodyHeight: Math.max(220, Math.round(circleDiameter * 1.6))
+    readonly property real sidebarControlDiameter: Math.max(44, Math.round(Theme.fontSize * 3.1))
+    readonly property real sidebarBodyPadding: Math.max(12, Theme.pad + 2)
+    readonly property real sidebarBodyWidth: Math.max(72, sidebarControlDiameter + sidebarBodyPadding * 2)
+    readonly property real sidebarBodyHeight: sidebarSurface ? sidebarSurface.contentHeight : 300
     readonly property real sidebarBodyX: 0
     readonly property real sidebarBodyY: Math.round(circularShellDiameter * 0.94)
     readonly property real sidebarEarWidth: Math.max(32, Math.round(flareReach * 1.5))
@@ -169,16 +169,74 @@ Item {
     readonly property real bridgeWidth: Math.max(sidebarBodyWidth, Math.round(circleRadius + shellPadding))
     readonly property real bridgeHeight: Math.max(1, (sidebarBodyY + Math.min(24, sidebarBodyHeight * 0.1)) - bridgeY)
 
+    // Quick Note interaction geometry:
+    property bool quickNoteOpen: false
+    readonly property bool tempNoteVisuallyActive: quickNoteOpen || (quickNoteLayer && quickNoteLayer.activeProgress > 0.001)
+    readonly property real quickNoteWidth: 350
+    readonly property real quickNoteHeight: 250
+    readonly property real quickNoteX: sidebarBodyWidth
+    readonly property real quickNoteY: sidebarBodyY + Math.max(10, Math.round(sidebarControlDiameter * 0.2))
+    readonly property real quickNoteSafeMargin: 60
+    readonly property real quickNoteSafeWidth: quickNoteX + (quickNoteLayer ? quickNoteLayer.width : quickNoteWidth) + quickNoteSafeMargin
+    readonly property real quickNoteSafeHeight: Math.max(sidebarSafeHeight, quickNoteY + (quickNoteLayer ? quickNoteLayer.height : quickNoteHeight) + quickNoteSafeMargin)
+
+    // Precise Wayland input mask geometry (union of interactive surfaces):
+    readonly property real navigationInputRadius: Math.min(navigationLayer.width, root.circularShellDiameter + 24)
+    readonly property real sidebarInputWidth: sidebarBodyWidth
+    readonly property real sidebarInputHeight: Math.max(0, (sidebarBodyY + sidebarBodyHeight + flareReach) - bridgeY)
+    readonly property real quickNoteInputWidth: quickNoteLayer ? quickNoteLayer.width : quickNoteWidth
+    readonly property real quickNoteInputHeight: quickNoteLayer ? quickNoteLayer.height : quickNoteHeight
+
+    onSidebarExpandedChanged: {
+        if (!sidebarExpanded && quickNoteOpen) {
+            closeQuickNote()
+        }
+    }
+
+    function toggleQuickNote() {
+        if (root.quickNoteOpen) {
+            closeQuickNote()
+        } else {
+            openQuickNote()
+        }
+    }
+
+    function openQuickNote() {
+        root.quickNoteOpen = true
+        Qt.callLater(function() {
+            if (quickNoteLayer && typeof quickNoteLayer.forceFocus === "function") {
+                quickNoteLayer.forceFocus()
+            }
+        })
+    }
+
+    function closeQuickNote() {
+        if (!root.quickNoteOpen) return
+        TextStore.flushScratch()
+        root.quickNoteOpen = false
+        Qt.callLater(function() {
+            if (root.panelOpen && keyHandler) {
+                keyHandler.forceActiveFocus()
+            }
+        })
+    }
 
     // Region A = Navigation keep-alive region
     function insideRegionA(x, y) {
         return x >= 0 && y >= 0 && (x * x + y * y <= safeRadius * safeRadius)
     }
 
+    function insideQuickNote(x, y) {
+        if (!tempNoteVisuallyActive || !quickNoteLayer) return false
+        return x >= quickNoteX && x <= (quickNoteX + quickNoteLayer.width)
+            && y >= quickNoteY && y <= (quickNoteY + quickNoteLayer.height)
+    }
+
     function insideSidebarSafeZone(x, y) {
-        return sidebarExpanded
-            && x >= 0 && x <= sidebarSafeWidth
-            && y >= 0 && y <= sidebarSafeHeight
+        if (!sidebarExpanded) return false
+        var maxW = tempNoteVisuallyActive ? quickNoteSafeWidth : sidebarSafeWidth
+        var maxH = tempNoteVisuallyActive ? quickNoteSafeHeight : sidebarSafeHeight
+        return x >= 0 && x <= maxW && y >= 0 && y <= maxH
     }
 
     function insideDashboardSafeZone(x, y) {
@@ -221,6 +279,7 @@ Item {
             || insideSidebarBridge(x, y)
             || insideSidebarBody(x, y)
             || insideSidebarEar(x, y)
+            || insideQuickNote(x, y)
     }
 
     // Authoritative pointer-state evaluation for handoff and close decisions
@@ -237,7 +296,7 @@ Item {
             return
         }
 
-        // 1. Direct interactive region of Sidebar (sector ∪ bridge ∪ body ∪ ear)
+        // 1. Direct interactive region of Sidebar (sector ∪ bridge ∪ body ∪ ear ∪ quick note)
         var inB = insideRegionB(x, y)
         if (inB) {
             root.selectedIndex = 1
@@ -251,8 +310,11 @@ Item {
         }
 
         // 2. Lateral safe boundary for Sidebar:
-        // When sidebar is open, moving > 100px away from the sidebar to the right closes it.
-        if (sidebarExpanded && y >= sidebarBodyY && x > sidebarSafeWidth) {
+        // When sidebar is open, moving outside safe lateral bounds closes it.
+        var maxLateralX = tempNoteVisuallyActive ? quickNoteSafeWidth : sidebarSafeWidth
+        var maxLateralY = tempNoteVisuallyActive ? quickNoteSafeHeight : sidebarSafeHeight
+        if (sidebarExpanded && y >= sidebarBodyY && (x > maxLateralX || y > maxLateralY)) {
+            if (quickNoteOpen) root.closeQuickNote()
             UiState.cancelNavigationHandoff()
             UiState.closeNavigation()
             return
@@ -269,6 +331,7 @@ Item {
                 root.selectedIndex = idx
                 root.hoveredIndex = idx
                 if (UiState.navigationMode === "handoff-sidebar") {
+                    if (quickNoteOpen) root.closeQuickNote()
                     UiState.cancelNavigationHandoff()
                 }
             }
@@ -284,6 +347,7 @@ Item {
 
         // 5. Outside all safe zones -> close both
         if (sidebarExpanded) {
+            if (quickNoteOpen) root.closeQuickNote()
             UiState.cancelNavigationHandoff()
         }
         UiState.closeNavigation()
@@ -536,6 +600,10 @@ Item {
             return
         }
 
+        if (root.quickNoteOpen) {
+            root.closeQuickNote()
+        }
+
         // Ownership moving to another monitor does not animate the stale output.
         if (UiState.activePanel === "navigation") {
             closing = false
@@ -646,7 +714,9 @@ Item {
                 root.closeCollapseProgress = 0.0
                 root.closeReturnProgress = 0.0
                 root.closeFlareProgress = 0.0
-                root.dashboardMorphAnim.stop()
+                if (typeof dashboardMorphAnim !== "undefined" && dashboardMorphAnim) {
+                    dashboardMorphAnim.stop()
+                }
                 root.dashboardMorphProgress = 0.0
                 root.seedLogoGeometry()
             })
@@ -668,24 +738,42 @@ Item {
         visible: root.panelOpen || root.closing
 
         mask: Region {
-            // Navigation safe region (around radial controller)
+            // 1. Navigation circular sector (around radial wheel)
             Region {
                 x: 0
                 y: 0
-                width: root.dashboardVisuallyActive ? 0 : Math.min(navigationLayer.width, root.safeRadius)
-                height: root.dashboardVisuallyActive ? 0 : Math.min(navigationLayer.height, root.safeRadius)
+                width: root.dashboardVisuallyActive ? 0 : root.navigationInputRadius
+                height: root.dashboardVisuallyActive ? 0 : root.navigationInputRadius
                 bottomRightRadius: Math.min(width, height)
             }
-            // Sidebar safe region (when expanded)
+            // 2. Sidebar rail body & bridge corridor
             Region {
                 x: 0
-                y: 0
+                y: root.bridgeY
                 width: (root.sidebarExpanded && !root.dashboardVisuallyActive)
-                       ? Math.min(navigationLayer.width, root.sidebarSafeWidth) : 0
+                       ? root.sidebarInputWidth : 0
                 height: (root.sidebarExpanded && !root.dashboardVisuallyActive)
-                       ? Math.min(navigationLayer.height, root.sidebarSafeHeight) : 0
+                       ? root.sidebarInputHeight : 0
             }
-            // Dashboard safe region (200px buffer outside dashboard bounds)
+            // 3. Sidebar top-right ear flare
+            Region {
+                x: root.sidebarBodyWidth
+                y: root.sidebarBodyY + 16
+                width: (root.sidebarExpanded && !root.dashboardVisuallyActive)
+                       ? root.sidebarEarWidth : 0
+                height: (root.sidebarExpanded && !root.dashboardVisuallyActive)
+                       ? root.sidebarEarRadius : 0
+            }
+            // 4. Temp Note (Quick Note) panel envelope & bridge
+            Region {
+                x: root.quickNoteX
+                y: root.quickNoteY
+                width: (root.sidebarExpanded && root.tempNoteVisuallyActive && !root.dashboardVisuallyActive)
+                       ? root.quickNoteInputWidth : 0
+                height: (root.sidebarExpanded && root.tempNoteVisuallyActive && !root.dashboardVisuallyActive)
+                       ? root.quickNoteInputHeight : 0
+            }
+            // 5. Dashboard safe region
             Region {
                 x: 0
                 y: 0
@@ -703,6 +791,7 @@ Item {
             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
             onHoveredChanged: {
                 if (!hovered && root.panelOpen && !root.closing) {
+                    if (root.quickNoteOpen) root.closeQuickNote()
                     if (root.sidebarExpanded || root.dashboardExpanded) {
                         UiState.cancelNavigationHandoff()
                     }
@@ -775,6 +864,7 @@ Item {
             bodyHeight: root.sidebarBodyHeight
             controlDiameter: root.sidebarControlDiameter
             expanded: root.panelOpen && root.sidebarExpanded && !root.closing && !root.dashboardVisuallyActive
+            quickNoteActive: root.tempNoteVisuallyActive
             rf: root.flareReach
             frameThickness: root.frameThickness
             topFlareY: Math.max(0, root.surfaceHeight - root.sidebarBodyY)
@@ -783,10 +873,31 @@ Item {
             cornerRadius: Theme.radius + 8
             surfaceColor: Theme.barColor
             z: 5
+            onToggleQuickNoteRequested: root.toggleQuickNote()
             onPointerMoved: (px, py) => {
                 root.hoveredIndex = 1
                 root.selectedIndex = 1
                 root.evaluatePointer(root.sidebarBodyX + px, root.sidebarBodyY + py)
+            }
+        }
+
+        // P3 Sidebar Quick Note layer: ~300x200 editor beside Sidebar rail
+        Sidebar.SidebarQuickNoteLayer {
+            id: quickNoteLayer
+            x: root.quickNoteX
+            y: root.quickNoteY
+            open: root.panelOpen && root.sidebarExpanded && root.quickNoteOpen && !root.closing && !root.dashboardVisuallyActive
+            z: 28
+            onCloseRequested: root.closeQuickNote()
+            onClosed: {
+                if (root.panelOpen && keyHandler) {
+                    keyHandler.forceActiveFocus()
+                }
+            }
+            onPointerMoved: (px, py) => {
+                root.hoveredIndex = 1
+                root.selectedIndex = 1
+                root.evaluatePointer(root.quickNoteX + px, root.quickNoteY + py)
             }
         }
 
@@ -886,14 +997,16 @@ Item {
             anchors.fill: parent
             focus: root.panelOpen
 
-            Keys.onLeftPressed: event => { if (!root.dashboardVisuallyActive) root.moveSelection(-1); event.accepted = true }
-            Keys.onUpPressed: event => { if (!root.dashboardVisuallyActive) root.moveSelection(-1); event.accepted = true }
-            Keys.onRightPressed: event => { if (!root.dashboardVisuallyActive) root.moveSelection(1); event.accepted = true }
-            Keys.onDownPressed: event => { if (!root.dashboardVisuallyActive) root.moveSelection(1); event.accepted = true }
-            Keys.onReturnPressed: event => { if (!root.dashboardVisuallyActive) root.activateSelected(); event.accepted = true }
-            Keys.onEnterPressed: event => { if (!root.dashboardVisuallyActive) root.activateSelected(); event.accepted = true }
+            Keys.onLeftPressed: event => { if (!root.dashboardVisuallyActive && !root.quickNoteOpen) { root.moveSelection(-1); event.accepted = true } }
+            Keys.onUpPressed: event => { if (!root.dashboardVisuallyActive && !root.quickNoteOpen) { root.moveSelection(-1); event.accepted = true } }
+            Keys.onRightPressed: event => { if (!root.dashboardVisuallyActive && !root.quickNoteOpen) { root.moveSelection(1); event.accepted = true } }
+            Keys.onDownPressed: event => { if (!root.dashboardVisuallyActive && !root.quickNoteOpen) { root.moveSelection(1); event.accepted = true } }
+            Keys.onReturnPressed: event => { if (!root.dashboardVisuallyActive && !root.quickNoteOpen) { root.activateSelected(); event.accepted = true } }
+            Keys.onEnterPressed: event => { if (!root.dashboardVisuallyActive && !root.quickNoteOpen) { root.activateSelected(); event.accepted = true } }
             Keys.onEscapePressed: event => {
-                if (root.dashboardExpanded) {
+                if (root.quickNoteOpen) {
+                    root.closeQuickNote()
+                } else if (root.dashboardExpanded) {
                     UiState.cancelNavigationHandoff()
                 } else if (root.sidebarExpanded) {
                     UiState.cancelNavigationHandoff()

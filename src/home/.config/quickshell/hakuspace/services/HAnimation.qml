@@ -32,6 +32,16 @@ QtObject {
     property list<real> sidebarOpenCurve: [0.30, 1.48, 0.38, 1.0, 1, 1]
     property list<real> sidebarCloseCurve: [0.38, 0.0, 0.22, 1.0, 1, 1]
 
+    // Sidebar Tool / Temp Note Panel Motion (calm flare expansion from rail)
+    property int sidebarToolOpenDuration: 380
+    property int sidebarToolCloseDuration: 300
+    property list<real> sidebarToolOpenCurve: [0.16, 1.08, 0.30, 1.0, 1, 1]
+    property list<real> sidebarToolCloseCurve: [0.32, 0.0, 0.22, 1.0, 1, 1]
+
+    // Dashboard Dynamic Widget Switch Motion (subtle directional card slide-fade)
+    property int dashboardWidgetSwitchDuration: 260
+    property list<real> dashboardWidgetSwitchCurve: [0.20, 0.80, 0.20, 1.0, 1, 1]
+
     property int hakuMenuOpenDuration: 400
     property int hakuMenuCloseDuration: 440
     property list<real> hakuMenuOpenCurve: [0.88, 1.31, 0.25, 0.98, 1, 1]

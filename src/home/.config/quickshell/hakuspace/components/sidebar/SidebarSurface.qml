@@ -7,7 +7,7 @@ Item {
 
     required property real controlDiameter
     required property real bodyWidth
-    required property real bodyHeight
+    property real bodyHeight: contentHeight
     property real rf: Math.max(Theme.tipHugRadius, AppState.roundedScreenRadius)
     property real frameThickness: FlareEdges.thickness
     property real topFlareY: 16
@@ -16,8 +16,29 @@ Item {
     property real cornerRadius: Theme.radius + 8
     property color surfaceColor: Theme.barColor
     property bool expanded: false
+    property bool quickNoteActive: false
+
+    readonly property real itemDiameter: root.controlDiameter
+    readonly property real itemSpacing: Math.max(10, Math.round(Theme.fontSize * 0.85))
+    readonly property real listTopPadding: Math.max(16, Math.round(root.controlDiameter * 0.40))
+    readonly property real listBottomPadding: Math.max(16, Math.round(root.controlDiameter * 0.40))
+
+    property var tools: [
+        {
+            key: "tempNote",
+            icon: "󰏫",
+            label: "Temp Note"
+        }
+    ]
+
+    readonly property real contentHeight: Math.max(300,
+        listTopPadding
+        + tools.length * itemDiameter
+        + Math.max(0, tools.length - 1) * itemSpacing
+        + listBottomPadding)
 
     signal pointerMoved(real x, real y)
+    signal toggleQuickNoteRequested()
 
     // Morph animation:
     property real morphProgress: 0.0
@@ -48,7 +69,7 @@ Item {
 
     visible: morphProgress > 0.001 || expanded
 
-    // Clip wrapper so controls smoothly slide / reveal as the body expands
+    // Clip wrapper so background body smoothly expands with morph progress
     Item {
         id: bodyClipper
         x: 0
@@ -131,99 +152,142 @@ Item {
                 }
             }
         }
+    }
 
-        // 4. Controls (Options: 2 circular dots + 1 circular plus button)
-        Item {
-            id: controlsGroup
-            x: 0
-            y: 20
-            width: root.bodyWidth
-            height: root.bodyHeight
-            opacity: Math.max(0, Math.min(1, (root.morphProgress - 0.15) / 0.70))
-            transform: Translate {
-                y: -24 * (1.0 - root.morphProgress)
-            }
+    // Controls group (model-driven tools list)
+    Item {
+        id: controlsGroup
+        x: 0
+        y: 20
+        width: root.bodyWidth
+        height: root.bodyHeight
+        opacity: Math.max(0, Math.min(1, (root.morphProgress - 0.15) / 0.70))
+        transform: Translate {
+            y: -24 * (1.0 - root.morphProgress)
+        }
+        visible: opacity > 0.001
 
-            readonly property real controlX: Math.round((root.bodyWidth - root.controlDiameter) / 2)
-            readonly property real spacing: Math.max(14, Math.round(Theme.fontSize * 1.1))
-            readonly property real topOffset: Math.max(20, Math.round(root.bodyHeight * 0.10))
+        readonly property real controlX: Math.round((root.bodyWidth - root.controlDiameter) / 2)
 
-            // Option Dot 1
-            Rectangle {
-                id: optionDot1
+        Repeater {
+            model: root.tools
+
+            delegate: Item {
+                id: toolDelegate
+                required property int index
+                required property var modelData
+
+                readonly property bool isTempNote: modelData.key === "tempNote"
+                readonly property bool isActive: isTempNote && root.quickNoteActive
+                readonly property bool isHovered: toolMouseArea.containsMouse
+                readonly property bool isPressed: toolMouseArea.pressed
+
                 x: controlsGroup.controlX
-                y: controlsGroup.topOffset
-                width: root.controlDiameter
-                height: root.controlDiameter
-                radius: width / 2
-                color: Theme.surface
-                border.width: 2
-                border.color: Qt.lighter(Theme.hoverMuted, 1.75)
-                scale: Math.max(0.6, Math.min(1.06, 0.6 + 0.4 * root.morphProgress))
+                y: root.listTopPadding + index * (root.itemDiameter + root.itemSpacing)
+                width: root.itemDiameter
+                height: root.itemDiameter
+                z: 20
 
                 Rectangle {
-                    anchors.centerIn: parent
-                    width: Math.max(6, Math.round(parent.width * 0.22))
-                    height: width
+                    id: toolButton
+                    anchors.fill: parent
                     radius: width / 2
-                    color: Qt.lighter(Theme.hoverMuted, 1.85)
+                    color: toolDelegate.isPressed
+                           ? Qt.darker(Theme.accent, 1.10)
+                           : (toolDelegate.isHovered ? Qt.lighter(Theme.accent, 1.25) : Theme.accent)
+                    border.width: 2
+                    border.color: toolDelegate.isActive
+                                  ? Qt.lighter(Theme.accent, 1.50)
+                                  : (toolDelegate.isHovered ? Qt.lighter(Theme.accent, 1.40) : Qt.darker(Theme.accent, 1.08))
+                    scale: toolDelegate.isPressed ? 0.94 : (toolDelegate.isHovered ? 1.12 : 1.0)
+
+                    Behavior on color { ColorAnimation { duration: HAnimation.buttonHoverDuration } }
+                    Behavior on border.color { ColorAnimation { duration: HAnimation.buttonHoverDuration } }
+                    Behavior on scale {
+                        NumberAnimation {
+                            duration: toolDelegate.isPressed ? HAnimation.buttonPressDuration : HAnimation.buttonHoverDuration
+                            easing.bezierCurve: toolDelegate.isPressed ? HAnimation.buttonPressCurve : HAnimation.buttonHoverCurve
+                        }
+                    }
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: modelData.icon
+                        color: Theme.onAccentColor
+                        font.family: Theme.fontFamily
+                        font.weight: Font.Bold
+                        font.pixelSize: Math.max(20, Math.round(parent.width * (toolDelegate.isHovered ? 0.52 : 0.48)))
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+
+                        Behavior on font.pixelSize {
+                            NumberAnimation {
+                                duration: toolDelegate.isPressed ? HAnimation.buttonPressDuration : HAnimation.buttonHoverDuration
+                                easing.bezierCurve: toolDelegate.isPressed ? HAnimation.buttonPressCurve : HAnimation.buttonHoverCurve
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        id: toolMouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        acceptedButtons: Qt.LeftButton
+                        onClicked: {
+                            if (toolDelegate.isTempNote) {
+                                root.toggleQuickNoteRequested()
+                            }
+                        }
+                        onPositionChanged: mouse => {
+                            root.pointerMoved(controlsGroup.x + toolDelegate.x + mouse.x,
+                                              controlsGroup.y + toolDelegate.y + mouse.y)
+                        }
+                    }
                 }
-            }
 
-            // Option Dot 2
-            Rectangle {
-                id: optionDot2
-                x: controlsGroup.controlX
-                y: optionDot1.y + root.controlDiameter + controlsGroup.spacing
-                width: root.controlDiameter
-                height: root.controlDiameter
-                radius: width / 2
-                color: Theme.surface
-                border.width: 2
-                border.color: Qt.lighter(Theme.hoverMuted, 1.75)
-                scale: Math.max(0.6, Math.min(1.06, 0.6 + 0.4 * root.morphProgress))
-
+                // Local tooltip on hover (shown when item is not active/open)
                 Rectangle {
-                    anchors.centerIn: parent
-                    width: Math.max(6, Math.round(parent.width * 0.22))
-                    height: width
-                    radius: width / 2
-                    color: Qt.lighter(Theme.hoverMuted, 1.85)
-                }
-            }
+                    id: toolTooltip
+                    visible: toolDelegate.isHovered && !toolDelegate.isActive && opacity > 0.01
+                    opacity: (toolDelegate.isHovered && !toolDelegate.isActive) ? 1.0 : 0.0
+                    anchors.left: parent.right
+                    anchors.leftMargin: 10
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: tooltipLabel.implicitWidth + 14
+                    height: tooltipLabel.implicitHeight + 8
+                    radius: Theme.radiusSm
+                    color: Theme.surface
+                    border.width: 1
+                    border.color: Qt.lighter(Theme.hoverMuted, 1.45)
+                    z: 100
 
-            // Option Plus Control (+)
-            Rectangle {
-                id: optionPlus
-                x: controlsGroup.controlX
-                y: optionDot2.y + root.controlDiameter + controlsGroup.spacing
-                width: root.controlDiameter
-                height: root.controlDiameter
-                radius: width / 2
-                color: Theme.surface
-                border.width: 2
-                border.color: Qt.lighter(Theme.hoverMuted, 1.75)
-                scale: Math.max(0.6, Math.min(1.06, 0.6 + 0.4 * root.morphProgress))
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 160
+                            easing.bezierCurve: HAnimation.tooltipCurve
+                        }
+                    }
 
-                Text {
-                    anchors.centerIn: parent
-                    text: "+"
-                    color: Theme.fgDim
-                    font.family: Theme.fontFamily
-                    font.weight: Font.Bold
-                    font.pixelSize: Math.max(16, Math.round(parent.width * 0.52))
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
+                    Text {
+                        id: tooltipLabel
+                        anchors.centerIn: parent
+                        text: modelData.label
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Math.max(10, Theme.fontSize - 3)
+                        font.weight: Font.Medium
+                        color: Theme.fg
+                    }
                 }
             }
         }
     }
 
-    // Hit test area for Sidebar pointer ownership
+    // Background hit-test tracking for Sidebar pointer ownership (NoButton so it never blocks clicks)
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
-        acceptedButtons: Qt.LeftButton
+        acceptedButtons: Qt.NoButton
         onEntered: root.pointerMoved(mouseX, mouseY)
         onPositionChanged: mouse => root.pointerMoved(mouse.x, mouse.y)
     }
