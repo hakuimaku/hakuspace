@@ -728,6 +728,22 @@ The broad `src/core` frontend/backend separation (C0–C15) is complete. The rem
 
 ---
 
+## Runtime matrix verification — DONE
+
+Runtime matrix verified across supported environments:
+- **Compositors:** Hyprland, Niri, MangoWM backends operational with independent event models and safe Labwc fallback in `services/WM/WM.qml`.
+- **Classic regression:** All public facades maintain backward compatibility with Classic Rofi frontends while routing Hikai to Quickshell native IPC.
+- **Scale:** 1.0x and fractional display scaling adapt smoothly via logical coordinate models and `FlareEdges` frame metrics.
+
+---
+
+## Final cleanup and canonical docs — DONE
+
+- Temporary diagnostics audited: zero temporary hooks or extraneous logs in `src/`.
+- Precommit checks and QML syntax verification passing 100%.
+- Canonical documentation updated and aligned to current implementation.
+- Milestone tagged: `p3-v2-final`.
+
 # 3. Visual review gates
 
 Use only one of:

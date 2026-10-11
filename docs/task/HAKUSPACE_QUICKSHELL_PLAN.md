@@ -560,8 +560,8 @@ P6  Optional polish / experimental work                 OPTIONAL
 | **P3.9** | Wallpaper carousel | **DONE** | Audited and accepted in `P3_WALLPAPER_FINAL_REPORT.md` (2026-10-11); standalone carousel, native scan model, apply static/lively (`cccf6b21`) |
 | **P3.10** | Existing shell polish retained | **DONE** | Frame attachments (`TooltipLayer`, `TrayMenuPanel`, `NotificationPopup`, `NotificationCenterPanel`, `LevelOsdOverlay`) audited and verified; OSD 0%–100% center stability confirmed |
 | **P3.11** | Remaining native migration | **DONE (classified)** | Power & Clipboard moved to P4; Drun/Wallpaper/Recorder native P3 DONE; Classic tooling retained where planned |
-| **P3.12** | Runtime verification | **PLANNED** | Multi-WM matrix (Hyprland, Niri, MangoWM), scale verification |
-| **P3.13** | Cleanup and docs | **PLANNED** | Cleanup diagnostics, final tag `p3-v2-final` |
+| **P3.12** | Runtime verification | **DONE** | Multi-WM matrix (Hyprland, Niri, MangoWM), scale verification verified |
+| **P3.13** | Cleanup and docs | **DONE** | Temporary diagnostics checked/clean, canonical docs synced, tagged `p3-v2-final` |
 
 P3 is intentionally executed as **small atomic commits**. Every accepted sub-part becomes a fallback point before the next dependent sub-part starts.
 
@@ -1751,9 +1751,9 @@ The frontend/backend split (C0–C15) is complete. The remaining native migratio
 
 ---
 
-### P3.12 — Runtime verification — **PLANNED**
+### P3.12 — Runtime verification — **DONE / VERIFIED**
 
-Run final matrices on **committed code only**.
+Run final matrices on **committed code only**. Completed across Hyprland, Niri, MangoWM, Classic regression, and 1.0x / fractional scaling.
 
 Core surface matrix:
 
@@ -1814,7 +1814,7 @@ Commit compositor-specific fixes only when the defect is reproduced. Do not leak
 
 ---
 
-### P3.13 — Cleanup and docs — **PLANNED**
+### P3.13 — Cleanup and docs — **DONE**
 
 Remove/disable temporary:
 
