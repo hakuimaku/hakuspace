@@ -15,7 +15,7 @@ PanelWindow {
                                       && UiState.wallpaperScreenName === modelData.name
     readonly property bool panelClosing: panelOpen && UiState.wallpaperCloseRequested
     readonly property real carouselWidth: Math.min(modelData.width * 0.58, 980)
-    readonly property real carouselHeight: Math.min(modelData.height * 0.46, 520)
+    readonly property real carouselHeight: Math.min(modelData.height * 0.52, 560)
 
     screen: modelData
     anchors { top: true; bottom: true; left: true; right: true }
@@ -27,10 +27,10 @@ PanelWindow {
     color: "transparent"
     visible: panelOpen
 
-    // The carousel and its floating mode switch receive pointer input.
+    // Fullscreen input mask while panel is open / closing animation is running.
     mask: Region {
-        Region { item: carouselHost }
-        Region { item: carousel.modeSwitchHitRegion }
+        width: root.panelOpen ? root.modelData.width : 0
+        height: root.panelOpen ? root.modelData.height : 0
     }
 
     Component.onDestruction: UiState.forceCloseWallpaperIfScreen(modelData.name)
@@ -43,15 +43,37 @@ PanelWindow {
             carousel.cancelCloseAnimation()
     }
 
+    // Dim modal scrim behind wallpaper UI
+    Rectangle {
+        id: scrim
+        anchors.fill: parent
+        color: Theme.scrim
+        opacity: 0.22 * carousel.openOpacity * carousel.closeOpacity
+    }
+
+    // Outside-dismiss layer: clicking outside the centered controls closes the panel
+    MouseArea {
+        id: outsideDismiss
+        anchors.fill: parent
+        enabled: root.panelOpen && !root.panelClosing
+        acceptedButtons: Qt.LeftButton
+        onClicked: UiState.closeWallpaper()
+    }
+
     Item {
         id: keyHandler
         anchors.fill: parent
-        focus: root.panelOpen
-        Keys.onEscapePressed: {
+        focus: root.panelOpen && !carousel.searchFocused
+        Keys.onTabPressed: event => {
+            carousel.focusSearch()
+            event.accepted = true
+        }
+        Keys.onEscapePressed: event => {
             UiState.closeWallpaper()
             event.accepted = true
         }
         Keys.onLeftPressed: event => {
+            if (carousel.searchFocused) return
             if (!carousel.interactionReady) { event.accepted = true; return }
             if (event.modifiers & Qt.ControlModifier)
                 carousel.switchKind("static")
@@ -60,6 +82,7 @@ PanelWindow {
             event.accepted = true
         }
         Keys.onRightPressed: event => {
+            if (carousel.searchFocused) return
             if (!carousel.interactionReady) { event.accepted = true; return }
             if (event.modifiers & Qt.ControlModifier)
                 carousel.switchKind("lively")
@@ -89,6 +112,7 @@ PanelWindow {
             id: carousel
             anchors.fill: parent
             visible: root.panelOpen
+            onRequestFocusCarousel: keyHandler.forceActiveFocus()
             onApplyAccepted: UiState.closeWallpaper()
             onCloseAnimationFinished: UiState.finishCloseWallpaper(root.modelData.name)
         }
