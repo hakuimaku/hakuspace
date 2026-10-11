@@ -94,16 +94,27 @@ Rectangle {
             width: parent.width - artBox.width - parent.spacing
             spacing: 2
 
-            Text {
-                id: titleText
-                width: parent.width
-                text: Media.available ? Media.title : "No media"
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize
-                font.weight: Font.Bold
-                color: Theme.fg
-                elide: Text.ElideRight
-            }
+                Text {
+                    id: titleText
+                    width: parent.width
+                    text: Media.available ? Media.title : "No media"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                    font.weight: Font.Bold
+                    color: Theme.fg
+                    elide: Text.ElideRight
+
+                    HoverHandler {
+                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                        onHoveredChanged: {
+                            if (hovered && Media.available) {
+                                DashboardTooltip.show(titleText, Media.title + (Media.artist ? ("\n" + Media.artist) : ""))
+                            } else {
+                                DashboardTooltip.hide(titleText)
+                            }
+                        }
+                    }
+                }
 
             Text {
                 id: artistText
@@ -152,7 +163,9 @@ Rectangle {
                         hoverEnabled: true
                         cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                         acceptedButtons: Qt.LeftButton
-                        onClicked: Media.previous()
+                        onEntered: if (parent.enabled) DashboardTooltip.show(prevBtn, "Previous track")
+                        onExited: DashboardTooltip.hide(prevBtn)
+                        onClicked: { DashboardTooltip.dismiss(); Media.previous() }
                     }
                 }
 
@@ -180,7 +193,9 @@ Rectangle {
                         hoverEnabled: true
                         cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                         acceptedButtons: Qt.LeftButton
-                        onClicked: Media.togglePlaying()
+                        onEntered: if (parent.enabled) DashboardTooltip.show(playBtn, Media.playing ? "Pause" : "Play")
+                        onExited: DashboardTooltip.hide(playBtn)
+                        onClicked: { DashboardTooltip.dismiss(); Media.togglePlaying() }
                     }
                 }
 
@@ -208,7 +223,9 @@ Rectangle {
                         hoverEnabled: true
                         cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                         acceptedButtons: Qt.LeftButton
-                        onClicked: Media.next()
+                        onEntered: if (parent.enabled) DashboardTooltip.show(nextBtn, "Next track")
+                        onExited: DashboardTooltip.hide(nextBtn)
+                        onClicked: { DashboardTooltip.dismiss(); Media.next() }
                     }
                 }
             }

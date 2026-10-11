@@ -131,10 +131,15 @@ Item {
         hoverEnabled: root.interactive
         enabled: root.interactive
         acceptedButtons: Qt.LeftButton | Qt.RightButton
-        cursorShape: (root.interactive && avatarArea.hovered) ? Qt.PointingHandCursor : Qt.ArrowCursor
-        z: 30
+        onEntered: {
+            if (root.interactive) DashboardTooltip.show(root, "Left click: Back to Navigation\nRight click: Change avatar")
+        }
+        onExited: {
+            DashboardTooltip.hide(root)
+        }
 
         onClicked: mouse => {
+            DashboardTooltip.dismiss()
             if (!root.interactive) return
             if (mouse.button === Qt.LeftButton) {
                 root.requestBack()

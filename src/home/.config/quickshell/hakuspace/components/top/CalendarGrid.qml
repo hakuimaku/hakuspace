@@ -63,7 +63,9 @@ Item {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 acceptedButtons: Qt.LeftButton
-                onClicked: root.previousMonthRequested()
+                onEntered: if (root.dayHoverEnabled) DashboardTooltip.show(prevBtn, "Previous month")
+                onExited: if (root.dayHoverEnabled) DashboardTooltip.hide(prevBtn)
+                onClicked: { DashboardTooltip.dismiss(); root.previousMonthRequested() }
             }
         }
 
@@ -90,7 +92,9 @@ Item {
                 enabled: root.showNavControls && root.monthOffset !== 0
                 cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                 acceptedButtons: Qt.LeftButton
-                onClicked: root.resetMonthRequested()
+                onEntered: if (root.dayHoverEnabled && enabled) DashboardTooltip.show(titleContainer, "Click to reset to current month")
+                onExited: if (root.dayHoverEnabled) DashboardTooltip.hide(titleContainer)
+                onClicked: { DashboardTooltip.dismiss(); root.resetMonthRequested() }
             }
         }
 
@@ -121,7 +125,9 @@ Item {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 acceptedButtons: Qt.LeftButton
-                onClicked: root.resetMonthRequested()
+                onEntered: if (root.dayHoverEnabled) DashboardTooltip.show(resetBtn, "Reset to current month")
+                onExited: if (root.dayHoverEnabled) DashboardTooltip.hide(resetBtn)
+                onClicked: { DashboardTooltip.dismiss(); root.resetMonthRequested() }
             }
         }
 
@@ -150,7 +156,9 @@ Item {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 acceptedButtons: Qt.LeftButton
-                onClicked: root.nextMonthRequested()
+                onEntered: if (root.dayHoverEnabled) DashboardTooltip.show(nextBtn, "Next month")
+                onExited: if (root.dayHoverEnabled) DashboardTooltip.hide(nextBtn)
+                onClicked: { DashboardTooltip.dismiss(); root.nextMonthRequested() }
             }
         }
     }
@@ -227,6 +235,19 @@ Item {
                     hoverEnabled: root.dayHoverEnabled && cellItem.isValidDay
                     enabled: root.dayHoverEnabled && cellItem.isValidDay
                     cursorShape: (root.dayHoverEnabled && cellItem.isValidDay) ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onEntered: {
+                        if (root.dayHoverEnabled && cellItem.isValidDay) {
+                            var d = new Date(root.firstDay.getFullYear(), root.firstDay.getMonth(), cellItem.day)
+                            var text = d.toLocaleDateString(Qt.locale(), Locale.LongFormat)
+                            if (cellItem.today) text += " (Today)"
+                            DashboardTooltip.show(cellItem, text)
+                        }
+                    }
+                    onExited: {
+                        if (root.dayHoverEnabled) {
+                            DashboardTooltip.hide(cellItem)
+                        }
+                    }
                 }
             }
         }

@@ -55,4 +55,16 @@ Rectangle {
             }
         }
     }
+
+    HoverHandler {
+        id: hoverHandler
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onHoveredChanged: {
+            if (hovered && Clock.date) {
+                DashboardTooltip.show(root, Clock.date.toLocaleDateString(Qt.locale(), Locale.LongFormat) + " " + Clock.date.toLocaleTimeString(Qt.locale(), "HH:mm:ss"))
+            } else {
+                DashboardTooltip.hide(root)
+            }
+        }
+    }
 }

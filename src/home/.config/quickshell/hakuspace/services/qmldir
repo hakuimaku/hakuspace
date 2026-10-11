@@ -19,3 +19,4 @@ singleton Cava 1.0 Cava.qml
 singleton Avatar 1.0 Avatar.qml
 singleton Clock 1.0 Clock.qml
 singleton UserIdentity 1.0 UserIdentity.qml
+singleton DashboardTooltip 1.0 DashboardTooltip.qml
