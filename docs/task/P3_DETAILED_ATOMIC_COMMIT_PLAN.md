@@ -713,15 +713,18 @@ p3(osd): stabilize compact centered layout
 
 ---
 
-## Remaining migration — PLANNED
+## Remaining migration — DONE (classified)
 
-The broad `src/core` frontend/backend separation is now specified in:
-
-```text
-docs/task/P3_CORE_SCRIPT_FRONTEND_BACKEND_SPLIT_PLAN.md
-```
-
-Any remaining Hikai direct-Rofi caller migration after C0–C15 still follows the original rule: one feature/caller family per commit, never one giant migration batch. Candidate surfaces to classify/migrate: Power, Clipboard, remaining launcher/menu facades.
+The broad `src/core` frontend/backend separation (C0–C15) is complete. The remaining migration audit (R5) classified each candidate surface:
+- **Power (`shutdown.sh`):** Move to P4 (backend `power_ctl.sh` headless; no P3 mockup exists).
+- **Clipboard (`clipboard_menu.sh`):** Move to P4 (backend `clipboard_ctl.sh` headless; native UI in P4).
+- **Launcher/Menu facades:**
+  - `hakumenu.sh` / Drun: native P3 implementation (DONE).
+  - `wallpaper_select.sh` / Wallpaper: native P3 implementation (DONE).
+  - `record.sh`: native P3 implementation (DONE).
+  - `change_theme.sh`: Move to P4.
+  - `exit.sh`: Move to P4.
+  - `rofi_theme_switcher.sh`, `taskbar_manager.sh`, `waybar_manager.sh`: Intentionally keep Classic-only.
 
 ---
 

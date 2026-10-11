@@ -559,7 +559,7 @@ P6  Optional polish / experimental work                 OPTIONAL
 | **P3.8** | HakuMenu Theme stub | **PARTIAL / STUB DONE** | Theme state region & tab shell stub; audited in `P3_HAKUMENU_FINAL_REPORT.md` |
 | **P3.9** | Wallpaper carousel | **DONE** | Audited and accepted in `P3_WALLPAPER_FINAL_REPORT.md` (2026-10-11); standalone carousel, native scan model, apply static/lively (`cccf6b21`) |
 | **P3.10** | Existing shell polish retained | **DONE** | Frame attachments (`TooltipLayer`, `TrayMenuPanel`, `NotificationPopup`, `NotificationCenterPanel`, `LevelOsdOverlay`) audited and verified; OSD 0%–100% center stability confirmed |
-| **P3.11** | Remaining native migration | **PLANNED** | Power, Clipboard, remaining facades |
+| **P3.11** | Remaining native migration | **DONE (classified)** | Power & Clipboard moved to P4; Drun/Wallpaper/Recorder native P3 DONE; Classic tooling retained where planned |
 | **P3.12** | Runtime verification | **PLANNED** | Multi-WM matrix (Hyprland, Niri, MangoWM), scale verification |
 | **P3.13** | Cleanup and docs | **PLANNED** | Cleanup diagnostics, final tag `p3-v2-final` |
 
@@ -1731,29 +1731,23 @@ Requirements:
 
 ---
 
-### P3.11 — Remaining native migration — **PLANNED**
+### P3.11 — Remaining native migration — **DONE (classified)**
 
-Because Drun is now represented inside HakuMenu, do not build a second unrelated launcher panel.
+The frontend/backend split (C0–C15) is complete. The remaining native migration audit (R5) resolved the scope for remaining surfaces without speculative redesign:
 
-Remaining native migrations are handled one feature/caller family at a time, for example:
-
-```text
-Power
-Clipboard
-remaining direct Hikai rofi callers
-```
-
-For each:
-
-```text
-audit
-→ implement
-→ runtime verify
-→ confirm Classic unchanged
-→ commit
-```
-
-Do not globally delete rofi if Classic still legitimately uses it.
+- **Power (`shutdown.sh` / `power_ctl.sh`):**
+  - **Decision:** **Move to P4**.
+  - **Rationale:** The headless backend `power_ctl.sh` is completely decoupled and exposes explicit subcommands (`suspend`, `reboot`, `poweroff`, `hibernate`, `lock`, `logout`). No Paint mockup exists in P3 for a native Power menu; designing a speculative UI violates the mockup-lock rule. A dedicated native QuickShell surface will be designed and implemented in P4.
+- **Clipboard (`clipboard_menu.sh` / `clipboard_ctl.sh`):**
+  - **Decision:** **Move to P4**.
+  - **Rationale:** Headless backend `clipboard_ctl.sh` handles `cliphist` history, copy, and wipe (`--wipe` is headless). No P3 mockup exists for a clipboard surface. Native QuickShell clipboard manager or picker integration is deferred to P4.
+- **Launcher/Menu facades:**
+  - **HakuMenu / Drun (`hakumenu.sh`):** **native P3 implementation (DONE)** via `haku_qs_ipc hakumenu toggleDefault` / `openTab drun`.
+  - **Wallpaper (`wallpaper_select.sh`):** **native P3 implementation (DONE)** via `haku_qs_ipc wallpaper toggleDefault`.
+  - **Screen recorder (`record.sh`):** **native P3 implementation (DONE)** via TopBar `RecorderGroup` and `record_ctl.sh`.
+  - **Theme engine (`change_theme.sh`):** **Move to P4** (HakuMenu Theme tab remains an approved visual stub in P3).
+  - **Session exit (`exit.sh`):** **Move to P4** (`session_exit_ctl.sh` headless backend decoupled; native confirmation UI deferred to P4).
+  - **`rofi_theme_switcher.sh`, `taskbar_manager.sh`, `waybar_manager.sh`:** **Intentionally keep Classic-only**.
 
 ---
 
