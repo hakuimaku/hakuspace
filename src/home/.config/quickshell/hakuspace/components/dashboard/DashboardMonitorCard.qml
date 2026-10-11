@@ -13,13 +13,20 @@ Rectangle {
     property bool active: false
     property bool _subscribed: false
 
+    // Presentation state: "system" (default) or "gpu"
+    property string currentPage: "system"
+
+    function togglePage() {
+        currentPage = (currentPage === "system") ? "gpu" : "system"
+    }
+
     function _updateSubscription() {
         if (active && !_subscribed) {
-            _subscribed = true;
-            SysStats.acquireExtended();
+            _subscribed = true
+            SysStats.acquireExtended()
         } else if (!active && _subscribed) {
-            _subscribed = false;
-            SysStats.releaseExtended();
+            _subscribed = false
+            SysStats.releaseExtended()
         }
     }
 
@@ -27,18 +34,19 @@ Rectangle {
     Component.onCompleted: _updateSubscription()
     Component.onDestruction: {
         if (_subscribed) {
-            _subscribed = false;
-            SysStats.releaseExtended();
+            _subscribed = false
+            SysStats.releaseExtended()
         }
     }
 
+    // 1. Header Area
     Item {
         id: headerArea
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 36
-        anchors.topMargin: Math.max(8, Math.round(Theme.pad * 0.8))
+        height: 32
+        anchors.topMargin: Math.max(6, Math.round(Theme.pad * 0.7))
         anchors.leftMargin: Math.max(12, Math.round(Theme.pad * 1.2))
         anchors.rightMargin: Math.max(12, Math.round(Theme.pad * 1.2))
 
@@ -52,247 +60,239 @@ Rectangle {
             font.weight: Font.Bold
             color: Theme.fg
         }
+
+        // Active page indicator pill
+        Rectangle {
+            id: pagePill
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            width: pillText.implicitWidth + 14
+            height: 20
+            radius: 10
+            color: Theme.hoverMuted
+
+            Text {
+                id: pillText
+                anchors.centerIn: parent
+                text: root.currentPage === "system" ? "System" : "GPU"
+                font.family: Theme.fontFamily
+                font.pixelSize: Math.max(10, Theme.fontSize - 3)
+                font.weight: Font.DemiBold
+                color: Theme.accent
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.togglePage()
+            }
+        }
+    }
+
+    // 2. Gauge cluster area with left/right switcher arrows
+    Item {
+        id: gaugeArea
+        anchors.top: headerArea.bottom
+        anchors.topMargin: 2
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 76
+
+        Row {
+            anchors.centerIn: parent
+            spacing: 10
+
+            // Left arrow button
+            Rectangle {
+                id: prevBtn
+                width: 24
+                height: 24
+                radius: 12
+                anchors.verticalCenter: parent.verticalCenter
+                color: prevMouse.containsMouse ? Theme.hoverMuted : "transparent"
+                Behavior on color { ColorAnimation { duration: HAnimation.fast } }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "‹"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 17
+                    font.weight: Font.Bold
+                    color: Theme.fg
+                }
+
+                MouseArea {
+                    id: prevMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    acceptedButtons: Qt.LeftButton
+                    onClicked: root.togglePage()
+                }
+            }
+
+            // Gauge slot: crossfades System and GPU circular gauges
+            Item {
+                id: gaugeSlot
+                width: 66 * 2 + 14
+                height: 66
+                anchors.verticalCenter: parent.verticalCenter
+
+                // System gauges: CPU & RAM
+                Row {
+                    id: systemGauges
+                    anchors.centerIn: parent
+                    spacing: 14
+                    opacity: root.currentPage === "system" ? 1.0 : 0.0
+                    visible: opacity > 0.001
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: HAnimation.normal
+                            easing.bezierCurve: HAnimation.moduleCurve
+                        }
+                    }
+
+                    DashboardMetricGauge {
+                        id: cpuGauge
+                        title: "CPU"
+                        value: SysStats.cpu
+                        available: true
+                        diameter: 66
+                    }
+
+                    DashboardMetricGauge {
+                        id: ramGauge
+                        title: "RAM"
+                        value: SysStats.ram
+                        available: true
+                        diameter: 66
+                    }
+                }
+
+                // GPU gauges: GPU & VRAM
+                Row {
+                    id: gpuGauges
+                    anchors.centerIn: parent
+                    spacing: 14
+                    opacity: root.currentPage === "gpu" ? 1.0 : 0.0
+                    visible: opacity > 0.001
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: HAnimation.normal
+                            easing.bezierCurve: HAnimation.moduleCurve
+                        }
+                    }
+
+                    DashboardMetricGauge {
+                        id: gpuGauge
+                        title: "GPU"
+                        value: SysStats.gpu
+                        available: SysStats.hasGpu
+                        diameter: 66
+                    }
+
+                    DashboardMetricGauge {
+                        id: vramGauge
+                        title: "VRAM"
+                        value: SysStats.gpuMemoryPercent
+                        available: SysStats.hasGpuMemory
+                        diameter: 66
+                    }
+                }
+            }
+
+            // Right arrow button
+            Rectangle {
+                id: nextBtn
+                width: 24
+                height: 24
+                radius: 12
+                anchors.verticalCenter: parent.verticalCenter
+                color: nextMouse.containsMouse ? Theme.hoverMuted : "transparent"
+                Behavior on color { ColorAnimation { duration: HAnimation.fast } }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "›"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 17
+                    font.weight: Font.Bold
+                    color: Theme.fg
+                }
+
+                MouseArea {
+                    id: nextMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    acceptedButtons: Qt.LeftButton
+                    onClicked: root.togglePage()
+                }
+            }
+        }
+    }
+
+    // Divider separating gauges from persistent storage section
+    Rectangle {
+        id: divider
+        anchors.top: gaugeArea.bottom
+        anchors.topMargin: 6
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.leftMargin: 12
+        anchors.rightMargin: 12
+        height: 1
+        color: Theme.hoverMuted
+    }
+
+    // 3. Persistent storage rows (root / always first, then mounts)
+    readonly property var storageList: {
+        if (SysStats.hasMounts && SysStats.mounts.length > 0) {
+            return SysStats.mounts
+        }
+        return [
+            {
+                "target": "/",
+                "source": "root",
+                "fstype": "",
+                "used": "",
+                "size": "",
+                "percent": SysStats.hasRootFs ? SysStats.rootFsUsed : 0
+            }
+        ]
     }
 
     Item {
-        id: contentArea
-        anchors.top: headerArea.bottom
+        id: storageSection
+        anchors.top: divider.bottom
+        anchors.topMargin: 6
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.margins: Math.max(14, Math.round(Theme.pad * 1.2))
+        anchors.leftMargin: 12
+        anchors.rightMargin: 12
+        anchors.bottomMargin: 6
+        clip: true
 
-        readonly property real colGap: Math.max(16, Math.round(Theme.gap * 2))
-        readonly property real rowGap: Math.max(20, Math.round(Theme.gap * 2.5))
-        readonly property real slotWidth: Math.floor((contentArea.width - colGap) / 2)
+        ListView {
+            id: storageView
+            anchors.fill: parent
+            model: root.storageList
+            spacing: 2
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
 
-        Grid {
-            id: metricGrid
-            anchors.centerIn: parent
-            columns: 2
-            columnSpacing: contentArea.colGap
-            rowSpacing: contentArea.rowGap
-
-            // Slot 1: ROM
-            Item {
-                width: contentArea.slotWidth
-                height: 44
-
-                Text {
-                    id: romLabel
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    text: "ROM"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(11, Theme.fontSize - 1)
-                    font.weight: Font.Bold
-                    color: Theme.fgDim
-                }
-
-                Text {
-                    id: romValue
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    text: SysStats.hasRootFs ? SysStats.rootFsUsed + "%" : "N/A"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(13, Theme.fontSize + 1)
-                    font.weight: Font.Bold
-                    color: SysStats.hasRootFs ? Theme.fg : Theme.fgDim
-                }
-
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: romLabel.bottom
-                    anchors.topMargin: 8
-                    height: 4
-                    radius: 2
-                    color: Theme.hoverMuted
-
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        width: SysStats.hasRootFs
-                            ? Math.round(parent.width * (Math.max(0, Math.min(100, SysStats.rootFsUsed)) / 100))
-                            : 0
-                        radius: 2
-                        color: Theme.accent
-                        visible: SysStats.hasRootFs
-
-                        Behavior on width {
-                            NumberAnimation {
-                                duration: HAnimation.normal
-                                easing.type: Easing.OutCubic
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Slot 2: RAM
-            Item {
-                width: contentArea.slotWidth
-                height: 44
-
-                Text {
-                    id: ramLabel
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    text: "RAM"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(11, Theme.fontSize - 1)
-                    font.weight: Font.Bold
-                    color: Theme.fgDim
-                }
-
-                Text {
-                    id: ramValue
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    text: SysStats.ram + "%"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(13, Theme.fontSize + 1)
-                    font.weight: Font.Bold
-                    color: Theme.fg
-                }
-
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: ramLabel.bottom
-                    anchors.topMargin: 8
-                    height: 4
-                    radius: 2
-                    color: Theme.hoverMuted
-
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        width: Math.round(parent.width * (Math.max(0, Math.min(100, SysStats.ram)) / 100))
-                        radius: 2
-                        color: Theme.accent
-
-                        Behavior on width {
-                            NumberAnimation {
-                                duration: HAnimation.normal
-                                easing.type: Easing.OutCubic
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Slot 3: CPU
-            Item {
-                width: contentArea.slotWidth
-                height: 44
-
-                Text {
-                    id: cpuLabel
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    text: "CPU"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(11, Theme.fontSize - 1)
-                    font.weight: Font.Bold
-                    color: Theme.fgDim
-                }
-
-                Text {
-                    id: cpuValue
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    text: SysStats.cpu + "%"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(13, Theme.fontSize + 1)
-                    font.weight: Font.Bold
-                    color: Theme.fg
-                }
-
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: cpuLabel.bottom
-                    anchors.topMargin: 8
-                    height: 4
-                    radius: 2
-                    color: Theme.hoverMuted
-
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        width: Math.round(parent.width * (Math.max(0, Math.min(100, SysStats.cpu)) / 100))
-                        radius: 2
-                        color: Theme.accent
-
-                        Behavior on width {
-                            NumberAnimation {
-                                duration: HAnimation.normal
-                                easing.type: Easing.OutCubic
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Slot 4: GPU
-            Item {
-                width: contentArea.slotWidth
-                height: 44
-
-                Text {
-                    id: gpuLabel
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    text: "GPU"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(11, Theme.fontSize - 1)
-                    font.weight: Font.Bold
-                    color: Theme.fgDim
-                }
-
-                Text {
-                    id: gpuValue
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    text: SysStats.hasGpu ? SysStats.gpu + "%" : "N/A"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(13, Theme.fontSize + 1)
-                    font.weight: Font.Bold
-                    color: SysStats.hasGpu ? Theme.fg : Theme.fgDim
-                }
-
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: gpuLabel.bottom
-                    anchors.topMargin: 8
-                    height: 4
-                    radius: 2
-                    color: Theme.hoverMuted
-
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        width: SysStats.hasGpu
-                            ? Math.round(parent.width * (Math.max(0, Math.min(100, SysStats.gpu)) / 100))
-                            : 0
-                        radius: 2
-                        color: Theme.accent
-                        visible: SysStats.hasGpu
-
-                        Behavior on width {
-                            NumberAnimation {
-                                duration: HAnimation.normal
-                                easing.type: Easing.OutCubic
-                            }
-                        }
-                    }
-                }
+            delegate: DashboardStorageRow {
+                width: storageView.width
+                target: modelData.target || "/"
+                source: modelData.source || ""
+                fstype: modelData.fstype || ""
+                usedStr: modelData.used || ""
+                sizeStr: modelData.size || ""
+                percent: (typeof modelData.percent === "number") ? modelData.percent : 0
+                available: true
             }
         }
     }
