@@ -333,6 +333,7 @@ Item {
                                 hoverScaleDelta: 0.004
                                 pressScaleDelta: 0.018
                                 text: modelData.label
+                                fontSize: Theme.fontSize + 1
                                 onClicked: {
                                     UiState.setHakuMenuQuery("")
                                     UiState.setHakuMenuMode(modelData.key)
@@ -378,7 +379,7 @@ Item {
                         text: "Search…   > General   ~ Theme"
                         color: Theme.fgMuted
                         font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.pixelSize: Theme.fontSize + 1
                         visible: searchInput.text.length === 0
                     }
 
@@ -392,7 +393,7 @@ Item {
                         selectionColor: Theme.accent
                         selectedTextColor: Theme.onAccentColor
                         font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.pixelSize: Theme.fontSize + 1
                         clip: true
                         focus: root.panelOpen
                         text: UiState.hakuMenuQuery

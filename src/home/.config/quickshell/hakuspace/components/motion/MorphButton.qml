@@ -5,6 +5,7 @@ Rectangle {
     id: root
 
     property string text: ""
+    property int fontSize: 0
     property bool selected: false
     property bool focused: false
     property bool interactive: true
@@ -151,7 +152,7 @@ Rectangle {
         text: root.text
         color: root.foreground
         font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.pixelSize: root.fontSize > 0 ? root.fontSize : Theme.fontSize
     }
 
     MouseArea {

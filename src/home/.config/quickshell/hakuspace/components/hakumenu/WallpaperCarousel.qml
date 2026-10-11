@@ -751,7 +751,7 @@ Item {
                         color: Theme.fg
                         elide: Text.ElideMiddle
                         font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.pixelSize: Theme.fontSize + 1
                     }
 
                     Text {
@@ -899,7 +899,7 @@ Item {
                 text: "Static"
                 color: staticButton.selected ? Theme.onAccentColor : Theme.fg
                 font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize
+                font.pixelSize: Theme.fontSize + 1
                 font.weight: staticButton.hovered ? Font.DemiBold : Font.Normal
                 scale: staticButton.hovered ? 1.06 : 1.0
 
@@ -959,7 +959,7 @@ Item {
                 text: "Lively"
                 color: livelyButton.selected ? Theme.onAccentColor : Theme.fg
                 font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize
+                font.pixelSize: Theme.fontSize + 1
                 font.weight: livelyButton.hovered ? Font.DemiBold : Font.Normal
                 scale: livelyButton.hovered ? 1.06 : 1.0
 
@@ -1004,7 +1004,7 @@ Item {
               : (root.activeKind === "lively" ? "No lively wallpapers" : "No static wallpapers")
         color: Theme.fgMuted
         font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize
+        font.pixelSize: Theme.fontSize + 1
     }
 
 }

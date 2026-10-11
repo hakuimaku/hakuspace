@@ -173,7 +173,7 @@ Item {
                         text: appRow.modelData.name || appRow.modelData.id
                         color: appRow.foreground
                         font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        font.pixelSize: Theme.fontSize + 1
                         elide: Text.ElideRight
                     }
 
@@ -182,7 +182,7 @@ Item {
                         text: appRow.modelData.genericName || appRow.modelData.comment || appRow.modelData.id
                         color: Theme.fgMuted
                         font.family: Theme.fontFamily
-                        font.pixelSize: Math.max(10, Theme.fontSize * 0.82)
+                        font.pixelSize: Math.max(10, Math.round((Theme.fontSize + 1) * 0.82))
                         elide: Text.ElideRight
                         visible: text.length > 0
                     }
@@ -195,7 +195,7 @@ Item {
             text: root.query.trim().length > 0 ? "No applications found" : "No applications"
             color: Theme.fgMuted
             font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.pixelSize: Theme.fontSize + 1
             visible: appList.count === 0
         }
     }
