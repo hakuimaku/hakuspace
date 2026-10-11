@@ -558,7 +558,7 @@ P6  Optional polish / experimental work                 OPTIONAL
 | **P3.7** | HakuMenu Drun | **DONE** | Audited and accepted in `P3_HAKUMENU_FINAL_REPORT.md` (2026-10-11) |
 | **P3.8** | HakuMenu Theme stub | **PARTIAL / STUB DONE** | Theme state region & tab shell stub; audited in `P3_HAKUMENU_FINAL_REPORT.md` |
 | **P3.9** | Wallpaper carousel | **DONE** | Audited and accepted in `P3_WALLPAPER_FINAL_REPORT.md` (2026-10-11); standalone carousel, native scan model, apply static/lively (`cccf6b21`) |
-| **P3.10** | Existing shell polish retained | **IMPLEMENTED / VERIFY** | `FlareEdges` frame attachments exist; recorder in recorder group (`8f21ac42`); calendar accent fill (`604638ea`) |
+| **P3.10** | Existing shell polish retained | **DONE** | Frame attachments (`TooltipLayer`, `TrayMenuPanel`, `NotificationPopup`, `NotificationCenterPanel`, `LevelOsdOverlay`) audited and verified; OSD 0%–100% center stability confirmed |
 | **P3.11** | Remaining native migration | **PLANNED** | Power, Clipboard, remaining facades |
 | **P3.12** | Runtime verification | **PLANNED** | Multi-WM matrix (Hyprland, Niri, MangoWM), scale verification |
 | **P3.13** | Cleanup and docs | **PLANNED** | Cleanup diagnostics, final tag `p3-v2-final` |
@@ -1666,9 +1666,9 @@ p3(wallpaper): harden carousel thumbnail loading
 
 ---
 
-### P3.10 — Existing shell polish retained — **IMPLEMENTED / VERIFY**
+### P3.10 — Existing shell polish retained — **DONE**
 
-These surfaces are not redesigned by the seven new mockups; they are aligned to the RoundedScreen/frame contract. Frame attachments to `FlareEdges` / `AppState` are implemented in code; physical verification is scheduled for R4.
+These surfaces are not redesigned by the seven new mockups; they are aligned to the RoundedScreen/frame contract. Frame attachments to `FlareEdges` / `AppState` and physical center stability were audited and verified in R4.
 
 Recent accepted refinements:
 - Recording state isolated to recorder group only (`8f21ac42`).

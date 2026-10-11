@@ -669,63 +669,34 @@ Gate:
 
 ---
 
-## Existing shell polish — IMPLEMENTED / VERIFY
+## Existing shell polish — DONE
 
-Surfaces already consume shared `FlareEdges` / `AppState` frame metrics in current code; physical verification is scheduled for R4.
+Surfaces consume shared `FlareEdges` / `AppState` frame metrics; audited and verified in R4:
+- TooltipLayer: `maxTooltipWidth` bounds against `FlareEdges.thickness * 2`, anchored at `FlareEdges.topOriginY`.
+- TrayMenuPanel (`FlarePanelWindow`): anchored to `FlareEdges.topOriginY` with `FlareEdges.thickness` bounds.
+- NotificationPopup: dual layer (Top layer `FlareSurface` + Overlay content layer) attached to `FlareEdges.topOriginY` and `FlareEdges.getBounds`.
+- NotificationCenterPanel: anchored to `FlareEdges.topOriginY` with `FlareEdges.thickness` bounds and `Theme.tipHugRadius` flare.
+- NotificationCenterContent: roomier header spacing, taller body, solid `Theme.accent` fill on Clear button.
+- LevelOsdOverlay: anchored to `FlareEdges.topOriginY`, span constrained by `FlareEdges.thickness` and `Theme.tipRadius`.
+- LevelOsdContent: fixed symmetric side slots (`Theme.fontSize * 3.7`) ensure optical/physical center stability across `0%`, `9%`, `10%`, `99%`, and `100%`.
 
-### P1 — IMPLEMENTED / VERIFY
-Tooltip → RoundedScreen attachment (consumes `FlareEdges`).
+### P1 — DONE
+Tooltip → RoundedScreen attachment (consumes `FlareEdges`). Audited and verified in `TooltipLayer.qml`.
 
-Commit:
+### P2 — DONE
+Tray → RoundedScreen attachment (consumes `FlareEdges`). Audited and verified in `TrayMenuPanel.qml` and `FlarePanelWindow.qml`.
 
-```text
-p3(anchor): attach tooltips to rounded frame
-```
+### P3 — DONE
+Notification popup → RoundedScreen attachment (consumes `FlareEdges`). Audited and verified in `NotificationPopup.qml`.
 
-### P2 — IMPLEMENTED / VERIFY
-Tray → RoundedScreen attachment (consumes `FlareEdges`).
+### P4 — DONE
+Notification Center attachment (consumes `FlareEdges`). Audited and verified in `NotificationCenterPanel.qml`.
 
-Commit:
+### P5 — DONE
+Notification Center spacing / taller body / Clear accent treatment. Audited and verified in `NotificationCenterContent.qml`.
 
-```text
-p3(anchor): attach tray menu to rounded frame
-```
-
-### P3 — IMPLEMENTED / VERIFY
-Notification popup → RoundedScreen attachment (consumes `FlareEdges`).
-
-Commit:
-
-```text
-p3(anchor): attach notification popup to rounded frame
-```
-
-### P4 — IMPLEMENTED / VERIFY
-Notification Center attachment (consumes `FlareEdges`).
-
-Commit:
-
-```text
-p3(anchor): attach notification center to rounded frame
-```
-
-### P5 — IMPLEMENTED / VERIFY
-Notification Center spacing / taller body / Clear accent treatment.
-
-Commit:
-
-```text
-p3(notifications): polish center spacing and clear action
-```
-
-### P6 — IMPLEMENTED / VERIFY
-OSD attachment (consumes `FlareEdges`).
-
-Commit:
-
-```text
-p3(anchor): attach level osd to rounded frame
-```
+### P6 — DONE
+OSD attachment (consumes `FlareEdges`). Audited and verified in `LevelOsdOverlay.qml`.
 
 ### P7 — DONE (Refinement & layout)
 Compact OSD + stable percentage slot + physical centering; plus accepted TopBar/Calendar refinements:
