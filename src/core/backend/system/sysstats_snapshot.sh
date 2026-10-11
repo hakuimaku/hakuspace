@@ -85,7 +85,7 @@ if [[ $extended -eq 0 ]]; then
     exit 0
 fi
 
-# 4. Extended: Root filesystem (/ used percentage via df -P /)
+# 4. Extended: Root filesystem and mounted storage devices
 root_used="NA"
 if df_out=$(df -P / 2>/dev/null); then
     pct=$(echo "$df_out" | awk 'NR==2 {gsub("%","",$5); print $5}')
@@ -95,12 +95,27 @@ if df_out=$(df -P / 2>/dev/null); then
 fi
 echo "ROOT_USED_PERCENT=$root_used"
 
-# 5. Extended: GPU utilization
+mounts_json="[]"
+if command -v findmnt >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+    mounts_json=$(findmnt -J -l -o TARGET,SOURCE,FSTYPE,USED,SIZE,USE% 2>/dev/null | jq -c '[.filesystems[]? | select(.target == "/" or ((.source | startswith("/dev/")) and (.source | startswith("/dev/loop") | not) and (.fstype != "devtmpfs") and (.fstype != "tmpfs"))) | {target: .target, source: .source, fstype: .fstype, used: (.used // ""), size: (.size // ""), percent: (.["use%"] | rtrimstr("%") | tonumber? // 0)}] | unique_by(.target) | sort_by(.target != "/", .target)' 2>/dev/null || echo "[]")
+fi
+if [[ -z "$mounts_json" || "$mounts_json" == "[]" || "$mounts_json" != *"\"target\":\"/\""* ]]; then
+    if [[ "$root_used" =~ ^[0-9]+$ ]]; then
+        mounts_json="[{\"target\":\"/\",\"source\":\"root\",\"fstype\":\"\",\"used\":\"\",\"size\":\"\",\"percent\":$root_used}]"
+    else
+        mounts_json="[]"
+    fi
+fi
+echo "MOUNTS_JSON=$mounts_json"
+
+# 5. Extended: GPU utilization & VRAM
 gpu_percent="NA"
+gpu_mem_percent="NA"
 gpu_backend="unsupported"
 
 # Tier 1: /sys/class/drm/card*/device/gpu_busy_percent
 max_drm_gpu=-1
+drm_vram_pct=-1
 shopt -s nullglob
 drm_files=(/sys/class/drm/card*/device/gpu_busy_percent)
 shopt -u nullglob
@@ -111,6 +126,14 @@ for f in "${drm_files[@]}"; do
         if [[ "$val" =~ ^[0-9]+$ ]] && [ "$val" -ge 0 ] && [ "$val" -le 100 ]; then
             if [ "$val" -gt "$max_drm_gpu" ]; then
                 max_drm_gpu="$val"
+                dev_dir=$(dirname "$f")
+                if [[ -r "$dev_dir/mem_info_vram_used" && -r "$dev_dir/mem_info_vram_total" ]]; then
+                    v_used=$(cat "$dev_dir/mem_info_vram_used" 2>/dev/null || echo "0")
+                    v_total=$(cat "$dev_dir/mem_info_vram_total" 2>/dev/null || echo "0")
+                    if [[ "$v_used" =~ ^[0-9]+$ && "$v_total" =~ ^[0-9]+$ ]] && [ "$v_total" -gt 0 ]; then
+                        drm_vram_pct=$(( (v_used * 100) / v_total ))
+                    fi
+                fi
             fi
         fi
     fi
@@ -119,15 +142,24 @@ done
 if [ "$max_drm_gpu" -ge 0 ]; then
     gpu_percent="$max_drm_gpu"
     gpu_backend="drm"
+    if [ "$drm_vram_pct" -ge 0 ] && [ "$drm_vram_pct" -le 100 ]; then
+        gpu_mem_percent="$drm_vram_pct"
+    fi
 elif command -v nvidia-smi >/dev/null 2>&1; then
     # Tier 2: nvidia-smi
     max_nv_gpu=-1
-    if nv_out=$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null); then
-        while read -r line; do
-            val=$(echo "$line" | tr -d '[:space:]')
-            if [[ "$val" =~ ^[0-9]+$ ]] && [ "$val" -ge 0 ] && [ "$val" -le 100 ]; then
-                if [ "$val" -gt "$max_nv_gpu" ]; then
-                    max_nv_gpu="$val"
+    nv_vram_pct=-1
+    if nv_out=$(nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null); then
+        while IFS=',' read -r util used total; do
+            u_val=$(echo "$util" | tr -d '[:space:]')
+            m_used=$(echo "$used" | tr -d '[:space:]')
+            m_total=$(echo "$total" | tr -d '[:space:]')
+            if [[ "$u_val" =~ ^[0-9]+$ ]] && [ "$u_val" -ge 0 ] && [ "$u_val" -le 100 ]; then
+                if [ "$u_val" -gt "$max_nv_gpu" ]; then
+                    max_nv_gpu="$u_val"
+                    if [[ "$m_used" =~ ^[0-9]+$ && "$m_total" =~ ^[0-9]+$ ]] && [ "$m_total" -gt 0 ]; then
+                        nv_vram_pct=$(( (m_used * 100) / m_total ))
+                    fi
                 fi
             fi
         done <<< "$nv_out"
@@ -135,8 +167,12 @@ elif command -v nvidia-smi >/dev/null 2>&1; then
     if [ "$max_nv_gpu" -ge 0 ]; then
         gpu_percent="$max_nv_gpu"
         gpu_backend="nvidia"
+        if [ "$nv_vram_pct" -ge 0 ] && [ "$nv_vram_pct" -le 100 ]; then
+            gpu_mem_percent="$nv_vram_pct"
+        fi
     fi
 fi
 
 echo "GPU_PERCENT=$gpu_percent"
+echo "GPU_MEM_PERCENT=$gpu_mem_percent"
 echo "GPU_BACKEND=$gpu_backend"

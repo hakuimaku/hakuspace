@@ -16,8 +16,14 @@ QtObject {
     property int rootFsUsed: 0
     property bool hasRootFs: false
 
+    property var mounts: []
+    property bool hasMounts: false
+
     property int gpu: 0
     property bool hasGpu: false
+    property int gpuMemoryPercent: 0
+    property alias gpuMemory: root.gpuMemoryPercent
+    property bool hasGpuMemory: false
     property string gpuBackend: "unsupported"
 
     // Subscription tracking
@@ -70,6 +76,9 @@ QtObject {
             root._prevTotal = 0;
             root._prevIdle = 0;
             root._currentTotal = 0;
+            root.mounts = [];
+            root.hasMounts = false;
+            root.hasGpuMemory = false;
         }
     }
 
@@ -153,6 +162,25 @@ QtObject {
                             }
                         }
                         break;
+                    case "MOUNTS_JSON":
+                        try {
+                            var parsedMounts = JSON.parse(val);
+                            if (Array.isArray(parsedMounts) && parsedMounts.length > 0) {
+                                root.mounts = parsedMounts;
+                                root.hasMounts = true;
+                                if (!root.hasRootFs && parsedMounts[0].target === "/" && typeof parsedMounts[0].percent === "number") {
+                                    root.hasRootFs = true;
+                                    root.rootFsUsed = parsedMounts[0].percent;
+                                }
+                            } else {
+                                root.mounts = [];
+                                root.hasMounts = false;
+                            }
+                        } catch (e) {
+                            root.mounts = [];
+                            root.hasMounts = false;
+                        }
+                        break;
                     case "GPU_PERCENT":
                         if (val === "NA" || val === "") {
                             root.hasGpu = false;
@@ -163,6 +191,19 @@ QtObject {
                                 root.gpu = g;
                             } else {
                                 root.hasGpu = false;
+                            }
+                        }
+                        break;
+                    case "GPU_MEM_PERCENT":
+                        if (val === "NA" || val === "") {
+                            root.hasGpuMemory = false;
+                        } else {
+                            var gm = parseInt(val);
+                            if (!isNaN(gm) && gm >= 0 && gm <= 100) {
+                                root.hasGpuMemory = true;
+                                root.gpuMemoryPercent = gm;
+                            } else {
+                                root.hasGpuMemory = false;
                             }
                         }
                         break;
