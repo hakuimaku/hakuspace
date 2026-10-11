@@ -22,17 +22,21 @@ Item {
     signal requestReturnToNavigation()
     signal focusRequested()
 
+    property real targetWidth: Math.round(screenWidth * 0.50)
+    property real targetHeight: Math.round(screenHeight * 0.50)
+
     readonly property bool isFullyOpen: morphProgress >= 0.999
 
-    // 20 logical px Dashboard shell inset (updated per user request)
+    // 20 logical px Dashboard shell inset
     readonly property real innerPadding: 20
-    readonly property real cardGap: 10
+    readonly property real railGap: 14
+    readonly property real cardGap: 12
     readonly property real cornerRadius: Theme.radius
     readonly property real flareRadius: Theme.tipRadius + 20
 
-    // Canonical 45x45 Dashboard shell dimensions (at 1080p: 864 x 486)
-    readonly property real dashboardWidth: Math.round(screenWidth * 0.45)
-    readonly property real dashboardHeight: Math.round(screenHeight * 0.45)
+    // Canonical 50x50 Dashboard shell dimensions
+    readonly property real dashboardWidth: targetWidth
+    readonly property real dashboardHeight: targetHeight
 
     // Morph geometry interpolation:
     // Start envelope corresponds to the compact Navigation controller origin
@@ -41,7 +45,7 @@ Item {
     readonly property real currentEnvelopeWidth: startEnvelopeWidth + (dashboardWidth - startEnvelopeWidth) * morphProgress
     readonly property real currentEnvelopeHeight: startEnvelopeHeight + (dashboardHeight - startEnvelopeHeight) * morphProgress
 
-    // Flare body bounds (ends before flare ear so final envelope stays <= 45% x 45%)
+    // Flare body bounds (ends before flare ear so final envelope stays <= 50% x 50%)
     property real bottomFlareReach: Theme.tipHugRadius
     readonly property real finalBodyEnd: Math.max(0, dashboardWidth - flareRadius)
     readonly property real currentBodyEnd: Math.max(0, currentEnvelopeWidth - flareRadius)
@@ -53,7 +57,7 @@ Item {
     readonly property real currentBodyHeight: usableBodyBottom
 
     // Avatar geometry:
-    // Glides smoothly from controller origin to (10, 10)
+    // Glides smoothly from controller origin to (20, 20)
     readonly property real finalAvatarX: innerPadding
     readonly property real finalAvatarY: innerPadding
     readonly property real avatarX: controllerX + (finalAvatarX - controllerX) * morphProgress
@@ -61,26 +65,34 @@ Item {
     readonly property real avatarDiameter: circleDiameter
     readonly property real avatarOpacity: Math.min(1.0, morphProgress / 0.25)
 
-    // Content area geometry (to the right of final Avatar)
-    readonly property real avatarRight: innerPadding + avatarDiameter
-    readonly property real contentX: avatarRight + cardGap
+    // Profile rail & content area geometry (to the right of final Avatar)
+    readonly property real profileRailWidth: avatarDiameter
+    readonly property real contentX: innerPadding + profileRailWidth + railGap
     readonly property real rightPadding: innerPadding
     readonly property real bottomPadding: innerPadding
 
-    // Usable card layout columns
-    readonly property real usableContentWidth: Math.max(100, finalBodyEnd - contentX - rightPadding)
-    readonly property real usableColWidth: Math.max(100, usableContentWidth - cardGap)
-    readonly property real col1Width: Math.round(usableColWidth * 0.46)
-    readonly property real col2Width: usableColWidth - col1Width
+    // Compact card cluster layout: capped at ~580-600px on large outputs,
+    // leaving remaining right and bottom regions empty as drawn in the sketch.
+    readonly property real maxClusterWidth: 600
+    readonly property real availableContentWidth: Math.max(260, finalBodyEnd - contentX - rightPadding)
+    readonly property real clusterWidth: Math.min(maxClusterWidth, availableContentWidth)
+
+    // Two equal card columns inside cluster
+    readonly property real colGap: cardGap
+    readonly property real colWidth: Math.max(120, Math.floor((clusterWidth - colGap) / 2))
+    readonly property real col1Width: colWidth
+    readonly property real col2Width: colWidth
 
     // Usable card layout rows
     readonly property real topClusterX: contentX
     readonly property real topClusterY: innerPadding
-    readonly property real row1Height: Math.round(dashboardHeight * 0.22)
+    readonly property real row1Height: Math.max(96, Math.min(120, Math.round(dashboardHeight * 0.22)))
     readonly property real row2Y: topClusterY + row1Height + cardGap
-    readonly property real row2Height: Math.max(100, finalBodyBottom - row2Y - bottomPadding)
+    readonly property real availableRow2Height: Math.max(100, finalBodyBottom - row2Y - bottomPadding)
+    readonly property real maxRow2Height: 286
+    readonly property real row2Height: Math.min(maxRow2Height, availableRow2Height)
 
-    // Legacy helper aliases
+    // Helper aliases
     readonly property real topClusterWidth: col1Width + cardGap + col2Width
     readonly property real topClusterHeight: row1Height + cardGap + row2Height
     readonly property real topClusterRight: topClusterX + topClusterWidth

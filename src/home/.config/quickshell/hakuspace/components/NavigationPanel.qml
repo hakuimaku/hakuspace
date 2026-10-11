@@ -72,9 +72,13 @@ Item {
     readonly property real sidebarSafeMargin: 100
     readonly property real sidebarSafeWidth: sidebarBodyWidth + sidebarSafeMargin
     readonly property real sidebarSafeHeight: sidebarBodyY + sidebarBodyHeight + flareReach + sidebarSafeMargin
+    readonly property real dashboardWidthRatio: 0.50
+    readonly property real dashboardHeightRatio: 0.50
+    readonly property real dashboardVisualWidth: Math.round(modelData.width * dashboardWidthRatio)
+    readonly property real dashboardVisualHeight: Math.round(modelData.height * dashboardHeightRatio)
     readonly property real dashboardSafeMargin: 200
-    readonly property real dashboardSafeWidth: Math.round(modelData.width * 0.45) + dashboardSafeMargin
-    readonly property real dashboardSafeHeight: Math.round(modelData.height * 0.45) + dashboardSafeMargin
+    readonly property real dashboardSafeWidth: dashboardVisualWidth + dashboardSafeMargin
+    readonly property real dashboardSafeHeight: dashboardVisualHeight + dashboardSafeMargin
 
     // Sidebar interaction geometry:
     readonly property bool sidebarExpanded: UiState.navigationMode === "handoff-sidebar"
@@ -693,6 +697,8 @@ Item {
             id: dashboardSurface
             screenWidth: navigationLayer.width
             screenHeight: navigationLayer.height
+            targetWidth: root.dashboardVisualWidth
+            targetHeight: root.dashboardVisualHeight
             controllerX: root.controllerX
             controllerY: root.controllerY
             circleRadius: root.circleRadius
