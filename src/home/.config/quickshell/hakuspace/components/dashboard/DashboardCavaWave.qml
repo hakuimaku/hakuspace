@@ -35,16 +35,8 @@ Item {
                 readonly property real level: (Cava.levels && Cava.levels.length > index) ? Cava.levels[index] : 0.0
                 height: Math.max(3, Math.round(barRow.height * 0.88 * level))
                 radius: Math.min(width / 2, 4)
-                gradient: Gradient {
-                    GradientStop {
-                        position: 0.0
-                        color: Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b, 0.45)
-                    }
-                    GradientStop {
-                        position: 1.0
-                        color: Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b, 0.12)
-                    }
-                }
+                color: Theme.accent
+                opacity: 0.3
 
                 Behavior on height {
                     NumberAnimation {

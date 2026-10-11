@@ -14,7 +14,7 @@ Item {
     width: diameter
     height: diameter
 
-    readonly property bool isHovered: Boolean(root.interactive && avatarArea && avatarArea.hovered)
+    readonly property bool isHovered: Boolean(root.interactive && avatarArea && avatarArea.containsMouse)
 
     // Visual scale container: scales smoothly without altering pointer hitbox bounds
     Item {
@@ -130,6 +130,7 @@ Item {
         anchors.fill: parent
         hoverEnabled: root.interactive
         enabled: root.interactive
+        cursorShape: root.interactive ? Qt.PointingHandCursor : Qt.ArrowCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         onEntered: {
             if (root.interactive) DashboardTooltip.show(root, "Left click: Back to Navigation\nRight click: Change avatar")

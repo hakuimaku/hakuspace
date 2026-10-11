@@ -15,7 +15,7 @@ Item {
         id: nameText
         anchors.top: parent.top
         anchors.horizontalCenter: parent.horizontalCenter
-        width: parent.width
+        width: Math.max(0, parent.width - 8)
         horizontalAlignment: Text.AlignHCenter
         text: UserIdentity.displayName
         font.family: Theme.fontFamily
@@ -46,7 +46,7 @@ Item {
                 font.family: Theme.fontFamily
                 font.pixelSize: Math.max(9, Theme.fontSize - 3)
                 font.weight: Font.Medium
-                color: Theme.fgDim
+                color: Theme.workspaceDot
                 rotation: -90
                 transformOrigin: Item.Center
             }

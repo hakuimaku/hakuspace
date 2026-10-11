@@ -25,7 +25,7 @@ Item {
     property real targetWidth: Math.round(screenWidth * 0.50)
     property real targetHeight: Math.round(screenHeight * 0.50)
 
-    readonly property bool isFullyOpen: morphProgress >= 0.999
+    readonly property bool isFullyOpen: morphProgress >= 0.98
 
     // 20 logical px Dashboard shell inset
     readonly property real innerPadding: 20
@@ -56,17 +56,21 @@ Item {
     readonly property real usableBodyBottom: startBodyBottom + (finalBodyBottom - startBodyBottom) * morphProgress
     readonly property real currentBodyHeight: usableBodyBottom
 
+    // Avatar column padding: 4px padding on left and right gives the column
+    // extra breathing room and prevents the hovered avatar from crowding margins
+    readonly property real avatarColumnPadding: 4
+
     // Avatar geometry:
-    // Glides smoothly from controller origin to (20, 20)
-    readonly property real finalAvatarX: innerPadding
+    // Glides smoothly from controller origin to (24, 20) with 4px left/right padding
+    readonly property real finalAvatarX: innerPadding + avatarColumnPadding
     readonly property real finalAvatarY: innerPadding
     readonly property real avatarX: controllerX + (finalAvatarX - controllerX) * morphProgress
     readonly property real avatarY: controllerY + (finalAvatarY - controllerY) * morphProgress
     readonly property real avatarDiameter: circleDiameter
     readonly property real avatarOpacity: Math.min(1.0, morphProgress / 0.25)
 
-    // Profile rail & content area geometry (to the right of final Avatar)
-    readonly property real profileRailWidth: avatarDiameter
+    // Profile rail & content area geometry (wider column accommodating the 4px padding)
+    readonly property real profileRailWidth: avatarDiameter + (avatarColumnPadding * 2)
     readonly property real contentX: innerPadding + profileRailWidth + railGap
     readonly property real rightPadding: innerPadding
     readonly property real bottomPadding: innerPadding
