@@ -146,8 +146,8 @@ General checks:
 - **Notifications:** Native notifications (P2) are active in Hikai (`NotificationServer` claims `org.freedesktop.Notifications`). `swaync` is blocked.
 - **Super+R / Launcher:** Routes directly to HakuMenu Drun tab (`DesktopEntries` search & launch).
 - **Large surfaces:** Navigation, Dashboard, Sidebar, Settings stub, HakuMenu (General, Drun, Theme stub), and Wallpaper carousel are implemented.
-- **Power & Clipboard:** Still use legacy/facade scripts; scheduled for native migration in P3.11.
-- **Edge trigger, taskbar, desktop icons, cava layer:** Out of P3 scope; planned for P4.
+- **Power & Clipboard:** Headless backends (`power_ctl.sh`, `clipboard_ctl.sh`) are complete; native Quickshell UI surfaces are deferred to P4 (P4.2 & P4.3).
+- **Edge trigger, taskbar, desktop icons, cava underbar, Theme M2:** Out of P3 scope; planned for P4.
 - **MangoWM:** workspaces are implemented with `mmsg` events; click, scroll, active/focused semantics, and monitor targeting still need runtime verification.
 - **Labwc:** the workspace module is intentionally hidden because Quickshell 0.3.1 crashes when loading ext-workspace. Hikai itself must start and remain stable.
 

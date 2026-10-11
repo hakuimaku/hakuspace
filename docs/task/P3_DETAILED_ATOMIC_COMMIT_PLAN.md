@@ -68,7 +68,10 @@ Run `qmllint` where supported.
 
 # 2. Ordered commit list
 
-### Rebase status against current Hikai implementation (HEAD: `64418615`)
+### Rebase status against current Hikai implementation (Final tag: `p3-v2-final` / commit `426e5a39`)
+
+> [!NOTE]
+> Historical rebase snapshot at `64418615` successfully progressed through all milestones and is now fully certified at tag `p3-v2-final` (`426e5a39`).
 
 | Item | Scope | Status | Notes / Commit reference |
 |---|---|---|---|
@@ -85,13 +88,13 @@ Run `qmllint` where supported.
 | **R1–R3** | HakuMenu Drun | **DONE** | Audited and accepted in `P3_HAKUMENU_FINAL_REPORT.md` (2026-10-11) |
 | **C0–C15** | Core script frontend/backend split | **DONE** | Clean frontend/backend split (`ea0f5288`), no direct Rofi in backend |
 | **M1** | HakuMenu Theme tab shell | **DONE** | Theme state region & tab shell stub; audited in `P3_HAKUMENU_FINAL_REPORT.md` |
-| **M2** | Live palette switcher | **PLANNED** | Real theme engine implementation deferred by design |
-| **W1–W11** | Wallpaper carousel | **DONE** | Standalone carousel, native scan model, apply static/lively (`cccf6b21`) |
-| **P1–P6** | Frame attachment polish | **IMPLEMENTED / VERIFY** | Tooltip, Tray, Popup, Center, OSD consume `FlareEdges`; physical verify in R4 |
+| **M2** | Live palette switcher | **DEFERRED (P4.1)** | Real theme engine implementation deferred to P4.1 by design |
+| **W1–W11** | Wallpaper carousel | **DONE** | Standalone carousel, native scan model, apply static/lively (`cccf6b21`, `1c4d2b1f`) |
+| **P1–P6** | Frame attachment polish | **DONE / VERIFIED** | Tooltip, Tray, Popup, Center, OSD consume `FlareEdges`; frame attachment verified |
 | **P7** | TopBar & calendar polish | **DONE** | Recorder isolated to recorder group (`8f21ac42`); Calendar accent fill & black text (`604638ea`) |
-| **P3.11** | Remaining native migration | **PLANNED** | Power, Clipboard, remaining facades |
-| **P3.12** | Multi-WM runtime matrix | **PLANNED** | Hyprland, Niri, MangoWM, scale verification |
-| **P3.13** | Cleanup and tag | **PLANNED** | Final tag `p3-v2-final` |
+| **P3.11** | Remaining native migration | **DONE (classified)** | Power & Clipboard moved to P4; Drun/Wallpaper/Recorder native P3 DONE; Classic tooling retained where planned |
+| **P3.12** | Multi-WM runtime matrix | **DONE / VERIFIED** | Hyprland, Niri, MangoWM, scale verification verified |
+| **P3.13** | Cleanup and tag | **DONE** | Final tag `p3-v2-final` created (`426e5a39`) |
 
 ---
 
@@ -952,4 +955,4 @@ Accepted contract:
 - keyboard selection, Enter activation, Escape close, Logo toggle, per-screen ownership, rapid reopen, and Sidebar handoff were runtime-verified;
 - temporary `notify-send` activation probes were removed during final cleanup.
 
-Next: **P3 Sidebar S1 — stable pointer-state union / anti-flicker handoff**.
+P3 milestone is certified **DONE** and tagged `p3-v2-final`. Next milestone: **P4 — Selected Classic Parity & Additional Native Surfaces** (starting with P4.0 Scope lock & P4.1 HakuMenu Theme M2 live integration).

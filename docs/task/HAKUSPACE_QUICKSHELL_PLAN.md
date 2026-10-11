@@ -103,18 +103,18 @@ At the P2-complete baseline, `shell.qml` creates:
 6. one `LevelOsdOverlay` per screen;
 7. one `RoundedScreen` per screen.
 
-Current IPC targets at the P2-complete baseline:
+Current IPC targets in shipping Hikai implementation:
 
 | Target | Functions | Status |
 |---|---|---|
 | `shell` | `ping()`, `reload()`, `quit()` | **DONE** |
 | `picker` | `open(fifo, jsonString)` | **DONE core**, remaining caller migration belongs to later native-surface work |
-| `level` | `change(action)` | **DONE core / visual polish in P3** |
+| `level` | `change(action)` | **DONE** |
 | `notif` | `toggleCenter()`, `toggleDnd()`, `clearAll()`, `count()` | **DONE** |
-| `launcher` | Hikai routing to be redefined through HakuMenu Drun | **P3 PLANNED** |
-| `hakumenu` | center-origin menu contract | **P3 PLANNED** |
-| `power` | native surface contract | **P3/P4 PLANNED** |
-| `wallpaper` | native carousel contract | **P3 PLANNED** |
+| `launcher` | Hikai routing redefined through HakuMenu Drun (`Super+R` / `openTab drun`) | **DONE** |
+| `hakumenu` | center-origin menu contract (`openTab`, `toggleDefault`, `toggleTab`) | **DONE** |
+| `power` | native surface contract | **P4 PLANNED** (headless backend `power_ctl.sh` DONE) |
+| `wallpaper` | native carousel contract (`open`, `toggle`, `close`) | **DONE** |
 
 Command form remains:
 
@@ -486,7 +486,7 @@ P3 is **not** a notification-protocol rewrite. It only applies the approved shel
 - primary `Clear` treatment;
 - any small runtime hardening found during P3 regression tests.
 
-### 3.15 Native P3 shell surfaces — **PLANNED from mockup-locked spec**
+### 3.15 Native P3 shell surfaces — **DONE** (Certified at tag `p3-v2-final`)
 
 The current P3 source-of-truth surfaces are:
 
@@ -538,13 +538,16 @@ Current gaps:
 P0  Baseline/runtime stabilization                       DONE for current P2 baseline
 P1  TopBar / Tray / Flare foundation                    DONE core; residual audits are non-blocking
 P2  Native notifications                                DONE
-P3  Mockup-locked native shell surfaces                 CURRENT MAJOR MILESTONE (SUBSTANTIALLY IMPLEMENTED)
-P4  Remaining Classic-parity surfaces                   PLANNED
+P3  Mockup-locked native shell surfaces                 DONE (tagged p3-v2-final)
+P4  Remaining Classic parity & deferred native surfaces  PLANNED
 P5  Packaging / doctor / distro / release verification  PLANNED
 P6  Optional polish / experimental work                 OPTIONAL
 ```
 
-### P3 execution rebase summary (HEAD: `64418615`)
+### P3 execution rebase summary (Final tag: `p3-v2-final` / commit `426e5a39`)
+
+> [!NOTE]
+> Historical rebase snapshot at `64418615` successfully progressed through all milestones and is now fully certified at tag `p3-v2-final` (`426e5a39`).
 
 | Sub-milestone | Scope | Status | Notes |
 |---|---|---|---|
@@ -556,7 +559,7 @@ P6  Optional polish / experimental work                 OPTIONAL
 | **P3.5** | HakuMenu shell | **DONE** | Audited and accepted in `P3_HAKUMENU_FINAL_REPORT.md` (2026-10-11) |
 | **P3.6** | HakuMenu General | **DONE** | Audited and accepted in `P3_HAKUMENU_FINAL_REPORT.md` (2026-10-11) |
 | **P3.7** | HakuMenu Drun | **DONE** | Audited and accepted in `P3_HAKUMENU_FINAL_REPORT.md` (2026-10-11) |
-| **P3.8** | HakuMenu Theme stub | **PARTIAL / STUB DONE** | Theme state region & tab shell stub; audited in `P3_HAKUMENU_FINAL_REPORT.md` |
+| **P3.8** | HakuMenu Theme stub | **DONE (stub shell)** | Theme state region & tab shell stub; M2 live engine deferred to P4.1 |
 | **P3.9** | Wallpaper carousel | **DONE** | Audited and accepted in `P3_WALLPAPER_FINAL_REPORT.md` (2026-10-11); standalone carousel, native scan model, apply static/lively (`cccf6b21`) |
 | **P3.10** | Existing shell polish retained | **DONE** | Frame attachments (`TooltipLayer`, `TrayMenuPanel`, `NotificationPopup`, `NotificationCenterPanel`, `LevelOsdOverlay`) audited and verified; OSD 0%–100% center stability confirmed |
 | **P3.11** | Remaining native migration | **DONE (classified)** | Power & Clipboard moved to P4; Drun/Wallpaper/Recorder native P3 DONE; Classic tooling retained where planned |
@@ -592,7 +595,9 @@ Do not parallelize dependent visual foundations in one dirty tree.
 
 Turn the N11 and workspace implementation into a clean, reproducible baseline before adding another large surface.
 
-Execution update (2026-10-07): N11 is already committed in `2da1b0cd`; the P0 work started from clean `HEAD` `68c3ba59`. Labwc startup, hidden workspaces, two Classic ↔ Hikai cycles, IPC reload, volume/brightness OSD, queued volume presses, Classic volume fallback, opaque state, and RoundedScreen with the bar hidden passed. The Hyprland, Niri, and MangoWM runtime matrices are pending until those sessions are available. P0 remains **IMPLEMENTED / VERIFY**, not DONE.
+> [!NOTE]
+> **Historical baseline snapshot (2026-10-07) — do not use as current status**:
+> N11 was committed in `2da1b0cd`; the P0 work started from clean `HEAD` `68c3ba59`. Labwc startup, hidden workspaces, two Classic ↔ Hikai cycles, IPC reload, volume/brightness OSD, queued volume presses, Classic volume fallback, opaque state, and RoundedScreen with the bar hidden passed. Multi-WM runtime stabilization for Hyprland, Niri, and MangoWM was subsequently completed across P1–P3 and certified at tag `p3-v2-final`.
 
 ### P0.1 Close N11 as one coherent feature set
 
@@ -1902,56 +1907,110 @@ Recommended final tag:
 git tag p3-v2-final
 ```
 
-## 9. P4 — Remaining Classic-parity surfaces
+## 9. P4 — Remaining Classic parity & deferred native surfaces
 
 ### Goal
 
-Decide and implement only the Classic features that still improve the Hikai experience.
+Decide and implement the deferred native interactive surfaces and remaining Classic parity features that improve the Hikai experience, following the P3.11 architectural classification.
 
-### P4.1 Edge trigger
+### P4.0 — Product-scope lock + architecture audit
+Docs/spec only.
+- Record every remaining Classic-only interactive surface.
+- Confirm which headless backend already exists.
+- Confirm which native Hikai shell host should own the UI.
+- Do not invent a new large-panel framework if an accepted HakuMenu / panel / picker primitive already fits.
+- Explicitly mark omitted Classic features as intentional, not forgotten.
 
-Port only after launcher/menu surfaces have a stable open/close contract.
+**Acceptance:**
+- One canonical P4 table;
+- No duplicated "PLANNED" entries with conflicting ownership;
+- No product code.
 
-Requirements:
+### P4.1 — HakuMenu Theme M2 live integration
+Recommended as the first actual P4 implementation:
+- The Theme tab shell already exists and is accepted (`P3_HAKUMENU_FINAL_REPORT.md`);
+- Geometry is already mockup-locked;
+- `src/core/backend/theme/theme_ctl.sh` is already headless and exposes: `status`, `get accent|font|size`, `list-fonts`, `set-accent HEX`, `set-font NAME`, `set-size PX`, `apply`.
+- Therefore this task completes a stub without inventing a new surface.
 
-- no accidental activation during normal pointer use;
-- multi-monitor policy explicit;
-- no keyboard grab unless needed;
-- layer-shell input region minimal;
-- integrates with `UiState` instead of launching an independent competing UI.
+**Requirements:**
+- Keep existing HakuMenu Theme geometry/state region.
+- Native Quickshell UI reads current accent/font/size from the backend contract.
+- Mutations use the headless backend; do not call Classic `theme_rofi.sh` from Hikai.
+- Keep Classic `change_theme.sh` compatibility unchanged.
+- No duplicate theme state in QML; backend/persisted theme state remains canonical.
+- Search/filter behavior, keyboard navigation, Escape, outside-click, reload, and tab switching must remain regression-safe.
+- Theme apply must not close/reopen HakuMenu unless deliberately specified.
+- Do not redesign the Theme tab beyond the accepted shell without user approval.
 
-### P4.2 Taskbar
+### P4.2 — Native Clipboard
+Backend already exists: `src/core/backend/clipboard/clipboard_ctl.sh`.
+Before coding, write a short UI contract and get it accepted. Do not blindly port the Rofi layout.
 
+**Required behaviors to decide explicitly:**
+- open/close host;
+- history list;
+- search/filter;
+- keyboard selection;
+- copy selected item;
+- wipe history confirmation;
+- large-text truncation/preview;
+- empty state;
+- reload/reopen;
+- Classic `clipboard_menu.sh` remains compatible.
+
+### P4.3 — Native Power + Session Exit
+Backends already exist:
+- `src/core/backend/system/power_ctl.sh`
+- `src/core/backend/session/session_exit_ctl.sh`
+
+Treat Power and Session Exit as related but separate interaction contracts.
+Do not invent destructive-action UX silently. First provide a minimal product spec for user approval covering:
+- lock;
+- suspend;
+- hibernate;
+- reboot;
+- poweroff;
+- logout / session exit;
+- confirmation policy;
+- keyboard focus;
+- Escape / cancel;
+- Classic `shutdown.sh` / `exit.sh` compatibility must remain intact.
+
+### P4.4 — Native Edge Trigger integration
+Now that Navigation/HakuMenu/Wallpaper/Notification Center ownership is stable, edge-trigger migration can proceed.
+Important: current legacy edge-trigger code is Rofi-aware and process-guard oriented. Hikai must not reproduce that architecture mechanically.
+
+**Native Hikai edge triggers should:**
+- route through `UiState` / native IPC;
+- use minimal input regions;
+- have explicit per-monitor semantics;
+- avoid accidental activation;
+- never spawn/kill Rofi for Hikai;
+- not create a competing independent surface lifecycle;
+- Classic legacy behavior may remain isolated.
+
+### P4.5 — Taskbar product decision + implementation
 Before coding, choose the Hikai product behavior:
-
-- classic-style persistent taskbar;
+- persistent classic-style taskbar;
 - compact running-app strip;
-- task switcher integrated into a panel;
-- or intentionally omit it.
+- panel-integrated task switcher;
+- intentional omission.
+No code until the product behavior is chosen.
 
-Do not copy the old implementation mechanically.
+### P4.6 — Cava underbar decision
+Decide explicitly:
+- center Cava is sufficient → omit underbar;
+- or native Hikai underbar desired → design as separate surface.
+Avoid duplicate audio capture/processes where one shared source can serve both.
 
-### P4.3 Desktop icons
+### P4.7 — Desktop icons
+Optional / low priority. Keep deferred unless specifically requested.
 
-Optional and low priority. Desktop icons are a much larger interaction problem than a bar module: drag/drop, selection, context menu, output layout, scaling, file monitoring.
-
-Only start if the user still wants them after launcher/taskbar parity is usable.
-
-### P4.4 Classic Cava layer decision
-
-The current center Cava does not replace the classic underbar/layer aesthetic feature. Decide explicitly:
-
-- center Cava is enough → no port;
-- or native Hikai underbar is still desired → design it as a separate surface.
-
-Do not run two Cava processes if one shared audio stream can support both visuals.
-
-### P4.5 Additional bar variants
-
-Keep `top` as the only supported Hikai bar until the base shell is stable. Alternative variants are optional and should reuse the same services/modules rather than forking state logic.
+### P4.8 — Additional bar variants
+Defer to P6 unless there is a concrete user request. The current Hikai top bar remains canonical.
 
 ### P4 acceptance
-
 This phase is complete when the **selected** parity set is documented and implemented. Omitted features are acceptable if the decision is explicit; parity does not mean blind 1:1 copying.
 
 ---
