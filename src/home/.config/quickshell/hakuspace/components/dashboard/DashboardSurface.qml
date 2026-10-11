@@ -240,6 +240,7 @@ Item {
             y: root.topClusterY
             width: root.col2Width
             height: root.row1Height
+            active: root.expanded
         }
 
         // Row 2: Dynamic Widget Host | Monitor

@@ -11,8 +11,25 @@ QtObject {
     property bool audioVisible: false
     readonly property int barCount: 12
     readonly property int soundThreshold: 30
-    // Run cava only while a player is active in the media center mode.
-    readonly property bool shouldRun: Media.playing && CenterState.baseMode === "media" && available
+
+    // Dashboard demand tracking (single shared process)
+    property int _dashboardSubscribers: 0
+    readonly property bool dashboardRequested: _dashboardSubscribers > 0
+
+    function acquireDashboard() {
+        _dashboardSubscribers++
+        syncProcess()
+    }
+
+    function releaseDashboard() {
+        if (_dashboardSubscribers > 0) {
+            _dashboardSubscribers--
+            syncProcess()
+        }
+    }
+
+    // Run cava while a player is active in either the media center mode OR requested by Dashboard.
+    readonly property bool shouldRun: Media.playing && available && (CenterState.baseMode === "media" || dashboardRequested)
     property bool stoppingForPolicy: false
 
     function resetSoundDetection() {

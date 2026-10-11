@@ -14,6 +14,28 @@ Rectangle {
     readonly property real artSize: Math.max(56, Math.min(76, root.height - 24))
     readonly property bool hasValidArt: Media.artUrl.length > 0 && artImage.status === Image.Ready
 
+    property bool active: false
+    property bool _cavaSubscribed: false
+
+    function _updateCavaSubscription() {
+        if (active && !_cavaSubscribed) {
+            _cavaSubscribed = true
+            Cava.acquireDashboard()
+        } else if (!active && _cavaSubscribed) {
+            _cavaSubscribed = false
+            Cava.releaseDashboard()
+        }
+    }
+
+    onActiveChanged: _updateCavaSubscription()
+    Component.onCompleted: _updateCavaSubscription()
+    Component.onDestruction: {
+        if (_cavaSubscribed) {
+            _cavaSubscribed = false
+            Cava.releaseDashboard()
+        }
+    }
+
     // Subtle Cava audio waveform rendered behind media content
     DashboardCavaWave {
         anchors.fill: parent
