@@ -495,7 +495,9 @@ Theme engine implementation is deferred by design (stub shell retained).
 
 ---
 
-## Wallpaper carousel
+## Wallpaper carousel — DONE
+
+Detailed audit and verification report: [`docs/task/P3_WALLPAPER_FINAL_REPORT.md`](file:///home/hakuimaku/hakuspace/docs/task/P3_WALLPAPER_FINAL_REPORT.md)
 
 ### W1 — DONE
 Audit existing wallpaper model/action path.
@@ -659,7 +661,7 @@ Result:
 - Navigation now has a small 55 ms retarget guard. Rapid key-repeat/touchpad bursts therefore retarget the existing stable delegates without producing an unbounded transition queue or backend/model reload.
 - Static/Lively models, W7 stable delegates/prefetch and W10 hero-mask steady-state optimization remain unchanged.
 
-Wallpaper UX sequence W1-W11 is functionally complete. Final runtime gate remains the user-visible close-motion check plus the existing multi-WM/reload checkpoint before the P3 wallpaper tag.
+Wallpaper UX sequence W1-W11 is certified DONE in `P3_WALLPAPER_FINAL_REPORT.md`. Multi-WM runtime matrix verification is scheduled for R6.
 
 Gate:
 - compare against `wallpaper-change.png`;

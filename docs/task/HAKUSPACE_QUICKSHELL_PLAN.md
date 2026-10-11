@@ -557,7 +557,7 @@ P6  Optional polish / experimental work                 OPTIONAL
 | **P3.6** | HakuMenu General | **DONE** | Audited and accepted in `P3_HAKUMENU_FINAL_REPORT.md` (2026-10-11) |
 | **P3.7** | HakuMenu Drun | **DONE** | Audited and accepted in `P3_HAKUMENU_FINAL_REPORT.md` (2026-10-11) |
 | **P3.8** | HakuMenu Theme stub | **PARTIAL / STUB DONE** | Theme state region & tab shell stub; audited in `P3_HAKUMENU_FINAL_REPORT.md` |
-| **P3.9** | Wallpaper carousel | **DONE** | Standalone carousel, native scan model, apply static/lively (`cccf6b21`) |
+| **P3.9** | Wallpaper carousel | **DONE** | Audited and accepted in `P3_WALLPAPER_FINAL_REPORT.md` (2026-10-11); standalone carousel, native scan model, apply static/lively (`cccf6b21`) |
 | **P3.10** | Existing shell polish retained | **IMPLEMENTED / VERIFY** | `FlareEdges` frame attachments exist; recorder in recorder group (`8f21ac42`); calendar accent fill (`604638ea`) |
 | **P3.11** | Remaining native migration | **PLANNED** | Power, Clipboard, remaining facades |
 | **P3.12** | Runtime verification | **PLANNED** | Multi-WM matrix (Hyprland, Niri, MangoWM), scale verification |
@@ -1572,9 +1572,9 @@ Real theme engine implementation is deferred by design (M2 PLANNED).
 
 ### P3.9 — Wallpaper carousel — **DONE**
 
-Reference: `wallpaper-change.png`.
+Reference: `wallpaper-change.png`. Final report: [`P3_WALLPAPER_FINAL_REPORT.md`](file:///home/hakuimaku/hakuspace/docs/task/P3_WALLPAPER_FINAL_REPORT.md).
 
-Standalone wallpaper carousel with native scan model, apply static/lively, keyboard/pointer navigation, and overlay hardening (`cccf6b21`).
+Standalone wallpaper carousel with native scan model, apply static/lively, keyboard/pointer navigation, and overlay hardening (`cccf6b21`). Audited and accepted (W1–W11 verified).
 
 #### P3.9.1 Model audit
 
