@@ -553,10 +553,10 @@ P6  Optional polish / experimental work                 OPTIONAL
 | **P3.2** | Dashboard | **DONE** | D1–D7 fully implemented, 45% shell, avatar persistence, widget host (`03b8453a`) |
 | **P3.3** | Sidebar | **DONE** | Audited and accepted in `P3_SIDEBAR_FINAL_REPORT.md` (2026-10-11) |
 | **P3.4** | Settings stub | **DONE** | T1 stub panel with T2 backdrop separation (`11bfdb75`, `08dfef20`) |
-| **P3.5** | HakuMenu shell | **DONE** | Center-triggered, split layers, pointer-union safe auto-close (`3e1b8048`) |
-| **P3.6** | HakuMenu General | **DONE** | Wired to `hm_general.sh`, quick actions, session actions |
-| **P3.7** | HakuMenu Drun | **DONE** | `DesktopEntries` model, search/filter, launcher IPC routing to Drun |
-| **P3.8** | HakuMenu Theme stub | **PARTIAL / STUB DONE** | Theme state region & tab shell stub DONE; live palette switcher PLANNED |
+| **P3.5** | HakuMenu shell | **DONE** | Audited and accepted in `P3_HAKUMENU_FINAL_REPORT.md` (2026-10-11) |
+| **P3.6** | HakuMenu General | **DONE** | Audited and accepted in `P3_HAKUMENU_FINAL_REPORT.md` (2026-10-11) |
+| **P3.7** | HakuMenu Drun | **DONE** | Audited and accepted in `P3_HAKUMENU_FINAL_REPORT.md` (2026-10-11) |
+| **P3.8** | HakuMenu Theme stub | **PARTIAL / STUB DONE** | Theme state region & tab shell stub; audited in `P3_HAKUMENU_FINAL_REPORT.md` |
 | **P3.9** | Wallpaper carousel | **DONE** | Standalone carousel, native scan model, apply static/lively (`cccf6b21`) |
 | **P3.10** | Existing shell polish retained | **IMPLEMENTED / VERIFY** | `FlareEdges` frame attachments exist; recorder in recorder group (`8f21ac42`); calendar accent fill (`604638ea`) |
 | **P3.11** | Remaining native migration | **PLANNED** | Power, Clipboard, remaining facades |

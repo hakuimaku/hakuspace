@@ -80,11 +80,11 @@ Run `qmllint` where supported.
 | **D1–D7** | Dashboard mockup integration | **DONE** | 45% shell, avatar, clock, MPRIS, 45x45 layout, calendar, monitor info (`03b8453a`) |
 | **S1–S3** | Sidebar left panel & actions | **DONE** | Audited and accepted in `P3_SIDEBAR_FINAL_REPORT.md` (2026-10-11) |
 | **T1–T2** | Settings stub surface | **DONE** | Centered stub panel with T2 backdrop separation (`11bfdb75`, `08dfef20`) |
-| **H1–H4** | HakuMenu shell & motion | **DONE** | Split layers, pointer-union safe auto-close (`3e1b8048`), shared motion primitives (`fc4fc702`) |
-| **G1–G3** | HakuMenu General | **DONE** | Wired to `hm_general.sh`, quick actions, session actions |
-| **R1–R3** | HakuMenu Drun | **DONE** | `DesktopEntries` model, search/filter, launcher IPC routing to Drun |
+| **H1–H4** | HakuMenu shell & motion | **DONE** | Audited and accepted in `P3_HAKUMENU_FINAL_REPORT.md` (2026-10-11) |
+| **G1–G3** | HakuMenu General | **DONE** | Audited and accepted in `P3_HAKUMENU_FINAL_REPORT.md` (2026-10-11) |
+| **R1–R3** | HakuMenu Drun | **DONE** | Audited and accepted in `P3_HAKUMENU_FINAL_REPORT.md` (2026-10-11) |
 | **C0–C15** | Core script frontend/backend split | **DONE** | Clean frontend/backend split (`ea0f5288`), no direct Rofi in backend |
-| **M1** | HakuMenu Theme tab shell | **DONE** | Theme state region & tab shell exist as stub |
+| **M1** | HakuMenu Theme tab shell | **DONE** | Theme state region & tab shell stub; audited in `P3_HAKUMENU_FINAL_REPORT.md` |
 | **M2** | Live palette switcher | **PLANNED** | Real theme engine implementation deferred by design |
 | **W1–W11** | Wallpaper carousel | **DONE** | Standalone carousel, native scan model, apply static/lively (`cccf6b21`) |
 | **P1–P6** | Frame attachment polish | **IMPLEMENTED / VERIFY** | Tooltip, Tray, Popup, Center, OSD consume `FlareEdges`; physical verify in R4 |
