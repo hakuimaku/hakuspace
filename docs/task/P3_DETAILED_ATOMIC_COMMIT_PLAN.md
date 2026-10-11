@@ -68,9 +68,36 @@ Run `qmllint` where supported.
 
 # 2. Ordered commit list
 
+### Rebase status against current Hikai implementation (HEAD: `64418615`)
+
+| Item | Scope | Status | Notes / Commit reference |
+|---|---|---|---|
+| **A1** | Superseded experiments removal | **DONE** | Abandoned center-collar and old dual-front removed |
+| **A2** | RoundedScreen chassis | **DONE** | Locked in `AppState.qml` (`t=4, r=20, c=#000000`), decoupled from classic conf (`64418615`) |
+| **A3** | Shared frame bounds | **DONE** | Per-output frame metrics exposed in `FlareEdges.qml` / `AppState.qml` |
+| **A4** | Standardize frame attachment | **DONE** | Bounded frame attachment helper standardized via `FlareEdges.qml` |
+| **N1–N3** | Navigation radial controller | **DONE** | 3-region radial controller, equal 120° sectors (`7604c1f0`) |
+| **D1–D7** | Dashboard mockup integration | **DONE** | 45% shell, avatar, clock, MPRIS, 45x45 layout, calendar, monitor info (`03b8453a`) |
+| **S1–S3** | Sidebar left panel & actions | **IMPLEMENTED / VERIFY** | `SidebarPanel.qml`, `SidebarSurface.qml` exist; awaiting R1 closeout audit |
+| **T1–T2** | Settings stub surface | **DONE** | Centered stub panel with T2 backdrop separation (`11bfdb75`, `08dfef20`) |
+| **H1–H4** | HakuMenu shell & motion | **DONE** | Split layers, pointer-union safe auto-close (`3e1b8048`), shared motion primitives (`fc4fc702`) |
+| **G1–G3** | HakuMenu General | **DONE** | Wired to `hm_general.sh`, quick actions, session actions |
+| **R1–R3** | HakuMenu Drun | **DONE** | `DesktopEntries` model, search/filter, launcher IPC routing to Drun |
+| **C0–C15** | Core script frontend/backend split | **DONE** | Clean frontend/backend split (`ea0f5288`), no direct Rofi in backend |
+| **M1** | HakuMenu Theme tab shell | **DONE** | Theme state region & tab shell exist as stub |
+| **M2** | Live palette switcher | **PLANNED** | Real theme engine implementation deferred by design |
+| **W1–W11** | Wallpaper carousel | **DONE** | Standalone carousel, native scan model, apply static/lively (`cccf6b21`) |
+| **P1–P6** | Frame attachment polish | **IMPLEMENTED / VERIFY** | Tooltip, Tray, Popup, Center, OSD consume `FlareEdges`; physical verify in R4 |
+| **P7** | TopBar & calendar polish | **DONE** | Recorder isolated to recorder group (`8f21ac42`); Calendar accent fill & black text (`604638ea`) |
+| **P3.11** | Remaining native migration | **PLANNED** | Power, Clipboard, remaining facades |
+| **P3.12** | Multi-WM runtime matrix | **PLANNED** | Hyprland, Niri, MangoWM, scale verification |
+| **P3.13** | Cleanup and tag | **PLANNED** | Final tag `p3-v2-final` |
+
+---
+
 ## Foundation
 
-### A1
+### A1 — DONE
 Remove abandoned center-collar and old Wallpaper dual-front remnants.
 
 Commit:
@@ -79,16 +106,20 @@ Commit:
 p3(baseline): remove superseded visual experiments
 ```
 
-### A2
-Lock continuous RoundedScreen.
+### A2 — DONE
+Lock continuous RoundedScreen chassis with single Quickshell source of truth.
+
+- `AppState.qml` defines canonical `roundedScreenThickness: 4`, `roundedScreenRadius: 20`, `roundedScreenColor: "#000000"`.
+- `RoundedScreen.qml` consumes these directly with three clear sections: A (visual drawing), B (input/click-through), C (edge/layout reservations).
+- Decoupled completely from classic `rounded-screen.conf`, `rounded_screen_state`, and manager toggle.
 
 Commit:
 
 ```text
-p3(frame): lock RoundedScreen chassis
+refactor(frame): establish single source of truth for rounded screen chassis (64418615)
 ```
 
-### A3
+### A3 — DONE
 Expose shared per-output frame bounds.
 
 Commit:
@@ -97,7 +128,7 @@ Commit:
 p3(geometry): expose shared frame bounds
 ```
 
-### A4
+### A4 — DONE
 Add/reuse bounded frame attachment helper.
 
 Commit:
@@ -137,67 +168,67 @@ Gate:
 
 ## Dashboard
 
-### D1
+### D1 — DONE
 Dashboard shell + reserved blank area only.
 
 Commit:
 
 ```text
-p3(dashboard): add mockup-locked dashboard shell
+p3(dashboard): add mockup-locked dashboard shell (902c2045, 7067c902)
 ```
 
-### D2
+### D2 — DONE
 Avatar visual + persistent selection.
 
 Commit:
 
 ```text
-p3(dashboard): add persistent dashboard avatar
+p3(dashboard): add persistent dashboard avatar (e8c0be66, b7a2fe4c)
 ```
 
-### D3
+### D3 — DONE
 Clock card.
 
 Commit:
 
 ```text
-p3(dashboard): add clock card
+p3(dashboard): add clock card (082da9d6)
 ```
 
-### D4
+### D4 — DONE
 MPRIS controls + thumbnail card.
 
 Commit:
 
 ```text
-p3(dashboard): add mpris control card
+p3(dashboard): add mpris control card (860402f5)
 ```
 
-### D5
-Calendar + month controls.
+### D5 — DONE
+Calendar + month controls (45x45 layout and widget host).
 
 Commit:
 
 ```text
-p3(dashboard): add calendar card
+p3(dashboard): add flare inset and navigation morph (11a9cae4, d2533818, ffbb1bbd)
 ```
 
-### D6
-ROM/RAM/CPU/GPU monitor card.
+### D6 — DONE
+ROM/RAM/CPU/GPU monitor card + Calendar widget.
 
 Commit:
 
 ```text
-p3(dashboard): add monitor information card
+p3(dashboard): add calendar widget to host (a5ca3dbc)
 ```
 
-### D7
-Dashboard layout/radius/spacing integration.
+### D7 — DONE
+Dashboard layout/radius/spacing integration & monitor information card.
 
 Commit:
 
 ```text
-p3(dashboard): finalize mockup layout
+p3(dashboard): finalize dashboard integration (de134efd, 03b8453a)
 ```
 
 Gate:
@@ -208,31 +239,31 @@ Gate:
 
 ## Sidebar
 
-### S1
+### S1 — IMPLEMENTED / VERIFY
 Pointer-state union / anti-flicker hover handoff.
 
 Commit:
 
 ```text
-p3(sidebar): add stable hover handoff
+p3(sidebar): add stable hover handoff (d63e2a7e, 4430691f)
 ```
 
-### S2
-Rounded left Sidebar + circular dots + plus.
+### S2 — IMPLEMENTED / VERIFY
+Rounded left Sidebar + circular dots + plus (`SidebarPanel.qml`, `SidebarSurface.qml`).
 
 Commit:
 
 ```text
-p3(sidebar): implement mockup visual
+p3(sidebar): implement mockup visual (d63e2a7e)
 ```
 
-### S3
-Only if specified actions exist: wire them.
+### S3 — IMPLEMENTED / VERIFY
+Action tiles and status strip stubs; dot/plus actions remain explicit stubs.
 
 Commit:
 
 ```text
-p3(sidebar): wire specified sidebar actions
+p3(sidebar): wire specified sidebar actions (stubs in place)
 ```
 
 Unknown actions are not blockers; leave them explicit stubs.
@@ -241,13 +272,22 @@ Unknown actions are not blockers; leave them explicit stubs.
 
 ## Settings
 
-### T1
+### T1 — DONE
 Settings stub surface exactly as current P3 scope.
 
 Commit:
 
 ```text
-p3(settings): add hikai settings stub
+p3(settings): add hikai settings stub (11bfdb75)
+```
+
+### T2 — DONE
+Settings stub backdrop separation and refinement.
+
+Commit:
+
+```text
+p3(settings): refine stub backdrop separation (08dfef20)
 ```
 
 Gate:
@@ -260,52 +300,53 @@ Gate:
 
 ## HakuMenu shell
 
-### H1
+### H1 — DONE
 Center-triggered lifecycle + focus/input cleanup.
 
 Commit:
 
 ```text
-p3(hakumenu): add center-triggered lifecycle
+p3(hakumenu): add center-triggered lifecycle (c6eb5358, 77aaca4c)
 ```
 
-### H2
-Physical centering + equal-radius geometry.
+### H2 — DONE
+Physical centering + equal-radius geometry & safe pointer-union auto close.
 
 Commit:
 
 ```text
-p3(hakumenu): lock centered equal-radius geometry
+p3(hakumenu): lock centered equal-radius geometry (3e1b8048)
 ```
 
 Gate:
 - physical center X and height remain stable;
-- General may use the approved 95%-of-standard width while Drun/Theme use standard width;
-- tab-to-tab width changes morph with the dedicated resize curve, not the shell-open bounce.
+- General uses approved compact width while Drun/Theme use standard width;
+- tab-to-tab width changes morph with dedicated resize curve;
 - HakuMenu uses synchronized split layers: Top = visual-only Flare/background, Overlay = rounded body/content/input/focus.
 - Fullscreen clients may cover the Top visual shell, but Overlay content remains visible and usable without geometry drift.
+- Pointer-union auto-close works safely across TopBar/HakuMenu/outside with grace timer.
 
-### H3
+### H3 — DONE
 General/Drun/Theme tab shell.
 
 Commit:
 
 ```text
-p3(hakumenu): add general drun theme tabs
+p3(hakumenu): add general drun theme tabs (06cf370e)
 ```
 
 Gate:
 - state area hidden except Theme;
 - no TopBar-center silhouette redesign.
 
-### H4
+### H4 — DONE
 Shared Hikai interactive-motion foundation and first migration.
 
 Commits:
 
 ```text
-p3(motion): add shared button morph primitives
-p3(motion): migrate hakumenu tray and notifications
+p3(motion): add shared button morph primitives (fc4fc702)
+p3(motion): migrate hakumenu tray and notifications (fc4fc702)
 ```
 
 Gate:
@@ -320,18 +361,16 @@ Gate:
 
 ## HakuMenu General
 
-### G1
+### G1 — DONE
 Audit `hm_general.sh` output.
 
-If no code change: report only.
-
-If contract hardening is needed:
+Commit:
 
 ```text
 p3(hakumenu): stabilize hm_general data contract
 ```
 
-### G2
+### G2 — DONE
 General parser/model.
 
 Commit:
@@ -340,7 +379,7 @@ Commit:
 p3(hakumenu): add general data model
 ```
 
-### G3
+### G3 — DONE
 General list rendering.
 
 Commit:
@@ -353,8 +392,8 @@ p3(hakumenu): render general list
 
 ## HakuMenu Drun
 
-### R1
-Application model/search source.
+### R1 — DONE
+Application model/search source (`DesktopEntries`).
 
 Commit:
 
@@ -362,7 +401,7 @@ Commit:
 p3(hakumenu): add drun application model
 ```
 
-### R2
+### R2 — DONE
 Keyboard/pointer launch interaction.
 
 Commit:
@@ -371,7 +410,7 @@ Commit:
 p3(hakumenu): add drun interaction
 ```
 
-### R3
+### R3 — DONE
 Route Hikai launcher facade/IPC to Drun tab.
 
 Commit:
@@ -384,9 +423,9 @@ Classic must remain unchanged.
 
 ---
 
-## Core script frontend/backend split
+## Core script frontend/backend split — DONE
 
-This refactor is inserted before real HakuMenu Theme / Wallpaper action wiring so Hikai does not depend on Classic Rofi scripts as its domain API.
+This refactor separates backend/domain commands from Classic presentation facades so Hikai does not depend on Classic Rofi scripts as its domain API.
 
 Detailed execution spec:
 
@@ -402,31 +441,28 @@ Classic frontend = Rofi / haku_pick presentation
 facade = stable public command basename
 ```
 
-Run C0–C7 from the dedicated plan before wiring Theme or Wallpaper UI to script actions. C8–C15 may follow immediately or after the next UI milestone, but no new Hikai feature may introduce a dependency on a direct-Rofi backend script.
-
 Atomic commits:
 
 ```text
-C0  plan/inventory
-C1  core-script guardrails
-C2  taskbar split
-C3  waybar split
-C4  theme mutation split
-C5  rofi-theme split
-C6  niri-animation split
-C7  wallpaper split
-C8  power split
-C9  session-exit split
-C10 recorder split
-C11 clipboard split
-C12 shell-switcher split
-C13 shortcut split
-C14 source-tree taxonomy/README
-C15 final direct-Rofi audit — DONE (C9 destructive exit remains NEEDS VERIFY)
+C0  plan/inventory — DONE
+C1  core-script guardrails — DONE
+C2  taskbar split — DONE
+C3  waybar split — DONE
+C4  theme mutation split — DONE
+C5  rofi-theme split — DONE
+C6  niri-animation split — DONE
+C7  wallpaper split — DONE
+C8  power split — DONE
+C9  session-exit split — DONE
+C10 recorder split — DONE
+C11 clipboard split — DONE
+C12 shell-switcher split — DONE
+C13 shortcut split — DONE
+C14 source-tree taxonomy/README — DONE
+C15 final direct-Rofi audit — DONE (ea0f5288)
 ```
 
-Gate before returning to HakuMenu Theme:
-
+Gate:
 - `theme_ctl.sh` is headless and explicit;
 - wallpaper model/action contract is available independently of Rofi before W1;
 - Classic public command behavior remains unchanged;
@@ -437,8 +473,8 @@ Gate before returning to HakuMenu Theme:
 
 ## HakuMenu Theme
 
-### M1
-Theme-only right state region.
+### M1 — DONE
+Theme-only right state region and tab shell stub.
 
 Commit:
 
@@ -446,8 +482,8 @@ Commit:
 p3(hakumenu): add theme state-region layout
 ```
 
-### M2
-Theme stub content/status.
+### M2 — PLANNED
+Theme live palette switcher / engine integration.
 
 Commit:
 
@@ -455,7 +491,7 @@ Commit:
 p3(hakumenu): mark theme tab as stub
 ```
 
-No theme engine implementation.
+Theme engine implementation is deferred by design (stub shell retained).
 
 ---
 
@@ -631,60 +667,80 @@ Gate:
 
 ---
 
-## Existing shell polish
+## Existing shell polish — IMPLEMENTED / VERIFY
 
-### P1
-Tooltip → RoundedScreen attachment.
+Surfaces already consume shared `FlareEdges` / `AppState` frame metrics in current code; physical verification is scheduled for R4.
+
+### P1 — IMPLEMENTED / VERIFY
+Tooltip → RoundedScreen attachment (consumes `FlareEdges`).
+
+Commit:
 
 ```text
 p3(anchor): attach tooltips to rounded frame
 ```
 
-### P2
-Tray → RoundedScreen attachment.
+### P2 — IMPLEMENTED / VERIFY
+Tray → RoundedScreen attachment (consumes `FlareEdges`).
+
+Commit:
 
 ```text
 p3(anchor): attach tray menu to rounded frame
 ```
 
-### P3
-Notification popup → RoundedScreen attachment.
+### P3 — IMPLEMENTED / VERIFY
+Notification popup → RoundedScreen attachment (consumes `FlareEdges`).
+
+Commit:
 
 ```text
 p3(anchor): attach notification popup to rounded frame
 ```
 
-### P4
-Notification Center attachment.
+### P4 — IMPLEMENTED / VERIFY
+Notification Center attachment (consumes `FlareEdges`).
+
+Commit:
 
 ```text
 p3(anchor): attach notification center to rounded frame
 ```
 
-### P5
+### P5 — IMPLEMENTED / VERIFY
 Notification Center spacing / taller body / Clear accent treatment.
+
+Commit:
 
 ```text
 p3(notifications): polish center spacing and clear action
 ```
 
-### P6
-OSD attachment.
+### P6 — IMPLEMENTED / VERIFY
+OSD attachment (consumes `FlareEdges`).
+
+Commit:
 
 ```text
 p3(anchor): attach level osd to rounded frame
 ```
 
-### P7
-Compact OSD + stable percentage slot + physical centering. Icon, track and percentage must be optically centered as one group inside the capsule.
+### P7 — DONE (Refinement & layout)
+Compact OSD + stable percentage slot + physical centering; plus accepted TopBar/Calendar refinements:
+- Recording state isolated to recorder group only (`8f21ac42`).
+- Calendar current-day marker given breathing room with solid accent fill and black text (`604638ea`).
+
+Commits:
 
 ```text
+refactor(topbar): keep recording state in recorder group only (8f21ac42)
+fix(calendar): add breathing room to current-day marker (604638ea)
 p3(osd): stabilize compact centered layout
 ```
 
 ---
 
-## Remaining migration
+## Remaining migration — PLANNED
 
 The broad `src/core` frontend/backend separation is now specified in:
 
@@ -692,7 +748,7 @@ The broad `src/core` frontend/backend separation is now specified in:
 docs/task/P3_CORE_SCRIPT_FRONTEND_BACKEND_SPLIT_PLAN.md
 ```
 
-Any remaining Hikai direct-Rofi caller migration after C0–C15 still follows the original rule: one feature/caller family per commit, never one giant migration batch.
+Any remaining Hikai direct-Rofi caller migration after C0–C15 still follows the original rule: one feature/caller family per commit, never one giant migration batch. Candidate surfaces to classify/migrate: Power, Clipboard, remaining launcher/menu facades.
 
 ---
 

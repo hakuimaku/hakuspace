@@ -201,8 +201,8 @@ Implemented:
 
 - generated `quickshell.json` theme;
 - live `FileView` reload in `Theme.qml`;
-- live state for top-bar visibility, opaque mode, rounded-screen state, and rounded-screen dynamic mode;
-- live rounded-screen radius/thickness from `rounded-screen.conf`;
+- live state for top-bar visibility and opaque mode;
+- canonical RoundedScreen chassis values (thickness: 4, radius: 20, color: #000000) defined in Quickshell code (`AppState.qml`), decoupled from classic `rounded-screen.conf` and manager toggles;
 - shared animation tokens.
 
 **Current background policy:** `Theme.barColor` keeps the `AppState.opaqueThemeState ? inkBg : bg` binding, while both `inkBg` and `bg` are fixed to `#000000`. Ordinary idle modules/cards and the Picker scrim are opaque black. Hover/selection fills use the accent colour with black text/icons; Tray and WindowTitle hover use dark grey `Theme.hoverMuted`, with WindowTitle text/icon in accent. The Logo and Settings group stay accent-filled with black icons in both states. Logo hover grows the icon font size by 2 px and expands the pill by `Theme.pad`. `Theme.surfaceHi` is bound to `accent`; the generated JSON mirrors this, while `Theme.qml` ignores incoming values for fixed background tokens so old theme files cannot override them. The MPRIS icon circle remains accent-filled with a black glyph. The earlier P0 labwc pixel check (`#000000` with opaque off, `#111111` with opaque on) is historical and must be repeated for the current policy.
@@ -430,17 +430,16 @@ Current N11 path:
 
 Do not call this DONE until P0 manual checks cover rapid input, fullscreen, classic fallback, multi-monitor, and screen scaling.
 
-### 3.12 Rounded screen — **DONE core**
+### 3.12 Rounded screen — **DONE**
 
-Implemented per screen:
+Implemented per screen as native Hikai chassis:
 
-- rounded-corner Canvas and border stroke;
-- live radius/thickness;
-- dynamic Top vs Overlay layer behavior;
-- separate Bottom/Left/Right spacing windows;
-- empty input mask.
-
-P0 must verify that current top-bar padding/OSD work did not regress the four-edge frame when the bar is hidden.
+- single Quickshell source of truth in `AppState.qml` (`roundedScreenThickness: 4`, `roundedScreenRadius: 20`, `roundedScreenColor: "#000000"`);
+- decoupled from classic `rounded-screen.conf`, `rounded_screen_state`, and manager toggles;
+- `RoundedScreen.qml` refactored into three clear sections: A (visual drawing), B (input/click-through), C (edge/layout reservations);
+- rounded-corner Canvas and border stroke repaints cleanly with canonical properties;
+- empty input mask ensures desktop/clients click and drag normally without blocked input regions;
+- shared frame geometry consumed by `FlareEdges`, Navigation, Sidebar, Tooltip, Tray, Notifications, and OSD.
 
 ### 3.13 Tooltip + Flare library — **core implemented; completion work remains**
 
@@ -539,11 +538,30 @@ Current gaps:
 P0  Baseline/runtime stabilization                       DONE for current P2 baseline
 P1  TopBar / Tray / Flare foundation                    DONE core; residual audits are non-blocking
 P2  Native notifications                                DONE
-P3  Mockup-locked native shell surfaces                 CURRENT MAJOR MILESTONE
+P3  Mockup-locked native shell surfaces                 CURRENT MAJOR MILESTONE (SUBSTANTIALLY IMPLEMENTED)
 P4  Remaining Classic-parity surfaces                   PLANNED
 P5  Packaging / doctor / distro / release verification  PLANNED
 P6  Optional polish / experimental work                 OPTIONAL
 ```
+
+### P3 execution rebase summary (HEAD: `64418615`)
+
+| Sub-milestone | Scope | Status | Notes |
+|---|---|---|---|
+| **P3.0** | RoundedScreen foundation | **DONE** | Single source of truth in `AppState.qml` (`t=4, r=20, c=#000000`), decoupled from classic conf (`64418615`) |
+| **P3.1** | Navigation radial controller | **DONE** | Equal 120° sectors (`7604c1f0`), Logo-origin radial controller |
+| **P3.2** | Dashboard | **DONE** | D1–D7 fully implemented, 45% shell, avatar persistence, widget host (`03b8453a`) |
+| **P3.3** | Sidebar | **IMPLEMENTED / VERIFY** | `SidebarPanel.qml`, `SidebarSurface.qml` exist; awaiting R1 closeout audit |
+| **P3.4** | Settings stub | **DONE** | T1 stub panel with T2 backdrop separation (`11bfdb75`, `08dfef20`) |
+| **P3.5** | HakuMenu shell | **DONE** | Center-triggered, split layers, pointer-union safe auto-close (`3e1b8048`) |
+| **P3.6** | HakuMenu General | **DONE** | Wired to `hm_general.sh`, quick actions, session actions |
+| **P3.7** | HakuMenu Drun | **DONE** | `DesktopEntries` model, search/filter, launcher IPC routing to Drun |
+| **P3.8** | HakuMenu Theme stub | **PARTIAL / STUB DONE** | Theme state region & tab shell stub DONE; live palette switcher PLANNED |
+| **P3.9** | Wallpaper carousel | **DONE** | Standalone carousel, native scan model, apply static/lively (`cccf6b21`) |
+| **P3.10** | Existing shell polish retained | **IMPLEMENTED / VERIFY** | `FlareEdges` frame attachments exist; recorder in recorder group (`8f21ac42`); calendar accent fill (`604638ea`) |
+| **P3.11** | Remaining native migration | **PLANNED** | Power, Clipboard, remaining facades |
+| **P3.12** | Runtime verification | **PLANNED** | Multi-WM matrix (Hyprland, Niri, MangoWM), scale verification |
+| **P3.13** | Cleanup and docs | **PLANNED** | Cleanup diagnostics, final tag `p3-v2-final` |
 
 P3 is intentionally executed as **small atomic commits**. Every accepted sub-part becomes a fallback point before the next dependent sub-part starts.
 
@@ -908,7 +926,7 @@ The abandoned TopBar-center collar/notch/shoulder experiment is explicitly out o
 
 ---
 
-### P3.0 — Git safety and RoundedScreen foundation
+### P3.0 — Git safety and RoundedScreen foundation — **DONE**
 
 #### P3.0.1 Atomic-commit rule
 
@@ -973,22 +991,14 @@ Requirements:
 - TopBar ON must not make the RoundedScreen top rail disappear;
 - the top frame/rail is visually stronger than side/bottom where configured;
 - TopBar and RoundedScreen remain separate layers instead of faking one geometry by hiding the other.
-
-Runtime matrix:
-
-```text
-Rounded ON + TopBar ON
-Rounded ON + TopBar OFF
-Rounded OFF + TopBar ON
-TopBar hide → show
-Rounded OFF → ON
-Quickshell reload
-```
+- Canonical config location in Quickshell code: single source of truth in `AppState.qml` (`roundedScreenThickness: 4`, `roundedScreenRadius: 20`, `roundedScreenColor: "#000000"`).
+- `RoundedScreen.qml` organized into three distinct, readable sections: A (visual drawing), B (input/click-through), C (edge/layout reservations).
+- No external config file (`rounded-screen.conf`), no file watcher, and no coupling to Classic manager toggles.
 
 Commit:
 
 ```text
-p3(frame): lock RoundedScreen chassis
+refactor(frame): establish single source of truth for rounded screen chassis (64418615)
 ```
 
 #### P3.0.4 Shared frame geometry
@@ -1022,11 +1032,14 @@ p3(geometry): standardize frame attachment
 
 ---
 
-### P3.1 — Navigation
+### P3.1 — Navigation — **DONE**
 
 Reference: `navigation.png`.
 
-Navigation is the temporary radial Logo-origin controller. It is **not HakuMenu**.
+Navigation is the temporary radial Logo-origin controller. It is **not HakuMenu**. Equal 120° sector geometry is locked (`7604c1f0`):
+- Sidebar: 90° → 210°
+- Dashboard: 210° → 330°
+- Settings: 330° → 450° (90°)
 
 #### P3.1.1 State/lifecycle
 
@@ -1078,11 +1091,12 @@ Commit:
 
 ```text
 p3(navigation): implement three-region radial visual
+fix(navigation): equalize radial sector geometry (7604c1f0)
 ```
 
 ---
 
-### P3.2 — Dashboard
+### P3.2 — Dashboard — **DONE**
 
 Reference: `dashboard.png`.
 
@@ -1242,11 +1256,11 @@ p3(dashboard): finalize dashboard integration
 
 ---
 
-### P3.3 — Sidebar
+### P3.3 — Sidebar — **IMPLEMENTED / VERIFY**
 
 Reference: `sidebar.png`.
 
-Sidebar is a left-edge expansion reached from the Navigation Sidebar sector.
+Sidebar is a left-edge expansion reached from the Navigation Sidebar sector. Implementation exists in `SidebarPanel.qml` and `SidebarSurface.qml` (`d63e2a7e`); scheduled for formal R1 closeout verification.
 
 #### P3.3.1 Hover handoff
 
@@ -1298,7 +1312,7 @@ p3(sidebar): wire specified sidebar actions
 
 ---
 
-### P3.4 — Settings stub
+### P3.4 — Settings stub — **DONE**
 
 Reference: `setting.png`.
 
@@ -1313,19 +1327,20 @@ Implement only:
 
 Do not build a theme editor, monitor settings, daemon settings, or persistence framework here.
 
-Commit:
+Commits:
 
 ```text
-p3(settings): add hikai settings stub
+p3(settings): add hikai settings stub (11bfdb75)
+p3(settings): refine stub backdrop separation (08dfef20)
 ```
 
 ---
 
-### P3.5 — HakuMenu shell
+### P3.5 — HakuMenu shell — **DONE**
 
 Reference: `hakumenu.png`.
 
-HakuMenu is a distinct top-center shell surface. It is not Navigation.
+HakuMenu is a distinct top-center shell surface. It is not Navigation. Top/Overlay split layers are synchronized, and pointer-union safe auto-close is verified (`3e1b8048`).
 
 Use the approved center interaction without redesigning the base TopBar-center silhouette.
 
@@ -1441,7 +1456,7 @@ p3(motion): migrate hakumenu tray and notifications
 
 ---
 
-### P3.6 — HakuMenu General
+### P3.6 — HakuMenu General — **DONE**
 
 #### P3.6.1 Audit `hm_general.sh`
 
@@ -1483,7 +1498,7 @@ p3(hakumenu): render general list
 
 ---
 
-### P3.7 — HakuMenu Drun
+### P3.7 — HakuMenu Drun — **DONE**
 
 Drun is the Hikai-native presentation replacing the interaction equivalent of `rofi -show drun`.
 
@@ -1532,7 +1547,7 @@ p3(launcher): route hikai launcher to hakumenu drun
 
 ---
 
-### P3.8 — HakuMenu Theme stub
+### P3.8 — HakuMenu Theme stub — **PARTIAL / STUB DONE**
 
 Theme remains a stub in this P3 revision.
 
@@ -1551,15 +1566,15 @@ p3(hakumenu): add theme state-region layout
 p3(hakumenu): mark theme tab as stub
 ```
 
-Do not build the real theme editor in this milestone.
+Real theme engine implementation is deferred by design (M2 PLANNED).
 
 ---
 
-### P3.9 — Wallpaper carousel
+### P3.9 — Wallpaper carousel — **DONE**
 
 Reference: `wallpaper-change.png`.
 
-This supersedes the previous full-width Flare / dual-front Wallpaper plan.
+Standalone wallpaper carousel with native scan model, apply static/lively, keyboard/pointer navigation, and overlay hardening (`cccf6b21`).
 
 #### P3.9.1 Model audit
 
@@ -1651,9 +1666,13 @@ p3(wallpaper): harden carousel thumbnail loading
 
 ---
 
-### P3.10 — Existing shell polish retained
+### P3.10 — Existing shell polish retained — **IMPLEMENTED / VERIFY**
 
-These surfaces are not redesigned by the seven new mockups; they are aligned to the RoundedScreen/frame contract.
+These surfaces are not redesigned by the seven new mockups; they are aligned to the RoundedScreen/frame contract. Frame attachments to `FlareEdges` / `AppState` are implemented in code; physical verification is scheduled for R4.
+
+Recent accepted refinements:
+- Recording state isolated to recorder group only (`8f21ac42`).
+- Calendar current-day marker given breathing room with solid `Theme.accent` fill and `#000000` text (`604638ea`).
 
 #### P3.10.1 Tooltip
 
@@ -1712,7 +1731,7 @@ Requirements:
 
 ---
 
-### P3.11 — Remaining native migration
+### P3.11 — Remaining native migration — **PLANNED**
 
 Because Drun is now represented inside HakuMenu, do not build a second unrelated launcher panel.
 
@@ -1738,7 +1757,7 @@ Do not globally delete rofi if Classic still legitimately uses it.
 
 ---
 
-### P3.12 — Runtime verification
+### P3.12 — Runtime verification — **PLANNED**
 
 Run final matrices on **committed code only**.
 
@@ -1801,7 +1820,7 @@ Commit compositor-specific fixes only when the defect is reproduced. Do not leak
 
 ---
 
-### P3.13 — Cleanup and docs
+### P3.13 — Cleanup and docs — **PLANNED**
 
 Remove/disable temporary:
 
