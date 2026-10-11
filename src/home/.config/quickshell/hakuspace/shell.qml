@@ -60,11 +60,56 @@ ShellRoot {
                 }
             }
         }
+        function openDashboard() {
+            if (Quickshell.screens.length > 0) {
+                UiState.openNavigation(Quickshell.screens[0].name, Theme.pad, Theme.fontSize * 1.8, Theme.topBarHeight, Theme.topBarTopPadding)
+                UiState.beginNavigationHandoff("dashboard")
+            }
+        }
         function toggleDefault() {
             if (Quickshell.screens.length > 0)
                 UiState.toggleNavigation(Quickshell.screens[0].name, Theme.pad, Theme.fontSize * 1.8, Theme.topBarHeight, Theme.topBarTopPadding)
         }
         function close() { UiState.closeNavigation() }
+        function status(): string {
+            return JSON.stringify({
+                activePanel: UiState.activePanel,
+                navigationMode: UiState.navigationMode,
+                cava: {
+                    dashboardRequested: Cava.dashboardRequested,
+                    dashboardSubscribers: Cava._dashboardSubscribers,
+                    shouldRun: Cava.shouldRun,
+                    soundPresent: Cava.soundPresent,
+                    audioVisible: Cava.audioVisible,
+                    levelsLength: (Cava.levels ? Cava.levels.length : 0),
+                    levelsSample: (Cava.levels ? Cava.levels.slice(0, 4) : []),
+                    bars: Cava.bars
+                },
+                media: {
+                    playing: Media.playing,
+                    title: Media.title,
+                    artist: Media.artist
+                },
+                center: {
+                    baseMode: CenterState.baseMode,
+                    centerMode: CenterState.centerMode
+                },
+                sysstats: {
+                    cpu: SysStats.cpu,
+                    cpuUsedStr: SysStats.cpuUsedStr,
+                    ram: SysStats.ram,
+                    ramUsedStr: SysStats.ramUsedStr,
+                    gpu: SysStats.gpu,
+                    gpuMemory: SysStats.gpuMemory,
+                    gpuMemoryUsedStr: SysStats.gpuMemoryUsedStr,
+                    hasGpu: SysStats.hasGpu,
+                    hasGpuMemory: SysStats.hasGpuMemory,
+                    mountsCount: (SysStats.mounts ? SysStats.mounts.length : 0),
+                    mounts: SysStats.mounts,
+                    extendedSubscribers: SysStats._extendedSubscribers
+                }
+            })
+        }
     }
 
     IpcHandler {

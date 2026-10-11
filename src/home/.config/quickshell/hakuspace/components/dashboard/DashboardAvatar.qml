@@ -14,7 +14,7 @@ Item {
     width: diameter
     height: diameter
 
-    readonly property bool isHovered: root.interactive && avatarArea.hovered
+    readonly property bool isHovered: Boolean(root.interactive && avatarArea && avatarArea.hovered)
 
     // Visual scale container: scales smoothly without altering pointer hitbox bounds
     Item {

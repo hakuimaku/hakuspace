@@ -16,11 +16,11 @@ Rectangle {
     // Presentation state: "system" (default) or "gpu"
     property string currentPage: "system"
 
-    // Responsive gauge, button, and spacing dimensions derived from card size
-    readonly property real gaugeAreaHeight: Math.max(92, Math.min(110, Math.round(root.height * 0.32)))
-    readonly property real gaugeDiameter: Math.max(74, Math.min(90, Math.floor(gaugeAreaHeight - 16), Math.floor((root.width - 120) / 2)))
-    readonly property real arrowBtnSize: Math.max(26, Math.min(30, Math.round(gaugeDiameter * 0.32)))
-    readonly property real gaugeGap: Math.max(14, Math.min(22, Math.round(root.width * 0.045)))
+    // Responsive gauge, button, and spacing dimensions (target 88–92px at standard resolutions)
+    readonly property real gaugeDiameter: Math.max(78, Math.min(92, Math.round(root.width * 0.225)))
+    readonly property real gaugeAreaHeight: Math.max(104, Math.round(gaugeDiameter + 18))
+    readonly property real arrowBtnSize: Math.max(28, Math.min(32, Math.round(gaugeDiameter * 0.33)))
+    readonly property real gaugeGap: Math.max(16, Math.min(22, Math.round(root.width * 0.045)))
 
     function togglePage() {
         currentPage = (currentPage === "system") ? "gpu" : "system"

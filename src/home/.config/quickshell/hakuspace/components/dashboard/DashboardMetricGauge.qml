@@ -81,11 +81,11 @@ Item {
             }
             font.family: Theme.fontFamily
             font.pixelSize: {
-                var baseSize = Math.max(14, Math.round(root.diameter * 0.19))
+                var baseSize = Math.max(15, Math.round(root.diameter * 0.20))
                 if (root.showUsed && root.usedText.length > 5) {
-                    return Math.max(10, Math.round(baseSize * 0.72))
+                    return Math.max(11, Math.round(baseSize * 0.72))
                 } else if (root.showUsed && root.usedText.length > 3) {
-                    return Math.max(11, Math.round(baseSize * 0.82))
+                    return Math.max(12, Math.round(baseSize * 0.82))
                 }
                 return baseSize
             }
