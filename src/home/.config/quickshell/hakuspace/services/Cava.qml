@@ -10,7 +10,7 @@ QtObject {
     property bool soundPresent: false
     property bool audioVisible: false
     readonly property int barCount: 12
-    readonly property int soundThreshold: 30
+    readonly property int soundThreshold: 10
 
     // Dashboard demand tracking (single shared process)
     property int _dashboardSubscribers: 0
@@ -38,17 +38,14 @@ QtObject {
         soundPresent = false
     }
 
-    // Require sustained sound before showing bars. Brief silence resets detection,
-    // but a visible visualizer stays until MPRIS has stopped playing for 5 seconds.
+    // Detect sound with generous silence tolerance (1.5s) to avoid resetting on natural musical rests
     function observePeak(peak) {
         if (!shouldRun) return
         if (peak >= soundThreshold) {
             silenceTimer.stop()
-            if (!soundPresent) {
-                soundPresent = true
-                if (!audioVisible) showTimer.restart()
-            } else if (!audioVisible && !showTimer.running) {
-                showTimer.restart()
+            soundPresent = true
+            if (!audioVisible && !showTimer.running) {
+                showTimer.start()
             }
         } else if (soundPresent && !silenceTimer.running) {
             silenceTimer.start()
@@ -78,28 +75,45 @@ QtObject {
     }
 
     Component.onCompleted: syncProcess()
-    onShouldRunChanged: syncProcess()
+    onShouldRunChanged: {
+        if (Media.playing) root.available = true
+        syncProcess()
+    }
 
+    // Require sustained sound (3 seconds) before revealing TopBar visualizer
     property Timer showTimer: Timer {
         interval: 3000
         repeat: false
         onTriggered: {
-            if (root.shouldRun && root.soundPresent && !root.silenceTimer.running)
+            if (root.shouldRun && root.soundPresent)
                 root.audioVisible = true
         }
     }
 
+    // Only consider silence real if it persists for 1.5 seconds continuously
     property Timer silenceTimer: Timer {
-        interval: 500
+        interval: 1500
         repeat: false
         onTriggered: root.resetSoundDetection()
     }
 
+    // Keep visualizer visible across 5 seconds of pause to prevent abrupt toggling
     property Timer hideTimer: Timer {
         interval: 5000
         repeat: false
         onTriggered: {
             if (!root.shouldRun) root.audioVisible = false
+        }
+    }
+
+    // Auto-recovery timer in case cava exits unexpectedly during playback
+    property Timer restartTimer: Timer {
+        interval: 1000
+        repeat: false
+        onTriggered: {
+            if (root.shouldRun && !root.process.running) {
+                root.syncProcess()
+            }
         }
     }
 
@@ -110,9 +124,7 @@ QtObject {
                 root.bars = ""
                 root.levels = []
                 root.resetSoundDetection()
-                root.hideTimer.stop()
-                root.audioVisible = false
-                root.available = false
+                root.restartTimer.restart()
             }
         }
         stdout: SplitParser {
@@ -149,6 +161,8 @@ QtObject {
             if (root.stoppingForPolicy) {
                 root.stoppingForPolicy = false
                 if (root.shouldRun) Qt.callLater(root.syncProcess)
+            } else if (root.shouldRun) {
+                root.restartTimer.restart()
             }
         }
     }
