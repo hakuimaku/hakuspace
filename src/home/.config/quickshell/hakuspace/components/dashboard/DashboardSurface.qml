@@ -119,48 +119,36 @@ Item {
     // Card 1: Clock (Row 1, Col 1)
     readonly property real clockCardTargetX: contentX
     readonly property real clockCardTargetY: topClusterY
-    readonly property real clockCardX: isFullyOpen ? clockCardTargetX
-        : clockCardTargetX + (-28 * (1.0 - cardMorphProgress))
-    readonly property real clockCardY: isFullyOpen ? clockCardTargetY
-        : clockCardTargetY + (-20 * (1.0 - cardMorphProgress))
-    readonly property real clockCardScale: isFullyOpen ? 1.0
-        : Math.max(0.70, 0.70 + 0.30 * cardMorphProgress)
+    readonly property real clockCardX: clockCardTargetX + (-28 * Math.max(0.0, 1.0 - cardMorphProgress))
+    readonly property real clockCardY: clockCardTargetY + (-20 * Math.max(0.0, 1.0 - cardMorphProgress))
+    readonly property real clockCardScale: Math.max(0.70, 0.70 + 0.30 * cardMorphProgress)
     readonly property real clockCardOpacity: isFullyOpen ? 1.0
         : Math.max(0.0, Math.min(1.0, (cardMorphProgress - 0.05) / 0.65))
 
     // Card 2: Media (Row 1, Col 2)
     readonly property real mediaCardTargetX: contentX + col1Width + cardGap
     readonly property real mediaCardTargetY: topClusterY
-    readonly property real mediaCardX: isFullyOpen ? mediaCardTargetX
-        : mediaCardTargetX + (36 * (1.0 - cardMorphProgress))
-    readonly property real mediaCardY: isFullyOpen ? mediaCardTargetY
-        : mediaCardTargetY + (-20 * (1.0 - cardMorphProgress))
-    readonly property real mediaCardScale: isFullyOpen ? 1.0
-        : Math.max(0.70, 0.70 + 0.30 * cardMorphProgress)
+    readonly property real mediaCardX: mediaCardTargetX + (36 * Math.max(0.0, 1.0 - cardMorphProgress))
+    readonly property real mediaCardY: mediaCardTargetY + (-20 * Math.max(0.0, 1.0 - cardMorphProgress))
+    readonly property real mediaCardScale: Math.max(0.70, 0.70 + 0.30 * cardMorphProgress)
     readonly property real mediaCardOpacity: isFullyOpen ? 1.0
         : Math.max(0.0, Math.min(1.0, (cardMorphProgress - 0.10) / 0.65))
 
     // Card 3: WidgetHost (Row 2, Col 1)
     readonly property real widgetHostTargetX: contentX
     readonly property real widgetHostTargetY: row2Y
-    readonly property real widgetHostX: isFullyOpen ? widgetHostTargetX
-        : widgetHostTargetX + (-28 * (1.0 - cardMorphProgress))
-    readonly property real widgetHostY: isFullyOpen ? widgetHostTargetY
-        : widgetHostTargetY + (28 * (1.0 - cardMorphProgress))
-    readonly property real widgetHostScale: isFullyOpen ? 1.0
-        : Math.max(0.70, 0.70 + 0.30 * cardMorphProgress)
+    readonly property real widgetHostX: widgetHostTargetX + (-28 * Math.max(0.0, 1.0 - cardMorphProgress))
+    readonly property real widgetHostY: widgetHostTargetY + (28 * Math.max(0.0, 1.0 - cardMorphProgress))
+    readonly property real widgetHostScale: Math.max(0.70, 0.70 + 0.30 * cardMorphProgress)
     readonly property real widgetHostOpacity: isFullyOpen ? 1.0
         : Math.max(0.0, Math.min(1.0, (cardMorphProgress - 0.15) / 0.65))
 
     // Card 4: Monitor (Row 2, Col 2)
     readonly property real monitorCardTargetX: contentX + col1Width + cardGap
     readonly property real monitorCardTargetY: row2Y
-    readonly property real monitorCardX: isFullyOpen ? monitorCardTargetX
-        : monitorCardTargetX + (36 * (1.0 - cardMorphProgress))
-    readonly property real monitorCardY: isFullyOpen ? monitorCardTargetY
-        : monitorCardTargetY + (28 * (1.0 - cardMorphProgress))
-    readonly property real monitorCardScale: isFullyOpen ? 1.0
-        : Math.max(0.70, 0.70 + 0.30 * cardMorphProgress)
+    readonly property real monitorCardX: monitorCardTargetX + (36 * Math.max(0.0, 1.0 - cardMorphProgress))
+    readonly property real monitorCardY: monitorCardTargetY + (28 * Math.max(0.0, 1.0 - cardMorphProgress))
+    readonly property real monitorCardScale: Math.max(0.70, 0.70 + 0.30 * cardMorphProgress)
     readonly property real monitorCardOpacity: isFullyOpen ? 1.0
         : Math.max(0.0, Math.min(1.0, (cardMorphProgress - 0.20) / 0.65))
 

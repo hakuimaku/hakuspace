@@ -13,17 +13,17 @@ QtObject {
     property list<real> tooltipCurve: [0.4, 0.0, 0.2, 1.0, 1, 1]
     property list<real> shellCurve: [0.16, 1.0, 0.3, 1.0, 1, 1]
 
-    // Navigation Motion (slower, buttery-smooth expansion)
-    property int navigationOpenDuration: 480
-    property int navigationCloseDuration: 360
-    property int navigationCollapseDuration: 220
-    property list<real> navigationOpenCurve: [0.16, 1.0, 0.28, 1.0, 1, 1]
+    // Navigation Motion (slower, modern fluid expansion)
+    property int navigationOpenDuration: 600
+    property int navigationCloseDuration: 420
+    property int navigationCollapseDuration: 240
+    property list<real> navigationOpenCurve: [0.16, 1.0, 0.25, 1.0, 1, 1]
     property list<real> navigationCloseCurve: [0.25, 1.0, 0.35, 1.0, 1, 1]
 
-    // Dashboard Motion (bouncing elastic expansion & graceful unhurried close)
-    property int dashboardOpenDuration: 680
-    property int dashboardCloseDuration: 540
-    property list<real> dashboardOpenCurve: [0.30, 1.42, 0.38, 1.0, 1, 1]
+    // Dashboard Motion (gentle bouncing elastic expansion & graceful unhurried close)
+    property int dashboardOpenDuration: 640
+    property int dashboardCloseDuration: 500
+    property list<real> dashboardOpenCurve: [0.24, 1.30, 0.34, 1.0, 1, 1]
     property list<real> dashboardCloseCurve: [0.32, 0.0, 0.22, 1.0, 1, 1]
 
     // Sidebar Motion (tactile, bouncy elastic expansion with visible rebound)

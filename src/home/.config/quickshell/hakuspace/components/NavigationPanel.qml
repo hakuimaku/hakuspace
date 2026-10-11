@@ -15,13 +15,36 @@ Item {
                                       && UiState.navigationScreenName === modelData.name
     readonly property bool dashboardExpanded: panelOpen && UiState.navigationMode === "handoff-dashboard"
     readonly property bool dashboardVisuallyActive: dashboardExpanded || dashboardMorphProgress > 0.001
-    property real dashboardMorphProgress: dashboardExpanded ? 1.0 : 0.0
+    property real dashboardMorphProgress: 0.0
 
-    Behavior on dashboardMorphProgress {
-        NumberAnimation {
-            duration: root.dashboardExpanded ? HAnimation.dashboardOpenDuration : HAnimation.dashboardCloseDuration
-            easing.bezierCurve: root.dashboardExpanded ? HAnimation.dashboardOpenCurve : HAnimation.dashboardCloseCurve
+    onDashboardExpandedChanged: {
+        dashboardMorphAnim.stop()
+        if (dashboardExpanded) {
+            dashboardMorphAnim.from = dashboardMorphProgress
+            dashboardMorphAnim.to = 1.0
+            dashboardMorphAnim.duration = HAnimation.dashboardOpenDuration
+            dashboardMorphAnim.easing.bezierCurve = HAnimation.dashboardOpenCurve
+            dashboardMorphAnim.start()
+        } else {
+            dashboardMorphAnim.from = dashboardMorphProgress
+            dashboardMorphAnim.to = 0.0
+            dashboardMorphAnim.duration = HAnimation.dashboardCloseDuration
+            dashboardMorphAnim.easing.bezierCurve = HAnimation.dashboardCloseCurve
+            dashboardMorphAnim.start()
+            if (panelOpen) {
+                selectedIndex = 0
+                hoveredIndex = -1
+                Qt.callLater(function() {
+                    if (root.panelOpen) keyHandler.forceActiveFocus()
+                })
+            }
         }
+    }
+
+    NumberAnimation {
+        id: dashboardMorphAnim
+        target: root
+        property: "dashboardMorphProgress"
     }
 
     onDashboardVisuallyActiveChanged: {
@@ -34,6 +57,33 @@ Item {
     property bool closing: false
     property int selectedIndex: 0
     property int hoveredIndex: -1
+
+    // Morphing active pizza slice indicator angle:
+    // 0 = Dashboard (270°), 1 = Sidebar (150°), 2 = Settings (390° / 30°)
+    readonly property int activeTargetIndex: hoveredIndex >= 0 ? hoveredIndex : selectedIndex
+    property real morphAngle: 270.0
+
+    function updateMorphTarget() {
+        var baseAngles = [270.0, 150.0, 390.0]
+        if (activeTargetIndex < 0 || activeTargetIndex >= baseAngles.length) return
+        var target = baseAngles[activeTargetIndex]
+        var diff = (target - morphAngle) % 360.0
+        if (diff > 180.0) diff -= 360.0
+        else if (diff < -180.0) diff += 360.0
+        morphAngle = morphAngle + diff
+    }
+
+    onActiveTargetIndexChanged: updateMorphTarget()
+
+    Behavior on morphAngle {
+        id: morphAngleBehavior
+        enabled: root.panelOpen && !root.closing
+        NumberAnimation {
+            duration: HAnimation.buttonSelectDuration
+            easing.bezierCurve: HAnimation.buttonSelectCurve
+        }
+    }
+
     // Close is two-phase: first fold the radial sectors into the Logo hub,
     // then return the Logo while the backing retracts into RoundedScreen.
     property real closeCollapseProgress: 0.0
@@ -276,12 +326,24 @@ Item {
     readonly property real logoTargetY: controllerY + circleRadius - logoTargetSize / 2
     readonly property real logoProxyX: anchorStart + (logoTargetX - anchorStart) * logoMorphProgress
     readonly property real logoProxyY: anchorY + (logoTargetY - anchorY) * logoMorphProgress
-    readonly property real logoBaseWidth: closing ? returnAnchorSize : capturedAnchorWidth
-    readonly property real logoBaseHeight: closing ? returnAnchorSize : capturedAnchorHeight
+    readonly property real logoBaseWidth: (panelOpen && !closing) ? capturedAnchorWidth : returnAnchorSize
+    readonly property real logoBaseHeight: (panelOpen && !closing) ? capturedAnchorHeight : returnAnchorSize
     readonly property real logoProxyWidth: logoBaseWidth
                                             + (logoTargetSize - logoBaseWidth) * logoMorphProgress
     readonly property real logoProxyHeight: logoBaseHeight
                                              + (logoTargetSize - logoBaseHeight) * logoMorphProgress
+
+    function blendColor(c1, c2, t) {
+        var a1 = Qt.color(c1)
+        var a2 = Qt.color(c2)
+        var clamped = Math.max(0.0, Math.min(1.0, t))
+        return Qt.rgba(
+            a1.r + (a2.r - a1.r) * clamped,
+            a1.g + (a2.g - a1.g) * clamped,
+            a1.b + (a2.b - a1.b) * clamped,
+            a1.a + (a2.a - a1.a) * clamped
+        )
+    }
     // Sector angles use canvas coordinates: 0° right, 90° down.
     // Three equal 120° sectors:
     // Sidebar: lower-left (90° -> 210°, center 150°);
@@ -441,10 +503,14 @@ Item {
             closeCollapseProgress = 0.0
             closeReturnProgress = 0.0
             closeFlareProgress = 0.0
+            dashboardMorphAnim.stop()
+            dashboardMorphProgress = 0.0
             captureAnchor()
             selectedIndex = UiState.navigationMode === "handoff-sidebar" ? 1
                             : UiState.navigationMode === "handoff-settings" ? 2 : 0
             hoveredIndex = -1
+            var initialAngles = [270.0, 150.0, 390.0]
+            morphAngle = initialAngles[selectedIndex]
 
             if (flareHeight <= anchorBodyHeight + 0.5)
                 seedLogoGeometry()
@@ -461,6 +527,8 @@ Item {
             closeCollapseProgress = 0.0
             closeReturnProgress = 0.0
             closeFlareProgress = 0.0
+            dashboardMorphAnim.stop()
+            dashboardMorphProgress = 0.0
             seedLogoGeometry()
             return
         }
@@ -477,18 +545,10 @@ Item {
             closeCollapseProgress = 0.0
             closeReturnProgress = 0.0
             closeFlareProgress = 0.0
+            dashboardMorphAnim.stop()
+            dashboardMorphProgress = 0.0
             seedLogoGeometry()
             UiState.finishNavigationVisual(modelData.name)
-        }
-    }
-
-    onDashboardExpandedChanged: {
-        if (!dashboardExpanded && panelOpen) {
-            selectedIndex = 0
-            hoveredIndex = -1
-            Qt.callLater(function() {
-                if (root.panelOpen) keyHandler.forceActiveFocus()
-            })
         }
     }
 
@@ -554,11 +614,13 @@ Item {
         }
 
         onFinished: {
+            UiState.finishNavigationVisual(root.modelData.name)
             root.closing = false
             root.closeCollapseProgress = 0.0
             root.closeReturnProgress = 0.0
             root.closeFlareProgress = 0.0
-            UiState.finishNavigationVisual(root.modelData.name)
+            dashboardMorphAnim.stop()
+            root.dashboardMorphProgress = 0.0
         }
     }
 
@@ -752,25 +814,23 @@ Item {
             width: root.logoProxyWidth
             height: root.logoProxyHeight
             radius: Math.min(width, height) / 2
-            color: root.logoMorphProgress < 0.52 ? Theme.accent : Theme.surface
-            border.width: root.logoMorphProgress > 0.45 ? 2 : 0
-            border.color: Qt.lighter(Theme.hoverMuted, 1.55)
+            color: root.blendColor(Theme.accent, Theme.surface, root.logoMorphProgress)
+            border.width: root.logoMorphProgress > 0.05 ? 2 : 0
+            readonly property color baseBorderColor: Qt.lighter(Theme.hoverMuted, 1.55)
+            border.color: Qt.rgba(baseBorderColor.r, baseBorderColor.g, baseBorderColor.b,
+                                  baseBorderColor.a * Math.max(0.0, Math.min(1.0, (root.logoMorphProgress - 0.1) / 0.9)))
             z: 120
             opacity: Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.30)
             visible: (root.panelOpen || root.closing) && opacity > 0.001
 
-            Behavior on color { ColorAnimation { duration: HAnimation.fast } }
-            Behavior on border.width { NumberAnimation { duration: HAnimation.fast } }
-
             Text {
                 anchors.centerIn: parent
                 text: "󰮯"
-                color: root.logoMorphProgress < 0.52 ? Theme.onAccentColor : Theme.accent
+                color: root.blendColor(Theme.onAccentColor, Theme.accent, root.logoMorphProgress)
                 font.family: Theme.fontFamily
                 font.weight: Font.Bold
                 font.pixelSize: Math.max(Theme.fontSize,
                                          Theme.fontSize + root.logoMorphProgress * Theme.fontSize * 0.20)
-                Behavior on color { ColorAnimation { duration: HAnimation.fast } }
             }
 
             MouseArea {
@@ -847,9 +907,7 @@ Item {
                         readonly property bool hovered: root.hoveredIndex === index
                         readonly property bool selected: root.selectedIndex === index
                         readonly property var sectorBox: root.sectorBounds(modelData.startDeg, modelData.endDeg)
-                        readonly property color fillColor: selected
-                            ? root.selectedColor
-                            : (hovered ? root.hoverColor : root.idleColor)
+                        readonly property color fillColor: root.idleColor
 
                         x: sectorBox.x
                         y: sectorBox.y
@@ -857,9 +915,9 @@ Item {
                         height: sectorBox.height
                         scale: root.closing
                                ? Math.max(0.18, root.navigationRevealProgress)
-                               : (hovered ? root.hoverSliceScale : 1.0)
+                               : 1.0
                         transformOrigin: Item.Center
-                        z: hovered ? 30 : (selected ? 20 : 10)
+                        z: 10
 
                         Behavior on scale {
                             NumberAnimation {
@@ -910,6 +968,68 @@ Item {
                     }
                 }
 
+                Canvas {
+                    id: activeWedgeCanvas
+                    anchors.fill: parent
+                    z: 35
+                    visible: root.panelOpen && opacity > 0.001
+
+                    property real morphAngle: root.morphAngle
+                    property color activeColor: root.hoveredIndex >= 0 ? Qt.lighter(Theme.accent, 1.15) : Theme.accent
+                    property color separatorColor: Theme.surface
+
+                    onMorphAngleChanged: requestPaint()
+                    onActiveColorChanged: requestPaint()
+                    onSeparatorColorChanged: requestPaint()
+                    onWidthChanged: requestPaint()
+                    onHeightChanged: requestPaint()
+
+                    scale: root.closing
+                           ? Math.max(0.18, root.navigationRevealProgress)
+                           : (root.hoveredIndex >= 0 ? 1.03 : 1.0)
+                    transformOrigin: Item.Center
+
+                    Behavior on scale {
+                        NumberAnimation {
+                            duration: HAnimation.buttonHoverDuration
+                            easing.bezierCurve: HAnimation.buttonHoverCurve
+                        }
+                    }
+                    Behavior on activeColor {
+                        ColorAnimation {
+                            duration: HAnimation.buttonHoverDuration
+                        }
+                    }
+
+                    function rad(deg) { return deg * Math.PI / 180 }
+
+                    onPaint: {
+                        var ctx = getContext("2d")
+                        ctx.clearRect(0, 0, width, height)
+                        if (!root.panelOpen && !root.closing) return
+
+                        var cx = width / 2
+                        var cy = height / 2
+                        var outerR = root.outerSectorRadius
+                        var innerR = root.innerSectorRadius
+                        var start = rad(morphAngle - 60.0)
+                        var end = rad(morphAngle + 60.0)
+
+                        ctx.beginPath()
+                        ctx.arc(cx, cy, outerR, start, end, false)
+                        ctx.arc(cx, cy, innerR, end, start, true)
+                        ctx.closePath()
+                        ctx.fillStyle = activeColor
+                        ctx.fill()
+
+                        ctx.strokeStyle = separatorColor
+                        ctx.lineWidth = 4
+                        ctx.lineJoin = "round"
+                        ctx.lineCap = "round"
+                        ctx.stroke()
+                    }
+                }
+
                 Repeater {
                     model: root.regions
 
@@ -917,7 +1037,7 @@ Item {
                         required property int index
                         required property var modelData
                         readonly property bool hovered: root.hoveredIndex === index
-                        readonly property bool selected: root.selectedIndex === index
+                        readonly property bool active: root.activeTargetIndex === index
                         readonly property real baseSize: Math.max(19, Theme.fontSize * 1.35)
                         readonly property real hoverShift: hovered ? root.circleRadius * 0.035 : 0
                         readonly property real angleRad: modelData.labelAngle * Math.PI / 180
@@ -931,15 +1051,17 @@ Item {
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         text: modelData.icon
-                        color: selected ? Theme.onAccentColor : Theme.fg
+                        color: active ? Theme.onAccentColor : Theme.fg
+                        scale: active ? 1.08 : 1.0
                         font.family: Theme.fontFamily
                         font.pixelSize: baseSize * (hovered ? root.hoverTextScale : 1.0)
-                        font.weight: hovered || selected ? Font.DemiBold : Font.Medium
+                        font.weight: active ? Font.DemiBold : Font.Medium
                         z: 60
 
                         Behavior on x { NumberAnimation { duration: HAnimation.buttonHoverDuration; easing.bezierCurve: HAnimation.buttonHoverCurve } }
                         Behavior on y { NumberAnimation { duration: HAnimation.buttonHoverDuration; easing.bezierCurve: HAnimation.buttonHoverCurve } }
-                        Behavior on color { ColorAnimation { duration: HAnimation.buttonHoverDuration } }
+                        Behavior on color { ColorAnimation { duration: HAnimation.buttonSelectDuration } }
+                        Behavior on scale { NumberAnimation { duration: HAnimation.buttonSelectDuration; easing.bezierCurve: HAnimation.buttonSelectCurve } }
                         Behavior on font.pixelSize {
                             NumberAnimation { duration: HAnimation.buttonHoverDuration; easing.bezierCurve: HAnimation.buttonHoverCurve }
                         }

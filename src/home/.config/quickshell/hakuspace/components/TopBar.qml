@@ -188,7 +188,11 @@ PanelWindow {
                 Row {
                     id: movingLeftModules
                     readonly property real baseX: logoModule.width + Theme.gap
-                    readonly property real navigationShift: root.navigationVisualActive
+                    readonly property bool navigationOpen: UiState.activePanel === "navigation"
+                                                              && UiState.navigationMode !== "closed"
+                                                              && (UiState.navigationScreenName === ""
+                                                                  || UiState.navigationScreenName === root.modelData.name)
+                    readonly property real navigationShift: navigationOpen
                         ? Math.max(0, root.navigationClearEdge - Theme.pad - baseX)
                         : 0
                     x: baseX + navigationShift
@@ -199,8 +203,8 @@ PanelWindow {
 
                     Behavior on x {
                         NumberAnimation {
-                            duration: HAnimation.normal
-                            easing.bezierCurve: HAnimation.moduleCurve
+                            duration: movingLeftModules.navigationOpen ? HAnimation.navigationOpenDuration : 560
+                            easing.bezierCurve: [0.18, 1.0, 0.32, 1.0, 1, 1]
                         }
                     }
 
