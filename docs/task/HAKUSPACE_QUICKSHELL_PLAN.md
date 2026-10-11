@@ -551,7 +551,7 @@ P6  Optional polish / experimental work                 OPTIONAL
 | **P3.0** | RoundedScreen foundation | **DONE** | Single source of truth in `AppState.qml` (`t=4, r=20, c=#000000`), decoupled from classic conf (`64418615`) |
 | **P3.1** | Navigation radial controller | **DONE** | Equal 120° sectors (`7604c1f0`), Logo-origin radial controller |
 | **P3.2** | Dashboard | **DONE** | D1–D7 fully implemented, 45% shell, avatar persistence, widget host (`03b8453a`) |
-| **P3.3** | Sidebar | **IMPLEMENTED / VERIFY** | `SidebarPanel.qml`, `SidebarSurface.qml` exist; awaiting R1 closeout audit |
+| **P3.3** | Sidebar | **DONE** | Audited and accepted in `P3_SIDEBAR_FINAL_REPORT.md` (2026-10-11) |
 | **P3.4** | Settings stub | **DONE** | T1 stub panel with T2 backdrop separation (`11bfdb75`, `08dfef20`) |
 | **P3.5** | HakuMenu shell | **DONE** | Center-triggered, split layers, pointer-union safe auto-close (`3e1b8048`) |
 | **P3.6** | HakuMenu General | **DONE** | Wired to `hm_general.sh`, quick actions, session actions |
@@ -1256,11 +1256,11 @@ p3(dashboard): finalize dashboard integration
 
 ---
 
-### P3.3 — Sidebar — **IMPLEMENTED / VERIFY**
+### P3.3 — Sidebar — **DONE**
 
 Reference: `sidebar.png`.
 
-Sidebar is a left-edge expansion reached from the Navigation Sidebar sector. Implementation exists in `SidebarPanel.qml` and `SidebarSurface.qml` (`d63e2a7e`); scheduled for formal R1 closeout verification.
+Sidebar is a left-edge expansion reached from the Navigation Sidebar sector. Implementation in `SidebarSurface.qml` and `NavigationPanel.qml` is audited, verified, and accepted in `P3_SIDEBAR_FINAL_REPORT.md` (2026-10-11).
 
 #### P3.3.1 Hover handoff
 

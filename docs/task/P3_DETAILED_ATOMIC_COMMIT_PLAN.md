@@ -78,7 +78,7 @@ Run `qmllint` where supported.
 | **A4** | Standardize frame attachment | **DONE** | Bounded frame attachment helper standardized via `FlareEdges.qml` |
 | **N1–N3** | Navigation radial controller | **DONE** | 3-region radial controller, equal 120° sectors (`7604c1f0`) |
 | **D1–D7** | Dashboard mockup integration | **DONE** | 45% shell, avatar, clock, MPRIS, 45x45 layout, calendar, monitor info (`03b8453a`) |
-| **S1–S3** | Sidebar left panel & actions | **IMPLEMENTED / VERIFY** | `SidebarPanel.qml`, `SidebarSurface.qml` exist; awaiting R1 closeout audit |
+| **S1–S3** | Sidebar left panel & actions | **DONE** | Audited and accepted in `P3_SIDEBAR_FINAL_REPORT.md` (2026-10-11) |
 | **T1–T2** | Settings stub surface | **DONE** | Centered stub panel with T2 backdrop separation (`11bfdb75`, `08dfef20`) |
 | **H1–H4** | HakuMenu shell & motion | **DONE** | Split layers, pointer-union safe auto-close (`3e1b8048`), shared motion primitives (`fc4fc702`) |
 | **G1–G3** | HakuMenu General | **DONE** | Wired to `hm_general.sh`, quick actions, session actions |
@@ -239,7 +239,7 @@ Gate:
 
 ## Sidebar
 
-### S1 — IMPLEMENTED / VERIFY
+### S1 — DONE
 Pointer-state union / anti-flicker hover handoff.
 
 Commit:
@@ -248,7 +248,7 @@ Commit:
 p3(sidebar): add stable hover handoff (d63e2a7e, 4430691f)
 ```
 
-### S2 — IMPLEMENTED / VERIFY
+### S2 — DONE
 Rounded left Sidebar + circular dots + plus (`SidebarPanel.qml`, `SidebarSurface.qml`).
 
 Commit:
@@ -257,7 +257,7 @@ Commit:
 p3(sidebar): implement mockup visual (d63e2a7e)
 ```
 
-### S3 — IMPLEMENTED / VERIFY
+### S3 — DONE
 Action tiles and status strip stubs; dot/plus actions remain explicit stubs.
 
 Commit:
@@ -266,7 +266,7 @@ Commit:
 p3(sidebar): wire specified sidebar actions (stubs in place)
 ```
 
-Unknown actions are not blockers; leave them explicit stubs.
+Unknown actions are not blockers; left as explicit stubs. Audited and verified in `P3_SIDEBAR_FINAL_REPORT.md`.
 
 ---
 
