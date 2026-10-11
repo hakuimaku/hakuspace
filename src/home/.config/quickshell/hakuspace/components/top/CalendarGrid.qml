@@ -12,6 +12,7 @@ Item {
     property real preferredCellHeight: Math.max(17, Theme.fontSize * 1.25)
     property bool showNavControls: false
     property bool showHeader: true
+    property bool dayHoverEnabled: false
 
     signal previousMonthRequested()
     signal nextMonthRequested()
@@ -181,35 +182,51 @@ Item {
         Repeater {
             model: 42
             Item {
+                id: cellItem
                 width: root.cellWidth
                 height: root.cellHeight
                 readonly property int day: index - root.mondayOffset + 1
-                readonly property bool today: day > 0 && day <= root.daysInMonth
+                readonly property bool isValidDay: day > 0 && day <= root.daysInMonth
+                readonly property bool today: isValidDay
                     && root.firstDay.getFullYear() === root.currentDate.getFullYear()
                     && root.firstDay.getMonth() === root.currentDate.getMonth()
                     && day === root.currentDate.getDate()
+                readonly property bool isHovered: root.dayHoverEnabled && isValidDay && dayMouse.containsMouse
+                readonly property real markerDiameter: Math.min(parent.width - 2, Math.max(16, root.cellHeight - 2))
 
                 Rectangle {
                     anchors.centerIn: parent
-                    readonly property real markerDiameter: Math.min(parent.width - 2, Math.max(16, root.cellHeight - 2))
-                    width: markerDiameter
-                    height: markerDiameter
-                    radius: markerDiameter / 2
-                    visible: parent.today
-                    color: Theme.accent
+                    width: cellItem.markerDiameter
+                    height: cellItem.markerDiameter
+                    radius: cellItem.markerDiameter / 2
+                    visible: cellItem.today || cellItem.isHovered
+                    color: cellItem.today ? Theme.accent : Qt.lighter(Theme.hoverMuted, 1.25)
+                    scale: (cellItem.isHovered && !cellItem.today) ? 1.08 : 1.0
                     border.width: 0
+
+                    Behavior on color { ColorAnimation { duration: HAnimation.fast } }
+                    Behavior on scale { NumberAnimation { duration: HAnimation.buttonHoverDuration } }
                 }
+
                 Text {
                     anchors.centerIn: parent
-                    text: parent.day > 0 && parent.day <= root.daysInMonth ? parent.day : ""
-                    color: parent.today ? Theme.onAccentColor : Theme.fg
+                    text: cellItem.isValidDay ? cellItem.day : ""
+                    color: cellItem.today ? Theme.onAccentColor : (cellItem.isHovered ? Theme.fg : Theme.fg)
                     font.family: Theme.fontFamily
                     font.pixelSize: {
                         if (root.cellHeight > 24) return Theme.fontSize
                         if (root.cellHeight >= 20) return Theme.fontSize - 1
                         return Math.max(10, root.cellHeight - 5)
                     }
-                    font.weight: parent.today ? Font.Bold : Font.Normal
+                    font.weight: cellItem.today ? Font.Bold : (cellItem.isHovered ? Font.DemiBold : Font.Normal)
+                }
+
+                MouseArea {
+                    id: dayMouse
+                    anchors.fill: parent
+                    hoverEnabled: root.dayHoverEnabled && cellItem.isValidDay
+                    enabled: root.dayHoverEnabled && cellItem.isValidDay
+                    cursorShape: (root.dayHoverEnabled && cellItem.isValidDay) ? Qt.PointingHandCursor : Qt.ArrowCursor
                 }
             }
         }

@@ -17,6 +17,7 @@ Item {
         showNavControls: true
         currentDate: Clock.date
         monthOffset: root.monthOffset
+        dayHoverEnabled: true
 
         onPreviousMonthRequested: root.monthOffset--
         onNextMonthRequested: root.monthOffset++
