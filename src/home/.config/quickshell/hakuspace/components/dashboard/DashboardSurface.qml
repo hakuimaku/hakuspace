@@ -164,6 +164,17 @@ Item {
         }
     }
 
+    // Profile rail (username + Hikaide identity below Avatar)
+    DashboardProfileRail {
+        id: profileRail
+        x: root.avatarX
+        y: root.avatarY + root.avatarDiameter + 14
+        railWidth: root.avatarDiameter
+        opacity: root.contentRevealProgress
+        visible: opacity > 0.001
+        z: 9
+    }
+
     Image {
         id: decodeProbe
         visible: false
