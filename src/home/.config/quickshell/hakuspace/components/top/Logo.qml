@@ -28,13 +28,26 @@ TopModule {
     // Disable color animation on Logo to guarantee immediate rock-solid Theme.accent
     Behavior on color { enabled: false }
 
-    property real lastCloseTime: 0
+    // When Navigation releases visual ownership, Logo may reappear directly
+    // underneath a stationary pointer. Suppress only that synthetic re-entry;
+    // do not impose a time cooldown that can swallow the user's first real hover.
+    property bool reopenHoverGuard: false
     Connections {
         target: UiState
         function onNavigationVisualScreenNameChanged() {
-            if (UiState.navigationVisualScreenName === "") {
-                root.lastCloseTime = Date.now()
+            if (UiState.navigationVisualScreenName !== "") {
+                root.reopenHoverGuard = false
+                return
             }
+
+            root.reopenHoverGuard = true
+            Qt.callLater(function() {
+                // If Logo came back with the pointer elsewhere, there is no
+                // synthetic hover to guard against, so the next enter opens
+                // Navigation immediately. If it came back under the pointer,
+                // keep the guard until that pointer leaves once.
+                if (!root.hovered) root.reopenHoverGuard = false
+            })
         }
     }
 
@@ -45,7 +58,11 @@ TopModule {
     }
 
     onHoveredChanged: {
-        if (hovered && !navigationVisualActive && (Date.now() - lastCloseTime > 350)) {
+        if (!hovered) {
+            reopenHoverGuard = false
+            return
+        }
+        if (!navigationVisualActive && !reopenHoverGuard) {
             triggerOpenNavigation()
         }
     }

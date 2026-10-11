@@ -806,6 +806,14 @@ Item {
             frameTop: root.frameTop
             expanded: root.panelOpen && root.dashboardExpanded && !root.closing
             morphProgress: root.dashboardMorphProgress
+            // A full Dashboard -> closed transition reuses the Dashboard ->
+            // Navigation morph path, whose zero-progress geometry is the
+            // Navigation start envelope rather than 0x0. Fade only the tail
+            // of the full-close path so that envelope never appears as a
+            // detached black afterimage. Dashboard -> Navigation is unchanged.
+            opacity: root.closingFromDashboard
+                     ? Math.max(0.0, Math.min(1.0, root.dashboardMorphProgress / 0.20))
+                     : 1.0
             z: 25
             onRequestReturnToNavigation: {
                 UiState.cancelNavigationHandoff()
