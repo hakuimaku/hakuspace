@@ -13,18 +13,20 @@ QtObject {
     signal userInteracted()
     signal userChanged()
 
+    // Triggers an immediate poll of the default audio sink volume and mute state.
     function refresh() {
         poll.running = false
         poll.running = true
     }
 
+    // Enqueues an audio adjustment command and schedules execution.
     function change(command) {
         queuedCommands.push(command)
         userInteracted()
         startNext()
     }
 
-    // Serialize wpctl actions to preserve rapid key presses in order.
+    // Serializes wpctl actions to preserve rapid key presses in order.
     function startNext() {
         if (actionBusy || queuedCommands.length === 0) return
         actionBusy = true

@@ -25,6 +25,7 @@ QtObject {
         + selectProgress * selectedScaleDelta
         - pressProgress * pressScaleDelta
 
+    // Animate hover progress when mouse enters or leaves control bounds.
     Behavior on hoverProgress {
         NumberAnimation {
             duration: root.hovered ? HAnimation.buttonHoverDuration : HAnimation.buttonReleaseDuration
@@ -33,6 +34,7 @@ QtObject {
         }
     }
 
+    // Animate press progress on pointer down and up events.
     Behavior on pressProgress {
         NumberAnimation {
             duration: root.pressed ? HAnimation.buttonPressDuration : HAnimation.buttonReleaseDuration
@@ -41,6 +43,7 @@ QtObject {
         }
     }
 
+    // Animate select progress when selected state transitions.
     Behavior on selectProgress {
         NumberAnimation {
             duration: HAnimation.buttonSelectDuration
@@ -49,6 +52,7 @@ QtObject {
         }
     }
 
+    // Animate focus progress when keyboard focus changes.
     Behavior on focusProgress {
         NumberAnimation {
             duration: HAnimation.buttonFocusDuration

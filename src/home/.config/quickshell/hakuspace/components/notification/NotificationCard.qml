@@ -4,6 +4,7 @@ import Quickshell.Widgets
 import "../../services"
 import "../base"
 
+// Card chassis container for notification popups and history entries.
 Rectangle {
     id: root
     required property var record
@@ -20,6 +21,7 @@ Rectangle {
     border.width: showBorder ? (record.urgency === NotificationUrgency.Critical ? 2 : 1) : 0
     border.color: record.urgency === NotificationUrgency.Critical ? "#ff5555" : Theme.fgMuted
 
+    // Resolves raw notification icon paths to valid Quickshell image URIs.
     function iconSource(icon) {
         if (!icon) return ""
         if (icon.startsWith("image://") || icon.startsWith("file://")) return icon

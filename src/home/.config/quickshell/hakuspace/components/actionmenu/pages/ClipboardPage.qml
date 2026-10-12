@@ -89,6 +89,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Filters clipboard history entries based on user search query.
     function filterEntries() {
         if (!root.searchQuery) {
             root.filteredEntries = root.allEntries;
@@ -106,6 +107,7 @@ ActionMenu.ActionMenuPage {
         root.selectedIndex = 0;
     }
 
+    // Invokes clipboard script to copy the selected item into system clipboard.
     function copyEntry(rawRow) {
         if (!rawRow) return;
         root.errorMessage = "";
@@ -159,6 +161,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Copies the currently focused clipboard row to system clipboard.
     function activateCurrent() {
         if (filteredEntries.length > 0 && root.selectedIndex < filteredEntries.length) {
             copyEntry(filteredEntries[root.selectedIndex].raw);

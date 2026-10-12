@@ -26,6 +26,7 @@ Rectangle {
     signal rightClicked()
     signal scrolled(int delta)
 
+    // Activates tooltip display anchored to this top bar module.
     function requestTooltip() {
         if (root.tooltip === "" && !root.tooltipComponent) return;
         if (!tooltipObj.active) tooltipObj.active = true;
@@ -48,6 +49,7 @@ Rectangle {
         }
     }
 
+    // Repeatedly pulses module opacity when urgent alert blinking is enabled.
     SequentialAnimation on opacity {
         running: root.blink
         loops: Animation.Infinite
@@ -63,9 +65,11 @@ Rectangle {
     }
     Component.onCompleted: opacity = muted ? 0.5 : 1.0
     
+    // Animates width expansion when label content or hover padding changes.
     Behavior on implicitWidth {
         NumberAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve }
     }
+    // Animates module background color on hover enter and exit.
     Behavior on color {
         ColorAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve }
     }

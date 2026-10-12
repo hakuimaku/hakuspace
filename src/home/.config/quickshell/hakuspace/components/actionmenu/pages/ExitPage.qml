@@ -53,6 +53,7 @@ ActionMenu.ActionMenuPage {
         id: executeProc
     }
 
+    // Aborts session termination and returns to previous menu or closes layer.
     function doCancel() {
         if (root.canGoBack) {
             root.requestBack();
@@ -61,6 +62,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Executes final session exit script and closes menu.
     function doExit() {
         executeProc.command = [Env.binDir + "/session_exit_ctl.sh", "execute"];
         executeProc.running = true;
@@ -105,6 +107,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Triggers execution or cancellation depending on selected button index.
     function activateCurrent() {
         if (root.selectedActionIndex === 1) doExit();
         else doCancel();

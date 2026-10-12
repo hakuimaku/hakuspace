@@ -1,6 +1,7 @@
 import QtQuick
 import "../../services"
 
+// Transient visual proxy rectangle representing the originating button during morphing transitions.
 Rectangle {
     id: root
 

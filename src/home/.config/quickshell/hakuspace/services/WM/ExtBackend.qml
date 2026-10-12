@@ -63,6 +63,7 @@ Item {
         function onValuesChanged() { _update() }
     }
     
+    // Requests activation of the ext-workspace object matching the key ID.
     function activate(key) {
         var id = key.substring(4);
         if (WindowManager && WindowManager.windowsets) {
@@ -76,5 +77,6 @@ Item {
         }
     }
     
+    // Secondary action handler (unsupported on ext-workspace).
     function secondary(key) {}
 }

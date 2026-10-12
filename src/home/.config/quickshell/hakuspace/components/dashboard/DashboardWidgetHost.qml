@@ -39,16 +39,19 @@ Rectangle {
 
     readonly property real slideDistance: 64
 
+    // Switches to the previous dynamic widget with slide-fade transition.
     function previousWidget() {
         if (transitioning || widgetCount <= 1) return
         startTransition(-1)
     }
 
+    // Switches to the next dynamic widget with slide-fade transition.
     function nextWidget() {
         if (transitioning || widgetCount <= 1) return
         startTransition(1)
     }
 
+    // Begins directional slide-fade transition to the target widget index.
     function startTransition(direction) {
         var targetIndex = (committedIndex + direction + widgetCount) % widgetCount
         if (targetIndex === committedIndex) return
@@ -59,6 +62,7 @@ Rectangle {
         transitionAnim.start()
     }
 
+    // Drives cross-fade and horizontal slide progress between active widgets.
     NumberAnimation {
         id: transitionAnim
         target: root

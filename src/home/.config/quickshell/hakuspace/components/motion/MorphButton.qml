@@ -30,10 +30,9 @@ Rectangle {
     property real hoverScaleDelta: 0.008
     property real pressScaleDelta: 0.030
     property real selectedScaleDelta: 0.0
-    // Optional horizontal-only expansion.  The default path keeps the legacy
-    // transform behavior.  `expandedVisual` draws a dedicated centered
-    // background shell so the expansion is unmistakable without changing the
-    // control's allocated layout width or hitbox.
+    // Optional horizontal-only expansion. When disabled, standard 2D scaling is used.
+    // expandedVisual draws a dedicated centered background shell so the expansion is
+    // unmistakable without changing the control's allocated layout width or hitbox.
     property real hoverXScaleDelta: 0.0
     property real pressXScaleDelta: 0.0
     property bool expandedVisual: false
@@ -87,6 +86,7 @@ Rectangle {
         yScale: 1
     }
 
+    // Centered background shell rendered during horizontal visual expansion.
     Rectangle {
         id: expandedBackground
         visible: root.expandedVisual
@@ -99,6 +99,7 @@ Rectangle {
         opacity: Math.max(0, Math.min(1,
             1 - root.hoverFadeAmount + motion.hoverProgress * root.hoverFadeAmount))
 
+        // Animate background color transition across interactive states.
         Behavior on color {
             ColorAnimation {
                 duration: root.transitionDuration
@@ -108,6 +109,7 @@ Rectangle {
         }
     }
 
+    // Animate root surface color transition across interactive states.
     Behavior on color {
         ColorAnimation {
             duration: root.transitionDuration
@@ -116,6 +118,7 @@ Rectangle {
         }
     }
 
+    // Animate text/icon foreground color transition across interactive states.
     Behavior on animatedForeground {
         ColorAnimation {
             duration: root.transitionDuration
@@ -124,6 +127,7 @@ Rectangle {
         }
     }
 
+    // Animate disabled/enabled opacity fade on state transition.
     Behavior on opacity {
         NumberAnimation {
             duration: HAnimation.buttonReleaseDuration

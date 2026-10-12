@@ -16,11 +16,13 @@ QtObject {
     property int _dashboardSubscribers: 0
     readonly property bool dashboardRequested: _dashboardSubscribers > 0
 
+    // Registers a subscriber demanding cava visualizer output for the Dashboard.
     function acquireDashboard() {
         _dashboardSubscribers++
         syncProcess()
     }
 
+    // Releases a dashboard subscriber demanding cava visualizer output.
     function releaseDashboard() {
         if (_dashboardSubscribers > 0) {
             _dashboardSubscribers--
@@ -32,13 +34,14 @@ QtObject {
     readonly property bool shouldRun: Media.playing && available && (CenterState.baseMode === "media" || dashboardRequested)
     property bool stoppingForPolicy: false
 
+    // Resets active sound detection flags and pending silence timers.
     function resetSoundDetection() {
         showTimer.stop()
         silenceTimer.stop()
         soundPresent = false
     }
 
-    // Detect sound with generous silence tolerance (1.5s) to avoid resetting on natural musical rests
+    // Evaluates audio peak against threshold with generous silence tolerance for rests.
     function observePeak(peak) {
         if (!shouldRun) return
         if (peak >= soundThreshold) {
@@ -52,7 +55,7 @@ QtObject {
         }
     }
 
-    // Distinguish an intentional stop from a failed cava process.
+    // Synchronizes the cava backend process lifecycle according to playback and subscriber state.
     function syncProcess() {
         if (!shouldRun) {
             bars = ""

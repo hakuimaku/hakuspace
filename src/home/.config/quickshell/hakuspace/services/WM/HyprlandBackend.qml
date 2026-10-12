@@ -11,6 +11,7 @@ Item {
         _update();
     }
     
+    // Synchronizes Hyprland workspaces, window titles, and app ID with the shared WM state.
     function _update() {
         var wss = [];
         for (var idx = 0; idx < Hyprland.workspaces.values.length; idx++) wss.push(Hyprland.workspaces.values[idx]);
@@ -99,6 +100,7 @@ Item {
         function onAppIdChanged() { _update() }
     }
     
+    // Activates the workspace with the given key in Hyprland.
     function activate(key) {
         var id = parseInt(key.substring(5));
         var wss = Hyprland.workspaces.values;
@@ -110,6 +112,7 @@ Item {
         }
     }
     
+    // Toggles the special workspace in Hyprland when a negative workspace ID is provided.
     function secondary(key) {
         var id = parseInt(key.substring(5));
         if (id < 0) {

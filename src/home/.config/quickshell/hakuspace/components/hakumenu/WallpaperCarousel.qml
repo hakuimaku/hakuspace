@@ -12,21 +12,20 @@ Item {
     property string loadError: ""
     property bool modelLoaded: false
 
-    // W8/W12 keeps Static and Lively as distinct carousel modes. Both backend
-    // models remain cached, and each mode remembers its own navigation index.
+    // Static and Lively carousel modes maintain distinct caches and selection indices.
     property string activeKind: "static"
     property int staticSelectedIndex: -1
     property int livelySelectedIndex: -1
     property bool staticWarm: false
     property bool livelyWarm: false
 
-    // W12.2 Search filter state
+    // Search query string and visible item index mappings.
     property string searchQuery: ""
     property var visibleSourceIndices: []
     property int selectedVisiblePos: -1
 
-    // W12.8 / W12.8.1 Single Motion Clock Architecture:
-    // Only visualPosition is animated. targetVirtualIndex is the logical destination.
+    // Single motion driver architecture:
+    // Only visualPosition is animated; targetVirtualIndex serves as the logical destination.
     property int targetVirtualIndex: 0
     property real visualPosition: 0.0
     property int lastRecycledCenter: 0
@@ -47,7 +46,7 @@ Item {
     readonly property Item modeSwitchHitRegion: headerControls
     readonly property bool searchFocused: searchInput.activeFocus
 
-    // W12.4 / W12.8 Bounded delegate window. Max 11 active preview records total.
+    // Bounded delegate window: limits active preview instances to minimize memory and GPU texture load.
     readonly property int sideDepth: 3
     readonly property int prefetchDepth: sideDepth + 2
     readonly property int maxActivePreviews: 1 + prefetchDepth * 2
@@ -90,7 +89,7 @@ Item {
     readonly property real reelSpacing: slotWidth * 0.34
     readonly property real reelSettleStart: 0.68
 
-    // Single animation driver for visualPosition (W12.8.1 target-following Behavior)
+    // Target-following smoothed animation for visualPosition carousel scrolling.
     Behavior on visualPosition {
         enabled: root.positionAnimationEnabled && root.openPhase === "ready"
         SmoothedAnimation {
@@ -745,7 +744,7 @@ Item {
         }
     }
 
-    // W12.8 Low-latency input pipeline: directly increments targetVirtualIndex
+    // Low-latency input pipeline: directly increments targetVirtualIndex with wheel/touch accumulators.
     property real wheelAccumulator: 0
     property real touchAccumulator: 0
 

@@ -101,6 +101,7 @@ Item {
     property var activeMorphChild: null
     property var activeMorphParent: null
 
+    // Linearly interpolates RGBA color channels by progress t [0.0..1.0].
     function interpolateColor(c1, c2, t) {
         var col1 = Qt.color(c1);
         var col2 = Qt.color(c2);
@@ -112,6 +113,7 @@ Item {
         return Qt.rgba(r, g, b, a);
     }
 
+    // Resolves width and height boundaries for a geometry profile name.
     function getProfileSize(profile) {
         var w = 540;
         var h = 420;
@@ -140,6 +142,7 @@ Item {
         return { width: Math.round(w), height: Math.round(h) };
     }
 
+    // Maps flow ID string to QML component page path.
     function pageUrlForFlow(flowId) {
         switch (flowId) {
         case "record": return "pages/RecordPage.qml";
@@ -151,6 +154,7 @@ Item {
         }
     }
 
+    // Returns default geometry profile for a given flow ID.
     function defaultProfileForFlow(flowId) {
         switch (flowId) {
         case "power": return "powerHorizontal";
@@ -162,6 +166,7 @@ Item {
         }
     }
 
+    // Cleans up all pushed navigation stack pages.
     function clearStack() {
         for (var i = 0; i < root.navStack.length; i++) {
             if (root.navStack[i].pageItem) {
@@ -173,6 +178,7 @@ Item {
         root.activeMorphParent = null;
     }
 
+    // Connects back, close, and pushSubmenu signals on dynamic page instances.
     function connectPageSignals(item) {
         if (!item) return;
         if (item.requestBack !== undefined) {
@@ -186,6 +192,7 @@ Item {
         }
     }
 
+    // Triggers default action on active top-of-stack page.
     function activateCurrent() {
         if (root.phase !== "ready" || root.navStack.length === 0) return;
         var topEntry = root.navStack[root.navStack.length - 1];
@@ -194,6 +201,7 @@ Item {
         }
     }
 
+    // Forwards scroll-previous event to active page.
     function scrollPrevious() {
         if (root.phase !== "ready" || root.navStack.length === 0) return;
         var topEntry = root.navStack[root.navStack.length - 1];
@@ -202,6 +210,7 @@ Item {
         }
     }
 
+    // Forwards scroll-next event to active page.
     function scrollNext() {
         if (root.phase !== "ready" || root.navStack.length === 0) return;
         var topEntry = root.navStack[root.navStack.length - 1];
@@ -210,6 +219,7 @@ Item {
         }
     }
 
+    // Initializes initial flow page and starts circular reveal opening animation.
     function beginOpenAnimation() {
         if (closeAnim.running) closeAnim.stop();
 
@@ -259,6 +269,7 @@ Item {
         openAnim.restart();
     }
 
+    // Starts action layer closing animation and resets morph states.
     function beginCloseAnimation() {
         if (root.phase === "closed" || root.phase === "closing") return;
         if (openAnim.running) openAnim.stop();
@@ -271,6 +282,7 @@ Item {
         closeAnim.restart();
     }
 
+    // Cancels active closing animation and restores ready phase.
     function cancelCloseAnimation() {
         if (root.phase !== "closing") return;
         closeAnim.stop();
@@ -280,6 +292,7 @@ Item {
         root.phase = "ready";
     }
 
+    // Pushes submenu page onto stack and initiates button-to-surface forward morph.
     function pushPage(pageUrl, pageProps, seedGeom, profile) {
         if (root.phase !== "ready" || root.navStack.length === 0) return;
 
@@ -380,6 +393,7 @@ Item {
         morphForwardAnim.restart();
     }
 
+    // Updates geometry, mask bounds, colors, and opacity on each forward morph frame.
     function updateForwardMorphFrame(progress) {
         root.morphProgress = progress;
 
@@ -406,6 +420,7 @@ Item {
         root.morphParentOpacity = Math.max(0.0, 1.0 - progress * 2.2);
     }
 
+    // Finalizes forward morph transition, settling active focus on child page.
     function finishForwardMorph() {
         var childItem = root.activeMorphChild;
         var parentItem = root.activeMorphParent;
@@ -449,6 +464,7 @@ Item {
         }
     }
 
+    // Pops top page from navigation stack and initiates reverse morph back to originating button.
     function popPage() {
         if (root.phase !== "ready" || root.navStack.length <= 1) {
             root.requestClose();
@@ -527,6 +543,7 @@ Item {
         morphBackAnim.restart();
     }
 
+    // Updates geometry, mask bounds, colors, and opacity on each reverse morph frame.
     function updateBackMorphFrame(progress) {
         root.morphBackProgress = progress;
 
@@ -553,6 +570,7 @@ Item {
         root.morphParentOpacity = Math.min(1.0, progress * 2.0);
     }
 
+    // Finalizes reverse morph transition, cleaning up child page and restoring parent active focus.
     function finishBackMorph() {
         var childItem = root.activeMorphChild;
         var parentItem = root.activeMorphParent;

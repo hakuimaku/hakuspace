@@ -9,7 +9,10 @@ Item {
         WM.workspaces = [];
     }
     
+    // No-op workspace activation handler when no WM backend is available.
     function activate(key) {}
+
+    // No-op secondary action handler when no WM backend is available.
     function secondary(key) {}
 }
 

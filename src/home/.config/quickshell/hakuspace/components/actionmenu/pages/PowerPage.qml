@@ -33,6 +33,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Executes the power control command or initiates morph to the exit report session page.
     function activateAction(idx) {
         if (idx < 0 || idx >= actions.length) return;
         var act = actions[idx];
@@ -84,6 +85,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Executes currently focused power option.
     function activateCurrent() {
         activateAction(root.selectedIndex);
     }
@@ -158,6 +160,7 @@ ActionMenu.ActionMenuPage {
                     }
                 }
 
+                // Returns button screen coordinates and styling metrics for seed morphing animations.
                 function getSurfaceGeometry(surfaceItem) {
                     var screenPt = mapToItem(null, 0, 0);
                     return {

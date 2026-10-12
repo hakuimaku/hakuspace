@@ -32,6 +32,7 @@ Item {
         }
     }
 
+    // Handles touchpad and mouse wheel scrolls with stepped accumulators.
     WheelHandler {
         id: pageWheelHandler
         target: root
@@ -73,6 +74,7 @@ Item {
         }
     }
 
+    // Default action handler executed on Return, Enter, or middle click (overridden by sub-pages).
     function activateCurrent() {}
 
     TapHandler {

@@ -43,6 +43,7 @@ TopModule {
         return w;
     }
 
+    // Computes the horizontal X offset for a workspace slot within the container.
     function slotX(index) {
         var x = 0;
         for (var i = 0; i < index; i++) {
@@ -95,6 +96,7 @@ TopModule {
                 height: root.dot
                 x: root.slotX(index)
 
+                // Background workspace dot indicating slot presence and occupancy.
                 Rectangle {
                     anchors.centerIn: parent
                     width: root.dot
@@ -105,6 +107,7 @@ TopModule {
                     border.color: Theme.accent
                     opacity: (ws && ws.special) ? 1 : (cell.isHovered ? 1 : ((ws && ws.occupied) || !WM.caps.occupied ? 1 : 0.7))
 
+                    // Animates dot color on occupancy or special state change.
                     Behavior on color {
                         ColorAnimation {
                             duration: HAnimation.effects
@@ -114,6 +117,7 @@ TopModule {
 
                     }
 
+                    // Animates dot opacity on hover enter and exit.
                     Behavior on opacity {
                         NumberAnimation {
                             duration: HAnimation.effects
@@ -123,6 +127,7 @@ TopModule {
 
                     }
 
+                    // Pulses dot opacity continuously for urgent workspace alert.
                     SequentialAnimation on opacity {
                         running: ws && ws.urgent
                         loops: Animation.Infinite
@@ -175,6 +180,7 @@ TopModule {
                     }
                 }
 
+                // Animates slot horizontal position when adjacent slots expand or collapse.
                 Behavior on x {
                     NumberAnimation {
                         duration: HAnimation.spatial
@@ -234,6 +240,7 @@ TopModule {
             }
         }
 
+        // Active workspace indicator pill morphing across workspace slots.
         Rectangle {
             id: indicator
 
@@ -241,6 +248,7 @@ TopModule {
             property real end: 0
             property bool firstTime: true
 
+            // Retargets the active indicator pill to the new active workspace slot with asymmetric lead/trail timing.
             function retarget() {
                 if (root.activeIdx === -1)
                     return ;
@@ -278,6 +286,7 @@ TopModule {
                 }
             }
 
+            // Animates leading edge of the active workspace pill.
             NumberAnimation {
                 id: startAnim
 
@@ -287,6 +296,7 @@ TopModule {
                 easing.bezierCurve: HAnimation.spatialCurve
             }
 
+            // Animates trailing edge of the active workspace pill.
             NumberAnimation {
                 id: endAnim
 
@@ -300,6 +310,7 @@ TopModule {
 
     }
 
+    // Animates Workspaces module width when workspace list changes.
     Behavior on implicitWidth {
         NumberAnimation {
             duration: HAnimation.spatial

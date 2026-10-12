@@ -23,6 +23,7 @@ Row {
         height: root.trigger ? root.trigger.height : 0
     }
     
+    // Clipping container revealing child content during drawer expansion.
     Item {
         id: clipArea
         clip: true
@@ -30,9 +31,11 @@ Row {
         width: root.open ? container.implicitWidth : 0
         opacity: root.open ? 1.0 : 0.0
         
+        // Animates drawer horizontal expansion width when opening or closing.
         Behavior on width {
             NumberAnimation { duration: HAnimation.slow; easing.bezierCurve: HAnimation.shellCurve }
         }
+        // Animates drawer content fade opacity during open/close transitions.
         Behavior on opacity {
             NumberAnimation { duration: HAnimation.slow; easing.bezierCurve: HAnimation.shellCurve }
         }

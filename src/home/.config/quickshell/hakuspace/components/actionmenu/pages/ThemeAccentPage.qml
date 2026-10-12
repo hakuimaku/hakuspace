@@ -52,6 +52,7 @@ ActionMenu.ActionMenuPage {
         id: pickerProc
     }
 
+    // Triggers custom color picker or applies the preset accent color.
     function activateItem(idx) {
         if (idx < 0 || idx >= allItems.length) return;
         var item = allItems[idx];
@@ -64,6 +65,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Executes theme control script to set system-wide accent color.
     function applyAccent(hex) {
         if (!hex || !hex.match(/^#[0-9a-fA-F]{6}$/)) return;
         root.errorMessage = "";
@@ -105,6 +107,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Activates currently focused accent color item.
     function activateCurrent() {
         activateItem(root.selectedIndex);
     }

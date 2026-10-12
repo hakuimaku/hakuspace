@@ -43,6 +43,7 @@ Motion.MorphButton {
         : root.hovered ? Theme.fg
         : Theme.fgMuted
 
+    // Returns button screen coordinates and styling metrics for seed morphing animations.
     function getSurfaceGeometry(surfaceItem) {
         var screenPt = mapToItem(null, 0, 0);
         return {

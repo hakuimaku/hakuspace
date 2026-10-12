@@ -17,6 +17,7 @@ ActionMenu.ActionMenuPage {
     property int selectedIndex: 0
     property string rawOutput: ""
 
+    // Formats raw ALSA audio device identifiers into clean human-readable labels.
     function formatSourceLabel(id) {
         if (!id) return "Unknown";
         // Convert long alsa device strings into human readable names
@@ -73,6 +74,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Starts recording with selected microphone audio source device.
     function activateSource(idx) {
         if (idx < 0 || idx >= sources.length) return;
         var sourceId = sources[idx].id;
@@ -127,6 +129,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Executes recording launch with currently selected audio source.
     function activateCurrent() {
         activateSource(root.selectedIndex);
     }

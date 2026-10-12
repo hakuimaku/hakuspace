@@ -26,6 +26,7 @@ Item {
     onReadyChanged: { if (ready) displayA = useA }
     Component.onCompleted: { if (shown) syncActive() }
 
+    // Copies contentProps dictionary entries onto the loaded item instance.
     function applyProps(item) {
         if (!item || !contentProps) return
         for (var key in contentProps) {
@@ -33,6 +34,7 @@ Item {
         }
     }
 
+    // Synchronizes the active loader component and applies props.
     function syncActive() {
         if (!shown) return
         var activeLoader = useA ? loaderA : loaderB
@@ -71,6 +73,7 @@ Item {
         Qt.callLater(syncActive)
     }
     
+    // Measures implicit dimensions of the actively loaded content item.
     function updateSize() {
         var activeLoader = useA ? loaderA : loaderB;
         if (activeLoader.status !== Loader.Ready || !activeLoader.item) return;
@@ -85,6 +88,7 @@ Item {
         measuredItem = activeLoader.item;
     }
     
+    // Schedules teardown timer when flare surface finishes closing.
     function settle(isShown) {
         if (!isShown) {
             hideTimer.restart();
@@ -106,6 +110,7 @@ Item {
         onImplicitWidthChanged: Qt.callLater(root.updateSize)
         onImplicitHeightChanged: Qt.callLater(root.updateSize)
         opacity: displayA ? 1 : 0
+        // Cross-fades primary content loader opacity.
         Behavior on opacity {
             enabled: root.fadeDuration > 0 && loaderA.item && loaderB.item
             NumberAnimation { duration: root.fadeDuration }
@@ -123,6 +128,7 @@ Item {
         onImplicitWidthChanged: Qt.callLater(root.updateSize)
         onImplicitHeightChanged: Qt.callLater(root.updateSize)
         opacity: !displayA ? 1 : 0
+        // Cross-fades secondary content loader opacity.
         Behavior on opacity {
             enabled: root.fadeDuration > 0 && loaderA.item && loaderB.item
             NumberAnimation { duration: root.fadeDuration }

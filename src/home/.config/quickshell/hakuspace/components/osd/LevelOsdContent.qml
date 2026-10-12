@@ -23,6 +23,7 @@ Item {
         else if (mode !== displayedMode) modeTransition.restart()
     }
 
+    // Fade transition when switching between audio and brightness levels.
     SequentialAnimation {
         id: modeTransition
         NumberAnimation { target: contentGroup; property: "opacity"; to: 0; duration: HAnimation.fast }
@@ -60,6 +61,7 @@ Item {
                 }
             }
 
+            // Background track for the level meter capsule.
             Rectangle {
                 id: track
                 anchors.verticalCenter: parent.verticalCenter
@@ -68,6 +70,7 @@ Item {
                 radius: height / 2
                 color: Theme.fgMuted
 
+                // Active level meter fill bar with module easing curve.
                 Rectangle {
                     width: parent.width * root.visualLevel / 100
                     height: parent.height

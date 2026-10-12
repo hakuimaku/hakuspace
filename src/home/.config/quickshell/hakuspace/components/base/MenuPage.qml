@@ -18,16 +18,19 @@ Item {
 
     signal dismissed()
 
+    // Navigates to a child sub-menu page for the selected entry.
     function openChild(entry) {
         nextHandle = entry
         childLoader.active = true
     }
 
+    // Closes the active child sub-menu page and restores current page view.
     function closeChild() {
         childLoader.active = false
         nextHandle = null
     }
 
+    // Resets menu page hierarchy back to the root level.
     function reset() {
         closeChild()
     }
@@ -88,6 +91,7 @@ Item {
                         height: modelData.isSeparator ? Math.max(8, Theme.gap * 2) : root.rowHeight
                         opacity: modelData.enabled || modelData.isSeparator ? 1 : 0.45
 
+                        // Separator line between distinct menu sections.
                         Rectangle {
                             anchors.left: parent.left
                             anchors.right: parent.right
@@ -169,6 +173,7 @@ Item {
                                     font.family: Theme.fontFamily
                                     font.pixelSize: Theme.fontSize
 
+                                    // Animate submenu chevron indicator color on hover/press.
                                     Behavior on color {
                                         ColorAnimation {
                                             duration: HAnimation.buttonHoverDuration

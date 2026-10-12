@@ -42,6 +42,7 @@ QtObject {
     readonly property string _repoScript: Quickshell.shellPath("../../../../core/backend/user/text_store_ctl.sh")
     readonly property string _envBinScript: Env.binDir + "/text_store_ctl.sh"
 
+    // Builds command descriptor and environment for executing text_store_ctl.sh.
     function _runCtl(action, envPayload) {
         return {
             command: [
@@ -61,6 +62,7 @@ QtObject {
     // Public API
     // -------------------------------------------------------------
 
+    // Initializes storage directory layout and fetches initial file contents.
     function prepare() {
         if (prepareProc.running) return
         var cfg = _runCtl("prepare")
@@ -69,6 +71,7 @@ QtObject {
         prepareProc.running = true
     }
 
+    // Sets uncommitted bio text and tracks revision generation counter.
     function setBioDraft(text) {
         var str = text !== undefined && text !== null ? String(text) : ""
         if (root.bioDraft === str) return
@@ -76,6 +79,7 @@ QtObject {
         root._bioDraftGen++
     }
 
+    // Commits dirty bio draft to storage via text_store_ctl.sh process.
     function saveBio() {
         if (!root.ready) return
         if (root.bioSaving) {
@@ -98,6 +102,7 @@ QtObject {
         saveBioProc.running = true
     }
 
+    // Reads bio text from file storage and updates local draft state.
     function reloadBio() {
         if (!root.ready || root.bioSaving || readBioProc.running) return
         var cfg = _runCtl("read-bio")
@@ -106,6 +111,7 @@ QtObject {
         readBioProc.running = true
     }
 
+    // Updates scratchpad note draft and schedules debounced save.
     function setScratchDraft(text) {
         var str = text !== undefined && text !== null ? String(text) : ""
         if (root.scratchDraft === str) return
@@ -114,10 +120,12 @@ QtObject {
         scheduleScratchSave()
     }
 
+    // Restarts debounced autosave timer for scratchpad notes.
     function scheduleScratchSave() {
         scratchDebounceTimer.restart()
     }
 
+    // Flushes pending scratchpad notes immediately without debounce delay.
     function flushScratch() {
         scratchDebounceTimer.stop()
         if (root.scratchSaving) {
@@ -127,6 +135,7 @@ QtObject {
         _performScratchSave()
     }
 
+    // Reads persisted scratchpad note content from storage.
     function reloadScratch() {
         if (!root.ready || root.scratchSaving || readScratchProc.running) return
         scratchDebounceTimer.stop()
@@ -136,6 +145,7 @@ QtObject {
         readScratchProc.running = true
     }
 
+    // Spawns background process to write current scratchpad snapshot to storage.
     function _performScratchSave() {
         if (!root.ready) return
         if (root.scratchSaving) {

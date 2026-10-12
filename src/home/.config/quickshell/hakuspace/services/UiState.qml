@@ -37,6 +37,7 @@ QtObject {
                                                   : hakuMenuTabLabel
 
 
+    // Opens navigation surface with anchor coordinates and updates active panel.
     function openNavigation(screenName, anchorX, anchorWidth, anchorHeight, anchorY) {
         if (activePanel === "navigation" && navigationScreenName === screenName && navigationMode !== "closed")
             return
@@ -50,6 +51,7 @@ QtObject {
         activePanel = "navigation"
     }
 
+    // Toggles navigation panel visibility for the specified screen.
     function toggleNavigation(screenName, anchorX, anchorWidth, anchorHeight, anchorY) {
         if (navigationMode !== "closed" && navigationScreenName === screenName) {
             closeNavigation()
@@ -58,12 +60,14 @@ QtObject {
         openNavigation(screenName, anchorX, anchorWidth, anchorHeight, anchorY)
     }
 
+    // Transitions navigation mode into handoff state for dashboard, sidebar, or settings.
     function beginNavigationHandoff(target) {
         if (activePanel !== "navigation") return
         if (target !== "dashboard" && target !== "sidebar" && target !== "settings") return
         navigationMode = "handoff-" + target
     }
 
+    // Cancels active handoff transition and returns navigation mode to open.
     function cancelNavigationHandoff() {
         if (activePanel === "navigation" && navigationMode.indexOf("handoff-") === 0) {
             navigationMode = "open"
@@ -71,6 +75,7 @@ QtObject {
         }
     }
 
+    // Closes navigation surface and clears active navigation coordinates and mode.
     function closeNavigation() {
         if (activePanel === "navigation") activePanel = ""
         navigationMode = "closed"
@@ -82,6 +87,7 @@ QtObject {
         navigationAnchorHeight = 0
     }
 
+    // Cleans up visual ownership after navigation close morph finishes on screen.
     function finishNavigationVisual(screenName) {
         if (navigationVisualScreenName !== screenName) return
         // A reopen on the same screen wins over a stale close-animation finish.
@@ -90,12 +96,14 @@ QtObject {
         dashboardVisuallyActive = false
     }
 
+    // Closes navigation if currently active on the matching screen.
     function closeNavigationIfScreen(screenName) {
         if (navigationScreenName === screenName) closeNavigation()
         else if (navigationVisualScreenName === screenName && activePanel !== "navigation")
             navigationVisualScreenName = ""
     }
 
+    // Opens HakuMenu panel in specified tab mode on the given screen.
     function openHakuMenu(screenName, mode) {
         hakuMenuScreenName = screenName
         hakuMenuMode = (mode === "drun" || mode === "theme" || mode === "general") ? mode : "general"
@@ -104,6 +112,7 @@ QtObject {
         activePanel = "hakumenu"
     }
 
+    // Switches HakuMenu tab mode (general, drun, theme).
     function setHakuMenuMode(mode) {
         if (mode !== "general" && mode !== "drun" && mode !== "theme") return
         if (activePanel !== "hakumenu") return
@@ -111,11 +120,13 @@ QtObject {
         hakuMenuSelectionLabel = ""
     }
 
+    // Sets breadcrumb selection label for the active HakuMenu entry.
     function setHakuMenuSelectionLabel(label) {
         if (activePanel !== "hakumenu") return
         hakuMenuSelectionLabel = label || ""
     }
 
+    // Updates HakuMenu search query and auto-switches mode based on prefix trigger.
     function setHakuMenuQuery(query) {
         hakuMenuQuery = query
         if (activePanel !== "hakumenu" || query.length === 0) return
@@ -129,6 +140,7 @@ QtObject {
         }
     }
 
+    // Closes HakuMenu panel and resets query and selection state.
     function closeHakuMenu() {
         if (activePanel === "hakumenu") activePanel = ""
         hakuMenuMode = "closed"
@@ -137,16 +149,19 @@ QtObject {
         hakuMenuSelectionLabel = ""
     }
 
+    // Closes HakuMenu if active on the specified screen.
     function closeHakuMenuIfScreen(screenName) {
         if (hakuMenuScreenName === screenName) closeHakuMenu()
     }
 
+    // Opens wallpaper selector panel on the specified screen.
     function openWallpaper(screenName) {
         wallpaperCloseRequested = false
         wallpaperScreenName = screenName
         activePanel = "wallpaper"
     }
 
+    // Toggles wallpaper panel visibility for the specified screen.
     function toggleWallpaper(screenName) {
         if (activePanel === "wallpaper" && wallpaperScreenName === screenName) {
             // A second toggle while the close animation is running reopens the
@@ -167,6 +182,7 @@ QtObject {
         if (activePanel === "wallpaper") wallpaperCloseRequested = true
     }
 
+    // Finalizes wallpaper panel close and resets active panel state once animation completes.
     function finishCloseWallpaper(screenName) {
         if (activePanel !== "wallpaper" || wallpaperScreenName !== screenName) return
         wallpaperCloseRequested = false
@@ -174,6 +190,7 @@ QtObject {
         wallpaperScreenName = ""
     }
 
+    // Immediately forces wallpaper panel closed without waiting for animation.
     function forceCloseWallpaperIfScreen(screenName) {
         if (wallpaperScreenName !== screenName) return
         wallpaperCloseRequested = false
@@ -181,10 +198,12 @@ QtObject {
         wallpaperScreenName = ""
     }
 
+    // Requests animated close if wallpaper is active on the specified screen.
     function closeWallpaperIfScreen(screenName) {
         if (wallpaperScreenName === screenName) closeWallpaper()
     }
 
+    // Toggles notification center dropdown panel on a screen.
     function toggleNotifications(screenName, anchorX, anchorWidth) {
         if (activePanel === "notifications" && notificationPanel
                 && notificationPanel.screenName === screenName) {
@@ -195,16 +214,19 @@ QtObject {
         activePanel = "notifications"
     }
 
+    // Closes notification center dropdown panel.
     function closeNotifications() {
         if (activePanel === "notifications") activePanel = ""
         notificationPanel = null
     }
 
+    // Closes notification panel if active on the specified screen.
     function closeNotificationsIfScreen(screenName) {
         if (notificationPanel && notificationPanel.screenName === screenName)
             closeNotifications()
     }
 
+    // Opens system tray popup menu anchored to a tray item.
     function openTrayMenu(item, handle, screenName, anchorX, anchorWidth) {
         trayMenu = {
             item: item,
@@ -216,33 +238,40 @@ QtObject {
         activePanel = "tray"
     }
 
+    // Closes system tray popup menu.
     function closeTrayMenu() {
         if (activePanel === "tray") activePanel = ""
         trayMenu = null
     }
 
+    // Closes system tray popup if currently anchored to the given item.
     function closeTrayMenuIfItem(item) {
         if (trayMenu && trayMenu.item === item) closeTrayMenu()
     }
 
+    // Closes system tray popup if active on the specified screen.
     function closeTrayMenuIfScreen(screenName) {
         if (trayMenu && trayMenu.screenName === screenName) closeTrayMenu()
     }
 
+    // Opens centered settings panel on the specified screen.
     function openSettings(screenName) {
         settingsScreenName = screenName
         activePanel = "settings"
     }
 
+    // Closes centered settings panel.
     function closeSettings() {
         if (activePanel === "settings") activePanel = ""
         settingsScreenName = ""
     }
 
+    // Closes settings panel if active on the specified screen.
     function closeSettingsIfScreen(screenName) {
         if (settingsScreenName === screenName) closeSettings()
     }
 
+    // Opens action menu panel with specified flow page on a screen.
     function openActionMenu(screenName, flow) {
         actionMenuCloseRequested = false
         actionMenuScreenName = screenName
@@ -250,6 +279,7 @@ QtObject {
         activePanel = "actionMenu"
     }
 
+    // Toggles action menu panel visibility for the specified screen and flow.
     function toggleActionMenu(screenName, flow) {
         if (activePanel === "actionMenu" && actionMenuScreenName === screenName && actionMenuFlow === flow) {
             if (actionMenuCloseRequested) {
@@ -266,6 +296,7 @@ QtObject {
         if (activePanel === "actionMenu") actionMenuCloseRequested = true
     }
 
+    // Finalizes action menu panel close after animation finishes.
     function finishCloseActionMenu(screenName) {
         if (activePanel !== "actionMenu" || actionMenuScreenName !== screenName) return
         actionMenuCloseRequested = false
@@ -274,6 +305,7 @@ QtObject {
         actionMenuFlow = ""
     }
 
+    // Immediately forces action menu closed without waiting for animation.
     function forceCloseActionMenuIfScreen(screenName) {
         if (actionMenuScreenName !== screenName) return
         actionMenuCloseRequested = false
@@ -282,6 +314,7 @@ QtObject {
         actionMenuFlow = ""
     }
 
+    // Requests animated close if action menu is active on the specified screen.
     function closeActionMenuIfScreen(screenName) {
         if (actionMenuScreenName === screenName) closeActionMenu()
     }

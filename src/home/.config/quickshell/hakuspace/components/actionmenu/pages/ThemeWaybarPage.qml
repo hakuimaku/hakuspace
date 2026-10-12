@@ -81,6 +81,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Applies selected Waybar layout configuration via waybar control script.
     function applyMode(modeId) {
         if (!modeId) return;
         root.statusMessage = "";
@@ -134,6 +135,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Applies currently focused Waybar mode item.
     function activateCurrent() {
         if (modes.length > 0 && root.selectedIndex < modes.length) {
             applyMode(modes[root.selectedIndex]);

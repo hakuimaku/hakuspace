@@ -58,6 +58,7 @@ Item {
         }
     }
 
+    // Computes clamped x/y coordinates to position tooltip bubble relative to target item.
     function positionBubble() {
         var target = DashboardTooltip.currentTarget
         if (!target) return
@@ -89,6 +90,7 @@ Item {
         }
     }
 
+    // Floating tooltip bubble visual container.
     Rectangle {
         id: bubble
         x: root.bubbleX

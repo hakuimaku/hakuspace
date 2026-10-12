@@ -82,6 +82,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Applies selected Rofi theme preset via control script.
     function applyTheme(themeId) {
         if (!themeId) return;
         root.errorMessage = "";
@@ -135,6 +136,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Applies the currently highlighted Rofi theme option.
     function activateCurrent() {
         if (themes.length > 0 && root.selectedIndex < themes.length) {
             applyTheme(themes[root.selectedIndex]);

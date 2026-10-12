@@ -17,6 +17,7 @@ MorphButton {
         source: root.iconSource
         opacity: root.enabled ? 1 : 0.55
 
+        // Animate icon opacity when disabled or enabled.
         Behavior on opacity {
             NumberAnimation {
                 duration: HAnimation.buttonReleaseDuration

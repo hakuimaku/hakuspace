@@ -14,9 +14,7 @@ QtObject {
     property FileView fv2: FileView { path: Env.stateDir + "/opaque_theme_state"; watchChanges: true; printErrors: false; onFileChanged: this.reload(); onTextChanged: { var txt = this.text().trim(); if (txt === "1") root.opaqueThemeState = true; else if (txt === "0") root.opaqueThemeState = false; else root.opaqueThemeState = false; } }
 
 
-    // =========================================================================
-    // Hikai RoundedScreen chassis configuration (single source of truth)
-    // =========================================================================
+    // Rounded-screen chassis geometry (single source of truth).
     readonly property real roundedScreenThickness: 4
     readonly property real roundedScreenRadius: 20
     readonly property color roundedScreenColor: "#000000"

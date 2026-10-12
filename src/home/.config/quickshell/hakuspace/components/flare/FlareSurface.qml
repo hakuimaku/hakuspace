@@ -35,6 +35,7 @@ Item {
     property var factors: FG.hugFactors(start, end, {bounds: bounds, rf: rf})
     property var p: FG.pieces({start: start, end: end, height: currentHeight, kS: factors.kS, kE: factors.kE}, {r: r, rf: rf})
 
+    // Central chassis container clipping hosted content and rounding bottom corners.
     Rectangle {
         id: body
         x: root.start
@@ -47,6 +48,7 @@ Item {
         clip: true
     }
 
+    // Left flare ear curve smoothly joining chassis top edge to the ceiling bar.
     Shape {
         id: leftEar
         readonly property real er: root.earStartRadius
@@ -68,6 +70,7 @@ Item {
         }
     }
 
+    // Right flare ear curve smoothly joining chassis top edge to the ceiling bar.
     Shape {
         id: rightEar
         readonly property real er: root.earEndRadius
@@ -89,6 +92,7 @@ Item {
         }
     }
 
+    // Left foot flare curve rounding into the chassis bottom corner.
     Shape {
         x: p.footStart.u; y: p.footStart.v
         width: rf; height: rf
@@ -99,6 +103,7 @@ Item {
         ShapePath { fillColor: root.surfaceColor; strokeColor: "transparent"; PathSvg { path: "M 0 0 L " + rf + " 0 A " + rf + " " + rf + " 0 0 0 0 " + rf + " Z" } }
     }
 
+    // Right foot flare curve rounding into the chassis bottom corner.
     Shape {
         x: p.footEnd.u; y: p.footEnd.v
         width: rf; height: rf

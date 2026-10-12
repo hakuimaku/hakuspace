@@ -4,9 +4,8 @@ import Quickshell.Wayland
 import "../services"
 import "hakumenu" as HakuMenu
 
-// Standalone Hikai wallpaper changer surface.
-// W3.5 intentionally keeps the existing W2/W3 carousel presentation intact,
-// but detaches it from HakuMenu so W4/W5 can be debugged in isolation.
+// Standalone wallpaper selector surface.
+// Hosts the standalone wallpaper carousel and owns its input lifecycle.
 PanelWindow {
     id: root
     required property var modelData

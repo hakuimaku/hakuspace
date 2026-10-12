@@ -15,19 +15,21 @@ Item {
     property string activeWindowClass: ""
     property string activeWindowTitle: ""
     
+    // Delegates workspace activation to the active WM backend.
     function activate(key) {
         if (backendItem && backendItem.activate) {
             backendItem.activate(key);
         }
     }
     
+    // Dispatches secondary backend action (special workspace or secondary toggle).
     function secondary(key) {
         if (backendItem && backendItem.secondary && caps.secondary) {
             backendItem.secondary(key);
         }
     }
     
-    // Prefer global focus when multiple outputs have active workspaces.
+    // Cycles workspace focus forward or backward by step on the specified monitor output.
     function cycle(step, outputName) {
         if (!supported) return;
         var wsList = workspacesFor(outputName);
@@ -49,7 +51,7 @@ Item {
         activate(wsList[nextIdx].key);
     }
     
-    // Each compositor exposes a different per-output workspace policy.
+    // Filters and returns workspace list for the given monitor output based on WM compositor semantics.
     function workspacesFor(outputName) {
         if (!supported) return [];
         if (backendName === "hyprland") {

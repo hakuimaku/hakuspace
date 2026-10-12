@@ -9,11 +9,12 @@ QtObject {
     readonly property string centerMode: baseMode
     readonly property bool osdVisible: transientMode !== ""
     property real osdExpansion: osdVisible ? 1 : 0
+    // Animates center OSD pill expansion when transient volume or brightness feedback triggers.
     Behavior on osdExpansion {
         NumberAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve }
     }
 
-    // Every user action extends the transient level display.
+    // Activates transient OSD mode (volume or brightness) and restarts expiry timer.
     function show(mode) {
         transientMode = mode
         expiry.restart()

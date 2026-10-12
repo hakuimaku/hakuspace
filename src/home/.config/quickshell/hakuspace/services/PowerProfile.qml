@@ -7,6 +7,7 @@ QtObject {
     property string profile: ""
     property bool refreshPending: false
 
+    // Triggers an immediate query of the active system power profile.
     function refresh() {
         if (poll.running) {
             refreshPending = true
@@ -15,6 +16,7 @@ QtObject {
         }
     }
 
+    // Cycles the system power profile to the next mode (performance -> balanced -> power-saver).
     function cycle() {
         if (action.running || profile === "") return
         var profiles = ["performance", "balanced", "power-saver"]

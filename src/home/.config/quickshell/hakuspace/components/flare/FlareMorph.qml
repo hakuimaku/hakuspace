@@ -43,12 +43,14 @@ Item {
         onTriggered: updateTargetBounds()
     }
     
+    // Emits settled signal when all position and height animations have completed.
     function checkSettled() {
         if (!animStart.running && !animEnd.running && !animHeight.running) {
             root.settled(root.shown);
         }
     }
     
+    // Resolves global horizontal start and end bounds of the anchor item.
     function anchorSpan() {
         if (!anchorItem) return null;
         var t = anchorItem;
@@ -62,6 +64,7 @@ Item {
         return {start: pt.x, end: pt.x + tW};
     }
 
+    // Resolves target flare geometry and initiates opening or retarget animations.
     function updateTargetBounds() {
         if (!shown) return;
         var anchor = anchorSpan();
@@ -160,8 +163,11 @@ Item {
     onContentWChanged: { Qt.callLater(updateTargetBounds); }
     onContentHChanged: { Qt.callLater(updateTargetBounds); }
     
+    // Animates leading horizontal edge during in-place width retargets.
     NumberAnimation { id: animStart; target: root; property: "mStart"; easing.bezierCurve: root._activeWidthCurve; onFinished: checkSettled() }
+    // Animates trailing horizontal edge during in-place width retargets.
     NumberAnimation { id: animEnd; target: root; property: "mEnd"; easing.bezierCurve: root._activeWidthCurve; onFinished: checkSettled() }
+    // Animates vertical flare reveal or collapse during open and close transitions.
     NumberAnimation {
         id: animHeight
         target: root

@@ -23,6 +23,7 @@ Item {
     implicitHeight: Theme.fontSize * 1.8
     implicitWidth: contentWrapper.implicitWidth + Theme.pad * 2
     
+    // Animates window title pill width when title text changes.
     Behavior on implicitWidth {
         NumberAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve }
     }
@@ -34,6 +35,7 @@ Item {
         if (activeTitle !== nextTitle) morphAnim.restart();
     }
     
+    // Fades window title out and in when active window class or title updates.
     SequentialAnimation {
         id: morphAnim
         NumberAnimation { target: contentWrapper; property: "opacity"; to: 0; duration: 150; easing.type: Easing.OutQuad }
@@ -52,10 +54,12 @@ Item {
         contentWrapper.opacity = 1;
     }
 
+    // Background chassis of the window title module pill.
     Rectangle {
         anchors.fill: parent
         color: root.hovered ? Theme.hoverMuted : Theme.surface
         radius: Theme.radius
+        // Animates background surface color on hover enter and exit.
         Behavior on color { ColorAnimation { duration: HAnimation.normal } }
     }
     

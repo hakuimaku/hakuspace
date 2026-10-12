@@ -18,6 +18,7 @@ Rectangle {
     property bool active: false
     property bool _cavaSubscribed: false
 
+    // Synchronizes Cava audio visualizer service subscription with active card visibility.
     function _updateCavaSubscription() {
         if (active && !_cavaSubscribed) {
             _cavaSubscribed = true

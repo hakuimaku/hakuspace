@@ -71,6 +71,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Filters available fonts based on search query.
     function filterFonts() {
         if (!root.searchQuery) {
             root.filteredFonts = root.allFonts;
@@ -87,6 +88,7 @@ ActionMenu.ActionMenuPage {
         root.selectedIndex = 0;
     }
 
+    // Applies selected system font family across HakuSpace themes.
     function applyFont(fontName) {
         if (!fontName) return;
         root.errorMessage = "";
@@ -140,6 +142,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Applies the currently highlighted font from the filtered font list.
     function activateCurrent() {
         if (filteredFonts.length > 0 && root.selectedIndex < filteredFonts.length) {
             applyFont(filteredFonts[root.selectedIndex]);

@@ -26,6 +26,7 @@ Item {
                             (hakuMenuActive ? 0 : iconBox.width + content.spacing)
                             + label.implicitWidth + Theme.pad * 2)
                    + (hovered ? Theme.pad * 2 : 0)
+    // Animates center module width when track title or breadcrumb length changes.
     Behavior on implicitWidth {
         NumberAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve }
     }
@@ -73,6 +74,7 @@ Item {
         }
     }
 
+    // Cross-fades content opacity when center mode switches between media and idle.
     SequentialAnimation {
         id: stateTransition
         NumberAnimation { target: content; property: "opacity"; to: 0; duration: HAnimation.fast }
@@ -80,6 +82,7 @@ Item {
         NumberAnimation { target: content; property: "opacity"; to: 1; duration: HAnimation.fast }
     }
 
+    // Slide-and-fade animation when HakuMenu breadcrumb navigation updates.
     SequentialAnimation {
         id: breadcrumbTransition
         ParallelAnimation {
@@ -122,10 +125,12 @@ Item {
         }
     }
 
+    // Background chassis of the center module pill.
     Rectangle {
         anchors.fill: parent
         radius: Theme.radius
         color: root.hovered ? Theme.surfaceHi : Theme.surface
+        // Animates background surface color between idle and hovered states.
         Behavior on color { ColorAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve } }
     }
 
@@ -146,12 +151,14 @@ Item {
             width: root.hakuMenuActive ? 0 : (root.mediaMode ? Theme.fontSize * 1.55 : iconLabel.implicitWidth)
             height: root.mediaMode ? width : iconLabel.implicitHeight
 
+            // Circular accent pill highlighting the media playback icon.
             Rectangle {
                 anchors.fill: parent
                 visible: root.mediaMode && !root.hakuMenuActive
                 radius: width / 2
                 color: Theme.accent
                 scale: root.hovered ? 1.06 : 1
+                // Animates media icon circle scale on hover enter and exit.
                 Behavior on scale { NumberAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve } }
             }
             Text {

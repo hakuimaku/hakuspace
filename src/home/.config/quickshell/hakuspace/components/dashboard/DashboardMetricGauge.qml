@@ -31,6 +31,7 @@ Item {
     onAccentColorChanged: canvas.requestPaint()
     onStrokeWidthChanged: canvas.requestPaint()
 
+    // Renders the background ring and active circular metric arc.
     Canvas {
         id: canvas
         anchors.fill: parent
@@ -111,6 +112,7 @@ Item {
         cursorShape: root.available ? Qt.PointingHandCursor : Qt.ArrowCursor
         acceptedButtons: Qt.LeftButton
 
+        // Updates Dashboard tooltip text with percent, used amount, and toggle action hint.
         function updateTooltip() {
             if (!root.available) {
                 DashboardTooltip.show(root, root.title + ": Not available")

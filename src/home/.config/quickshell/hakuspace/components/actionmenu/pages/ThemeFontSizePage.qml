@@ -38,6 +38,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Executes theme control script to set system font size point value.
     function applySize(sz) {
         root.errorMessage = "";
         setSizeProc.command = [Env.binDir + "/theme_ctl.sh", "set-size", String(sz)];
@@ -79,6 +80,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Applies the currently selected font size value.
     function activateCurrent() {
         if (root.selectedIndex >= 0 && root.selectedIndex < sizes.length) {
             applySize(sizes[root.selectedIndex]);

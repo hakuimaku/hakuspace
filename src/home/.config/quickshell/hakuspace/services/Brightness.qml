@@ -12,18 +12,20 @@ QtObject {
     signal userInteracted()
     signal userChanged()
 
+    // Triggers an immediate poll of the current display backlight level.
     function refresh() {
         poll.running = false
         poll.running = true
     }
 
+    // Enqueues a brightnessctl command and schedules execution.
     function change(command) {
         queuedCommands.push(command)
         userInteracted()
         startNext()
     }
 
-    // Serialize brightnessctl actions to preserve rapid key presses in order.
+    // Serializes brightnessctl actions to preserve rapid key presses in order.
     function startNext() {
         if (actionBusy || queuedCommands.length === 0) return
         actionBusy = true

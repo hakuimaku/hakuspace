@@ -23,19 +23,22 @@ QtObject {
         if (dnd) hidePopups()
     }
 
+    // Toggles do-not-disturb mode and hides active popups if enabled.
     function toggleDnd() { dnd = !dnd }
 
+    // Marks all active popup notifications as ineligible for popup display.
     function hidePopups() {
         records = records.map(function(record) {
             return record.popupEligible ? Object.assign({}, record, { popupEligible: false }) : record
         })
     }
 
-    // ponytail: first available output until WM provides one reliable focused-output signal.
+    // Resolves primary screen name used as the popup destination fallback.
     function popupScreen() {
         return Quickshell.screens.length ? Quickshell.screens[0].name : ""
     }
 
+    // Filters and returns the latest visible popup records for a screen.
     function popupForScreen(screenName) {
         var target = popupScreen()
         return records.filter(function(record) {
@@ -53,6 +56,7 @@ QtObject {
         if (_memory) _memory.recordsJson = JSON.stringify(records)
     }
 
+    // Initializes notification store with persisted records from memory.
     function start(memory) {
         // The reloadable holder belongs to ShellRoot, where Quickshell can
         // match it to the preceding configuration generation.
@@ -65,6 +69,7 @@ QtObject {
         return server
     }
 
+    // Finds array index of a notification by its tracking key.
     function indexOfKey(key) {
         for (var i = 0; i < records.length; ++i) {
             if (records[i].key === key) return i
@@ -72,6 +77,7 @@ QtObject {
         return -1
     }
 
+    // Finds active notification key corresponding to a notification ID.
     function activeKeyForId(id, allowUnbound) {
         for (var i = 0; i < records.length; ++i) {
             var record = records[i]
@@ -81,6 +87,7 @@ QtObject {
         return null
     }
 
+    // Creates an immutable record snapshot from an incoming notification object.
     function snapshot(notification, previous, key) {
         var actions = []
         for (var i = 0; i < notification.actions.length; ++i) {
@@ -114,6 +121,7 @@ QtObject {
         }
     }
 
+    // Refreshes the snapshot for an already tracked notification.
     function refresh(key, notification) {
         if (_handles[key] !== notification) return
         var index = indexOfKey(key)
@@ -123,6 +131,7 @@ QtObject {
         records = updated
     }
 
+    // Computes and registers the timeout deadline for notification expiry.
     function scheduleExpiry(key, notification) {
         // This installed Quickshell 0.3.1 exposes the D-Bus timeout in ms.
         var timeoutMs = notification.expireTimeout
@@ -133,6 +142,7 @@ QtObject {
         expiryTimer.running = Object.keys(_deadlines).length > 0
     }
 
+    // Closes a notification, cleans up handles/deadlines, and updates status.
     function close(key, notification, reason) {
         if (_handles[key] !== notification) return
         delete _handles[key]
@@ -156,6 +166,7 @@ QtObject {
         records = updated
     }
 
+    // Ingests incoming notification, tracks handle, and sets up signal listeners.
     function accept(notification) {
         if (!_started) throw new Error("Notification arrived before history restore")
         // Quickshell drops an untracked notification after the signal handler.
@@ -199,6 +210,7 @@ QtObject {
         notification.actionsChanged.connect(function() { root.refresh(key, notification) })
     }
 
+    // Dismisses notification by key, hiding it from popups and signaling client.
     function dismiss(key) {
         var index = indexOfKey(key)
         if (index < 0) return
@@ -209,11 +221,13 @@ QtObject {
         if (notification) notification.dismiss()
     }
 
+    // Tells the notification handle to trigger expiration.
     function expire(key) {
         var notification = _handles[key]
         if (notification) notification.expire()
     }
 
+    // Clears all stored records and dismisses active handles.
     function clearAll() {
         if (records.length === 0) return
         records = []
@@ -221,8 +235,9 @@ QtObject {
         for (var i = 0; i < keys.length; ++i) _handles[keys[i]].dismiss()
     }
 
+    // Periodic timer that expires notifications past their deadline.
+    // Hover does not pause the notification expiry deadline.
     property Timer expiryTimer: Timer {
-        // ponytail: hover does not pause this deadline; revisit during P2.5 timeout hardening.
         interval: 250
         repeat: true
         running: false

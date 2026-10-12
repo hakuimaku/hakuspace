@@ -44,11 +44,13 @@ QtObject {
 
     readonly property string snapshotScript: Env.binDir + "/sysstats_snapshot.sh"
 
+    // Registers a subscriber for basic system metrics (CPU, RAM, temp).
     function acquire() {
         _basicSubscribers++;
         _syncState(false);
     }
 
+    // Unregisters a subscriber for basic system metrics.
     function release() {
         if (_basicSubscribers > 0) {
             _basicSubscribers--;
@@ -56,11 +58,13 @@ QtObject {
         }
     }
 
+    // Registers a subscriber for extended metrics (GPU, disk mounts).
     function acquireExtended() {
         _extendedSubscribers++;
         _syncState(true);
     }
 
+    // Unregisters a subscriber for extended metrics.
     function releaseExtended() {
         if (_extendedSubscribers > 0) {
             _extendedSubscribers--;
@@ -68,6 +72,7 @@ QtObject {
         }
     }
 
+    // Synchronizes polling timer and state caches with active subscriber demand.
     function _syncState(immediateFetch) {
         if (totalSubscribers > 0) {
             if (!statTimer.running) {
@@ -90,6 +95,7 @@ QtObject {
         }
     }
 
+    // Triggers execution of the system metrics snapshot script.
     function _triggerPoll() {
         statProc.command = _extendedSubscribers > 0
             ? [snapshotScript, "--extended"]

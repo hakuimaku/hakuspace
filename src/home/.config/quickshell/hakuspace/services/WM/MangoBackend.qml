@@ -13,6 +13,7 @@ Item {
     
     property var tagsData: []
     
+    // Synchronizes Mango tag status and client counts into the shared WM workspaces model.
     function _update() {
         var newWorkspaces = [];
         
@@ -101,6 +102,7 @@ Item {
         id: mangoActionProc
     }
     
+    // Switches active desktop view to the requested tag index in Mango.
     function activate(key) {
         var parts = key.split(":");
         if (parts.length < 3) return;
@@ -111,6 +113,7 @@ Item {
         mangoActionProc.running = true;
     }
     
+    // Toggles visibility of the requested tag index in Mango.
     function secondary(key) {
         var parts = key.split(":");
         if (parts.length < 3) return;

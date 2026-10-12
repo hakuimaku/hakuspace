@@ -22,10 +22,12 @@ Rectangle {
     readonly property real arrowBtnSize: Math.max(28, Math.min(32, Math.round(gaugeDiameter * 0.33)))
     readonly property real gaugeGap: Math.max(16, Math.min(22, Math.round(root.width * 0.045)))
 
+    // Toggles between System (CPU/RAM) and GPU (GPU/VRAM) gauge views.
     function togglePage() {
         currentPage = (currentPage === "system") ? "gpu" : "system"
     }
 
+    // Synchronizes extended hardware polling with card active lifecycle.
     function _updateSubscription() {
         if (active && !_subscribed) {
             _subscribed = true

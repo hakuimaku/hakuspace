@@ -34,6 +34,7 @@ PanelWindow {
         if (trayMenuItem && trayRowCount > 0) menuSettled.restart()
     }
 
+    // Cleans up active tray popup state and stops pending resolution timers.
     function closeTrayMenu() {
         menuTimeout.stop()
         menuSettled.stop()
@@ -41,6 +42,7 @@ PanelWindow {
         trayMenuAnchor = null
     }
 
+    // Falls back to native platform context menu or secondary activation for tray item.
     function platformMenu(item, anchor, reason) {
         lastTrayFallbackReason = reason
         if (!item || !anchor) return
@@ -52,6 +54,7 @@ PanelWindow {
         }
     }
 
+    // Handles tray item click: opens native menu, dismisses existing, or prepares custom popup.
     function requestTrayMenu(item, anchor) {
         if (UiState.trayMenu && UiState.trayMenu.item === item) {
             UiState.closeTrayMenu()
@@ -75,6 +78,7 @@ PanelWindow {
         if (trayRowCount > 0) menuSettled.restart()
     }
 
+    // Dispatches request to open custom flare tray menu panel anchored to tray item.
     function openTrayPanel() {
         if (!trayMenuItem || !trayMenuAnchor) return
         var item = trayMenuItem
@@ -84,6 +88,7 @@ PanelWindow {
         UiState.openTrayMenu(item, item.menu, root.modelData.name, x, anchor.width)
     }
 
+    // Evaluates loaded tray menu rows and opens tray menu once content has populated.
     function resolveTrayMenu() {
         if (!trayMenuItem) return
         var rows = trayOpener.children.values
@@ -156,6 +161,7 @@ PanelWindow {
 
     mask: Region { item: barBg }
 
+    // Primary background chassis and container of the top status bar.
     Rectangle {
         id: barBg
         width: parent.width
@@ -201,6 +207,7 @@ PanelWindow {
                     opacity: 1.0
                     enabled: true
 
+                    // Animates horizontal displacement of left modules to clear expanding navigation controller.
                     Behavior on x {
                         NumberAnimation {
                             duration: movingLeftModules.navigationOpen ? HAnimation.navigationOpenDuration : 560
@@ -220,6 +227,7 @@ PanelWindow {
                 anchors.centerIn: parent
                 anchors.verticalCenterOffset: Theme.topBarTopPadding / 2
                 spacing: showCava ? Theme.gap : 0
+                // Animates center cluster spacing when the cava visualizer expands or collapses.
                 Behavior on spacing { NumberAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve } }
                 readonly property real safeSpan: Math.max(0, 2 * Math.min(parent.width / 2
                                                                           - (leftModules.x + leftModules.width)
@@ -239,6 +247,7 @@ PanelWindow {
                                                   && safeSpan >= cavaSlotWidth + Theme.gap + Theme.fontSize * 3
                 opacity: (CenterState.osdVisible || CenterState.osdExpansion > 0 || dashboardActive) ? 0 : 1
                 enabled: !CenterState.osdVisible && CenterState.osdExpansion === 0 && !dashboardActive
+                // Animates center cluster opacity when OSD feedback or dashboard becomes active.
                 Behavior on opacity {
                     NumberAnimation {
                         duration: HAnimation.fast

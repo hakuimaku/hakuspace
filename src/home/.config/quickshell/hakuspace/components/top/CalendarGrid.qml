@@ -202,6 +202,7 @@ Item {
                 readonly property bool isHovered: root.dayHoverEnabled && isValidDay && dayMouse.containsMouse
                 readonly property real markerDiameter: Math.min(parent.width - 2, Math.max(16, root.cellHeight - 2))
 
+                // Circular day highlight indicator for current date and hovered cell.
                 Rectangle {
                     anchors.centerIn: parent
                     width: cellItem.markerDiameter
@@ -212,7 +213,9 @@ Item {
                     scale: (cellItem.isHovered && !cellItem.today) ? 1.08 : 1.0
                     border.width: 0
 
+                    // Animates day marker highlight color on hover.
                     Behavior on color { ColorAnimation { duration: HAnimation.fast } }
+                    // Animates day marker scale slightly on hover.
                     Behavior on scale { NumberAnimation { duration: HAnimation.buttonHoverDuration } }
                 }
 

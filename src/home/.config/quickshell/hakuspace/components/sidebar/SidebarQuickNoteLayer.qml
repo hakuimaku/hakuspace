@@ -18,6 +18,7 @@ Item {
     signal closed()
     signal pointerMoved(real x, real y)
 
+    // Grants keyboard input focus to the embedded Markdown editor.
     function forceFocus() {
         if (editor) {
             editor.forceEditorFocus()

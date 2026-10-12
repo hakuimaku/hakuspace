@@ -19,19 +19,21 @@ Row {
         id: execProc
     }
 
+    // Spawns shell command asynchronously via background process.
     function exec(cmd) {
         execProc.command = ["bash", "-c", cmd];
         execProc.running = false;
         execProc.running = true;
     }
 
-    
+    // Quick settings pill grouping backlight, volume, and battery status icons.
     Rectangle {
         color: Theme.accent
         radius: Theme.radius
         implicitHeight: Theme.fontSize * 1.8
         implicitWidth: sysRow.implicitWidth + Theme.pad * 2
         
+        // Animates quick settings pill width when status icons become visible or hidden.
         Behavior on implicitWidth { NumberAnimation { duration: HAnimation.normal } }
         
         Row {
@@ -55,6 +57,7 @@ Row {
                     color: Theme.onAccentColor
                     anchors.centerIn: parent
                     scale: blMA.containsMouse ? 1.2 : 1.0
+                    // Animates brightness icon hover scale.
                     Behavior on scale { NumberAnimation { duration: HAnimation.normal } }
                 }
                 MouseArea {
@@ -86,6 +89,7 @@ Row {
                     color: Theme.onAccentColor
                     anchors.centerIn: parent
                     scale: volMA.containsMouse ? 1.2 : 1.0
+                    // Animates volume icon hover scale.
                     Behavior on scale { NumberAnimation { duration: HAnimation.normal } }
                 }
                 MouseArea {
@@ -130,6 +134,7 @@ Row {
                     color: Theme.onAccentColor
                     anchors.centerIn: parent
                     scale: batMA.containsMouse ? 1.2 : 1.0
+                    // Animates battery icon hover scale.
                     Behavior on scale { NumberAnimation { duration: HAnimation.normal } }
                 }
                 MouseArea {

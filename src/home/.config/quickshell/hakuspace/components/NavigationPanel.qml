@@ -665,9 +665,7 @@ Item {
     SequentialAnimation {
         id: closeMorph
 
-        // Fold the pizza slices/ring into the hub first. Keeping flare geometry
-        // fixed here removes the abrupt "menu disappears, then blob travels"
-        // seen in the runtime recording.
+        // Fold the navigation slices and outer ring into the hub first while keeping flare geometry stable.
         NumberAnimation {
             target: root
             property: "closeCollapseProgress"
@@ -678,9 +676,7 @@ Item {
         }
 
         // Once only the Logo hub remains, return it to the TopBar while the
-        // flare retracts into the RoundedScreen seam. Do not collapse the flare
-        // horizontally toward the Logo: its visual origin lives at frameTop,
-        // so doing that creates the detached black blob seen in runtime.
+        // flare retracts into the RoundedScreen seam without horizontal deformation.
         ParallelAnimation {
             NumberAnimation {
                 target: root
@@ -852,7 +848,7 @@ Item {
             }
         }
 
-        // P3 Sidebar visual surface: attached flush to left edge with flare curve,
+        // Sidebar visual surface: attached flush to left edge with flare curve,
         // morph opening/closing animation, and circular option controls.
         Sidebar.SidebarSurface {
             id: sidebarSurface
@@ -881,7 +877,7 @@ Item {
             }
         }
 
-        // P3 Sidebar Quick Note layer: ~300x200 editor beside Sidebar rail
+        // Sidebar Quick Note layer: editor beside Sidebar rail.
         Sidebar.SidebarQuickNoteLayer {
             id: quickNoteLayer
             x: root.quickNoteX
@@ -901,8 +897,8 @@ Item {
             }
         }
 
-        // P3 Dashboard visual surface: mockup-locked silhouette, placeholder avatar,
-        // and card placeholder bounds inside the existing navigation overlay.
+        // Dashboard visual surface: fluid silhouette with avatar, profile rail,
+        // and card layout inside the navigation overlay.
         Dashboard.DashboardSurface {
             id: dashboardSurface
             screenWidth: navigationLayer.width

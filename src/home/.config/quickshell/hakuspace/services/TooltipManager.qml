@@ -11,6 +11,7 @@ Item {
     property bool warm: false
     property var activeBar: null
 
+    // Stops pending tooltip timers and hides active tooltip state.
     function dismiss() {
         showTimer.stop();
         graceTimer.stop();
@@ -21,10 +22,12 @@ Item {
         activeBar = null;
     }
 
+    // Dismisses active tooltip if it matches the released target.
     function release(target) {
         if (current && current.target === target) dismiss();
     }
 
+    // Recursively verifies visibility of the target through its parent hierarchy.
     function targetVisible(target) {
         if (!target) return false;
         try {
@@ -78,7 +81,7 @@ Item {
         onTriggered: root.warm = false
     }
     
-    // Associate each tooltip with the top-level bar containing its target.
+    // Associates tooltip payload with target item and schedules display.
     function show(target, text, component, props) {
         if (!target || !targetVisible(target) || UiState.activePanel !== "") return;
         
@@ -113,6 +116,7 @@ Item {
         }
     }
     
+    // Cancels show timer and begins grace cooldown period for target.
     function hide(target) {
         if (current && current.target === target) {
             showTimer.stop();

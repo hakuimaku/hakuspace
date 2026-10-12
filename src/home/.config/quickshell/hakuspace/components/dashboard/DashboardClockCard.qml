@@ -1,6 +1,7 @@
 import QtQuick
 import "../../services"
 
+// Primary clock and date card positioned in Row 1, Col 1 of the Dashboard cluster.
 Rectangle {
     id: root
 

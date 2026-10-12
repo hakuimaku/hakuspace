@@ -47,6 +47,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Triggers recording mode launch or pushes the audio source submenu.
     function activateIndex(idx) {
         if (idx < 0 || idx >= modes.length) return;
         var mode = modes[idx];
@@ -97,6 +98,7 @@ ActionMenu.ActionMenuPage {
         }
     }
 
+    // Executes currently selected recording option.
     function activateCurrent() {
         activateIndex(root.selectedIndex);
     }

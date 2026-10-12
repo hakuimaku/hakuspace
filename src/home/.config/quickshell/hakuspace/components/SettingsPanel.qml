@@ -3,9 +3,8 @@ import Quickshell
 import Quickshell.Wayland
 import "../services"
 
-// P3 Settings Stub Layer (T2)
-// Standalone modal surface centered in the output.
-// Visual stub with restrained modal backdrop and subtle body outline.
+// Fullscreen host for the centered Settings surface.
+// Standalone modal surface centered in the output with restrained backdrop and body outline.
 PanelWindow {
     id: root
     required property var modelData

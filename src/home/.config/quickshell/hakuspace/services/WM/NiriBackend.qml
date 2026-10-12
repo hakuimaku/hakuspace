@@ -233,6 +233,7 @@ Item {
         id: niriActionProc
     }
 
+    // Activates target monitor and workspace index via niri IPC action commands.
     function activate(key) {
         var id = parseInt(key.substring(5));
         var ws = null;
@@ -252,5 +253,6 @@ Item {
         niriActionProc.running = true;
     }
 
+    // Secondary action handler (unsupported on Niri).
     function secondary(key) {}
 }

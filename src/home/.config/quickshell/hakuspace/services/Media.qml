@@ -18,7 +18,7 @@ QtObject {
     property bool canGoPrevious: available && selected.canGoPrevious
     property bool canGoNext: available && selected.canGoNext
 
-    // The revision forces reevaluation when an existing MPRIS player changes.
+    // Selects the preferred active MPRIS player from available candidates.
     function choosePlayer(list, ignoredRevision) {
         var candidates = []
         for (var i = 0; i < list.length; ++i) {
@@ -33,14 +33,17 @@ QtObject {
         return candidates.length ? candidates[0] : null
     }
 
+    // Toggles playback state (play/pause) on the active media player.
     function togglePlaying() {
         if (selected && selected.canTogglePlaying) selected.togglePlaying()
     }
 
+    // Triggers previous track action on the active media player.
     function previous() {
         if (selected && selected.canGoPrevious) selected.previous()
     }
 
+    // Triggers next track action on the active media player.
     function next() {
         if (selected && selected.canGoNext) selected.next()
     }

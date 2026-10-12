@@ -51,6 +51,7 @@ QtObject {
         return c;
     }
 
+    // Parses quickshell.json payload and updates reactive theme properties.
     function apply(jsonString) {
         if (!jsonString || jsonString.trim() === "") return;
         try {

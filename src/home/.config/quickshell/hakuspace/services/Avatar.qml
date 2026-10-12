@@ -15,11 +15,13 @@ QtObject {
     property string lastError: ""
     property int revision: 0
 
+    // Queries current avatar path from avatar_ctl.sh.
     function refresh() {
         if (queryProc.running) return
         queryProc.running = true
     }
 
+    // Assigns and commits a new avatar image path via avatar_ctl.sh.
     function setAvatar(localPath) {
         if (!localPath || busy) return
         busy = true
@@ -29,6 +31,7 @@ QtObject {
         setProc.running = true
     }
 
+    // Reports image decoding failure message for error banner presentation.
     function reportDecodeError(msg) {
         lastError = msg ? msg : "Image format not supported by runtime"
     }

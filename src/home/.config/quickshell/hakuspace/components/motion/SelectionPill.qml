@@ -46,6 +46,7 @@ Rectangle {
     property color normalColor: Theme.accent
     property color dangerColor: "#e05555"
 
+    // Maps geometry from target Item into container coordinates and updates target bounds.
     function syncTarget(forceSnap) {
         if (!targetItem) return;
         if (targetItem.width <= 0 || targetItem.height <= 0) return;
@@ -72,6 +73,7 @@ Rectangle {
         }
     }
 
+    // Assigns target item and immediately snaps selection pill geometry to it.
     function snapToItem(item) {
         targetItem = item;
         syncTarget(true);
@@ -114,6 +116,7 @@ Rectangle {
     color: indexedMode ? Theme.accent : currentColor
     opacity: shown ? 1 : 0
 
+    // Immediately snaps pill coordinates and styling to target bounds without animation.
     function snap() {
         if (indexedMode) {
             startIndexAnim.stop();
@@ -144,6 +147,7 @@ Rectangle {
         }
     }
 
+    // Calculates directional lead/trail timing and restarts asymmetric morph animations for absolute mode.
     function retargetAbsolute() {
         if (indexedMode) return;
         if (!absoluteTargetValid) return;
@@ -221,6 +225,7 @@ Rectangle {
     onTargetRadiusChanged: { if (!indexedMode) Qt.callLater(root.retargetAbsolute); }
     onTargetColorChanged: { if (!indexedMode) Qt.callLater(root.retargetAbsolute); }
 
+    // Computes directional lead/trail times and triggers indexed tab lane slide animations.
     function syncIndexedTarget() {
         if (targetIndex < 0 || slotCount <= 0 || !shown) {
             startIndexAnim.stop();
@@ -268,6 +273,7 @@ Rectangle {
         }
     }
 
+    // Animates indexed leading edge position across lane slots.
     NumberAnimation {
         id: startIndexAnim
         target: root
@@ -276,6 +282,7 @@ Rectangle {
         easing.bezierCurve: root.curve
     }
 
+    // Animates indexed trailing edge position across lane slots.
     NumberAnimation {
         id: endIndexAnim
         target: root
@@ -284,6 +291,7 @@ Rectangle {
         easing.bezierCurve: root.curve
     }
 
+    // Animates pill fade in and out when shown state toggles.
     Behavior on opacity {
         NumberAnimation {
             duration: HAnimation.buttonReleaseDuration
@@ -293,6 +301,7 @@ Rectangle {
     }
 
     // Asymmetric leading/trailing edge morph animations for absolute mode
+    // Animates leading horizontal edge with directional timing.
     NumberAnimation {
         id: startXAnim
         target: root
@@ -301,6 +310,7 @@ Rectangle {
         easing.bezierCurve: root.curve
     }
 
+    // Animates trailing horizontal edge with directional timing.
     NumberAnimation {
         id: endXAnim
         target: root
@@ -309,6 +319,7 @@ Rectangle {
         easing.bezierCurve: root.curve
     }
 
+    // Animates leading vertical edge with directional timing.
     NumberAnimation {
         id: startYAnim
         target: root
@@ -317,6 +328,7 @@ Rectangle {
         easing.bezierCurve: root.curve
     }
 
+    // Animates trailing vertical edge with directional timing.
     NumberAnimation {
         id: endYAnim
         target: root
@@ -325,6 +337,7 @@ Rectangle {
         easing.bezierCurve: root.curve
     }
 
+    // Animates corner radius morph to target shape.
     NumberAnimation {
         id: radiusAnim
         target: root
@@ -334,6 +347,7 @@ Rectangle {
         easing.bezierCurve: root.curve
     }
 
+    // Animates background fill color transition to target color.
     ColorAnimation {
         id: colorAnim
         target: root

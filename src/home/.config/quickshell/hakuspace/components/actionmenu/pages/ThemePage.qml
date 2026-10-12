@@ -53,6 +53,7 @@ ActionMenu.ActionMenuPage {
         }
     ]
 
+    // Pushes corresponding theme configuration submenu onto stack with seed geometry.
     function activateIndex(idx) {
         if (idx < 0 || idx >= items.length) return;
         var item = items[idx];
@@ -61,6 +62,7 @@ ActionMenu.ActionMenuPage {
         root.pushSubmenu(item.page, {}, geom, "option");
     }
 
+    // Activates currently focused theme category.
     function activateCurrent() {
         activateIndex(root.selectedIndex);
     }

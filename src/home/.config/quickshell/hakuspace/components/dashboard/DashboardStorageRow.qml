@@ -34,7 +34,7 @@ Item {
             elide: Text.ElideRight
         }
 
-        // Progress bar track
+        // Progress bar background track.
         Rectangle {
             id: track
             width: parent.width - label.width - valueText.width - (parent.spacing * 2)
@@ -43,6 +43,7 @@ Item {
             color: Theme.hoverMuted
             anchors.verticalCenter: parent.verticalCenter
 
+            // Filled storage usage bar with easing animation.
             Rectangle {
                 id: fill
                 anchors.left: parent.left
@@ -87,6 +88,7 @@ Item {
         cursorShape: root.available ? Qt.PointingHandCursor : Qt.ArrowCursor
         acceptedButtons: Qt.LeftButton
 
+        // Updates Dashboard tooltip with filesystem type, usage breakdown, and toggle hint.
         function updateTooltip() {
             if (!root.available) return
             var title = root.target === "/" ? "Root (/)" : root.target
