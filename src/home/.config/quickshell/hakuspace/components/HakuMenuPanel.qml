@@ -269,7 +269,7 @@ Item {
 
                 readonly property real innerPad: Theme.pad * 2
                 readonly property real innerWidth: Math.max(0, width - innerPad * 2)
-                readonly property real stateWidth: Theme.fontSize * 3.5 + 10
+                readonly property real stateWidth: Math.max(92, Theme.fontSize * 6.2)
                 readonly property bool showStateRegion: UiState.hakuMenuMode === "theme"
                 readonly property color controlBg: Qt.darker(Theme.hoverMuted, 1.75)
                 readonly property color controlHoverBg: Qt.darker(Theme.hoverMuted, 1.35)
@@ -413,18 +413,22 @@ Item {
                         Keys.onDownPressed: {
                             if (UiState.hakuMenuMode === "general") generalList.moveSelection(1)
                             else if (UiState.hakuMenuMode === "drun") drunList.moveSelection(1)
+                            else if (UiState.hakuMenuMode === "theme") themeList.moveSelection(1)
                         }
                         Keys.onUpPressed: {
                             if (UiState.hakuMenuMode === "general") generalList.moveSelection(-1)
                             else if (UiState.hakuMenuMode === "drun") drunList.moveSelection(-1)
+                            else if (UiState.hakuMenuMode === "theme") themeList.moveSelection(-1)
                         }
                         Keys.onReturnPressed: {
                             if (UiState.hakuMenuMode === "general") generalList.activateCurrent()
                             else if (UiState.hakuMenuMode === "drun") drunList.activateCurrent()
+                            else if (UiState.hakuMenuMode === "theme") themeList.activateCurrent()
                         }
                         Keys.onEnterPressed: {
                             if (UiState.hakuMenuMode === "general") generalList.activateCurrent()
                             else if (UiState.hakuMenuMode === "drun") drunList.activateCurrent()
+                            else if (UiState.hakuMenuMode === "theme") themeList.activateCurrent()
                         }
                     }
 
@@ -441,7 +445,7 @@ Item {
                     width: menu.innerWidth - (menu.showStateRegion ? stateRegion.width + Theme.gap * 2 : 0)
                     height: Math.max(0, menu.height - y - menu.innerPad)
                     radius: Theme.largeRadius
-                    color: UiState.hakuMenuMode === "theme" ? "transparent" : menu.listBg
+                    color: menu.listBg
                     clip: true
 
                     HakuMenu.GeneralList {
@@ -478,6 +482,25 @@ Item {
                     radius: Theme.largeRadius
                     color: menu.listBg
                     visible: menu.showStateRegion
+                }
+
+                HakuMenu.ThemeList {
+                    id: themeList
+                    x: mainList.x + Theme.gap
+                    y: mainList.y + Theme.gap
+                    width: mainList.width + Theme.gap * 2 + stateRegion.width - Theme.gap * 2
+                    height: Math.max(0, mainList.height - Theme.gap * 2)
+                    visible: UiState.hakuMenuMode === "theme"
+                    query: UiState.hakuMenuQuery
+                    leftColumnWidth: Math.max(0, mainList.width - Theme.gap * 2)
+                    stateColumnWidth: Math.max(0, stateRegion.width - Theme.gap * 2)
+                    columnGap: Theme.gap * 4
+                    rowHoverColor: menu.controlHoverBg
+                    rowSelectedColor: Qt.darker(Theme.hoverMuted, 1.18)
+                    onHighlightedLabelChanged: label => UiState.setHakuMenuSelectionLabel(label)
+                    onLaunched: closeMenu => {
+                        if (closeMenu) UiState.closeHakuMenu()
+                    }
                 }
             }
         }

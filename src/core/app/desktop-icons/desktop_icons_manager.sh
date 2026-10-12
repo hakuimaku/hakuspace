@@ -40,11 +40,6 @@ EOF
     exit 0
 fi
 
-if haku_qs_mode; then
-    echo "Desktop icons are not supported in Quickshell backend yet."
-    exit 0
-fi
-
 # Toggle desktop icons on/off
 if [[ $1 == "--toggle" ]]; then
     if [[ $(cat "$DESKTOP_ICONS_STATE") == "1" ]]; then
