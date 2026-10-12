@@ -55,14 +55,23 @@ pgrep -af 'qs -c hakuspace'                # Expected: empty after switching to 
 Switch **several times in succession**: this must not create two supervisors or two `qs` processes (`pgrep -af qs_supervisor.sh` and `pgrep -af 'qs -c hakuspace'` must each return at most one line).
 If a manually started `qs -c hakuspace` instance already exists, `set hikai` must stop it and start it again.
 
-### 1.2 Manager guards (do not run legacy apps in Hikai)
+### 1.2 Manager guards and Hikai-compatible app state
 ```bash
 ~/.local/bin/haku_backend.sh set hikai
-for m in waybar_manager.sh taskbar_manager.sh rounded_screen_manager.sh edge_trigger_manager.sh \
-         cava_manager.sh desktop_icons_manager.sh; do ~/.local/bin/$m --startup; done
-pgrep -x waybar; pgrep -x taskbar; pgrep -f '\.py'    # Expected: all three empty
+for m in waybar_manager.sh rounded_screen_manager.sh edge_trigger_manager.sh; do ~/.local/bin/$m --startup; done
+pgrep -x waybar; pgrep -x taskbar    # Expected: empty
+
+~/.local/bin/taskbar_manager.sh --toggle
+cat ~/.local/state/hakuspace/state/taskbar_manual_state   # Expected: flips 0/1; no Waybar taskbar process starts
+
+~/.local/bin/cava_manager.sh toggle
+cat ~/.local/state/hakuspace/state/cava_layer_state       # Expected: flips 0/1; no legacy cava-layer.py process starts
+
+~/.local/bin/desktop_icons_manager.sh --toggle
+cat ~/.local/state/hakuspace/state/desktop_icons_state    # Expected: flips 0/1
+pgrep -af 'desktop_icons.py'                        # Expected when state=1: one Desktop Icons app process
 ```
-Also try `--toggle` and `--reload`: they must only change the state file; no legacy process may appear.
+Desktop Icons is explicitly allowed in Hikai. Taskbar and Cava Underbar are Hikai state-only toggles; they must not start legacy Waybar/Cava surfaces.
 
 ### 1.3 Autostart and fresh startup
 Log out/in (or reboot) on the `hikai` backend for each WM: the bar appears and `--verify` passes. All four autostart entries must call `session_start.sh --early` (`grep -rn session_start src/home/.config/{hypr,niri,labwc,mango}`). A reboot must preserve the selected backend.
@@ -145,9 +154,9 @@ General checks:
 
 - **Notifications:** Native notifications (P2) are active in Hikai (`NotificationServer` claims `org.freedesktop.Notifications`). `swaync` is blocked.
 - **Super+R / Launcher:** Routes directly to HakuMenu Drun tab (`DesktopEntries` search & launch).
-- **Large surfaces:** Navigation, Dashboard, Sidebar, Settings stub, HakuMenu (General, Drun, Theme stub), and Wallpaper carousel are implemented.
+- **Large surfaces:** Navigation, Dashboard, Sidebar, Settings stub, HakuMenu (General, Drun, live Theme tab), and Wallpaper carousel are implemented.
 - **Power & Clipboard:** Headless backends (`power_ctl.sh`, `clipboard_ctl.sh`) are complete; native Quickshell UI surfaces are deferred to P4 (P4.2 & P4.3).
-- **Edge trigger, taskbar, desktop icons, cava underbar, Theme M2:** Out of P3 scope; planned for P4.
+- **Theme-tab parity update:** Hikai now exposes Cava Underbar, Desktop Icons, Taskbar, Niri Animation, wallpaper controls, and the backend switch. Desktop Icons may run as its standalone app; Taskbar and Cava Underbar are state-only toggles until/if native Hikai surfaces are implemented. Edge Trigger remains deferred.
 - **MangoWM:** workspaces are implemented with `mmsg` events; click, scroll, active/focused semantics, and monitor targeting still need runtime verification.
 - **Labwc:** the workspace module is intentionally hidden because Quickshell 0.3.1 crashes when loading ext-workspace. Hikai itself must start and remain stable.
 
@@ -242,7 +251,7 @@ Record: idle CPU (bar not interacting), CPU while morphing, and whether any fram
 - **Tabs:** Segmented controller with moving `SelectionPill`:
   - **General:** Compact width (38% output width), actions populated from `hm_general.sh`.
   - **Drun:** Standard width (40% output width), `DesktopEntries` model, instant search filtering, keyboard/click launch. Super+R routes here.
-  - **Theme:** Standard width, right-hand state region layout stub.
+  - **Theme:** Wide layout with a right-hand state rail. Cava Underbar, Desktop Icons, Taskbar, and Auto Random Wallpaper render ON/OFF pills; toggle rows keep HakuMenu open. Niri Animation is available as an action. The backend switch is the final row, has no state pill, and is labeled `Go back to Surface` in Hikai / `Explore the Abyss` in Classic.
 - **Auto-close:** Pointer-union safe auto-close across TopBar, HakuMenu, and outside area with grace timer (`3e1b8048`). Outside click and Escape close reliably.
 
 ### 9.6 Wallpaper carousel

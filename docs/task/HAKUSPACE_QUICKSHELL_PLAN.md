@@ -508,14 +508,14 @@ The Logo owns Navigation. The TopBar center interaction owns HakuMenu. Do not me
 
 ### 3.16 Classic-parity surfaces — **PLANNED / selective porting**
 
-Still absent in Hikai:
+Still absent as native Hikai surfaces:
 
 - edge trigger;
-- taskbar;
-- desktop icons;
+- taskbar surface (the HakuMenu toggle is state-only);
+- Cava underbar surface (the HakuMenu toggle is state-only);
 - alternative bar variants.
 
-Do not automatically port every Classic implementation 1:1. Each feature should first answer: “is this still desirable in a native QS shell, and what is the simplest native interaction model?”
+Desktop Icons is an exception: it is a standalone Wayland app and is now allowed to run under Hikai through the existing manager. Do not automatically port every other Classic implementation 1:1. Each feature should first answer: “is this still desirable in a native QS shell, and what is the simplest native interaction model?”
 
 ### 3.17 Packaging, doctor, docs, Nix — **PLANNED**
 
@@ -1759,7 +1759,8 @@ The frontend/backend split (C0–C15) is complete. The remaining native migratio
   - **Screen recorder (`record.sh`):** **native P3 implementation (DONE)** via TopBar `RecorderGroup` and `record_ctl.sh`.
   - **Theme engine (`change_theme.sh`):** **Move to P4** (HakuMenu Theme tab remains an approved visual stub in P3).
   - **Session exit (`exit.sh`):** **Move to P4** (`session_exit_ctl.sh` headless backend decoupled; native confirmation UI deferred to P4).
-  - **`rofi_theme_switcher.sh`, `taskbar_manager.sh`, `waybar_manager.sh`:** **Intentionally keep Classic-only**.
+  - **`rofi_theme_switcher.sh`, `waybar_manager.sh`:** **Intentionally keep Classic-only**.
+  - **`taskbar_manager.sh`:** Classic still owns the Waybar taskbar runtime; Hikai may use `--toggle` as a persisted state-only control and must not start Waybar.
 
 ---
 
@@ -1934,6 +1935,9 @@ Docs/spec only.
 - No product code.
 
 ### P4.1 — HakuMenu Theme M2 live integration
+
+> **2026-10-12 parity update:** the native Theme tab now has live action rows and a state rail for Cava Underbar, Desktop Icons, Taskbar, and Auto Random Wallpaper. It also exposes Niri Animation. The backend switch is the final row, has no state indicator, and uses `Go back to Surface` / `Explore the Abyss`. Stateful toggles keep HakuMenu open.
+
 Recommended as the first actual P4 implementation:
 - The Theme tab shell already exists and is accepted (`P3_HAKUMENU_FINAL_REPORT.md`);
 - Geometry is already mockup-locked;
@@ -2006,13 +2010,13 @@ Before coding, choose the Hikai product behavior:
 No code until the product behavior is chosen.
 
 ### P4.6 — Cava underbar decision
-Decide explicitly:
-- center Cava is sufficient → omit underbar;
-- or native Hikai underbar desired → design as separate surface.
+The Hikai HakuMenu now exposes a **state-only** Cava Underbar toggle via `cava_layer_state`; it does not start the legacy GTK/VTE underbar. The remaining product decision is still explicit:
+- center Cava is sufficient → keep the state control but omit a native underbar surface;
+- or native Hikai underbar desired → design it as a separate surface.
 Avoid duplicate audio capture/processes where one shared source can serve both.
 
 ### P4.7 — Desktop icons
-Optional / low priority. Keep deferred unless specifically requested.
+User-requested parity is now satisfied by reusing the existing standalone `desktop_icons.py` app under Hikai. The HakuMenu Theme toggle owns `desktop_icons_state` through `desktop_icons_manager.sh`; no Quickshell-native reimplementation is required unless a later UX requirement justifies one.
 
 ### P4.8 — Additional bar variants
 Defer to P6 unless there is a concrete user request. The current Hikai top bar remains canonical.
