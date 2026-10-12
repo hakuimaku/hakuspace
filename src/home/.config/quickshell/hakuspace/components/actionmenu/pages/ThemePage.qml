@@ -50,6 +50,13 @@ ActionMenu.ActionMenuPage {
             label: "Change Accent Color",
             secondary: Theme.accent,
             page: "pages/ThemeAccentPage.qml"
+        },
+        {
+            id: "niriAnimation",
+            icon: "󰤕",
+            label: "Niri Animation",
+            secondary: "Window transitions",
+            page: "pages/NiriAnimationPage.qml"
         }
     ]
 

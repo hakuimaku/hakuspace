@@ -59,7 +59,7 @@ Niri animation selection is split into three layers so Hikai and future UI code 
 
 - `niri_animation_ctl.sh` is the headless backend. It parses `niri-animation.kdl`, reports the active option, and applies an explicit `<mode> <option-id>` selection.
 - `niri_animation_rofi.sh` is the Classic-only Rofi frontend. It owns the mode switcher and script-mode presentation but does not edit KDL itself.
-- `niri_animation_switcher.sh` remains the compatibility facade. Calling it without arguments opens the existing picker, while `--list`, `--get`, and `--set` expose the headless API. The Hikai HakuMenu Theme tab now exposes a **Niri Animation** action so this control is no longer missing from the native menu.
+- `niri_animation_switcher.sh` remains the compatibility facade. Calling it without arguments opens the Classic Rofi picker in Classic mode, or the native Action Layer Menu (`haku_qs_ipc actionMenu openDefault niriAnimation`) in Hikai mode. `--list`, `--get`, and `--set` expose the headless API. The Hikai HakuMenu Theme tab and Action Layer Theme page expose **Niri Animation** actions so this control is available natively.
 
 The backend contract is:
 

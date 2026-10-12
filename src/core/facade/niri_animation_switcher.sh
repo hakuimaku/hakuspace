@@ -26,11 +26,19 @@ resolve_script() {
 
 NIRI_ANIMATION_CTL="$(resolve_script niri_animation_ctl.sh ../backend/wm/niri_animation_ctl.sh)" || exit 1
 NIRI_ANIMATION_ROFI="$(resolve_script niri_animation_rofi.sh ../frontend/classic/niri_animation_rofi.sh)" || exit 1
+HAKU_BACKEND_LIB="$(resolve_script haku_backend_lib.sh ../lib/haku_backend_lib.sh)" || exit 1
+
+# shellcheck source=/dev/null
+source "$HAKU_BACKEND_LIB"
 
 print_help() {
     cat <<'EOF_HELP'
 Usage: niri_animation_switcher.sh [OPTION]
-Open the Classic Niri animation picker or use the headless animation API.
+Manage Niri animation transitions.
+
+No arguments:
+    Classic             Open the Classic Niri animation picker
+    Hikai               Open the native centered Niri animation action layer
 
 Options:
     --list [--json]       List mode/option/active state
@@ -43,8 +51,11 @@ EOF_HELP
 }
 
 case "${1:-}" in
-    '')
-        exec "$NIRI_ANIMATION_ROFI" menu
+    ''|menu|--menu)
+        if haku_backend_is "classic"; then
+            exec "$NIRI_ANIMATION_ROFI" menu
+        fi
+        haku_qs_ipc actionMenu openDefault niriAnimation
         ;;
     --list|list)
         shift
