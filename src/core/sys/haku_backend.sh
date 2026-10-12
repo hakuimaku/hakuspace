@@ -68,6 +68,8 @@ set_backend() {
         done
         
         if [[ $success -eq 1 ]]; then
+            ~/.local/bin/desktop_icons_manager.sh --startup
+            ~/.local/bin/cava_manager.sh --startup
             notify-send -a "HakuSpace" -i "info" "Backend Switched" "Successfully switched to hikai backend."
         else
             echo "Quickshell failed to start. Rolling back to classic."
@@ -110,7 +112,7 @@ verify_backend() {
     echo "Current backend: $current"
     if [[ "$current" == $QS_BACKEND_NAME ]]; then
         local violations=""
-        local procs="waybar taskbar rofi edge_trigger.py rounded_screen.py cava_layer.py desktop_icons.py swaync"
+        local procs="waybar taskbar rofi edge_trigger.py rounded_screen.py swaync"
         for proc in $procs; do
             if [[ "$proc" == *.py ]]; then
                 if pgrep -f "$proc" >/dev/null 2>&1; then

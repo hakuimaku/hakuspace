@@ -11,7 +11,7 @@ if [[ $# -eq 0 ]]; then
     [[ "$WALL_STATUS" == "1" ]] && WALL_TEXT="ON"
 
     # Cava Layer
-    CAVA_STATUS=$([[ -f /tmp/cava-layer.pid ]] && echo "1" || echo "0")
+    CAVA_STATUS=$([[ -f /tmp/cava-layer.pid ]] && kill -0 "$(cat /tmp/cava-layer.pid 2>/dev/null)" 2>/dev/null && echo "1" || echo "0")
     CAVA_TEXT="OFF"
     [[ "$CAVA_STATUS" == "1" ]] && CAVA_TEXT="ON"
 

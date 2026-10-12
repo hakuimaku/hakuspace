@@ -65,13 +65,14 @@ pgrep -x waybar; pgrep -x taskbar    # Expected: empty
 cat ~/.local/state/hakuspace/state/taskbar_manual_state   # Expected: flips 0/1; no Waybar taskbar process starts
 
 ~/.local/bin/cava_manager.sh toggle
-cat ~/.local/state/hakuspace/state/cava_layer_state       # Expected: flips 0/1; no legacy cava-layer.py process starts
+cat ~/.local/state/hakuspace/state/cava_layer_state       # Expected: flips 0/1
+pgrep -af 'cava_layer.py'                           # Expected when state=1: one Cava Underbar process
 
 ~/.local/bin/desktop_icons_manager.sh --toggle
 cat ~/.local/state/hakuspace/state/desktop_icons_state    # Expected: flips 0/1
 pgrep -af 'desktop_icons.py'                        # Expected when state=1: one Desktop Icons app process
 ```
-Desktop Icons is explicitly allowed in Hikai. Taskbar and Cava Underbar are Hikai state-only toggles; they must not start legacy Waybar/Cava surfaces.
+Desktop Icons and Cava Underbar are explicitly allowed in Hikai as standalone apps. Taskbar remains a Hikai state-only toggle; it must not start legacy Waybar surfaces. In Hikai, Cava Underbar always operates with dynamic exclusive mode (`--dynamic`).
 
 ### 1.3 Autostart and fresh startup
 Log out/in (or reboot) on the `hikai` backend for each WM: the bar appears and `--verify` passes. All four autostart entries must call `session_start.sh --early` (`grep -rn session_start src/home/.config/{hypr,niri,labwc,mango}`). A reboot must preserve the selected backend.
@@ -156,7 +157,7 @@ General checks:
 - **Super+R / Launcher:** Routes directly to HakuMenu Drun tab (`DesktopEntries` search & launch).
 - **Large surfaces:** Navigation, Dashboard, Sidebar, Settings stub, HakuMenu (General, Drun, live Theme tab), and Wallpaper carousel are implemented.
 - **Power & Clipboard:** Headless backends (`power_ctl.sh`, `clipboard_ctl.sh`) are complete; native Quickshell UI surfaces are deferred to P4 (P4.2 & P4.3).
-- **Theme-tab parity update:** Hikai now exposes Cava Underbar, Desktop Icons, Taskbar, Niri Animation, wallpaper controls, and the backend switch. Desktop Icons may run as its standalone app; Taskbar and Cava Underbar are state-only toggles until/if native Hikai surfaces are implemented. Edge Trigger remains deferred.
+- **Theme-tab parity update:** Hikai now exposes Cava Underbar, Desktop Icons, Taskbar, Niri Animation, wallpaper controls, and the backend switch. Desktop Icons and Cava Underbar run as standalone apps; Taskbar is a state-only toggle until/if a native Hikai surface is implemented. Edge Trigger remains deferred.
 - **MangoWM:** workspaces are implemented with `mmsg` events; click, scroll, active/focused semantics, and monitor targeting still need runtime verification.
 - **Labwc:** the workspace module is intentionally hidden because Quickshell 0.3.1 crashes when loading ext-workspace. Hikai itself must start and remain stable.
 

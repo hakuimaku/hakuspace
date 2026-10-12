@@ -131,8 +131,8 @@ Because the Python script acts as a background daemon, it needs a manager to han
 
 **Developer Note on CLI conventions:** Be aware that unlike other manager scripts in HakuSpace which primarily use long flags (e.g., `--toggle`, `--reload`), `cava_manager.sh` utilizes positional sub-commands (`start`, `stop`, `toggle`, `reload`) mixed with flags (e.g., `-t`/`--top`, `-d`/`--toggle-dynamic`).
 
-- **Toggling:** You can use `cava_manager.sh toggle` (which is mapped in the Haku Menu's Theme tab). Classic spawns or stops the legacy Cava layer process; Hikai is deliberately **state-only** and flips `~/.local/state/hakuspace/state/cava_layer_state` without starting the GTK/VTE underbar process.
-- **Top Mode & Dynamic Mode:** You can use `cava_manager.sh --top` to toggle the top layer mode, or `--toggle-dynamic` to toggle Dynamic Mode (which adapts to other panels' exclusive zones). The manager saves these settings in `cava_top_state` and `cava_dynamic_state`.
+- **Toggling:** You can use `cava_manager.sh toggle` (which is mapped in the Haku Menu's Theme tab). Both Classic and Hikai modes spawn or stop the standalone Cava layer process, and Hikai synchronizes the toggle state with `~/.local/state/hakuspace/state/cava_layer_state` so the HakuMenu Theme tab reflects the active state.
+- **Top Mode & Dynamic Mode:** You can use `cava_manager.sh --top` to toggle the top layer mode, or `--toggle-dynamic` to toggle Dynamic Mode (which adapts to other panels' exclusive zones). The manager saves these settings in `cava_top_state` and `cava_dynamic_state`. Note that under Hikai mode, Dynamic Exclusive mode (`--dynamic`) is **always enabled** by default to seamlessly respect Quickshell's TopBar exclusive zone without overlapping.
 - **Live Reloading:** When you change your system's accent color (via `gen_style.sh`), you don't want the audio visualizer to stutter, drop frames, or restart. Calling `cava_manager.sh reload` sends a specific UNIX signal (`SIGUSR1`) to the Python daemon. The script intercepts this signal, re-reads the Kitty configuration, and instantly updates the visualizer's colors on the fly without ever interrupting the live audio stream!
 
 

@@ -13,6 +13,7 @@ LOGFILE="/tmp/cava-layer.log"
 
 TOP_STATE_FILE="$STATE_DIR/cava_top_state"
 DYNAMIC_STATE_FILE="$STATE_DIR/cava_dynamic_state"
+CAVA_LAYER_STATE="$STATE_DIR/cava_layer_state"
  
 log() { echo "[cava-layer-toggle] $*"; }
 err() { echo "[cava-layer-toggle] $*" >&2; }
@@ -31,6 +32,7 @@ Commands:
     -t, --top           Toggle the top mode (saves state and restarts)
     -d, --toggle-dynamic Toggle dynamic position (affected by panels)
     -c, --color-switch  Toggle foreground color between black and white
+    --startup           Restore previous state at boot (if enabled)
 
 Options:
     -p, --config PATH       Forward configuration to cava_layer.py
@@ -81,26 +83,17 @@ from gi.repository import Vte
 }
  
 is_running() {
-    if haku_qs_mode; then
-        [[ "$(cat "$STATE_DIR/cava_layer_state" 2>/dev/null)" == "1" ]]
-        return $?
-    fi
     [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE" 2>/dev/null)" 2>/dev/null
 }
  
 start() {
+    mkdir -p "$STATE_DIR"
     if is_running; then
         log "Already running."
+        echo "1" > "$CAVA_LAYER_STATE"
         return 0
     fi
-    
-    if haku_qs_mode; then
-        echo "1" > "$STATE_DIR/cava_layer_state"
-        echo "1" > "$PIDFILE" # Dummy PID for compat
-        log "Started (QS mode)"
-        return 0
-    fi
- 
+
     check_dependencies
  
     local top_flag=""
@@ -109,12 +102,12 @@ start() {
     fi
 
     local dynamic_flag=""
-    if [[ "$(cat "$DYNAMIC_STATE_FILE" 2>/dev/null || echo "0")" == "1" ]]; then
+    if haku_qs_mode || [[ "$(cat "$DYNAMIC_STATE_FILE" 2>/dev/null || echo "0")" == "1" ]]; then
         dynamic_flag="--dynamic"
     fi
 
     log "Starting: python3 $SCRIPT_PATH $top_flag $dynamic_flag $*"
-    nohup python3 "$SCRIPT_PATH" $top_flag $dynamic_flag "$@" >"$LOGFILE" 2>&1 &
+    setsid python3 "$SCRIPT_PATH" $top_flag $dynamic_flag "$@" </dev/null >"$LOGFILE" 2>&1 &
     local pid=$!
     disown "$pid" 2>/dev/null || true
     echo "$pid" > "$PIDFILE"
@@ -124,28 +117,26 @@ start() {
         err "cava-layer exited immediately. Last log lines:"
         tail -n 20 "$LOGFILE" >&2 2>/dev/null
         rm -f "$PIDFILE"
+        echo "0" > "$CAVA_LAYER_STATE"
         exit 1
     fi
  
+    echo "1" > "$CAVA_LAYER_STATE"
     log "Started (pid=$pid). Log: $LOGFILE"
 }
  
 stop() {
+    mkdir -p "$STATE_DIR"
+    echo "0" > "$CAVA_LAYER_STATE"
+
     if ! is_running; then
         log "Not running."
         rm -f "$PIDFILE"
         return 0
     fi
-    
-    if haku_qs_mode; then
-        echo "0" > "$STATE_DIR/cava_layer_state"
-        rm -f "$PIDFILE"
-        log "Stopped (QS mode)"
-        return 0
-    fi
- 
+
     local pid
-    pid="$(cat "$PIDFILE")"
+    pid="$(cat "$PIDFILE" 2>/dev/null)"
     log "Stopping (pid=$pid)..."
     kill "$pid" 2>/dev/null
  
@@ -160,6 +151,7 @@ stop() {
     fi
  
     rm -f "$PIDFILE"
+    echo "0" > "$CAVA_LAYER_STATE"
     log "Stopped."
 }
  
@@ -168,6 +160,14 @@ toggle() {
         stop
     else
         start "$@"
+    fi
+}
+
+startup() {
+    if [[ "$(cat "$CAVA_LAYER_STATE" 2>/dev/null || echo "0")" == "1" ]]; then
+        if ! is_running; then
+            start "$@"
+        fi
     fi
 }
 
@@ -188,6 +188,10 @@ toggle_top() {
 }
 
 toggle_dynamic() {
+    if haku_qs_mode; then
+        log "Dynamic mode is always enabled in Hikai mode."
+        return 0
+    fi
     mkdir -p "$STATE_DIR"
     local current_state=$(cat "$DYNAMIC_STATE_FILE" 2>/dev/null || echo "0")
     if [[ "$current_state" == "1" ]]; then
@@ -261,6 +265,10 @@ case "${1:-}" in
     toggle)
         shift
         toggle "$@"
+        ;;
+    --startup)
+        shift
+        startup "$@"
         ;;
     reload)
         reload

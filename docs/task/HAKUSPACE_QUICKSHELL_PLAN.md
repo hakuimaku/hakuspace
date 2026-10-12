@@ -512,10 +512,9 @@ Still absent as native Hikai surfaces:
 
 - edge trigger;
 - taskbar surface (the HakuMenu toggle is state-only);
-- Cava underbar surface (the HakuMenu toggle is state-only);
 - alternative bar variants.
 
-Desktop Icons is an exception: it is a standalone Wayland app and is now allowed to run under Hikai through the existing manager. Do not automatically port every other Classic implementation 1:1. Each feature should first answer: “is this still desirable in a native QS shell, and what is the simplest native interaction model?”
+Desktop Icons and Cava Underbar are exceptions: they are standalone Wayland apps and are allowed to run under Hikai through their existing managers (`desktop_icons_manager.sh` and `cava_manager.sh`), with toggle state reflected in HakuMenu. Do not automatically port every other Classic implementation 1:1. Each feature should first answer: “is this still desirable in a native QS shell, and what is the simplest native interaction model?”
 
 ### 3.17 Packaging, doctor, docs, Nix — **PLANNED**
 
@@ -2010,10 +2009,7 @@ Before coding, choose the Hikai product behavior:
 No code until the product behavior is chosen.
 
 ### P4.6 — Cava underbar decision
-The Hikai HakuMenu now exposes a **state-only** Cava Underbar toggle via `cava_layer_state`; it does not start the legacy GTK/VTE underbar. The remaining product decision is still explicit:
-- center Cava is sufficient → keep the state control but omit a native underbar surface;
-- or native Hikai underbar desired → design it as a separate surface.
-Avoid duplicate audio capture/processes where one shared source can serve both.
+Parity is satisfied by allowing the standalone `cava_layer.py` app under Hikai (matching the Desktop Icons decision in P4.7). The HakuMenu Theme toggle owns `cava_layer_state` through `cava_manager.sh`, which starts and stops the live Cava layer process in both Classic and Hikai modes while keeping HakuMenu's state indicator in sync. Under Hikai, `cava_manager.sh` always launches the layer with dynamic exclusive mode (`--dynamic`) so it adapts to Quickshell's TopBar exclusive zone.
 
 ### P4.7 — Desktop icons
 User-requested parity is now satisfied by reusing the existing standalone `desktop_icons.py` app under Hikai. The HakuMenu Theme toggle owns `desktop_icons_state` through `desktop_icons_manager.sh`; no Quickshell-native reimplementation is required unless a later UX requirement justifies one.
