@@ -26,11 +26,11 @@ PanelWindow {
     color: "transparent"
     implicitWidth: Math.max(0, Math.min(520, modelData.width - Theme.pad * 2))
     implicitHeight: Math.min(modelData.height - FlareEdges.topOriginY - Theme.pad,
-                             Math.max(220, flare.naturalContentHeight + 16 + Theme.tipHugRadius))
+                             Math.max(220, flare.naturalContentHeight + 16 + Theme.hugRadius))
     visible: panelOpen || closing
     mask: Region {
         width: root.panelOpen ? root.width : 0
-        height: root.panelOpen ? Math.min(root.height, flare.currentHeight + Theme.tipHugRadius) : 0
+        height: root.panelOpen ? Math.min(root.height, flare.currentHeight + Theme.hugRadius) : 0
     }
 
     onPanelOpenChanged: {
@@ -67,7 +67,7 @@ PanelWindow {
         shown: root.panelOpen
         content: centerComponent
         contentProps: ({ maxHeight: Math.max(0, root.modelData.height - FlareEdges.topOriginY
-                                              - Theme.pad * 2 - Theme.tipHugRadius),
+                                              - Theme.pad * 2 - Theme.hugRadius),
                          maxWidth: Math.max(0, root.width - 50) })
         contentKey: "notifications"
         maxWidth: Math.min(500, Math.max(0, root.width - FlareEdges.thickness * 2))

@@ -10,7 +10,7 @@ Rectangle {
     property real morphY: 0
     property real morphWidth: 0
     property real morphHeight: 0
-    property real morphRadius: Theme.radiusSm
+    property real morphRadius: Theme.radius
     property color morphColor: Theme.accent
     property int morphBorderWidth: 1
 

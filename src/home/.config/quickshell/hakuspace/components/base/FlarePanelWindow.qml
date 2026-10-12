@@ -14,7 +14,7 @@ PanelWindow {
     property Component panelComponent: null
     property var panelProps: ({})
     property var panelKey: null
-    property real maxPanelContentHeight: Math.max(0, height - Theme.tipHugRadius - 16 - Theme.pad)
+    property real maxPanelContentHeight: Math.max(0, height - Theme.hugRadius - 16 - Theme.pad)
     signal dismissed()
 
     screen: modelData
@@ -64,7 +64,7 @@ PanelWindow {
         x: flare.start
         y: 0
         width: Math.max(0, flare.end - flare.start)
-        height: Math.min(root.height, flare.currentHeight + Theme.tipHugRadius)
+        height: Math.min(root.height, flare.currentHeight + Theme.hugRadius)
         onClicked: (mouse) => { mouse.accepted = true }
     }
 

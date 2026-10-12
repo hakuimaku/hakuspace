@@ -10,7 +10,7 @@ Rectangle {
     property bool compact: false
     // Presentation knobs let popup cards diverge from Notification Center cards
     // without duplicating the notification body component.
-    property real cardRadius: Theme.radiusSm
+    property real cardRadius: Theme.radius
     property real cardPadding: 12
     property bool showBorder: true
     implicitWidth: 450

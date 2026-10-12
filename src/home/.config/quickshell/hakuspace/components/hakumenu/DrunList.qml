@@ -139,7 +139,7 @@ Item {
             required property int index
             width: appList.width
             height: Math.max(48, Theme.fontSize * 3.5)
-            radius: Theme.radiusSm
+            radius: Theme.radius
             selected: appList.currentIndex === appRow.index
             selectedOverridesHover: true
             idleColor: "transparent"

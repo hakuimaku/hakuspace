@@ -5,7 +5,7 @@ import "../../services"
 Rectangle {
     id: root
     color: Theme.bg
-    radius: Theme.radius
+    radius: Theme.largeRadius
     border.width: Theme.borderWidth
     border.color: Theme.border
 }

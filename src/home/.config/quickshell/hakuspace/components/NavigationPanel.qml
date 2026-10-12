@@ -136,7 +136,7 @@ Item {
     readonly property real surfaceEnd: Math.min(modelData.width - frameThickness,
                                                 surfaceStart + surfaceWidth)
     readonly property real flareTargetHeight: Math.max(1, surfaceHeight - frameTop)
-    readonly property real flareReach: Math.max(Theme.tipHugRadius, AppState.roundedScreenRadius)
+    readonly property real flareReach: Math.max(Theme.hugRadius, AppState.roundedScreenRadius)
     readonly property real hoverOverflow: Math.ceil(circleDiameter * 0.12)
     readonly property real controllerX: shellX + shellPadding
     readonly property real controllerY: shellY + shellPadding
@@ -161,7 +161,7 @@ Item {
     readonly property real sidebarBodyX: 0
     readonly property real sidebarBodyY: Math.round(circularShellDiameter * 0.94)
     readonly property real sidebarEarWidth: Math.max(32, Math.round(flareReach * 1.5))
-    readonly property real sidebarEarRadius: sidebarEarWidth + Theme.tipTitanRadius
+    readonly property real sidebarEarRadius: sidebarEarWidth + Theme.giantRadius * 2
 
     // Bridge connects the lower-left radial sector to the sidebar body:
     readonly property real bridgeX: 0
@@ -818,7 +818,7 @@ Item {
             currentHeight: root.flareHeight
             bounds: root.frameBounds
             // Match the shared RoundedScreen corner language.
-            r: Math.max(Theme.tipRadius, AppState.roundedScreenRadius + 8)
+            r: Math.max(Theme.largeRadius + 8, AppState.roundedScreenRadius + 8)
             rf: root.flareReach
             bottomRadius: root.closing
                           ? root.backingCurveRadius * (1.0 - root.closeFlareProgress)
@@ -870,7 +870,7 @@ Item {
             topFlareY: Math.max(0, root.surfaceHeight - root.sidebarBodyY)
             earWidth: root.sidebarEarWidth
             earRadius: root.sidebarEarRadius
-            cornerRadius: Theme.radius + 8
+            cornerRadius: Theme.largeRadius + 8
             surfaceColor: Theme.barColor
             z: 5
             onToggleQuickNoteRequested: root.toggleQuickNote()

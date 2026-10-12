@@ -22,12 +22,10 @@ QtObject {
     
     property color barColor: AppState.opaqueThemeState ? root.inkBg : root.bg
     
-    property int radius: 20
-    property int radiusSm: 12
-    property int tipRadius: 24
-    property int tipHugRadius: 28
-    property int tipGiantRadius: 48
-    property int tipTitanRadius: 96
+    property int radius: 12
+    property int largeRadius: 16
+    property int hugRadius: 28
+    property int giantRadius: 48
     property int borderWidth: 0
     property int gap: 4
     property int pad: 10
@@ -72,10 +70,10 @@ QtObject {
             if (conf.accent) root.accent = parseColor(conf.accent);
             if (conf.onAccent) root.onAccentColor = parseColor(conf.onAccent);
             
-            if (conf.radius !== undefined) {
-                root.radius = conf.radius;
-                root.radiusSm = Math.max(0, conf.radius - 4);
-            }
+            if (conf.radius !== undefined) root.radius = conf.radius;
+            if (conf.largeRadius !== undefined) root.largeRadius = conf.largeRadius;
+            if (conf.hugRadius !== undefined) root.hugRadius = conf.hugRadius;
+            if (conf.giantRadius !== undefined) root.giantRadius = conf.giantRadius;
             if (conf.borderWidth !== undefined) root.borderWidth = conf.borderWidth;
             if (conf.gap !== undefined) root.gap = conf.gap;
             if (conf.pad !== undefined) root.pad = conf.pad;

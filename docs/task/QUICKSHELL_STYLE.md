@@ -281,7 +281,7 @@ The new P3 mockups do not cancel these established style directions:
 | `surfaceHi` | `surfaceHi` | bound to `accent` for hover/selection; JSON value ignored |
 | `accent` | `accent` | |
 | `onAccent` | `onAccentColor` | fixed `#000000` for text/icons on accent fills; JSON value ignored |
-| `radius` | `radius`, and `radiusSm = max(0, radius − 4)` | |
+| `radius`, `largeRadius`, `hugRadius`, `giantRadius` | `radius` (12), `largeRadius` (16), `hugRadius` (28), `giantRadius` (48) | |
 | `borderWidth`, `gap`, `pad` | same names | |
 | `font` | `font` and `fontFamily` | |
 | `fontSize` | `fontSize` | |
@@ -295,8 +295,6 @@ The new P3 mockups do not cancel these established style directions:
 | `hoverMuted` | `#2b2b2b` | dark grey hover fill for Tray and WindowTitle |
 | `workspaceDot` | `#424242` | inactive workspace status dots |
 | `barColor` | `AppState.opaqueThemeState ? inkBg : bg` | both states render `#000000`; bar and flare/tooltip body |
-| `tipRadius` | `20` | corner radius of the tooltip/flare body and the ears |
-| `tipHugRadius` | `24` | radius of the edge-hugging feet; the flare snap distance is `2 × tipHugRadius` |
 
 ### Token use
 | Token | Used for |

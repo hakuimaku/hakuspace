@@ -100,7 +100,7 @@ Item {
         anchors.horizontalCenter: root.tooltipAlignRight ? undefined : parent.horizontalCenter
         width: tooltipLabel.implicitWidth + 14
         height: tooltipLabel.implicitHeight + 8
-        radius: Theme.radiusSm
+        radius: Theme.radius
         color: Theme.surface
         border.width: 1
         border.color: Qt.lighter(Theme.hoverMuted, 1.45)

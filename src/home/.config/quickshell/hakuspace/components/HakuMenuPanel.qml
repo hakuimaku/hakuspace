@@ -25,7 +25,7 @@ Item {
     readonly property real menuHeight: modelData.height * 0.45
     readonly property real menuTop: FlareEdges.topOriginY
     readonly property real bounceHeadroom: menuHeight * HAnimation.hakuMenuBounceHeadroom
-    readonly property real windowWidth: Math.max(triggerWidth, maxMenuWidth + Theme.tipHugRadius * 2)
+    readonly property real windowWidth: Math.max(triggerWidth, maxMenuWidth + Theme.hugRadius * 2)
     readonly property real windowHeight: menuTop + menuHeight + bounceHeadroom
     readonly property real triggerX: (modelData.width - triggerWidth) / 2
     readonly property bool contentReady: isFinite(menu.width) && menu.width > 0
@@ -48,8 +48,8 @@ Item {
     }
 
     function insideSafeUnion(px, py) {
-        var leftBound = Math.min(morph.mStart, (modelData.width - root.targetMenuWidth) / 2, root.triggerX) - Theme.tipHugRadius
-        var rightBound = Math.max(morph.mEnd, (modelData.width + root.targetMenuWidth) / 2, root.triggerX + root.triggerWidth) + Theme.tipHugRadius
+        var leftBound = Math.min(morph.mStart, (modelData.width - root.targetMenuWidth) / 2, root.triggerX) - Theme.hugRadius
+        var rightBound = Math.max(morph.mEnd, (modelData.width + root.targetMenuWidth) / 2, root.triggerX + root.triggerWidth) + Theme.hugRadius
         var topBound = 0
         var bottomBound = root.menuTop + Math.max(morph.mHeight, root.menuHeight) + Theme.pad
         return px >= leftBound && px <= rightBound && py >= topBound && py <= bottomBound
@@ -102,9 +102,9 @@ Item {
             end: morph.mEnd
             currentHeight: morph.mHeight
             bounds: morph.bounds
-            r: Theme.tipGiantRadius
-            rf: Theme.tipHugRadius
-            bottomRadius: Theme.tipHugRadius
+            r: Theme.giantRadius
+            rf: Theme.hugRadius
+            bottomRadius: Theme.hugRadius
             surfaceColor: Theme.surface
         }
     }
@@ -234,7 +234,7 @@ Item {
             y: root.menuTop
             width: Math.max(0, morph.mEnd - morph.mStart)
             height: morph.mHeight
-            radius: Math.min(Theme.tipHugRadius, width / 2, height / 2)
+            radius: Math.min(Theme.hugRadius, width / 2, height / 2)
             color: Theme.surface
             clip: true
             visible: width > 0.01 && height > 0.01
@@ -284,7 +284,7 @@ Item {
                     y: menu.innerPad
                     width: menu.switcherWidth
                     height: menu.topRowHeight
-                    radius: Theme.radius
+                    radius: Theme.largeRadius
                     color: menu.controlBg
 
                     readonly property var modes: [
@@ -319,7 +319,7 @@ Item {
                                 x: index * (tabLane.slotWidth + tabLane.spacing)
                                 width: tabLane.slotWidth
                                 height: tabLane.height
-                                radius: Theme.radiusSm
+                                radius: Theme.radius
                                 selected: UiState.hakuMenuMode === modelData.key
                                 selectedOverridesHover: true
                                 idleColor: "transparent"
@@ -359,7 +359,7 @@ Item {
                     y: menu.innerPad
                     width: menu.searchWidth
                     height: menu.topRowHeight
-                    radius: Theme.tipHugRadius
+                    radius: Theme.hugRadius
                     interactive: false
                     externalHovered: searchHover.hovered
                     focused: searchInput.activeFocus
@@ -440,7 +440,7 @@ Item {
                     y: menu.innerPad + modeSwitcher.height + Theme.pad
                     width: menu.innerWidth - (menu.showStateRegion ? stateRegion.width + Theme.gap * 2 : 0)
                     height: Math.max(0, menu.height - y - menu.innerPad)
-                    radius: Theme.radius
+                    radius: Theme.largeRadius
                     color: UiState.hakuMenuMode === "theme" ? "transparent" : menu.listBg
                     clip: true
 
@@ -475,7 +475,7 @@ Item {
                     y: mainList.y
                     width: menu.stateWidth
                     height: mainList.height
-                    radius: Theme.radius
+                    radius: Theme.largeRadius
                     color: menu.listBg
                     visible: menu.showStateRegion
                 }

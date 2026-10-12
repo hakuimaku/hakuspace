@@ -55,7 +55,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: root.hovered ? Theme.hoverMuted : Theme.surface
-        radius: Theme.radiusSm
+        radius: Theme.radius
         Behavior on color { ColorAnimation { duration: HAnimation.normal } }
     }
     

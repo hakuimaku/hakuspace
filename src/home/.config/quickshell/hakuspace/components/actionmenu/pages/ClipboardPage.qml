@@ -213,7 +213,7 @@ ActionMenu.ActionMenuPage {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: Math.max(34, Theme.fontSize * 2.2)
-            radius: Theme.radiusSm
+            radius: Theme.radius
             color: Qt.rgba(1, 1, 1, 0.06)
             border.color: searchInput.activeFocus ? Theme.accent : "transparent"
             border.width: 1

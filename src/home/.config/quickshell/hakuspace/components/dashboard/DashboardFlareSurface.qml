@@ -9,12 +9,12 @@ Item {
     property real bodyHeight: 0
     property real frameThickness: FlareEdges.thickness
     property real frameTop: FlareEdges.topOriginY
-    property real bottomFlareReach: Theme.tipHugRadius
-    property real flareRadius: Theme.tipRadius
+    property real bottomFlareReach: Theme.hugRadius
+    property real flareRadius: Theme.largeRadius + 8
     property real screenWidth: 1920
     property real screenHeight: 1080
     property color surfaceColor: Theme.barColor
-    property real cornerRadius: Theme.radius + 8
+    property real cornerRadius: Theme.largeRadius + 8
 
     readonly property var frameBounds: FlareEdges.getBounds(screenWidth)
 

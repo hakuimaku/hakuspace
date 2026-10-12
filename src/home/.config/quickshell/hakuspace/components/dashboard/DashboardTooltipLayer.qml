@@ -95,7 +95,7 @@ Item {
         y: root.bubbleY
         width: Math.min(260, Math.max(56, label.implicitWidth + 18))
         height: Math.max(24, label.implicitHeight + 10)
-        radius: Theme.radiusSm
+        radius: Theme.radius
         color: Qt.darker(Theme.surface, 1.15)
         border.width: 1
         border.color: Qt.lighter(Theme.hoverMuted, 1.35)

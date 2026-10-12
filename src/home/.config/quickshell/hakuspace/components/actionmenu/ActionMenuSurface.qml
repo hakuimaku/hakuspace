@@ -72,7 +72,7 @@ Item {
     property real morphSeedScreenY: 0
     property real morphSeedWidth: 200
     property real morphSeedHeight: 40
-    property real morphSeedRadius: Theme.radiusSm
+    property real morphSeedRadius: Theme.radius
     property color morphSeedColor: Theme.accent
     property string morphSeedIcon: ""
     property string morphSeedLabel: ""
@@ -335,7 +335,7 @@ Item {
             y: Math.round(parentSize.height / 2 - 20),
             width: 200,
             height: 40,
-            radius: Theme.radiusSm,
+            radius: Theme.radius,
             color: Theme.accent,
             icon: "",
             label: ""
@@ -345,7 +345,7 @@ Item {
         root.morphSeedScreenY = (seed.screenY !== undefined) ? seed.screenY : (root.morphStartScreenY + (seed.y || 0));
         root.morphSeedWidth = seed.width || 200;
         root.morphSeedHeight = seed.height || 40;
-        root.morphSeedRadius = seed.radius || Theme.radiusSm;
+        root.morphSeedRadius = seed.radius || Theme.radius;
         root.morphSeedColor = seed.color || Theme.accent;
         root.morphSeedIcon = seed.icon || "";
         root.morphSeedLabel = seed.label || "";
@@ -392,7 +392,7 @@ Item {
         root.maskScreenY = root.morphSeedScreenY + (root.morphTargetScreenY - root.morphSeedScreenY) * progress;
         root.maskWidth = Math.max(1, root.morphSeedWidth + (root.morphTargetW - root.morphSeedWidth) * progress);
         root.maskHeight = Math.max(1, root.morphSeedHeight + (root.morphTargetH - root.morphSeedHeight) * progress);
-        root.maskRadius = Math.max(0, root.morphSeedRadius + (Theme.radius - root.morphSeedRadius) * progress);
+        root.maskRadius = Math.max(0, root.morphSeedRadius + (Theme.largeRadius - root.morphSeedRadius) * progress);
 
         // Visual effects
         if (progress <= 0.7) {
@@ -482,7 +482,7 @@ Item {
             y: Math.round(parentSize.height / 2 - 20),
             width: 200,
             height: 40,
-            radius: Theme.radiusSm,
+            radius: Theme.radius,
             color: Theme.accent,
             icon: "",
             label: ""
@@ -492,7 +492,7 @@ Item {
         root.morphSeedScreenY = (seed.screenY !== undefined) ? seed.screenY : (root.morphTargetScreenY + (seed.y || 0));
         root.morphSeedWidth = seed.width || 200;
         root.morphSeedHeight = seed.height || 40;
-        root.morphSeedRadius = seed.radius || Theme.radiusSm;
+        root.morphSeedRadius = seed.radius || Theme.radius;
         root.morphSeedColor = seed.color || Theme.accent;
         root.morphSeedIcon = seed.icon || "";
         root.morphSeedLabel = seed.label || "";
@@ -539,7 +539,7 @@ Item {
         root.maskScreenY = root.morphStartScreenY + (root.morphSeedScreenY - root.morphStartScreenY) * progress;
         root.maskWidth = Math.max(1, root.morphStartW + (root.morphSeedWidth - root.morphStartW) * progress);
         root.maskHeight = Math.max(1, root.morphStartH + (root.morphSeedHeight - root.morphStartH) * progress);
-        root.maskRadius = Math.max(0, Theme.radius + (root.morphSeedRadius - Theme.radius) * progress);
+        root.maskRadius = Math.max(0, Theme.largeRadius + (root.morphSeedRadius - Theme.largeRadius) * progress);
 
         // Visual effects
         if (progress <= 0.3) {
@@ -631,7 +631,7 @@ Item {
         id: surfaceRect
         anchors.fill: parent
         visible: true
-        radius: Theme.radius
+        radius: Theme.largeRadius
         color: Theme.surface
         border.color: Theme.border !== "transparent" ? Theme.border : Qt.rgba(1, 1, 1, 0.12)
         border.width: Theme.borderWidth > 0 ? Theme.borderWidth : 1

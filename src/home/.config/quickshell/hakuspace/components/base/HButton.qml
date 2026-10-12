@@ -7,7 +7,7 @@ Motion.MorphButton {
     id: root
     width: Math.max(implicitWidth, height)
     height: Theme.fontSize * 2
-    radius: Theme.radiusSm
+    radius: Theme.radius
     idleColor: Theme.surface
     hoverColor: Theme.surfaceHi
     pressedColor: Theme.surfaceHi

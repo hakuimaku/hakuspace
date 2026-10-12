@@ -210,7 +210,7 @@ Item {
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 height: root.rowHeight
-                radius: Theme.radiusSm
+                radius: Theme.radius
                 selected: generalList.currentIndex === rowWrap.index
                 selectedOverridesHover: true
                 idleColor: "transparent"

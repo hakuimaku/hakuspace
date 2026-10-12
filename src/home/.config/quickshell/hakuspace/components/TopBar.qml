@@ -138,7 +138,7 @@ PanelWindow {
 
     exclusionMode: ExclusionMode.Normal
     // Edge-hugging Flare feet extend below the content body; keep that area inside the window.
-    implicitHeight: Math.max(barH, FlareEdges.topOriginY + tipAreaH + Theme.tipHugRadius)
+    implicitHeight: Math.max(barH, FlareEdges.topOriginY + tipAreaH + Theme.hugRadius)
     exclusiveZone: Math.round(barH)
 
     color: "transparent"
@@ -295,13 +295,13 @@ PanelWindow {
         end: (root.width + spanWidth) / 2
         currentHeight: Theme.levelOsdHeight * CenterState.osdExpansion
         bounds: FlareEdges.getBounds(root.width)
-        r: Theme.tipRadius
-        rf: Theme.tipHugRadius
+        r: Theme.largeRadius + 8
+        rf: Theme.hugRadius
         surfaceColor: Theme.barColor
         visible: CenterState.osdExpansion > 0 && spanWidth > 0
 
         readonly property real spanWidth: Math.min(Theme.levelOsdWidth + Theme.levelOsdPadding * 2,
-                                                    Math.max(0, root.width - 2 * (FlareEdges.thickness + Theme.tipRadius)))
+                                                    Math.max(0, root.width - 2 * (FlareEdges.thickness + Theme.largeRadius + 8)))
     }
 
     TooltipLayer {

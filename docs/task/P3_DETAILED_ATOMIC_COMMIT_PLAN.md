@@ -678,9 +678,9 @@ Surfaces consume shared `FlareEdges` / `AppState` frame metrics; audited and ver
 - TooltipLayer: `maxTooltipWidth` bounds against `FlareEdges.thickness * 2`, anchored at `FlareEdges.topOriginY`.
 - TrayMenuPanel (`FlarePanelWindow`): anchored to `FlareEdges.topOriginY` with `FlareEdges.thickness` bounds.
 - NotificationPopup: dual layer (Top layer `FlareSurface` + Overlay content layer) attached to `FlareEdges.topOriginY` and `FlareEdges.getBounds`.
-- NotificationCenterPanel: anchored to `FlareEdges.topOriginY` with `FlareEdges.thickness` bounds and `Theme.tipHugRadius` flare.
+- NotificationCenterPanel: anchored to `FlareEdges.topOriginY` with `FlareEdges.thickness` bounds and `Theme.hugRadius` flare.
 - NotificationCenterContent: roomier header spacing, taller body, solid `Theme.accent` fill on Clear button.
-- LevelOsdOverlay: anchored to `FlareEdges.topOriginY`, span constrained by `FlareEdges.thickness` and `Theme.tipRadius`.
+- LevelOsdOverlay: anchored to `FlareEdges.topOriginY`, span constrained by `FlareEdges.thickness` and `Theme.largeRadius + 8`.
 - LevelOsdContent: fixed symmetric side slots (`Theme.fontSize * 3.7`) ensure optical/physical center stability across `0%`, `9%`, `10%`, `99%`, and `100%`.
 
 ### P1 — DONE

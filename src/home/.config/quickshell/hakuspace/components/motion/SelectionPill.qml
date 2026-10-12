@@ -9,7 +9,7 @@ Rectangle {
     property real targetY: 0
     property real targetWidth: 0
     property real targetHeight: 0
-    property real targetRadius: Theme.radiusSm
+    property real targetRadius: Theme.radius
     property color targetColor: Theme.accent
     property bool absoluteInitialized: false
     readonly property bool absoluteTargetValid: !indexedMode && targetWidth > 0 && targetHeight > 0
@@ -19,7 +19,7 @@ Rectangle {
     property real currentEndX: 0
     property real currentStartY: 0
     property real currentEndY: 0
-    property real currentRadius: Theme.radiusSm
+    property real currentRadius: Theme.radius
     property color currentColor: Theme.accent
 
     // Optional indexed-lane mode. This is preferred for tab strips whose own
@@ -56,7 +56,7 @@ Rectangle {
         var pt = container.mapFromItem(targetItem, 0, 0);
         var tw = targetItem.width;
         var th = targetItem.height;
-        var tr = (targetItem.radius !== undefined && targetItem.radius > 0) ? targetItem.radius : Theme.radiusSm;
+        var tr = (targetItem.radius !== undefined && targetItem.radius > 0) ? targetItem.radius : Theme.radius;
         var isDanger = targetItem.danger === true;
         var tc = isDanger ? dangerColor : normalColor;
 
@@ -110,7 +110,7 @@ Rectangle {
     y: indexedMode ? 0 : currentStartY
     width: indexedMode ? indexedWidth : Math.max(0, currentEndX - currentStartX)
     height: indexedMode ? parent.height : Math.max(0, currentEndY - currentStartY)
-    radius: indexedMode ? Theme.radiusSm : currentRadius
+    radius: indexedMode ? Theme.radius : currentRadius
     color: indexedMode ? Theme.accent : currentColor
     opacity: shown ? 1 : 0
 

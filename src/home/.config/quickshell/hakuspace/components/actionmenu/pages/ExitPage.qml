@@ -183,7 +183,7 @@ ActionMenu.ActionMenuPage {
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: Theme.radiusSm
+            radius: Theme.radius
             color: Qt.rgba(0, 0, 0, 0.25)
             clip: true
 
@@ -297,7 +297,7 @@ ActionMenu.ActionMenuPage {
                 z: 1
                 Layout.preferredWidth: 130
                 Layout.preferredHeight: Math.max(38, Theme.fontSize * 2.4)
-                radius: Theme.radiusSm
+                radius: Theme.radius
                 selected: root.selectedActionIndex === 0
                 focused: selected
                 selectedOverridesHover: true
@@ -330,7 +330,7 @@ ActionMenu.ActionMenuPage {
                 property bool danger: true
                 Layout.preferredWidth: 150
                 Layout.preferredHeight: Math.max(38, Theme.fontSize * 2.4)
-                radius: Theme.radiusSm
+                radius: Theme.radius
                 selected: root.selectedActionIndex === 1
                 focused: selected
                 selectedOverridesHover: true

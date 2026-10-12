@@ -8,12 +8,12 @@ Item {
     required property real controlDiameter
     required property real bodyWidth
     property real bodyHeight: contentHeight
-    property real rf: Math.max(Theme.tipHugRadius, AppState.roundedScreenRadius)
+    property real rf: Math.max(Theme.hugRadius, AppState.roundedScreenRadius)
     property real frameThickness: FlareEdges.thickness
     property real topFlareY: 16
     property real earWidth: Math.max(32, Math.round(rf * 1.5))
     property real earRadius: Math.max(32, Math.round(rf * 1.5))
-    property real cornerRadius: Theme.radius + 8
+    property real cornerRadius: Theme.largeRadius + 8
     property color surfaceColor: Theme.barColor
     property bool expanded: false
     property bool quickNoteActive: false
@@ -256,7 +256,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     width: tooltipLabel.implicitWidth + 14
                     height: tooltipLabel.implicitHeight + 8
-                    radius: Theme.radiusSm
+                    radius: Theme.radius
                     color: Theme.surface
                     border.width: 1
                     border.color: Qt.lighter(Theme.hoverMuted, 1.45)

@@ -124,7 +124,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: Theme.radiusSm
+        radius: Theme.radius
         color: root.hovered ? Theme.surfaceHi : Theme.surface
         Behavior on color { ColorAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve } }
     }

@@ -10,7 +10,7 @@ Item {
     property real currentHeight: 0
     property var bounds: ({start: 0, end: 1920})
     property real r: 24
-    property real rf: Theme.tipHugRadius
+    property real rf: Theme.hugRadius
     property real bottomRadius: r
     property color surfaceColor: Theme.barColor
     // Cover the antialiased join at fractional body coordinates without moving the outer curve.

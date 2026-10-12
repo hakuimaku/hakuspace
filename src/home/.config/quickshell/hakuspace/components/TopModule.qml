@@ -34,7 +34,7 @@ Rectangle {
 
     color: hovered ? Theme.surfaceHi : Theme.surface
     
-    radius: Theme.radiusSm
+    radius: Theme.radius
     border.width: borderWidth
     border.color: borderColor
     

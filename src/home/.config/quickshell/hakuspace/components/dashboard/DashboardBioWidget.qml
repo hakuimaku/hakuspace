@@ -139,7 +139,7 @@ Item {
                 anchors.right: parent.right
                 width: saveTooltipText.implicitWidth + 14
                 height: saveTooltipText.implicitHeight + 8
-                radius: Theme.radiusSm
+                radius: Theme.radius
                 color: Theme.surface
                 border.width: 1
                 border.color: Qt.lighter(Theme.hoverMuted, 1.45)

@@ -4,7 +4,7 @@ import "../../services"
 Rectangle {
     id: root
 
-    radius: Theme.radius
+    radius: Theme.largeRadius
     color: Theme.surface
     border.width: 0
     border.color: Qt.lighter(Theme.hoverMuted, 1.25)

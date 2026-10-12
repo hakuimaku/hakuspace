@@ -11,7 +11,7 @@ Item {
     property real targetHeight: 250
     property real bridgeWidth: 8
     property real bridgeHeight: 36
-    property real cornerRadius: Theme.radiusSm + 4
+    property real cornerRadius: Theme.radius + 4
     property color surfaceColor: Theme.barColor
 
     signal closeRequested()

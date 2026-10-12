@@ -5,7 +5,7 @@ import "../../services"
 Rectangle {
     id: root
 
-    radius: Theme.radius
+    radius: Theme.largeRadius
     color: Theme.surface
     border.width: 0
     border.color: Qt.lighter(Theme.hoverMuted, 1.25)
@@ -55,7 +55,7 @@ Rectangle {
         Rectangle {
             id: artPlaceholder
             anchors.fill: parent
-            radius: Theme.radiusSm
+            radius: Theme.radius
             color: Theme.hoverMuted
             visible: !root.hasValidArt
 
@@ -88,7 +88,7 @@ Rectangle {
 
             Rectangle {
                 anchors.fill: parent
-                radius: Theme.radiusSm
+                radius: Theme.radius
                 color: "white"
             }
         }

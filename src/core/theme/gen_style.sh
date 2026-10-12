@@ -250,7 +250,10 @@ render_quickshell() {
             fgDim: $fgDim,
             fgMuted: "rgba(255, 255, 255, 0.5)",
             onAccent: "#000000",
-            radius: 16,
+            radius: 12,
+            largeRadius: 16,
+            hugRadius: 28,
+            giantRadius: 48,
             borderWidth: 0,
             gap: 4,
             pad: 12

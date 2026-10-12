@@ -17,7 +17,7 @@ Motion.MorphButton {
     // Clear MorphButton's internal center text
     text: ""
 
-    radius: Theme.radiusSm > 0 ? Theme.radiusSm : 10
+    radius: Theme.radius > 0 ? Theme.radius : 10
     implicitHeight: Math.max(44, Theme.fontSize * 2.8)
 
     selectedOverridesHover: true

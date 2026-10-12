@@ -1098,7 +1098,7 @@ Item {
             id: modeSwitcher
             width: headerControls.trackWidth
             height: headerControls.height
-            radius: Theme.radius
+            radius: Theme.largeRadius
             color: "#b8000000"
 
             readonly property var modes: [
@@ -1132,7 +1132,7 @@ Item {
                         x: index * (tabLane.slotWidth + tabLane.spacing)
                         width: tabLane.slotWidth
                         height: tabLane.height
-                        radius: Theme.radiusSm
+                        radius: Theme.radius
                         selected: root.activeKind === modelData.key
                         selectedOverridesHover: true
                         idleColor: "transparent"
@@ -1159,7 +1159,7 @@ Item {
             x: modeSwitcher.width + headerControls.spacing
             width: headerControls.searchWidth
             height: headerControls.height
-            radius: Theme.radius
+            radius: Theme.largeRadius
             interactive: false
             externalHovered: searchHover.hovered
             focused: searchInput.activeFocus

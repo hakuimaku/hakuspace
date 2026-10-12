@@ -28,7 +28,7 @@ Row {
     
     Rectangle {
         color: Theme.accent
-        radius: Theme.radiusSm
+        radius: Theme.radius
         implicitHeight: Theme.fontSize * 1.8
         implicitWidth: sysRow.implicitWidth + Theme.pad * 2
         

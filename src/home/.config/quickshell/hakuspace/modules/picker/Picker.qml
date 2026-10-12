@@ -85,7 +85,7 @@ PanelWindow {
         height: Math.min(600, layout.implicitHeight + Theme.pad * 2)
         anchors.centerIn: parent
         color: Theme.surface
-        radius: Theme.radius
+        radius: Theme.largeRadius
         border.color: Theme.border
         border.width: Theme.borderWidth
         
@@ -174,7 +174,7 @@ PanelWindow {
                     width: listView.width
                     height: Theme.fontSize * 2
                     color: index === listView.currentIndex || delegateMouse.containsMouse ? Theme.surfaceHi : Theme.surface
-                    radius: Theme.radiusSm
+                    radius: Theme.radius
                     
                     Text {
                         anchors.fill: parent

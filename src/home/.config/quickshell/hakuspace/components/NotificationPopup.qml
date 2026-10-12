@@ -26,7 +26,7 @@ Item {
     // Top layer is only the frame-attached flare/bridge. The Overlay owns the
     // full notification body, so never let the Top layer draw a second full
     // height panel behind it.
-    readonly property real flareVisualHeight: Math.min(revealHeight, 20 + Theme.tipHugRadius)
+    readonly property real flareVisualHeight: Math.min(revealHeight, 20 + Theme.hugRadius)
     readonly property int fitCount: Math.max(0, Math.min(maxVisible,
         Math.floor((modelData.height - topOffset - Theme.pad) / (Theme.fontSize * 12 + gap))))
     readonly property var livePopups: NotificationStore.popupForScreen(modelData.name).slice(0, fitCount)
@@ -154,7 +154,7 @@ Item {
             currentHeight: root.flareVisualHeight
             bounds: root.frameBounds
             r: 20
-            rf: Theme.tipHugRadius
+            rf: Theme.hugRadius
             bottomRadius: 0
             surfaceColor: Theme.surface
         }

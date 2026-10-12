@@ -31,8 +31,8 @@ Item {
     readonly property real innerPadding: 24
     readonly property real railGap: 14
     readonly property real cardGap: 12
-    readonly property real cornerRadius: Theme.radius
-    readonly property real flareRadius: Theme.tipGiantRadius
+    readonly property real cornerRadius: Theme.largeRadius
+    readonly property real flareRadius: Theme.giantRadius
 
     // Canonical 50x50 Dashboard shell dimensions
     readonly property real dashboardWidth: targetWidth
@@ -46,7 +46,7 @@ Item {
     readonly property real currentEnvelopeHeight: startEnvelopeHeight + (dashboardHeight - startEnvelopeHeight) * morphProgress
 
     // Flare body bounds (ends before flare ear so final envelope stays <= 50% x 50%)
-    property real bottomFlareReach: Theme.tipHugRadius
+    property real bottomFlareReach: Theme.hugRadius
     readonly property real finalBodyEnd: Math.max(0, dashboardWidth - flareRadius)
     readonly property real currentBodyEnd: Math.max(0, currentEnvelopeWidth - flareRadius)
     readonly property real currentBodyWidth: currentBodyEnd

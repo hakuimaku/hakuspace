@@ -99,7 +99,7 @@ Item {
                 visible: root.canGoBack
                 Layout.preferredWidth: Math.max(34, Theme.fontSize * 2.2)
                 Layout.preferredHeight: Layout.preferredWidth
-                radius: Theme.radiusSm
+                radius: Theme.radius
                 text: ""
                 idleColor: "transparent"
                 hoverColor: Qt.darker(Theme.hoverMuted, 1.18)

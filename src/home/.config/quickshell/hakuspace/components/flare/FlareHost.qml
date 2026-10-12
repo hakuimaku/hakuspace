@@ -46,7 +46,7 @@ Item {
         padX: root.horizontalPadding * 2
         bounds: root.wBounds
         maxW: root.maxWidth
-        snap: 2 * Theme.tipHugRadius
+        snap: 2 * Theme.hugRadius
         onSettled: function(s) { root.settled(s); contentItem.settle(s); }
     }
     
@@ -56,8 +56,8 @@ Item {
         end: morph.mEnd
         currentHeight: morph.mHeight
         bounds: root.wBounds
-        r: Theme.tipRadius
-        rf: Theme.tipHugRadius
+        r: Theme.largeRadius + 8
+        rf: Theme.hugRadius
         surfaceColor: Theme.barColor
         
         FlareContent {

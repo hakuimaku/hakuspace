@@ -117,7 +117,7 @@ ActionMenu.ActionMenuPage {
                 property bool danger: modelData.danger
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                radius: Theme.radiusSm > 0 ? Theme.radiusSm : 12
+                radius: Theme.radius > 0 ? Theme.radius : 12
 
                 text: ""
                 selected: root.selectedIndex === index

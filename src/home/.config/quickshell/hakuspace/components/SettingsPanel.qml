@@ -71,7 +71,7 @@ PanelWindow {
         anchors.centerIn: parent
         width: Math.round(root.modelData.width * 0.76)
         height: Math.round(root.modelData.height * 0.60)
-        radius: Theme.radius
+        radius: Theme.largeRadius
         color: Theme.surface
         border.color: Theme.border
         border.width: Theme.borderWidth
@@ -102,7 +102,7 @@ PanelWindow {
             y: Theme.pad * 2
             width: Math.max(140, headerText.implicitWidth + Theme.pad * 4)
             height: Math.max(40, headerText.implicitHeight + Theme.pad * 2)
-            radius: Theme.radius
+            radius: Theme.largeRadius
             color: Theme.hoverMuted
 
             Text {
