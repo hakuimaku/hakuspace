@@ -217,10 +217,10 @@ Item {
                 hoverColor: (selected || focused) ? "transparent" : root.rowHoverColor
                 pressedColor: (selected || focused) ? "transparent" : root.rowHoverColor
                 selectedColor: "transparent"
-                foregroundColor: (selected || focused) ? "#000000" : Theme.fg
-                hoverForegroundColor: (selected || focused) ? "#000000" : Theme.fg
-                pressedForegroundColor: (selected || focused) ? "#000000" : Theme.fg
-                selectedForegroundColor: "#000000"
+                foregroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
+                hoverForegroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
+                pressedForegroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
+                selectedForegroundColor: Theme.onAccentColor
                 hoverScaleDelta: 0.003
                 pressScaleDelta: 0.012
 
@@ -251,7 +251,7 @@ Item {
                     anchors.rightMargin: Theme.pad * 1.5
                     anchors.verticalCenter: parent.verticalCenter
                     text: rowWrap.modelData.raw
-                    color: (row.selected || row.focused) ? "#000000" : row.foreground
+                    color: (row.selected || row.focused) ? Theme.onAccentColor : row.foreground
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize + 1
                     font.weight: (row.selected || row.focused) ? Font.Medium : Font.Normal

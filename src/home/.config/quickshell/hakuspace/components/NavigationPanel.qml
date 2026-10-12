@@ -823,7 +823,7 @@ Item {
             bottomRadius: root.closing
                           ? root.backingCurveRadius * (1.0 - root.closeFlareProgress)
                           : root.backingCurveRadius
-            surfaceColor: Theme.barColor
+            surfaceColor: Theme.surface
             opacity: root.closingFromDashboard ? 0.0 : (root.closing
                      ? Math.max(0.0, 1.0 - Math.max(0.0, root.closeFlareProgress - 0.72) / 0.28)
                      : Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35))
@@ -871,7 +871,7 @@ Item {
             earWidth: root.sidebarEarWidth
             earRadius: root.sidebarEarRadius
             cornerRadius: Theme.largeRadius + 8
-            surfaceColor: Theme.barColor
+            surfaceColor: Theme.surface
             z: 5
             onToggleQuickNoteRequested: root.toggleQuickNote()
             onPointerMoved: (px, py) => {
@@ -946,7 +946,7 @@ Item {
             width: root.circularShellDiameter
             height: root.circularShellDiameter
             radius: width / 2
-            color: Theme.barColor
+            color: Theme.surface
             opacity: root.closingFromDashboard ? 0.0 : (root.navigationRevealProgress * Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35))
             scale: 0.92 + root.navigationRevealProgress * 0.08
             transformOrigin: Item.Center

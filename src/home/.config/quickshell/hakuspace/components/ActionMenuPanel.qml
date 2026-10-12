@@ -42,7 +42,7 @@ PanelWindow {
     Rectangle {
         id: scrim
         anchors.fill: parent
-        color: Theme.scrim
+        color: Theme.surface
         opacity: 0.35 * surface.openOpacity * surface.closeOpacity
     }
 

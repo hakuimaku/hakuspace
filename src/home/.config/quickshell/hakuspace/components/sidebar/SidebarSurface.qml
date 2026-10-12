@@ -14,7 +14,7 @@ Item {
     property real earWidth: Math.max(32, Math.round(rf * 1.5))
     property real earRadius: Math.max(32, Math.round(rf * 1.5))
     property real cornerRadius: Theme.largeRadius + 8
-    property color surfaceColor: Theme.barColor
+    property color surfaceColor: Theme.surface
     property bool expanded: false
     property bool quickNoteActive: false
 

@@ -186,7 +186,7 @@ Item {
         flareRadius: root.flareRadius
         screenWidth: root.screenWidth
         screenHeight: root.screenHeight
-        surfaceColor: Theme.barColor
+        surfaceColor: Theme.surface
         cornerRadius: root.cornerRadius + 8
         z: 1
     }

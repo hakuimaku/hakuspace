@@ -12,7 +12,7 @@ Item {
     property real r: 24
     property real rf: Theme.hugRadius
     property real bottomRadius: r
-    property color surfaceColor: Theme.barColor
+    property color surfaceColor: Theme.surface
     // Cover the antialiased join at fractional body coordinates without moving the outer curve.
     readonly property real seamOverlap: 2
 

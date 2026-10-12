@@ -13,7 +13,7 @@ Item {
     property real flareRadius: Theme.largeRadius + 8
     property real screenWidth: 1920
     property real screenHeight: 1080
-    property color surfaceColor: Theme.barColor
+    property color surfaceColor: Theme.surface
     property real cornerRadius: Theme.largeRadius + 8
 
     readonly property var frameBounds: FlareEdges.getBounds(screenWidth)

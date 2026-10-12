@@ -52,7 +52,7 @@ PanelWindow {
     Rectangle {
         id: backdrop
         anchors.fill: parent
-        color: Theme.scrim
+        color: Theme.surface
         opacity: 0.22
     }
 

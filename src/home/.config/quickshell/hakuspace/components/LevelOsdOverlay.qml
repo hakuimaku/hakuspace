@@ -30,7 +30,7 @@ PanelWindow {
         width: Math.max(0, root.spanWidth - Theme.gap * 2)
         height: Math.max(0, Theme.levelOsdHeight * CenterState.osdExpansion - Theme.gap * 2)
         radius: Math.min(Theme.largeRadius + 8, height / 2)
-        color: "#000000"
+        color: Theme.surface
         clip: true
         visible: CenterState.osdExpansion > 0 && root.spanWidth > 0
 

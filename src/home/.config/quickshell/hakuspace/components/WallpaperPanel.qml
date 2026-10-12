@@ -47,7 +47,7 @@ PanelWindow {
     Rectangle {
         id: scrim
         anchors.fill: parent
-        color: Theme.scrim
+        color: Theme.surface
         opacity: 0.22 * carousel.openOpacity * carousel.closeOpacity
     }
 

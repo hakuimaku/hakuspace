@@ -17,7 +17,7 @@
 ## 1. General principles (Irunu Style)
 
 1. **Two primary colours:** solid black `#000000` for shell surfaces and the dynamic **accent** for active/selected/hover states, text, icons and state indicators where defined.
-2. **Background surfaces:** `Theme.bg`, `surface`, `scrim` and `inkBg` are fixed opaque black in the current preset. Transparent regions stay transparent when they are real shape cutouts or empty window space.
+2. **Background surfaces:** `Theme.surface` is the canonical opaque black UI surface in the current preset. `Theme.onAccentColor` is the semantic foreground color derived from `surface`. Transparent regions stay transparent when they are real shape cutouts or empty window space.
 3. **Shape:** default radius comes from `Theme.radius`; use a small shared radius family rather than unrelated radii per card. Borders are normally hidden (`borderWidth = 0`). Paint outlines describe geometry/grouping, **not literal border requirements**.
 4. **Hierarchy:** ordinary cards/modules are black. Accent fill + black foreground is the primary selected/active treatment. Tray/WindowTitle keep their existing muted-hover exception. Do not turn every shell surface into the same generic rounded rectangle.
 5. **Geometry ownership:** RoundedScreen/frame geometry is shared per output. TopBar-origin surfaces derive attachment coordinates from that shared frame instead of duplicating `topBarHeight + offset` calculations.
@@ -272,15 +272,13 @@ The new P3 mockups do not cancel these established style directions:
 ### Mapping JSON → `Theme`
 | JSON key | `Theme` property | Notes |
 |---|---|---|
-| `bg` | `bg` | fixed opaque `#000000`; JSON value ignored |
 | `fg` | `fg` | equals the accent |
 | `fgDim` | `fgDim` | default `#aaaaaa` |
 | `fgMuted` | `fgMuted` | `rgba(255,255,255,0.5)` → `#80ffffff` |
 | `border` | `border` | `transparent` |
-| `surface` | `surface` | fixed opaque `#000000`; JSON value ignored |
+| `surface` | `surface` | fixed opaque `#000000`; canonical black UI surface |
 | `surfaceHi` | `surfaceHi` | bound to `accent` for hover/selection; JSON value ignored |
 | `accent` | `accent` | |
-| `onAccent` | `onAccentColor` | fixed `#000000` for text/icons on accent fills; JSON value ignored |
 | `radius`, `largeRadius`, `hugRadius`, `giantRadius` | `radius` (12), `largeRadius` (16), `hugRadius` (28), `giantRadius` (48) | |
 | `borderWidth`, `gap`, `pad` | same names | |
 | `font` | `font` and `fontFamily` | |
@@ -289,23 +287,19 @@ The new P3 mockups do not cancel these established style directions:
 ### `Theme`-only tokens (not in the JSON)
 | Token | Default | Use |
 |---|---|---|
-| `scrim` | `#000000` | opaque overlay behind the Picker card |
-| `inkBg` | `#000000` | background used by `barColor` in opaque mode |
-| `onAccentColor` | `#000000` | black text/icons on accent fills |
+| `onAccentColor` | `root.surface` (`#000000`) | black text/icons on accent fills |
 | `hoverMuted` | `#2b2b2b` | dark grey hover fill for Tray and WindowTitle |
 | `workspaceDot` | `#424242` | inactive workspace status dots |
-| `barColor` | `AppState.opaqueThemeState ? inkBg : bg` | both states render `#000000`; bar and flare/tooltip body |
 
 ### Token use
 | Token | Used for |
 |---|---|
-| `barColor` / `bg` | bar, tooltip and flare body; always solid black |
-| `surface` | module and card fills, including Settings and Picker |
+| `surface` | canonical black UI surface; bar, module and card fills, tooltip/flare body, Settings and Picker |
 | `surfaceHi` | accent fill on hovered/selected controls |
 | `hoverMuted` | dark grey hover fill for Tray and WindowTitle |
 | `fg` / `fgDim` / `fgMuted` | primary, dim and muted text/icons (including the WindowTitle class name) |
 | `accent` | highlighted text/icons and borders; tooltip text; workspace indicator |
-| `onAccentColor` | black text/icons on accent fills, including hover, Settings and MPRIS |
+| `onAccentColor` | semantic black text/icons on accent fills, including hover, Settings and MPRIS |
 | `border`, `borderWidth` | transparent/0 (hidden borders) |
 
 ### Derived rules (as coded in `TopModule`)
@@ -345,7 +339,7 @@ HakuMenu shell-open motion remains a separate profile: ordinary controls must no
 ## 4. Component style notes
 
 - **Workspaces:** retain the existing dot/worm model and status semantics from the stable baseline. Geometry/animation uses shared tokens rather than ad-hoc per-screen values.
-- **Tooltip / Flare:** body uses `Theme.barColor`, text uses the approved accent treatment, and Flare geometry remains centralized in the shared Flare library. P3 attachment is frame-derived.
+- **Tooltip / Flare:** body uses `Theme.surface`, text uses the approved accent treatment, and Flare geometry remains centralized in the shared Flare library. P3 attachment is frame-derived.
 - **MPRIS / Center:** keep the stable fallback TopBar-center silhouette. Dashboard MPRIS reuses media data but has its own card layout. Do not revive the cancelled center-collar redesign.
 - **RoundedScreen:** permanent chassis. Frame edge values come from rounded-screen config/theme and shared geometry; with TopBar visible, keep the top frame instead of deleting it.
 - **Navigation:** radial Logo-origin controller from `navigation.png`; Dashboard/Sidebar/Settings only.
@@ -381,7 +375,6 @@ HakuMenu shell-open motion remains a separate profile: ordinary controls must no
 | Where | Value | Why |
 |---|---|---|
 | `TopModule.qml` | `#ff3333` (urgent text) | no urgent-text token yet |
-| `LevelOsdOverlay.qml` | `#000000` (OSD body) | matches fixed background policy |
 | `RoundedScreen.qml` | `#000000` fill and stroke | frame is always black |
 
 Suggested token if the urgent colour is centralized later: `Theme.urgentText`.
@@ -390,7 +383,7 @@ Suggested token if the urgent colour is centralized later: `Theme.urgentText`.
 
 ## 7. Observations
 
-- Opaque mode currently keeps the bar at black because both `bg` and `inkBg` are black.
+- Opaque mode keeps the bar at black using canonical `Theme.surface`.
 - The current token file is flat; older nested-schema/shadow descriptions are obsolete.
 - The P3 mockups deliberately leave several semantic areas unspecified (for example Sidebar dot meanings and the real Theme tab). Those omissions are scope boundaries, not invitations to invent product behavior.
 - The latest Wallpaper mockup invalidates the earlier dual-front/wide-Flare implementation direction.

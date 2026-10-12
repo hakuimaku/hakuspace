@@ -134,11 +134,11 @@ ActionMenu.ActionMenuPage {
                 selectedColor: "transparent"
                 focusColor: "transparent"
 
-                foregroundColor: (selected || focused) ? (modelData.danger ? "#ffffff" : "#000000")
+                foregroundColor: (selected || focused) ? (modelData.danger ? "#ffffff" : Theme.onAccentColor)
                                                        : (modelData.danger ? "#ff6b6b" : Theme.fg)
                 hoverForegroundColor: (selected || focused) ? foregroundColor
                                                             : (modelData.danger ? "#ffffff" : Theme.fg)
-                selectedForegroundColor: modelData.danger ? "#ffffff" : "#000000"
+                selectedForegroundColor: modelData.danger ? "#ffffff" : Theme.onAccentColor
 
                 Component.onCompleted: {
                     if (selected) {

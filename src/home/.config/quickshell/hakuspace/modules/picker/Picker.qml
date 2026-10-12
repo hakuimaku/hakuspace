@@ -22,7 +22,7 @@ PanelWindow {
     
     Rectangle {
         anchors.fill: parent
-        color: Theme.scrim
+        color: Theme.surface
     }
     
     property string currentFifo: ""

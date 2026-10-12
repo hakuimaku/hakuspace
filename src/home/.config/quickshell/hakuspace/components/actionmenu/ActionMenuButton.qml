@@ -32,14 +32,14 @@ Motion.MorphButton {
     selectedColor: "transparent"
     focusColor: "transparent"
 
-    foregroundColor: (selected || focused) ? (danger ? "#ffffff" : "#000000")
+    foregroundColor: (selected || focused) ? (danger ? "#ffffff" : Theme.onAccentColor)
                                            : (danger ? "#ff6b6b" : Theme.fg)
     hoverForegroundColor: (selected || focused) ? foregroundColor
                                                 : (danger ? "#ffffff" : Theme.fg)
-    selectedForegroundColor: danger ? "#ffffff" : "#000000"
+    selectedForegroundColor: danger ? "#ffffff" : Theme.onAccentColor
 
     readonly property color trailingForeground:
-        (root.selected || root.focused) ? (root.danger ? "#ffffff" : "#000000")
+        (root.selected || root.focused) ? (root.danger ? "#ffffff" : Theme.onAccentColor)
         : root.hovered ? Theme.fg
         : Theme.fgMuted
 
@@ -121,7 +121,7 @@ Motion.MorphButton {
                 font.pixelSize: Math.max(8, Theme.fontSize - 4)
                 font.weight: Font.Medium
                 color: (root.selected || root.focused)
-                    ? (root.danger ? "#ffffff" : "#000000")
+                    ? (root.danger ? "#ffffff" : Theme.onAccentColor)
                     : root.badgeColor
             }
         }

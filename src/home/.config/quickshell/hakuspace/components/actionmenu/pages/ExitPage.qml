@@ -308,9 +308,9 @@ ActionMenu.ActionMenuPage {
                 selectedColor: "transparent"
                 focusColor: "transparent"
 
-                foregroundColor: (selected || focused) ? "#000000" : Theme.fg
-                hoverForegroundColor: (selected || focused) ? "#000000" : Theme.fg
-                selectedForegroundColor: "#000000"
+                foregroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
+                hoverForegroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
+                selectedForegroundColor: Theme.onAccentColor
 
                 text: "Cancel"
                 onHoveredChanged: {

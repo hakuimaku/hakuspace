@@ -58,7 +58,7 @@ Item {
         bounds: root.wBounds
         r: Theme.largeRadius + 8
         rf: Theme.hugRadius
-        surfaceColor: Theme.barColor
+        surfaceColor: Theme.surface
         
         FlareContent {
             id: contentItem

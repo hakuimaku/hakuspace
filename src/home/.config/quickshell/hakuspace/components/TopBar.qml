@@ -160,7 +160,7 @@ PanelWindow {
         id: barBg
         width: parent.width
         height: root.barH
-        color: Theme.barColor
+        color: Theme.surface
         border.width: Theme.borderWidth
         border.color: Theme.border
 
@@ -297,7 +297,7 @@ PanelWindow {
         bounds: FlareEdges.getBounds(root.width)
         r: Theme.largeRadius + 8
         rf: Theme.hugRadius
-        surfaceColor: Theme.barColor
+        surfaceColor: Theme.surface
         visible: CenterState.osdExpansion > 0 && spanWidth > 0
 
         readonly property real spanWidth: Math.min(Theme.levelOsdWidth + Theme.levelOsdPadding * 2,

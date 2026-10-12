@@ -6,21 +6,16 @@ import Quickshell.Io
 QtObject {
     id: root
 
-    property string bg: "#000000"
+    property color surface: "#000000"
+    readonly property color onAccentColor: root.surface
     property string fg: "#ffffff"
     property string fgDim: "#aaaaaa"
-    property string scrim: "#000000"
     property string fgMuted: "#80ffffff"
     property string border: "transparent"
-    property string surface: "#000000"
     property color surfaceHi: root.accent
     property string hoverMuted: "#2b2b2b"
     property string accent: "#ffffff"
-    property string onAccentColor: "#000000"
-    property string inkBg: "#000000"
     property string workspaceDot: "#424242"
-    
-    property color barColor: AppState.opaqueThemeState ? root.inkBg : root.bg
     
     property int radius: 12
     property int largeRadius: 16
@@ -60,7 +55,6 @@ QtObject {
         if (!jsonString || jsonString.trim() === "") return;
         try {
             var conf = JSON.parse(jsonString);
-            if (conf.bg) root.bg = parseColor(conf.bg);
             if (conf.surface) root.surface = parseColor(conf.surface);
             if (conf.surfaceHi) root.surfaceHi = parseColor(conf.surfaceHi);
             if (conf.fg) root.fg = parseColor(conf.fg);
@@ -68,7 +62,6 @@ QtObject {
             if (conf.fgMuted) root.fgMuted = parseColor(conf.fgMuted);
             if (conf.border) root.border = parseColor(conf.border);
             if (conf.accent) root.accent = parseColor(conf.accent);
-            if (conf.onAccent) root.onAccentColor = parseColor(conf.onAccent);
             
             if (conf.radius !== undefined) root.radius = conf.radius;
             if (conf.largeRadius !== undefined) root.largeRadius = conf.largeRadius;
