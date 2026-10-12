@@ -239,7 +239,19 @@ The new P3 mockups do not cancel these established style directions:
 - **Notification popup:** borderless black Flare/toast; source X from Notification control, frame-derived Y; no generic card stroke.
 - **Notification Center:** non-modal right-side shell surface, wider spacing, taller history viewport, `Clear` uses accent fill + black text; hover may grow label without changing allocated geometry.
 - **Level OSD:** compact, physical-center stable, fixed percentage slot, same layout for volume/brightness, frame-derived attachment. Treat icon + level track + percentage as one optically centered group; do not let asymmetric slots bias the content to one side.
-- **Tray / Tooltip:** X from source control, Y from shared frame geometry, body clamped inside safe bounds while source neck/origin may still point to the true trigger.
+### 1.11 Shared Action Layer (ActionMenu)
+
+Shared modal action menu host replacing standalone Rofi dialogs in Hikai:
+
+- **Host Window:** Single shared fullscreen `ActionMenuPanel` on `WlrLayer.Overlay` with dimmed backdrop, outside-click dismissal, and exclusive keyboard focus.
+- **Surface geometry:** Screen-centered rectangle with `Theme.largeRadius` (16px), opaque `Theme.surface` (`#000000`) background, and subtle border stroke.
+- **Motion language:**
+  - Initial open: circular expanding mask reveal (`actionLayerOpenDuration`) centered on screen diagonal.
+  - Close: smooth fade + scale zoom-out (`actionLayerCloseDuration`).
+  - Forward morph: originating button seeds `ActionMenuMorphProxy` and expands into child page surface (`actionLayerMorphDuration`).
+  - Reverse morph: child surface contracts back to originating button geometry on Back or Escape.
+- **Navigation stack:** Dynamic page stack with unified Escape/Back navigation and `ActionMenuSelectionPill` target tracking.
+- **Backend separation:** Hikai routes via Quickshell IPC directly to headless `*_ctl.sh` scripts, while Classic continues using standalone `*_rofi.sh` facades.
 
 ## 2. Token contract (`quickshell.json` → `Theme.qml`)
 
@@ -251,21 +263,22 @@ The new P3 mockups do not cancel these established style directions:
   "accent": "#c89a6a",
   "font": "JetBrainsMono Nerd Font",
   "fontSize": 14,
-  "bg": "#000000",
   "surface": "#000000",
   "surfaceHi": "#c89a6a",
   "border": "transparent",
   "fg": "#c89a6a",
   "fgDim": "<ACCENT_DIM>",
   "fgMuted": "rgba(255, 255, 255, 0.5)",
-  "onAccent": "#000000",
-  "radius": 16,
+  "radius": 12,
+  "largeRadius": 16,
+  "hugRadius": 28,
+  "giantRadius": 48,
   "borderWidth": 0,
   "gap": 4,
   "pad": 12
 }
 ```
-(`accent`, `font`, `fontSize`, `fgDim` come from `state.env`/the accent pipeline; the rest are constants of the preset.) `preset` is informational. The generated `bg` and `surface` keys document the black-background policy. `Theme.qml` keeps them read-only and ignores incoming values so an older generated file cannot restore translucent fills. `surfaceHi` is read-only and bound to `accent`; its JSON value is informational.
+(`accent`, `font`, `fontSize`, `fgDim` come from `state.env`/the accent pipeline; the rest are constants of the preset.) `preset` is informational. The generated `surface` key documents the canonical black UI surface policy. `Theme.qml` keeps it read-only and ignores incoming values so an older generated file cannot restore translucent fills. `surfaceHi` is read-only and bound to `accent`; its JSON value is informational.
 
 `Theme.qml` loads the file with `FileView` (`watchChanges`, `onFileChanged: reload()`), parses it in `apply()` inside `try/catch` (invalid or empty content keeps the previous values), and converts CSS `rgba(r, g, b, a)` strings to `#AARRGGBB` with `parseColor()`.
 

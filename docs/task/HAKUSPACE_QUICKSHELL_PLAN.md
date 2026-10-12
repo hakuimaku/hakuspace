@@ -205,7 +205,7 @@ Implemented:
 - canonical RoundedScreen chassis values (thickness: 4, radius: 20, color: #000000) defined in Quickshell code (`AppState.qml`), decoupled from classic `rounded-screen.conf` and manager toggles;
 - shared animation tokens.
 
-**Current background policy:** `Theme.barColor` keeps the `AppState.opaqueThemeState ? inkBg : bg` binding, while both `inkBg` and `bg` are fixed to `#000000`. Ordinary idle modules/cards and the Picker scrim are opaque black. Hover/selection fills use the accent colour with black text/icons; Tray and WindowTitle hover use dark grey `Theme.hoverMuted`, with WindowTitle text/icon in accent. The Logo and Settings group stay accent-filled with black icons in both states. Logo hover grows the icon font size by 2 px and expands the pill by `Theme.pad`. `Theme.surfaceHi` is bound to `accent`; the generated JSON mirrors this, while `Theme.qml` ignores incoming values for fixed background tokens so old theme files cannot override them. The MPRIS icon circle remains accent-filled with a black glyph. The earlier P0 labwc pixel check (`#000000` with opaque off, `#111111` with opaque on) is historical and must be repeated for the current policy.
+**Current background policy:** `Theme.surface` is the canonical opaque black background (`#000000`). `Theme.onAccentColor` is the derived foreground token (`root.surface`). Ordinary idle modules/cards and the Picker overlay are opaque black. Hover/selection fills use the accent colour with black text/icons; Tray and WindowTitle hover use dark grey `Theme.hoverMuted`, with WindowTitle text/icon in accent. The Logo and Settings group stay accent-filled with black icons in both states. Logo hover grows the icon font size by 2 px and expands the pill by `Theme.pad`. `Theme.surfaceHi` is bound to `accent`; the generated JSON mirrors this, while `Theme.qml` ignores incoming values for fixed background tokens so old theme files cannot override them. The MPRIS icon circle remains accent-filled with a black glyph.
 
 ### 3.3 Picker — **DONE core / integration debt**
 
@@ -621,7 +621,7 @@ Required actions:
 
 1. read the final diff end-to-end;
 2. ensure no accidental unrelated formatting/refactor is mixed in;
-3. reconcile the `Theme.barColor` policy;
+3. reconcile the `Theme.surface` policy;
 4. verify all new files are tracked;
 5. keep the Classic fallback path in `level_control.sh` functional;
 6. do not claim completion until the runtime matrix below passes.

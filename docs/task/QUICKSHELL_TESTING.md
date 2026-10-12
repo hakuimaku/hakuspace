@@ -258,7 +258,7 @@ Record: idle CPU (bar not interacting), CPU while morphing, and whether any fram
 - **Calendar marker:** Current day in Clock calendar and Dashboard calendar has solid `Theme.accent` fill with black `#000000` text and 3–4px breathing room clearance (`604638ea`).
 
 ### 9.8 Shared Action Layer / Morph Menu
-- **Host Window:** Single shared centered `ActionMenuPanel` on `WlrLayer.Overlay` with scrim and exclusive keyboard focus.
+- **Host Window:** Single shared centered `ActionMenuPanel` on `WlrLayer.Overlay` with dimmed backdrop and exclusive keyboard focus.
 - **Motion language:**
   - First open: circular center reveal (`MultiEffect` mask expanding to surface diagonal, `actionLayerOpenDuration`).
   - Close: smooth fade + scale zoom out (`actionLayerCloseDuration`).

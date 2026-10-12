@@ -58,7 +58,7 @@ The library must not contain tooltip-specific names or logic such as
    V1 maps `u = x`, `v = y` and supports `attach: Top`. Other attachments are
    visual transforms only; the math does not change.
 4. **Token-driven dimensions.** Radii, dimensions, and animation curves come
-   from `Theme.flare*`, `Theme.barColor`, and `HAnimation`. Do not add
+   from `Theme.flare*`, `Theme.surface`, and `HAnimation`. Do not add
    library-local magic constants.
 5. **Safe failure.** Pure functions accept malformed input without throwing;
    they return finite, safe values.
@@ -220,7 +220,7 @@ Responsibilities:
 - translate and scale pieces from `FlareGeometry.pieces`;
 - expose `default property alias content: body.data`;
 - keep the body clipped to its content;
-- use `Theme.barColor` by default.
+- use `Theme.surface` by default.
 
 Inputs are `start`, `end`, `height`, `bounds`, `r`, `rf`, and `color`.
 
@@ -340,7 +340,7 @@ Menus and other panels use the same `FlareHost` with a different
 content `Component` and one `FlareHost`; it does not draw its own background,
 round its own corners, or implement edge hugging.
 
-Large panels will eventually use `FlareWindow.qml` (M4):
+Large panels use `FlareWindow.qml`:
 
 - fixed-size transparent `PanelWindow` covering the workspace below the bar;
 - `exclusionMode: Ignore`;
@@ -348,7 +348,7 @@ Large panels will eventually use `FlareWindow.qml` (M4):
 - no runtime window resizing.
 
 Because the bar and panel may be separate windows, verify the seam at the
-Topbar edge with `Theme.barColor` and `barH` at 1.25x and 1.5x scale.
+Topbar edge with `Theme.surface` and `barH` at 1.25x and 1.5x scale.
 
 For `attach: Left`, `Right`, or `Bottom`, transform the visual item containing
 the body and pieces. Keep content untransformed and leave
@@ -395,23 +395,11 @@ Do not import it from default `TopBar.qml` or `shell.qml`. If it exceeds the
 bar's 160 px tooltip area, document the boundary; do not resize the bar window
 to hide the issue.
 
-## 10. Delivery order
-
-Stop and provide a diff for review after each step.
-
-| Step | Work | Acceptance |
-| --- | --- | --- |
-| L0 | Complete blocking cleanup from `TOOLTIP_TT3_REVIEW.md`. | Clean status and no debug junk. |
-| L1 | Add `FlareGeometry.js` and its Node test. | Pure module; tests pass with real output. |
-| L2 | Add all flare layers and migrate `TooltipLayer`. | Equivalent rendering; clean geometry grep. |
-| L3 | Complete tooltip controls, portal state, payloads, metrics, `R × t`, and multi-monitor handling. | Review items B4–B9, C, and D addressed. |
-| L4 | Add the dev demo and `docs/flare.md`. | Demo is opt-in and docs include a menu example. |
-
-## 11. Pitfalls
+## 10. Pitfalls
 
 - Do not reintroduce tooltip vocabulary into `components/flare/`.
 - Keep math out of QML bindings; put it in `FlareGeometry.js`.
 - Keep all animation in `FlareMorph.qml`.
 - Do not hardcode dimensions, radii, durations, or colors.
-- Keep `Theme.barColor` as the single background-color source.
+- Keep `Theme.surface` as the single background-color source.
 - Keep Rounded Screen calculations inside `FlareEdges.qml`.
