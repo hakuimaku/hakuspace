@@ -416,7 +416,7 @@ Item {
         }
 
         root.morphGhostOpacity = Math.max(0.0, 1.0 - progress * 2.8);
-        root.morphBorderWidth = Math.max(0, Math.round((1.0 - progress) * (Theme.borderWidth > 0 ? Theme.borderWidth : 1)));
+        root.morphBorderWidth = Math.max(0, Math.round((1.0 - progress) * Theme.borderWidth));
         root.morphParentOpacity = Math.max(0.0, 1.0 - progress * 2.2);
     }
 
@@ -566,7 +566,7 @@ Item {
         }
 
         root.morphGhostOpacity = (progress >= 0.65) ? Math.min(1.0, (progress - 0.65) / 0.35) : 0.0;
-        root.morphBorderWidth = Math.max(0, Math.round(progress * (Theme.borderWidth > 0 ? Theme.borderWidth : 1)));
+        root.morphBorderWidth = Math.max(0, Math.round(progress * Theme.borderWidth));
         root.morphParentOpacity = Math.min(1.0, progress * 2.0);
     }
 
@@ -652,7 +652,7 @@ Item {
         radius: Theme.largeRadius
         color: Theme.surface
         border.color: Theme.border !== "transparent" ? Theme.border : Qt.rgba(1, 1, 1, 0.12)
-        border.width: Theme.borderWidth > 0 ? Theme.borderWidth : 1
+        border.width: Theme.borderWidth
         clip: true
 
         // Permanent Page Stack Host (Layer 1, parent lives here underneath)
