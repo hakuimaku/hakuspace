@@ -6,18 +6,18 @@ import Quickshell.Io
 QtObject {
     id: root
 
-    readonly property string bg: "#000000"
+    property string bg: "#000000"
     property string fg: "#ffffff"
     property string fgDim: "#aaaaaa"
-    readonly property string scrim: "#000000"
+    property string scrim: "#000000"
     property string fgMuted: "#80ffffff"
     property string border: "transparent"
-    readonly property string surface: "#000000"
-    readonly property color surfaceHi: root.accent
-    readonly property string hoverMuted: "#2b2b2b"
+    property string surface: "#000000"
+    property color surfaceHi: root.accent
+    property string hoverMuted: "#2b2b2b"
     property string accent: "#ffffff"
-    readonly property string onAccentColor: "#000000"
-    readonly property string inkBg: "#000000"
+    property string onAccentColor: "#000000"
+    property string inkBg: "#000000"
     property string workspaceDot: "#424242"
     
     property color barColor: AppState.opaqueThemeState ? root.inkBg : root.bg
@@ -62,11 +62,15 @@ QtObject {
         if (!jsonString || jsonString.trim() === "") return;
         try {
             var conf = JSON.parse(jsonString);
+            if (conf.bg) root.bg = parseColor(conf.bg);
+            if (conf.surface) root.surface = parseColor(conf.surface);
+            if (conf.surfaceHi) root.surfaceHi = parseColor(conf.surfaceHi);
             if (conf.fg) root.fg = parseColor(conf.fg);
             if (conf.fgDim) root.fgDim = parseColor(conf.fgDim);
             if (conf.fgMuted) root.fgMuted = parseColor(conf.fgMuted);
             if (conf.border) root.border = parseColor(conf.border);
             if (conf.accent) root.accent = parseColor(conf.accent);
+            if (conf.onAccent) root.onAccentColor = parseColor(conf.onAccent);
             
             if (conf.radius !== undefined) {
                 root.radius = conf.radius;

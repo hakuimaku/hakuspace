@@ -153,7 +153,7 @@ case "${1:-}" in
         ;;
     list-fonts|--list-fonts)
         if command -v fc-list >/dev/null 2>&1; then
-            fc-list : family 2>/dev/null | sed 's/,.*//' | sort -u
+            fc-list ':spacing=100' -f '%{family[0]}\n' 2>/dev/null | grep -v '^[[:space:]]*$' | sort -fu
         fi
         ;;
     set-accent|--set-accent)

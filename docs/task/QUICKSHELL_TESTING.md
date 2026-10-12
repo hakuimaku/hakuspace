@@ -256,3 +256,27 @@ Record: idle CPU (bar not interacting), CPU while morphing, and whether any fram
 - **Level OSD:** Compact capsule layout; optical center stays fixed across 0%, 9%, 10%, 99%, 100%.
 - **TopBar recording:** Recording state (`REC` chip + timer) is restricted to right `RecorderGroup`; `CenterState` handles media/OSD only (`8f21ac42`).
 - **Calendar marker:** Current day in Clock calendar and Dashboard calendar has solid `Theme.accent` fill with black `#000000` text and 3–4px breathing room clearance (`604638ea`).
+
+### 9.8 Shared Action Layer / Morph Menu
+- **Host Window:** Single shared centered `ActionMenuPanel` on `WlrLayer.Overlay` with scrim and exclusive keyboard focus.
+- **Motion language:**
+  - First open: circular center reveal (`MultiEffect` mask expanding to surface diagonal, `actionLayerOpenDuration`).
+  - Close: smooth fade + scale zoom out (`actionLayerCloseDuration`).
+  - Page morph: button expands/morphs directly into child surface via `ActionMenuMorphProxy` and animated profile geometry (`actionLayerMorphDuration`).
+  - Reverse morph: child surface contracts back into seed button geometry on Back or Escape.
+- **Flows:**
+  - `record`: Record mode -> Micro + Sound -> Mic Source child page -> start recording.
+  - `power`: Horizontal action cards (Suspend, Reboot, Poweroff, Hibernate, Lock, Logout).
+  - `power -> exit`: Logout button morphs directly into Exit confirmation report in same layer!
+  - `exit`: Process report with scrollable active processes and Cancel / Exit Anyway actions.
+  - `theme`: Theme root -> Font / Size / Accent / Rofi / Waybar child pages with live reflection on reverse morph.
+- **Verification commands:**
+  ```bash
+  record.sh
+  shutdown.sh
+  exit.sh
+  change_theme.sh
+  qs -c hakuspace ipc call actionMenu status
+  qs -c hakuspace ipc call actionMenu close
+  ```
+

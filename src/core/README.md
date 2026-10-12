@@ -16,9 +16,15 @@ lib/               shared sourced helpers
 A typical migrated command family looks like:
 
 ```text
-facade/wallpaper_select.sh
-        -> frontend/classic/wallpaper_rofi.sh   # interactive Classic picker
-        -> backend/theme/wallpaper_ctl.sh       # explicit headless operations
+Classic:
+    facade/record.sh
+        -> frontend/classic/record_rofi.sh   # interactive Classic picker
+        -> backend/media/record_ctl.sh       # explicit headless operations
+
+Hikai:
+    facade/record.sh
+        -> Quickshell IPC actionMenu record  # native shared Action Layer
+        -> backend/media/record_ctl.sh       # explicit headless operations
 ```
 
 The facade keeps the long-standing public basename used by keybinds, startup files, user configuration and other HakuSpace components. Frontends collect human input and translate it into explicit backend calls. Backends own state queries and mutations and must remain UI-free.

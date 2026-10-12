@@ -10,7 +10,7 @@ Item {
 
     property string query: ""
     property color rowHoverColor: "#202020"
-    property color rowSelectedColor: "#262626"
+    property color rowSelectedColor: Theme.accent
     signal launched()
     signal highlightedLabelChanged(string label)
 
@@ -114,7 +114,19 @@ Item {
         boundsBehavior: Flickable.StopAtBounds
         currentIndex: count > 0 ? 0 : -1
         model: appModel
-        onCurrentIndexChanged: root.publishCurrentLabel()
+        onCurrentIndexChanged: {
+            root.publishCurrentLabel();
+            if (currentIndex < 0) {
+                selectionPill.targetItem = null;
+            }
+        }
+
+        Motion.SelectionPill {
+            id: selectionPill
+            parent: appList.contentItem
+            z: 0
+            normalColor: Theme.accent
+        }
 
         ScrollBar.vertical: ScrollBar {
             policy: ScrollBar.AsNeeded
@@ -122,23 +134,37 @@ Item {
 
         delegate: Motion.MorphButton {
             id: appRow
+            z: 1
             required property var modelData
             required property int index
             width: appList.width
             height: Math.max(48, Theme.fontSize * 3.5)
             radius: Theme.radiusSm
-            selected: ListView.isCurrentItem
+            selected: appList.currentIndex === appRow.index
             selectedOverridesHover: true
             idleColor: "transparent"
-            hoverColor: root.rowHoverColor
-            pressedColor: root.rowSelectedColor
-            selectedColor: root.rowSelectedColor
-            foregroundColor: Theme.fg
-            hoverForegroundColor: Theme.accent
-            pressedForegroundColor: Theme.accent
-            selectedForegroundColor: Theme.accent
+            hoverColor: (selected || focused) ? "transparent" : root.rowHoverColor
+            pressedColor: (selected || focused) ? "transparent" : root.rowHoverColor
+            selectedColor: "transparent"
+            foregroundColor: (selected || focused) ? "#000000" : Theme.fg
+            hoverForegroundColor: (selected || focused) ? "#000000" : Theme.fg
+            pressedForegroundColor: (selected || focused) ? "#000000" : Theme.fg
+            selectedForegroundColor: "#000000"
             hoverScaleDelta: 0.003
             pressScaleDelta: 0.012
+
+            Component.onCompleted: {
+                if (selected) {
+                    selectionPill.targetItem = this;
+                }
+            }
+
+            onSelectedChanged: {
+                if (selected) {
+                    selectionPill.targetItem = this;
+                }
+            }
+
             onHoveredChanged: {
                 if (hovered) appList.currentIndex = appRow.index
             }
@@ -171,20 +197,28 @@ Item {
                     Text {
                         width: parent.width
                         text: appRow.modelData.name || appRow.modelData.id
-                        color: appRow.foreground
+                        color: (appRow.selected || appRow.focused) ? "#000000" : appRow.foreground
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSize + 1
+                        font.weight: (appRow.selected || appRow.focused) ? Font.Medium : Font.Normal
                         elide: Text.ElideRight
                     }
 
                     Text {
                         width: parent.width
                         text: appRow.modelData.genericName || appRow.modelData.comment || appRow.modelData.id
-                        color: Theme.fgMuted
+                        color: (appRow.selected || appRow.focused) ? Qt.rgba(0, 0, 0, 0.70) : Theme.fgMuted
                         font.family: Theme.fontFamily
                         font.pixelSize: Math.max(10, Math.round((Theme.fontSize + 1) * 0.82))
                         elide: Text.ElideRight
                         visible: text.length > 0
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: HAnimation.buttonSelectDuration
+                                easing.bezierCurve: HAnimation.buttonSelectCurve
+                            }
+                        }
                     }
                 }
             }

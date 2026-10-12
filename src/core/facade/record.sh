@@ -25,13 +25,18 @@ resolve_script() {
 
 RECORD_CTL="$(resolve_script record_ctl.sh ../backend/media/record_ctl.sh)" || exit 1
 RECORD_ROFI="$(resolve_script record_rofi.sh ../frontend/classic/record_rofi.sh)" || exit 1
+HAKU_BACKEND_LIB="$(resolve_script haku_backend_lib.sh ../lib/haku_backend_lib.sh)" || exit 1
+
+# shellcheck source=/dev/null
+source "$HAKU_BACKEND_LIB"
 
 usage() {
     cat <<'EOF_HELP'
 Usage: record.sh [OPTION]
 
-Compatibility:
-    record.sh                         Stop active recording, otherwise open Classic picker
+Interactive:
+    Classic                           Stop active recording, otherwise open Classic picker
+    Hikai                             Stop active recording, otherwise open native Action Layer
 
 Headless API:
     --status [--json]                 Show recorder state
@@ -48,7 +53,10 @@ case "${1:-}" in
         if [[ "$("$RECORD_CTL" status)" == recording ]]; then
             exec "$RECORD_CTL" stop
         fi
-        exec "$RECORD_ROFI"
+        if haku_backend_is "classic"; then
+            exec "$RECORD_ROFI"
+        fi
+        haku_qs_ipc actionMenu openDefault record
         ;;
     --status)
         shift

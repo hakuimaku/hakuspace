@@ -69,4 +69,16 @@ QtObject {
     property int spatial: 350
     property int effects: 200
     property real trailFactor: 1.5
+
+    // Shared Action Layer Motion (centered reveal, smooth morphing, fade-zoom close)
+    property int actionLayerOpenDuration: 560
+    property int actionLayerCloseDuration: 460
+    property int actionLayerMorphDuration: 600
+    property int actionLayerMorphContentDuration: 340
+    property list<real> actionLayerOpenCurve: [0.16, 1.0, 0.25, 1.0, 1, 1]
+    property list<real> actionLayerCloseCurve: [0.25, 1.0, 0.35, 1.0, 1, 1]
+    property list<real> actionLayerMorphCurve: [0.20, 0.90, 0.20, 1.0, 1, 1]
+    property list<real> actionLayerContentCurve: [0.20, 0.80, 0.20, 1.0, 1, 1]
+    property int actionLayerDataFadeDuration: 260
+    property list<real> actionLayerDataFadeCurve: [0.20, 0.80, 0.20, 1.0, 1, 1]
 }

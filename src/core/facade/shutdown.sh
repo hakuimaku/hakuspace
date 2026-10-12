@@ -23,10 +23,18 @@ resolve_script() {
 
 POWER_CTL="$(resolve_script power_ctl.sh ../backend/system/power_ctl.sh)" || exit 1
 POWER_ROFI="$(resolve_script power_rofi.sh ../frontend/classic/power_rofi.sh)" || exit 1
+HAKU_BACKEND_LIB="$(resolve_script haku_backend_lib.sh ../lib/haku_backend_lib.sh)" || exit 1
+
+# shellcheck source=/dev/null
+source "$HAKU_BACKEND_LIB"
 
 usage() {
     cat <<'EOF_HELP'
 Usage: shutdown.sh [OPTIONS]
+
+Interactive:
+    Classic                  Open the Classic power menu
+    Hikai                    Open the native centered Power layer
 
 Classic compatibility:
     -e, --extend <ARG...>    Pass placement arguments to the Classic menu
@@ -46,10 +54,16 @@ EOF_HELP
 
 case "${1:-}" in
     '')
-        exec "$POWER_ROFI"
+        if haku_backend_is "classic"; then
+            exec "$POWER_ROFI"
+        fi
+        haku_qs_ipc actionMenu openDefault power
         ;;
     -e|--extend|-v|--vertical)
-        exec "$POWER_ROFI" "$@"
+        if haku_backend_is "classic"; then
+            exec "$POWER_ROFI" "$@"
+        fi
+        haku_qs_ipc actionMenu openDefault power
         ;;
     --list)
         shift

@@ -178,6 +178,15 @@ set_mode() {
     reload_waybar
 }
 
+select_config() {
+    local mode="${1:-}"
+    if [[ -z "$mode" ]]; then
+        printf 'waybar_ctl.sh: select-config requires a mode id.\n' >&2
+        return 2
+    fi
+    link_mode "$mode" || return $?
+}
+
 cycle_mode() {
     if haku_qs_mode; then
         return 0
@@ -210,6 +219,7 @@ Commands:
     list                Print known mode ids, one per line
     current             Print persisted current mode id
     set MODE            Select MODE explicitly and reload when applicable
+    select-config MODE  Persist and link MODE config without starting/reloading Waybar
     cycle               Switch to the next mode
     toggle              Toggle Waybar on/off
     reload              Reload Waybar when enabled
@@ -230,6 +240,9 @@ case "${1:-}" in
         ;;
     set|--set)
         set_mode "${2:-}"
+        ;;
+    select-config|--select-config)
+        select_config "${2:-}"
         ;;
     cycle|--cycle)
         cycle_mode

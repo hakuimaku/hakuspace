@@ -317,6 +317,15 @@
         <keybind key="W-y">
         <action name="Execute" command="~/.local/bin/wallpaper_select.sh" />
         </keybind>
+        <keybind key="W-S-y">
+        <action name="Execute" command="~/.local/bin/change_theme.sh" />
+        </keybind>
+        <keybind key="W-S-e">
+        <action name="Execute" command="~/.local/bin/exit.sh" />
+        </keybind>
+        <keybind key="W-S-q">
+        <action name="Execute" command="~/.local/bin/shutdown.sh" />
+        </keybind>
 
         <keybind key="W-f11">
         <action name="Execute" command="~/.local/bin/record.sh" />

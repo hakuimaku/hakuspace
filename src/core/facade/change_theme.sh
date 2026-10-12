@@ -24,16 +24,25 @@ resolve_script() {
 
 THEME_CTL="$(resolve_script theme_ctl.sh ../backend/theme/theme_ctl.sh)" || exit 1
 THEME_ROFI="$(resolve_script theme_rofi.sh ../frontend/classic/theme_rofi.sh)" || exit 1
+HAKU_BACKEND_LIB="$(resolve_script haku_backend_lib.sh ../lib/haku_backend_lib.sh)" || exit 1
+
+# shellcheck source=/dev/null
+source "$HAKU_BACKEND_LIB"
 
 print_help() {
     cat <<'EOF_HELP'
 Usage: change_theme.sh [OPTION]
-Open the Classic theme menu or mutate theme state explicitly.
+Manage appearance and themes.
+
+No arguments:
+    Classic             Open the Classic theme menu
+    Hikai               Open the native centered Theme layer
 
 Options:
     --accent HEX        Set accent color explicitly
     --font NAME         Set font family explicitly
     --size PX           Set font size explicitly
+    --list-fonts        List installed monospace font families
     --status            Print current theme state
     -h, --help          Show this help message
 EOF_HELP
@@ -41,7 +50,10 @@ EOF_HELP
 
 case "${1:-}" in
     '')
-        exec "$THEME_ROFI" menu
+        if haku_backend_is "classic"; then
+            exec "$THEME_ROFI" menu
+        fi
+        haku_qs_ipc actionMenu openDefault theme
         ;;
     --accent)
         exec "$THEME_CTL" set-accent "${2:-}"
@@ -51,6 +63,9 @@ case "${1:-}" in
         ;;
     --size)
         exec "$THEME_CTL" set-size "${2:-}"
+        ;;
+    --list-fonts)
+        exec "$THEME_CTL" list-fonts
         ;;
     --status)
         exec "$THEME_CTL" status

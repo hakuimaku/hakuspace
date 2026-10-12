@@ -9,9 +9,9 @@ Item {
 
     property string query: ""
     property color rowHoverColor: "#202020"
-    property color rowSelectedColor: "#262626"
+    property color rowSelectedColor: Theme.accent
     readonly property real itemGap: Math.max(3, Math.round(Theme.gap * 0.35) + 1)
-    readonly property real rowHeight: Math.max(34, Theme.fontSize * 2.35)
+    readonly property real rowHeight: Math.max(46, Theme.fontSize * 3.0)
     readonly property real sectionGap: Math.max(10, Math.round(Theme.gap * 1.5))
     property var parsedItems: []
     property var pendingItems: []
@@ -168,7 +168,19 @@ Item {
         boundsBehavior: Flickable.StopAtBounds
         currentIndex: count > 0 ? 0 : -1
         model: root.visibleItems
-        onCurrentIndexChanged: root.syncSelectionLabel()
+        onCurrentIndexChanged: {
+            root.syncSelectionLabel();
+            if (currentIndex < 0) {
+                selectionPill.targetItem = null;
+            }
+        }
+
+        Motion.SelectionPill {
+            id: selectionPill
+            parent: generalList.contentItem
+            z: 0
+            normalColor: Theme.accent
+        }
 
         ScrollBar.vertical: ScrollBar {
             policy: ScrollBar.AsNeeded
@@ -193,6 +205,7 @@ Item {
 
             Motion.MorphButton {
                 id: row
+                z: 1
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
@@ -201,15 +214,28 @@ Item {
                 selected: generalList.currentIndex === rowWrap.index
                 selectedOverridesHover: true
                 idleColor: "transparent"
-                hoverColor: root.rowHoverColor
-                pressedColor: root.rowSelectedColor
-                selectedColor: root.rowSelectedColor
-                foregroundColor: Theme.fg
-                hoverForegroundColor: Theme.accent
-                pressedForegroundColor: Theme.accent
-                selectedForegroundColor: Theme.accent
+                hoverColor: (selected || focused) ? "transparent" : root.rowHoverColor
+                pressedColor: (selected || focused) ? "transparent" : root.rowHoverColor
+                selectedColor: "transparent"
+                foregroundColor: (selected || focused) ? "#000000" : Theme.fg
+                hoverForegroundColor: (selected || focused) ? "#000000" : Theme.fg
+                pressedForegroundColor: (selected || focused) ? "#000000" : Theme.fg
+                selectedForegroundColor: "#000000"
                 hoverScaleDelta: 0.003
                 pressScaleDelta: 0.012
+
+                Component.onCompleted: {
+                    if (selected) {
+                        selectionPill.targetItem = this;
+                    }
+                }
+
+                onSelectedChanged: {
+                    if (selected) {
+                        selectionPill.targetItem = this;
+                    }
+                }
+
                 onHoveredChanged: {
                     if (hovered) {
                         generalList.currentIndex = rowWrap.index
@@ -225,9 +251,10 @@ Item {
                     anchors.rightMargin: Theme.pad * 1.5
                     anchors.verticalCenter: parent.verticalCenter
                     text: rowWrap.modelData.raw
-                    color: row.foreground
+                    color: (row.selected || row.focused) ? "#000000" : row.foreground
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize + 1
+                    font.weight: (row.selected || row.focused) ? Font.Medium : Font.Normal
                     elide: Text.ElideRight
                 }
             }

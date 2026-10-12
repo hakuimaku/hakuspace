@@ -24,6 +24,9 @@ QtObject {
     property string hakuMenuSelectionLabel: ""
     property string wallpaperScreenName: ""
     property bool wallpaperCloseRequested: false
+    property string actionMenuScreenName: ""
+    property string actionMenuFlow: ""
+    property bool actionMenuCloseRequested: false
     property string settingsScreenName: ""
     readonly property string hakuMenuTabLabel: hakuMenuMode === "general" ? "General"
                                                    : hakuMenuMode === "drun" ? "Drun"
@@ -240,6 +243,53 @@ QtObject {
         if (settingsScreenName === screenName) closeSettings()
     }
 
+    function openActionMenu(screenName, flow) {
+        actionMenuCloseRequested = false
+        actionMenuScreenName = screenName
+        actionMenuFlow = flow || ""
+        activePanel = "actionMenu"
+    }
+
+    function toggleActionMenu(screenName, flow) {
+        if (activePanel === "actionMenu" && actionMenuScreenName === screenName && actionMenuFlow === flow) {
+            if (actionMenuCloseRequested) {
+                actionMenuCloseRequested = false
+                return
+            }
+            closeActionMenu()
+            return
+        }
+        openActionMenu(screenName, flow)
+    }
+
+    function closeActionMenu() {
+        if (activePanel === "actionMenu") actionMenuCloseRequested = true
+    }
+
+    function finishCloseActionMenu(screenName) {
+        if (activePanel !== "actionMenu" || actionMenuScreenName !== screenName) return
+        actionMenuCloseRequested = false
+        activePanel = ""
+        actionMenuScreenName = ""
+        actionMenuFlow = ""
+    }
+
+    function forceCloseActionMenuIfScreen(screenName) {
+        if (actionMenuScreenName !== screenName) return
+        actionMenuCloseRequested = false
+        if (activePanel === "actionMenu") activePanel = ""
+        actionMenuScreenName = ""
+        actionMenuFlow = ""
+    }
+
+    function closeActionMenuIfScreen(screenName) {
+        if (actionMenuScreenName === screenName) closeActionMenu()
+    }
+
+    signal actionMenuScrollNextRequested()
+    signal actionMenuScrollPreviousRequested()
+    signal actionMenuActivateRequested()
+
     onActivePanelChanged: {
         if (activePanel !== "navigation") {
             navigationMode = "closed"
@@ -253,6 +303,11 @@ QtObject {
         if (activePanel !== "wallpaper") {
             wallpaperScreenName = ""
             wallpaperCloseRequested = false
+        }
+        if (activePanel !== "actionMenu") {
+            actionMenuScreenName = ""
+            actionMenuCloseRequested = false
+            actionMenuFlow = ""
         }
         if (activePanel !== "hakumenu") {
             hakuMenuMode = "closed"

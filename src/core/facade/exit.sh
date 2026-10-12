@@ -25,13 +25,18 @@ resolve_script() {
 
 SESSION_EXIT_CTL="$(resolve_script session_exit_ctl.sh ../backend/system/session_exit_ctl.sh)" || exit 1
 EXIT_ROFI="$(resolve_script exit_rofi.sh ../frontend/classic/exit_rofi.sh)" || exit 1
+HAKU_BACKEND_LIB="$(resolve_script haku_backend_lib.sh ../lib/haku_backend_lib.sh)" || exit 1
+
+# shellcheck source=/dev/null
+source "$HAKU_BACKEND_LIB"
 
 usage() {
     cat <<'EOF_HELP'
 Usage: exit.sh [OPTION]
 
-Classic compatibility:
-    exit.sh                 Show process report and ask for confirmation
+Interactive:
+    Classic                 Show process report and ask for confirmation with Rofi
+    Hikai                   Open native Exit layer with interactive process list
 
 Headless API:
     --process-report        Print the side-effect-free process report
@@ -42,7 +47,10 @@ EOF_HELP
 
 case "${1:-}" in
     '')
-        exec "$EXIT_ROFI"
+        if haku_backend_is "classic"; then
+            exec "$EXIT_ROFI"
+        fi
+        haku_qs_ipc actionMenu openDefault exit
         ;;
     --process-report)
         shift

@@ -127,6 +127,7 @@ ShellRoot {
                 UiState.openHakuMenu(Quickshell.screens[0].name)
         }
         function close() { UiState.closeHakuMenu() }
+        function setMode(mode: string) { UiState.setHakuMenuMode(mode) }
     }
 
     IpcHandler {
@@ -149,6 +150,39 @@ ShellRoot {
                 UiState.toggleWallpaper(Quickshell.screens[0].name)
         }
         function close() { UiState.closeWallpaper() }
+    }
+
+    IpcHandler {
+        target: "actionMenu"
+        enabled: true
+        function open(screenName: string, flow: string) {
+            for (var screen of Quickshell.screens) {
+                if (screen.name === screenName) {
+                    UiState.openActionMenu(screenName, flow)
+                    return
+                }
+            }
+        }
+        function openDefault(flow: string) {
+            if (Quickshell.screens.length > 0)
+                UiState.openActionMenu(Quickshell.screens[0].name, flow)
+        }
+        function toggleDefault(flow: string) {
+            if (Quickshell.screens.length > 0)
+                UiState.toggleActionMenu(Quickshell.screens[0].name, flow)
+        }
+        function close() { UiState.closeActionMenu() }
+        function scrollNext() { UiState.actionMenuScrollNextRequested() }
+        function scrollPrevious() { UiState.actionMenuScrollPreviousRequested() }
+        function activate() { UiState.actionMenuActivateRequested() }
+        function status(): string {
+            return JSON.stringify({
+                activePanel: UiState.activePanel,
+                screenName: UiState.actionMenuScreenName,
+                flow: UiState.actionMenuFlow,
+                closeRequested: UiState.actionMenuCloseRequested
+            })
+        }
     }
 
     IpcHandler {
@@ -222,6 +256,11 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         WallpaperPanel {}
+    }
+
+    Variants {
+        model: Quickshell.screens
+        ActionMenuPanel {}
     }
 
     Variants {

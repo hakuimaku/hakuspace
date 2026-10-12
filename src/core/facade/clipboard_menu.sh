@@ -25,16 +25,19 @@ resolve_script() {
 
 CLIPBOARD_CTL="$(resolve_script clipboard_ctl.sh ../backend/clipboard/clipboard_ctl.sh)" || exit 1
 CLIPBOARD_ROFI="$(resolve_script clipboard_rofi.sh ../frontend/classic/clipboard_rofi.sh)" || exit 1
+HAKU_BACKEND_LIB="$(resolve_script haku_backend_lib.sh ../lib/haku_backend_lib.sh)" || exit 1
+source "$HAKU_BACKEND_LIB"
 
 usage() {
     cat <<'EOF_HELP'
 Usage: clipboard_menu.sh [OPTION]
 
-Compatibility:
-    clipboard_menu.sh               Open the Classic clipboard picker
-    --wipe                          Clear all clipboard history
+No arguments:
+    Classic             Open the Classic clipboard picker
+    Hikai               Open the native centered Clipboard layer
 
 Headless API:
+    --wipe                          Clear all clipboard history
     --ensure-watchers               Ensure clipboard history watchers are running
     --list                          Print raw cliphist history rows
     --copy [ENTRY]                  Copy one raw cliphist row; stdin when omitted
@@ -46,7 +49,10 @@ EOF_HELP
 
 case "${1:-}" in
     '')
-        exec "$CLIPBOARD_ROFI"
+        if haku_backend_is "classic"; then
+            exec "$CLIPBOARD_ROFI"
+        fi
+        haku_qs_ipc actionMenu openDefault clipboard
         ;;
     --wipe)
         shift
