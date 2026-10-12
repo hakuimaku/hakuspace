@@ -17,10 +17,10 @@ QtObject {
     property string accent: "#ffffff"
     property string workspaceDot: "#424242"
     
-    property int radius: 12
-    property int largeRadius: 16
-    property int hugRadius: 28
-    property int giantRadius: 48
+    property int radius: 20
+    property int largeRadius: 24
+    property int hugRadius: 32
+    property int giantRadius: 50
     property int borderWidth: 0
     property int gap: 4
     property int pad: 10
