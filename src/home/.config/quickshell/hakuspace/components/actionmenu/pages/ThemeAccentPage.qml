@@ -51,6 +51,13 @@ ActionMenu.ActionMenuPage {
 
     Process {
         id: pickerProc
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode === 0) {
+                root.requestClose();
+            } else {
+                root.errorMessage = "Failed to launch color picker (exit " + exitCode + ")";
+            }
+        }
     }
 
     // Triggers custom color picker or applies the preset accent color.
@@ -58,9 +65,19 @@ ActionMenu.ActionMenuPage {
         if (idx < 0 || idx >= allItems.length) return;
         var item = allItems[idx];
         if (item.isPicker) {
-            pickerProc.command = [Env.binDir + "/accent_color_picker.sh"];
+            if (pickerProc.running) return;
+            root.errorMessage = "";
+            // Detach the interactive picker before closing ActionMenu. The picker
+            // intentionally waits briefly before invoking hyprpicker; running it as
+            // a page-owned Process would otherwise kill it when this page is destroyed.
+            pickerProc.command = [
+                "sh",
+                "-c",
+                'setsid -f "$1" >/dev/null 2>&1',
+                "haku-accent-picker",
+                Env.binDir + "/accent_color_picker.sh"
+            ];
             pickerProc.running = true;
-            root.requestClose();
         } else {
             applyAccent(item.hex);
         }
