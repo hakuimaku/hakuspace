@@ -128,8 +128,8 @@ Item {
             normalColor: Theme.accent
         }
 
-        ScrollBar.vertical: ScrollBar {
-            policy: ScrollBar.AsNeeded
+        ScrollBar.vertical: Motion.HScrollBar {
+            id: vbar
         }
 
         delegate: Motion.MorphButton {
@@ -137,7 +137,7 @@ Item {
             z: 1
             required property var modelData
             required property int index
-            width: appList.width
+            width: appList.width - vbar.reservedGutter
             height: Math.max(48, Theme.fontSize * 3.5)
             radius: Theme.radius
             selected: appList.currentIndex === appRow.index
@@ -146,7 +146,7 @@ Item {
             hoverColor: (selected || focused) ? "transparent" : root.rowHoverColor
             pressedColor: (selected || focused) ? "transparent" : root.rowHoverColor
             selectedColor: "transparent"
-            foregroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
+            foregroundColor: Theme.fg
             hoverForegroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
             pressedForegroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
             selectedForegroundColor: Theme.onAccentColor
@@ -197,7 +197,7 @@ Item {
                     Text {
                         width: parent.width
                         text: appRow.modelData.name || appRow.modelData.id
-                        color: (appRow.selected || appRow.focused) ? Theme.onAccentColor : appRow.foreground
+                        color: appRow.foreground
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSize + 1
                         font.weight: (appRow.selected || appRow.focused) ? Font.Medium : Font.Normal
@@ -215,8 +215,9 @@ Item {
 
                         Behavior on color {
                             ColorAnimation {
-                                duration: HAnimation.buttonSelectDuration
-                                easing.bezierCurve: HAnimation.buttonSelectCurve
+                                duration: HAnimation.selectionMorphDuration
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: HAnimation.selectionMorphCurve
                             }
                         }
                     }

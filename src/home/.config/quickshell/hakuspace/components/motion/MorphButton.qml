@@ -59,13 +59,27 @@ Rectangle {
         : focused ? focusForegroundColor
         : selected ? selectedForegroundColor
         : foregroundColor
+    property bool _wasSelected: false
+    onSelectedChanged: {
+        _wasSelected = !selected;
+        if (!selected) {
+            _unselectTimer.restart();
+        }
+    }
+    Timer {
+        id: _unselectTimer
+        interval: HAnimation.selectionMorphDuration + 50
+        onTriggered: root._wasSelected = false
+    }
+    readonly property bool inSelectionTransition: selected || _wasSelected
+
     readonly property int transitionDuration: pressed ? HAnimation.buttonPressDuration
-        : (selectedWins || selected) ? HAnimation.buttonSelectDuration
+        : inSelectionTransition ? HAnimation.selectionMorphDuration
         : focused ? HAnimation.buttonFocusDuration
         : hovered ? HAnimation.buttonHoverDuration
         : HAnimation.buttonReleaseDuration
     readonly property var transitionCurve: pressed ? HAnimation.buttonPressCurve
-        : (selectedWins || selected) ? HAnimation.buttonSelectCurve
+        : inSelectionTransition ? HAnimation.selectionMorphCurve
         : focused ? HAnimation.buttonFocusCurve
         : hovered ? HAnimation.buttonHoverCurve
         : HAnimation.buttonReleaseCurve

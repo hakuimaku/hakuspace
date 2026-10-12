@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell.Io
 import "../../../services"
@@ -207,8 +208,12 @@ ActionMenu.ActionMenuPage {
                 clip: true
                 model: root.processItems
 
+                ScrollBar.vertical: ActionMenu.ActionMenuScrollBar {
+                    id: vbar
+                }
+
                 delegate: Rectangle {
-                    width: processList.width
+                    width: processList.width - vbar.reservedGutter
                     height: Math.max(32, Theme.fontSize * 2.0)
                     radius: 4
                     color: index % 2 === 0 ? "transparent" : Qt.rgba(1, 1, 1, 0.02)

@@ -4,3 +4,4 @@ ActionMenuPage 1.0 ActionMenuPage.qml
 ActionMenuButton 1.0 ActionMenuButton.qml
 ActionMenuMorphProxy 1.0 ActionMenuMorphProxy.qml
 ActionMenuSelectionPill 1.0 ActionMenuSelectionPill.qml
+ActionMenuScrollBar 1.0 ActionMenuScrollBar.qml

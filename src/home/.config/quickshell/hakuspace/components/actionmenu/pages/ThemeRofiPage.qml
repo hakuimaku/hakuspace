@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell.Io
 import "../../../services"
@@ -212,10 +213,14 @@ ActionMenu.ActionMenuPage {
                 z: 0
             }
 
+            ScrollBar.vertical: ActionMenu.ActionMenuScrollBar {
+                id: vbar
+            }
+
             delegate: ActionMenu.ActionMenuButton {
                 id: delegateBtn
                 z: 1
-                width: themesList.width
+                width: themesList.width - vbar.reservedGutter
                 icon: ""
                 label: modelData
                 secondaryText: modelData === root.currentTheme ? "Active" : ""

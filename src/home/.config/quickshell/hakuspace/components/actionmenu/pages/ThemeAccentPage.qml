@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell.Io
 import "../../../services"
@@ -233,10 +234,14 @@ ActionMenu.ActionMenuPage {
                 z: 0
             }
 
+            ScrollBar.vertical: ActionMenu.ActionMenuScrollBar {
+                id: vbar
+            }
+
             delegate: ActionMenu.ActionMenuButton {
                 id: delegateBtn
                 z: 1
-                width: accentList.width
+                width: accentList.width - vbar.reservedGutter
                 icon: modelData.icon
                 label: modelData.label
                 secondaryText: modelData.secondary

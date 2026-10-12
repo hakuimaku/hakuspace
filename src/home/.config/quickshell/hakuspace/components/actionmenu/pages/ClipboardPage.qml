@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell.Io
 import "../../../services"
@@ -343,10 +344,14 @@ ActionMenu.ActionMenuPage {
                 z: 0
             }
 
+            ScrollBar.vertical: ActionMenu.ActionMenuScrollBar {
+                id: vbar
+            }
+
             delegate: ActionMenu.ActionMenuButton {
                 id: delegateBtn
                 z: 1
-                width: clipList.width
+                width: clipList.width - vbar.reservedGutter
                 icon: modelData.isImage ? "" : "󰅌"
                 label: modelData.preview
                 badge: modelData.id ? ("#" + modelData.id) : ""

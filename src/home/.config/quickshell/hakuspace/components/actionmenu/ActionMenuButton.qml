@@ -32,16 +32,26 @@ Motion.MorphButton {
     selectedColor: "transparent"
     focusColor: "transparent"
 
-    foregroundColor: (selected || focused) ? (danger ? "#ffffff" : Theme.onAccentColor)
-                                           : (danger ? "#ff6b6b" : Theme.fg)
-    hoverForegroundColor: (selected || focused) ? foregroundColor
+    foregroundColor: danger ? "#ff6b6b" : Theme.fg
+    hoverForegroundColor: (selected || focused) ? selectedForegroundColor
                                                 : (danger ? "#ffffff" : Theme.fg)
+    pressedForegroundColor: selectedForegroundColor
     selectedForegroundColor: danger ? "#ffffff" : Theme.onAccentColor
 
-    readonly property color trailingForeground:
+    readonly property color targetTrailingForeground:
         (root.selected || root.focused) ? (root.danger ? "#ffffff" : Theme.onAccentColor)
         : root.hovered ? Theme.fg
         : Theme.fgMuted
+    property color animatedTrailingForeground: targetTrailingForeground
+    readonly property color trailingForeground: animatedTrailingForeground
+
+    Behavior on animatedTrailingForeground {
+        ColorAnimation {
+            duration: root.transitionDuration
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: root.transitionCurve
+        }
+    }
 
     // Returns button screen coordinates and styling metrics for seed morphing animations.
     function getSurfaceGeometry(surfaceItem) {
@@ -114,6 +124,14 @@ Motion.MorphButton {
                 : Qt.rgba(root.badgeColor.r, root.badgeColor.g, root.badgeColor.b, 0.2)
             Layout.alignment: Qt.AlignVCenter
 
+            Behavior on color {
+                ColorAnimation {
+                    duration: root.transitionDuration
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: root.transitionCurve
+                }
+            }
+
             Text {
                 id: badgeText
                 anchors.centerIn: parent
@@ -124,6 +142,14 @@ Motion.MorphButton {
                 color: (root.selected || root.focused)
                     ? (root.danger ? "#ffffff" : Theme.onAccentColor)
                     : root.badgeColor
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: root.transitionDuration
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: root.transitionCurve
+                    }
+                }
             }
         }
 

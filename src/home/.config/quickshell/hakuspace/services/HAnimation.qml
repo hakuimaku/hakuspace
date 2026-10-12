@@ -51,24 +51,30 @@ QtObject {
     property list<real> hakuMenuResizeCurve: [0.7, 1.0, 0.6, 0.98, 1, 1]
     property real hakuMenuBounceHeadroom: 0.04
 
-    // Shared Hikai interactive-state motion. Keep these calmer than shell-open motion.
-    property int buttonHoverDuration: 240
-    property int buttonPressDuration: 120
-    property int buttonReleaseDuration: 240
-    property int buttonSelectDuration: 300
-    property int buttonFocusDuration: 240
-    property list<real> buttonHoverCurve: [0.20, 0.60, 0.20, 1.0, 1, 1]
-    property list<real> buttonPressCurve: [0.40, 0.00, 0.20, 1.0, 1, 1]
-    property list<real> buttonReleaseCurve: [0.16, 1.08, 0.30, 1.0, 1, 1]
-    property list<real> buttonSelectCurve: [0.16, 1.20, 0.30, 0.98, 1, 1]
-    property list<real> buttonFocusCurve: [0.20, 0.80, 0.20, 1.0, 1, 1]
-    
     // Six control values drive the asymmetric workspace and flare motion.
     property list<real> spatialCurve: [0.5, 1.21, 0.22, 1, 1, 1]
     property list<real> effectsCurve: [0.56, 0.8, 0.34, 1, 1, 1]
     property int spatial: 350
     property int effects: 200
     property real trailFactor: 1.5
+
+    // Selection Morph & Synchronized Text Fade Timing
+    // The selection pill asymmetric morph completes when its trailing edge reaches target (spatial * trailFactor = 525ms).
+    // Text color fade MUST take this exact duration and easing curve so both finish simultaneously.
+    readonly property int selectionMorphDuration: Math.round(spatial * trailFactor)
+    readonly property list<real> selectionMorphCurve: spatialCurve
+
+    // Shared Hikai interactive-state motion. Keep these calmer than shell-open motion.
+    property int buttonHoverDuration: 240
+    property int buttonPressDuration: 120
+    property int buttonReleaseDuration: 240
+    property int buttonSelectDuration: selectionMorphDuration
+    property int buttonFocusDuration: 240
+    property list<real> buttonHoverCurve: [0.20, 0.60, 0.20, 1.0, 1, 1]
+    property list<real> buttonPressCurve: [0.40, 0.00, 0.20, 1.0, 1, 1]
+    property list<real> buttonReleaseCurve: [0.16, 1.08, 0.30, 1.0, 1, 1]
+    property list<real> buttonSelectCurve: selectionMorphCurve
+    property list<real> buttonFocusCurve: [0.20, 0.80, 0.20, 1.0, 1, 1]
 
     // Shared Action Layer Motion (centered reveal, smooth morphing, fade-zoom close)
     property int actionLayerOpenDuration: 560

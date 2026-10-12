@@ -182,8 +182,8 @@ Item {
             normalColor: Theme.accent
         }
 
-        ScrollBar.vertical: ScrollBar {
-            policy: ScrollBar.AsNeeded
+        ScrollBar.vertical: Motion.HScrollBar {
+            id: vbar
         }
 
         delegate: Item {
@@ -197,7 +197,7 @@ Item {
                 visible: rowWrap.modelData.sectionStart
                 x: Theme.pad
                 y: Math.max(0, (root.sectionGap - height) / 2)
-                width: Math.max(0, parent.width - Theme.pad * 2)
+                width: Math.max(0, parent.width - Theme.pad * 2 - vbar.reservedGutter)
                 height: 1
                 color: Qt.darker(Theme.fgMuted, 1.75)
                 opacity: 0.55
@@ -208,6 +208,7 @@ Item {
                 z: 1
                 anchors.left: parent.left
                 anchors.right: parent.right
+                anchors.rightMargin: vbar.reservedGutter
                 anchors.bottom: parent.bottom
                 height: root.rowHeight
                 radius: Theme.radius
@@ -217,7 +218,7 @@ Item {
                 hoverColor: (selected || focused) ? "transparent" : root.rowHoverColor
                 pressedColor: (selected || focused) ? "transparent" : root.rowHoverColor
                 selectedColor: "transparent"
-                foregroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
+                foregroundColor: Theme.fg
                 hoverForegroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
                 pressedForegroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
                 selectedForegroundColor: Theme.onAccentColor
@@ -251,7 +252,7 @@ Item {
                     anchors.rightMargin: Theme.pad * 1.5
                     anchors.verticalCenter: parent.verticalCenter
                     text: rowWrap.modelData.raw
-                    color: (row.selected || row.focused) ? Theme.onAccentColor : row.foreground
+                    color: row.foreground
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize + 1
                     font.weight: (row.selected || row.focused) ? Font.Medium : Font.Normal
