@@ -157,17 +157,48 @@ Grants the local root user permission to connect to and launch graphical (GUI) a
 
 ## Dotfiles Management
 
-Haku Space provides built-in scripts to safely manage your dotfiles using a flexible deployment mechanism:
-- **Deployment Mode**: Files are automatically managed via **Symlink** (default, allowing instant updates when source files change) or **Copy** mode during installation.
+Haku Space provides modular scripts to safely manage your dotfiles using a flexible, composable mechanism:
+- **Deployment Mode**: Files are automatically managed via **Deep Symlink** (default, allowing instant updates when source files change) or **Copy** mode during installation.
 - **Customization**: All your personal tweaks should be done inside the `~/hakucfg` directory, keeping the core system clean and untouched.
 
 See more in: [Management & Deployment](docs/management.md)
+
+### Available Commands
+| Command | Description |
+|---|---|
+| `./install.sh` | Full automatic installation profile |
+| `./update.sh` | Full automatic update profile |
+| `./link.sh [modules]` | Link specific modules (e.g. `./link.sh quickshell niri core`) or `./link.sh --all` |
+| `./unlink.sh [modules]` | Safely remove tracked symlinks without touching user data (`./unlink.sh --all`) |
+| `./packages.sh [groups]` | Install package groups (e.g. `./packages.sh core niri`) or `./packages.sh --all` |
+| `./doctor.sh` | Read-only integrity check and troubleshooting instructions |
+| `./rollback.sh` | Restore previous configuration backups safely |
+
+### Manual / Modular Installation
+If you prefer picking specific components instead of running the full installer:
+```bash
+# 1. Install packages
+./packages.sh core
+./packages.sh niri
+
+# 2. Link desired configurations
+./link.sh quickshell
+./link.sh kitty
+./link.sh niri
+./link.sh core
+
+# 3. Initialize state and user configuration
+scripts/state.sh init
+scripts/hakucfg.sh sync
+
+# 4. Verify integrity
+./doctor.sh
+```
 
 ### Update Haku Space
 Simply run the `update.sh` script in the hakuspace folder. This will safely update the core files while preserving your personal settings in `~/hakucfg`.
 ```bash
 cd ~/hakuspace
-chmod +x update.sh
 ./update.sh
 ```
 
@@ -175,19 +206,105 @@ chmod +x update.sh
 Restore files from a backup created by `install.sh` or `update.sh`.
 ```bash
 cd ~/hakuspace
-chmod +x rollback.sh
 ./rollback.sh
 ```
 If multiple backups are available, the newest one is selected by pressing Enter.
 
 ### Uninstall Haku Space
-> (WM: The Window Manager you are currently using, e.g., hyprland, niri, mango).
+Haku Space does not use a destructive one-shot uninstaller. The safest removal path depends on the deployment mode you selected during installation.
 
-- Run `rollback.sh` to restore your previous configuration.
-- Remove all scripts located in `~/.local/bin`.
-- Delete the auto-generated files in `~/.local/state/hakuspace`.
-- If necessary, you can also remove the icons and themes inside `~/.icons` and `~/.themes`.
-- Review `pkg-core.txt`, `pkg-service.txt`, `pkg-optional.txt` and `pkg-WM.txt` (in `src/packages/`) to uninstall any unnecessary packages.
+> [!important]
+> `./unlink.sh` is for **Deep Symlink mode only**. It removes only symlinks verified to belong to Haku Space and preserves real files, foreign symlinks, and application-generated data. Do **not** delete everything in `~/.local/bin` or entire config directories manually.
+
+#### 1. Restore an older configuration (recommended when available)
+If you want to restore configuration files that existed before a Haku Space install/update, use a suitable backup:
+
+```bash
+cd ~/hakuspace
+./rollback.sh
+```
+
+Choose the backup you actually want to restore. The newest backup may simply be from a recent Haku Space update rather than your pre-Haku Space configuration.
+
+`rollback.sh` restores managed configuration destinations only. It does not uninstall packages or automatically revert system-level choices such as your login shell, display manager, desktop defaults, or NixOS configuration.
+
+#### 2. Remove Haku Space symlinks
+For a **Symlink mode** installation, you can unlink individual modules:
+
+```bash
+./unlink.sh quickshell
+./unlink.sh niri
+./unlink.sh core
+```
+
+Or remove all common Haku Space links plus the Window Manager modules you installed:
+
+```bash
+# Example: Niri installation
+./unlink.sh --all niri
+
+# If you installed several/all supported WMs
+./unlink.sh --all hyprland niri mango labwc
+```
+
+Use `./unlink.sh --list` to see the available module names.
+
+> [!note]
+> `--all` removes the registered **base configs and core scripts**. Window Manager-specific configs are separate modules, so include the relevant WM name(s) as shown above.
+
+For a **Copy mode** installation, `unlink.sh` does not remove copied files. Use `./rollback.sh` when an appropriate backup exists. If no suitable backup exists, review copied configs manually instead of deleting whole directories, because they may now contain your own files or application-generated data.
+
+#### 3. Clean up Haku Space runtime/user data
+The runtime state directory is generated by Haku Space and can be removed after you are finished using it:
+
+```bash
+rm -rf ~/.local/state/hakuspace
+rm -rf ~/.local/share/hakuspace
+```
+
+`~/hakucfg` contains your personal customizations and is intentionally **not** removed automatically. Keep it if you may reinstall Haku Space later; remove it manually only after backing up anything you want to preserve.
+
+The install-once configs (`Thunar`, `xfce4`, `mpv`, `btop`, `cava`, and `mimeapps.list`) are real copied files, not managed symlinks. `unlink.sh` intentionally leaves them alone. Prefer restoring them from a suitable Haku Space backup; otherwise review them individually before removing anything.
+
+#### 4. Optional assets and repository cleanup
+If you installed the optional `hakuspace-archive`, the cloned repository can be removed separately:
+
+```bash
+rm -rf ~/hakuspace-archive
+```
+
+The archive setup may also have installed Haku Space icons, themes, cursors, or wallpapers into your home directories. Remove only the Haku Space assets you recognize; do not delete the entire `~/.icons`, `~/.themes`, or `~/Pictures/Wallpapers` directories because they may contain unrelated user files.
+
+After you have restored/unlinked everything you need and verified your setup, you may remove the Haku Space repository itself:
+
+```bash
+rm -rf ~/hakuspace
+```
+
+Keep `~/.backup/Backup_*` / `Rollback_Backup_*` until you are sure you no longer need to restore anything.
+
+For the custom `~/hakucfg` directory, remove it only after you have backed up any personal changes you want to keep. If you are certain you no longer need it, remove it with:
+
+```bash
+rm -rf ~/hakucfg
+```
+
+#### 5. Packages and system settings
+Package removal is intentionally manual because some packages may have existed before Haku Space or may be used by other applications. You can inspect the package groups before deciding what to remove:
+
+```bash
+./packages.sh --list
+./packages.sh --dry-run core service niri   # example
+```
+
+You can also review the files in `src/packages/`. Remove only packages you are certain you no longer need.
+
+Haku Space currently does not provide an automatic rollback for every system-level choice made during installation. If applicable, also review and restore your preferred:
+
+- default login shell (the installer may switch it to Fish);
+- display manager / TTY service configuration (for example, LY);
+- desktop defaults such as dark color preference and Thunar file-manager association;
+- NixOS integration under `/etc/nixos`.
 
 ---
 

@@ -1,76 +1,136 @@
 # How Are My Dotfiles Managed?
 
-See the Vietnamese version: [Management](./vietnamese/VN_management.md).
+See the Vietnamese version: [Quản lý Dotfiles](./vietnamese/VN_management.md).
 
-This doc explains how HakuSpace sets up your dotfiles safely. We use a **Hybrid Deployment** system, meaning you get to choose how your files are handled!
+This document explains the architecture and tooling behind HakuSpace's modular dotfiles management.
 
-## 1. How It Works
+---
 
-The repo stores the core configs under `src/home/`:
+## 1. Modular Architecture
+
+HakuSpace uses a modular, composable CLI architecture. The top-level scripts (`install.sh` and `update.sh`) are thin orchestrators that execute dedicated modules under `scripts/`.
+
+Every operational task can be performed either automatically via the orchestrators or manually using standalone CLI commands.
 
 ```text
-Repository                         Your home
------------                        ---------
-src/home/.config/*       ------->  ~/.config/*
-src/core/*               ------->  ~/.local/bin/*
-src/home/hakucfg/*       --copy->  ~/hakucfg/*
+install.sh / update.sh
+        │
+        │ orchestration only
+        ▼
+   scripts/*.sh
+        │
+        ├── registry.sh       (Single source of truth for managed targets)
+        ├── runtime.sh        (Shared execution ID & backup context)
+        └── filesystem.sh     (Policy-neutral file & backup primitives)
 ```
 
-When you install, you pick between two modes for your `.config` and `core` scripts:
+### Shared Runtime Context
+Whenever `install.sh`, `update.sh`, or any standalone tool runs, a shared runtime context (`scripts/runtime.sh`) establishes a single `BACKUP_DIR` for that entire execution. Child processes automatically reuse this shared backup directory, preventing fragmented backup folders.
 
-### Mode 1: Symlink (Recommended)
-This uses **Deep Symlinking** (kinda like GNU Stow).
-Instead of linking a whole folder (like `~/.config/hypr`), it makes real folders and only symlinks the files inside.
+---
 
-- **Pros:** 
-  - App junk (cache, logs, states) stays on your machine and won't pollute the Git repo.
-  - Any edits you make in `~/.config` instantly sync to the Git repo.
-- **Cons:** 
-  - If you create a brand new file in `~/.config`, you gotta manually move it to the repo and run `update.sh` to link it up.
+## 2. Deployment Modes
 
-### Mode 2: Copy (Classic)
-Just straight up copies files from the repo to your home folder.
+HakuSpace supports two deployment strategies:
 
-- **Pros:** Super simple and safe.
-- **Cons:** Your edits in `~/.config` won't update the Git repo. You have to manually copy them back to save your changes.
+### Mode 1: Deep Symlink (Recommended & Default)
+Managed via `./link.sh` and `scripts/link.sh`.
+- **Directory preservation**: Destination directories (e.g. `~/.config/quickshell`) remain real directories rather than directory symlinks.
+- **File symlinks**: Only individual tracked files are symlinked to `src/home/`.
+- **Isolation**: Application caches, logs, and untracked runtime files stay local in your home directory and will never pollute the Git repository.
+- **Instant sync**: Edits made to tracked files in `~/.config` immediately reflect in the repository.
 
-Your deployment mode isn't saved to a configuration file; instead, `update.sh` heuristically scans your `~/.config` to detect whether you are primarily using symlinks or copies, and automatically syncs new changes using the same method.
+### Mode 2: Legacy Copy (Classic)
+Managed via `scripts/legacy_copy.sh`.
+- Direct file copy from repository to user home.
+- Safe and decoupled from the Git repository, but changes made in `~/.config` will not sync back to the repo automatically.
+- Maintained for compatibility without altering legacy behavior.
 
-## 2. Special Rules
+`update.sh` and `doctor.sh` automatically detect whether your machine is in Symlink or Copy mode using `scripts/deploy_mode.sh`.
 
-Not everything is symlinked. To stop apps from breaking your repo, we have some strict rules:
+---
 
-### `ONCE_CONFIGS` (Always Copied)
-Apps like Thunar, xfce4, mpv, btop, cava, and mimeapps.list often overwrite their configs during normal use.
-To stop them from breaking symlinks, these are **ALWAYS** copied as real files, no matter what mode you picked. Also, `update.sh` will **skip** updating them to protect your personal tweaks!
+## 3. Special Targets & Lifecycles
 
-### `hakucfg` (Your Custom Space)
-HakuSpace won't touch your personal stuff. `~/hakucfg/` is for your own environment variables, autostarts, and custom scripts. 
+### `ONCE_CONFIGS` (Install-only Copy)
+Certain applications (Thunar, xfce4, mpv, btop, cava, mimeapps.list) frequently rewrite their configuration files with runtime state.
+- These configs are **always copied** during initial installation via `scripts/once_configs.sh`.
+- They are **never symlinked** and **never overwritten** during `./update.sh`.
 
-**Important Developer Note:** `~/hakucfg/` is NOT copied blindly as a whole directory. Instead, the `check_control_dir()` function in `scripts/functions.sh` maintains a hardcoded `required_files` array (like `setting.sh`, WM configs, and menu scripts). It iterates through this array and copies files from `src/home/hakucfg/` ONLY if they are completely missing on the user's machine (except for `setting.sh`, which uses a specific version-check to handle upgrades). If you add a new template file to `src/home/hakucfg/`, you **must** remember to manually add it to the `required_files` array; otherwise, existing users will never receive it during updates!
+### `~/hakucfg` (User Custom Space)
+All personal customizations (autostarts, environment variables, theme overrides) belong in `~/hakucfg/`.
+- Managed by `scripts/hakucfg.sh`.
+- Missing templates are seeded during setup, while user-modified files are strictly preserved.
+- `setting.sh` versions are checked against repository updates.
 
-## 3. The Scripts
+### `~/.local/state/hakuspace` (Runtime State)
+Stores generated style variables, themes, and runtime tokens.
+- Initialized via `scripts/state.sh init`.
+- Inspectable in read-only mode via `scripts/state.sh check`.
 
-We got three main scripts to manage your setup:
+---
 
-### `install.sh`
-The first-time setup. It asks for your Window Manager and deploy mode (Symlink or Copy), then sets everything up.
+## 4. Root CLI Commands
 
-### `update.sh`
-Run this when you pull new changes from GitHub. It automatically checks your deploy mode and syncs the changes to your home directory (skipping `ONCE_CONFIGS` of course!).
+| Command | Purpose |
+|---|---|
+| `./install.sh` | Full automatic installation profile |
+| `./update.sh` | Full automatic update profile |
+| `./link.sh [modules]` | Deep Symlink specific modules or all configs |
+| `./unlink.sh [modules]` | Safely remove tracked symlinks |
+| `./packages.sh [groups]` | Install pacman/yay package groups |
+| `./doctor.sh` | Read-only integrity diagnostic |
+| `./rollback.sh` | Restore configuration from previous backups |
 
-### `rollback.sh`
-Safety first! Before HakuSpace overwrites anything, it backs it up to `~/.backup/Backup_<timestamp>`.
-If an update breaks things, just run `rollback.sh`:
-- It scans your `~/.config` and `~/.local/bin`.
-- It safely removes HakuSpace symlinks so it doesn't accidentally wipe repo files.
-- It restores your old files exactly where they were.
+---
 
-### `doctor.sh`
-If things act weird, run `./doctor.sh`.
-If you're in Symlink mode, the doctor scans your configs to find:
-- **Broken symlinks:** Deleted files or changed paths.
-- **Overwritten files:** If you accidentally saved over a symlink (turning it into a real file), the doctor will warn you and tell you to run `update.sh` to fix it.
+## 5. Manual / Modular Workflow
+
+You never need to copy-paste commands out of `install.sh` to configure a customized setup. You can run individual modules independently:
+
+### Install Packages
+```bash
+./packages.sh core
+./packages.sh service
+./packages.sh niri
+./packages.sh --list
+```
+
+### Link Configurations
+```bash
+# Link individual components
+./link.sh quickshell
+./link.sh kitty
+./link.sh niri
+./link.sh core
+
+# Link all registered base configs
+./link.sh --all
+
+# View available module names
+./link.sh --list
+```
+
+### Unlink Configurations
+`./unlink.sh` only removes symlinks verified to belong to HakuSpace. It will **never** delete real files, foreign symlinks, or application data:
+```bash
+./unlink.sh quickshell
+./unlink.sh niri
+./unlink.sh core
+./unlink.sh --all
+```
+
+### Initialize State & User Space
+```bash
+scripts/state.sh init
+scripts/hakucfg.sh sync
+```
+
+### Run Diagnostics
+`./doctor.sh` is strictly read-only and will never alter your filesystem. It scans for broken links, missing configs, or overwritten real files and provides exact remediation commands:
+```bash
+./doctor.sh
+```
 
 ---
 **Next:** [Core Libraries](core/lib.md) ➡️
