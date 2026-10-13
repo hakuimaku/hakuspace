@@ -18,7 +18,7 @@ Item {
     signal closed()
     signal pointerMoved(real x, real y)
 
-    // Grants keyboard input focus to the embedded Markdown editor.
+    // Grants keyboard input focus to the embedded editor.
     function forceFocus() {
         if (editor) {
             editor.forceEditorFocus()
@@ -258,8 +258,8 @@ Item {
                 color: Qt.lighter(Theme.hoverMuted, 1.25)
             }
 
-            // Real editor body (compact toolbar)
-            MarkdownEditor {
+            // Edit the temporary note as literal text.
+            PlainTextEditor {
                 id: editor
                 anchors.top: headerDivider.bottom
                 anchors.topMargin: 4
@@ -267,22 +267,20 @@ Item {
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 anchors.margins: 6
-                toolbarDensity: "compact"
                 text: TextStore.scratchDraft
                 placeholderText: "Quick temporary note (autosaved)..."
 
+                // Keep the existing autosave flow.
                 onTextEdited: newText => {
                     TextStore.setScratchDraft(newText)
                 }
 
-                onTextChangedByUser: newText => {
-                    TextStore.setScratchDraft(newText)
-                }
-
+                // Close the panel on Escape.
                 onEscapeRequested: {
                     root.closeRequested()
                 }
 
+                // Flush pending text immediately on Ctrl+S.
                 onSaveRequested: {
                     TextStore.flushScratch()
                 }

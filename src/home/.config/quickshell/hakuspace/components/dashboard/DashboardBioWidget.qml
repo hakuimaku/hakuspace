@@ -5,25 +5,23 @@ import "../editor"
 Item {
     id: root
 
-    MarkdownEditor {
+    // Edit the bio and save it on request.
+    PlainTextEditor {
         id: editor
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: bottomBar.top
         anchors.bottomMargin: 8
-        toolbarDensity: "comfortable"
         text: TextStore.bioDraft
-        placeholderText: "Write your bio or notes in Markdown..."
+        placeholderText: "Write your bio or notes..."
 
+        // Track edits for the existing dirty state.
         onTextEdited: newText => {
             TextStore.setBioDraft(newText)
         }
 
-        onTextChangedByUser: newText => {
-            TextStore.setBioDraft(newText)
-        }
-
+        // Save the bio when Ctrl+S is pressed.
         onSaveRequested: {
             TextStore.saveBio()
         }

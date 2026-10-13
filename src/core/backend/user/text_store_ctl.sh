@@ -2,17 +2,17 @@
 
 # Headless text store controller for HakuSpace user notes and bio.
 # Owns storage initialization, directory permissions (0700), file permissions (0600),
-# atomic persistence, and reads for Bio (~/.local/share/hakuspace/user/bio.md)
-# and Quick Note (/tmp/hakuspace-<uid>/quick-note.md).
+# atomic persistence, and reads for Bio (~/.local/share/hakuspace/user/bio.txt)
+# and Quick Note (/tmp/hakuspace-<uid>/quick-note.txt).
 
 set -u
 
 USER_DIR="${HAKUSPACE_USER_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/hakuspace/user}"
-BIO_PATH="$USER_DIR/bio.md"
+BIO_PATH="$USER_DIR/bio.txt"
 
 UID_VAL="$(id -u 2>/dev/null || echo 1000)"
 SCRATCH_DIR="${HAKUSPACE_SCRATCH_DIR:-/tmp/hakuspace-${UID_VAL}}"
-SCRATCH_PATH="$SCRATCH_DIR/quick-note.md"
+SCRATCH_PATH="$SCRATCH_DIR/quick-note.txt"
 
 ensure_user_dir() {
     if [[ -L "$USER_DIR" ]]; then
