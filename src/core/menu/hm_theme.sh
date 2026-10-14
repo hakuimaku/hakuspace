@@ -34,6 +34,11 @@ if [[ $# -eq 0 ]]; then
     BACKEND_LABEL="Explore the Abyss"
     [[ "$BACKEND_STATUS" == "hikai" ]] && BACKEND_LABEL="Go back to Surface"
 
+    # Haku Space Mode
+    HAKU_LEGACY_STATUS=$(cat "$STATE_DIR/haku_space_state" 2>/dev/null || echo "0")
+    HAKU_LEGACY_TEXT="OFF"
+    [[ "$HAKU_LEGACY_STATUS" == "1" ]] && HAKU_LEGACY_TEXT="ON"
+
     cat <<EOF
   Change Theme
 󰝚  Cava Underbar ($CAVA_TEXT) $IS_TOP
@@ -43,6 +48,7 @@ if [[ $# -eq 0 ]]; then
 󰏜  Change Wallpaper
 󱛹  Kill Lively Wallpaper
   Auto Random Wallpaper ($WALL_TEXT)
+󰆧  Haku Legacy Space :) ($HAKU_LEGACY_TEXT)
 󰆧  $BACKEND_LABEL
 EOF
     exit 0
@@ -58,6 +64,7 @@ case "$chosen" in
     *"Niri Animation"*) spawn $HOME/.local/bin/niri_animation_switcher.sh ;;
     *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
     *"Kill Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh --exit ;;
+    *"Haku Legacy Space :)"*) spawn $HOME/.local/bin/haku_space_mode.sh --toggle ;;
     *"Auto Random Wallpaper"*) spawn $HOME/.local/bin/random_wallpaper.sh --toggle ;;
 esac
 
