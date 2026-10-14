@@ -102,6 +102,13 @@ Item {
         id: mangoActionProc
     }
     
+    // Quits Mango through the same live mmsg IPC path used by workspace actions.
+    function quitSession() {
+        mangoActionProc.running = false;
+        mangoActionProc.command = ["mmsg", "dispatch", "quit"];
+        mangoActionProc.running = true;
+    }
+
     // Switches active desktop view to the requested tag index in Mango.
     function activate(key) {
         var parts = key.split(":");

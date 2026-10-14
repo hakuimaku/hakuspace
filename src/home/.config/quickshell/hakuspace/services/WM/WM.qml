@@ -15,6 +15,16 @@ Item {
     property string activeWindowClass: ""
     property string activeWindowTitle: ""
     
+    // Requests a compositor-native session exit through the active backend.
+    // Returns true when a backend accepted the request.
+    function quitSession() {
+        if (backendItem && backendItem.quitSession) {
+            backendItem.quitSession();
+            return true;
+        }
+        return false;
+    }
+
     // Delegates workspace activation to the active WM backend.
     function activate(key) {
         if (backendItem && backendItem.activate) {

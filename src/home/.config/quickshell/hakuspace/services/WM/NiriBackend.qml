@@ -233,6 +233,13 @@ Item {
         id: niriActionProc
     }
 
+    // Quits Niri using the same live IPC client used by workspace actions.
+    function quitSession() {
+        niriActionProc.running = false;
+        niriActionProc.command = ["niri", "msg", "action", "quit", "--skip-confirmation"];
+        niriActionProc.running = true;
+    }
+
     // Activates target monitor and workspace index via niri IPC action commands.
     function activate(key) {
         var id = parseInt(key.substring(5));

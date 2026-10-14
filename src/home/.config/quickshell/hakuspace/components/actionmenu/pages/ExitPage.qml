@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell
 import Quickshell.Io
 import "../../../services"
 import ".." as ActionMenu
@@ -18,6 +19,7 @@ ActionMenu.ActionMenuPage {
     property var processItems: []
     property string rawReport: ""
     property int selectedActionIndex: 0 // 0: Cancel, 1: Exit Anyway
+    property bool exiting: false
 
     property var _pendingItems: []
 
@@ -51,7 +53,23 @@ ActionMenu.ActionMenuPage {
     }
 
     Process {
-        id: executeProc
+        id: prepareExitProc
+        onExited: (exitCode, exitStatus) => {
+            if (!root.exiting) return;
+
+            // The active Hikai WM backend already owns a proven-live compositor
+            // IPC connection. Let it deliver the quit request while Quickshell is
+            // still alive instead of asking a teardown script to rediscover IPC.
+            if (exitCode === 0 && WM.quitSession()) {
+                root.requestClose();
+                return;
+            }
+
+            // Defensive fallback for an unsupported/failed backend. This keeps
+            // the old headless path available instead of leaving the UI stuck.
+            Quickshell.execDetached([Env.binDir + "/session_exit_ctl.sh", "execute"]);
+            root.requestClose();
+        }
     }
 
     // Aborts session termination and returns to previous menu or closes layer.
@@ -63,11 +81,12 @@ ActionMenu.ActionMenuPage {
         }
     }
 
-    // Executes final session exit script and closes menu.
+    // Prepares the Hikai session, then asks the active WM backend to quit.
     function doExit() {
-        executeProc.command = [Env.binDir + "/session_exit_ctl.sh", "execute"];
-        executeProc.running = true;
-        root.requestClose();
+        if (root.exiting) return;
+        root.exiting = true;
+        prepareExitProc.command = [Env.binDir + "/session_exit_ctl.sh", "prepare-hikai"];
+        prepareExitProc.running = true;
     }
 
     onScrollPrevious: {

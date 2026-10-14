@@ -100,6 +100,11 @@ Item {
         function onAppIdChanged() { _update() }
     }
     
+    // Quits Hyprland through Quickshell's already-open Hyprland IPC socket.
+    function quitSession() {
+        Hyprland.dispatch("hl.dsp.exit()");
+    }
+
     // Activates the workspace with the given key in Hyprland.
     function activate(key) {
         var id = parseInt(key.substring(5));
