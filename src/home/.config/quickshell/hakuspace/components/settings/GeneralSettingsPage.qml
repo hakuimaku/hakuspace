@@ -18,12 +18,13 @@ Item {
             width: parent.width
             height: Math.max(0, parent.height - 51)
             contentWidth: width
-            contentHeight: formColumn.implicitHeight
+            contentHeight: formColumn.y + formColumn.implicitHeight
             clip: true
             boundsBehavior: Flickable.StopAtBounds
             ScrollBar.vertical: Motion.HScrollBar {}
             Column {
                 id: formColumn
+                y: Theme.pad * 2
                 width: Math.min(830, Math.max(0, formScroll.width - 14))
                 spacing: 4
                 Repeater {

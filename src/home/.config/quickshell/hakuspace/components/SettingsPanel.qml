@@ -1,7 +1,9 @@
 import QtQuick
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import "../services"
+import "flare" as Flare
 import "motion" as Motion
 import "settings" as SettingsPages
 
@@ -18,6 +20,48 @@ PanelWindow {
     readonly property real normalWidth: Math.min(normalPreferredWidth, Math.max(0, modelData.width - 64))
     readonly property real configWidth: Math.min(normalPreferredWidth * 1.10, Math.max(0, modelData.width - 64))
     readonly property real infoWidth: Math.min(normalPreferredWidth * 0.95, Math.max(0, modelData.width - 64))
+    readonly property real targetBodyWidth: selectedGroup === "Config" ? configWidth
+                                             : selectedGroup === "Info" ? infoWidth : normalWidth
+    readonly property real targetBodyHeight: Math.min(690, Math.max(0, modelData.height - 64))
+    readonly property real circleSize: Math.min(96, normalWidth, targetBodyHeight)
+    property real slideProgress: 0
+    property real expandProgress: 0
+    property real closeProgress: 0
+    readonly property bool phaseOrderValid: expandProgress <= 0.001 || slideProgress >= 0.999
+    onPhaseOrderValidChanged: console.assert(phaseOrderValid, "Settings must reach center before expanding")
+
+    SequentialAnimation {
+        id: openAnimation
+        ParallelAnimation {
+            NumberAnimation {
+                id: slideIn
+                target: root; property: "slideProgress"; to: 1
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: HAnimation.dashboardOpenCurve
+            }
+            NumberAnimation {
+                id: recoverClose
+                target: root; property: "closeProgress"; to: 0
+            }
+        }
+        NumberAnimation {
+            id: expandIn
+            target: root; property: "expandProgress"; to: 1
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: [0.32, 0.05, 0.55, 1.18, 1, 1]
+        }
+    }
+    NumberAnimation {
+        id: closeAnimation
+        target: root; property: "closeProgress"; to: 1
+        duration: 480
+        easing.type: Easing.OutCubic
+        onFinished: {
+            root.expandProgress = 0
+            root.slideProgress = 0
+            root.closeProgress = 0
+        }
+    }
 
     function requestClose() {
         if (SettingsStore.dirty || ConfigEditorStore.dirty) confirmation = "close"
@@ -53,13 +97,24 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     color: "transparent"
-    visible: panelOpen
+    visible: panelOpen || slideProgress > 0.001 || expandProgress > 0.001
     mask: Region {
-        width: root.panelOpen ? root.modelData.width : 0
-        height: root.panelOpen ? root.modelData.height : 0
+        width: root.visible ? root.modelData.width : 0
+        height: root.visible ? root.modelData.height : 0
     }
     Component.onDestruction: UiState.closeSettingsIfScreen(modelData.name)
     onPanelOpenChanged: {
+        openAnimation.stop()
+        closeAnimation.stop()
+        if (panelOpen) {
+            slideIn.duration = Math.round(280 * Math.max(0, 1 - slideProgress))
+            recoverClose.duration = Math.round(220 * closeProgress)
+            expandIn.duration = Math.round(350 * Math.max(0, 1 - expandProgress))
+            openAnimation.start()
+        } else {
+            closeAnimation.duration = Math.round(480 * Math.max(0, 1 - closeProgress))
+            closeAnimation.start()
+        }
         if (panelOpen) {
             confirmation = ""
             if (!SettingsStore.ready) SettingsStore.load()
@@ -80,20 +135,78 @@ PanelWindow {
             event.accepted = true
         }
     }
-    Rectangle { anchors.fill: parent; color: Theme.surface; opacity: 0.22 }
+    Rectangle { anchors.fill: parent; color: Theme.surface; opacity: 0.22 * Math.min(1, root.expandProgress) * (1 - root.closeProgress) }
     MouseArea { anchors.fill: parent; enabled: root.panelOpen; onClicked: root.requestClose() }
+
+    Shape {
+        id: dropTail
+        readonly property real diameter: root.circleSize
+        readonly property real tail: Math.min(60, diameter * 0.65)
+                                     * Math.pow(Math.sin(Math.PI * Math.max(0, Math.min(1, root.slideProgress))), 2)
+        x: settingsBody.x - tail
+        y: settingsBody.y
+        width: tail + diameter
+        height: diameter
+        visible: root.panelOpen && tail > 0.01 && root.expandProgress <= 0.001
+        preferredRendererType: Shape.CurveRenderer
+        transform: Rotation {
+            origin.x: dropTail.tail + dropTail.diameter / 2
+            origin.y: dropTail.diameter / 2
+            angle: Math.atan2(root.height / 2 - FlareEdges.topOriginY - root.circleSize / 2,
+                              root.width / 2 - FlareEdges.thickness - root.circleSize / 2) * 180 / Math.PI
+        }
+        ShapePath {
+            fillColor: Theme.surface
+            strokeColor: "transparent"
+            startX: 0
+            startY: dropTail.diameter / 2
+            PathCubic {
+                control1X: dropTail.tail * 0.3; control1Y: dropTail.diameter * 0.43
+                control2X: dropTail.tail * 0.68; control2Y: dropTail.diameter * 0.08
+                x: dropTail.tail + dropTail.diameter * 0.42; y: dropTail.diameter * 0.08
+            }
+            PathCubic {
+                control1X: dropTail.tail + dropTail.diameter * 0.78; control1Y: dropTail.diameter * 0.22
+                control2X: dropTail.tail + dropTail.diameter * 0.78; control2Y: dropTail.diameter * 0.78
+                x: dropTail.tail + dropTail.diameter * 0.42; y: dropTail.diameter * 0.92
+            }
+            PathCubic {
+                control1X: dropTail.tail * 0.68; control1Y: dropTail.diameter * 0.92
+                control2X: dropTail.tail * 0.3; control2Y: dropTail.diameter * 0.57
+                x: 0; y: dropTail.diameter / 2
+            }
+        }
+    }
+
+    Flare.FlareSurface {
+        x: settingsBody.x
+        y: settingsBody.y
+        width: settingsBody.width
+        height: settingsBody.height
+        start: 0
+        end: width
+        currentHeight: height
+        bounds: ({start: 0, end: root.modelData.width})
+        r: Theme.giantRadius * Math.max(0, 1 - root.expandProgress)
+        rf: Theme.hugRadius * Math.max(0, 1 - root.expandProgress)
+        opacity: Math.min(1, root.expandProgress * 4) * Math.max(0, 1 - root.expandProgress) * (1 - root.closeProgress)
+    }
 
     Rectangle {
         id: settingsBody
-        anchors.centerIn: parent
-        width: root.selectedGroup === "Config" ? root.configWidth
-             : root.selectedGroup === "Info" ? root.infoWidth : root.normalWidth
-        height: Math.min(690, Math.max(0, root.modelData.height - 64))
-        radius: Theme.largeRadius
+        x: FlareEdges.thickness + (root.width / 2 - width / 2 - FlareEdges.thickness) * root.slideProgress
+        y: FlareEdges.topOriginY + (root.height / 2 - height / 2 - FlareEdges.topOriginY) * root.slideProgress
+        width: root.circleSize + (root.targetBodyWidth - root.circleSize) * root.expandProgress
+        height: root.circleSize + (root.targetBodyHeight - root.circleSize) * root.expandProgress
+        radius: root.circleSize / 2 + (Theme.largeRadius - root.circleSize / 2) * root.expandProgress
         color: Theme.surface
+        opacity: 1 - root.closeProgress
+        scale: 1 - 0.2 * root.closeProgress
         border.color: Theme.border
         border.width: Theme.borderWidth
+        clip: root.expandProgress < 0.999
         Behavior on width {
+            enabled: root.expandProgress >= 0.999 && !openAnimation.running && !closeAnimation.running
             NumberAnimation {
                 duration: HAnimation.settingsResizeDuration
                 easing.type: Easing.BezierSpline
@@ -105,7 +218,10 @@ PanelWindow {
         Column {
             anchors.fill: parent
             anchors.margins: Theme.pad * 2
+            anchors.rightMargin: 24
             spacing: Theme.pad
+            opacity: Math.max(0, Math.min(1, (root.expandProgress - 0.55) / 0.4))
+            enabled: root.panelOpen && root.expandProgress >= 0.95
             Row {
                 width: parent.width
                 height: 48
