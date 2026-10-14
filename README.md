@@ -102,58 +102,158 @@ Specific packages for each WM: [pkg-hyprland](src/packages/pkg-hyprland.txt) | [
 ## Installation Guide
 
 > [!tip]
-> For Fedora users, you should follow the [Fedora Guide](docs/fedora_guide.md)
+> For Fedora users, you should follow the [Fedora Guide](docs/fedora_guide.md). The package module currently uses `yay`, so package installation on non-Arch distributions must follow the distro-specific setup first.
 
-### 0. Prerequisites:
+### Prerequisites
 
-- You have completed the installation of Arch, Fedora, and NixOS (or derivative distros)
-- You have installed and configured essential utilities such as Wi-Fi, Bluetooth, Audio,... and necessary hardware drivers.
-- You are familiar with configuring the system via **code**, as my dotfiles do NOT have a central graphical settings GUI.
+- You have completed the installation of Arch, Fedora, NixOS, or a derivative distribution.
+- You have installed and configured essential utilities such as Wi-Fi, Bluetooth, Audio, and the necessary hardware drivers.
+- You are familiar with configuring the system via **code**, as Haku Space does **not** provide a central graphical settings GUI.
 
-### 1. Clone the Dotfiles
-- Stable Release (Recommended):
+### Clone Haku Space
+
+Stable release (recommended):
+
 ```bash
 cd ~
 git clone --depth 1 --branch v26.10-1 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
-
+cd ~/hakuspace
 ```
-- If you prefer to experience the **lastest changes**:
+
+If you prefer the **latest changes**:
+
 ```bash
 cd ~
 git clone https://github.com/hakuimaku/hakuspace.git ~/hakuspace
-
+cd ~/hakuspace
 ```
 
-### 2. Run the Installation Script
+### Method 1 — Automatic Installation (`install.sh`)
+
+This is the recommended method for a complete Haku Space setup. The installer lets you select your Window Manager and deployment mode, then orchestrates the package, config, core-script, state, asset, shell, display-manager, desktop-default, and diagnostic modules for you.
 
 ```bash
-cd hakuspace
+cd ~/hakuspace
 chmod +x install.sh
 ./install.sh
 ```
 
-### 3. Complete the Installation
-After running the installation script, restart your computer and log in to either **Hyprland**, **Niri**, **Mango** or **Labwc** to experience the new setup.
+After the installer finishes, restart your computer and log in to **Hyprland**, **Niri**, **MangoWM**, or **Labwc**.
 
-### 4. After Installation
-1) Change the GTK theme:
-- Go to `GTK Settings` in Rofi App Menu (SUPER + R).
-- Change the theme, icons, and mouse cursor for a better aesthetic.
+### Method 2 — Manual / Modular Installation
 
-2) **Install additional packages**:
-
-`waybar-cava` is a plugin for Waybar that provides a visualizer for audio output. My waybar top needs this to work properly (cava module).
+Use this method if you want full control over which package groups and configuration modules are installed. You can inspect the available targets first:
 
 ```bash
-yay -S waybar-cava
+cd ~/hakuspace
+./packages.sh --list
+./link.sh --list
 ```
 
-3) Allow Local Root User to Access X/Xwayland Display
+#### Full Haku Space, module by module
+
+The example below installs Niri. Replace `niri` with `hyprland`, `mango`, or `labwc` as needed. You can also pass more than one WM group/module.
+
 ```bash
-xhost +si:localuser:root
-```
-Grants the local root user permission to connect to and launch graphical (GUI) applications (like `GParted`) within the current user's active X server or Xwayland session.
+cd ~/hakuspace
 
+# 1. Bootstrap/check the installer dependencies (Arch/yay flow)
+./scripts/dependencies.sh
+
+# 2. Review and install package groups
+./packages.sh --plan core service optional niri
+./packages.sh core service optional niri
+
+# 3. Create the base directories
+./scripts/directories.sh
+
+# 4. Install configs that are intentionally copied only once
+./scripts/once_configs.sh
+
+# 5. Deploy common configs + core scripts + your WM config
+./link.sh --all niri
+
+# 6. Optional: install Haku Space icons/themes/wallpapers
+./scripts/assets.sh
+
+# 7. Initialize Haku Space state and user overrides
+./scripts/state.sh init
+./scripts/hakucfg.sh sync
+
+# 8. Optional system integration used by the full installer
+./scripts/shell_setup.sh
+./scripts/display_manager.sh
+./scripts/desktop_defaults.sh
+
+# 9. Verify the installation
+./doctor.sh
+```
+
+`./link.sh --all` deploys all registered common configs and the scripts from `src/core` into `~/.local/bin`. If you want an even smaller setup, link only the modules you need instead, for example:
+
+```bash
+./link.sh quickshell kitty core niri
+```
+
+> [!note]
+> `optional`, assets, shell setup, display-manager setup, and desktop defaults are not required for every manual installation. Skip the modules you do not want.
+
+#### Quickshell only — Hikai mode
+
+If you already have a supported Wayland compositor configured and only want the Haku Space **Quickshell / Hikai** interface, you do not need to deploy all Haku Space configs or replace your WM configuration.
+
+```bash
+cd ~/hakuspace
+
+# 1. Install the core package group.
+#    Quickshell is expected to be included in pkg-core.txt.
+./scripts/dependencies.sh
+./packages.sh --plan core
+./packages.sh core
+
+# 2. Create base directories and deploy only Quickshell + Haku Space core scripts
+./scripts/directories.sh
+./link.sh quickshell core
+
+# 3. Initialize the state/config data used by Hikai
+./scripts/state.sh init
+./scripts/hakucfg.sh sync
+
+# 4. Start Hikai now and verify it
+~/.local/bin/haku_backend.sh set hikai
+~/.local/bin/haku_backend.sh --verify
+```
+
+If you keep your **own** WM configuration instead of linking a Haku Space WM module, add this command to your compositor's autostart so the selected Hikai backend starts again on future sessions:
+
+```bash
+~/.local/bin/session_start.sh --early
+```
+
+Haku Space's bundled Hyprland, Niri, MangoWM, and Labwc configs already call this startup hook, so no extra step is needed when you use those configs.
+
+> [!important]
+> Hikai depends on the scripts deployed by the `core` module. Linking only `quickshell` is not enough for the full Haku Space Hikai experience.
+
+### After Installation
+
+1. **Change the GTK theme**
+   - Open `GTK Settings` from the Rofi App Menu (`SUPER + R`).
+   - Change the theme, icons, and mouse cursor to your preference.
+
+2. **Install `waybar-cava` if you use the Classic Waybar cava module**
+
+   ```bash
+   yay -S waybar-cava
+   ```
+
+3. **Allow the local root user to access X/Xwayland display when needed**
+
+   ```bash
+   xhost +si:localuser:root
+   ```
+
+   This allows local root GUI applications such as `GParted` to connect to the current user's X/Xwayland display.
 
 ## Dotfiles Management
 
@@ -175,25 +275,7 @@ See more in: [Management & Deployment](docs/management.md)
 | `./rollback.sh` | Restore previous configuration backups safely |
 
 ### Manual / Modular Installation
-If you prefer picking specific components instead of running the full installer:
-```bash
-# 1. Install packages
-./packages.sh core
-./packages.sh niri
-
-# 2. Link desired configurations
-./link.sh quickshell
-./link.sh kitty
-./link.sh niri
-./link.sh core
-
-# 3. Initialize state and user configuration
-scripts/state.sh init
-scripts/hakucfg.sh sync
-
-# 4. Verify integrity
-./doctor.sh
-```
+For the complete module-by-module flow, including the **Quickshell-only / Hikai** setup, see [Method 2 — Manual / Modular Installation](#method-2--manual--modular-installation) above.
 
 ### Update Haku Space
 Simply run the `update.sh` script in the hakuspace folder. This will safely update the core files while preserving your personal settings in `~/hakucfg`.
