@@ -339,10 +339,6 @@
         <keybind key="W-S-p">
         <action name="Execute" command="~/.local/bin/screenshot.sh --fullscreen" />
         </keybind>
-        <keybind key="W-l">
-        <action name="Execute" command="~/.local/bin/nightlight_toggle.sh" />
-        </keybind>
-
         <!-- keybind for Show Menu -->
         <keybind key="A-grave">
         <action name="ShowMenu" menu="client-list-combined-menu" />
@@ -351,7 +347,7 @@
             <y>center</y>
         </position>
         </keybind>
-        <keybind key="W-grave">
+        <keybind key="W-x">
         <action name="ShowMenu" menu="client-menu" atCursor="yes" />
         </keybind>
 
@@ -382,9 +378,6 @@
         </keybind>
         <keybind key="W-f">
         <action name="ToggleFullscreen" />
-        </keybind>
-        <keybind key="W-x">
-        <action name="Resize" />
         </keybind>
 
         <!-- Window Resize Alt + WASD -->

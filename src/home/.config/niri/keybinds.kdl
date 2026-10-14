@@ -23,7 +23,6 @@ binds {
     Mod+Shift+W      hotkey-overlay-title="Cycle Waybar Mode" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --cycle"; }
     Mod+W            hotkey-overlay-title="Toggle Taskbar" { spawn "sh" "-c" "$HOME/.local/bin/taskbar_manager.sh --toggle"; }
     Mod+Ctrl+W       hotkey-overlay-title="Toggle Waybar" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --toggle"; }
-    Mod+L            hotkey-overlay-title="Adjust Brightness" { spawn "sh" "-c" "$HOME/.local/bin/nightlight_toggle.sh"; }
     Mod+T            hotkey-overlay-title="Cava Underbar" { spawn "sh" "-c" "$HOME/.local/bin/cava_manager.sh"; }
 
     // Application Launchers
@@ -50,8 +49,9 @@ binds {
     // Window Management
     Mod+C            repeat=false { close-window; }
     Mod+Z            { toggle-window-floating; }
-    Mod+Grave        repeat=false { toggle-overview; }
+    Mod+X            repeat=false { toggle-overview; }
     Mod+D            { switch-preset-column-width; }
+    Mod+Shift+D      { switch-focus-between-floating-and-tiling; }
     Mod+F            { maximize-column; }
     Mod+Shift+F      { fullscreen-window; }
     Mod+Alt+F        { maximize-window-to-edges; }
@@ -99,7 +99,6 @@ binds {
     Mod+Shift+Equal { set-window-height "+10%"; }
 
     Mod+Shift+X { toggle-column-tabbed-display; }
-    Mod+X       { switch-focus-between-floating-and-tiling; }
 
     // Mouse & Touchpad Wheels
     Mod+WheelScrollDown      cooldown-ms=150 { focus-workspace-down; }

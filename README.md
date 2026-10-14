@@ -484,22 +484,22 @@ See more in `~/hakucfg/wm/hyprland-custom.lua` or [here](src/home/hakucfg/wm/hyp
 | SUPER + Y | Wallpaper Select |
 | SUPER + SHIFT + Y | Lively Wallpaper Select |
 | SUPER + SHIFT + W | Cycle Waybar Mode |
-| SUPER + X | Cycle Hyprland Layout (Hyprland Only) |
-| SUPER + ` | Open Special Workspace - For VS Code (Hyprland Only) |
-| SUPER + ` | Open Niri Overview |
+| SUPER + L | Cycle Hyprland Layout (Hyprland Only) |
+| SUPER + SHIFT + D | Switch Focus Between Tiling and Floating (Niri Only) |
+| SUPER + O | Toggle Overlay (MangoWM Only) |
+| SUPER + X | Toggle Special Workspace (Hyprland), Overview (Niri), or Scratchpad (MangoWM) |
 
 - Labwc:
 
 | Bind | Function |
 |------|----------|
 | SUPER + Space | Open Root Menu |
-| SUPER + ` | Open Client Menu |
+| SUPER + X | Open Client Menu |
 | ALT + ` | Open Combined Client Menu |
 | SUPER + A | Maximize |
 | SUPER + S | Iconify |
 | SUPER + D | Show Desktop |
 | SUPER + Z | Shrink Size Window (-10%) |
-| SUPER + X | Resize By Mouse |
 
 ---
 

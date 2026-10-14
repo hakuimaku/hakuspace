@@ -23,7 +23,6 @@ hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("$HOME/.local/bin/open_browser.sh"))
 hl.bind(mainMod .. " + SLASH", hl.dsp.exec_cmd("$HOME/.local/bin/launcher.sh emoji"))
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))
 hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
-hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("$HOME/.local/bin/nightlight_toggle.sh"))
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("$HOME/.local/bin/notif.sh toggle"))
 hl.bind(mainMod .. " + K", hl.dsp.exec_cmd("$HOME/.local/bin/lock.sh"))
 hl.bind(mainMod .. " + ESCAPE", hl.dsp.exec_cmd("$HOME/.local/bin/haku_backend.sh set classic"))
@@ -74,7 +73,7 @@ for i = 1, 10 do
 end
 
 -- Example special workspace (scratchpad)
-hl.bind(mainMod .. " + GRAVE",         hl.dsp.workspace.toggle_special("magic"))
+hl.bind(mainMod .. " + X",             hl.dsp.workspace.toggle_special("magic"))
 hl.bind(mainMod .. " + SHIFT + GRAVE", hl.dsp.window.move({ workspace = "special:magic" }))
 
 -- Scroll through existing workspaces with mainMod + scroll
@@ -99,7 +98,7 @@ hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = tr
 hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
 
--- Minimize windows to a special workspace with mainMod + X. Press again to restore.
+-- Minimize windows to a special workspace with mainMod + M. Press again to restore.
 hl.bind(mainMod .. " + M", function ()
     if hl.get_workspace("special:minimized") then
         hl.dispatch(hl.dsp.window.move({ workspace = hl.get_active_workspace(), window = "tag:minimized" }))
@@ -142,7 +141,7 @@ hl.bind(mainMod .. " + F1", function ()
 end)
 
 -- Cycle layouts
-hl.bind(mainMod .. " + X", function ()
+hl.bind(mainMod .. " + L", function ()
     local layouts     = { "scrolling", "dwindle", "master" }
     local workspace   = hl.get_active_workspace()
 	if hl.get_active_special_workspace() then
