@@ -150,6 +150,7 @@ Item {
         case "exit": return "pages/ExitPage.qml";
         case "theme": return "pages/ThemePage.qml";
         case "clipboard": return "pages/ClipboardPage.qml";
+        case "shortcut": return "pages/ShortcutPage.qml";
         case "niriAnimation":
         case "niri_animation": return "pages/NiriAnimationPage.qml";
         default: return "pages/RecordPage.qml";

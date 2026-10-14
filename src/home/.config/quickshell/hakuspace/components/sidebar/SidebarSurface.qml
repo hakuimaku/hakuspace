@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Shapes
+import Quickshell.Widgets
 import "../../services"
 
 Item {
@@ -7,7 +8,9 @@ Item {
 
     required property real controlDiameter
     required property real bodyWidth
-    property real bodyHeight: contentHeight
+    property real bodyHeight: 500
+    property var pinsModel
+    property Item tooltipHost: null
     property real rf: Math.max(Theme.hugRadius, AppState.roundedScreenRadius)
     property real frameThickness: FlareEdges.thickness
     property real topFlareY: 16
@@ -16,29 +19,57 @@ Item {
     property real cornerRadius: Theme.largeRadius + 8
     property color surfaceColor: Theme.surface
     property bool expanded: false
-    property bool quickNoteActive: false
+    property string activeToolKey: ""
+    property int selectedToolIndex: 0
+    property bool keyboardSelected: false
 
     readonly property real itemDiameter: root.controlDiameter
-    readonly property real itemSpacing: Math.max(10, Math.round(Theme.fontSize * 0.85))
-    readonly property real listTopPadding: Math.max(16, Math.round(root.controlDiameter * 0.40))
-    readonly property real listBottomPadding: Math.max(16, Math.round(root.controlDiameter * 0.40))
+    readonly property real itemSpacing: 10
+    readonly property real listTopPadding: 20
+    // Leave room below Add for the control offset and hover scale.
+    readonly property real listBottomPadding: 40
 
-    property var tools: [
-        {
-            key: "tempNote",
-            icon: "󰏫",
-            label: "Temp Note"
-        }
+    readonly property var tools: [
+        { key: "quickActions", icon: "󰀻", label: "Quick Actions" },
+        { key: "clipboard", icon: "󰅌", label: "Clipboard" },
+        { key: "tempNote", icon: "󰏫", label: "Temp Note" }
     ]
-
-    readonly property real contentHeight: Math.max(300,
-        listTopPadding
-        + tools.length * itemDiameter
-        + Math.max(0, tools.length - 1) * itemSpacing
-        + listBottomPadding)
+    readonly property int pinCount: pinsModel ? pinsModel.pins.length : 0
+    readonly property int navigationCount: tools.length + pinCount + 1
+    readonly property real primaryBottom: listTopPadding + tools.length * itemDiameter + (tools.length - 1) * itemSpacing
+    readonly property real dividerY: primaryBottom + 24
+    readonly property real addY: bodyHeight - listBottomPadding - itemDiameter
+    readonly property real pinsTop: dividerY + 24
+    readonly property real pinRowsHeight: pinCount > 0
+        ? pinCount * (itemDiameter + 8) + (pinCount - 1) * 8 : 0
+    readonly property real preferredBodyHeight: pinsTop + pinRowsHeight + 12
+        + itemDiameter + listBottomPadding
 
     signal pointerMoved(real x, real y)
-    signal toggleQuickNoteRequested()
+    signal toolRequested(string key)
+    signal pinRequested(int index)
+
+    function entryKind(index) { return index < tools.length ? "tool" : index < tools.length + pinCount ? "pin" : "add" }
+    function entryKey(index) { return entryKind(index) === "tool" ? tools[index].key : entryKind(index) === "pin" ? String(index - tools.length) : "shortcutManager" }
+    function activateIndex(index) {
+        if (index < 0 || index >= navigationCount) return
+        if (entryKind(index) === "pin") pinRequested(index - tools.length)
+        else toolRequested(entryKey(index))
+    }
+    function revealIndex(index) {
+        if (index >= tools.length && index < tools.length + pinCount)
+            pinList.positionViewAtIndex(index - tools.length, ListView.Contain)
+    }
+    function pinTooltip(pin) {
+        if (typeof pin.target === "string" && pin.target.length) return pin.target
+        var command = pin.command || []
+        for (var i = command.length - 1; i >= 0; i--) {
+            var arg = command[i]
+            if (typeof arg === "string" && (arg.indexOf("/") >= 0 || arg.startsWith("$") || arg.startsWith("~")))
+                return arg
+        }
+        return pin.cwd || pin.label
+    }
 
     // Morph animation:
     property real morphProgress: 0.0
@@ -154,9 +185,10 @@ Item {
         }
     }
 
-    // Controls group (model-driven tools list)
+    // Keep the controls fixed while the pin list takes the remaining height.
     Item {
         id: controlsGroup
+        z: 1
         x: 0
         y: 20
         width: root.bodyWidth
@@ -177,113 +209,86 @@ Item {
                 required property int index
                 required property var modelData
 
-                readonly property bool isTempNote: modelData.key === "tempNote"
-                readonly property bool isActive: isTempNote && root.quickNoteActive
-                readonly property bool isHovered: toolMouseArea.containsMouse
-                readonly property bool isPressed: toolMouseArea.pressed
-
                 x: controlsGroup.controlX
                 y: root.listTopPadding + index * (root.itemDiameter + root.itemSpacing)
                 width: root.itemDiameter
                 height: root.itemDiameter
                 z: 20
 
-                Rectangle {
-                    id: toolButton
+                SidebarRailButton {
                     anchors.fill: parent
-                    radius: width / 2
-                    color: toolDelegate.isPressed
-                           ? Qt.darker(Theme.accent, 1.10)
-                           : (toolDelegate.isHovered ? Qt.lighter(Theme.accent, 1.25) : Theme.accent)
-                    border.width: 2
-                    border.color: toolDelegate.isActive
-                                  ? Qt.lighter(Theme.accent, 1.50)
-                                  : (toolDelegate.isHovered ? Qt.lighter(Theme.accent, 1.40) : Qt.darker(Theme.accent, 1.08))
-                    scale: toolDelegate.isPressed ? 0.94 : (toolDelegate.isHovered ? 1.12 : 1.0)
-
-                    Behavior on color { ColorAnimation { duration: HAnimation.buttonHoverDuration } }
-                    Behavior on border.color { ColorAnimation { duration: HAnimation.buttonHoverDuration } }
-                    Behavior on scale {
-                        NumberAnimation {
-                            duration: toolDelegate.isPressed ? HAnimation.buttonPressDuration : HAnimation.buttonHoverDuration
-                            easing.bezierCurve: toolDelegate.isPressed ? HAnimation.buttonPressCurve : HAnimation.buttonHoverCurve
-                        }
-                    }
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: modelData.icon
-                        color: Theme.onAccentColor
-                        font.family: Theme.fontFamily
-                        font.weight: Font.Bold
-                        font.pixelSize: Math.max(20, Math.round(parent.width * (toolDelegate.isHovered ? 0.52 : 0.48)))
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-
-                        Behavior on font.pixelSize {
-                            NumberAnimation {
-                                duration: toolDelegate.isPressed ? HAnimation.buttonPressDuration : HAnimation.buttonHoverDuration
-                                easing.bezierCurve: toolDelegate.isPressed ? HAnimation.buttonPressCurve : HAnimation.buttonHoverCurve
-                            }
-                        }
-                    }
-
-                    MouseArea {
-                        id: toolMouseArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        acceptedButtons: Qt.LeftButton
-                        onClicked: {
-                            if (toolDelegate.isTempNote) {
-                                root.toggleQuickNoteRequested()
-                            }
-                        }
-                        onPositionChanged: mouse => {
-                            root.pointerMoved(controlsGroup.x + toolDelegate.x + mouse.x,
-                                              controlsGroup.y + toolDelegate.y + mouse.y)
-                        }
-                    }
+                    text: modelData.icon
+                    tooltip: modelData.label
+                    tooltipHost: root.tooltipHost
+                    selected: root.keyboardSelected && root.selectedToolIndex === index
+                    focused: root.keyboardSelected && root.selectedToolIndex === index
+                    onClicked: root.toolRequested(modelData.key)
                 }
+            }
+        }
 
-                // Local tooltip on hover (shown when item is not active/open)
-                Rectangle {
-                    id: toolTooltip
-                    visible: toolDelegate.isHovered && !toolDelegate.isActive && opacity > 0.01
-                    opacity: (toolDelegate.isHovered && !toolDelegate.isActive) ? 1.0 : 0.0
-                    anchors.left: parent.right
-                    anchors.leftMargin: 10
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: tooltipLabel.implicitWidth + 14
-                    height: tooltipLabel.implicitHeight + 8
-                    radius: Theme.radius
-                    color: Theme.surface
-                    border.width: 1
-                    border.color: Qt.lighter(Theme.hoverMuted, 1.45)
-                    z: 100
+        Rectangle {
+            x: Math.round(root.bodyWidth * 0.2)
+            y: root.dividerY
+            width: Math.round(root.bodyWidth * 0.6)
+            height: 2
+            radius: 1
+            color: Theme.hoverMuted
+        }
 
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: HAnimation.slow
-                            easing.bezierCurve: HAnimation.tooltipCurve
-                        }
-                    }
-
-                    Text {
-                        id: tooltipLabel
+        ListView {
+            id: pinList
+            x: 0
+            y: root.pinsTop
+            width: root.bodyWidth
+            height: Math.max(0, root.addY - root.pinsTop - 12)
+            clip: true
+            spacing: 8
+            model: root.pinsModel ? root.pinsModel.pins : []
+            delegate: Item {
+                required property int index
+                required property var modelData
+                width: pinList.width
+                height: root.itemDiameter + 8
+                SidebarRailButton {
+                    id: pinButton
+                    anchors.centerIn: parent
+                    width: root.itemDiameter
+                    height: width
+                    text: modelData.kind === "app" ? "" : (modelData.icon || "󰐃")
+                    radius: Theme.largeRadius
+                    tooltip: root.pinTooltip(modelData)
+                    tooltipHost: root.tooltipHost
+                    focused: root.keyboardSelected && root.selectedToolIndex === root.tools.length + index
+                    onClicked: root.pinRequested(index)
+                    IconImage {
                         anchors.centerIn: parent
-                        text: modelData.label
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Math.max(10, Theme.fontSize - 3)
-                        font.weight: Font.Medium
-                        color: Theme.fg
+                        width: Math.round(pinButton.width * 0.55)
+                        height: width
+                        visible: modelData.kind === "app"
+                        source: visible ? (modelData.icon.startsWith("/")
+                            ? "file://" + modelData.icon : "image://icon/" + modelData.icon) : ""
                     }
                 }
             }
         }
+
+        SidebarRailButton {
+            x: controlsGroup.controlX
+            y: root.addY
+            width: root.itemDiameter
+            height: width
+            text: "󰐕"
+            tooltip: "Add Shortcut"
+            tooltipHost: root.tooltipHost
+            idleColor: "transparent"
+            selected: root.keyboardSelected && root.selectedToolIndex === root.navigationCount - 1
+            focused: root.keyboardSelected && root.selectedToolIndex === root.navigationCount - 1
+            onClicked: root.toolRequested("shortcutManager")
+        }
     }
 
-    // Background hit-test tracking for Sidebar pointer ownership (NoButton so it never blocks clicks)
+    // Keep background pointer tracking below buttons so their hover handlers receive motion.
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true

@@ -45,6 +45,9 @@ fi
 python3 scripts/test_setting_ctl.py
 python3 scripts/test_hakucfg_editor_ctl.py
 python3 scripts/test_hakuspace_info_ctl.py
+python3 scripts/test_sidebar_pins_ctl.py
+python3 scripts/test_shortcut_metadata.py
+python3 scripts/test_quick_actions_ctl.py
 
 # 6. Shell syntax check for repository tooling
 while IFS= read -r -d '' script; do

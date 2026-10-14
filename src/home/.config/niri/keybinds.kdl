@@ -15,6 +15,7 @@ binds {
     Mod+Shift+V      hotkey-overlay-title="Wipe Clipboard" { spawn "sh" "-c" "$HOME/.local/bin/clipboard_menu.sh --wipe"; }
     Mod+F11          hotkey-overlay-title="Record Screen" { spawn "sh" "-c" "$HOME/.local/bin/record.sh"; }
     Mod+Tab          hotkey-overlay-title="Haku Menu" { spawn "sh" "-c" "$HOME/.local/bin/hakumenu.sh"; }
+    Mod+Grave        hotkey-overlay-title="Hikai Navigation" { spawn "sh" "-c" "$HOME/.local/bin/navigation.sh toggle"; }
     Mod+Y            hotkey-overlay-title="Wallpaper Select" { spawn "sh" "-c" "$HOME/.local/bin/wallpaper_select.sh"; }
     Mod+Shift+Y      hotkey-overlay-title="Change Theme" { spawn "sh" "-c" "$HOME/.local/bin/change_theme.sh"; }
     Mod+Shift+E      hotkey-overlay-title="Exit Session" { spawn "sh" "-c" "$HOME/.local/bin/exit.sh"; }

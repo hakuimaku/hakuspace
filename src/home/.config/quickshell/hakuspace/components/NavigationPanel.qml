@@ -154,10 +154,12 @@ Item {
 
     // Sidebar interaction geometry:
     readonly property bool sidebarExpanded: UiState.navigationMode === "handoff-sidebar"
-    readonly property real sidebarControlDiameter: Math.max(44, Math.round(Theme.fontSize * 3.1))
-    readonly property real sidebarBodyPadding: Math.max(12, Theme.pad + 2)
-    readonly property real sidebarBodyWidth: Math.max(72, sidebarControlDiameter + sidebarBodyPadding * 2)
-    readonly property real sidebarBodyHeight: sidebarSurface ? sidebarSurface.contentHeight : 300
+    readonly property real sidebarControlDiameter: Math.max(50, Math.round(Theme.fontSize * 3.1))
+    readonly property real sidebarBodyPadding: Math.max(10, Theme.pad)
+    readonly property real sidebarBodyWidth: Math.max(70, sidebarControlDiameter + sidebarBodyPadding * 2)
+    readonly property real sidebarBodyHeight: Math.max(1, Math.min(sidebarSurface.preferredBodyHeight,
+        520, modelData.height - sidebarBodyY - flareReach - 16))
+    readonly property real railHoverOverflow: 6
     readonly property real sidebarBodyX: 0
     readonly property real sidebarBodyY: Math.round(circularShellDiameter * 0.94)
     readonly property real sidebarEarWidth: Math.max(32, Math.round(flareReach * 1.5))
@@ -169,73 +171,164 @@ Item {
     readonly property real bridgeWidth: Math.max(sidebarBodyWidth, Math.round(circleRadius + shellPadding))
     readonly property real bridgeHeight: Math.max(1, (sidebarBodyY + Math.min(24, sidebarBodyHeight * 0.1)) - bridgeY)
 
-    // Quick Note interaction geometry:
-    property bool quickNoteOpen: false
-    readonly property bool tempNoteVisuallyActive: quickNoteOpen || (quickNoteLayer && quickNoteLayer.activeProgress > 0.001)
-    readonly property real quickNoteWidth: 350
-    readonly property real quickNoteHeight: 250
-    readonly property real quickNoteX: sidebarBodyWidth
-    readonly property real quickNoteY: sidebarBodyY + Math.max(10, Math.round(sidebarControlDiameter * 0.2))
-    readonly property real quickNoteSafeMargin: 60
-    readonly property real quickNoteSafeWidth: quickNoteX + (quickNoteLayer ? quickNoteLayer.width : quickNoteWidth) + quickNoteSafeMargin
-    readonly property real quickNoteSafeHeight: Math.max(sidebarSafeHeight, quickNoteY + (quickNoteLayer ? quickNoteLayer.height : quickNoteHeight) + quickNoteSafeMargin)
+    // One tool key owns the attached shell; rail selection remains independent.
+    property string activeSidebarTool: ""
+    property string renderedSidebarTool: ""
+    property int sidebarSelectedIndex: 0
+    property bool sidebarKeyboardMode: false
+    property bool keyboardLease: false
+    property bool externalDialogLease: false
+    property bool dialogFocusRestore: false
+    property bool pointerOwned: false
+    property real lastPointerX: -1
+    property real lastPointerY: -1
+    readonly property bool sidebarToolOpen: activeSidebarTool.length > 0
+    readonly property bool sidebarToolVisible: sidebarToolOpen || (sidebarToolLayer && sidebarToolLayer.activeProgress > 0.001)
+    readonly property real sidebarToolX: sidebarBodyWidth + 30
+    readonly property real sidebarToolY: Math.max(0, Math.min(
+        sidebarBodyY + 40, modelData.height - sidebarToolPreferredHeight - 12))
+    readonly property real sidebarToolPreferredWidth: renderedSidebarTool === "quickActions" ? 540
+        : renderedSidebarTool === "clipboard" ? 460 : renderedSidebarTool === "shortcutManager" ? 500 : 460
+    readonly property real sidebarToolPreferredHeight: renderedSidebarTool === "quickActions" ? 240
+        : renderedSidebarTool === "clipboard" ? 360 : renderedSidebarTool === "shortcutManager" ? 400 : 330
+    readonly property real sidebarToolWidth: Math.max(1, Math.min(sidebarToolPreferredWidth,
+        modelData.width - sidebarToolX - 12))
+    readonly property real sidebarToolHeight: Math.max(1, Math.min(sidebarToolPreferredHeight,
+        modelData.height - sidebarToolY - 12))
+    readonly property real sidebarToolSafeMargin: 50
+    readonly property real sidebarToolSafeWidth: sidebarToolX + (sidebarToolLayer ? sidebarToolLayer.interactionWidth : sidebarToolWidth) + sidebarToolSafeMargin
+    readonly property real sidebarToolSafeHeight: Math.max(sidebarSafeHeight,
+        sidebarToolY + (sidebarToolLayer ? sidebarToolLayer.interactionHeight : sidebarToolHeight) + sidebarToolSafeMargin)
 
     // Precise Wayland input mask geometry (union of interactive surfaces):
     readonly property real navigationInputRadius: Math.min(navigationLayer.width, root.circularShellDiameter + 24)
-    readonly property real sidebarInputWidth: sidebarBodyWidth
+    readonly property real sidebarInputWidth: sidebarBodyWidth + railHoverOverflow
     readonly property real sidebarInputHeight: Math.max(0, (sidebarBodyY + sidebarBodyHeight + flareReach) - bridgeY)
-    readonly property real quickNoteInputWidth: quickNoteLayer ? quickNoteLayer.width : quickNoteWidth
-    readonly property real quickNoteInputHeight: quickNoteLayer ? quickNoteLayer.height : quickNoteHeight
+    readonly property real sidebarToolInputWidth: sidebarToolLayer ? sidebarToolLayer.interactionWidth : 0
+    readonly property real sidebarToolInputHeight: sidebarToolLayer ? sidebarToolLayer.interactionHeight : 0
+
+    Sidebar.SidebarPinsModel {
+        id: sidebarPinsModel
+        onLaunched: UiState.closeNavigation()
+        onAdded: { if (root.activeSidebarTool === "shortcutManager") root.closeSidebarTool(root.keyboardLease) }
+        onPinsChanged: {
+            root.sidebarSelectedIndex = Math.min(root.sidebarSelectedIndex, sidebarSurface.navigationCount - 1)
+            sidebarSurface.revealIndex(root.sidebarSelectedIndex)
+        }
+    }
 
     onSidebarExpandedChanged: {
-        if (!sidebarExpanded && quickNoteOpen) {
-            closeQuickNote()
+        if (!sidebarExpanded) {
+            if (sidebarToolOpen) closeSidebarTool()
+            sidebarKeyboardMode = false
         }
     }
 
-    function toggleQuickNote() {
-        if (root.quickNoteOpen) {
-            closeQuickNote()
-        } else {
-            openQuickNote()
-        }
+    // Return focus to the rail after a tool or radial handoff.
+    function focusSidebarRail(fromKeyboard) {
+        sidebarKeyboardMode = !!fromKeyboard
+        keyboardLease = !!fromKeyboard
+        Qt.callLater(function() { if (root.panelOpen) keyHandler.forceActiveFocus() })
     }
 
-    function openQuickNote() {
-        root.quickNoteOpen = true
+    // Give newly loaded content keyboard ownership.
+    function focusActiveSidebarTool() {
         Qt.callLater(function() {
-            if (quickNoteLayer && typeof quickNoteLayer.forceFocus === "function") {
-                quickNoteLayer.forceFocus()
-            }
+            if (root.sidebarToolOpen && sidebarToolLayer) sidebarToolLayer.forceFocus()
         })
     }
 
-    function closeQuickNote() {
-        if (!root.quickNoteOpen) return
-        TextStore.flushScratch()
-        root.quickNoteOpen = false
-        Qt.callLater(function() {
-            if (root.panelOpen && keyHandler) {
-                keyHandler.forceActiveFocus()
-            }
-        })
+    // Replace content in the existing attached shell.
+    function openSidebarTool(key, fromKeyboard) {
+        var index = key === "shortcutManager" ? sidebarSurface.navigationCount - 1
+            : sidebarSurface.tools.findIndex(function(tool) { return tool.key === key })
+        if (index < 0) return
+        if (activeSidebarTool === "tempNote" && key !== "tempNote") TextStore.flushScratch()
+        sidebarSelectedIndex = index
+        if (!sidebarExpanded) UiState.beginNavigationHandoff("sidebar")
+        renderedSidebarTool = key
+        activeSidebarTool = key
+        sidebarKeyboardMode = false
+        keyboardLease = !!fromKeyboard
+        cancelPointerClose()
+        focusActiveSidebarTool()
     }
+
+    // Flush the note before returning to rail navigation.
+    function closeSidebarTool(fromKeyboard) {
+        if (!sidebarToolOpen) return
+        if (activeSidebarTool === "tempNote") TextStore.flushScratch()
+        activeSidebarTool = ""
+        focusSidebarRail(fromKeyboard)
+    }
+
+    // A second activation closes the current tool.
+    function toggleSidebarTool(key, fromKeyboard) {
+        if (activeSidebarTool === key) closeSidebarTool(fromKeyboard)
+        else openSidebarTool(key, fromKeyboard)
+    }
+
+    // Keep the rail cursor within utilities, pins and Add.
+    function moveSidebarSelection(delta) {
+        sidebarSelectedIndex = Math.max(0, Math.min(sidebarSurface.navigationCount - 1, sidebarSelectedIndex + delta))
+        sidebarSurface.revealIndex(sidebarSelectedIndex)
+    }
+
+    // Activate the rail cursor without changing hover state.
+    function activateSidebarSelection() {
+        var kind = sidebarSurface.entryKind(sidebarSelectedIndex)
+        if (kind === "pin") sidebarPinsModel.launch(Number(sidebarSurface.entryKey(sidebarSelectedIndex)))
+        else toggleSidebarTool(sidebarSurface.entryKey(sidebarSelectedIndex), true)
+    }
+
+    // Keep dispatch in the parent so closing the tool cannot cancel its command.
+    function runQuickAction(key) {
+        if (key !== "screenshot" && key !== "lock" && key !== "wallpaper") return
+        var script = key === "screenshot" ? "screenshot.sh"
+                   : key === "lock" ? "lock.sh" : "wallpaper_select.sh"
+        if (key === "screenshot") Quickshell.execDetached([Env.binDir + "/" + script])
+        UiState.closeNavigation()
+        if (key !== "screenshot")
+            Qt.callLater(function() { Quickshell.execDetached([Env.binDir + "/" + script]) })
+    }
+
+    // Wait briefly for pointer handoffs before closing the full Navigation layer.
+    function schedulePointerClose() {
+        if (!panelOpen || keyboardLease || externalDialogLease) return
+        pointerCloseTimer.restart()
+    }
+
+    // Reentry cancels a pending pointer exit.
+    function cancelPointerClose() { pointerCloseTimer.stop() }
+
+    // Unwind owned layers in one parent transaction.
+    function commitPointerClose() {
+        if (!panelOpen || pointerOwned || keyboardLease || externalDialogLease) return
+        if (sidebarToolOpen) closeSidebarTool()
+        if (sidebarExpanded || dashboardExpanded) UiState.cancelNavigationHandoff()
+        UiState.closeNavigation()
+    }
+
+    Timer { id: pointerCloseTimer; interval: 220; onTriggered: root.commitPointerClose() }
+    // Reacquire layer focus briefly after a native chooser closes.
+    Timer { id: focusRestoreTimer; interval: 200; onTriggered: root.dialogFocusRestore = false }
 
     // Region A = Navigation keep-alive region
     function insideRegionA(x, y) {
         return x >= 0 && y >= 0 && (x * x + y * y <= safeRadius * safeRadius)
     }
 
-    function insideQuickNote(x, y) {
-        if (!tempNoteVisuallyActive || !quickNoteLayer) return false
-        return x >= quickNoteX && x <= (quickNoteX + quickNoteLayer.width)
-            && y >= quickNoteY && y <= (quickNoteY + quickNoteLayer.height)
+    // Keep pointer ownership throughout the shell animation.
+    function insideSidebarTool(x, y) {
+        if (!sidebarToolVisible || !sidebarToolLayer) return false
+        return x >= sidebarToolX && x <= (sidebarToolX + sidebarToolLayer.interactionWidth)
+            && y >= sidebarToolY && y <= (sidebarToolY + sidebarToolLayer.interactionHeight)
     }
 
     function insideSidebarSafeZone(x, y) {
         if (!sidebarExpanded) return false
-        var maxW = tempNoteVisuallyActive ? quickNoteSafeWidth : sidebarSafeWidth
-        var maxH = tempNoteVisuallyActive ? quickNoteSafeHeight : sidebarSafeHeight
+        var maxW = sidebarToolVisible ? sidebarToolSafeWidth : sidebarSafeWidth
+        var maxH = sidebarToolVisible ? sidebarToolSafeHeight : sidebarSafeHeight
         return x >= 0 && x <= maxW && y >= 0 && y <= maxH
     }
 
@@ -263,7 +356,7 @@ Item {
     }
 
     function insideSidebarBody(x, y) {
-        return x >= sidebarBodyX && x <= (sidebarBodyX + sidebarBodyWidth)
+        return x >= sidebarBodyX && x <= (sidebarBodyX + sidebarBodyWidth + railHoverOverflow)
             && y >= sidebarBodyY && y <= (sidebarBodyY + sidebarBodyHeight + flareReach)
     }
 
@@ -279,26 +372,29 @@ Item {
             || insideSidebarBridge(x, y)
             || insideSidebarBody(x, y)
             || insideSidebarEar(x, y)
-            || insideQuickNote(x, y)
+            || insideSidebarTool(x, y)
     }
 
     // Authoritative pointer-state evaluation for handoff and close decisions
     function evaluatePointer(x, y) {
         if (!panelOpen || closing) return
+        if (Math.abs(x - lastPointerX) > 1 || Math.abs(y - lastPointerY) > 1)
+            keyboardLease = false
+        lastPointerX = x
+        lastPointerY = y
 
-        // 0. Dashboard safe boundary:
-        // When dashboard is open, moving > 200px away from the dashboard closes it.
+        // Dashboard uses the same close grace as the Sidebar.
         if (dashboardExpanded) {
-            if (x > dashboardSafeWidth || y > dashboardSafeHeight) {
-                UiState.cancelNavigationHandoff()
-                UiState.closeNavigation()
-            }
+            pointerOwned = x <= dashboardSafeWidth && y <= dashboardSafeHeight
+            if (pointerOwned) cancelPointerClose()
+            else schedulePointerClose()
             return
         }
 
-        // 1. Direct interactive region of Sidebar (sector ∪ bridge ∪ body ∪ ear ∪ quick note)
         var inB = insideRegionB(x, y)
         if (inB) {
+            pointerOwned = true
+            cancelPointerClose()
             root.selectedIndex = 1
             root.hoveredIndex = 1
             if (UiState.navigationMode !== "handoff-sidebar") {
@@ -309,20 +405,10 @@ Item {
             return
         }
 
-        // 2. Lateral safe boundary for Sidebar:
-        // When sidebar is open, moving outside safe lateral bounds closes it.
-        var maxLateralX = tempNoteVisuallyActive ? quickNoteSafeWidth : sidebarSafeWidth
-        var maxLateralY = tempNoteVisuallyActive ? quickNoteSafeHeight : sidebarSafeHeight
-        if (sidebarExpanded && y >= sidebarBodyY && (x > maxLateralX || y > maxLateralY)) {
-            if (quickNoteOpen) root.closeQuickNote()
-            UiState.cancelNavigationHandoff()
-            UiState.closeNavigation()
-            return
-        }
-
-        // 3. Navigation circular controller area (Region A)
         var inA = insideRegionA(x, y)
         if (inA) {
+            pointerOwned = true
+            cancelPointerClose()
             // Check if pointer deliberately hovered another sector (Dashboard or Settings)
             var lx = x - root.controllerX
             var ly = y - root.controllerY
@@ -331,26 +417,23 @@ Item {
                 root.selectedIndex = idx
                 root.hoveredIndex = idx
                 if (UiState.navigationMode === "handoff-sidebar") {
-                    if (quickNoteOpen) root.closeQuickNote()
+                    if (sidebarToolOpen) root.closeSidebarTool()
                     UiState.cancelNavigationHandoff()
                 }
             }
             return
         }
 
-        // 4. Within sidebar safe zone buffer (margin)
         if (insideSidebarSafeZone(x, y)) {
+            pointerOwned = true
+            cancelPointerClose()
             root.selectedIndex = 1
             root.hoveredIndex = 1
             return
         }
 
-        // 5. Outside all safe zones -> close both
-        if (sidebarExpanded) {
-            if (quickNoteOpen) root.closeQuickNote()
-            UiState.cancelNavigationHandoff()
-        }
-        UiState.closeNavigation()
+        pointerOwned = false
+        schedulePointerClose()
     }
 
     // Logo geometry is captured when Navigation opens. Keeping this copy local
@@ -517,12 +600,17 @@ Item {
 
     function moveSelection(delta) {
         var count = regions.length
-        selectIndex((selectedIndex + delta + count) % count, true)
+        selectIndex((selectedIndex + delta + count) % count, false)
     }
 
-    function activateIndex(index) {
+    function activateIndex(index, fromKeyboard) {
         if (index < 0 || index >= regions.length) return
         selectedIndex = index
+        if (regions[index].key === "sidebar") {
+            if (!sidebarExpanded) UiState.beginNavigationHandoff("sidebar")
+            focusSidebarRail(fromKeyboard)
+            return
+        }
         if (regions[index].key === "dashboard") {
             if (sidebarExpanded) UiState.cancelNavigationHandoff()
             UiState.beginNavigationHandoff("dashboard")
@@ -537,7 +625,7 @@ Item {
     }
 
     function activateSelected() {
-        activateIndex(selectedIndex)
+        activateIndex(selectedIndex, true)
     }
 
     function iconCenterX(index) {
@@ -577,6 +665,13 @@ Item {
         closeMorph.stop()
 
         if (panelOpen) {
+            focusRestoreTimer.stop()
+            dialogFocusRestore = false
+            sidebarPinsModel.reload()
+            cancelPointerClose()
+            pointerOwned = false
+            keyboardLease = true
+            sidebarKeyboardMode = false
             closing = false
             closingFromDashboard = false
             closeCollapseProgress = 0.0
@@ -600,9 +695,10 @@ Item {
             return
         }
 
-        if (root.quickNoteOpen) {
-            root.closeQuickNote()
-        }
+        cancelPointerClose()
+        focusRestoreTimer.stop()
+        dialogFocusRestore = false
+        if (root.sidebarToolOpen) root.closeSidebarTool()
 
         // Ownership moving to another monitor does not animate the stale output.
         if (UiState.activePanel === "navigation") {
@@ -719,21 +815,26 @@ Item {
         }
     }
 
-    // One Overlay surface owns both the backing and radial content. The compact
-    // input mask keeps the rest of the desktop directly interactive.
+    // Capture outside clicks while Navigation is open.
     PanelWindow {
         id: navigationLayer
         screen: root.modelData
         anchors { top: true; left: true; right: true; bottom: true }
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "hakuspace-navigation"
-        WlrLayershell.keyboardFocus: root.panelOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+        WlrLayershell.keyboardFocus: !root.panelOpen || root.externalDialogLease
+            ? WlrKeyboardFocus.None
+            : root.dialogFocusRestore ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
         color: "transparent"
         visible: root.panelOpen || root.closing
 
         mask: Region {
+            Region {
+                width: root.panelOpen && !root.externalDialogLease ? navigationLayer.width : 0
+                height: root.panelOpen && !root.externalDialogLease ? navigationLayer.height : 0
+            }
             // 1. Navigation circular sector (around radial wheel)
             Region {
                 x: 0
@@ -760,14 +861,24 @@ Item {
                 height: (root.sidebarExpanded && !root.dashboardVisuallyActive)
                        ? root.sidebarEarRadius : 0
             }
-            // 4. Temp Note (Quick Note) panel envelope & bridge
+            // Keep pointer tracking across the visual gap beside the rail.
             Region {
-                x: root.quickNoteX
-                y: root.quickNoteY
-                width: (root.sidebarExpanded && root.tempNoteVisuallyActive && !root.dashboardVisuallyActive)
-                       ? root.quickNoteInputWidth : 0
-                height: (root.sidebarExpanded && root.tempNoteVisuallyActive && !root.dashboardVisuallyActive)
-                       ? root.quickNoteInputHeight : 0
+                x: root.sidebarBodyWidth
+                y: root.sidebarBodyY
+                width: (root.sidebarToolVisible && !root.dashboardVisuallyActive)
+                       ? root.sidebarToolX - root.sidebarBodyWidth : 0
+                height: (root.sidebarToolVisible && !root.dashboardVisuallyActive)
+                        ? Math.max(root.sidebarBodyY + root.sidebarBodyHeight + root.flareReach,
+                                   root.sidebarToolY + root.sidebarToolInputHeight) - root.sidebarBodyY : 0
+            }
+            // Keep the layer active within 50 px of its visible shell.
+            Region {
+                x: Math.max(0, root.sidebarToolX - root.sidebarToolSafeMargin)
+                y: Math.max(0, root.sidebarToolY - root.sidebarToolSafeMargin)
+                width: (root.sidebarToolVisible && !root.dashboardVisuallyActive)
+                       ? root.sidebarToolX + root.sidebarToolInputWidth + root.sidebarToolSafeMargin - x : 0
+                height: (root.sidebarToolVisible && !root.dashboardVisuallyActive)
+                        ? root.sidebarToolY + root.sidebarToolInputHeight + root.sidebarToolSafeMargin - y : 0
             }
             // 5. Dashboard safe region
             Region {
@@ -787,16 +898,25 @@ Item {
             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
             onHoveredChanged: {
                 if (!hovered && root.panelOpen && !root.closing) {
-                    if (root.quickNoteOpen) root.closeQuickNote()
-                    if (root.sidebarExpanded || root.dashboardExpanded) {
-                        UiState.cancelNavigationHandoff()
-                    }
-                    UiState.closeNavigation()
+                    root.pointerOwned = false
+                    root.schedulePointerClose()
+                } else if (hovered) {
+                    root.pointerOwned = true
+                    root.cancelPointerClose()
                 }
             }
             onPointChanged: {
                 if (!root.panelOpen || root.closing) return
                 root.evaluatePointer(point.position.x, point.position.y)
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            enabled: root.panelOpen && !root.externalDialogLease
+            z: -1
+            onClicked: mouse => {
+                if (!root.insideSafeZone(mouse.x, mouse.y)) UiState.closeNavigation()
             }
         }
 
@@ -859,8 +979,12 @@ Item {
             bodyWidth: root.sidebarBodyWidth
             bodyHeight: root.sidebarBodyHeight
             controlDiameter: root.sidebarControlDiameter
+            pinsModel: sidebarPinsModel
+            tooltipHost: sidebarTooltipLayer
             expanded: root.panelOpen && root.sidebarExpanded && !root.closing && !root.dashboardVisuallyActive
-            quickNoteActive: root.tempNoteVisuallyActive
+            activeToolKey: root.activeSidebarTool
+            selectedToolIndex: root.sidebarSelectedIndex
+            keyboardSelected: root.sidebarKeyboardMode
             rf: root.flareReach
             frameThickness: root.frameThickness
             topFlareY: Math.max(0, root.surfaceHeight - root.sidebarBodyY)
@@ -869,7 +993,14 @@ Item {
             cornerRadius: Theme.largeRadius + 8
             surfaceColor: Theme.surface
             z: 5
-            onToggleQuickNoteRequested: root.toggleQuickNote()
+            onToolRequested: key => {
+                root.keyboardLease = false
+                root.toggleSidebarTool(key, false)
+            }
+            onPinRequested: index => {
+                root.keyboardLease = false
+                sidebarPinsModel.launch(index)
+            }
             onPointerMoved: (px, py) => {
                 root.hoveredIndex = 1
                 root.selectedIndex = 1
@@ -877,26 +1008,107 @@ Item {
             }
         }
 
-        // Sidebar Quick Note layer: editor beside Sidebar rail.
-        Sidebar.SidebarQuickNoteLayer {
-            id: quickNoteLayer
-            x: root.quickNoteX
-            y: root.quickNoteY
-            open: root.panelOpen && root.sidebarExpanded && root.quickNoteOpen && !root.closing && !root.dashboardVisuallyActive
+        // One attached shell hosts the active utility.
+        Sidebar.SidebarToolLayer {
+            id: sidebarToolLayer
+            x: root.sidebarToolX
+            y: root.sidebarToolY
+            targetWidth: root.sidebarToolWidth
+            targetHeight: root.sidebarToolHeight
+            title: root.renderedSidebarTool === "quickActions" ? "Quick Actions"
+                : root.renderedSidebarTool === "shortcutManager" ? "Add Shortcut"
+                : root.renderedSidebarTool === "clipboard" ? "Clipboard" : "Temp Note"
+            showHeader: root.renderedSidebarTool === "clipboard" || root.renderedSidebarTool === "shortcutManager"
+            icon: root.renderedSidebarTool === "quickActions" ? "󰀻"
+                : root.renderedSidebarTool === "shortcutManager" ? "󰐕"
+                : root.renderedSidebarTool === "clipboard" ? "󰅌" : "󰏫"
+            toolContent: root.renderedSidebarTool === "quickActions" ? quickActionsContent
+                : root.renderedSidebarTool === "shortcutManager" ? shortcutManagerContent
+                : root.renderedSidebarTool === "clipboard" ? clipboardContent
+                : root.renderedSidebarTool === "tempNote" ? tempNoteContent : null
+            open: root.panelOpen && root.sidebarExpanded && root.sidebarToolOpen && !root.closing && !root.dashboardVisuallyActive
             z: 28
-            onCloseRequested: root.closeQuickNote()
+            onCloseRequested: {
+                root.keyboardLease = false
+                root.closeSidebarTool()
+            }
             onClosed: {
-                if (root.panelOpen && keyHandler) {
-                    keyHandler.forceActiveFocus()
-                }
+                if (!root.sidebarToolOpen) root.renderedSidebarTool = ""
+                if (root.panelOpen && root.sidebarExpanded && !root.sidebarToolOpen)
+                    root.focusSidebarRail(root.sidebarKeyboardMode)
             }
             onPointerMoved: (px, py) => {
                 root.hoveredIndex = 1
                 root.selectedIndex = 1
-                root.evaluatePointer(root.quickNoteX + px, root.quickNoteY + py)
+                root.evaluatePointer(root.sidebarToolX + px, root.sidebarToolY + py)
             }
         }
 
+        Item {
+            id: sidebarTooltipLayer
+            anchors.fill: parent
+            z: 100
+        }
+
+        Component {
+            id: quickActionsContent
+            Sidebar.SidebarQuickActions {
+                keyboardCursor: root.keyboardLease
+                onCloseRequested: keyboard => {
+                    if (keyboard) UiState.closeNavigation()
+                    else root.closeSidebarTool()
+                }
+                onActionRequested: key => root.runQuickAction(key)
+            }
+        }
+        Component {
+            id: shortcutManagerContent
+            Sidebar.SidebarShortcutManager {
+                pinsModel: sidebarPinsModel
+                onCloseRequested: keyboard => {
+                    if (keyboard) UiState.closeNavigation()
+                    else root.closeSidebarTool()
+                }
+                onDialogLeaseRequested: active => {
+                    if (active) {
+                        focusRestoreTimer.stop()
+                        root.dialogFocusRestore = false
+                        root.externalDialogLease = true
+                        root.cancelPointerClose()
+                    } else {
+                        Qt.callLater(function() {
+                            root.externalDialogLease = false
+                            root.dialogFocusRestore = true
+                            focusRestoreTimer.restart()
+                            root.keyboardLease = true
+                            root.focusActiveSidebarTool()
+                        })
+                    }
+                }
+            }
+        }
+        Component {
+            id: clipboardContent
+            Sidebar.SidebarClipboard {
+                onOpenFullRequested: {
+                    UiState.closeNavigation()
+                    UiState.openActionMenu(root.modelData.name, "clipboard")
+                }
+                onCloseRequested: keyboard => {
+                    if (keyboard) UiState.closeNavigation()
+                    else root.closeSidebarTool()
+                }
+            }
+        }
+        Component {
+            id: tempNoteContent
+            Sidebar.SidebarTempNote {
+                onCloseRequested: keyboard => {
+                    if (keyboard) UiState.closeNavigation()
+                    else root.closeSidebarTool()
+                }
+            }
+        }
         // Dashboard visual surface: fluid silhouette with avatar, profile rail,
         // and card layout inside the navigation overlay.
         Dashboard.DashboardSurface {
@@ -993,22 +1205,64 @@ Item {
             anchors.fill: parent
             focus: root.panelOpen
 
-            Keys.onLeftPressed: event => { if (!root.dashboardVisuallyActive && !root.quickNoteOpen) { root.moveSelection(-1); event.accepted = true } }
-            Keys.onUpPressed: event => { if (!root.dashboardVisuallyActive && !root.quickNoteOpen) { root.moveSelection(-1); event.accepted = true } }
-            Keys.onRightPressed: event => { if (!root.dashboardVisuallyActive && !root.quickNoteOpen) { root.moveSelection(1); event.accepted = true } }
-            Keys.onDownPressed: event => { if (!root.dashboardVisuallyActive && !root.quickNoteOpen) { root.moveSelection(1); event.accepted = true } }
-            Keys.onReturnPressed: event => { if (!root.dashboardVisuallyActive && !root.quickNoteOpen) { root.activateSelected(); event.accepted = true } }
-            Keys.onEnterPressed: event => { if (!root.dashboardVisuallyActive && !root.quickNoteOpen) { root.activateSelected(); event.accepted = true } }
-            Keys.onEscapePressed: event => {
-                if (root.quickNoteOpen) {
-                    root.closeQuickNote()
-                } else if (root.dashboardExpanded) {
-                    UiState.cancelNavigationHandoff()
-                } else if (root.sidebarExpanded) {
-                    UiState.cancelNavigationHandoff()
-                } else {
-                    UiState.closeNavigation()
+            Keys.onLeftPressed: event => {
+                if (root.dashboardVisuallyActive || root.sidebarToolOpen) return
+                root.keyboardLease = true
+                if (root.sidebarKeyboardMode) root.moveSidebarSelection(-1)
+                else root.moveSelection(-1)
+                event.accepted = true
+            }
+            Keys.onUpPressed: event => {
+                if (root.dashboardVisuallyActive || root.sidebarToolOpen) return
+                root.keyboardLease = true
+                if (root.sidebarKeyboardMode) root.moveSidebarSelection(-1)
+                else root.moveSelection(-1)
+                event.accepted = true
+            }
+            Keys.onRightPressed: event => {
+                if (root.dashboardVisuallyActive || root.sidebarToolOpen) return
+                root.keyboardLease = true
+                if (root.sidebarKeyboardMode) root.moveSidebarSelection(1)
+                else root.moveSelection(1)
+                event.accepted = true
+            }
+            Keys.onDownPressed: event => {
+                if (root.dashboardVisuallyActive || root.sidebarToolOpen) return
+                root.keyboardLease = true
+                if (root.sidebarKeyboardMode) root.moveSidebarSelection(1)
+                else root.moveSelection(1)
+                event.accepted = true
+            }
+            Keys.onPressed: event => {
+                if (!root.sidebarKeyboardMode || root.sidebarToolOpen) return
+                if (event.key === Qt.Key_Home) root.sidebarSelectedIndex = 0
+                else if (event.key === Qt.Key_End) root.sidebarSelectedIndex = sidebarSurface.navigationCount - 1
+                else return
+                root.keyboardLease = true
+                event.accepted = true
+            }
+            Keys.onReturnPressed: event => {
+                if (root.dashboardVisuallyActive || root.sidebarToolOpen) return
+                root.keyboardLease = true
+                if (root.sidebarKeyboardMode) root.activateSidebarSelection()
+                else root.activateSelected()
+                event.accepted = true
+            }
+            Keys.onEnterPressed: event => {
+                if (root.dashboardVisuallyActive || root.sidebarToolOpen) return
+                root.keyboardLease = true
+                if (root.sidebarKeyboardMode) root.activateSidebarSelection()
+                else root.activateSelected()
+                event.accepted = true
+            }
+            Keys.onSpacePressed: event => {
+                if (root.sidebarKeyboardMode && !root.sidebarToolOpen) {
+                    root.activateSidebarSelection()
+                    event.accepted = true
                 }
+            }
+            Keys.onEscapePressed: event => {
+                if (!root.externalDialogLease) UiState.closeNavigation()
                 event.accepted = true
             }
         }
@@ -1252,7 +1506,10 @@ Item {
                     }
                     onClicked: mouse => {
                         var index = root.indexAt(localCircleX(mouse.x), localCircleY(mouse.y), true)
-                        if (index >= 0) root.activateIndex(index)
+                        if (index >= 0) {
+                            root.keyboardLease = false
+                            root.activateIndex(index, false)
+                        }
                     }
                 }
             }

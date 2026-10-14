@@ -3,6 +3,14 @@
 # This script is a simple wrapper around cava-layer.py to manage its lifecycle (start/stop/toggle)
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+if [[ "${1:-}" == "--status" || "${1:-}" == "status" ]]; then
+    if [[ -f /tmp/cava-layer.pid ]] && kill -0 "$(cat /tmp/cava-layer.pid)" 2>/dev/null; then
+        printf 'enabled\n'
+    else
+        printf 'disabled\n'
+    fi
+    exit 0
+fi
 source "$SCRIPT_DIR/haku_theme.sh"
 source "$SCRIPT_DIR/haku_backend_lib.sh"
 
@@ -33,6 +41,7 @@ Commands:
     -d, --toggle-dynamic Toggle dynamic position (affected by panels)
     -c, --color-switch  Toggle foreground color between black and white
     --startup           Restore previous state at boot (if enabled)
+    --status            Print enabled or disabled
 
 Options:
     -p, --config PATH       Forward configuration to cava_layer.py

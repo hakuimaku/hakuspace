@@ -24,7 +24,6 @@ resolve_script() {
 }
 
 TASKBAR_CTL="$(resolve_script taskbar_ctl.sh ../backend/desktop/taskbar_ctl.sh)" || exit 1
-TASKBAR_ROFI="$(resolve_script taskbar_rofi.sh ../frontend/classic/taskbar_rofi.sh)" || exit 1
 
 print_help() {
     cat <<'EOF_HELP'
@@ -35,6 +34,7 @@ Options:
     --startup           Restore previous state at boot
     --reload            Reload the taskbar
     --toggle            Toggle the taskbar on/off
+    --status            Print enabled or disabled
     --app-name          Toggle app name format
     --icon-size         Change the icon size
     -h, --help          Show this help message
@@ -42,13 +42,14 @@ EOF_HELP
 }
 
 case "${1:-}" in
-    --startup|--reload|--toggle)
+    --startup|--reload|--toggle|--status)
         exec "$TASKBAR_CTL" "$1"
         ;;
     --app-name)
         exec "$TASKBAR_CTL" --toggle-app-name
         ;;
     --icon-size)
+        TASKBAR_ROFI="$(resolve_script taskbar_rofi.sh ../frontend/classic/taskbar_rofi.sh)" || exit 1
         exec "$TASKBAR_ROFI" icon-size
         ;;
     -h|--help)

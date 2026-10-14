@@ -299,6 +299,9 @@
         <keybind key="W-Tab">
         <action name="Execute" command="~/.local/bin/hakumenu.sh" />
         </keybind>
+        <keybind key="W-grave">
+        <action name="Execute" command="~/.local/bin/navigation.sh toggle" />
+        </keybind>
         <keybind key="W-w">
         <action name="Execute" command="~/.local/bin/taskbar_manager.sh --toggle" />
         </keybind>

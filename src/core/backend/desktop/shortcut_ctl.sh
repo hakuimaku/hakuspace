@@ -25,6 +25,7 @@ Usage: shortcut_ctl.sh COMMAND [ARGS]
 
 Commands:
     list [KEYWORD]                  List matching .desktop files as absolute paths
+    list-json [KEYWORD]             List picker metadata as JSON
     add <KEYWORD|PATH>              Copy matching .desktop files to ~/Desktop
     create <APP_NAME> <EXEC> [ICON] Create a custom desktop shortcut
 
@@ -135,6 +136,11 @@ case "${1:-}" in
     list)
         shift
         cmd_list "$@"
+        ;;
+    list-json)
+        shift
+        [[ $# -le 1 ]] || { printf 'shortcut_ctl.sh: list-json accepts at most one keyword.\n' >&2; exit 2; }
+        find_matches "${1:-}" | python3 "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/shortcut_metadata.py"
         ;;
     add)
         shift

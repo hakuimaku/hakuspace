@@ -8,6 +8,15 @@
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
+if [[ ${1:-} == --status ]]; then
+    if [[ "$(cat "$HOME/.local/state/hakuspace/state/taskbar_manual_state" 2>/dev/null)" == "1" ]]; then
+        printf 'enabled\n'
+    else
+        printf 'disabled\n'
+    fi
+    exit 0
+fi
+
 source_core_lib() {
     local name="$1"
     local candidate
@@ -36,8 +45,6 @@ TASKBAR_STYLE="$TASKBAR_LINK_DIR/style-taskbar.css"
 TASKBAR_PIN_APPS="$HOME/hakucfg/config/taskbar-pin-apps"
 THEME_FILE="$THEME_ROOT/taskbar-theme"
 TASKBAR_BIN="$HOME/.local/bin/taskbar"
-
-mkdir -p "$STATE_DIR"
 
 ensure_manual_state() {
     if [[ ! -f "$MANUAL_STATE" ]] || ! grep -qxE '0|1' "$MANUAL_STATE"; then
@@ -219,6 +226,7 @@ Commands:
 EOF_HELP
 }
 
+mkdir -p "$STATE_DIR"
 ensure_manual_state
 
 case "${1:-}" in
@@ -230,13 +238,6 @@ case "${1:-}" in
         ;;
     --toggle)
         toggle_taskbar
-        ;;
-    --status)
-        if [[ "$(cat "$MANUAL_STATE")" == "1" ]]; then
-            printf 'enabled\n'
-        else
-            printf 'disabled\n'
-        fi
         ;;
     --get-app-name)
         get_app_name

@@ -52,6 +52,10 @@ ShellRoot {
     IpcHandler {
         target: "navigation"
         enabled: true
+        function openDefault() {
+            if (Quickshell.screens.length > 0)
+                UiState.openNavigation(Quickshell.screens[0].name, Theme.pad, Theme.fontSize * 1.8, Theme.topBarHeight, Theme.topBarTopPadding)
+        }
         function open(screenName: string) {
             for (var screen of Quickshell.screens) {
                 if (screen.name === screenName) {

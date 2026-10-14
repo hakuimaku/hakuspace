@@ -23,7 +23,6 @@ resolve_script() {
 }
 
 SHORTCUT_CTL="$(resolve_script shortcut_ctl.sh ../backend/desktop/shortcut_ctl.sh)" || exit 1
-SHORTCUT_ROFI="$(resolve_script shortcut_rofi.sh ../frontend/classic/shortcut_rofi.sh)" || exit 1
 
 usage() {
     cat <<'EOF_HELP'
@@ -34,11 +33,12 @@ Usage: gen_shortcut.sh [options]
 Compatibility:
     <AppName> <ExecPath> [IconPath]   Create a custom shortcut
     -a, -add, --add <KeywordOrPath>   Find and copy matching shortcuts to Desktop
-    -m, --menu                        Select and add a shortcut using Rofi
+    -m, --menu                        Select and add a shortcut with the active backend
     -q, --query [Keyword]             List available shortcuts with legacy summary
 
 Headless API:
     --list [Keyword]                  Print matching .desktop paths only
+    --list-json [Keyword]             Print native picker metadata
     --create <AppName> <Exec> [Icon]  Create a custom shortcut explicitly
 
 Options:
@@ -72,7 +72,13 @@ case "${1:-}" in
     -m|--menu)
         shift
         [[ $# -eq 0 ]] || { printf 'gen_shortcut.sh: --menu accepts no arguments.\n' >&2; exit 2; }
-        exec "$SHORTCUT_ROFI"
+        source "$(resolve_script haku_backend_lib.sh ../lib/haku_backend_lib.sh)" || exit 1
+        if haku_qs_mode; then
+            haku_qs_ipc actionMenu openDefault shortcut
+        else
+            SHORTCUT_ROFI="$(resolve_script shortcut_rofi.sh ../frontend/classic/shortcut_rofi.sh)" || exit 1
+            exec "$SHORTCUT_ROFI"
+        fi
         ;;
     -q|--query)
         shift
@@ -82,6 +88,10 @@ case "${1:-}" in
     --list)
         shift
         exec "$SHORTCUT_CTL" list "$@"
+        ;;
+    --list-json)
+        shift
+        exec "$SHORTCUT_CTL" list-json "$@"
         ;;
     -a|-add|--add)
         shift

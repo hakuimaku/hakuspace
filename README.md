@@ -475,6 +475,7 @@ See more in `~/hakucfg/wm/hyprland-custom.lua` or [here](src/home/hakucfg/wm/hyp
 | SUPER + Q | Open Kitty Terminal |
 | SUPER + C | Kill Focus Window |
 | SUPER + TAB | Open Menu |
+| SUPER + GRAVE | Toggle Hikai Navigation |
 | SUPER + R | App Menu |
 | SUPER + W | Toggle Taskbar |
 | SUPER + P | Screenshot |

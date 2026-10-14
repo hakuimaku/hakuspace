@@ -34,8 +34,8 @@ QtObject {
     property list<real> sidebarCloseCurve: [0.38, 0.0, 0.22, 1.0, 1, 1]
 
     // Sidebar Tool / Temp Note Panel Motion (calm flare expansion from rail)
-    property int sidebarToolOpenDuration: 380
-    property int sidebarToolCloseDuration: 300
+    property int sidebarToolOpenDuration: 560
+    property int sidebarToolCloseDuration: 400
     property list<real> sidebarToolOpenCurve: [0.16, 1.08, 0.30, 1.0, 1, 1]
     property list<real> sidebarToolCloseCurve: [0.32, 0.0, 0.22, 1.0, 1, 1]
 

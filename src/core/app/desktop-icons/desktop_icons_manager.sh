@@ -4,6 +4,15 @@
 # Toggle them on/off, reload them, or restore the previous state at startup.
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+if [[ "${1:-}" == "--status" ]]; then
+    if [[ "$(cat "$HOME/.local/state/hakuspace/state/desktop_icons_state" 2>/dev/null)" == "1" ]]; then
+        printf 'enabled\n'
+    else
+        printf 'disabled\n'
+    fi
+    exit 0
+fi
+
 source "$SCRIPT_DIR/haku_theme.sh"
 source "$SCRIPT_DIR/haku_backend_lib.sh"
 DESKTOP_ICONS_STATE="$STATE_DIR/desktop_icons_state"
@@ -34,6 +43,7 @@ Manage desktop icons.
 Options:
     --startup           Restore previous state at boot
     --toggle            Toggle desktop icons on/off
+    --status            Print enabled or disabled
     --reload            Reload desktop icons
     -h, --help          Show this help message
 EOF

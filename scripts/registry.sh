@@ -352,6 +352,7 @@ registry_resolve_module() {
 registry_get_hakucfg_files() {
     cat <<'EOF'
 setting.sh
+sidebar-pins.json
 wm/mango-custom.conf
 wm/niri-custom.kdl
 wm/hyprland-custom.lua
