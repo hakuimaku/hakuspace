@@ -10,6 +10,7 @@ hyprlock                      # Screen locker
 hypridle                      # Idle management
 hyprpicker                    # Color picker
 fish                          # Shell
+quickshell                    # The Hikai, another appearance for hakuspace :)
 
 # === Hakuspace scripts needed ===
 jq                            # Command-line JSON processor
