@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
-import Quickshell.Io
+import Quickshell
 import "../../../services"
 import ".." as ActionMenu
 
@@ -40,13 +40,6 @@ ActionMenu.ActionMenuPage {
         }
     ]
 
-    Process {
-        id: startProc
-        onExited: (exitCode, exitStatus) => {
-            root.requestClose();
-        }
-    }
-
     // Triggers recording mode launch or pushes the audio source submenu.
     function activateIndex(idx) {
         if (idx < 0 || idx >= modes.length) return;
@@ -57,8 +50,7 @@ ActionMenu.ActionMenuPage {
             var geom = btn && btn.getSurfaceGeometry ? btn.getSurfaceGeometry() : null;
             root.pushSubmenu("pages/RecordSourcePage.qml", {}, geom, "option");
         } else {
-            startProc.command = [Env.binDir + "/record_ctl.sh", "start", mode.id];
-            startProc.running = true;
+            Quickshell.execDetached([Env.binDir + "/record_ctl.sh", "start", mode.id]);
             root.requestClose();
         }
     }
@@ -161,8 +153,7 @@ ActionMenu.ActionMenuPage {
                     if (modelData.isSubmenu) {
                         root.pushSubmenu("pages/RecordSourcePage.qml", {}, geom, "option");
                     } else {
-                        startProc.command = [Env.binDir + "/record_ctl.sh", "start", modelData.id];
-                        startProc.running = true;
+                        Quickshell.execDetached([Env.binDir + "/record_ctl.sh", "start", modelData.id]);
                         root.requestClose();
                     }
                 }

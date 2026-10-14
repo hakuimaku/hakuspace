@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell
 import Quickshell.Io
 import "../../../services"
 import ".." as ActionMenu
@@ -68,19 +69,11 @@ ActionMenu.ActionMenuPage {
         }
     }
 
-    Process {
-        id: startRecordProc
-        onExited: (code, status) => {
-            root.requestClose();
-        }
-    }
-
     // Starts recording with selected microphone audio source device.
     function activateSource(idx) {
         if (idx < 0 || idx >= sources.length) return;
         var sourceId = sources[idx].id;
-        startRecordProc.command = [Env.binDir + "/record_ctl.sh", "start", "mic-system", "--source", sourceId];
-        startRecordProc.running = true;
+        Quickshell.execDetached([Env.binDir + "/record_ctl.sh", "start", "mic-system", "--source", sourceId]);
         root.requestClose();
     }
 
