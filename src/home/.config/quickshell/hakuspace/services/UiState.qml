@@ -328,6 +328,7 @@ QtObject {
             navigationMode = "closed"
             navigationScreenName = ""
             navigationAnchorX = 0
+            navigationAnchorY = 0
             navigationAnchorWidth = 0
             navigationAnchorHeight = 0
         }

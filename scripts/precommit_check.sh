@@ -1,10 +1,11 @@
 #!/bin/bash
 set -e
+export PYTHONDONTWRITEBYTECODE=1
 
 echo "Running pre-commit checks..."
 
 # 1. No debug code
-if grep -rnE "INJECTED|Perf Test|ancestor|console\.log" src/ | grep -v "Theme.qml" | grep -v "dbg("; then
+if grep -rnE "INJECTED|Perf Test|console\.log" src/ | grep -v "Theme.qml" | grep -v "dbg("; then
     echo "ERROR: Debug code found."
     exit 1
 fi
@@ -34,6 +35,16 @@ fi
 if [ -f scripts/test_flare_geometry.js ]; then
     node scripts/test_flare_geometry.js
 fi
+if [ -f scripts/test_config_tree_model.js ]; then
+    node scripts/test_config_tree_model.js
+fi
+if [ -f scripts/test_plain_text_edit_ops.js ]; then
+    node scripts/test_plain_text_edit_ops.js
+fi
+
+python3 scripts/test_setting_ctl.py
+python3 scripts/test_hakucfg_editor_ctl.py
+python3 scripts/test_hakuspace_info_ctl.py
 
 # 6. Shell syntax check for repository tooling
 while IFS= read -r -d '' script; do

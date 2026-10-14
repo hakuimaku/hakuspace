@@ -21,3 +21,6 @@ singleton Clock 1.0 Clock.qml
 singleton UserIdentity 1.0 UserIdentity.qml
 singleton DashboardTooltip 1.0 DashboardTooltip.qml
 singleton TextStore 1.0 TextStore.qml
+singleton SettingsStore 1.0 SettingsStore.qml
+singleton ConfigEditorStore 1.0 ConfigEditorStore.qml
+singleton InfoStore 1.0 InfoStore.qml

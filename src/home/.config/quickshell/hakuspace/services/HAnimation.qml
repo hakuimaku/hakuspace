@@ -50,6 +50,8 @@ QtObject {
     property int hakuMenuResizeDuration: 280
     property list<real> hakuMenuResizeCurve: [0.7, 1.0, 0.6, 0.98, 1, 1]
     property real hakuMenuBounceHeadroom: 0.04
+    property int settingsResizeDuration: 280
+    property list<real> settingsResizeCurve: [0.7, 1.0, 0.6, 0.98, 1, 1]
 
     // Six control values drive the asymmetric workspace and flare motion.
     property list<real> spatialCurve: [0.5, 1.21, 0.22, 1, 1, 1]
