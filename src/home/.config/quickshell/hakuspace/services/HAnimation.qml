@@ -10,6 +10,7 @@ QtObject {
     property int slow: 540
     
     property list<real> moduleCurve: [0.16, 1.0, 0.3, 1.0, 1, 1]
+    property int tooltipDuration: slow
     property list<real> tooltipCurve: [0.4, 0.0, 0.2, 1.0, 1, 1]
     property list<real> shellCurve: [0.16, 1.0, 0.3, 1.0, 1, 1]
 

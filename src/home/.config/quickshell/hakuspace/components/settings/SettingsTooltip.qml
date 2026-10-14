@@ -15,10 +15,10 @@ ToolTip {
     padding: 8
     closePolicy: Popup.NoAutoClose
     enter: Transition {
-        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: HAnimation.fast; easing.bezierCurve: HAnimation.tooltipCurve }
+        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: HAnimation.slow; easing.bezierCurve: HAnimation.tooltipCurve }
     }
     exit: Transition {
-        NumberAnimation { property: "opacity"; from: 1; to: 0; duration: HAnimation.fast; easing.bezierCurve: HAnimation.tooltipCurve }
+        NumberAnimation { property: "opacity"; from: 1; to: 0; duration: HAnimation.slow; easing.bezierCurve: HAnimation.tooltipCurve }
     }
 
     onActiveChanged: {

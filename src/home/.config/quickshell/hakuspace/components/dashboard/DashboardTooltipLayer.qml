@@ -105,7 +105,7 @@ Item {
 
         Behavior on opacity {
             NumberAnimation {
-                duration: HAnimation.fast
+                duration: HAnimation.slow
                 easing.bezierCurve: HAnimation.tooltipCurve
             }
         }
