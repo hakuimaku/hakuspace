@@ -22,7 +22,7 @@ Item {
         if (UiState.hakuMenuMode === "theme") return modelData.width * 0.42
         return modelData.width * 0.40
     }
-    readonly property real menuHeight: modelData.height * 0.45
+    readonly property real menuHeight: modelData.height * 0.40
     readonly property real menuTop: FlareEdges.topOriginY
     readonly property real bounceHeadroom: menuHeight * HAnimation.hakuMenuBounceHeadroom
     readonly property real windowWidth: Math.max(triggerWidth, maxMenuWidth + Theme.hugRadius * 2)
@@ -288,9 +288,9 @@ Item {
                     color: menu.controlBg
 
                     readonly property var modes: [
-                        { key: "general", label: "General" },
-                        { key: "drun", label: "Drun" },
-                        { key: "theme", label: "Theme" }
+                        { key: "general", icon: "󰀻", label: "General" },
+                        { key: "drun", icon: "󰍉", label: "Drun" },
+                        { key: "theme", icon: "", label: "Theme" }
                     ]
                     readonly property int selectedIndex: ["general", "drun", "theme"].indexOf(UiState.hakuMenuMode)
 
@@ -332,7 +332,9 @@ Item {
                                 selectedForegroundColor: Theme.onAccentColor
                                 hoverScaleDelta: 0.004
                                 pressScaleDelta: 0.018
-                                text: modelData.label
+                                text: modelData.icon
+                                Accessible.role: Accessible.Button
+                                Accessible.name: modelData.label
                                 fontSize: Theme.fontSize + 1
                                 onClicked: {
                                     UiState.setHakuMenuQuery("")
