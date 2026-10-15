@@ -9,8 +9,6 @@ QtObject {
     property string errorMessage: ""
     property string rawOutput: ""
     property string pendingCommand: ""
-    signal launched()
-    signal added()
 
     // Refresh the one pin list shared by the rail and manager.
     function reload() {
@@ -22,18 +20,23 @@ QtObject {
     }
 
     // Run one validated backend operation.
-    function run(command, target) {
+    function run(command, target, expectedHash) {
         if (mutateProc.running) return
         errorMessage = ""
         pendingCommand = command
-        mutateProc.command = [Env.binDir + "/sidebar_pins_ctl.py", command, target]
+        var args = [Env.binDir + "/sidebar_pins_ctl.py", command, target]
+        if (expectedHash !== undefined) args.push(expectedHash)
+        mutateProc.command = args
         mutateProc.running = true
     }
 
     function launch(index) { if (index >= 0 && index < pins.length) run("launch", String(index)) }
+    function remove(index) {
+        if (index >= 0 && index < pins.length)
+            run("remove", String(pins[index]._rawIndex), pins[index]._rawHash)
+    }
     function addFile(path) { run("add-file", path) }
     function addFolder(path) { run("add-folder", path) }
-    function addApp(path) { run("add-app", path) }
 
     property Process listProc: Process {
         command: [Env.binDir + "/sidebar_pins_ctl.py", "list"]
@@ -49,9 +52,12 @@ QtObject {
     }
     property Process mutateProc: Process {
         onExited: (code, status) => {
-            if (code !== 0) { root.errorMessage = "Could not " + root.pendingCommand; return }
-            if (root.pendingCommand === "launch") root.launched()
-            else { root.reload(); root.added() }
+            if (code !== 0) {
+                if (root.pendingCommand === "remove") root.reload()
+                root.errorMessage = "Could not " + root.pendingCommand
+                return
+            }
+            if (root.pendingCommand !== "launch") root.reload()
         }
     }
 }

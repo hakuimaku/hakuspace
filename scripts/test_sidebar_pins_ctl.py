@@ -74,6 +74,25 @@ class SidebarPinsTest(unittest.TestCase):
                     PINS.add_pin("file", str(target))
                 self.assertEqual(config.read_text(), "broken json")
 
+    def test_remove_only_selected_pin_and_rejects_stale_selection(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            config = Path(tmp) / "pins.json"
+            data = [{"broken": True},
+                    {"label": "Same", "command": ["true"], "extra": 1},
+                    {"label": "Same", "command": ["true"], "extra": 2}]
+            config.write_text(json.dumps(data), encoding="utf-8")
+            with patch.object(PINS, "CONFIG", config):
+                pins = PINS.load_pins()
+                PINS.remove_pin(pins[1]["_rawIndex"], pins[1]["_rawHash"])
+                self.assertEqual(json.loads(config.read_text()), data[:2])
+                stale = PINS.load_pins()[0]
+                changed = data[:2]
+                changed[1] = {**changed[1], "label": "Edited"}
+                config.write_text(json.dumps(changed), encoding="utf-8")
+                with self.assertRaises(ValueError):
+                    PINS.remove_pin(stale["_rawIndex"], stale["_rawHash"])
+                self.assertEqual(json.loads(config.read_text()), changed)
+
 
 if __name__ == "__main__":
     unittest.main()

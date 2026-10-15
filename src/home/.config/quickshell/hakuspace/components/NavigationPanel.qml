@@ -72,6 +72,7 @@ Item {
     }
     property bool closing: false
     property bool closingFromDashboard: false
+    property int pendingPinIndex: -1
     property int selectedIndex: 0
     property int hoveredIndex: -1
 
@@ -179,11 +180,14 @@ Item {
     readonly property bool sidebarInteractionVisible: sidebarExpanded || sidebarToolVisible
     readonly property real sidebarToolX: sidebarBodyWidth + 30
     readonly property real sidebarToolY: Math.max(0, Math.min(
-        sidebarBodyY + 40, modelData.height - sidebarToolPreferredHeight - 12))
+        renderedSidebarTool === "shortcutManager"
+            ? sidebarBodyY + sidebarSurface.addY + (sidebarControlDiameter - sidebarToolPreferredHeight) / 2
+            : sidebarBodyY + 40,
+        modelData.height - sidebarToolPreferredHeight - 12))
     readonly property real sidebarToolPreferredWidth: renderedSidebarTool === "quickActions" ? 540
-        : renderedSidebarTool === "clipboard" ? 460 : renderedSidebarTool === "shortcutManager" ? 500 : 460
+        : renderedSidebarTool === "clipboard" ? 460 : renderedSidebarTool === "shortcutManager" ? 120 : 460
     readonly property real sidebarToolPreferredHeight: renderedSidebarTool === "quickActions" ? 240
-        : renderedSidebarTool === "clipboard" ? 360 : renderedSidebarTool === "shortcutManager" ? 400 : 330
+        : renderedSidebarTool === "clipboard" ? 360 : renderedSidebarTool === "shortcutManager" ? 360 : 330
     readonly property real sidebarToolWidth: Math.max(1, Math.min(sidebarToolPreferredWidth,
         modelData.width - sidebarToolX - 12))
     readonly property real sidebarToolHeight: Math.max(1, Math.min(sidebarToolPreferredHeight,
@@ -239,8 +243,6 @@ Item {
 
     Sidebar.SidebarPinsModel {
         id: sidebarPinsModel
-        onLaunched: UiState.closeNavigation()
-        onAdded: { if (root.activeSidebarTool === "shortcutManager") root.closeSidebarTool(root.keyboardLease) }
         onPinsChanged: {
             root.sidebarSelectedIndex = Math.min(root.sidebarSelectedIndex, sidebarSurface.navigationCount - 1)
             sidebarSurface.revealIndex(root.sidebarSelectedIndex)
@@ -307,8 +309,14 @@ Item {
     // Activate the rail cursor without changing hover state.
     function activateSidebarSelection() {
         var kind = sidebarSurface.entryKind(sidebarSelectedIndex)
-        if (kind === "pin") sidebarPinsModel.launch(Number(sidebarSurface.entryKey(sidebarSelectedIndex)))
+        if (kind === "pin") launchSidebarPin(Number(sidebarSurface.entryKey(sidebarSelectedIndex)))
         else toggleSidebarTool(sidebarSurface.entryKey(sidebarSelectedIndex), true)
+    }
+
+    function launchSidebarPin(index) {
+        if (!panelOpen || index < 0 || index >= sidebarPinsModel.pins.length) return
+        pendingPinIndex = index
+        UiState.closeNavigation()
     }
 
     // Keep dispatch in the parent so closing the tool cannot cancel its command.
@@ -600,6 +608,7 @@ Item {
         closeMorph.stop()
 
         if (panelOpen) {
+            pendingPinIndex = -1
             sidebarPinsModel.reload()
             sidebarKeyboardMode = false
             closing = false
@@ -755,6 +764,14 @@ Item {
         exclusiveZone: 0
         color: "transparent"
         visible: root.panelOpen || root.closing
+        // The layer keeps its safe-zone mask until the close animation ends.
+        onVisibleChanged: if (!visible && root.pendingPinIndex >= 0) {
+            var index = root.pendingPinIndex
+            root.pendingPinIndex = -1
+            Qt.callLater(function() {
+                if (!root.panelOpen && !navigationLayer.visible) sidebarPinsModel.launch(index)
+            })
+        }
 
         mask: Region {
             Region {
@@ -906,8 +923,9 @@ Item {
             }
             onPinRequested: index => {
                 root.keyboardLease = false
-                sidebarPinsModel.launch(index)
+                root.launchSidebarPin(index)
             }
+            onUnpinRequested: index => sidebarPinsModel.remove(index)
             onPointerMoved: (px, py) => {
                 root.hoveredIndex = 1
                 root.selectedIndex = 1
@@ -922,10 +940,11 @@ Item {
             y: root.sidebarToolY
             targetWidth: root.sidebarToolWidth
             targetHeight: root.sidebarToolHeight
+            contentPadding: root.renderedSidebarTool === "shortcutManager" ? 8 : 24
             title: root.renderedSidebarTool === "quickActions" ? "Quick Actions"
                 : root.renderedSidebarTool === "shortcutManager" ? "Add Shortcut"
                 : root.renderedSidebarTool === "clipboard" ? "Clipboard" : "Temp Note"
-            showHeader: root.renderedSidebarTool === "clipboard" || root.renderedSidebarTool === "shortcutManager"
+            showHeader: root.renderedSidebarTool === "clipboard"
             icon: root.renderedSidebarTool === "quickActions" ? "󰀻"
                 : root.renderedSidebarTool === "shortcutManager" ? "󰐕"
                 : root.renderedSidebarTool === "clipboard" ? "󰅌" : "󰏫"
@@ -971,10 +990,19 @@ Item {
         Component {
             id: shortcutManagerContent
             Sidebar.SidebarShortcutManager {
-                pinsModel: sidebarPinsModel
+                tooltipHost: sidebarTooltipLayer
                 onCloseRequested: keyboard => {
                     if (keyboard) UiState.closeNavigation()
                     else root.closeSidebarTool()
+                }
+                onAppRequested: {
+                    UiState.closeNavigation()
+                    UiState.openActionMenu(root.modelData.name, "sidebarPin")
+                }
+                onPinRequested: (kind, path) => {
+                    UiState.closeNavigation()
+                    if (kind === "file") sidebarPinsModel.addFile(path)
+                    else sidebarPinsModel.addFolder(path)
                 }
                 onDialogLeaseRequested: (token, active) => {
                     if (active) {

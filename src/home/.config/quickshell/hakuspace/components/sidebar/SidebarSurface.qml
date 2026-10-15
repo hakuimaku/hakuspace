@@ -48,6 +48,7 @@ Item {
     signal pointerMoved(real x, real y)
     signal toolRequested(string key)
     signal pinRequested(int index)
+    signal unpinRequested(int index)
 
     function entryKind(index) { return index < tools.length ? "tool" : index < tools.length + pinCount ? "pin" : "add" }
     function entryKey(index) { return entryKind(index) === "tool" ? tools[index].key : entryKind(index) === "pin" ? String(index - tools.length) : "shortcutManager" }
@@ -261,6 +262,10 @@ Item {
                     tooltipHost: root.tooltipHost
                     focused: root.keyboardSelected && root.selectedToolIndex === root.tools.length + index
                     onClicked: root.pinRequested(index)
+                    TapHandler {
+                        acceptedButtons: Qt.MiddleButton
+                        onTapped: root.unpinRequested(index)
+                    }
                     IconImage {
                         anchors.centerIn: parent
                         width: Math.round(pinButton.width * 0.55)

@@ -3,6 +3,7 @@
 
 import json
 import configparser
+import hashlib
 import os
 from pathlib import Path
 import subprocess
@@ -10,6 +11,10 @@ import sys
 import tempfile
 
 CONFIG = Path.home() / "hakucfg/sidebar-pins.json"
+
+
+def fingerprint(entry):
+    return hashlib.sha256(json.dumps(entry, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 
 # Read a desktop entry's theme icon for app pins, including older saved pins.
@@ -38,7 +43,7 @@ def load_pins():
         return []
     pins = []
     skipped = 0
-    for entry in data:
+    for index, entry in enumerate(data):
         if not isinstance(entry, dict):
             skipped += 1
             continue
@@ -57,8 +62,8 @@ def load_pins():
             continue
         icon = desktop_icon(entry.get("target", "")) if entry.get("kind") == "app" \
             else entry.get("icon") if isinstance(entry.get("icon"), str) else "󰐃"
-        pins.append({**entry, "icon": icon,
-                     "command": argv, "cwd": entry.get("cwd", "")})
+        pins.append({**entry, "icon": icon, "command": argv, "cwd": entry.get("cwd", ""),
+                     "_rawIndex": index, "_rawHash": fingerprint(entry)})
     if skipped:
         print(f"sidebar-pins: skipped {skipped} invalid entries", file=sys.stderr)
     return pins
@@ -107,6 +112,21 @@ def add_pin(kind, target):
         icon = desktop.get("Desktop Entry", "Icon", fallback="").strip() or icon
     data.append({"kind": kind, "label": label,
                  "icon": icon, "target": str(path), "command": command})
+    save_pins(data)
+
+
+def remove_pin(index, expected_hash):
+    data = json.loads(CONFIG.read_text(encoding="utf-8"))
+    if not isinstance(data, list):
+        raise ValueError("expected a JSON array")
+    if index < 0 or index >= len(data) or not isinstance(data[index], dict) \
+            or fingerprint(data[index]) != expected_hash:
+        raise ValueError("pin list changed; reopen the sidebar")
+    del data[index]
+    save_pins(data)
+
+
+def save_pins(data):
     CONFIG.parent.mkdir(parents=True, exist_ok=True)
     temp_name = None
     try:
@@ -143,7 +163,14 @@ def main():
         except (OSError, ValueError, configparser.Error, UnicodeError) as exc:
             print(f"sidebar-pins: {exc}", file=sys.stderr)
             return 1
-    print("Usage: sidebar_pins_ctl.py list | launch INDEX | add-file|add-folder|add-app PATH", file=sys.stderr)
+    if len(sys.argv) == 4 and sys.argv[1] == "remove":
+        try:
+            remove_pin(int(sys.argv[2]), sys.argv[3])
+            return 0
+        except (OSError, ValueError) as exc:
+            print(f"sidebar-pins: {exc}", file=sys.stderr)
+            return 1
+    print("Usage: sidebar_pins_ctl.py list | launch INDEX | add-file|add-folder|add-app PATH | remove INDEX HASH", file=sys.stderr)
     return 2
 
 
