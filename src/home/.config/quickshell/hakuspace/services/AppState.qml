@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "../../services"
 
 QtObject {
     id: root
@@ -17,5 +18,5 @@ QtObject {
     // Rounded-screen chassis geometry (single source of truth).
     readonly property real roundedScreenThickness: 4
     readonly property real roundedScreenRadius: 20
-    readonly property color roundedScreenColor: "#000000"
+    readonly property color roundedScreenColor: Theme.surface
 }

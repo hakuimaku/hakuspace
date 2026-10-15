@@ -6,7 +6,7 @@ import Quickshell.Io
 QtObject {
     id: root
 
-    property color surface: "#000000"
+    property color surface: "#0b0b0b"
     readonly property color onAccentColor: root.surface
     property string fg: "#ffffff"
     property string fgDim: "#aaaaaa"
