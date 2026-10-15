@@ -96,7 +96,7 @@ gestures {
     }
 
     hot-corners {
-        top-left
+        top-right
     }
 }
 

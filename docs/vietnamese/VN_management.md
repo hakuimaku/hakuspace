@@ -2,73 +2,135 @@
 
 Bản tiếng Anh: [Management](../management.md).
 
-Tài liệu này giải thích cách HakuSpace cài đặt dotfiles an toàn vào máy bạn. Hệ thống dùng cơ chế **Hybrid Deployment**, nghĩa là bạn có thể chọn cách quản lý file!
+Tài liệu này giải thích kiến trúc và bộ công cụ quản lý dotfiles dạng module (modular) của HakuSpace.
 
-## 1. Cách hoạt động
+---
 
-Repo chứa các file config gốc ở `src/home/`:
+## 1. Kiến trúc Modular
+
+HakuSpace sử dụng kiến trúc CLI phân tách module rõ ràng. Các script ở thư mục gốc (`install.sh` và `update.sh`) chỉ đóng vai trò điều phối (orchestration), gọi trực tiếp các module chuyên trách nằm trong thư mục `scripts/`.
+
+Mọi tác vụ đều có thể chạy tự động qua bộ cài đặt hoặc chạy độc lập bằng các câu lệnh dòng lệnh (CLI).
 
 ```text
-Repository                         Máy của bạn
------------                        ---------
-src/home/.config/*       ------->  ~/.config/*
-src/core/*               ------->  ~/.local/bin/*
-src/home/hakucfg/*       --copy->  ~/hakucfg/*
+install.sh / update.sh
+        │
+        │ chỉ điều phối
+        ▼
+   scripts/*.sh
+        │
+        ├── registry.sh       (Nguồn dữ liệu chuẩn duy nhất cho các target)
+        ├── runtime.sh        (Quản lý Run ID & thư mục backup dùng chung)
+        └── filesystem.sh     (Các thao tác file & backup trung lập)
 ```
 
-Khi cài đặt, bạn chọn 1 trong 2 chế độ cho `.config` và các script `core`:
+### Thư mục Backup dùng chung (Shared Runtime Context)
+Mỗi khi bạn chạy `install.sh`, `update.sh` hoặc bất kỳ script độc lập nào, module `scripts/runtime.sh` sẽ tạo một biến `BACKUP_DIR` duy nhất cho toàn bộ phiên chạy đó. Mọi tiến trình con sẽ tự động dùng chung thư mục này, không sinh ra nhiều thư mục backup lộn xộn.
 
-### Chế độ 1: Symlink (Khuyên dùng)
-Dùng **Deep Symlinking** (giống GNU Stow).
-Thay vì link nguyên thư mục (như `~/.config/hypr`), hệ thống tạo thư mục thật và chỉ symlink các file bên trong.
+---
 
-- **Ưu điểm:** 
-  - Mấy file rác (cache, logs) của app sẽ nằm yên trên máy bạn, không bị chui vào Git repo làm bẩn lịch sử.
-  - Bạn sửa file ở `~/.config` là nó tự cập nhật luôn vào Git repo.
-- **Nhược điểm:** 
-  - Nếu bạn tạo file mới toanh ở `~/.config`, bạn phải tự move nó vào Repo rồi chạy lại `update.sh` để link.
+## 2. Các chế độ triển khai (Deployment Modes)
 
-### Chế độ 2: Copy (Truyền thống)
-Copy đứt đoạn toàn bộ file từ Repo ra máy bạn.
+HakuSpace hỗ trợ 2 chế độ triển khai:
 
-- **Ưu điểm:** Cực kỳ đơn giản, an toàn.
-- **Nhược điểm:** Bạn sửa file ở `~/.config` sẽ không lưu vào Git repo. Bạn phải tự copy ngược lại nếu muốn lưu.
+### Chế độ 1: Deep Symlink (Mặc định & Khuyên dùng)
+Được quản lý thông qua `./link.sh` và `scripts/link.sh`.
+- **Thư mục thật**: Các thư mục đích (như `~/.config/quickshell`) vẫn là thư mục thật, không phải symlink dạng thư mục.
+- **Symlink từng file**: Chỉ các file cấu hình được theo dõi mới được symlink từ `src/home/`.
+- **Cách ly dữ liệu**: File cache, log và dữ liệu sinh ra khi chạy app sẽ nằm nguyên tại máy cá nhân, không làm bẩn Git repo.
+- **Đồng bộ tức thì**: Chỉnh sửa file ở `~/.config` sẽ lập tức cập nhật vào repo.
 
-Chế độ bạn dùng không được lưu vào file trạng thái nào cả; thay vào đó, `update.sh` sẽ quét tự động (heuristically) cấu hình trong `~/.config` để nhận diện xem bạn đang dùng symlink hay copy, rồi tự động đồng bộ theo đúng phương pháp đó.
+### Chế độ 2: Copy Truyền thống (Legacy Copy)
+Được quản lý thông qua `scripts/legacy_copy.sh`.
+- Copy trực tiếp file từ repo vào thư mục máy người dùng.
+- An toàn và tách biệt khỏi Git, nhưng các thay đổi bạn thực hiện ở `~/.config` sẽ không tự đồng bộ ngược lại repo.
+- Giữ nguyên cơ chế cũ tương thích mà không thay đổi hành vi.
 
-## 2. Luật đặc biệt
+Script `update.sh` và `doctor.sh` sẽ tự động nhận diện chế độ Symlink hay Copy thông qua `scripts/deploy_mode.sh`.
 
-Không phải cái gì cũng symlink đâu. Để tránh app làm hỏng Repo của bạn, có vài luật như sau:
+---
 
-### `ONCE_CONFIGS` (Luôn Copy)
-Mấy app như Thunar, xfce4, mpv, btop hay có trò tự ghi đè file config khi bạn chỉnh UI.
-Để tránh đứt symlink, các config này **LUÔN** được copy đứt đoạn, dù bạn chọn chế độ nào. Hơn nữa, `update.sh` sẽ **bỏ qua** không update tụi nó để giữ lại các tùy chỉnh cá nhân của bạn!
+## 3. Các mục tiêu đặc biệt & Vòng đời (Lifecycles)
 
-### `hakucfg` (Không gian riêng của bạn)
-HakuSpace không đụng vào đồ cá nhân của bạn. `~/hakucfg/` là nơi chứa biến môi trường, autostart và script riêng của bạn. Nó luôn được Copy một lần và để yên đó vĩnh viễn.
+### `ONCE_CONFIGS` (Chỉ Copy một lần khi cài đặt)
+Các ứng dụng như Thunar, xfce4, mpv, btop, cava, mimeapps.list thường xuyên ghi đè trạng thái vào file cấu hình khi chạy.
+- Các file này **luôn được copy thật** khi cài đặt lần đầu (`scripts/once_configs.sh`).
+- Chúng **không bao giờ được symlink** và **không bị ghi đè** khi chạy `./update.sh`.
 
-## 3. Các Script quản lý
+### `~/hakucfg` (Không gian tùy biến cá nhân)
+Mọi thiết lập cá nhân của bạn (autostart, biến môi trường, theme riêng) nằm tại `~/hakucfg/`.
+- Quản lý bởi `scripts/hakucfg.sh`.
+- Tự động tạo các file mẫu nếu chưa có, bảo vệ tuyệt đối các file bạn đã chỉnh sửa.
+- Tự động kiểm tra phiên bản của `setting.sh` để nhắc bạn cập nhật khi có bản mới.
 
-Có 3 script chính để bạn lo liệu mọi thứ:
+### `~/.local/state/hakuspace` (Trạng thái hệ thống)
+Chứa style động, theme và cache runtime.
+- Khởi tạo qua `scripts/state.sh init`.
+- Kiểm tra tính toàn vẹn (chỉ đọc) qua `scripts/state.sh check`.
 
-### `install.sh`
-Chạy lần đầu. Nó sẽ hỏi bạn chọn Window Manager và chế độ (Symlink/Copy), rồi cài đặt mọi thứ.
+---
 
-### `update.sh`
-Mỗi khi kéo update mới từ GitHub, chạy cái này. Nó tự biết bạn đang dùng chế độ nào và đồng bộ update ra máy (tất nhiên là né `ONCE_CONFIGS` ra!).
+## 4. Các lệnh CLI chính tại thư mục gốc
 
-### `rollback.sh`
-An toàn là bạn! Trước khi ghi đè gì, HakuSpace luôn backup ra `~/.backup/Backup_<thời_gian>`.
-Lỡ update bị lỗi thì cứ chạy `rollback.sh`:
-- Quét nhanh `~/.config` và `~/.local/bin`.
-- Xóa an toàn các symlink để tránh lỡ tay xóa nhầm file gốc trong Repo.
-- Khôi phục file cũ về đúng chỗ cũ.
+| Câu lệnh | Mục đích |
+|---|---|
+| `./install.sh` | Cài đặt tự động toàn diện theo profile |
+| `./update.sh` | Cập nhật tự động toàn diện theo profile |
+| `./link.sh [modules]` | Tạo Deep Symlink cho từng module hoặc toàn bộ |
+| `./unlink.sh [modules]` | Gỡ bỏ an toàn các symlink thuộc HakuSpace |
+| `./packages.sh [groups]` | Cài đặt các nhóm package qua pacman/yay |
+| `./doctor.sh` | Chẩn đoán toàn diện hệ thống (chế độ chỉ đọc) |
+| `./rollback.sh` | Khôi phục lại cấu hình từ bản backup trước đó |
 
-### `doctor.sh` (Bác sĩ)
-Nếu máy có vấn đề, hãy chạy `./doctor.sh`.
-Nếu bạn đang dùng Symlink, bác sĩ sẽ quét để tìm:
-- **Symlink gãy:** Mấy file gốc bị xóa mất.
-- **File bị ghi đè:** Lỡ bạn mở symlink bằng text editor rồi lưu đè thành file thật, bác sĩ sẽ báo liền và nhắc bạn chạy `update.sh` để sửa.
+---
+
+## 5. Hướng dẫn sử dụng thủ công (Manual Workflow)
+
+Bạn không bao giờ cần phải mở `install.sh` để copy từng dòng lệnh. Bạn có thể sử dụng các module độc lập một cách tiện lợi:
+
+### Cài đặt Packages
+```bash
+./packages.sh core
+./packages.sh service
+./packages.sh niri
+./packages.sh --list
+```
+
+### Link Cấu hình
+```bash
+# Link từng thành phần riêng lẻ
+./link.sh quickshell
+./link.sh kitty
+./link.sh niri
+./link.sh core
+
+# Link toàn bộ cấu hình nền tảng
+./link.sh --all
+
+# Xem danh sách các module có sẵn
+./link.sh --list
+```
+
+### Gỡ bỏ Symlink (Unlink an toàn)
+`./unlink.sh` chỉ xóa các symlink được xác nhận là thuộc về HakuSpace. Nó **không bao giờ** xóa file thật của người dùng, symlink ngoại lai hay dữ liệu ứng dụng:
+```bash
+./unlink.sh quickshell
+./unlink.sh niri
+./unlink.sh core
+./unlink.sh --all
+```
+
+### Khởi tạo State & Hakucfg
+```bash
+scripts/state.sh init
+scripts/hakucfg.sh sync
+```
+
+### Chẩn đoán lỗi với Doctor
+`./doctor.sh` hoạt động hoàn toàn ở chế độ chỉ đọc (read-only) và không bao giờ tự ý sửa đổi file trên máy bạn. Script sẽ quét tìm symlink gãy, file bị ghi đè, và chỉ dẫn câu lệnh chính xác để khắc phục:
+```bash
+./doctor.sh
+```
 
 ---
 **Tiếp theo:** [Thư viện Lõi (Core Libraries)](../core/lib.md) ➡️

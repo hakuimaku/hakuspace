@@ -15,21 +15,25 @@ binds {
     Mod+Shift+V      hotkey-overlay-title="Wipe Clipboard" { spawn "sh" "-c" "$HOME/.local/bin/clipboard_menu.sh --wipe"; }
     Mod+F11          hotkey-overlay-title="Record Screen" { spawn "sh" "-c" "$HOME/.local/bin/record.sh"; }
     Mod+Tab          hotkey-overlay-title="Haku Menu" { spawn "sh" "-c" "$HOME/.local/bin/hakumenu.sh"; }
+    Mod+Grave        hotkey-overlay-title="Hikai Navigation" { spawn "sh" "-c" "$HOME/.local/bin/navigation.sh toggle"; }
     Mod+Y            hotkey-overlay-title="Wallpaper Select" { spawn "sh" "-c" "$HOME/.local/bin/wallpaper_select.sh"; }
+    Mod+Shift+Y      hotkey-overlay-title="Change Theme" { spawn "sh" "-c" "$HOME/.local/bin/change_theme.sh"; }
+    Mod+Shift+E      hotkey-overlay-title="Exit Session" { spawn "sh" "-c" "$HOME/.local/bin/exit.sh"; }
+    Mod+Shift+Q      hotkey-overlay-title="Power Menu" { spawn "sh" "-c" "$HOME/.local/bin/shutdown.sh"; }
 
     Mod+Shift+W      hotkey-overlay-title="Cycle Waybar Mode" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --cycle"; }
     Mod+W            hotkey-overlay-title="Toggle Taskbar" { spawn "sh" "-c" "$HOME/.local/bin/taskbar_manager.sh --toggle"; }
     Mod+Ctrl+W       hotkey-overlay-title="Toggle Waybar" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --toggle"; }
-    Mod+L            hotkey-overlay-title="Adjust Brightness" { spawn "sh" "-c" "$HOME/.local/bin/nightlight_toggle.sh"; }
     Mod+T            hotkey-overlay-title="Cava Underbar" { spawn "sh" "-c" "$HOME/.local/bin/cava_manager.sh"; }
 
     // Application Launchers
     Mod+Q            hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
-    Mod+R            hotkey-overlay-title="Run Application Menu: rofi" { spawn "rofi" "-show" "drun"; }
+    Mod+R            hotkey-overlay-title="Run Application Menu: rofi" { spawn "sh" "-c" "$HOME/.local/bin/launcher.sh drun"; }
     Mod+E            hotkey-overlay-title="Open File Manager" { spawn "sh" "-c" "xdg-open \"$HOME\""; }
     Mod+B            hotkey-overlay-title="Open Browser" { spawn "sh" "-c" "$HOME/.local/bin/open_browser.sh"; }
-    Mod+Slash        hotkey-overlay-title="Open Emoji Menu" { spawn "rofi" "-modi" "emoji" "-show" "emoji"; }
-    Mod+N            hotkey-overlay-title="Open Notification Center" { spawn "swaync-client" "-t" "-sw"; }
+    Mod+Slash        hotkey-overlay-title="Open Emoji Menu" { spawn "sh" "-c" "$HOME/.local/bin/launcher.sh emoji"; }
+    Mod+N            hotkey-overlay-title="Open Notification Center" { spawn "sh" "-c" "$HOME/.local/bin/notif.sh toggle"; }
+    Mod+Escape       hotkey-overlay-title="Emergency Classic Backend" { spawn "sh" "-c" "$HOME/.local/bin/haku_backend.sh set classic"; }
 
     // Screenshots
     Print           { screenshot; }
@@ -41,14 +45,14 @@ binds {
     Mod+Alt+P       { screenshot-window; }
 
     // Misc actions
-    Mod+Shift+E     { quit; }
     Ctrl+Alt+Delete { quit; }
 
     // Window Management
     Mod+C            repeat=false { close-window; }
     Mod+Z            { toggle-window-floating; }
-    Mod+Grave        repeat=false { toggle-overview; }
+    Mod+X            repeat=false { toggle-overview; }
     Mod+D            { switch-preset-column-width; }
+    Mod+Shift+D      { switch-focus-between-floating-and-tiling; }
     Mod+F            { maximize-column; }
     Mod+Shift+F      { fullscreen-window; }
     Mod+Alt+F        { maximize-window-to-edges; }
@@ -96,7 +100,6 @@ binds {
     Mod+Shift+Equal { set-window-height "+10%"; }
 
     Mod+Shift+X { toggle-column-tabbed-display; }
-    Mod+X       { switch-focus-between-floating-and-tiling; }
 
     // Mouse & Touchpad Wheels
     Mod+WheelScrollDown      cooldown-ms=150 { focus-workspace-down; }
@@ -135,10 +138,10 @@ binds {
     Mod+Ctrl+9 { move-column-to-workspace 9; }
 
     // Audio - Media Controls
-    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 2%+"; }
-    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%-"; }
-    XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
-    XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "$HOME/.local/bin/level_control.sh volume-up"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "$HOME/.local/bin/level_control.sh volume-down"; }
+    XF86AudioMute        allow-when-locked=true { spawn-sh "$HOME/.local/bin/level_control.sh volume-mute"; }
+    XF86AudioMicMute     allow-when-locked=true { spawn-sh "$HOME/.local/bin/level_control.sh mic-mute"; }
 
     XF86AudioPlay        allow-when-locked=true { spawn-sh "playerctl play-pause"; }
     XF86AudioPause       allow-when-locked=true { spawn-sh "playerctl play-pause"; }
@@ -146,6 +149,6 @@ binds {
     XF86AudioPrev        allow-when-locked=true { spawn-sh "playerctl previous"; }
     XF86AudioNext        allow-when-locked=true { spawn-sh "playerctl next"; }
 
-    XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "-e4" "-n2" "set" "2%+"; }
-    XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "-e4" "-n2" "set" "2%-"; } 
+    XF86MonBrightnessUp allow-when-locked=true { spawn-sh "$HOME/.local/bin/level_control.sh brightness-up"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn-sh "$HOME/.local/bin/level_control.sh brightness-down"; }
 }

@@ -1,0 +1,153 @@
+pragma Singleton
+import QtQuick
+import Quickshell
+import Quickshell.Io
+import "."
+
+QtObject {
+    id: root
+    property bool ready: false
+    property bool loading: false
+    property bool saving: false
+    property string error: ""
+    property string statusMessage: ""
+    property string settingPath: ""
+    property string settingVersion: ""
+    // values is the live draft; savedValues is the last confirmed disk snapshot.
+    property var values: ({})
+    property var savedValues: ({})
+    property var unsupportedKeys: []
+    property var missingKeys: []
+    property var duplicateKeys: []
+    readonly property bool dirty: JSON.stringify(values) !== JSON.stringify(savedValues)
+    readonly property var validityByKey: validateAll(values)
+    readonly property bool valid: Object.keys(validityByKey).length === 0 && duplicateKeys.length === 0
+    // Keep the submitted draft so later edits survive an in-flight save.
+    property var writingSnapshot: ({})
+
+    readonly property var catalog: [
+        { key: "WELCOME_MSG", group: "General", label: "Welcome message", type: "bool", hint: "Show the welcome message on startup." },
+        { key: "NIGHT_LIGHT_TEMPERATURE", group: "General", label: "Night light temperature", type: "int", hint: "Color temperature used by night light." },
+        { key: "SCREENSHOT_DIR", group: "General", label: "Screenshot directory", type: "path", hint: "Directory where HakuSpace screenshots are saved. Niri uses its built-in screenshot tool, so this setting does not apply there. Configure Niri in ~/hakucfg/wm/niri-custom.kdl, or bind the HakuSpace screenshot script." },
+        { key: "WALL_DIR", group: "Wallpaper", label: "Wallpaper directory", type: "path", hint: "Directory containing static wallpapers." },
+        { key: "WALL_MPV_DIR", group: "Wallpaper", label: "Video wallpaper directory", type: "path", hint: "Directory for lively video wallpapers." },
+        { key: "WALL_INTERVAL", group: "Wallpaper", label: "Change interval (seconds)", type: "int", hint: "Interval in seconds between random wallpaper changes." },
+        { key: "ACCENT_COLOR_BASED_ON_WALLPAPER", group: "Wallpaper", label: "Accent from wallpaper", type: "bool", hint: "Derive the accent color from the wallpaper." },
+        { key: "AWWW_OPTS", group: "Wallpaper", label: "Awww options", type: "text", hint: "Options for awww wallpaper transitions." },
+        { key: "ACCENT_COLOR_MODE", group: "Wallpaper", label: "Accent color mode", type: "enum", hint: "Extract an accent from the wallpaper:\nvivid — most vivid color\ndominant — dominant color\nbrightest — brightest color\nsaturated — most saturated color" },
+        { key: "SCREENREC_SAVE_DIR", group: "Screen Recording", label: "Recording directory", type: "path", hint: "Directory where screen recordings are saved." },
+        { key: "REC_COMMAND", group: "Screen Recording", label: "Recording command", type: "required", hint: "Command for wl-screenrec. Ensure it is in PATH, or use the full path if installed with Cargo." },
+        { key: "REC_OPTS", group: "Screen Recording", label: "Recording options", type: "text", hint: "Options passed to wl-screenrec; customize them as needed." },
+        { key: "HAKU_CLOCK_FONT_SIZE", group: "Haku Widget", label: "Clock font size", type: "int", hint: "Clock text size in Haku Widget." },
+        { key: "HAKU_GENERAL_FONT_SIZE", group: "Haku Widget", label: "General font size", type: "int", hint: "General text size in Haku Widget." },
+        { key: "HAKU_TERMINAL_FONT_SIZE", group: "Haku Widget", label: "Terminal font size", type: "int", hint: "Terminal text size in Haku Widget." },
+        { key: "RAM_THRESHOLD_MB", group: "Exit", label: "RAM warning threshold (MB)", type: "int", hint: "RAM warning threshold in megabytes when exiting the window manager." },
+        { key: "EXIT_APP_LIST_USER", group: "Exit", label: "Apps to close", type: "list", hint: "Apps targeted for graceful shutdown, then forced termination, when exiting the window manager. Example: discord, firefox, code." }
+    ]
+    readonly property var groups: ["General"]
+    readonly property string deployedScript: (Quickshell.env("HOME") || "") + "/.local/bin/setting_ctl.py"
+    readonly property string repoScript: Quickshell.shellPath("../../../../core/backend/user/setting_ctl.py")
+    readonly property string envScript: Env.binDir + "/setting_ctl.py"
+
+    function command(action) {
+        return ["sh", "-c", 'if [ -x "$1" ]; then exec "$1" "$4"; elif [ -x "$2" ]; then exec "$2" "$4"; elif [ -x "$3" ]; then exec "$3" "$4"; else exec setting_ctl.py "$4"; fi',
+                "--", deployedScript, envScript, repoScript, action]
+    }
+
+    // Mirror backend validation before Apply becomes available.
+    function validateAll(draft) {
+        var errors = {}
+        for (var i = 0; i < catalog.length; i++) {
+            var item = catalog[i]
+            if (!Object.prototype.hasOwnProperty.call(draft, item.key)) continue
+            var value = draft[item.key]
+            if (item.type === "int" && (!/^[1-9][0-9]*$/.test(String(value)) || !Number.isSafeInteger(Number(value)))) errors[item.key] = "Enter a positive integer"
+            else if ((item.type === "path" || item.type === "required") && (!String(value).length || /[\r\n\0]/.test(value))) errors[item.key] = "Enter a value on one line"
+            else if (item.type === "enum" && ["vivid", "dominant", "brightest", "saturated"].indexOf(value) < 0) errors[item.key] = "Choose a listed mode"
+            else if (item.type === "list" && (!Array.isArray(value) || value.some(function(entry) { return !entry || /[\r\n\0]/.test(entry) }))) errors[item.key] = "Invalid list item"
+            else if (item.type === "text" && /[\r\n\0]/.test(value)) errors[item.key] = "Use one line"
+        }
+        return errors
+    }
+
+    function value(key) { return values[key] }
+    function isKeyEditable(key) {
+        return ready && missingKeys.indexOf(key) < 0 && unsupportedKeys.indexOf(key) < 0 && duplicateKeys.length === 0
+    }
+    function validationMessage(key) {
+        if (missingKeys.indexOf(key) >= 0) return "Missing from installed setting.sh"
+        if (unsupportedKeys.indexOf(key) >= 0) return "Customized syntax is unsupported"
+        if (duplicateKeys.length) return "Duplicate assignment in setting.sh"
+        return validityByKey[key] || ""
+    }
+    function setValue(key, value) {
+        if (!isKeyEditable(key)) return
+        var draft = Object.assign({}, values)
+        draft[key] = value
+        values = draft
+        statusMessage = ""
+    }
+    function discard() { values = Object.assign({}, savedValues); error = ""; statusMessage = "" }
+    function load() { reload() }
+    function reload() {
+        if (loading || saving) return
+        loading = true
+        error = ""
+        readProc.command = command("read")
+        readProc.running = true
+    }
+    // Send changed keys only; the backend preserves unrelated setting.sh lines.
+    function apply() {
+        if (!ready || !dirty || !valid || loading || saving) return
+        var changes = {}
+        for (var key in values) {
+            if (JSON.stringify(values[key]) !== JSON.stringify(savedValues[key])) {
+                var item = values[key]
+                changes[key] = typeof item === "string" && /^[1-9][0-9]*$/.test(item) && catalog.some(function(c) { return c.key === key && c.type === "int" }) ? Number(item) : item
+            }
+        }
+        writingSnapshot = Object.assign({}, values)
+        saving = true
+        error = ""
+        writeProc.command = command("write")
+        writeProc.environment = { "HAKUSPACE_SETTINGS_JSON": JSON.stringify(changes) }
+        writeProc.running = true
+    }
+    function accept(data, preserveDraft) {
+        settingPath = data.path || ""
+        settingVersion = data.settingVersion || ""
+        unsupportedKeys = data.unsupportedKeys || []
+        missingKeys = data.missingKeys || []
+        duplicateKeys = data.duplicateKeys || []
+        savedValues = data.values || ({})
+        if (!preserveDraft) values = Object.assign({}, savedValues)
+        ready = true
+    }
+
+    property Process readProc: Process {
+        id: readProc
+        stdout: StdioCollector { id: readOut }
+        stderr: StdioCollector { id: readErr }
+        onExited: (code, status) => {
+            root.loading = false
+            if (code !== 0) { root.ready = false; root.error = readErr.text.trim() || "Could not read setting.sh"; return }
+            try { root.accept(JSON.parse(readOut.text), false); root.statusMessage = "" }
+            catch (e) { root.ready = false; root.error = "Invalid settings response" }
+        }
+    }
+    property Process writeProc: Process {
+        id: writeProc
+        stdout: StdioCollector { id: writeOut }
+        stderr: StdioCollector { id: writeErr }
+        onExited: (code, status) => {
+            root.saving = false
+            if (code !== 0) { root.error = writeErr.text.trim() || "Could not save setting.sh"; return }
+            try {
+                var current = root.values
+                root.accept(JSON.parse(writeOut.text), true)
+                if (JSON.stringify(current) === JSON.stringify(root.writingSnapshot)) root.values = Object.assign({}, root.savedValues)
+                root.statusMessage = "Saved to ~/hakucfg/setting.sh. Some settings take effect on the next related action."
+            } catch (e) { root.error = "Invalid save response" }
+        }
+    }
+}

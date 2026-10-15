@@ -11,7 +11,10 @@ BACKUP_GLOB="$HOME/.backup/${BACKUP_PREFIX}"*
 # Rollback only considers backups created by HakuSpace, not unrelated folders
 # that may also exist under ~/.backup.
 print_rollback_header() {
-    print_header ">>> CONFIG ROLLBACK <<<" "Restore files from a previous HakuSpace backup."
+    print_divider
+    echo -e "${C_BOLD}>>> CONFIG ROLLBACK <<<${C_RESET}"
+    echo -e "Restore files from a previous HakuSpace backup."
+    print_divider
 }
 
 get_backup_dirs() {
@@ -42,12 +45,12 @@ select_backup_dir() {
         return 0
     fi
 
-    echo "Available backups (newest first):"
+    ui_print "Available backups (newest first):"
     for i in "${!backup_names[@]}"; do
-        printf "  [%d] %s\n" "$((i + 1))" "${backup_names[$i]}"
+        ui_printf "  [%d] %s\n" "$((i + 1))" "${backup_names[$i]}"
     done
-    echo ""
-    read -r -p ">>> Choose backup (default: 1, newest): " choice
+    ui_print ""
+    ui_prompt "Choose backup [1-${#backup_names[@]}] (default: 1, newest): " choice
     choice="${choice:-1}"
 
     if [[ ! "$choice" =~ ^[0-9]+$ ]] || (( choice < 1 || choice > ${#backup_names[@]} )); then
@@ -66,59 +69,15 @@ add_managed_destination() {
 }
 
 is_once_config() {
-    local config_path
-    local config_name
-
-    config_path="$1"
-    config_name="$(basename "$config_path")"
-
-    for config_path in "${ONCE_CONFIGS[@]}"; do
-        if [[ "$(basename "$config_path")" == "$config_name" ]]; then
-            return 0
-        fi
-    done
-
-    return 1
+    registry_is_once_config "$1"
 }
 
 build_managed_destinations() {
-    local source_item
-    local item_name
-
-    # Keep this list in sync with the paths managed by the installer. Items
-    # outside this list are left untouched during rollback.
-    while IFS= read -r -d '' source_item; do
-        item_name="$(basename "$source_item")"
-
-        case "$item_name" in
-            hypr|niri|mango|labwc)
-                continue
-                ;;
-            gtk-3.0)
-                add_managed_destination "$DEST_CONFIG/gtk-3.0"
-                ;;
-            *)
-                is_once_config "$source_item" && continue
-                add_managed_destination "$DEST_CONFIG/$item_name"
-                ;;
-        esac
-    done < <(find "$SOURCE_CONFIG" -mindepth 1 -maxdepth 1 -print0)
-
-    add_managed_destination "$DEST_CONFIG/hypr/config"
-    add_managed_destination "$DEST_CONFIG/hypr/hyprland.lua"
-    add_managed_destination "$DEST_CONFIG/hypr/hypridle.conf"
-    add_managed_destination "$DEST_CONFIG/hypr/hyprlock.conf"
-    add_managed_destination "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
-    add_managed_destination "$DEST_CONFIG/niri"
-    add_managed_destination "$DEST_CONFIG/mango"
-    add_managed_destination "$DEST_CONFIG/labwc"
-    while IFS= read -r -d '' source_item; do
-        item_name="$(basename "$source_item")"
-        [[ "$item_name" == "README.md" ]] && continue
-        add_managed_destination "$DEST_BIN/$item_name"
-    done < <(find "$SOURCE_CORE" -type f -print0)
-    
-    add_managed_destination "$HOME/.nanorc"
+    MANAGED_DESTINATIONS=()
+    while IFS= read -r dest; do
+        [[ -z "$dest" ]] && continue
+        add_managed_destination "$dest"
+    done < <(registry_get_managed_destinations)
 }
 
 clear_managed_destinations() {
@@ -140,7 +99,7 @@ clear_managed_destinations() {
                     rm -f "$link"
                 fi
             done < <(find "$destination" -type l -print0)
-            
+
             # If the directory is now empty, just remove it
             rmdir "$destination" 2>/dev/null && continue
         elif [[ -L "$destination" ]]; then

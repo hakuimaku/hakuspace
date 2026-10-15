@@ -7,3 +7,6 @@ build/
 *.tar
 *.zip
 *.iso
+temp/
+
+docs/task/mockups/

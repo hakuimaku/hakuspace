@@ -10,13 +10,8 @@ if [[ $# -eq 0 ]]; then
     WALL_TEXT="OFF"
     [[ "$WALL_STATUS" == "1" ]] && WALL_TEXT="ON"
 
-    # Haku Shell
-    HAKU_SHELL_STATUS=$(cat "$STATE_DIR/haku_shell_state" 2>/dev/null || echo "0")
-    HAKU_SHELL_TEXT="OFF"
-    [[ "$HAKU_SHELL_STATUS" == "1" ]] && HAKU_SHELL_TEXT="ON"
-
     # Cava Layer
-    CAVA_STATUS=$([[ -f /tmp/cava-layer.pid ]] && echo "1" || echo "0")
+    CAVA_STATUS=$([[ -f /tmp/cava-layer.pid ]] && kill -0 "$(cat /tmp/cava-layer.pid 2>/dev/null)" 2>/dev/null && echo "1" || echo "0")
     CAVA_TEXT="OFF"
     [[ "$CAVA_STATUS" == "1" ]] && CAVA_TEXT="ON"
 
@@ -29,45 +24,32 @@ if [[ $# -eq 0 ]]; then
     TASKBAR_TEXT="OFF"
     [[ "$TASKBAR_STATUS" == "1" ]] && TASKBAR_TEXT="ON"
 
-    # Waybar
-    WAYBAR_STATUS=$(cat "$STATE_DIR/waybar_manual_state" 2>/dev/null || echo "0")
-    WAYBAR_TEXT="OFF"
-    [[ "$WAYBAR_STATUS" == "1" ]] && WAYBAR_TEXT="ON"
-
     # Desktop Icons
     DESKTOP_ICONS_STATUS=$(cat "$STATE_DIR/desktop_icons_state" 2>/dev/null || echo "0")
     DESKTOP_ICONS_TEXT="OFF"
     [[ "$DESKTOP_ICONS_STATUS" == "1" ]] && DESKTOP_ICONS_TEXT="ON"
 
-    # Rounded Screen
-    ROUNDED_SCREEN_STATUS=$(cat "$STATE_DIR/rounded_screen_state" 2>/dev/null || echo "0")
-    ROUNDED_SCREEN_TEXT="OFF"
-    [[ "$ROUNDED_SCREEN_STATUS" == "1" ]] && ROUNDED_SCREEN_TEXT="ON"
+    # Backend switch label follows the active shell mode.
+    BACKEND_STATUS=$(cat "$STATE_DIR/shell_backend" 2>/dev/null || echo "classic")
+    BACKEND_LABEL="Explore the Abyss"
+    [[ "$BACKEND_STATUS" == "hikai" ]] && BACKEND_LABEL="Go back to Surface"
 
-    # Edge Trigger
-    EDGE_TRIGGER_STATUS=$(cat "$STATE_DIR/edge_trigger_state" 2>/dev/null || echo "0")
-    EDGE_TRIGGER_TEXT="OFF"
-    [[ "$EDGE_TRIGGER_STATUS" == "1" ]] && EDGE_TRIGGER_TEXT="ON"
-
-    # Opaque Theme
-    OPAQUE_STATUS=$(cat "$STATE_DIR/opaque_theme_state" 2>/dev/null || echo "0")
-    IS_OPAQUE=""
-    [[ "$OPAQUE_STATUS" == "1" ]] && IS_OPAQUE="(ON)" || IS_OPAQUE="(OFF)"
+    # Haku Space Mode
+    HAKU_LEGACY_STATUS=$(cat "$STATE_DIR/haku_space_state" 2>/dev/null || echo "0")
+    HAKU_LEGACY_TEXT="OFF"
+    [[ "$HAKU_LEGACY_STATUS" == "1" ]] && HAKU_LEGACY_TEXT="ON"
 
     cat <<EOF
   Change Theme
-󰆧  Haku Shell ($HAKU_SHELL_TEXT)
 󰝚  Cava Underbar ($CAVA_TEXT) $IS_TOP
-  Desktop ($DESKTOP_ICONS_TEXT)
-󰅹  Waybar ($WAYBAR_TEXT)
+  Desktop Icons ($DESKTOP_ICONS_TEXT)
 󰐃  Taskbar ($TASKBAR_TEXT)
-󰤕  Niri Animations
+󰤕  Niri Animation
 󰏜  Change Wallpaper
 󱛹  Kill Lively Wallpaper
   Auto Random Wallpaper ($WALL_TEXT)
-  Rounded Screen ($ROUNDED_SCREEN_TEXT)
-  Edge Trigger ($EDGE_TRIGGER_TEXT)
-  Opaque Theme Mode $IS_OPAQUE
+󰆧  Haku Legacy Space :) ($HAKU_LEGACY_TEXT)
+󰆧  $BACKEND_LABEL
 EOF
     exit 0
 fi
@@ -75,18 +57,15 @@ fi
 chosen="$*"
 case "$chosen" in
     *"Change Theme"*) spawn $HOME/.local/bin/change_theme.sh ;;
-    *"Haku Shell"*) spawn $HOME/.local/bin/haku_shell_mode.sh --toggle ;;
+    *"Go back to Surface"*|*"Explore the Abyss"*) spawn $HOME/.local/bin/haku_backend.sh --toggle ;;
     *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh ;;
-    *"Desktop"*) spawn $HOME/.local/bin/desktop_icons_manager.sh --toggle ;;
-    *"Waybar"*) spawn $HOME/.local/bin/waybar_manager.sh --toggle ;;
+    *"Desktop Icons"*) spawn $HOME/.local/bin/desktop_icons_manager.sh --toggle ;;
     *"Taskbar"*) spawn $HOME/.local/bin/taskbar_manager.sh --toggle ;;
-    *"Niri Animations"*) spawn $HOME/.local/bin/niri_animation_switcher.sh ;;
+    *"Niri Animation"*) spawn $HOME/.local/bin/niri_animation_switcher.sh ;;
     *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
     *"Kill Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh --exit ;;
+    *"Haku Legacy Space :)"*) spawn $HOME/.local/bin/haku_space_mode.sh --toggle ;;
     *"Auto Random Wallpaper"*) spawn $HOME/.local/bin/random_wallpaper.sh --toggle ;;
-    *"Rounded Screen"*) spawn $HOME/.local/bin/rounded_screen_manager.sh --toggle ;;
-    *"Edge Trigger"*) spawn $HOME/.local/bin/edge_trigger_manager.sh --toggle ;;
-    *"Opaque Theme Mode"*) spawn $HOME/.local/bin/opaque_theme.sh --toggle ;;
 esac
 
 exit 0

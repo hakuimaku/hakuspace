@@ -10,6 +10,7 @@ if ! command -v code &> /dev/null; then
 fi
 
 paths=(
+    "$HOME/.config/quickshell/hakuspace"
     "$HOME/.config/waybar"
     "$HOME/.config/rofi"
     "$HOME/.config/swaync"

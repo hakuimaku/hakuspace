@@ -1,19 +1,15 @@
 #!/usr/bin/env bash
 
-# Directories
+# Resolve HAKU_DIR if not set
+if [[ -z "${HAKU_DIR:-}" ]]; then
+    HAKU_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." &> /dev/null && pwd)"
+fi
+
+# Static Directories
 SOURCE_DIR="$HAKU_DIR/src"
 HOME_SRC_DIR="$SOURCE_DIR/home"
 ASSETS_DIR="$HAKU_DIR/assets"
 NIX_DIR="$HAKU_DIR/nix"
-
-# Backup directory with timestamp
-BACKUP_TS="$(date +%Y-%m-%d_%H-%M-%S)"
-BACKUP_DIR="$HOME/.backup/Backup_$BACKUP_TS"
-
-# Arrays to handle multiple WMs
-SELECTED_WMS=()
-SELECTED_WM_DIRS=()
-SELECTED_PKG_WMS=()
 
 # Package lists
 PKG_SERVICE="$SOURCE_DIR/packages/pkg-service.txt"
@@ -36,27 +32,17 @@ DEST_CUSTOM_DIR="$HOME/hakucfg"
 SOURCE_CONFIG="$HOME_SRC_DIR/.config"
 DEST_CONFIG="$HOME/.config"
 
-# Once configs (to be deployed only once)
-# update.sh will skip these configs, for not overwriting user changes
-ONCE_CONFIGS=(
-    "$SOURCE_CONFIG/Thunar"
-    "$SOURCE_CONFIG/xfce4"
-    "$SOURCE_CONFIG/mpv"
-    "$SOURCE_CONFIG/btop"
-    "$SOURCE_CONFIG/cava"
-    "$SOURCE_CONFIG/mimeapps.list"
-)
-
-# Skip configs (to be skipped during install.sh and update.sh)
-# Not deloyed together with the rest of the configs in $SOURCE_CONFIG
-SKIP_CONFIGS=(
-    "$SOURCE_CONFIG/hypr"
-    "$SOURCE_CONFIG/niri"
-    "$SOURCE_CONFIG/mango"
-    "$SOURCE_CONFIG/labwc"
-    "$SOURCE_CONFIG/gtk-3.0"
-)
-    
 # HakuSpace script directories
 SOURCE_CORE="$SOURCE_DIR/core"
 DEST_BIN="$HOME/.local/bin"
+
+# Arrays to handle multiple WMs (default empty for set -u safety)
+SELECTED_WMS=("${SELECTED_WMS[@]:-}")
+SELECTED_WM_DIRS=("${SELECTED_WM_DIRS[@]:-}")
+SELECTED_PKG_WMS=("${SELECTED_PKG_WMS[@]:-}")
+
+# Source runtime context (shared run ID and backup directory)
+source "$HAKU_DIR/scripts/runtime.sh"
+
+# Source registry (single source of truth for managed targets and ONCE_CONFIGS)
+source "$HAKU_DIR/scripts/registry.sh"

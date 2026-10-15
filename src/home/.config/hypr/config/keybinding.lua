@@ -18,14 +18,14 @@ hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd("kitty"))
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd("xdg-open $HOME"))
 hl.bind(mainMod .. " + Z", hl.dsp.window.float({ action = "toggle" }))
-hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("rofi -show drun"))
+hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("$HOME/.local/bin/launcher.sh drun"))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("$HOME/.local/bin/open_browser.sh"))
-hl.bind(mainMod .. " + SLASH", hl.dsp.exec_cmd("rofi -modi emoji -show emoji"))
+hl.bind(mainMod .. " + SLASH", hl.dsp.exec_cmd("$HOME/.local/bin/launcher.sh emoji"))
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))
 hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
-hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("$HOME/.local/bin/nightlight_toggle.sh"))
-hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("swaync-client -t -sw"))
+hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("$HOME/.local/bin/notif.sh toggle"))
 hl.bind(mainMod .. " + K", hl.dsp.exec_cmd("$HOME/.local/bin/lock.sh"))
+hl.bind(mainMod .. " + ESCAPE", hl.dsp.exec_cmd("$HOME/.local/bin/haku_backend.sh set classic"))
 
 -- Column resize keybindings (Scroller layout)
 hl.bind(mainMod .. " + D", hl.dsp.layout("colresize +0.1"))
@@ -43,7 +43,11 @@ hl.bind(mainMod .. " + V",    hl.dsp.exec_cmd("$HOME/.local/bin/clipboard_menu.s
 hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("$HOME/.local/bin/clipboard_menu.sh --wipe"))
 hl.bind(mainMod .. " + F11",   hl.dsp.exec_cmd("$HOME/.local/bin/record.sh"))
 hl.bind(mainMod .. " + TAB",   hl.dsp.exec_cmd("$HOME/.local/bin/hakumenu.sh"))
+hl.bind(mainMod .. " + GRAVE", hl.dsp.exec_cmd("$HOME/.local/bin/navigation.sh toggle"))
 hl.bind(mainMod .. " + Y",     hl.dsp.exec_cmd("$HOME/.local/bin/wallpaper_select.sh"))
+hl.bind(mainMod .. " + SHIFT + Y", hl.dsp.exec_cmd("$HOME/.local/bin/change_theme.sh"))
+hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exec_cmd("$HOME/.local/bin/exit.sh"))
+hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.exec_cmd("$HOME/.local/bin/shutdown.sh"))
 
 hl.bind(mainMod .. " + T",     hl.dsp.exec_cmd("$HOME/.local/bin/cava_manager.sh"))
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh"))
@@ -70,7 +74,7 @@ for i = 1, 10 do
 end
 
 -- Example special workspace (scratchpad)
-hl.bind(mainMod .. " + GRAVE",         hl.dsp.workspace.toggle_special("magic"))
+hl.bind(mainMod .. " + X",             hl.dsp.workspace.toggle_special("magic"))
 hl.bind(mainMod .. " + SHIFT + GRAVE", hl.dsp.window.move({ workspace = "special:magic" }))
 
 -- Scroll through existing workspaces with mainMod + scroll
@@ -82,12 +86,12 @@ hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
 hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
 
 -- Laptop multimedia keys for volume and LCD brightness
-hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 2%+"), { locked = true, repeating = true })
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%-"),      { locked = true, repeating = true })
-hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { locked = true, repeating = true })
-hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessUp",  hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 2%+"),                  { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessDown",hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 2%-"),                  { locked = true, repeating = true })
+hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("$HOME/.local/bin/level_control.sh volume-up"),       { locked = true, repeating = true })
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("$HOME/.local/bin/level_control.sh volume-down"),     { locked = true, repeating = true })
+hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("$HOME/.local/bin/level_control.sh volume-mute"),     { locked = true, repeating = true })
+hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("$HOME/.local/bin/level_control.sh mic-mute"),        { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessUp",  hl.dsp.exec_cmd("$HOME/.local/bin/level_control.sh brightness-up"),   { locked = true, repeating = true })
+hl.bind("XF86MonBrightnessDown",hl.dsp.exec_cmd("$HOME/.local/bin/level_control.sh brightness-down"), { locked = true, repeating = true })
 
 -- Requires playerctl
 hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = true })
@@ -95,7 +99,7 @@ hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = tr
 hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
 
--- Minimize windows to a special workspace with mainMod + X. Press again to restore.
+-- Minimize windows to a special workspace with mainMod + M. Press again to restore.
 hl.bind(mainMod .. " + M", function ()
     if hl.get_workspace("special:minimized") then
         hl.dispatch(hl.dsp.window.move({ workspace = hl.get_active_workspace(), window = "tag:minimized" }))
@@ -138,7 +142,7 @@ hl.bind(mainMod .. " + F1", function ()
 end)
 
 -- Cycle layouts
-hl.bind(mainMod .. " + X", function ()
+hl.bind(mainMod .. " + L", function ()
     local layouts     = { "scrolling", "dwindle", "master" }
     local workspace   = hl.get_active_workspace()
 	if hl.get_active_special_workspace() then

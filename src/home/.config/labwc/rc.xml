@@ -268,7 +268,7 @@
         <action name="ShowMenu" menu="root-menu" />
         </keybind>
         <keybind key="W-r">
-        <action name="Execute" command="rofi -show drun" />
+        <action name="Execute" command="~/.local/bin/launcher.sh drun" />
         </keybind>
         <keybind key="W-q">
         <action name="Execute" command="kitty" />
@@ -280,10 +280,13 @@
         <action name="Execute" command="~/.local/bin/open_browser.sh" />
         </keybind>
         <keybind key="W-n">
-        <action name="Execute" command="swaync-client -t -sw" />
+        <action name="Execute" command="~/.local/bin/notif.sh toggle" />
         </keybind>
         <keybind key="W-slash">
-        <action name="Execute" command="rofi -modi emoji -show emoji" />
+        <action name="Execute" command="~/.local/bin/launcher.sh emoji" />
+        </keybind>
+        <keybind key="W-Escape">
+        <action name="Execute" command="~/.local/bin/haku_backend.sh set classic" />
         </keybind>
         <keybind key="A-F4">
         <action name="Close" />
@@ -295,6 +298,9 @@
         <!-- Script keybinds -->
         <keybind key="W-Tab">
         <action name="Execute" command="~/.local/bin/hakumenu.sh" />
+        </keybind>
+        <keybind key="W-grave">
+        <action name="Execute" command="~/.local/bin/navigation.sh toggle" />
         </keybind>
         <keybind key="W-w">
         <action name="Execute" command="~/.local/bin/taskbar_manager.sh --toggle" />
@@ -314,6 +320,15 @@
         <keybind key="W-y">
         <action name="Execute" command="~/.local/bin/wallpaper_select.sh" />
         </keybind>
+        <keybind key="W-S-y">
+        <action name="Execute" command="~/.local/bin/change_theme.sh" />
+        </keybind>
+        <keybind key="W-S-e">
+        <action name="Execute" command="~/.local/bin/exit.sh" />
+        </keybind>
+        <keybind key="W-S-q">
+        <action name="Execute" command="~/.local/bin/shutdown.sh" />
+        </keybind>
 
         <keybind key="W-f11">
         <action name="Execute" command="~/.local/bin/record.sh" />
@@ -327,10 +342,6 @@
         <keybind key="W-S-p">
         <action name="Execute" command="~/.local/bin/screenshot.sh --fullscreen" />
         </keybind>
-        <keybind key="W-l">
-        <action name="Execute" command="~/.local/bin/nightlight_toggle.sh" />
-        </keybind>
-
         <!-- keybind for Show Menu -->
         <keybind key="A-grave">
         <action name="ShowMenu" menu="client-list-combined-menu" />
@@ -339,7 +350,7 @@
             <y>center</y>
         </position>
         </keybind>
-        <keybind key="W-grave">
+        <keybind key="W-x">
         <action name="ShowMenu" menu="client-menu" atCursor="yes" />
         </keybind>
 
@@ -370,9 +381,6 @@
         </keybind>
         <keybind key="W-f">
         <action name="ToggleFullscreen" />
-        </keybind>
-        <keybind key="W-x">
-        <action name="Resize" />
         </keybind>
 
         <!-- Window Resize Alt + WASD -->
@@ -417,19 +425,22 @@
 
         <!-- Hardware keys -->
         <keybind key="XF86AudioLowerVolume">
-        <action name="Execute" command="pactl set-sink-volume @DEFAULT_SINK@ -5%" />
+        <action name="Execute" command="~/.local/bin/level_control.sh volume-down" />
         </keybind>
         <keybind key="XF86AudioRaiseVolume">
-        <action name="Execute" command="pactl set-sink-volume @DEFAULT_SINK@ +5%" />
+        <action name="Execute" command="~/.local/bin/level_control.sh volume-up" />
         </keybind>
         <keybind key="XF86AudioMute">
-        <action name="Execute" command="pactl set-sink-mute @DEFAULT_SINK@ toggle" />
+        <action name="Execute" command="~/.local/bin/level_control.sh volume-mute" />
+        </keybind>
+        <keybind key="XF86AudioMicMute">
+        <action name="Execute" command="~/.local/bin/level_control.sh mic-mute" />
         </keybind>
         <keybind key="XF86MonBrightnessUp">
-        <action name="Execute" command="brightnessctl set +10%" />
+        <action name="Execute" command="~/.local/bin/level_control.sh brightness-up" />
         </keybind>
         <keybind key="XF86MonBrightnessDown">
-        <action name="Execute" command="brightnessctl set 10%-" />
+        <action name="Execute" command="~/.local/bin/level_control.sh brightness-down" />
         </keybind>
 
         <!-- Switch Workspaces (Super + 1 -> 9) -->
