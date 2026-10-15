@@ -1,7 +1,9 @@
 <div align="center">
 
 # Haku Space
-Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
+Wayland dotfiles and desktop shell for Hyprland / Niri / MangoWM / Labwc
+
+**Classic** (Waybar / Rofi / SwayNC) + **Hikai** (Quickshell)
 
 *Haku (ハク) is the very highest Value, the manifestation of a wish. It means "the shape of a soul," "that which is irreplaceable."*
     <div align="right">
@@ -37,66 +39,106 @@ Hyprland / Niri / MangoWM / Labwc dotfiles for Arch / Fedora / NixOS
 
 </div>
 
-- Multi-WM Support: Hyprland, Niri, MangoWM, Labwc with seamless switching between window managers.
-- Multi-Distro Support: Have been tested on Arch, Fedora, Nixos.
-- DE-like Experience: Modular UI powered by Rofi, Waybar, SwayNC, and custom scripts.
-- Extensible: Highly customizable and easy to adapt to your own workflow.
+- **Dual shell modes**: keep the proven **Classic** stack or switch to **Hikai**, the native Quickshell desktop shell.
+- **Multi-WM support**: Hyprland, Niri, MangoWM, and Labwc configs share the same HakuSpace scripts, state, theme, and user overrides.
+- **Multi-distro support**: developed for Arch and also used with Fedora / NixOS-specific setup paths.
+- **Modular dotfiles management**: install, update, link, unlink, diagnose, and roll back individual modules instead of treating the repository as one giant config copy.
+- **User-owned customization**: `~/hakucfg` remains separate from the managed base so updates can evolve without overwriting personal settings.
 - See Guide for: [Arch Linux](#installation-guide) | [NixOS](#nixos-configuration) | [Fedora](docs/fedora_guide.md)
+
+## Shell Modes
+
+HakuSpace now has two interchangeable desktop-shell backends. The selected backend is stored in HakuSpace state and restored by `session_start.sh --early` on the next compositor session.
+
+### Hikai — Quickshell native
+
+**Hikai** is the new Quickshell-based HakuSpace interface. In Hikai mode, Quickshell owns the main desktop UI instead of running the Classic Waybar/Rofi/SwayNC stack in parallel.
+
+Current Hikai surfaces include:
+
+- **Top bar** with workspace state, active-window title, tray, clock, system information, notification state, recorder state, and settings entry points.
+- **Navigation layer** that opens the Dashboard, Sidebar, and Settings surfaces with the shared HakuSpace motion / Flare visual language.
+- **Dashboard** with profile information, media controls, Cava visualization, calendar, CPU/RAM/GPU metrics, and mounted-storage information.
+- **Sidebar** with quick actions, clipboard access, pinned applications, temporary notes, and shortcut management.
+- **Native notifications** through `org.freedesktop.Notifications`, including popup/history handling, replacement IDs, timeout/close behavior, DND, persistence across Quickshell reloads, and a native Notification Center.
+- **Native Haku Menu / wallpaper / action layers**, plus volume and brightness OSDs, rounded-screen rendering, tray menus, theme controls, and the Hikai Settings UI.
+- **Settings and config editing** for supported `~/hakucfg/setting.sh` options plus a built-in configuration browser/editor and system information page.
+- **WM-aware workspaces** for Hyprland, Niri, and MangoWM through dedicated Quickshell backends.
+
+> [!note]
+> Labwc itself remains a supported HakuSpace compositor, but Hikai workspace loading is currently disabled on Labwc because the ext-workspace path is unstable with the Quickshell version targeted by this branch. Other Hikai surfaces can still run.
+
+### Classic — Waybar / Rofi / SwayNC
+
+**Classic** keeps the previous HakuSpace desktop stack: Waybar, Rofi menus, SwayNC, and the existing script-driven mini-apps. It remains available as a compatibility/fallback backend rather than being removed by the Quickshell migration.
+
+Switch between backends at runtime:
+
+```bash
+~/.local/bin/haku_backend.sh set hikai
+~/.local/bin/haku_backend.sh set classic
+~/.local/bin/haku_backend.sh --toggle
+~/.local/bin/haku_backend.sh --verify
+```
+
+The bundled WM configs also bind **`SUPER + ESCAPE`** as an emergency return to Classic.
 
 ---
 
 ## Key Features
 
-* **Control Center**: `~/hakucfg` this directory stores your custom configs so you don't have to touch the main ones, giving you much more freedom to customize.
-* **Accent Colors**: Synced across **Waybar**, **Rofi**, **Kitty**, **Swaync**,... giving your setup a **Super Clean** and **Cohesive Vibe**!
-* **Smart Accent Color**: Automatically generates the accent color based on your current wallpaper.
-* **Flexible Waybar Layouts**: Support 7 styles: `top`, `left`, `coredge`, `minimal`, `neon`, `island`, `legacy`.
-* **Wallpaper Automation**: Wallpapers change automatically every 5 minutes.
-* **Taskbar**: Another Waybar with `wlr/taskbar` module, can pin applications, looking like a Taskbar or Dock.
-* **Haku Space**, Include aesthetic features: 
-  * **Unique Cava Underbar**: *Built-in*, Dynamic audio visualizer waves seamlessly layered directly beneath the Waybar.
-  * **Desktop Icons**: *Built-in*, Items in folder `~/Desktop` will be shown on Desktop.
-  * **Rounded Screen Corners**: *Built-in*, Rounded corners for your screen, with a smooth and elegant look.
-  * **Edge Trigger**: *Built-in*, Hover your mouse at the screen edges to quickly launch menus or applications.
+* **Hikai + Classic backends**: Use the Quickshell-native Hikai experience or keep the mature Classic stack; shared facade scripts route common actions to the active backend.
+* **HakuSpace Settings**: Hikai provides a native Settings surface for supported HakuSpace options, config editing, and system/repository information. `~/hakucfg` remains the source of user-owned customization.
+* **Shared theming**: Accent colors, typography, radius tokens, and generated state are reused across Hikai and Classic components where applicable.
+* **Smart accent color**: Generate an accent from the active wallpaper with multiple extraction modes.
+* **Wallpaper system**: Static and lively wallpaper workflows, automatic rotation, picker UIs, and shared theme refresh behavior.
+* **Workspace integration**: Dedicated Hikai workspace models for Hyprland, Niri, and MangoWM, including compositor-specific active/focused/occupied semantics.
+* **Native desktop services in Hikai**: Notifications, tray UI, media state, audio/brightness control, system statistics, recorder state, persistent text/avatar data, and IPC-backed shell actions.
+* **Classic layouts remain available**: Waybar layouts such as `top`, `left`, `coredge`, `minimal`, `neon`, `island`, and `legacy`, plus the Classic Rofi/SwayNC workflow.
+* **Desktop extras**: Cava underbar, Desktop Icons, Rounded Screen, Edge Trigger, taskbar/dock workflow, screenshots, recording, clipboard tools, and session/power actions.
+* **Safer dotfiles lifecycle**: Deep Symlink or Copy deployment, centralized target registry, install-only configs, per-run backups, diagnostics, rollback, and safe unlinking.
 
 > [!note]
-> My dotfiles are powered by scripts; if you're not using them, there's no impact on your performance!
+> HakuSpace is modular. Features that are not enabled do not need to stay running, and Hikai replaces several Classic UI processes instead of stacking another complete shell on top of them.
 
 > [!tip]
-> See performance breakdown in [Performance](#performance) section.
+> The [Performance](#performance) numbers below are historical Classic-stack measurements; Hikai uses a different process model and should be measured separately.
 
 ---
 
 ## Programs
 
 <div align="center">
-  
+
 See more information in: [pkg-core](src/packages/pkg-core.txt) | [pkg-service](src/packages/pkg-service.txt) | [pkg-optional](src/packages/pkg-optional.txt)
 
 Specific packages for each WM: [pkg-hyprland](src/packages/pkg-hyprland.txt) | [pkg-niri](src/packages/pkg-niri.txt) | [pkg-mango](src/packages/pkg-mango.txt) | [pkg-labwc](src/packages/pkg-labwc.txt)
 
 </div>
 
-| Component | Program |
-|---|---|
-| Terminal | [Kitty](https://github.com/kovidgoyal/kitty) |
-| App Launcher | [Rofi](https://github.com/davatorium/rofi) |
-| Status Bar | [Waybar](https://github.com/alexays/waybar) |
-| Shell | [Fish](https://fishshell.com/) + [Starship](https://starship.rs/) |
-| File Manager | [Thunar](https://docs.xfce.org/xfce/thunar/start) |
-| Notifications & Control Center | [SwayNC](https://github.com/ErikReider/SwayNotificationCenter) |
-| Wallpaper | [Awww](https://codeberg.org/LGFae/awww) |
-| Idle Management | [Hypridle](https://github.com/hyprwm/hypridle) |
-| Screen Lock | [Hyprlock](https://github.com/hyprwm/hyprlock) |
-| Editor | [VS Code](https://code.visualstudio.com/) |
-| Browser | [Firefox](https://www.firefox.com/en-US/) |
-| Screen Recording | [Wl-screenrec](https://github.com/russelltg/wl-screenrec) |
-| Display Manager (Default) | [Ly](https://codeberg.org/fairyglade/ly#systemd) |
+| Component | Hikai | Classic / Shared |
+|---|---|---|
+| Desktop shell / status UI | [Quickshell](https://quickshell.org/) | [Waybar](https://github.com/alexays/waybar) |
+| App launcher / menus | Native Haku Menu, Action Menu, picker surfaces | [Rofi](https://github.com/davatorium/rofi) |
+| Notifications | Native Quickshell `NotificationServer` + HakuSpace Center | [SwayNC](https://github.com/ErikReider/SwayNotificationCenter) |
+| System tray | Native Quickshell tray + tray menus | Waybar tray |
+| Terminal | [Kitty](https://github.com/kovidgoyal/kitty) | Shared |
+| Shell | [Fish](https://fishshell.com/) + [Starship](https://starship.rs/) | Shared |
+| File Manager | [Thunar](https://docs.xfce.org/xfce/thunar/start) | Shared |
+| Wallpaper | [Awww](https://codeberg.org/LGFae/awww) + `mpvpaper` | Shared |
+| Idle Management | [Hypridle](https://github.com/hyprwm/Hypridle) | Shared |
+| Screen Lock | [Hyprlock](https://github.com/hyprwm/hyprlock) | Shared |
+| Screen Recording | [wl-screenrec](https://github.com/russelltg/wl-screenrec) | Shared |
+| Editor | [VS Code](https://code.visualstudio.com/) | Shared / replaceable |
+| Browser | [Firefox](https://www.firefox.com/en-US/) | Shared / replaceable |
+| Display Manager (Default) | [Ly](https://codeberg.org/fairyglade/ly#systemd) | Shared |
 
-> XDG Desktop Portal: GTK by default, but each WM will use its specific, recommended portal according to its official wiki (hyprland uses hyprland, niri uses gnome, and mangowm/labwc uses wlr).
+> [!note]
+> The public HakuSpace scripts are increasingly backend-neutral. Commands such as notification, wallpaper, launcher, recording, power/session, and theme actions are routed through facade/controller layers so keybindings do not need separate Hikai and Classic commands.
 
-> Accent Color based on wallpaper using [python-colorthief](https://github.com/fengsp/color-thief-py)
+> XDG Desktop Portal: GTK by default, but each WM will use its specific, recommended portal according to its official wiki (Hyprland uses Hyprland, Niri uses GNOME, and MangoWM/Labwc use wlr).
 
+> Accent color generation uses [python-colorthief](https://github.com/fengsp/color-thief-py).
 ---
 
 ## Installation Guide
@@ -108,7 +150,7 @@ Specific packages for each WM: [pkg-hyprland](src/packages/pkg-hyprland.txt) | [
 
 - You have completed the installation of Arch, Fedora, NixOS, or a derivative distribution.
 - You have installed and configured essential utilities such as Wi-Fi, Bluetooth, Audio, and the necessary hardware drivers.
-- You are familiar with configuring the system via **code**, as Haku Space does **not** provide a central graphical settings GUI.
+- You are comfortable reading configuration files and scripts. Hikai now includes a native Settings/config editor for supported options, but HakuSpace is still a dotfiles project rather than a fully graphical desktop control center.
 
 ### Clone Haku Space
 
@@ -258,8 +300,13 @@ Haku Space's bundled Hyprland, Niri, MangoWM, and Labwc configs already call thi
 ## Dotfiles Management
 
 Haku Space provides modular scripts to safely manage your dotfiles using a flexible, composable mechanism:
-- **Deployment Mode**: Files are automatically managed via **Deep Symlink** (default, allowing instant updates when source files change) or **Copy** mode during installation.
-- **Customization**: All your personal tweaks should be done inside the `~/hakucfg` directory, keeping the core system clean and untouched.
+- **Thin orchestrators**: `install.sh` and `update.sh` coordinate reusable modules under `scripts/` instead of containing all filesystem/package logic themselves.
+- **Single target registry**: `scripts/registry.sh` is the common source of truth used by link/unlink/update/diagnostic workflows.
+- **Deployment Mode**: Files are managed via **Deep Symlink** (default, per-file links that preserve real destination directories) or **Copy** mode.
+- **Safe lifecycle**: A shared runtime context keeps one backup location per operation; `doctor.sh`, `rollback.sh`, and `unlink.sh` provide read-only diagnosis, restoration, and ownership-aware cleanup.
+- **Install-only configs**: Application-managed configs such as Thunar/btop/cava are copied once and are intentionally skipped by later updates.
+- **Customization**: Personal tweaks live inside `~/hakucfg`; sync seeds missing templates while preserving user-modified values.
+- **Core script architecture**: user-facing compatibility facades are separated from headless backend/controllers and Classic-only frontends, allowing Hikai to reuse the same operations without depending on Rofi.
 
 See more in: [Management & Deployment](docs/management.md)
 
@@ -392,7 +439,7 @@ Haku Space currently does not provide an automatic rollback for every system-lev
 
 ## Performance
 
-Haku Space is designed to balance aesthetic features and resource efficiency. Below is the RAM usage breakdown based on a system with **16GB RAM**:
+Haku Space is designed to balance aesthetic features and resource efficiency. The figures below are **older Classic-stack measurements** from a system with **16GB RAM**; they are kept as a rough reference and are not a current Hikai benchmark:
 
 - **Fresh Arch Linux + Dotfiles (Base):** ~1.1 GB RAM
 - **Taskbar enabled:** +77 MB
@@ -476,6 +523,8 @@ See more in `~/hakucfg/wm/hyprland-custom.lua` or [here](src/home/hakucfg/wm/hyp
 | SUPER + C | Kill Focus Window |
 | SUPER + TAB | Open Menu |
 | SUPER + GRAVE | Toggle Hikai Navigation |
+| SUPER + N | Open Notification Center (routes to active backend) |
+| SUPER + ESCAPE | Emergency switch to Classic backend |
 | SUPER + R | App Menu |
 | SUPER + W | Toggle Taskbar |
 | SUPER + P | Screenshot |
@@ -519,7 +568,7 @@ See more in `~/hakucfg/wm/hyprland-custom.lua` or [here](src/home/hakucfg/wm/hyp
 
 ## Documentation
 
-Want to understand how HakuSpace works under the hood? We've written comprehensive documentation explaining the internal architecture, scripts, and theming engine. 
+Want to understand how HakuSpace works under the hood? We've written comprehensive documentation explaining the internal architecture, scripts, and theming engine.
 
 - [Architecture Overview](docs/architecture.md) (**Start Here!**)
 - [Management & Deployment](docs/management.md)
@@ -529,27 +578,45 @@ Want to understand how HakuSpace works under the hood? We've written comprehensi
 - [Utilities](docs/core/util.md)
 - [Haku Menu](docs/core/menu.md)
 - [Mini-Apps (Taskbar, Desktop Icons, Rounded Screen, Edge Trigger)](docs/core/app.md)
+- [Quickshell / Hikai Master Plan](docs/task/HAKUSPACE_QUICKSHELL_PLAN.md)
+- [Quickshell Style Guide](docs/task/QUICKSHELL_STYLE.md)
+- [Quickshell Testing Guide](docs/task/QUICKSHELL_TESTING.md)
 
 ---
 
 ## Troubleshooting
 
-**Waybar issues**:
-- **Waybar clock**: You should set your timezone and locale manually in waybar configuration to ensure the clock displays correctly.
-- **Waybar cava module**: If you encounter issues with the Cava module in Waybar, ensure that you have installed `waybar-cava` and that it is properly configured in your Waybar config file.
-- Waybar use `ext/workspaces` for **Multi-WMs** setup.
+**Hikai / Quickshell checks**:
 
-**My dotfiles issues**:
-- Some features might still be missing since I only tested this setup for **my personal use**. If you need more than what's provided, you'll need to install and configure those parts manually.
-- If you don't want to use certain apps (like `wl-screenrec`, `thunar`, `ly` etc.), you can easily remove and replace them with alternatives. However, some apps are deeply integrated into my scripts or configs, so removing them may break functionality or cause those scripts/configs to stop working.
-- If you find that **the script isn't working**, run it directly in the terminal to see what the error is.
-- If you encounter any **issues** during installation or configuration, just ask me in some video on my [Tiktok](https://www.tiktok.com/@hakuimaku2372), open an issue on GitHub or Join my [Discord](https://discord.gg/Juuun8sXsN) to get more help!. I will do my best to help you out.
+```bash
+~/.local/bin/haku_backend.sh --check
+~/.local/bin/haku_backend.sh --verify
+qs -c hakuspace ipc call shell ping
+```
 
-If you're using **Fedora**:
-- Swaync service may automatically start on Fedora. Which can **cause issues when startup**. To fix this, you can disable the Swaync service by running the following command:
+- `haku_backend.sh --verify` checks that Quickshell is alive in Hikai mode, the Classic UI processes are not running, and Quickshell owns `org.freedesktop.Notifications`.
+- If Hikai cannot start cleanly, return to the fallback stack with `~/.local/bin/haku_backend.sh set classic` or use the bundled **`SUPER + ESCAPE`** binding.
+- Hikai workspace integration is currently implemented for Hyprland, Niri, and MangoWM. Labwc uses the null workspace backend for now because ext-workspace is unstable with the targeted Quickshell version.
+- Runtime Quickshell logs are written under `${XDG_RUNTIME_DIR}/hakuspace/` by the supervisor/backend helpers.
+
+**Classic / Waybar checks**:
+- **Waybar clock**: set your timezone and locale manually in the Waybar configuration if the clock is incorrect.
+- **Waybar cava module**: install `waybar-cava` if you use the Classic Waybar Cava module.
+- Classic uses Waybar/Rofi/SwayNC; these processes are intentionally stopped when Hikai is active.
+
+**Dotfiles / deployment checks**:
+- Run `./doctor.sh` for a read-only integrity scan of managed configs and symlinks.
+- Use `./link.sh --list` / `./packages.sh --list` to inspect the modules and package groups known to the current repository.
+- If an update causes a configuration regression, use `./rollback.sh` and select the appropriate backup instead of deleting managed directories manually.
+- Some applications are deeply integrated with HakuSpace scripts. Replacing packages such as `wl-screenrec`, `thunar`, or `ly` may require updating the corresponding controller/configuration.
+
+If you're using **Fedora** and a user `swaync.service` automatically restarts SwayNC, it can conflict with Hikai's native notification ownership. Disable that service if needed:
+
 ```bash
 systemctl --user disable swaync.service
 ```
+
+If you encounter an installation or configuration issue, open a GitHub issue or ask in the project [Discord](https://discord.gg/Juuun8sXsN).
 
 ---
 
