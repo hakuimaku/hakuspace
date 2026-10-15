@@ -6,6 +6,7 @@ import "../motion" as Motion
 FocusScope {
     id: root
     signal closeRequested(bool keyboard)
+    signal railFocusRequested()
     signal openFullRequested()
     property var entries: []
     property var pendingEntries: []
@@ -47,6 +48,11 @@ FocusScope {
     }
 
     Component.onCompleted: reload()
+    Keys.onLeftPressed: event => {
+        if (event.modifiers !== Qt.NoModifier) { event.accepted = false; return }
+        railFocusRequested()
+        event.accepted = true
+    }
     Keys.onUpPressed: event => {
         if (fullMenuSelected) fullMenuSelected = false
         else selectedIndex = Math.max(0, selectedIndex - 1)

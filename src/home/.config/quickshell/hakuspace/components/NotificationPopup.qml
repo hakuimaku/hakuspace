@@ -144,10 +144,12 @@ Item {
         // configure cycles and makes the reveal visibly stutter.
         anchors.bottom: true
         color: "transparent"
-        visible: root.displayPopups.length > 0 || root.revealHeight > 0
+        // Keep Top mapped so opening the popup does not raise it over fullscreen.
+        visible: true
         mask: Region {}
 
         Flare.FlareSurface {
+            visible: root.displayPopups.length > 0 || root.revealHeight > 0
             y: root.topOffset
             start: root.flareStart
             end: root.flareEnd

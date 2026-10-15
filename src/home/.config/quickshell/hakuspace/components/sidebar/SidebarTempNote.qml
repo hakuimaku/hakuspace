@@ -5,6 +5,7 @@ import "../editor"
 FocusScope {
     id: root
     signal closeRequested(bool keyboard)
+    signal railFocusRequested()
     signal keyboardInteraction()
 
     // Keep editing focus inside the note.
@@ -15,6 +16,8 @@ FocusScope {
         anchors.fill: parent
         text: TextStore.scratchDraft
         placeholderText: "write something temporary here :v"
+        leftBoundaryNavigationEnabled: true
+        onLeftBoundaryRequested: root.railFocusRequested()
         onTextEdited: newText => {
             root.keyboardInteraction()
             TextStore.setScratchDraft(newText)

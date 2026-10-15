@@ -6,6 +6,7 @@ FocusScope {
     id: root
     property Item tooltipHost: null
     signal closeRequested(bool keyboard)
+    signal railFocusRequested()
     signal dialogLeaseRequested(string token, bool active)
     signal appRequested()
     signal pinRequested(string kind, string path)
@@ -19,6 +20,14 @@ FocusScope {
     Keys.onEscapePressed: event => {
         if (fileDialog.visible || folderDialog.visible) { event.accepted = true; return }
         closeRequested(true)
+        event.accepted = true
+    }
+    Keys.onLeftPressed: event => {
+        if (event.modifiers !== Qt.NoModifier || fileDialog.visible || folderDialog.visible) {
+            event.accepted = false
+            return
+        }
+        railFocusRequested()
         event.accepted = true
     }
     Keys.onUpPressed: event => { modeIndex = Math.max(0, modeIndex - 1); event.accepted = true }
@@ -72,12 +81,14 @@ FocusScope {
                 radius: Theme.radius
                 border.width: 0
                 idleColor: Theme.surface
-                hoverColor: Theme.accent
+                hoverColor: root.modeIndex === index ? Theme.accent : Theme.surface
                 pressedColor: Theme.accent
-                selectedColor: Theme.surface
-                hoverForegroundColor: Theme.onAccentColor
+                selectedColor: Theme.accent
+                focusColor: Theme.accent
+                hoverForegroundColor: root.modeIndex === index ? Theme.onAccentColor : Theme.fg
                 pressedForegroundColor: Theme.onAccentColor
-                selectedForegroundColor: Theme.accent
+                selectedForegroundColor: Theme.onAccentColor
+                focusForegroundColor: Theme.onAccentColor
                 hoverScaleDelta: 0.04
                 tooltip: modelData.label
                 tooltipHost: root.tooltipHost
@@ -85,6 +96,7 @@ FocusScope {
                 Accessible.name: modelData.label
                 selected: root.activeFocus && root.modeIndex === index
                 focused: root.activeFocus && root.modeIndex === index
+                onHoveredChanged: if (hovered) root.modeIndex = index
                 onClicked: root.activateMode(index)
                 Column {
                     anchors.centerIn: parent

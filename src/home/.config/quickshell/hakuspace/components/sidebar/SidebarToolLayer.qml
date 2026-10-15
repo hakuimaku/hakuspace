@@ -5,6 +5,7 @@ Item {
     id: root
 
     property bool open: false
+    property bool focusContent: true
     property real targetWidth: 350
     property real targetHeight: 250
     property real cornerRadius: Theme.largeRadius
@@ -66,7 +67,7 @@ Item {
         morphAnim.start()
     }
     onMorphProgressChanged: {
-        if (open && morphProgress >= 0.96) forceFocus()
+        if (open && focusContent && morphProgress >= 0.96) forceFocus()
     }
 
     NumberAnimation {

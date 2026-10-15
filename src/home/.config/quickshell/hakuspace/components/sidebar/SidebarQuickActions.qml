@@ -5,6 +5,7 @@ import "../../services"
 FocusScope {
     id: root
     signal closeRequested(bool keyboard)
+    signal railFocusRequested()
     signal actionRequested(string key)
     property int selectedIndex: 0
     property bool keyboardCursor: false
@@ -48,6 +49,7 @@ FocusScope {
     Keys.onLeftPressed: event => {
         keyboardCursor = true
         if (selectedIndex % 5 > 0) selectedIndex--
+        else railFocusRequested()
         event.accepted = true
     }
     Keys.onRightPressed: event => {

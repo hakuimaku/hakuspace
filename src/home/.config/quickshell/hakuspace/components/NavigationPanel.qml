@@ -260,13 +260,21 @@ Item {
     function focusSidebarRail(fromKeyboard) {
         sidebarKeyboardMode = !!fromKeyboard
         keyboardLease = !!fromKeyboard
-        Qt.callLater(function() { if (root.panelOpen) keyHandler.forceActiveFocus() })
+        if (panelOpen) keyHandler.forceActiveFocus()
+        Qt.callLater(function() {
+            if (root.panelOpen && root.sidebarKeyboardMode === !!fromKeyboard
+                    && (!root.sidebarToolOpen || fromKeyboard))
+                keyHandler.forceActiveFocus()
+        })
     }
 
     // Give newly loaded content keyboard ownership.
     function focusActiveSidebarTool() {
+        if (!panelOpen || !sidebarToolOpen || sidebarKeyboardMode) return
+        sidebarToolLayer.forceFocus()
         Qt.callLater(function() {
-            if (root.sidebarToolOpen && sidebarToolLayer) sidebarToolLayer.forceFocus()
+            if (root.panelOpen && root.sidebarToolOpen && !root.sidebarKeyboardMode)
+                sidebarToolLayer.forceFocus()
         })
     }
 
@@ -753,6 +761,60 @@ Item {
     }
 
     PanelWindow {
+        id: navigationVisualLayer
+        screen: root.modelData
+        anchors { top: true; left: true; right: true; bottom: true }
+        WlrLayershell.layer: WlrLayer.Top
+        WlrLayershell.namespace: "hakuspace-navigation-flare"
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+        exclusionMode: ExclusionMode.Ignore
+        exclusiveZone: 0
+        color: "transparent"
+        // Keep Top mapped so opening the panel does not raise it over fullscreen.
+        visible: true
+        mask: Region {}
+
+        Flare.FlareSurface {
+            id: navigationFlare
+            x: 0
+            // Align the top-right attachment to RoundedScreen content.
+            y: root.frameTop
+            width: navigationVisualLayer.width
+            height: root.flareTargetHeight + root.flareReach
+            start: root.flareStart
+            end: root.flareEnd
+            currentHeight: root.flareHeight
+            bounds: root.frameBounds
+            // Match the shared RoundedScreen corner language.
+            r: Math.max(Theme.largeRadius + 8, AppState.roundedScreenRadius + 8)
+            rf: root.flareReach
+            bottomRadius: root.closing
+                          ? root.backingCurveRadius * (1.0 - root.closeFlareProgress)
+                          : root.backingCurveRadius
+            surfaceColor: Theme.surface
+            opacity: root.closingFromDashboard ? 0.0 : (root.closing
+                     ? Math.max(0.0, 1.0 - Math.max(0.0, root.closeFlareProgress - 0.72) / 0.28)
+                     : Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35))
+            visible: (root.panelOpen || root.closing) && opacity > 0.001
+        }
+        Sidebar.SidebarFlareSurface {
+            x: root.sidebarBodyX
+            y: root.sidebarBodyY
+            visible: sidebarSurface.visible && (root.panelOpen || root.closing)
+            bodyWidth: sidebarSurface.bodyWidth
+            currentHeight: sidebarSurface.currentHeight
+            morphProgress: sidebarSurface.morphProgress
+            rf: sidebarSurface.rf
+            frameThickness: sidebarSurface.frameThickness
+            topFlareY: sidebarSurface.topFlareY
+            earWidth: sidebarSurface.earWidth
+            earRadius: sidebarSurface.earRadius
+            cornerRadius: sidebarSurface.cornerRadius
+            surfaceColor: sidebarSurface.surfaceColor
+        }
+    }
+
+    PanelWindow {
         id: navigationLayer
         screen: root.modelData
         anchors { top: true; left: true; right: true; bottom: true }
@@ -844,32 +906,6 @@ Item {
             })
         }
 
-        // Persistent backing participates in the Logo morph and remains visible
-        // at rest around the circular controller.
-        Flare.FlareSurface {
-            id: navigationFlare
-            x: 0
-            // Align the top-right attachment to RoundedScreen content.
-            y: root.frameTop
-            width: navigationLayer.width
-            height: root.flareTargetHeight + root.flareReach
-            start: root.flareStart
-            end: root.flareEnd
-            currentHeight: root.flareHeight
-            bounds: root.frameBounds
-            // Match the shared RoundedScreen corner language.
-            r: Math.max(Theme.largeRadius + 8, AppState.roundedScreenRadius + 8)
-            rf: root.flareReach
-            bottomRadius: root.closing
-                          ? root.backingCurveRadius * (1.0 - root.closeFlareProgress)
-                          : root.backingCurveRadius
-            surfaceColor: Theme.surface
-            opacity: root.closingFromDashboard ? 0.0 : (root.closing
-                     ? Math.max(0.0, 1.0 - Math.max(0.0, root.closeFlareProgress - 0.72) / 0.28)
-                     : Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35))
-            visible: (root.panelOpen || root.closing) && opacity > 0.001
-        }
-
         // Invisible interaction bridge connecting Sidebar sector to Sidebar body.
         MouseArea {
             id: bridgeHit
@@ -952,6 +988,7 @@ Item {
                 : root.renderedSidebarTool === "shortcutManager" ? shortcutManagerContent
                 : root.renderedSidebarTool === "clipboard" ? clipboardContent
                 : root.renderedSidebarTool === "tempNote" ? tempNoteContent : null
+            focusContent: !root.sidebarKeyboardMode
             open: root.panelOpen && root.sidebarExpanded && root.sidebarToolOpen && !root.closing && !root.dashboardVisuallyActive
             z: 28
             onCloseRequested: {
@@ -980,6 +1017,7 @@ Item {
             id: quickActionsContent
             Sidebar.SidebarQuickActions {
                 keyboardCursor: root.keyboardLease
+                onRailFocusRequested: root.focusSidebarRail(true)
                 onCloseRequested: keyboard => {
                     if (keyboard) UiState.closeNavigation()
                     else root.closeSidebarTool()
@@ -991,6 +1029,7 @@ Item {
             id: shortcutManagerContent
             Sidebar.SidebarShortcutManager {
                 tooltipHost: sidebarTooltipLayer
+                onRailFocusRequested: root.focusSidebarRail(true)
                 onCloseRequested: keyboard => {
                     if (keyboard) UiState.closeNavigation()
                     else root.closeSidebarTool()
@@ -1019,6 +1058,7 @@ Item {
         Component {
             id: clipboardContent
             Sidebar.SidebarClipboard {
+                onRailFocusRequested: root.focusSidebarRail(true)
                 onOpenFullRequested: {
                     UiState.closeNavigation()
                     UiState.openActionMenu(root.modelData.name, "clipboard")
@@ -1032,6 +1072,7 @@ Item {
         Component {
             id: tempNoteContent
             Sidebar.SidebarTempNote {
+                onRailFocusRequested: root.focusSidebarRail(true)
                 onKeyboardInteraction: lifetime.beginKeyboardLease()
                 onCloseRequested: keyboard => {
                     if (keyboard) UiState.closeNavigation()
@@ -1074,20 +1115,19 @@ Item {
             }
         }
 
-        // Circular bulb is flush with the physical top-left corner. The
-        // RoundedScreen border underneath provides the outer 4 px frame, while
-        // navigationFlare joins from frameTop on the right/bottom.
+        // One background follows the Logo morph into the circular controller.
         Rectangle {
             id: circularShell
-            x: root.shellX
-            y: root.shellY
-            width: root.circularShellDiameter
-            height: root.circularShellDiameter
-            radius: width / 2
-            color: Theme.surface
-            opacity: root.closingFromDashboard ? 0.0 : (root.navigationRevealProgress * Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35))
-            scale: 0.92 + root.navigationRevealProgress * 0.08
-            transformOrigin: Item.Center
+            x: root.anchorStart + (root.shellX - root.anchorStart) * root.logoMorphProgress
+            y: root.anchorY + (root.shellY - root.anchorY) * root.logoMorphProgress
+            width: root.logoBaseWidth
+                   + (root.circularShellDiameter - root.logoBaseWidth) * root.logoMorphProgress
+            height: root.logoBaseHeight
+                    + (root.circularShellDiameter - root.logoBaseHeight) * root.logoMorphProgress
+            radius: Math.min(width, height) / 2
+            color: root.blendColor(Theme.accent, Theme.surface, root.logoMorphProgress)
+            opacity: root.closingFromDashboard ? 0.0
+                     : Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35)
             visible: (root.panelOpen || root.closing) && opacity > 0.001
             z: 10
         }
@@ -1136,35 +1176,40 @@ Item {
             focus: root.panelOpen
 
             Keys.onLeftPressed: event => {
-                if (root.dashboardVisuallyActive || root.sidebarToolOpen) return
+                if (root.dashboardVisuallyActive || (root.sidebarToolOpen && !root.sidebarKeyboardMode)) return
                 root.keyboardLease = true
-                if (root.sidebarKeyboardMode) root.moveSidebarSelection(-1)
+                if (root.sidebarKeyboardMode) {
+                    if (!root.sidebarToolOpen) root.moveSidebarSelection(-1)
+                }
                 else root.moveSelection(-1)
                 event.accepted = true
             }
             Keys.onUpPressed: event => {
-                if (root.dashboardVisuallyActive || root.sidebarToolOpen) return
+                if (root.dashboardVisuallyActive || (root.sidebarToolOpen && !root.sidebarKeyboardMode)) return
                 root.keyboardLease = true
                 if (root.sidebarKeyboardMode) root.moveSidebarSelection(-1)
                 else root.moveSelection(-1)
                 event.accepted = true
             }
             Keys.onRightPressed: event => {
-                if (root.dashboardVisuallyActive || root.sidebarToolOpen) return
+                if (root.dashboardVisuallyActive || (root.sidebarToolOpen && !root.sidebarKeyboardMode)) return
                 root.keyboardLease = true
-                if (root.sidebarKeyboardMode) root.moveSidebarSelection(1)
+                if (root.sidebarKeyboardMode && root.sidebarToolOpen) {
+                    root.sidebarKeyboardMode = false
+                    root.focusActiveSidebarTool()
+                } else if (root.sidebarKeyboardMode) root.moveSidebarSelection(1)
                 else root.moveSelection(1)
                 event.accepted = true
             }
             Keys.onDownPressed: event => {
-                if (root.dashboardVisuallyActive || root.sidebarToolOpen) return
+                if (root.dashboardVisuallyActive || (root.sidebarToolOpen && !root.sidebarKeyboardMode)) return
                 root.keyboardLease = true
                 if (root.sidebarKeyboardMode) root.moveSidebarSelection(1)
                 else root.moveSelection(1)
                 event.accepted = true
             }
             Keys.onPressed: event => {
-                if (!root.sidebarKeyboardMode || root.sidebarToolOpen) return
+                if (!root.sidebarKeyboardMode) return
                 if (event.key === Qt.Key_Home) root.sidebarSelectedIndex = 0
                 else if (event.key === Qt.Key_End) root.sidebarSelectedIndex = sidebarSurface.navigationCount - 1
                 else return
@@ -1172,21 +1217,21 @@ Item {
                 event.accepted = true
             }
             Keys.onReturnPressed: event => {
-                if (root.dashboardVisuallyActive || root.sidebarToolOpen) return
+                if (root.dashboardVisuallyActive || (root.sidebarToolOpen && !root.sidebarKeyboardMode)) return
                 root.keyboardLease = true
                 if (root.sidebarKeyboardMode) root.activateSidebarSelection()
                 else root.activateSelected()
                 event.accepted = true
             }
             Keys.onEnterPressed: event => {
-                if (root.dashboardVisuallyActive || root.sidebarToolOpen) return
+                if (root.dashboardVisuallyActive || (root.sidebarToolOpen && !root.sidebarKeyboardMode)) return
                 root.keyboardLease = true
                 if (root.sidebarKeyboardMode) root.activateSidebarSelection()
                 else root.activateSelected()
                 event.accepted = true
             }
             Keys.onSpacePressed: event => {
-                if (root.sidebarKeyboardMode && !root.sidebarToolOpen) {
+                if (root.sidebarKeyboardMode) {
                     root.activateSidebarSelection()
                     event.accepted = true
                 }

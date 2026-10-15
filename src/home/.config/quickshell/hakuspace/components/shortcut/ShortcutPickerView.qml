@@ -3,7 +3,7 @@ import QtQuick.Controls
 import Quickshell.Io
 import Quickshell.Widgets
 import "../../services"
-import "../sidebar" as Sidebar
+import "../motion" as Motion
 
 FocusScope {
     id: root
@@ -84,15 +84,36 @@ FocusScope {
         clip: true
         spacing: 6
         model: root.filtered
-        delegate: Sidebar.SidebarMorphButton {
+        Motion.SelectionPill {
+            id: selectionPill
+            parent: appList.contentItem
+            z: 0
+        }
+        delegate: Motion.MorphButton {
+            id: appButton
             required property int index
             required property var modelData
+            z: 1
             width: appList.width
             height: 52
             radius: Theme.radius
-            hoverScaleDelta: 0.025
-            focused: root.selectedIndex === index && (root.activeFocus || search.activeFocus)
-            selected: root.selectedIndex === index && (root.activeFocus || search.activeFocus)
+            selected: root.selectedIndex === index
+            focused: selected && root.activeFocus
+            selectedOverridesHover: true
+            idleColor: "transparent"
+            hoverColor: selected ? "transparent" : Qt.darker(Theme.hoverMuted, 1.18)
+            pressedColor: selected ? "transparent" : Qt.darker(Theme.hoverMuted, 1.35)
+            selectedColor: "transparent"
+            focusColor: "transparent"
+            foregroundColor: Theme.fg
+            hoverForegroundColor: selected ? Theme.onAccentColor : Theme.fg
+            selectedForegroundColor: Theme.onAccentColor
+            focusForegroundColor: Theme.onAccentColor
+            border.width: 0
+            hoverScaleDelta: 0.003
+            Component.onCompleted: if (selected) selectionPill.targetItem = this
+            onSelectedChanged: if (selected) selectionPill.targetItem = this
+            onHoveredChanged: if (hovered) root.selectedIndex = index
             onClicked: { root.selectedIndex = index; root.shortcutChosen(modelData.path) }
             Row {
                 anchors { fill: parent; margins: 10 }

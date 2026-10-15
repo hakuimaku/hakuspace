@@ -14,6 +14,7 @@ Item {
     property int fontPixelSize: Math.max(12, Theme.fontSize - 1)
     property int wrapMode: TextEdit.Wrap
     property bool codeEditingEnabled: false
+    property bool leftBoundaryNavigationEnabled: false
     property string fileId: ""
     property string indentText: "    "
     property bool _syncingExternal: false
@@ -23,6 +24,7 @@ Item {
     signal textEdited(string newText)
     signal escapeRequested()
     signal saveRequested()
+    signal leftBoundaryRequested()
 
     // Focus the input after its parent panel opens.
     function forceEditorFocus() {
@@ -142,6 +144,15 @@ Item {
                 if (root.codeEditingEnabled && !root.readOnly)
                     root.applyEdit(EditOps.indent(text, selectionStart, selectionEnd, cursorPosition, root.indentText, true))
                 event.accepted = true
+            }
+
+            Keys.onLeftPressed: event => {
+                event.accepted = false
+                if (root.leftBoundaryNavigationEnabled && event.modifiers === Qt.NoModifier
+                        && cursorPosition === 0 && selectionStart === selectionEnd) {
+                    root.leftBoundaryRequested()
+                    event.accepted = true
+                }
             }
 
             // Let the parent close its editor panel.

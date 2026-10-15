@@ -10,6 +10,8 @@ Item {
     property var contentKey: null
     property real maxWidth: 360
     property real horizontalPadding: 12
+    property real verticalPadding: 8
+    property color surfaceColor: Theme.surface
     property int contentFadeDuration: HAnimation.effects
     property bool contentReady: false
     property var interactionEnvelope: ({ start: 0, end: 0, height: 0 })
@@ -20,7 +22,7 @@ Item {
         interactionEnvelope = {
             start: previous.end > previous.start ? Math.min(previous.start, start) : start,
             end: Math.max(previous.end, end),
-            height: Math.max(previous.height, currentHeight, naturalContentHeight + 16)
+            height: Math.max(previous.height, currentHeight, naturalContentHeight + root.verticalPadding * 2)
         }
     }
     onStartChanged: extendInteractionEnvelope()
@@ -63,13 +65,14 @@ Item {
         contentW: contentItem.naturalWidth
         contentH: contentItem.naturalHeight
         padX: root.horizontalPadding * 2
+        padY: root.verticalPadding * 2
         bounds: root.wBounds
         maxW: root.maxWidth
         snap: 2 * Theme.hugRadius
         onSettled: function(s) {
             if (s) root.interactionEnvelope = {
                 start: morph.mStart, end: morph.mEnd,
-                height: Math.max(morph.mHeight, contentItem.naturalHeight + 16)
+                height: Math.max(morph.mHeight, contentItem.naturalHeight + root.verticalPadding * 2)
             }
             root.settled(s)
             contentItem.settle(s)
@@ -84,7 +87,7 @@ Item {
         bounds: root.wBounds
         r: Theme.largeRadius + 8
         rf: Theme.hugRadius
-        surfaceColor: Theme.surface
+        surfaceColor: root.surfaceColor
         
         FlareContent {
             id: contentItem
