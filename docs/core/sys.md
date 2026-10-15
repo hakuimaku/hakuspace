@@ -32,7 +32,7 @@ Managing monitor power states varies wildly between different Window Managers. T
 ### `idle_inhibit.sh` (The Smart Sleep Blocker)
 There's nothing more annoying than your screen turning off while you're watching a video or listening to a podcast.
 - **What it does:** This script acts as the brain for `hypridle`. When your system is inactive, `hypridle` asks this script if it's allowed to turn off the screen.
-- **Audio Detection:** It actively checks your PulseAudio/PipeWire sink inputs. If it detects that audio is currently playing (and isn't muted or paused), it blocks the screen from sleeping.
+- **Audio Detection:** It checks PulseAudio/PipeWire sink inputs and blocks idle for unmuted, uncorked audio streams, except streams from Zen.
 - **Manual Toggle:** You can run it with `--toggle` to manually force the screen to stay on indefinitely, saving the state to a local file.
 
 ### `lock.sh` (The Smart Screen Locker)

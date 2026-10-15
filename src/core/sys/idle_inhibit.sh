@@ -24,14 +24,10 @@ mkdir -p "$STATE_DIR"
 is_audio_playing() {
     local check_audio
     check_audio=$(pactl list sink-inputs 2>/dev/null | awk '
-        /Sink Input/ { is_target=1; corked=0; muted=0 }
-        is_target && /Corked: yes/ { corked=1 }
-        is_target && /Mute: yes/ { muted=1 }
-        is_target && /media.class = "Stream\/Output\/Audio"/ {
-            if (corked == 0 && muted == 0) {
-                found=1
-            }
-        }
+        BEGIN { RS="Sink Input #" }
+        /media.class = "Stream\/Output\/Audio"/ &&
+        !/Corked: yes/ && !/Mute: yes/ &&
+        !/application.process.binary = "zen-bin"/ { found=1 }
         END { print (found == 1 ? "1" : "0") }
     ')
 
