@@ -10,6 +10,7 @@ Item {
     property var workspaces: []
     property bool supported: backendName !== "none"
     property string backendName: "none"
+    property bool labwcSession: false
     property var caps: ({ occupied: false, windowCount: false, urgent: false, perOutput: false, special: false, secondary: false })
     
     property string activeWindowClass: ""
@@ -18,6 +19,10 @@ Item {
     // Requests a compositor-native session exit through the active backend.
     // Returns true when a backend accepted the request.
     function quitSession() {
+        if (labwcSession) {
+            Quickshell.execDetached(["labwc", "--exit"]);
+            return true;
+        }
         if (backendItem && backendItem.quitSession) {
             backendItem.quitSession();
             return true;
@@ -97,6 +102,7 @@ Item {
             comp = Qt.createComponent("MangoBackend.qml");
         // Disable Labwc workspace loading: ext-workspace crashes Quickshell 0.3.1.
         } else if (envLabwc || envXdg.toLowerCase().indexOf("labwc") !== -1) {
+            labwcSession = true;
             backendName = "none";
             comp = Qt.createComponent("NullBackend.qml");
         } else {

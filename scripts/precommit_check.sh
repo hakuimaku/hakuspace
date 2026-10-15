@@ -44,6 +44,7 @@ fi
 node scripts/test_safe_zone_geometry.js
 if command -v quickshell >/dev/null 2>&1; then
     bash scripts/test_safe_zone_controller.sh
+    bash scripts/test_labwc_exit.sh
 fi
 
 python3 scripts/test_setting_ctl.py
