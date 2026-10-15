@@ -58,7 +58,7 @@ Row {
                     anchors.centerIn: parent
                     scale: blMA.containsMouse ? 1.2 : 1.0
                     // Animates brightness icon hover scale.
-                    Behavior on scale { NumberAnimation { duration: HAnimation.normal } }
+                    Behavior on scale { NumberAnimation { duration: HAnimation.slow } }
                 }
                 MouseArea {
                     id: blMA
@@ -90,7 +90,7 @@ Row {
                     anchors.centerIn: parent
                     scale: volMA.containsMouse ? 1.2 : 1.0
                     // Animates volume icon hover scale.
-                    Behavior on scale { NumberAnimation { duration: HAnimation.normal } }
+                    Behavior on scale { NumberAnimation { duration: HAnimation.slow } }
                 }
                 MouseArea {
                     id: volMA
@@ -135,7 +135,7 @@ Row {
                     anchors.centerIn: parent
                     scale: batMA.containsMouse ? 1.2 : 1.0
                     // Animates battery icon hover scale.
-                    Behavior on scale { NumberAnimation { duration: HAnimation.normal } }
+                    Behavior on scale { NumberAnimation { duration: HAnimation.slow } }
                 }
                 MouseArea {
                     id: batMA

@@ -2,6 +2,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import "../services"
+import "base" as Base
+import "base/SafeZoneGeometry.js" as SafeZoneGeometry
 import "flare" as Flare
 import "hakumenu" as HakuMenu
 import "motion" as Motion
@@ -13,7 +15,6 @@ Item {
     readonly property bool panelOpen: UiState.activePanel === "hakumenu"
         && UiState.hakuMenuMode !== "closed"
         && UiState.hakuMenuScreenName === modelData.name
-    property bool openedByTrigger: false
     readonly property real triggerHeight: 4
     readonly property real triggerWidth: modelData.width * 0.20
     readonly property real maxMenuWidth: modelData.width * 0.42
@@ -30,50 +31,46 @@ Item {
     readonly property real triggerX: (modelData.width - triggerWidth) / 2
     readonly property bool contentReady: isFinite(menu.width) && menu.width > 0
                                          && isFinite(menu.height) && menu.height > 0
+    readonly property bool safeExpanded: panelOpen || morph.mHeight > 0.01
+    readonly property var safeZones: {
+        var empty = SafeZoneGeometry.rect(0, 0, 0, 0)
+        var trigger = SafeZoneGeometry.rect(triggerX, 0, triggerWidth, triggerHeight)
+        var anchor = safeExpanded ? SafeZoneGeometry.inflate(trigger,
+            Interaction.safeZoneAnchorMargin) : trigger
+        var target = SafeZoneGeometry.rect((modelData.width - maxMenuWidth) / 2,
+            menuTop, maxMenuWidth, menuHeight + bounceHeadroom)
+        var current = SafeZoneGeometry.rect(morph.mStart, menuTop,
+            Math.max(0, morph.mEnd - morph.mStart), morph.mHeight)
+        var menuZone = safeExpanded ? SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
+            SafeZoneGeometry.unionBounds(current, target), Interaction.safeZoneMargin),
+            modelData.width, modelData.height) : empty
+        return [SafeZoneGeometry.clampRect(anchor, modelData.width, modelData.height),
+                // The 20% wide trigger needs a vertical handoff along its full width.
+                safeExpanded ? SafeZoneGeometry.clampRect(SafeZoneGeometry.rect(
+                    triggerX, triggerHeight, triggerWidth, Math.max(0, menuTop - triggerHeight)),
+                    modelData.width, modelData.height) : empty,
+                menuZone]
+    }
+    function safeZone(index) { return safeZones[index] || SafeZoneGeometry.rect(0, 0, 0, 0) }
+
+    Base.SafeZoneController {
+        id: lifetime
+        active: root.panelOpen
+        containsPoint: function(x, y) { return SafeZoneGeometry.containsAny(root.safeZones, x, y) }
+        onCloseRequested: UiState.closeHakuMenu()
+    }
 
     width: windowWidth
     height: windowHeight
 
     Component.onDestruction: UiState.closeHakuMenuIfScreen(modelData.name)
 
-    Timer {
-        id: closeGraceTimer
-        interval: HAnimation.fast
-        repeat: false
-        onTriggered: {
-            if (root.panelOpen && root.openedByTrigger) {
-                UiState.closeHakuMenu()
-            }
-        }
-    }
-
-    function insideSafeUnion(px, py) {
-        var leftBound = Math.min(morph.mStart, (modelData.width - root.targetMenuWidth) / 2, root.triggerX) - Theme.hugRadius
-        var rightBound = Math.max(morph.mEnd, (modelData.width + root.targetMenuWidth) / 2, root.triggerX + root.triggerWidth) + Theme.hugRadius
-        var topBound = 0
-        var bottomBound = root.menuTop + Math.max(morph.mHeight, root.menuHeight) + Theme.pad
-        return px >= leftBound && px <= rightBound && py >= topBound && py <= bottomBound
-    }
-
-    function evaluatePointer(px, py) {
-        if (!panelOpen || !openedByTrigger) return
-        if (insideSafeUnion(px, py)) {
-            closeGraceTimer.stop()
-        } else {
-            if (!closeGraceTimer.running) {
-                closeGraceTimer.start()
-            }
-        }
-    }
-
     onPanelOpenChanged: {
-        closeGraceTimer.stop()
         if (panelOpen) {
             Qt.callLater(function() {
                 if (root.panelOpen) searchInput.forceActiveFocus()
             })
         } else {
-            openedByTrigger = false
             searchInput.focus = false
         }
     }
@@ -118,17 +115,23 @@ Item {
         anchors { top: true; bottom: true; left: true; right: true }
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "hakuspace-hakumenu-content"
-        WlrLayershell.keyboardFocus: root.panelOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+        WlrLayershell.keyboardFocus: root.panelOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
         color: "transparent"
 
         mask: Region {
             Region {
-                x: root.panelOpen || morph.mHeight > 0.01 ? 0 : root.triggerX
-                y: 0
-                width: root.panelOpen || morph.mHeight > 0.01 ? root.modelData.width : root.triggerWidth
-                height: root.panelOpen || morph.mHeight > 0.01 ? root.modelData.height : root.triggerHeight
+                x: root.safeZone(0).x; y: root.safeZone(0).y
+                width: root.safeZone(0).width; height: root.safeZone(0).height
+            }
+            Region {
+                x: root.safeZone(1).x; y: root.safeZone(1).y
+                width: root.safeZone(1).width; height: root.safeZone(1).height
+            }
+            Region {
+                x: root.safeZone(2).x; y: root.safeZone(2).y
+                width: root.safeZone(2).width; height: root.safeZone(2).height
             }
         }
 
@@ -136,31 +139,25 @@ Item {
             id: safeZoneHover
             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
             onHoveredChanged: {
-                if (!hovered && root.panelOpen && root.openedByTrigger) {
-                    if (!closeGraceTimer.running) {
-                        closeGraceTimer.start()
-                    }
+                if (!hovered) lifetime.pointerExited()
+                else {
+                    lifetime.pointerEntered(point.position.x, point.position.y)
+                    if (root.panelOpen) searchInput.forceActiveFocus()
                 }
             }
-            onPointChanged: {
-                if (root.panelOpen) {
-                    root.evaluatePointer(point.position.x, point.position.y)
-                }
-            }
+            onPointChanged: lifetime.pointerMoved(point.position.x, point.position.y)
         }
 
-        // Clicking outside the menu closes HakuMenu
-        MouseArea {
-            id: outsideDismiss
+        Base.SafeZoneDebugOverlay {
             anchors.fill: parent
-            enabled: root.panelOpen
-            hoverEnabled: true
-            onPositionChanged: mouse => {
-                if (root.panelOpen) {
-                    root.evaluatePointer(mouse.x, mouse.y)
-                }
-            }
-            onClicked: UiState.closeHakuMenu()
+            z: 999
+            closePending: lifetime.closePending
+            zones: root.safeZones.map(function(zone, index) {
+                return { rect: zone, kind: index === 0 ? "anchor"
+                    : index === 1 ? "corridor"
+                    : morph.mHeight > 0.01 && morph.mHeight < root.menuHeight
+                        ? "animation" : "surface" }
+            })
         }
 
         Item {
@@ -185,15 +182,11 @@ Item {
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                 onHoveredChanged: {
                     if (hovered && !root.panelOpen) {
-                        root.openedByTrigger = true
                         UiState.openHakuMenu(root.modelData.name)
                     }
                 }
-                onPointChanged: {
-                    if (root.panelOpen && root.openedByTrigger) {
-                        root.evaluatePointer(root.triggerX + point.position.x, point.position.y)
-                    }
-                }
+                onPointChanged: if (root.panelOpen)
+                    lifetime.pointerMoved(root.triggerX + point.position.x, point.position.y)
             }
 
             MouseArea {
@@ -201,7 +194,6 @@ Item {
                 hoverEnabled: true
                 onEntered: {
                     if (!root.panelOpen) {
-                        root.openedByTrigger = true
                         UiState.openHakuMenu(root.modelData.name)
                     }
                 }
@@ -247,11 +239,9 @@ Item {
             HoverHandler {
                 id: surfaceHover
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                onPointChanged: {
-                    if (root.panelOpen && root.openedByTrigger) {
-                        root.evaluatePointer(contentSurface.x + point.position.x, contentSurface.y + point.position.y)
-                    }
-                }
+                onPointChanged: if (root.panelOpen)
+                    lifetime.pointerMoved(contentSurface.x + point.position.x,
+                        contentSurface.y + point.position.y)
             }
 
             Item {
@@ -335,7 +325,7 @@ Item {
                                 text: modelData.icon
                                 Accessible.role: Accessible.Button
                                 Accessible.name: modelData.label
-                                fontSize: Theme.fontSize + 1
+                                fontSize: Theme.fontSize + 5
                                 onClicked: {
                                     UiState.setHakuMenuQuery("")
                                     UiState.setHakuMenuMode(modelData.key)
@@ -399,7 +389,11 @@ Item {
                         clip: true
                         focus: root.panelOpen
                         text: UiState.hakuMenuQuery
-                        onTextEdited: UiState.setHakuMenuQuery(text)
+                        onTextEdited: {
+                            lifetime.beginKeyboardLease()
+                            UiState.setHakuMenuQuery(text)
+                        }
+                        Keys.onPressed: lifetime.beginKeyboardLease()
                         Keys.onEscapePressed: event => {
                             UiState.closeHakuMenu()
                             event.accepted = true

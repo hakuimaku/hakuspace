@@ -30,7 +30,6 @@ FocusScope {
     // Refresh from system owners after each completed toggle.
     function refresh() {
         statusOutput = ""
-        statusProc.running = false
         statusProc.running = true
     }
 
@@ -39,7 +38,7 @@ FocusScope {
         if (index < 0 || index >= actions.length) return
         var action = actions[index]
         if (!action.toggle) { actionRequested(action.key); return }
-        if (!stateFor(action.key).available || toggleProc.running) return
+        if (!stateFor(action.key).available || toggleProc.running || statusProc.running) return
         errorMessage = ""
         toggleProc.command = [Env.binDir + "/quick_actions_ctl.py", "toggle", action.key]
         toggleProc.running = true

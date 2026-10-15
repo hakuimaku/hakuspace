@@ -25,7 +25,7 @@ TopModule {
             font.weight: Font.Bold
             color: root.hovered ? Theme.onAccentColor : Theme.fg
             anchors.verticalCenter: parent.verticalCenter
-            Behavior on color { ColorAnimation { duration: HAnimation.normal } }
+            Behavior on color { ColorAnimation { duration: HAnimation.slow } }
         }
 
         Column {
@@ -41,7 +41,7 @@ TopModule {
                 color: root.hovered ? Theme.onAccentColor : Theme.fg
                 anchors.left: parent.left
                 anchors.leftMargin: - 2
-                Behavior on color { ColorAnimation { duration: HAnimation.normal } }
+                Behavior on color { ColorAnimation { duration: HAnimation.slow } }
             }
             
             Text {
@@ -52,7 +52,7 @@ TopModule {
                 color: root.hovered ? Theme.onAccentColor : Theme.fg
                 anchors.right: parent.right
                 anchors.rightMargin: - 4
-                Behavior on color { ColorAnimation { duration: HAnimation.normal } }
+                Behavior on color { ColorAnimation { duration: HAnimation.slow } }
             }
         }
     }

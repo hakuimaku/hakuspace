@@ -7,6 +7,7 @@ import "../base"
 // Card chassis container for notification popups and history entries.
 Rectangle {
     id: root
+    signal keyboardInteraction()
     required property var record
     property bool compact: false
     // Presentation knobs let popup cards diverge from Notification Center cards
@@ -14,12 +15,15 @@ Rectangle {
     property real cardRadius: Theme.radius
     property real cardPadding: 12
     property bool showBorder: true
+    property bool accentedBorder: false
     implicitWidth: 450
     implicitHeight: content.implicitHeight + cardPadding * 2
     radius: cardRadius
     color: Theme.surface
-    border.width: showBorder ? (record.urgency === NotificationUrgency.Critical ? 2 : 1) : 0
-    border.color: record.urgency === NotificationUrgency.Critical ? "#ff5555" : Theme.fgMuted
+    border.width: showBorder ? (record.urgency === NotificationUrgency.Critical ? 2 : 1)
+                               + (accentedBorder ? 1 : 0) : 0
+    border.color: accentedBorder ? Theme.accent
+                                : record.urgency === NotificationUrgency.Critical ? "#ff5555" : Theme.fgMuted
 
     // Resolves raw notification icon paths to valid Quickshell image URIs.
     function iconSource(icon) {
@@ -73,8 +77,8 @@ Rectangle {
                 activeFocusOnTab: true
                 Accessible.role: Accessible.Button
                 Accessible.name: "Dismiss notification"
-                Keys.onReturnPressed: NotificationStore.dismiss(root.record.key)
-                Keys.onSpacePressed: NotificationStore.dismiss(root.record.key)
+                Keys.onReturnPressed: { root.keyboardInteraction(); NotificationStore.dismiss(root.record.key) }
+                Keys.onSpacePressed: { root.keyboardInteraction(); NotificationStore.dismiss(root.record.key) }
                 onClicked: NotificationStore.dismiss(root.record.key)
             }
         }

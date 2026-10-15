@@ -5,6 +5,7 @@ import "../base"
 
 Item {
     id: root
+    signal keyboardInteraction()
     property real maxHeight: 500
     property real maxWidth: 450
     readonly property var entries: NotificationStore.records.filter(function(record) {
@@ -45,8 +46,8 @@ Item {
             activeFocusOnTab: true
             Accessible.role: Accessible.Button
             Accessible.name: "Toggle Do Not Disturb"
-            Keys.onReturnPressed: NotificationStore.toggleDnd()
-            Keys.onSpacePressed: NotificationStore.toggleDnd()
+            Keys.onReturnPressed: { root.keyboardInteraction(); NotificationStore.toggleDnd() }
+            Keys.onSpacePressed: { root.keyboardInteraction(); NotificationStore.toggleDnd() }
             onClicked: NotificationStore.toggleDnd()
         }
         HButton {
@@ -68,8 +69,8 @@ Item {
             Accessible.role: Accessible.Button
             Accessible.name: "Clear all notifications"
             enabled: NotificationStore.count > 0
-            Keys.onReturnPressed: NotificationStore.clearAll()
-            Keys.onSpacePressed: NotificationStore.clearAll()
+            Keys.onReturnPressed: { root.keyboardInteraction(); NotificationStore.clearAll() }
+            Keys.onSpacePressed: { root.keyboardInteraction(); NotificationStore.clearAll() }
             onClicked: NotificationStore.clearAll()
         }
         HButton {
@@ -84,8 +85,8 @@ Item {
             activeFocusOnTab: true
             Accessible.role: Accessible.Button
             Accessible.name: "Close Notification Center"
-            Keys.onReturnPressed: UiState.closeNotifications()
-            Keys.onSpacePressed: UiState.closeNotifications()
+            Keys.onReturnPressed: { root.keyboardInteraction(); UiState.closeNotifications() }
+            Keys.onSpacePressed: { root.keyboardInteraction(); UiState.closeNotifications() }
             onClicked: UiState.closeNotifications()
         }
     }
@@ -109,6 +110,8 @@ Item {
             required property var modelData
             record: modelData
             width: list.width
+            accentedBorder: true
+            onKeyboardInteraction: root.keyboardInteraction()
         }
 
         Text {

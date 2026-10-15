@@ -20,9 +20,10 @@ SCRIPTS = {
 
 
 # Keep failed or missing backends unavailable instead of guessing their state.
-def command(argv):
+def command(argv, capture=True):
     try:
-        return subprocess.run(argv, capture_output=True, text=True, timeout=8, check=False)
+        output = subprocess.PIPE if capture else subprocess.DEVNULL
+        return subprocess.run(argv, stdout=output, stderr=output, text=True, timeout=8, check=False)
     except (OSError, subprocess.TimeoutExpired):
         return None
 
@@ -70,7 +71,7 @@ def toggle(key):
     else:
         name, _, toggle_arg = SCRIPTS[key]
         argv = [str(BIN_DIR / name)] + ([toggle_arg] if toggle_arg else [])
-    result = command(argv)
+    result = command(argv, capture=False)
     if result is None or result.returncode != 0:
         print(f"quick-actions: could not toggle {key}", file=sys.stderr)
         return 1

@@ -67,11 +67,11 @@ Rectangle {
     
     // Animates width expansion when label content or hover padding changes.
     Behavior on implicitWidth {
-        NumberAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve }
+        NumberAnimation { duration: HAnimation.slow; easing.bezierCurve: HAnimation.moduleCurve }
     }
     // Animates module background color on hover enter and exit.
     Behavior on color {
-        ColorAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve }
+        ColorAnimation { duration: HAnimation.slow; easing.bezierCurve: HAnimation.moduleCurve }
     }
 
     Row {
@@ -87,7 +87,7 @@ Rectangle {
             font.pixelSize: root.iconFontSize
             font.weight: Font.Bold
             color: root.foregroundColor
-            Behavior on color { ColorAnimation { duration: HAnimation.normal } }
+            Behavior on color { ColorAnimation { duration: HAnimation.slow } }
         }
         
         Text {
@@ -98,7 +98,7 @@ Rectangle {
             font.pixelSize: Theme.fontSize
             font.weight: Font.Bold
             color: root.foregroundColor
-            Behavior on color { ColorAnimation { duration: HAnimation.normal } }
+            Behavior on color { ColorAnimation { duration: HAnimation.slow } }
         }
     }
 

@@ -9,7 +9,7 @@ FocusScope {
     property var pinsModel
     property bool showingApps: false
     signal closeRequested(bool keyboard)
-    signal dialogLeaseRequested(bool active)
+    signal dialogLeaseRequested(string token, bool active)
 
     function forceFocus() {
         if (showingApps) appPicker.forceFocus()
@@ -41,8 +41,8 @@ FocusScope {
         modeIndex = index
         if (pinsModel) pinsModel.errorMessage = ""
         if (index === 0) { showingApps = true; Qt.callLater(function() { appPicker.forceFocus() }) }
-        else if (index === 1) { dialogLeaseRequested(true); fileDialog.open() }
-        else { dialogLeaseRequested(true); folderDialog.open() }
+        else if (index === 1) { dialogLeaseRequested("shortcut-file-dialog", true); fileDialog.open() }
+        else { dialogLeaseRequested("shortcut-folder-dialog", true); folderDialog.open() }
     }
 
     FileDialog {
@@ -50,14 +50,14 @@ FocusScope {
         title: "Choose a file to pin"
         onAccepted: if (selectedFile) root.pinsModel.addFile(root.localPath(selectedFile))
         onRejected: root.pinsModel.errorMessage = ""
-        onVisibleChanged: if (!visible) { root.dialogLeaseRequested(false); Qt.callLater(root.forceFocus) }
+        onVisibleChanged: if (!visible) { root.dialogLeaseRequested("shortcut-file-dialog", false); Qt.callLater(root.forceFocus) }
     }
     FolderDialog {
         id: folderDialog
         title: "Choose a folder to pin"
         onAccepted: if (selectedFolder) root.pinsModel.addFolder(root.localPath(selectedFolder))
         onRejected: root.pinsModel.errorMessage = ""
-        onVisibleChanged: if (!visible) { root.dialogLeaseRequested(false); Qt.callLater(root.forceFocus) }
+        onVisibleChanged: if (!visible) { root.dialogLeaseRequested("shortcut-folder-dialog", false); Qt.callLater(root.forceFocus) }
     }
 
     Row {

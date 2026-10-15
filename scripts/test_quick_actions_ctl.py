@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 
@@ -66,7 +67,8 @@ case "$name" in
             if [ "$name" = idle_inhibit.sh ]; then echo Allowed; else echo disabled; fi
             exit 1
         fi
-        if [ "$current" = 1 ]; then echo 0 > "$state"; else echo 1 > "$state"; fi ;;
+        if [ "$current" = 1 ]; then echo 0 > "$state"; else echo 1 > "$state"; fi
+        if [ "$name" = nightlight_toggle.sh ]; then sleep 2 & fi ;;
     taskbar_manager.sh|desktop_icons_manager.sh|cava_manager.sh)
         if [ "$1" = --status ]; then
             if [ "$current" = 1 ]; then echo enabled; else echo disabled; fi
@@ -99,7 +101,10 @@ esac
                                 for item in initial.values()))
             self.assertEqual(before, {name: (state_dir / name).read_text() for name in names})
             for key in keys:
+                started = time.monotonic()
                 self.assertEqual(call("toggle", key).returncode, 0, key)
+                if key == "nightLight":
+                    self.assertLess(time.monotonic() - started, 1.5)
                 self.assertTrue(json.loads(call("status").stdout)[key]["enabled"], key)
                 self.assertEqual(call("toggle", key).returncode, 0, key)
                 self.assertFalse(json.loads(call("status").stdout)[key]["enabled"], key)

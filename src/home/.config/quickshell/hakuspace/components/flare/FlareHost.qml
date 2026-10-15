@@ -12,10 +12,28 @@ Item {
     property real horizontalPadding: 12
     property int contentFadeDuration: HAnimation.effects
     property bool contentReady: false
+    property var interactionEnvelope: ({ start: 0, end: 0, height: 0 })
+
+    function extendInteractionEnvelope() {
+        if (!shown || end <= start) return
+        var previous = interactionEnvelope
+        interactionEnvelope = {
+            start: previous.end > previous.start ? Math.min(previous.start, start) : start,
+            end: Math.max(previous.end, end),
+            height: Math.max(previous.height, currentHeight, naturalContentHeight + 16)
+        }
+    }
+    onStartChanged: extendInteractionEnvelope()
+    onEndChanged: extendInteractionEnvelope()
+    onCurrentHeightChanged: extendInteractionEnvelope()
+    onNaturalContentHeightChanged: extendInteractionEnvelope()
 
     onShownChanged: {
         if (!shown) contentReady = false
-        else if (contentItem.ready) contentReady = true
+        else {
+            interactionEnvelope = { start: 0, end: 0, height: 0 }
+            if (contentItem.ready) contentReady = true
+        }
     }
 
     Connections {
@@ -32,6 +50,7 @@ Item {
     property alias end: morph.mEnd
     property alias currentHeight: morph.mHeight
     property alias naturalContentHeight: contentItem.naturalHeight
+    property alias naturalContentWidth: contentItem.naturalWidth
     property alias hugging: morph.hugging
     signal settled(bool isShown)
     
@@ -47,7 +66,14 @@ Item {
         bounds: root.wBounds
         maxW: root.maxWidth
         snap: 2 * Theme.hugRadius
-        onSettled: function(s) { root.settled(s); contentItem.settle(s); }
+        onSettled: function(s) {
+            if (s) root.interactionEnvelope = {
+                start: morph.mStart, end: morph.mEnd,
+                height: Math.max(morph.mHeight, contentItem.naturalHeight + 16)
+            }
+            root.settled(s)
+            contentItem.settle(s)
+        }
     }
     
     FlareSurface {

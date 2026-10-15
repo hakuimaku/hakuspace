@@ -2,6 +2,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import "../services"
+import "base" as Base
+import "base/SafeZoneGeometry.js" as SafeZoneGeometry
 import "flare" as Flare
 import "sidebar" as Sidebar
 import "dashboard" as Dashboard
@@ -35,7 +37,8 @@ Item {
                 selectedIndex = 0
                 hoveredIndex = -1
                 Qt.callLater(function() {
-                    if (root.panelOpen) keyHandler.forceActiveFocus()
+                    if (root.panelOpen && !lifetime.externallyLeased)
+                        keyHandler.forceActiveFocus()
                 })
             }
         }
@@ -140,17 +143,10 @@ Item {
     readonly property real hoverOverflow: Math.ceil(circleDiameter * 0.12)
     readonly property real controllerX: shellX + shellPadding
     readonly property real controllerY: shellY + shellPadding
-    readonly property real safeRadius: circularShellDiameter + 100
-    readonly property real sidebarSafeMargin: 100
-    readonly property real sidebarSafeWidth: sidebarBodyWidth + sidebarSafeMargin
-    readonly property real sidebarSafeHeight: sidebarBodyY + sidebarBodyHeight + flareReach + sidebarSafeMargin
     readonly property real dashboardWidthRatio: 0.50
     readonly property real dashboardHeightRatio: 0.50
     readonly property real dashboardVisualWidth: Math.round(modelData.width * dashboardWidthRatio)
     readonly property real dashboardVisualHeight: Math.round(modelData.height * dashboardHeightRatio)
-    readonly property real dashboardSafeMargin: 100
-    readonly property real dashboardSafeWidth: dashboardVisualWidth + dashboardSafeMargin
-    readonly property real dashboardSafeHeight: dashboardVisualHeight + dashboardSafeMargin
 
     // Sidebar interaction geometry:
     readonly property bool sidebarExpanded: UiState.navigationMode === "handoff-sidebar"
@@ -176,14 +172,11 @@ Item {
     property string renderedSidebarTool: ""
     property int sidebarSelectedIndex: 0
     property bool sidebarKeyboardMode: false
-    property bool keyboardLease: false
-    property bool externalDialogLease: false
-    property bool dialogFocusRestore: false
-    property bool pointerOwned: false
-    property real lastPointerX: -1
-    property real lastPointerY: -1
+    property alias keyboardLease: lifetime.keyboardLease
+    readonly property bool externalDialogLease: lifetime.externallyLeased
     readonly property bool sidebarToolOpen: activeSidebarTool.length > 0
     readonly property bool sidebarToolVisible: sidebarToolOpen || (sidebarToolLayer && sidebarToolLayer.activeProgress > 0.001)
+    readonly property bool sidebarInteractionVisible: sidebarExpanded || sidebarToolVisible
     readonly property real sidebarToolX: sidebarBodyWidth + 30
     readonly property real sidebarToolY: Math.max(0, Math.min(
         sidebarBodyY + 40, modelData.height - sidebarToolPreferredHeight - 12))
@@ -195,17 +188,54 @@ Item {
         modelData.width - sidebarToolX - 12))
     readonly property real sidebarToolHeight: Math.max(1, Math.min(sidebarToolPreferredHeight,
         modelData.height - sidebarToolY - 12))
-    readonly property real sidebarToolSafeMargin: 50
-    readonly property real sidebarToolSafeWidth: sidebarToolX + (sidebarToolLayer ? sidebarToolLayer.interactionWidth : sidebarToolWidth) + sidebarToolSafeMargin
-    readonly property real sidebarToolSafeHeight: Math.max(sidebarSafeHeight,
-        sidebarToolY + (sidebarToolLayer ? sidebarToolLayer.interactionHeight : sidebarToolHeight) + sidebarToolSafeMargin)
+    readonly property var liveSafeZones: {
+        var margin = Interaction.safeZoneMargin
+        var empty = SafeZoneGeometry.rect(0, 0, 0, 0)
+        var radial = SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
+            SafeZoneGeometry.rect(0, 0, circularShellDiameter, circularShellDiameter), margin),
+            modelData.width, modelData.height)
+        var anchor = SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
+            SafeZoneGeometry.rect(capturedAnchorX, capturedAnchorY,
+                                  capturedAnchorWidth, capturedAnchorHeight),
+            Interaction.safeZoneAnchorMargin), modelData.width, modelData.height)
+        var bridge = sidebarInteractionVisible ? SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
+            SafeZoneGeometry.rect(bridgeX, bridgeY, bridgeWidth, bridgeHeight), margin / 2),
+            modelData.width, modelData.height) : empty
+        var railVisual = SafeZoneGeometry.rect(sidebarBodyX, sidebarBodyY,
+            sidebarBodyWidth + railHoverOverflow, sidebarBodyHeight + flareReach)
+        var rail = sidebarInteractionVisible ? SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
+            railVisual, margin),
+            modelData.width, modelData.height) : empty
+        var ear = sidebarInteractionVisible ? SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
+            SafeZoneGeometry.rect(sidebarBodyWidth, sidebarBodyY + 16,
+                                  sidebarEarWidth, sidebarEarRadius), margin / 2),
+            modelData.width, modelData.height) : empty
+        var toolVisual = sidebarToolVisible ? SafeZoneGeometry.rect(sidebarToolX, sidebarToolY,
+            sidebarToolLayer.interactionWidth, sidebarToolLayer.interactionHeight) : empty
+        var tool = sidebarToolVisible ? SafeZoneGeometry.clampRect(
+            SafeZoneGeometry.inflate(toolVisual, margin),
+            modelData.width, modelData.height) : empty
+        var toolBridge = tool.width ? SafeZoneGeometry.clampRect(
+            SafeZoneGeometry.horizontalBridge(railVisual, toolVisual, Interaction.safeZoneCorridorWidth),
+            modelData.width, modelData.height) : empty
+        var dashboard = dashboardVisuallyActive ? SafeZoneGeometry.clampRect(
+            SafeZoneGeometry.inflate(SafeZoneGeometry.rect(0, 0, dashboardVisualWidth,
+                dashboardVisualHeight), margin), modelData.width, modelData.height) : empty
+        return [radial, anchor, bridge, rail, ear, toolBridge, tool, dashboard]
+    }
+    property var frozenSafeZones: []
+    onLiveSafeZonesChanged: if (panelOpen && !closing) frozenSafeZones = liveSafeZones
+    readonly property var safeZones: closing && !panelOpen ? frozenSafeZones : liveSafeZones
+    function safeZone(index) { return safeZones[index] || SafeZoneGeometry.rect(0, 0, 0, 0) }
+    function safeContains(x, y) { return SafeZoneGeometry.containsAny(safeZones, x, y) }
 
-    // Precise Wayland input mask geometry (union of interactive surfaces):
-    readonly property real navigationInputRadius: Math.min(navigationLayer.width, root.circularShellDiameter + 24)
-    readonly property real sidebarInputWidth: sidebarBodyWidth + railHoverOverflow
-    readonly property real sidebarInputHeight: Math.max(0, (sidebarBodyY + sidebarBodyHeight + flareReach) - bridgeY)
-    readonly property real sidebarToolInputWidth: sidebarToolLayer ? sidebarToolLayer.interactionWidth : 0
-    readonly property real sidebarToolInputHeight: sidebarToolLayer ? sidebarToolLayer.interactionHeight : 0
+    Base.SafeZoneController {
+        id: lifetime
+        active: root.panelOpen
+        closing: root.closing
+        containsPoint: function(x, y) { return root.safeContains(x, y) }
+        onCloseRequested: root.requestClose()
+    }
 
     Sidebar.SidebarPinsModel {
         id: sidebarPinsModel
@@ -250,7 +280,7 @@ Item {
         activeSidebarTool = key
         sidebarKeyboardMode = false
         keyboardLease = !!fromKeyboard
-        cancelPointerClose()
+        lifetime.cancelClose()
         focusActiveSidebarTool()
     }
 
@@ -292,57 +322,13 @@ Item {
             Qt.callLater(function() { Quickshell.execDetached([Env.binDir + "/" + script]) })
     }
 
-    // Wait briefly for pointer handoffs before closing the full Navigation layer.
-    function schedulePointerClose() {
-        if (!panelOpen || keyboardLease || externalDialogLease) return
-        pointerCloseTimer.restart()
-    }
-
-    // Reentry cancels a pending pointer exit.
-    function cancelPointerClose() { pointerCloseTimer.stop() }
-
-    // Unwind owned layers in one parent transaction.
-    function commitPointerClose() {
-        if (!panelOpen || pointerOwned || keyboardLease || externalDialogLease) return
+    function requestClose() {
+        if (!panelOpen || externalDialogLease) return
         if (sidebarToolOpen) closeSidebarTool()
         if (sidebarExpanded || dashboardExpanded) UiState.cancelNavigationHandoff()
         UiState.closeNavigation()
     }
 
-    Timer { id: pointerCloseTimer; interval: 220; onTriggered: root.commitPointerClose() }
-    // Reacquire layer focus briefly after a native chooser closes.
-    Timer { id: focusRestoreTimer; interval: 200; onTriggered: root.dialogFocusRestore = false }
-
-    // Region A = Navigation keep-alive region
-    function insideRegionA(x, y) {
-        return x >= 0 && y >= 0 && (x * x + y * y <= safeRadius * safeRadius)
-    }
-
-    // Keep pointer ownership throughout the shell animation.
-    function insideSidebarTool(x, y) {
-        if (!sidebarToolVisible || !sidebarToolLayer) return false
-        return x >= sidebarToolX && x <= (sidebarToolX + sidebarToolLayer.interactionWidth)
-            && y >= sidebarToolY && y <= (sidebarToolY + sidebarToolLayer.interactionHeight)
-    }
-
-    function insideSidebarSafeZone(x, y) {
-        if (!sidebarExpanded) return false
-        var maxW = sidebarToolVisible ? sidebarToolSafeWidth : sidebarSafeWidth
-        var maxH = sidebarToolVisible ? sidebarToolSafeHeight : sidebarSafeHeight
-        return x >= 0 && x <= maxW && y >= 0 && y <= maxH
-    }
-
-    function insideDashboardSafeZone(x, y) {
-        return dashboardExpanded
-            && x >= 0 && x <= dashboardSafeWidth
-            && y >= 0 && y <= dashboardSafeHeight
-    }
-
-    function insideSafeZone(x, y) {
-        return insideRegionA(x, y) || insideSidebarSafeZone(x, y) || insideDashboardSafeZone(x, y)
-    }
-
-    // Region B = Sidebar handoff union = Sidebar sector ∪ bridge ∪ Sidebar body
     function insideSidebarSector(x, y) {
         var lx = x - controllerX
         var ly = y - controllerY
@@ -350,65 +336,25 @@ Item {
         return idx >= 0 && regions[idx].key === "sidebar"
     }
 
-    function insideSidebarBridge(x, y) {
-        return x >= bridgeX && x <= (bridgeX + bridgeWidth)
-            && y >= bridgeY && y <= (bridgeY + bridgeHeight)
-    }
-
-    function insideSidebarBody(x, y) {
-        return x >= sidebarBodyX && x <= (sidebarBodyX + sidebarBodyWidth + railHoverOverflow)
-            && y >= sidebarBodyY && y <= (sidebarBodyY + sidebarBodyHeight + flareReach)
-    }
-
-    function insideSidebarEar(x, y) {
-        if (!sidebarExpanded) return false
-        var earTop = sidebarBodyY + Math.max(0, surfaceHeight - sidebarBodyY)
-        return x >= sidebarBodyWidth && x <= (sidebarBodyWidth + sidebarEarWidth)
-            && y >= earTop && y <= (earTop + sidebarEarRadius)
-    }
-
-    function insideRegionB(x, y) {
-        return insideSidebarSector(x, y)
-            || insideSidebarBridge(x, y)
-            || insideSidebarBody(x, y)
-            || insideSidebarEar(x, y)
-            || insideSidebarTool(x, y)
-    }
-
-    // Authoritative pointer-state evaluation for handoff and close decisions
     function evaluatePointer(x, y) {
         if (!panelOpen || closing) return
-        if (Math.abs(x - lastPointerX) > 1 || Math.abs(y - lastPointerY) > 1)
-            keyboardLease = false
-        lastPointerX = x
-        lastPointerY = y
+        lifetime.pointerMoved(x, y)
+        if (dashboardExpanded) return
 
-        // Dashboard uses the same close grace as the Sidebar.
-        if (dashboardExpanded) {
-            pointerOwned = x <= dashboardSafeWidth && y <= dashboardSafeHeight
-            if (pointerOwned) cancelPointerClose()
-            else schedulePointerClose()
-            return
-        }
-
-        var inB = insideRegionB(x, y)
-        if (inB) {
-            pointerOwned = true
-            cancelPointerClose()
+        if (insideSidebarSector(x, y) || (sidebarExpanded &&
+                (SafeZoneGeometry.contains(safeZone(2), x, y)
+                 || SafeZoneGeometry.contains(safeZone(3), x, y)
+                 || SafeZoneGeometry.contains(safeZone(4), x, y)
+                 || SafeZoneGeometry.contains(safeZone(5), x, y)
+                 || SafeZoneGeometry.contains(safeZone(6), x, y)))) {
             root.selectedIndex = 1
             root.hoveredIndex = 1
-            if (UiState.navigationMode !== "handoff-sidebar") {
-                if (insideSidebarSector(x, y)) {
-                    UiState.beginNavigationHandoff("sidebar")
-                }
-            }
+            if (UiState.navigationMode !== "handoff-sidebar" && insideSidebarSector(x, y))
+                UiState.beginNavigationHandoff("sidebar")
             return
         }
 
-        var inA = insideRegionA(x, y)
-        if (inA) {
-            pointerOwned = true
-            cancelPointerClose()
+        if (SafeZoneGeometry.contains(safeZone(0), x, y)) {
             // Check if pointer deliberately hovered another sector (Dashboard or Settings)
             var lx = x - root.controllerX
             var ly = y - root.controllerY
@@ -423,17 +369,6 @@ Item {
             }
             return
         }
-
-        if (insideSidebarSafeZone(x, y)) {
-            pointerOwned = true
-            cancelPointerClose()
-            root.selectedIndex = 1
-            root.hoveredIndex = 1
-            return
-        }
-
-        pointerOwned = false
-        schedulePointerClose()
     }
 
     // Logo geometry is captured when Navigation opens. Keeping this copy local
@@ -665,12 +600,7 @@ Item {
         closeMorph.stop()
 
         if (panelOpen) {
-            focusRestoreTimer.stop()
-            dialogFocusRestore = false
             sidebarPinsModel.reload()
-            cancelPointerClose()
-            pointerOwned = false
-            keyboardLease = true
             sidebarKeyboardMode = false
             closing = false
             closingFromDashboard = false
@@ -695,9 +625,7 @@ Item {
             return
         }
 
-        cancelPointerClose()
-        focusRestoreTimer.stop()
-        dialogFocusRestore = false
+        lifetime.cancelClose()
         if (root.sidebarToolOpen) root.closeSidebarTool()
 
         // Ownership moving to another monitor does not animate the stale output.
@@ -815,7 +743,6 @@ Item {
         }
     }
 
-    // Capture outside clicks while Navigation is open.
     PanelWindow {
         id: navigationLayer
         screen: root.modelData
@@ -823,8 +750,7 @@ Item {
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "hakuspace-navigation"
         WlrLayershell.keyboardFocus: !root.panelOpen || root.externalDialogLease
-            ? WlrKeyboardFocus.None
-            : root.dialogFocusRestore ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
+            ? WlrKeyboardFocus.None : WlrKeyboardFocus.OnDemand
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
         color: "transparent"
@@ -832,77 +758,55 @@ Item {
 
         mask: Region {
             Region {
-                width: root.panelOpen && !root.externalDialogLease ? navigationLayer.width : 0
-                height: root.panelOpen && !root.externalDialogLease ? navigationLayer.height : 0
+                x: root.safeZone(0).x; y: root.safeZone(0).y
+                width: root.panelOpen || root.closing ? root.safeZone(0).width : 0
+                height: root.panelOpen || root.closing ? root.safeZone(0).height : 0
             }
-            // 1. Navigation circular sector (around radial wheel)
             Region {
-                x: 0
-                y: 0
-                width: root.dashboardVisuallyActive ? 0 : root.navigationInputRadius
-                height: root.dashboardVisuallyActive ? 0 : root.navigationInputRadius
-                bottomRightRadius: Math.min(width, height)
+                x: root.safeZone(1).x; y: root.safeZone(1).y
+                width: root.panelOpen || root.closing ? root.safeZone(1).width : 0
+                height: root.panelOpen || root.closing ? root.safeZone(1).height : 0
             }
-            // 2. Sidebar rail body & bridge corridor
             Region {
-                x: 0
-                y: root.bridgeY
-                width: (root.sidebarExpanded && !root.dashboardVisuallyActive)
-                       ? root.sidebarInputWidth : 0
-                height: (root.sidebarExpanded && !root.dashboardVisuallyActive)
-                       ? root.sidebarInputHeight : 0
+                x: root.safeZone(2).x; y: root.safeZone(2).y
+                width: root.panelOpen || root.closing ? root.safeZone(2).width : 0
+                height: root.panelOpen || root.closing ? root.safeZone(2).height : 0
             }
-            // 3. Sidebar top-right ear flare
             Region {
-                x: root.sidebarBodyWidth
-                y: root.sidebarBodyY + 16
-                width: (root.sidebarExpanded && !root.dashboardVisuallyActive)
-                       ? root.sidebarEarWidth : 0
-                height: (root.sidebarExpanded && !root.dashboardVisuallyActive)
-                       ? root.sidebarEarRadius : 0
+                x: root.safeZone(3).x; y: root.safeZone(3).y
+                width: root.panelOpen || root.closing ? root.safeZone(3).width : 0
+                height: root.panelOpen || root.closing ? root.safeZone(3).height : 0
             }
-            // Keep pointer tracking across the visual gap beside the rail.
             Region {
-                x: root.sidebarBodyWidth
-                y: root.sidebarBodyY
-                width: (root.sidebarToolVisible && !root.dashboardVisuallyActive)
-                       ? root.sidebarToolX - root.sidebarBodyWidth : 0
-                height: (root.sidebarToolVisible && !root.dashboardVisuallyActive)
-                        ? Math.max(root.sidebarBodyY + root.sidebarBodyHeight + root.flareReach,
-                                   root.sidebarToolY + root.sidebarToolInputHeight) - root.sidebarBodyY : 0
+                x: root.safeZone(4).x; y: root.safeZone(4).y
+                width: root.panelOpen || root.closing ? root.safeZone(4).width : 0
+                height: root.panelOpen || root.closing ? root.safeZone(4).height : 0
             }
-            // Keep the layer active within 50 px of its visible shell.
             Region {
-                x: Math.max(0, root.sidebarToolX - root.sidebarToolSafeMargin)
-                y: Math.max(0, root.sidebarToolY - root.sidebarToolSafeMargin)
-                width: (root.sidebarToolVisible && !root.dashboardVisuallyActive)
-                       ? root.sidebarToolX + root.sidebarToolInputWidth + root.sidebarToolSafeMargin - x : 0
-                height: (root.sidebarToolVisible && !root.dashboardVisuallyActive)
-                        ? root.sidebarToolY + root.sidebarToolInputHeight + root.sidebarToolSafeMargin - y : 0
+                x: root.safeZone(5).x; y: root.safeZone(5).y
+                width: root.panelOpen || root.closing ? root.safeZone(5).width : 0
+                height: root.panelOpen || root.closing ? root.safeZone(5).height : 0
             }
-            // 5. Dashboard safe region
             Region {
-                x: 0
-                y: 0
-                width: root.dashboardVisuallyActive
-                       ? Math.min(navigationLayer.width, root.dashboardSafeWidth) : 0
-                height: root.dashboardVisuallyActive
-                       ? Math.min(navigationLayer.height, root.dashboardSafeHeight) : 0
+                x: root.safeZone(6).x; y: root.safeZone(6).y
+                width: root.panelOpen || root.closing ? root.safeZone(6).width : 0
+                height: root.panelOpen || root.closing ? root.safeZone(6).height : 0
+            }
+            Region {
+                x: root.safeZone(7).x; y: root.safeZone(7).y
+                width: root.panelOpen || root.closing ? root.safeZone(7).width : 0
+                height: root.panelOpen || root.closing ? root.safeZone(7).height : 0
             }
         }
 
-        // Authoritative pointer-lifetime evaluation for Navigation, Sidebar, and Dashboard:
-        // Evaluates Region A (Navigation), Region B (Sidebar), and Dashboard safe zone.
         HoverHandler {
             id: safeZoneHover
             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
             onHoveredChanged: {
-                if (!hovered && root.panelOpen && !root.closing) {
-                    root.pointerOwned = false
-                    root.schedulePointerClose()
-                } else if (hovered) {
-                    root.pointerOwned = true
-                    root.cancelPointerClose()
+                if (!hovered) lifetime.pointerExited()
+                else {
+                    lifetime.pointerEntered(point.position.x, point.position.y)
+                    if (root.panelOpen) keyHandler.forceActiveFocus()
                 }
             }
             onPointChanged: {
@@ -911,13 +815,16 @@ Item {
             }
         }
 
-        MouseArea {
+        Base.SafeZoneDebugOverlay {
             anchors.fill: parent
-            enabled: root.panelOpen && !root.externalDialogLease
-            z: -1
-            onClicked: mouse => {
-                if (!root.insideSafeZone(mouse.x, mouse.y)) UiState.closeNavigation()
-            }
+            z: 999
+            closePending: lifetime.closePending
+            zones: root.safeZones.map(function(zone, index) {
+                return { rect: zone, kind: index === 1 ? "anchor"
+                    : index === 2 || index === 5 ? "corridor"
+                    : index === 6 && sidebarToolLayer.activeProgress > 0.001
+                        && sidebarToolLayer.activeProgress < 0.999 ? "animation" : "surface" }
+            })
         }
 
         // Persistent backing participates in the Logo morph and remains visible
@@ -1069,18 +976,12 @@ Item {
                     if (keyboard) UiState.closeNavigation()
                     else root.closeSidebarTool()
                 }
-                onDialogLeaseRequested: active => {
+                onDialogLeaseRequested: (token, active) => {
                     if (active) {
-                        focusRestoreTimer.stop()
-                        root.dialogFocusRestore = false
-                        root.externalDialogLease = true
-                        root.cancelPointerClose()
+                        lifetime.acquireExternalLease(token)
                     } else {
                         Qt.callLater(function() {
-                            root.externalDialogLease = false
-                            root.dialogFocusRestore = true
-                            focusRestoreTimer.restart()
-                            root.keyboardLease = true
+                            lifetime.releaseExternalLease(token, true)
                             root.focusActiveSidebarTool()
                         })
                     }
@@ -1103,6 +1004,7 @@ Item {
         Component {
             id: tempNoteContent
             Sidebar.SidebarTempNote {
+                onKeyboardInteraction: lifetime.beginKeyboardLease()
                 onCloseRequested: keyboard => {
                     if (keyboard) UiState.closeNavigation()
                     else root.closeSidebarTool()

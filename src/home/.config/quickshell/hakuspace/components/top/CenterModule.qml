@@ -28,7 +28,7 @@ Item {
                    + (hovered ? Theme.pad * 2 : 0)
     // Animates center module width when track title or breadcrumb length changes.
     Behavior on implicitWidth {
-        NumberAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve }
+        NumberAnimation { duration: HAnimation.slow; easing.bezierCurve: HAnimation.moduleCurve }
     }
     width: active ? Math.min(implicitWidth, maximumWidth) : 0
     height: implicitHeight
@@ -131,7 +131,7 @@ Item {
         radius: Theme.radius
         color: root.hovered ? Theme.surfaceHi : Theme.surface
         // Animates background surface color between idle and hovered states.
-        Behavior on color { ColorAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve } }
+        Behavior on color { ColorAnimation { duration: HAnimation.slow; easing.bezierCurve: HAnimation.moduleCurve } }
     }
 
     Row {
@@ -159,7 +159,7 @@ Item {
                 color: Theme.accent
                 scale: root.hovered ? 1.06 : 1
                 // Animates media icon circle scale on hover enter and exit.
-                Behavior on scale { NumberAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve } }
+                Behavior on scale { NumberAnimation { duration: HAnimation.slow; easing.bezierCurve: HAnimation.moduleCurve } }
             }
             Text {
                 id: iconLabel
@@ -183,7 +183,7 @@ Item {
             font.weight: Font.Bold
             elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
-            Behavior on color { ColorAnimation { duration: HAnimation.normal } }
+            Behavior on color { ColorAnimation { duration: HAnimation.slow } }
         }
     }
 
