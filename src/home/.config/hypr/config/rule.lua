@@ -129,10 +129,10 @@ swayncAnimation = hl.layer_rule({
 -------------------------------------------------
 floatingCenter = hl.window_rule({
     name  = "floating-center",
-    match = { class = "imv|mpv|org.gnome.Calculator" },
+    match = { class = "imv|mpv|org.gnome.Calculator|qs" },
 
     float = true,
-    size  = "1280 720",
+    size  = "800 600",
 })
 
 floatingApps = hl.window_rule({

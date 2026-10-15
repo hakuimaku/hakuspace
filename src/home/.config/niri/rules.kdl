@@ -15,7 +15,7 @@ layer-rule {
 
 // Rounded corners for all windows
 window-rule {
-    geometry-corner-radius 12
+    geometry-corner-radius 16
     clip-to-geometry true
 }
 
@@ -147,4 +147,13 @@ window-rule {
     open-floating true
     min-width 300
     min-height 100
+}
+
+// Rules for quickshell
+window-rule {
+    match app-id="qs"
+
+    open-floating true
+    min-width 600
+    min-height 800
 }
