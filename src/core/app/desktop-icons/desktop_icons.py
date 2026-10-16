@@ -76,22 +76,7 @@ DEFAULT_CSS = """
 .desktop-icon.hovered label, .desktop-icon.selected label {
     opacity: 1.0;
 }
-menu.desktop-context-menu {
-    background-color: #2d2d2d;
-    border: 1px solid #555;
-    border-radius: 8px;
-    padding: 4px 0px;
-}
-menu.desktop-context-menu menuitem {
-    color: #e0e0e0;
-    padding: 6px 20px;
-    min-height: 20px;
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-menu.desktop-context-menu menuitem:hover {
-    background-color: #4287f5;
-    color: white;
-}
+
 """
 
 # Default action mode for each Drag & Drop case between Desktop and Thunar.
@@ -2548,6 +2533,7 @@ def on_drag_leave(widget, drag_context, time):
 def create_desktop_window(app, monitor):
     window = Gtk.ApplicationWindow(application=app)
     window.set_title("desktop-icons")
+    window.set_app_paintable(True)
     window.set_wmclass("desktop-icons", "desktop-icons")
     
     GtkLayerShell.init_for_window(window)
@@ -2566,13 +2552,23 @@ def create_desktop_window(app, monitor):
 
     screen = window.get_screen()
     visual = screen.get_rgba_visual()
-    if visual and screen.is_composited():
+    if visual:
         window.set_visual(visual)
     
     css_provider_window = Gtk.CssProvider()
-    css_provider_window.load_from_data(b"window { background-color: rgba(0, 0, 0, 0); }")
+    css_provider_window.load_from_data(b"window { background: transparent; }")
     context = window.get_style_context()
     context.add_provider(css_provider_window, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+    def clear_background(widget, cr):
+        cr.save()
+        cr.set_operator(cairo.OPERATOR_SOURCE)
+        cr.set_source_rgba(0, 0, 0, 0)
+        cr.paint()
+        cr.restore()
+        return False
+
+    window.connect("draw", clear_background)
 
     window.drag_dest_set(Gtk.DestDefaults.MOTION | Gtk.DestDefaults.DROP, [], Gdk.DragAction.COPY | Gdk.DragAction.MOVE)
     window.drag_dest_add_uri_targets()
