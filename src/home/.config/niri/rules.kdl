@@ -54,6 +54,14 @@ window-rule {
 }
 
 window-rule {
+    match app-id="Pinentry-gtk"
+
+    open-floating true
+    min-width 400
+    min-height 200
+}
+
+window-rule {
     match app-id=r#"zen"#
     match app-id=r#"app.zen_browser.zen"#
     match app-id=r#"firefox"#
@@ -80,7 +88,6 @@ window-rule {
 // Rules for xdg-desktop-portal-gtk
 window-rule {
     match app-id=r#"xdg-desktop-portal-gtk"#
-    match title="^Pinentry-gtk$"
 
     open-floating true
     default-floating-position x=0 y=0
