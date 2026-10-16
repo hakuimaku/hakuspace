@@ -201,6 +201,40 @@ class AccentTests(unittest.TestCase):
         self.assertEqual(self.svg.read_bytes(), KDE)
         self.assertEqual(list(self.theme.glob(".icon-accent-*")), [])
 
+    def test_reinstalled_alias_does_not_block_other_accent_targets(self):
+        old = self.theme / "old-home.svg"
+        old.write_bytes(KDE)
+        self.assertEqual(self.cli("set", "89b4fa", "--theme", "Example")[0], 0)
+        backups = app.BackupManager(self.theme)
+        original_backup = (backups.directory / "backup/old-home.svg").read_bytes()
+        # A new theme installation resets the artwork and converts an icon to an alias.
+        self.svg.write_bytes(KDE)
+        old.unlink()
+        old.symlink_to(self.svg.name)
+        code, output = self.cli("set", "cba6f7", "--theme", "Example")
+        self.assertEqual(code, 0, output)
+        self.assertEqual(self.cli("status", "Example"), (0, "#cba6f7\n"))
+        self.assertTrue(old.is_symlink())
+        self.assertEqual(old.readlink(), Path(self.svg.name))
+        self.assertEqual((backups.directory / "backup/old-home.svg").read_bytes(), original_backup)
+        self.assertIn("old-home.svg", json.loads(backups.path.read_text())["files"])
+        # Restore still refuses to write old bytes through the newly retargeted path.
+        self.assertEqual(self.cli("restore", "Example")[0], 5)
+        before = self.svg.read_bytes()
+        (backups.directory / "backup/old-home.svg").write_bytes(b"corrupted")
+        self.assertEqual(self.cli("set", "89b4fa", "--theme", "Example")[0], 5)
+        self.assertEqual(self.svg.read_bytes(), before)
+
+    def test_unused_unsafe_backup_paths_still_block_set(self):
+        self.cli("set", "89b4fa", "--theme", "Example")
+        backups = app.BackupManager(self.theme)
+        state = backups.load()
+        state["files"]["../outside.svg"] = state["files"]["user-home.svg"]
+        backups.save(state)
+        before = self.svg.read_bytes()
+        self.assertEqual(self.cli("set", "cba6f7", "--theme", "Example")[0], 5)
+        self.assertEqual(self.svg.read_bytes(), before)
+
     def test_state_cannot_restore_through_retargeted_symlink(self):
         self.cli("set", "89b4fa", "--theme", "Example")
         outside = self.root / "outside.svg"

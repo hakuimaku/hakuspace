@@ -269,7 +269,7 @@ class BackupManager:
             fcntl.flock(stream, fcntl.LOCK_EX)
             yield
 
-    def load(self):
+    def load(self, targets=None):
         if not self.path.exists():
             return None
         state = json.loads(self.path.read_text())
@@ -277,7 +277,9 @@ class BackupManager:
             raise ValueError("invalid backup state")
         for relative, entry in state["files"].items():
             target = self.theme / relative
-            if Path(relative).is_absolute() or ".." in Path(relative).parts or target.resolve() != target or not inside(target, self.theme):
+            # Reinstalls can turn old, untouched backup paths into aliases.
+            if (Path(relative).is_absolute() or ".." in Path(relative).parts or not inside(target, self.theme)
+                    or ((targets is None or target in targets) and target.resolve() != target)):
                 raise ValueError(f"unsafe backup path: {relative}")
             backup = self.directory / "backup" / relative
             if not inside(backup.resolve(), (self.directory / "backup").resolve()):
@@ -329,7 +331,7 @@ def set_accent(scanner, name, color, dry_run=False):
         if not changes:
             print("Accent already set; no files changed.")
             return
-        state = backups.load() or dict(theme=name, location=str(theme), backend="kde-colorscheme",
+        state = backups.load(targets={path for path, _, _ in changes}) or dict(theme=name, location=str(theme), backend="kde-colorscheme",
                                        original_accent=report["editable_accents"], current_accent=None, files={})
         for path, item, updated in changes:
             relative = str(path.relative_to(theme))
