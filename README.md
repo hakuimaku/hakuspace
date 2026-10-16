@@ -23,9 +23,9 @@ Wayland dotfiles and desktop shell for Hyprland / Niri / MangoWM / Labwc
     <a href="https://github.com/hakuimaku/hakuspace"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/hakuimaku/hakuspace?style=for-the-badge&label=Repo%20Size&labelColor=%23000000&color=%23212121&logo=github&logoColor=%23FFFFFF"></a>
 </p>
 
-| <img width="1920" height="1080" alt="screenshot_2026-09-29_16-13-28" src="https://github.com/user-attachments/assets/69ce3bf5-3dd0-43a9-aa7f-d12fd488dfb9" /> | <img width="1920" height="1080" alt="screenshot_2026-09-29_16-12-47" src="https://github.com/user-attachments/assets/f429c5b6-9694-4ed6-9aa6-a87d25f8247a" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-10-16_20-13-32" src="https://github.com/user-attachments/assets/a5fa45ea-35fc-45fb-bc9c-26cb981a48d9" /> | <img width="1920" height="1080" alt="screenshot_2026-10-16_18-36-19" src="https://github.com/user-attachments/assets/636d0b55-b1ea-4de7-a241-e3053e545f20" /> |
 |--|--|
-| <img width="1920" height="1080" alt="screenshot_2026-09-23_15-52-55" src="https://github.com/user-attachments/assets/b87cd87d-f9da-4e32-8b0d-5b948dd55c19" /> | <img width="1920" height="1080" alt="screenshot_2026-09-23_15-43-51" src="https://github.com/user-attachments/assets/aba0fcdd-b063-451a-bf1f-7c77e879c0a8" /> |
+| <img width="1920" height="1080" alt="screenshot_2026-09-29_16-13-28" src="https://github.com/user-attachments/assets/69ce3bf5-3dd0-43a9-aa7f-d12fd488dfb9" /> | <img width="1920" height="1080" alt="screenshot_2026-09-29_16-12-47" src="https://github.com/user-attachments/assets/f429c5b6-9694-4ed6-9aa6-a87d25f8247a" /> |
 
 ## Welcome to Haku Space
 
@@ -45,120 +45,6 @@ Wayland dotfiles and desktop shell for Hyprland / Niri / MangoWM / Labwc
 - **Modular dotfiles management**: install, update, link, unlink, diagnose, and roll back individual modules instead of treating the repository as one giant config copy.
 - **User-owned customization**: `~/hakucfg` remains separate from the managed base so updates can evolve without overwriting personal settings.
 - See Guide for: [Arch Linux](#installation-guide) | [NixOS](#nixos-configuration) | [Fedora](docs/fedora_guide.md)
-
-## Visual ecosystem
-
-[Haku Cursor](https://github.com/hakuimaku/haku-cursor),
-[Hikaide GTK](https://github.com/hakuimaku/hikade-gtk-theme), and optional
-[Hikaide-Symbols](https://github.com/hakuimaku/hikaide-symbols) are installed by
-`hakuspace-archive`. HakuSpace owns appearance selection, canonical accent state
-and the internal safe recoloring engine. There is no external accent executable
-or source checkout required at runtime.
-
-```text
-Theme UI / wallpaper / CLI → theme_ctl → state.env
-                                    → gen_style / apply_style
-                                    → appearance_ctl → haku_icon_accent.py
-                                                     → configured icon theme
-```
-
-`scripts/assets.sh` installs/updates the three visual sources and wallpapers via
-`~/hakuspace-archive`, verifies/selects configured appearance, then reconciles the
-current accent. `--dry-run` describes the sequence. For local tests,
-`HAKUSPACE_ARCHIVE_SOURCE` selects an archive checkout without pulling it; the
-archive accepts `HAKU_CURSOR_SOURCE`, `HAKU_GTK_THEME_SOURCE` and
-`HAKU_ICON_THEME_SOURCE`. Production paths still use HOME and the XDG cache.
-Archive/source caches can be deleted after installation.
-
-The only canonical accent is `ACCENT_COLOR` in
-`~/.local/state/hakuspace/state/state.env`. Classic, Hikai, wallpaper extraction
-and the CLI use the same controller. `set-accent` saves state, renders/reloads
-consumers, then synchronizes icons according to appearance policy. `apply`
-reconciles icons after reinstall/restore even if canonical accent has not changed.
-`set-font` and `set-size` do not recolor icons. `gen_style.sh` only renders; custom
-scripts must use controller commands to mutate state.
-
-```bash
-~/.local/bin/appearance_ctl.sh status
-~/.local/bin/appearance_ctl.sh verify
-~/.local/bin/appearance_ctl.sh apply
-~/.local/bin/theme_ctl.sh set-accent '#AC7994'
-~/.local/bin/theme_ctl.sh apply
-```
-
-Defaults live in `src/core/lib/haku_appearance.sh`. Set environment variables or
-`${XDG_CONFIG_HOME:-$HOME/.config}/hakuspace/appearance.env`:
-
-```bash
-HAKU_ICON_THEME=Hikaide-Symbols   # default: select the installed icon theme
-# HAKU_ICON_THEME=Papirus-Dark    # select another installed theme
-# HAKU_ICON_THEME=system          # leave the desktop icon-theme setting alone
-HAKU_ICON_ACCENT_MODE=auto       # default: only managed Hikaide-Symbols
-# HAKU_ICON_ACCENT_MODE=on        # opt in to safe recoloring of a user-owned theme
-# HAKU_ICON_ACCENT_MODE=off       # never recolor icons
-```
-
-`system` always disables icon synchronization. `auto` leaves other themes and
-unmanaged Hikaide-Symbols untouched. `on` uses the internal scanner against the
-theme under `HAKU_ICON_DIR` (default `~/.icons`); static/GTK-symbolic themes report
-`not-applicable` and succeed. Third-party themes installed in standard XDG/system
-icon locations remain selectable; system-wide files are never recolored.
-
-`verify` checks configured assets: `system` does not require an icon theme;
-a configured missing theme fails verification. Normal theme changes warn and
-continue when optional icons are missing. `HAKUSPACE_STRICT_ASSETS=1` makes genuine
-asset/engine failures nonzero at the controller boundary, while disabled,
-external and not-applicable integrations still succeed. Filesystem/backup safety
-errors remain nonzero from `appearance_ctl sync-accent`; core state and rendered
-outputs are never rolled back. A missing internal engine is a broken HakuSpace
-deployment, reported by `verify`, rather than an optional external dependency.
-
-The standard-library-only engine is `src/core/app/icon-accent/haku_icon_accent.py`,
-deployed flat to `~/.local/bin/haku_icon_accent.py` in Copy or Deep Symlink mode.
-Its CLI supports `inspect`, `status`, `set --dry-run`, `set`, and `restore`:
-
-```bash
-python3 ~/.local/bin/haku_icon_accent.py --icons-dir ~/.icons status Hikaide-Symbols
-python3 ~/.local/bin/haku_icon_accent.py --icons-dir ~/.icons restore Hikaide-Symbols
-# Reapply canonical accent after a manual restore:
-~/.local/bin/theme_ctl.sh apply
-```
-
-Original backups remain under `${XDG_STATE_HOME:-$HOME/.local/state}/icon-accent/`
-with the same checksums/format. Archive update removes the old two installed
-engine files only if both match its complete checksum receipt; modified,
-symlinked or unmanaged files are preserved with a warning. This cleanup runs at
-installation time, never every session.
-
-GTK/cursor defaults are Hikaide, **Haku-Dark** and size 24. Cursor assets install
-at `~/.icons/$HAKU_CURSOR_THEME`. Select an exact theme in appearance.env:
-
-```bash
-HAKU_CURSOR_THEME=Haku-Dark
-HAKU_CURSOR_SIZE=24
-# HAKU_CURSOR_THEME=Haku-Light
-# Optional colour variants: Haku-Blue, Haku-Blue-Light, Haku-Pink, Haku-Pink-Light
-```
-
-`HAKU_GTK_THEME`, `HAKU_CURSOR_THEME` and `HAKU_CURSOR_SIZE` override selection.
-The archive builds only the selected style and installs its exact directory;
-it does not install or replace the sibling dark/light variant. Upstream animation
-defaults remain unchanged. For one compatibility cycle, deprecated
-`HAKU_CURSOR_PALETTE=blue` still resolves to Haku-Blue (dark variant).
-Resolution is explicit theme → legacy palette → Haku-Dark; prefer the exact theme
-setting for new configuration. Existing managed cursor installations in the old
-XDG location are left intact, and runtime can still discover them as a fallback.
-
-Cursor selection writes managed `environment.d/90-hakuspace-cursor.conf`;
-Hyprland gets a best-effort live setter, while Niri/MangoWM use the next session's
-imported environment. No global `GTK_THEME`, cursor rebuild-on-accent, CSS
-injection, watcher or daemon is added.
-Reopen applications to refresh cached icons; file managers are not killed.
-
-See the [V2 report](docs/task/HAKUSPACE_INTERNAL_ICON_ACCENT_V2_REPORT.md) for
-parity, migration, deployment and integration results. The
-[V1 report](docs/task/HAKUSPACE_VISUAL_ECOSYSTEM_INTEGRATION_REPORT.md) is historical;
-its external-engine architecture is superseded by V2.
 
 ## Shell Modes
 
@@ -548,6 +434,122 @@ Haku Space currently does not provide an automatic rollback for every system-lev
 - display manager / TTY service configuration (for example, LY);
 - desktop defaults such as dark color preference and Thunar file-manager association;
 - NixOS integration under `/etc/nixos`.
+
+---
+
+## Visual ecosystem
+
+[Haku Cursor](https://github.com/hakuimaku/haku-cursor),
+[Hikaide GTK](https://github.com/hakuimaku/hikade-gtk-theme), and optional
+[Hikaide-Symbols](https://github.com/hakuimaku/hikaide-symbols) are installed by
+`hakuspace-archive`. HakuSpace owns appearance selection, canonical accent state
+and the internal safe recoloring engine. There is no external accent executable
+or source checkout required at runtime.
+
+```text
+Theme UI / wallpaper / CLI → theme_ctl → state.env
+                                    → gen_style / apply_style
+                                    → appearance_ctl → haku_icon_accent.py
+                                                     → configured icon theme
+```
+
+`scripts/assets.sh` installs/updates the three visual sources and wallpapers via
+`~/hakuspace-archive`, verifies/selects configured appearance, then reconciles the
+current accent. `--dry-run` describes the sequence. For local tests,
+`HAKUSPACE_ARCHIVE_SOURCE` selects an archive checkout without pulling it; the
+archive accepts `HAKU_CURSOR_SOURCE`, `HAKU_GTK_THEME_SOURCE` and
+`HAKU_ICON_THEME_SOURCE`. Production paths still use HOME and the XDG cache.
+Archive/source caches can be deleted after installation.
+
+The only canonical accent is `ACCENT_COLOR` in
+`~/.local/state/hakuspace/state/state.env`. Classic, Hikai, wallpaper extraction
+and the CLI use the same controller. `set-accent` saves state, renders/reloads
+consumers, then synchronizes icons according to appearance policy. `apply`
+reconciles icons after reinstall/restore even if canonical accent has not changed.
+`set-font` and `set-size` do not recolor icons. `gen_style.sh` only renders; custom
+scripts must use controller commands to mutate state.
+
+```bash
+~/.local/bin/appearance_ctl.sh status
+~/.local/bin/appearance_ctl.sh verify
+~/.local/bin/appearance_ctl.sh apply
+~/.local/bin/theme_ctl.sh set-accent '#AC7994'
+~/.local/bin/theme_ctl.sh apply
+```
+
+Defaults live in `src/core/lib/haku_appearance.sh`. Set environment variables or
+`${XDG_CONFIG_HOME:-$HOME/.config}/hakuspace/appearance.env`:
+
+```bash
+HAKU_ICON_THEME=Hikaide-Symbols   # default: select the installed icon theme
+# HAKU_ICON_THEME=Papirus-Dark    # select another installed theme
+# HAKU_ICON_THEME=system          # leave the desktop icon-theme setting alone
+HAKU_ICON_ACCENT_MODE=auto       # default: only managed Hikaide-Symbols
+# HAKU_ICON_ACCENT_MODE=on        # opt in to safe recoloring of a user-owned theme
+# HAKU_ICON_ACCENT_MODE=off       # never recolor icons
+```
+
+`system` always disables icon synchronization. `auto` leaves other themes and
+unmanaged Hikaide-Symbols untouched. `on` uses the internal scanner against the
+theme under `HAKU_ICON_DIR` (default `~/.icons`); static/GTK-symbolic themes report
+`not-applicable` and succeed. Third-party themes installed in standard XDG/system
+icon locations remain selectable; system-wide files are never recolored.
+
+`verify` checks configured assets: `system` does not require an icon theme;
+a configured missing theme fails verification. Normal theme changes warn and
+continue when optional icons are missing. `HAKUSPACE_STRICT_ASSETS=1` makes genuine
+asset/engine failures nonzero at the controller boundary, while disabled,
+external and not-applicable integrations still succeed. Filesystem/backup safety
+errors remain nonzero from `appearance_ctl sync-accent`; core state and rendered
+outputs are never rolled back. A missing internal engine is a broken HakuSpace
+deployment, reported by `verify`, rather than an optional external dependency.
+
+The standard-library-only engine is `src/core/app/icon-accent/haku_icon_accent.py`,
+deployed flat to `~/.local/bin/haku_icon_accent.py` in Copy or Deep Symlink mode.
+Its CLI supports `inspect`, `status`, `set --dry-run`, `set`, and `restore`:
+
+```bash
+python3 ~/.local/bin/haku_icon_accent.py --icons-dir ~/.icons status Hikaide-Symbols
+python3 ~/.local/bin/haku_icon_accent.py --icons-dir ~/.icons restore Hikaide-Symbols
+# Reapply canonical accent after a manual restore:
+~/.local/bin/theme_ctl.sh apply
+```
+
+Original backups remain under `${XDG_STATE_HOME:-$HOME/.local/state}/icon-accent/`
+with the same checksums/format. Archive update removes the old two installed
+engine files only if both match its complete checksum receipt; modified,
+symlinked or unmanaged files are preserved with a warning. This cleanup runs at
+installation time, never every session.
+
+GTK/cursor defaults are Hikaide, **Haku-Dark** and size 24. Cursor assets install
+at `~/.icons/$HAKU_CURSOR_THEME`. Select an exact theme in appearance.env:
+
+```bash
+HAKU_CURSOR_THEME=Haku-Dark
+HAKU_CURSOR_SIZE=24
+# HAKU_CURSOR_THEME=Haku-Light
+# Optional colour variants: Haku-Blue, Haku-Blue-Light, Haku-Pink, Haku-Pink-Light
+```
+
+`HAKU_GTK_THEME`, `HAKU_CURSOR_THEME` and `HAKU_CURSOR_SIZE` override selection.
+The archive builds only the selected style and installs its exact directory;
+it does not install or replace the sibling dark/light variant. Upstream animation
+defaults remain unchanged. For one compatibility cycle, deprecated
+`HAKU_CURSOR_PALETTE=blue` still resolves to Haku-Blue (dark variant).
+Resolution is explicit theme → legacy palette → Haku-Dark; prefer the exact theme
+setting for new configuration. Existing managed cursor installations in the old
+XDG location are left intact, and runtime can still discover them as a fallback.
+
+Cursor selection writes managed `environment.d/90-hakuspace-cursor.conf`;
+Hyprland gets a best-effort live setter, while Niri/MangoWM use the next session's
+imported environment. No global `GTK_THEME`, cursor rebuild-on-accent, CSS
+injection, watcher or daemon is added.
+Reopen applications to refresh cached icons; file managers are not killed.
+
+See the [V2 report](docs/task/HAKUSPACE_INTERNAL_ICON_ACCENT_V2_REPORT.md) for
+parity, migration, deployment and integration results. The
+[V1 report](docs/task/HAKUSPACE_VISUAL_ECOSYSTEM_INTEGRATION_REPORT.md) is historical;
+its external-engine architecture is superseded by V2.
 
 ---
 
