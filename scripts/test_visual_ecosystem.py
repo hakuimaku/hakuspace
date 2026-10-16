@@ -71,7 +71,7 @@ class AppearanceTests(unittest.TestCase):
         return result
 
     def base_assets(self):
-        for relative in (".themes/Hikaide", ".local/share/icons/Haku-Blue"):
+        for relative in (".themes/Hikaide", ".icons/Haku-Dark"):
             directory = self.home / relative
             directory.mkdir(parents=True)
             (directory / "index.theme").write_text("[Icon Theme]\n")
@@ -100,17 +100,42 @@ class AppearanceTests(unittest.TestCase):
         self.env["HYPRLAND_INSTANCE_SIGNATURE"] = "test"
         self.run_script("appearance_ctl.sh", "apply")
         self.assertEqual(len(self.calls()), 5)
-        self.assertIn("hyprctl setcursor Haku-Blue 24", self.calls())
+        self.assertIn("hyprctl setcursor Haku-Dark 24", self.calls())
+        self.assertIn("gsettings set org.gnome.desktop.interface cursor-theme Haku-Dark", self.calls())
+        self.assertIn("cursor_theme=Haku-Dark", self.run_script("appearance_ctl.sh", "status").stdout)
         environment = self.home / ".config/environment.d/90-hakuspace-cursor.conf"
-        self.assertEqual(environment.read_text(), "XCURSOR_THEME=Haku-Blue\nXCURSOR_SIZE=24\n")
+        self.assertEqual(environment.read_text(), "XCURSOR_THEME=Haku-Dark\nXCURSOR_SIZE=24\n")
         self.assertNotIn("GTK_THEME", environment.read_text())
+
+    def test_exact_light_variant_overrides_legacy_palette(self):
+        self.assets()
+        self.env.update(HAKU_CURSOR_THEME="Haku-Blue-Light", HAKU_CURSOR_PALETTE="pink",
+                        HYPRLAND_INSTANCE_SIGNATURE="test")
+        cursor = self.home / ".icons/Haku-Blue-Light"
+        cursor.mkdir()
+        (cursor / "index.theme").touch()
+        self.run_script("appearance_ctl.sh", "verify")
+        self.run_script("appearance_ctl.sh", "apply")
+        self.assertIn("cursor_theme=Haku-Blue-Light", self.run_script("appearance_ctl.sh", "status").stdout)
+        self.assertIn("gsettings set org.gnome.desktop.interface cursor-theme Haku-Blue-Light", self.calls())
+        self.assertIn("hyprctl setcursor Haku-Blue-Light 24", self.calls())
+        environment = self.home / ".config/environment.d/90-hakuspace-cursor.conf"
+        self.assertEqual(environment.read_text(), "XCURSOR_THEME=Haku-Blue-Light\nXCURSOR_SIZE=24\n")
+
+    def test_legacy_palette_resolution_retains_dark_variants(self):
+        for palette in ("blue", "cyan", "green", "purple", "pink", "red", "orange", "yellow"):
+            with self.subTest(palette=palette):
+                self.env["HAKU_CURSOR_PALETTE"] = palette
+                status = self.run_script("appearance_ctl.sh", "status").stdout
+                self.assertIn(f"cursor_theme=Haku-{palette.capitalize()}\n", status)
+                self.assertNotIn(f"cursor_theme=Haku-{palette.capitalize()}-Light", status)
 
     def test_cursor_overrides_and_no_schema(self):
         self.assets()
         config = self.home / ".config/hakuspace"
         config.mkdir(parents=True)
         (config / "appearance.env").write_text("HAKU_CURSOR_PALETTE=pink\nHAKU_CURSOR_SIZE=32\n")
-        cursor = self.home / ".local/share/icons/Haku-Pink"
+        cursor = self.home / ".icons/Haku-Pink"
         cursor.mkdir()
         (cursor / "index.theme").touch()
         self.stub("gsettings", "exit 1")
@@ -278,12 +303,35 @@ class DeploymentTests(unittest.TestCase):
                 self.assertTrue(engine.is_file())
                 self.assertFalse((home / ".local/bin/kde.svg").exists())
                 theme_fixture(home)
+                for relative in (".themes/Hikaide", ".icons/Haku-Dark"):
+                    directory = home / relative
+                    directory.mkdir(parents=True)
+                    (directory / "index.theme").touch()
+                calls = home / "cursor-calls"
+                env.update(CALLS=str(calls), HYPRLAND_INSTANCE_SIGNATURE="test")
+                for name, code in (
+                    ("gsettings", 'if [ "$1" = list-schemas ]; then echo org.gnome.desktop.interface; else echo "$*" >> "$CALLS"; fi'),
+                    ("hyprctl", 'echo "$*" >> "$CALLS"'),
+                ):
+                    command = home / ".local/bin" / name
+                    command.write_text(f"#!/bin/sh\n{code}\n")
+                    command.chmod(0o755)
                 apply = home / "apply"
                 apply.write_text("#!/bin/sh\nexit 0\n")
                 apply.chmod(0o755)
                 env["HAKUSPACE_APPLY_STYLE"] = str(apply)
                 if mode == "copy":
                     shutil.rmtree(source)
+                for action in ("status", "verify", "apply"):
+                    result = subprocess.run([str(home / ".local/bin/appearance_ctl.sh"), action],
+                                            env=env, text=True, capture_output=True)
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    if action == "status":
+                        self.assertIn("cursor_theme=Haku-Dark", result.stdout)
+                self.assertIn("cursor-theme Haku-Dark", calls.read_text())
+                self.assertIn("setcursor Haku-Dark 24", calls.read_text())
+                environment = home / ".config/environment.d/90-hakuspace-cursor.conf"
+                self.assertEqual(environment.read_text(), "XCURSOR_THEME=Haku-Dark\nXCURSOR_SIZE=24\n")
                 result = subprocess.run([str(home / ".local/bin/theme_ctl.sh"), "set-accent", "#AC7994"],
                                         env=env, text=True, capture_output=True)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -338,6 +386,11 @@ class InstalledAssetsTests(unittest.TestCase):
             self.assertEqual(json.loads(generated.read_text())["accent"], "#ffffff")
             manifest = home / ".local/state/hakuspace/assets/installed.env"
             self.assertNotIn("ICON_ACCENT", manifest.read_text())
+            self.assertIn("HAKU_CURSOR_THEME=Haku-Dark", manifest.read_text())
+            self.assertIn(f"HAKU_CURSOR_PATH={home}/.icons/Haku-Dark", manifest.read_text())
+            self.assertTrue((home / ".icons/Haku-Dark/index.theme").is_file())
+            self.assertFalse((home / ".icons/Haku-Light").exists())
+            self.assertFalse((home / ".local/share/icons/Haku-Dark").exists())
             self.assertFalse((binary / "icon-accent").exists())
             self.assertFalse((binary / "icon_accent.py").exists())
             self.assertTrue(any((home / "Pictures/Wallpapers").iterdir()))

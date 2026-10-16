@@ -130,13 +130,29 @@ engine files only if both match its complete checksum receipt; modified,
 symlinked or unmanaged files are preserved with a warning. This cleanup runs at
 installation time, never every session.
 
-GTK/cursor defaults remain Hikaide, Haku-Blue and size 24. `HAKU_GTK_THEME`,
-`HAKU_CURSOR_THEME`, `HAKU_CURSOR_SIZE` override selection. Setting
-`HAKU_CURSOR_PALETTE=pink` in appearance.env makes the next asset install build
-that palette and runtime derive Haku-Pink. Cursor selection writes managed
-`environment.d/90-hakuspace-cursor.conf`; Hyprland gets a best-effort live setter,
-while Niri/MangoWM use the next session's imported environment. No global
-`GTK_THEME`, cursor rebuild-on-accent, CSS injection, watcher or daemon is added.
+GTK/cursor defaults are Hikaide, **Haku-Dark** and size 24. Cursor assets install
+at `~/.icons/$HAKU_CURSOR_THEME`. Select an exact theme in appearance.env:
+
+```bash
+HAKU_CURSOR_THEME=Haku-Dark
+HAKU_CURSOR_SIZE=24
+# HAKU_CURSOR_THEME=Haku-Light
+# Optional colour variants: Haku-Blue, Haku-Blue-Light, Haku-Pink, Haku-Pink-Light
+```
+
+`HAKU_GTK_THEME`, `HAKU_CURSOR_THEME` and `HAKU_CURSOR_SIZE` override selection.
+The archive builds only the selected style and installs its exact directory;
+it does not install or replace the sibling dark/light variant. Upstream animation
+defaults remain unchanged. For one compatibility cycle, deprecated
+`HAKU_CURSOR_PALETTE=blue` still resolves to Haku-Blue (dark variant).
+Resolution is explicit theme → legacy palette → Haku-Dark; prefer the exact theme
+setting for new configuration. Existing managed cursor installations in the old
+XDG location are left intact, and runtime can still discover them as a fallback.
+
+Cursor selection writes managed `environment.d/90-hakuspace-cursor.conf`;
+Hyprland gets a best-effort live setter, while Niri/MangoWM use the next session's
+imported environment. No global `GTK_THEME`, cursor rebuild-on-accent, CSS
+injection, watcher or daemon is added.
 Reopen applications to refresh cached icons; file managers are not killed.
 
 See the [V2 report](docs/task/HAKUSPACE_INTERNAL_ICON_ACCENT_V2_REPORT.md) for

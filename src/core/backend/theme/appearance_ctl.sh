@@ -40,7 +40,7 @@ asset_warning() {
 
 cursor_directory() {
     local root
-    for root in "${XDG_DATA_HOME:-$HOME/.local/share}/icons" "$HOME/.icons" /usr/local/share/icons /usr/share/icons; do
+    for root in "$HOME/.icons" "${XDG_DATA_HOME:-$HOME/.local/share}/icons" /usr/local/share/icons /usr/share/icons; do
         if [[ -f "$root/$HAKU_CURSOR_THEME/index.theme" ]]; then
             printf '%s\n' "$root/$HAKU_CURSOR_THEME"
             return 0
