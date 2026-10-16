@@ -1,56 +1,15 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/haku_theme.sh"
-source "$SCRIPT_DIR/accent_color.sh"
-
-usage() {
-    cat <<'EOF'
-Usage: gen_style.sh [ACCENT] [FONT] [SIZE]
-Generate theme files for the desktop environment.
-
-Options:
-    -a, --accent HEX    Set the accent color
-    -f, --font NAME     Set the font family
-    -s, --size N        Set the font size in pixels
-    -h, --help          Show this help message
-EOF
-}
-
-[[ "${1:-}" == "-h" || "${1:-}" == "--help" ]] && { usage; exit 0; }
-
-ACCENT_PROVIDED=false
-SIZE_PROVIDED=false
-
-if [[ "${1-}" != "" && "${1-}" != -* ]]; then ACCENT_COLOR="$1"; ACCENT_PROVIDED=true; shift; fi
-if [[ "${1-}" != "" && "${1-}" != -* ]]; then FONT_FAMILY="$1"; shift; fi
-if [[ "${1-}" != "" && "${1-}" != -* ]]; then FONT_SIZE="$1"; SIZE_PROVIDED=true; shift; fi
-
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --accent|-a) ACCENT_COLOR="${2:?missing value for --accent}"; ACCENT_PROVIDED=true; shift 2 ;;
-        --font|-f) FONT_FAMILY="${2:?missing value for --font}"; shift 2 ;;
-        --size|-s) FONT_SIZE="${2:?missing value for --size}"; SIZE_PROVIDED=true; shift 2 ;;
-        *) echo "Unknown arg: $1" >&2; exit 2 ;;
-    esac
-done
-
-if [[ "$ACCENT_PROVIDED" == true ]]; then
-    ACCENT_COLOR="$(printf '%s' "$ACCENT_COLOR" | tr -cd '#0-9a-fA-F')"
-    [[ "$ACCENT_COLOR" =~ ^#[0-9a-fA-F]{6}$ ]] || ACCENT_COLOR="$THEME_DEFAULT_ACCENT"
-
-    validated_accent="$(accent_color_or_fallback "$ACCENT_COLOR")"
-    if [[ "$validated_accent" == "$THEME_DEFAULT_ACCENT" && "${ACCENT_COLOR,,}" != "$THEME_DEFAULT_ACCENT" ]]; then
-        notify-send "Color ${ACCENT_COLOR} is too dark" "Generating color failed" 2>/dev/null || true
-        exit 1
-    fi
-    ACCENT_COLOR="$validated_accent"
+LIB_DIR="$SCRIPT_DIR"
+[[ -f "$LIB_DIR/haku_theme.sh" ]] || LIB_DIR="$SCRIPT_DIR/../lib"
+source "$LIB_DIR/haku_theme.sh" || exit 1
+# Mutation belongs to theme_ctl; this renderer only reads canonical state.
+if [[ $# -gt 0 ]]; then
+    printf 'Usage: gen_style.sh\nUse theme_ctl.sh set-accent|set-font|set-size to change theme state.\n'
+    [[ "${1:-}" == --help || "${1:-}" == -h ]] && exit 0
+    exit 2
 fi
-
-[[ "$SIZE_PROVIDED" == false || ( "$FONT_SIZE" =~ ^[0-9]+$ && "$FONT_SIZE" -gt 0 ) ]] || FONT_SIZE="$THEME_DEFAULT_SIZE"
-[[ -n "$FONT_FAMILY" ]] || FONT_FAMILY="$THEME_DEFAULT_FONT"
-
-theme_save_state
 
 hex_to_rgba() {
     local hex="${1#\#}"

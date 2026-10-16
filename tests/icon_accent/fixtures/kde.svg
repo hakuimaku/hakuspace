@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg">
+  <style id="current-color-scheme">
+    .ColorScheme-Highlight { color:#5294e2; }
+    .ColorScheme-Text { color:#232629; }
+    .ColorScheme-Background { color:#5294e2; }
+    .ColorScheme-ViewText { color:#5294e2; }
+  </style>
+  <path class="ColorScheme-Highlight" fill="currentColor"/>
+  <path fill="#5294e2"/>
+  <stop style="stop-color:#5294e2"/>
+</svg>

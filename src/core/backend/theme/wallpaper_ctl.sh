@@ -52,8 +52,7 @@ source_core_lib() {
 
 SET_WALLPAPER_SCRIPT="$(resolve_script wallpaper_set.sh ../../theme/wallpaper_set.sh)" || exit 1
 GET_ACCENT_COLOR_SCRIPT="$(resolve_script get_accent_color.py ../../theme/get_accent_color.py)" || exit 1
-GEN_STYLE_SCRIPT="$(resolve_script gen_style.sh ../../theme/gen_style.sh)" || exit 1
-APPLY_STYLE_SCRIPT="$(resolve_script apply_style.sh ../../theme/apply_style.sh)" || exit 1
+THEME_CTL="$(resolve_script theme_ctl.sh theme_ctl.sh)" || exit 1
 source_core_lib accent_color.sh ../../lib/accent_color.sh || exit 1
 
 current_path() {
@@ -120,7 +119,7 @@ apply_accent_color() {
         accent="$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$target_image" "$ACCENT_COLOR_MODE")"
     fi
     accent="$(accent_color_or_fallback "$accent")"
-    "$GEN_STYLE_SCRIPT" "$accent" && "$APPLY_STYLE_SCRIPT"
+    "$THEME_CTL" set-accent "$accent"
 }
 
 resolve_static() {

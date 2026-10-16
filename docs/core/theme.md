@@ -27,7 +27,7 @@ Not every color pulled from an image is suitable for a user interface. For examp
 - This function double-checks the brightness of the color. If the selected color is deemed too dark or invalid, it rejects it and safely falls back to a predefined default color (`THEME_DEFAULT_ACCENT`). This ensures your UI is always readable and aesthetically pleasing.
 
 ### 4. Generating the Theme (`gen_style.sh`)
-Once we have the perfect, validated Hex color code (e.g., `#ff6699`), it is handed over to `gen_style.sh`. This is the workhorse of the theming engine.
+Once we have the perfect, validated Hex color code (e.g., `#ff6699`), it is handed to `theme_ctl.sh set-accent`, which saves canonical state and calls `gen_style.sh`. This is the workhorse of the theming engine.
 - The script takes the Hex code and translates it into various color formats (RGB, RGBA) so different applications can understand it.
 - It then dynamically generates and overwrites the `.css` and `.conf` configuration files for your desktop components. It updates the styling variables for Waybar, configures Rofi's color scheme, changes Kitty's terminal colors, and updates SwayNC's notification aesthetics.
 
@@ -47,7 +47,7 @@ We've designed this system to be highly customizable. If you want to tweak how i
 
 1. **Disable Auto-Theming:** If you prefer a static color scheme that doesn't change with your wallpaper, simply open `~/hakucfg/setting.sh` and set `ACCENT_COLOR_BASED_ON_WALLPAPER=false`.
 2. **Change the Extraction Mode:** Don't like the vivid colors? Open `~/hakucfg/setting.sh` and change `ACCENT_COLOR_MODE` to `dominant`, `brightest`, or `saturated` to suit your taste.
-3. **Pick a Color Manually:** Sometimes you just want to choose the color yourself. You can run the `accent_color_picker.sh` script to open a graphical color picker. Whatever color you select there will immediately be pushed through `gen_style.sh` and applied to your entire system!
+3. **Pick a Color Manually:** Sometimes you just want to choose the color yourself. You can run the `accent_color_picker.sh` script to open a graphical color picker. Whatever color you select there will immediately be sent through `theme_ctl.sh set-accent`, applied to your desktop, and synchronized through the HakuSpace internal icon accent engine according to `HAKU_ICON_THEME` and `HAKU_ICON_ACCENT_MODE`!
 4. **Opaque Theme Mode:** Want your panels and UI elements to be solid black rather than transparent/translucent? `opaque_theme.sh` provides this functionality. When enabled (via the Haku Menu's Setting tab), it dynamically writes solid `#000000` background rules into `THEME_RENDER_DIR/opaque/`. These rules are safely included at the bottom of Waybar, SwayNC, Rofi, GTK, and Kitty configs, allowing instant toggleable opaqueness without manual config editing.
 
 ---

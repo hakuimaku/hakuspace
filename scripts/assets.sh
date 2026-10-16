@@ -16,6 +16,8 @@ deploy_assets() {
 
     if [[ "$dry_run" -eq 1 ]]; then
         log_info "DRY RUN: would deploy assets from $ARCHIVE_REPO_URL to $ARCHIVE_DIR"
+        log_info "DRY RUN: install Haku Cursor, Hikaide, Hikaide-Symbols and wallpapers"
+        log_info "DRY RUN: verify/activate appearance, apply canonical theme and reconcile icon accent"
         return 0
     fi
 
@@ -24,28 +26,21 @@ deploy_assets() {
         return 1
     fi
 
-    if [[ -d "$ARCHIVE_DIR/.git" ]]; then
-        log_info "Archive repo already exists. Pulling latest changes..."
-        if ! git -C "$ARCHIVE_DIR" pull --ff-only; then
-            log_error "Failed to update $ARCHIVE_DIR"
+    if [[ -n "${HAKUSPACE_ARCHIVE_SOURCE:-}" ]]; then
+        [[ -d "$ARCHIVE_DIR" ]] || { log_error "Archive override not found: $ARCHIVE_DIR"; return 1; }
+    elif [[ -d "$ARCHIVE_DIR/.git" && ! -L "$ARCHIVE_DIR" ]]; then
+        if [[ -n "$(git -C "$ARCHIVE_DIR" status --porcelain)" ]]; then
+            log_error "Dirty archive checkout; leaving untouched: $ARCHIVE_DIR"
             return 1
         fi
+        log_info "Updating archive checkout..."
+        git -C "$ARCHIVE_DIR" pull --ff-only || return 1
+    elif [[ -e "$ARCHIVE_DIR" || -L "$ARCHIVE_DIR" ]]; then
+        log_error "Refusing to replace non-checkout: $ARCHIVE_DIR"
+        return 1
     else
-        if [[ -d "$ARCHIVE_DIR" ]]; then
-            log_warn "$ARCHIVE_DIR exists but is not a git repo."
-            if ask_yes_no "===> Remove and re-clone hakuspace-archive?"; then
-                rm -rf "$ARCHIVE_DIR"
-            else
-                log_warn "Cannot continue archive deployment without a valid repo."
-                return 1
-            fi
-        fi
-
         log_info "Cloning archive repo..."
-        if ! git clone "$ARCHIVE_REPO_URL" "$ARCHIVE_DIR"; then
-            log_error "Failed to clone $ARCHIVE_REPO_URL"
-            return 1
-        fi
+        git clone --depth 1 "$ARCHIVE_REPO_URL" "$ARCHIVE_DIR" || return 1
     fi
 
     if [[ ! -f "$ARCHIVE_DIR/setup.sh" ]]; then
@@ -53,9 +48,12 @@ deploy_assets() {
         return 1
     fi
 
-    chmod +x "$ARCHIVE_DIR/setup.sh"
     log_info "Running archive setup script..."
-    (cd "$ARCHIVE_DIR" && ./setup.sh)
+    export PATH="$HOME/.local/bin:$PATH"
+    bash "$ARCHIVE_DIR/setup.sh" || return 1
+    "$SOURCE_CORE/backend/theme/appearance_ctl.sh" verify || return 1
+    "$SOURCE_CORE/backend/theme/appearance_ctl.sh" apply || return 1
+    "$SOURCE_CORE/backend/theme/theme_ctl.sh" apply
 }
 
 # CLI Entrypoint

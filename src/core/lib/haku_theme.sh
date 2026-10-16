@@ -10,8 +10,8 @@
 #   to recover theme values.
 
 # - Scripts source this library to share paths, defaults, and state handling.
-#   A script may modify ACCENT_COLOR, FONT_FAMILY, or FONT_SIZE, then call
-#   theme_save_state() before rendering the dependent theme files.
+#   theme_ctl.sh owns mutations and calls theme_save_state() before rendering.
+#   Renderers and consumers only read canonical state.
 
 # - Toggle and UI state files also live under the state directory, while
 #   application-specific generated files remain isolated in the theme directory.

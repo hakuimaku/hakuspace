@@ -60,6 +60,20 @@ render_apply() {
     "$APPLY_STYLE"
 }
 
+sync_icon_accent() {
+    local appearance
+    if appearance="$(resolve_script appearance_ctl.sh appearance_ctl.sh)" && "$appearance" sync-accent; then
+        return 0
+    fi
+    printf 'theme_ctl.sh: warning: icon accent sync unavailable; core theme preserved.\n' >&2
+    [[ "${HAKUSPACE_STRICT_ASSETS:-0}" != 1 ]]
+}
+
+apply_and_reconcile() {
+    render_apply || return $?
+    sync_icon_accent
+}
+
 validate_accent() {
     local requested="${1:-}"
     if [[ ! "$requested" =~ ^#[0-9a-fA-F]{6}$ ]]; then
@@ -96,7 +110,8 @@ set_accent() {
     local validated
     validated="$(validate_accent "${1:-}")" || return $?
     ACCENT_COLOR="$validated"
-    save_and_apply
+    theme_save_state || return 1
+    apply_and_reconcile
 }
 
 set_font() {
@@ -166,7 +181,7 @@ case "${1:-}" in
         set_size "${2:-}"
         ;;
     apply|--apply)
-        render_apply
+        apply_and_reconcile
         ;;
     -h|--help)
         print_help

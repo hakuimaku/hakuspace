@@ -6,6 +6,13 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_backend_lib.sh"
 
 if [[ "${1:-}" == "--early" ]]; then
+    # Reconcile installed assets after updates or restores without failing login.
+    if [[ -x "$HOME/.local/bin/appearance_ctl.sh" ]]; then
+        "$HOME/.local/bin/appearance_ctl.sh" apply || true
+    fi
+    if [[ -x "$HOME/.local/bin/theme_ctl.sh" ]]; then
+        "$HOME/.local/bin/theme_ctl.sh" apply || true
+    fi
     if [[ ! -f "$STATE_DIR/haku_space_state" ]] && [[ -f "$STATE_DIR/haku_shell_state" ]]; then
 
         cp "$STATE_DIR/haku_shell_state" "$STATE_DIR/haku_space_state"

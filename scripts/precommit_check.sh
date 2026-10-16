@@ -47,6 +47,8 @@ if command -v quickshell >/dev/null 2>&1; then
     bash scripts/test_labwc_exit.sh
 fi
 
+python3 -m unittest discover -s tests/icon_accent -v
+python3 scripts/test_visual_ecosystem.py
 python3 scripts/test_setting_ctl.py
 python3 scripts/test_hakucfg_editor_ctl.py
 python3 scripts/test_hakuspace_info_ctl.py

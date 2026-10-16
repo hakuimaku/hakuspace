@@ -51,12 +51,12 @@ state_init() {
         fi
     done < <(registry_get_state_files)
 
-    # Initialize style state if missing and gen_style.sh is available
+    # Initialize style state if missing and theme_ctl.sh is available
     local state_env="$STATE_DIR/state/state.env"
     if [[ ! -f "$state_env" ]]; then
-        if [[ -x "$DEST_BIN/gen_style.sh" ]]; then
-            "$DEST_BIN/gen_style.sh" --font "JetBrainsMono Nerd Font" >/dev/null 2>&1 || true
-            log_ok "Executed gen_style.sh"
+        if [[ -x "$DEST_BIN/theme_ctl.sh" ]]; then
+            "$DEST_BIN/theme_ctl.sh" set-font "JetBrainsMono Nerd Font" >/dev/null 2>&1 || true
+            log_ok "Executed theme_ctl.sh"
         fi
     fi
 

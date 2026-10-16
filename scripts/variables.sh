@@ -22,7 +22,7 @@ PKG_LABWC="$SOURCE_DIR/packages/pkg-labwc.txt"
 
 # hakuspace-archive repo URL and directory
 ARCHIVE_REPO_URL="https://github.com/hakuimaku/hakuspace-archive.git"
-ARCHIVE_DIR="$HOME/hakuspace-archive"
+ARCHIVE_DIR="${HAKUSPACE_ARCHIVE_SOURCE:-$HOME/hakuspace-archive}"
 
 # User custom configuration directory
 HAKUSPACE_CUSTOM_DIR="$HOME_SRC_DIR/hakucfg"
