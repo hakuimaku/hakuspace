@@ -41,7 +41,6 @@ SKIP_CONFIG_NAMES=(
     "niri"
     "mango"
     "labwc"
-    "gtk-3.0"
 )
 
 # Full paths in source tree for backward compatibility
@@ -50,7 +49,6 @@ SKIP_CONFIGS=(
     "$SOURCE_CONFIG/niri"
     "$SOURCE_CONFIG/mango"
     "$SOURCE_CONFIG/labwc"
-    "$SOURCE_CONFIG/gtk-3.0"
 )
 
 # Canonical Window Manager names
@@ -166,10 +164,7 @@ registry_get_common_configs() {
     echo "$SOURCE_CONFIG/hypr/hyprlock.conf|$DEST_CONFIG/hypr/hyprlock.conf"
     echo "$SOURCE_CONFIG/hypr/hyprlock_tiny.conf|$DEST_CONFIG/hypr/hyprlock_tiny.conf"
 
-    # 3. Thunar GTK 3.0 CSS
-    echo "$SOURCE_CONFIG/gtk-3.0/gtk.css|$DEST_CONFIG/gtk-3.0/gtk.css"
-
-    # 4. Home root dotfiles
+    # 3. Home root dotfiles
     echo "$HOME_SRC_DIR/.nanorc|$HOME/.nanorc"
     echo "$HOME_SRC_DIR/.zshrc|$HOME/.zshrc"
 }
@@ -233,22 +228,19 @@ registry_get_managed_destinations() {
         echo "$DEST_CONFIG/$name"
     done
 
-    # 2. GTK-3.0
-    echo "$DEST_CONFIG/gtk-3.0"
-
-    # 3. Hypr targets
+    # 2. Hypr targets
     echo "$DEST_CONFIG/hypr/config"
     echo "$DEST_CONFIG/hypr/hyprland.lua"
     echo "$DEST_CONFIG/hypr/hypridle.conf"
     echo "$DEST_CONFIG/hypr/hyprlock.conf"
     echo "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
 
-    # 4. Other WM targets
+    # 3. Other WM targets
     echo "$DEST_CONFIG/niri"
     echo "$DEST_CONFIG/mango"
     echo "$DEST_CONFIG/labwc"
 
-    # 5. Core scripts
+    # 4. Core scripts
     if [[ -d "$SOURCE_CORE" ]]; then
         while IFS= read -r -d '' file; do
             local filename
@@ -258,7 +250,7 @@ registry_get_managed_destinations() {
         done < <(find "$SOURCE_CORE" -type f -print0)
     fi
 
-    # 6. Home dotfiles
+    # 5. Home dotfiles
     echo "$HOME/.nanorc"
     echo "$HOME/.zshrc"
 }
@@ -284,7 +276,6 @@ registry_list_modules() {
     echo "labwc"
 
     # Special modules
-    echo "gtk-3.0"
     echo "hypridle"
     echo "hyprlock"
     echo "nanorc"
@@ -317,9 +308,6 @@ registry_resolve_module() {
         hyprlock)
             echo "$SOURCE_CONFIG/hypr/hyprlock.conf|$DEST_CONFIG/hypr/hyprlock.conf"
             echo "$SOURCE_CONFIG/hypr/hyprlock_tiny.conf|$DEST_CONFIG/hypr/hyprlock_tiny.conf"
-            ;;
-        gtk|gtk-3.0|thunar-gtk)
-            echo "$SOURCE_CONFIG/gtk-3.0/gtk.css|$DEST_CONFIG/gtk-3.0/gtk.css"
             ;;
         nano|nanorc|.nanorc)
             echo "$HOME_SRC_DIR/.nanorc|$HOME/.nanorc"
