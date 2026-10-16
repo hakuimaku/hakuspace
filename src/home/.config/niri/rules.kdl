@@ -49,7 +49,7 @@ window-rule {
     match app-id=r#"zen$"# title="^Picture-in-Picture$"
     match app-id=r#"app.zen_browser.zen$"# title="^Picture-in-Picture$"
     match app-id=r#"firefox$"# title="^Picture-in-Picture$"
-    
+
     open-floating true
 }
 
@@ -80,6 +80,7 @@ window-rule {
 // Rules for xdg-desktop-portal-gtk
 window-rule {
     match app-id=r#"xdg-desktop-portal-gtk"#
+    match title="^Pinentry-gtk$"
 
     open-floating true
     default-floating-position x=0 y=0
