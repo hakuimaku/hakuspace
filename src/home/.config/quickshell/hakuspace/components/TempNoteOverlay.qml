@@ -187,7 +187,7 @@ PanelWindow {
             }
 
             Sidebar.SidebarMorphButton {
-                anchors { top: parent.top; right: parent.right; margins: 8 }
+                anchors { top: parent.top; right: parent.right; margins: 16 }
                 width: 28
                 height: 28
                 radius: 14
@@ -207,7 +207,7 @@ PanelWindow {
                 id: noteContent
                 anchors { top: dragHandle.bottom; left: parent.left; right: parent.right; bottom: parent.bottom }
                 anchors.margins: 16
-                anchors.topMargin: 8
+                anchors.topMargin: 16
                 onCloseRequested: root.requestClose()
             }
         }
