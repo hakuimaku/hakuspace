@@ -70,8 +70,12 @@ sync_icon_accent() {
 }
 
 apply_and_reconcile() {
-    render_apply || return $?
-    sync_icon_accent
+    "$GEN_STYLE" || return $?
+    # Preserve sync errors while still applying the core theme after icon updates.
+    local icon_status=0
+    sync_icon_accent || icon_status=$?
+    "$APPLY_STYLE" || return $?
+    return "$icon_status"
 }
 
 validate_accent() {

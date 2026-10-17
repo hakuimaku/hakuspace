@@ -163,6 +163,22 @@ class AppearanceTests(unittest.TestCase):
         self.assertFalse((self.home / ".local/state/hakuspace/state/state.env").exists())
         self.assertEqual(self.calls(), [])
 
+    def test_icon_accent_is_synced_before_live_apply(self):
+        """Live reload must read the updated icon artwork."""
+        self.assets()
+        Path(self.env["HAKUSPACE_APPLY_STYLE"]).write_text(
+            '#!/bin/bash\n'
+            'python3 "$HOME/.local/bin/haku_icon_accent.py" --icons-dir "$HOME/.icons" '
+            'status Hikaide-Symbols >> "$CALLS"\n'
+            'echo apply >> "$CALLS"\n'
+        )
+        self.run_script("theme_ctl.sh", "set-accent", "#AC7994")
+        self.assertEqual(self.calls(), ["render", "#ac7994", "apply"])
+        self.log.unlink()
+        (self.home / ".icons/Hikaide-Symbols/user-home.svg").write_bytes(KDE)
+        self.run_script("theme_ctl.sh", "apply")
+        self.assertEqual(self.calls(), ["render", "#ac7994", "apply"])
+
     def test_missing_configured_icons_and_strict_mode(self):
         self.base_assets()
         result = self.run_script("theme_ctl.sh", "set-accent", "#AC7994")
@@ -172,6 +188,7 @@ class AppearanceTests(unittest.TestCase):
         self.env["HAKUSPACE_STRICT_ASSETS"] = "1"
         self.run_script("theme_ctl.sh", "set-accent", "#5294E2", success=False)
         self.assertEqual(self.run_script("theme_ctl.sh", "get", "accent").stdout.strip(), "#5294e2")
+        self.assertEqual(self.calls()[-2:], ["render", "apply"])
 
     def test_system_mode_without_icon_install_is_valid(self):
         self.base_assets()
