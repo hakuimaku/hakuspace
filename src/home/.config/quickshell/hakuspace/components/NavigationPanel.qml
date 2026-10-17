@@ -185,9 +185,8 @@ Item {
             : sidebarBodyY + 40,
         modelData.height - sidebarToolPreferredHeight - 12))
     readonly property real sidebarToolPreferredWidth: renderedSidebarTool === "quickActions" ? 540
-        : renderedSidebarTool === "clipboard" ? 460 : renderedSidebarTool === "shortcutManager" ? 120 : 460
-    readonly property real sidebarToolPreferredHeight: renderedSidebarTool === "quickActions" ? 240
-        : renderedSidebarTool === "clipboard" ? 360 : renderedSidebarTool === "shortcutManager" ? 360 : 330
+        : renderedSidebarTool === "clipboard" ? 460 : 120
+    readonly property real sidebarToolPreferredHeight: renderedSidebarTool === "quickActions" ? 240 : 360
     readonly property real sidebarToolWidth: Math.max(1, Math.min(sidebarToolPreferredWidth,
         modelData.width - sidebarToolX - 12))
     readonly property real sidebarToolHeight: Math.max(1, Math.min(sidebarToolPreferredHeight,
@@ -283,7 +282,6 @@ Item {
         var index = key === "shortcutManager" ? sidebarSurface.navigationCount - 1
             : sidebarSurface.tools.findIndex(function(tool) { return tool.key === key })
         if (index < 0) return
-        if (activeSidebarTool === "tempNote" && key !== "tempNote") TextStore.flushScratch()
         sidebarSelectedIndex = index
         if (!sidebarExpanded) UiState.beginNavigationHandoff("sidebar")
         renderedSidebarTool = key
@@ -294,16 +292,19 @@ Item {
         focusActiveSidebarTool()
     }
 
-    // Flush the note before returning to rail navigation.
+    // Close the attached utility before returning to rail navigation.
     function closeSidebarTool(fromKeyboard) {
         if (!sidebarToolOpen) return
-        if (activeSidebarTool === "tempNote") TextStore.flushScratch()
         activeSidebarTool = ""
         focusSidebarRail(fromKeyboard)
     }
 
     // A second activation closes the current tool.
     function toggleSidebarTool(key, fromKeyboard) {
+        if (key === "tempNote") {
+            UiState.toggleTempNote(modelData.name)
+            return
+        }
         if (activeSidebarTool === key) closeSidebarTool(fromKeyboard)
         else openSidebarTool(key, fromKeyboard)
     }
@@ -979,15 +980,14 @@ Item {
             contentPadding: root.renderedSidebarTool === "shortcutManager" ? 8 : 24
             title: root.renderedSidebarTool === "quickActions" ? "Quick Actions"
                 : root.renderedSidebarTool === "shortcutManager" ? "Add Shortcut"
-                : root.renderedSidebarTool === "clipboard" ? "Clipboard" : "Temp Note"
+                : root.renderedSidebarTool === "clipboard" ? "Clipboard" : ""
             showHeader: root.renderedSidebarTool === "clipboard"
             icon: root.renderedSidebarTool === "quickActions" ? "󰀻"
                 : root.renderedSidebarTool === "shortcutManager" ? "󰐕"
-                : root.renderedSidebarTool === "clipboard" ? "󰅌" : "󰏫"
+                : root.renderedSidebarTool === "clipboard" ? "󰅌" : ""
             toolContent: root.renderedSidebarTool === "quickActions" ? quickActionsContent
                 : root.renderedSidebarTool === "shortcutManager" ? shortcutManagerContent
-                : root.renderedSidebarTool === "clipboard" ? clipboardContent
-                : root.renderedSidebarTool === "tempNote" ? tempNoteContent : null
+                : root.renderedSidebarTool === "clipboard" ? clipboardContent : null
             focusContent: !root.sidebarKeyboardMode
             open: root.panelOpen && root.sidebarExpanded && root.sidebarToolOpen && !root.closing && !root.dashboardVisuallyActive
             z: 28
@@ -1063,17 +1063,6 @@ Item {
                     UiState.closeNavigation()
                     UiState.openActionMenu(root.modelData.name, "clipboard")
                 }
-                onCloseRequested: keyboard => {
-                    if (keyboard) UiState.closeNavigation()
-                    else root.closeSidebarTool()
-                }
-            }
-        }
-        Component {
-            id: tempNoteContent
-            Sidebar.SidebarTempNote {
-                onRailFocusRequested: root.focusSidebarRail(true)
-                onKeyboardInteraction: lifetime.beginKeyboardLease()
                 onCloseRequested: keyboard => {
                     if (keyboard) UiState.closeNavigation()
                     else root.closeSidebarTool()

@@ -28,6 +28,12 @@ QtObject {
     property string actionMenuFlow: ""
     property bool actionMenuCloseRequested: false
     property string settingsScreenName: ""
+    // Keep the pinned note independent of mutually exclusive panels.
+    property bool tempNoteOpen: false
+    // Assign the shared scratch editor to exactly one output.
+    property string tempNoteScreenName: ""
+    // Let the owning overlay flush and reset before hiding or transferring it.
+    signal tempNoteClosing(string screenName)
     readonly property string hakuMenuTabLabel: hakuMenuMode === "general" ? "General"
                                                    : hakuMenuMode === "drun" ? "Drun"
                                                    : hakuMenuMode === "theme" ? "Theme"
@@ -36,6 +42,33 @@ QtObject {
                                                   ? hakuMenuTabLabel + " → " + hakuMenuSelectionLabel
                                                   : hakuMenuTabLabel
 
+
+    // Open the note on one output, finishing any previous ownership first.
+    function openTempNote(screenName) {
+        if (tempNoteOpen && tempNoteScreenName === screenName) return
+        if (tempNoteOpen) closeTempNote()
+        tempNoteScreenName = screenName
+        tempNoteOpen = true
+    }
+
+    // Flush the owning overlay before clearing its visibility and ownership.
+    function closeTempNote() {
+        if (!tempNoteOpen) return
+        tempNoteClosing(tempNoteScreenName)
+        tempNoteOpen = false
+        tempNoteScreenName = ""
+    }
+
+    // Close on the same output or transfer ownership to the requested output.
+    function toggleTempNote(screenName) {
+        if (tempNoteOpen && tempNoteScreenName === screenName) closeTempNote()
+        else openTempNote(screenName)
+    }
+
+    // Clear ownership when its output disappears.
+    function closeTempNoteIfScreen(screenName) {
+        if (tempNoteScreenName === screenName) closeTempNote()
+    }
 
     // Opens navigation surface with anchor coordinates and updates active panel.
     function openNavigation(screenName, anchorX, anchorWidth, anchorHeight, anchorY) {

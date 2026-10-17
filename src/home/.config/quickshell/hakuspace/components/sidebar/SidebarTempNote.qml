@@ -4,28 +4,26 @@ import "../editor"
 
 FocusScope {
     id: root
-    signal closeRequested(bool keyboard)
-    signal railFocusRequested()
-    signal keyboardInteraction()
+    signal closeRequested()
 
     // Keep editing focus inside the note.
     function forceFocus() { editor.forceEditorFocus() }
+
+    // Commit focused input, flush the draft and release the note's focus scope.
+    function finishEditing() {
+        if (activeFocus) Qt.inputMethod.commit()
+        editor.finishComposition()
+        TextStore.flushScratch()
+        focus = false
+    }
 
     PlainTextEditor {
         id: editor
         anchors.fill: parent
         text: TextStore.scratchDraft
         placeholderText: "write something temporary here :v"
-        leftBoundaryNavigationEnabled: true
-        onLeftBoundaryRequested: root.railFocusRequested()
-        onTextEdited: newText => {
-            root.keyboardInteraction()
-            TextStore.setScratchDraft(newText)
-        }
-        onEscapeRequested: root.closeRequested(true)
-        onSaveRequested: {
-            root.keyboardInteraction()
-            TextStore.flushScratch()
-        }
+        onTextEdited: newText => TextStore.setScratchDraft(newText)
+        onEscapeRequested: root.closeRequested()
+        onSaveRequested: TextStore.flushScratch()
     }
 }

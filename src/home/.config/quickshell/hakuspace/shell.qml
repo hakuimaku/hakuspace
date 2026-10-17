@@ -244,6 +244,11 @@ ShellRoot {
 
     Variants {
         model: Quickshell.screens
+        TempNoteOverlay {}
+    }
+
+    Variants {
+        model: Quickshell.screens
         TrayMenuPanel {}
     }
 
