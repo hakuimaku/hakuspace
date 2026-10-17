@@ -20,6 +20,12 @@ Item {
     property bool _syncingExternal: false
     property var _undoGroups: []
     property var _redoGroups: []
+    // Expose native preedit ownership to editor consumers.
+    readonly property bool imeComposing: textArea.inputMethodComposing
+    // Delay reconciliation until Qt finishes the input-method event.
+    property bool _compositionPending: false
+    // Keep the latest owner value in root.text until composition finishes.
+    property bool _hasPendingExternalText: false
 
     signal textEdited(string newText)
     signal escapeRequested()
@@ -33,7 +39,7 @@ Item {
 
     // Apply a bounded edit so Qt retains its native undo history.
     function applyEdit(operation) {
-        if (!operation.changed || readOnly) return false
+        if (imeComposing || !operation.changed || readOnly) return false
         if (!operation.selectionOnly) {
             var before = textArea.text
             var priorStart = textArea.selectionStart
@@ -59,6 +65,7 @@ Item {
 
     // Qt records remove and insert separately; group only our own adjacent edits.
     function undoSmart(redo) {
+        if (imeComposing) return false
         var source = redo ? _redoGroups : _undoGroups
         var group = source[source.length - 1]
         if (!group || textArea.text !== (redo ? group.before : group.after)) return false
@@ -79,8 +86,8 @@ Item {
         return true
     }
 
-    // Apply external updates without reporting them as user edits.
-    onTextChanged: {
+    // Apply owner updates without resetting native preedit or echoing edits.
+    function syncExternalText() {
         if (textArea.text !== root.text) {
             _undoGroups = []
             _redoGroups = []
@@ -91,6 +98,28 @@ Item {
             _syncingExternal = false
         }
     }
+
+    // Publish the final commit, or apply a newer value supplied by the owner.
+    function finishComposition() {
+        if (imeComposing) return
+        _compositionPending = false
+        if (_hasPendingExternalText) {
+            _hasPendingExternalText = false
+            syncExternalText()
+        } else publishText()
+    }
+
+    // Wait for Qt's preedit state before forwarding selection replacements.
+    function publishText() {
+        if (!_syncingExternal && !imeComposing && !_compositionPending
+                && root.text !== textArea.text) root.textEdited(textArea.text)
+    }
+
+    onTextChanged: {
+        if (imeComposing || _compositionPending) _hasPendingExternalText = true
+        else syncExternalText()
+    }
+    Component.onCompleted: syncExternalText()
 
     TextMetrics {
         id: tabMetrics
@@ -107,7 +136,6 @@ Item {
         // Display source and notes literally.
         TextArea {
             id: textArea
-            text: root.text
             readOnly: root.readOnly
             textFormat: TextEdit.PlainText
             wrapMode: root.wrapMode
@@ -124,15 +152,20 @@ Item {
             padding: 4
             background: null
 
+            // Qt may emit text changes before its composition-end signal.
+            onInputMethodComposingChanged: {
+                root._compositionPending = true
+                if (!inputMethodComposing) Qt.callLater(root.finishComposition)
+            }
+
             // Forward only text entered by the user.
             onTextChanged: {
-                if (!root._syncingExternal && root.text !== text) {
-                    root.textEdited(text)
-                }
+                if (!root._syncingExternal) Qt.callLater(root.publishText)
             }
 
             // Insert a tab instead of moving focus.
             Keys.onTabPressed: event => {
+                if (root.imeComposing) { event.accepted = false; return }
                 if (root.codeEditingEnabled && !root.readOnly)
                     root.applyEdit(EditOps.indent(text, selectionStart, selectionEnd, cursorPosition, root.indentText, false))
                 else if (!root.codeEditingEnabled) insert(cursorPosition, "\t")
@@ -141,6 +174,7 @@ Item {
 
             // Keep reverse Tab from moving focus.
             Keys.onBacktabPressed: event => {
+                if (root.imeComposing) { event.accepted = false; return }
                 if (root.codeEditingEnabled && !root.readOnly)
                     root.applyEdit(EditOps.indent(text, selectionStart, selectionEnd, cursorPosition, root.indentText, true))
                 event.accepted = true
@@ -148,6 +182,7 @@ Item {
 
             Keys.onLeftPressed: event => {
                 event.accepted = false
+                if (root.imeComposing) return
                 if (root.leftBoundaryNavigationEnabled && event.modifiers === Qt.NoModifier
                         && cursorPosition === 0 && selectionStart === selectionEnd) {
                     root.leftBoundaryRequested()
@@ -157,13 +192,19 @@ Item {
 
             // Let the parent close its editor panel.
             Keys.onEscapePressed: event => {
-                root.escapeRequested()
+                // Prevent unhandled IME cancellation from reaching parent close handlers.
+                if (!root.imeComposing) {
+                    root.finishComposition()
+                    root.escapeRequested()
+                }
                 event.accepted = true
             }
 
             // Let the parent handle Ctrl+S.
             Keys.onPressed: event => {
+                if (root.imeComposing) { event.accepted = false; return }
                 if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_S) {
+                    root.finishComposition()
                     root.saveRequested()
                     event.accepted = true
                     return
