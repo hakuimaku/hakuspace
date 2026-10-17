@@ -4,6 +4,9 @@ import "../../services"
 Item {
     id: root
     property Item anchorItem: null
+    property var anchorRect: null
+    property var hostRect: ({x: 0, y: 0, width: root.width, height: root.height})
+    readonly property var localizedAnchorRect: morph.localizedAnchorRect
     property bool shown: false
     property Component content: null
     property var contentProps: ({})
@@ -56,11 +59,13 @@ Item {
     property alias hugging: morph.hugging
     signal settled(bool isShown)
     
-    property var wBounds: FlareEdges.getBounds(root.width)
+    property var wBounds: ScreenGeometry.horizontalBounds(root.width)
     
     FlareMorph {
         id: morph
         anchorItem: root.anchorItem
+        anchorRect: root.anchorRect
+        hostRect: root.hostRect
         shown: root.shown && root.contentReady
         contentW: contentItem.naturalWidth
         contentH: contentItem.naturalHeight

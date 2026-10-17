@@ -10,9 +10,13 @@ import "notification"
 
 Item {
     id: root
+    readonly property var horizontalBounds: ScreenGeometry.horizontalBounds(modelData.width, hostRect)
     required property var modelData
     width: Math.max(0, Math.min(520, modelData.width - Theme.pad * 2))
     height: modelData.height
+    // Partial-width windows localize the captured bell rect at one shared boundary.
+    readonly property var hostRect: ({x: modelData.width - width, y: 0, width: width, height: height})
+    readonly property var localAnchorRect: flare.localizedAnchorRect || ({x: 0, y: 0, width: 0, height: 0})
     readonly property var panelState: UiState.notificationPanel
     readonly property bool panelOpen: NotificationStore._started
         && UiState.activePanel === "notifications"
@@ -20,22 +24,21 @@ Item {
     property bool closing: false
     readonly property var liveSafeZones: {
         var empty = SafeZoneGeometry.rect(0, 0, 0, 0)
-        var anchorVisual = SafeZoneGeometry.rect(anchorProxy.x, 0,
-            anchorProxy.width, Theme.topBarHeight)
-        var target = FlareGeometry.resolveSpan({ anchorStart: anchorProxy.x,
-            anchorEnd: anchorProxy.x + anchorProxy.width, contentW: flare.naturalContentWidth,
+        var anchorVisual = localAnchorRect
+        var target = FlareGeometry.resolveSpan({ anchorStart: anchorVisual.x,
+            anchorEnd: anchorVisual.x + anchorVisual.width, contentW: flare.naturalContentWidth,
             padX: flare.horizontalPadding * 2, minW: 80, maxW: flare.maxWidth,
             bounds: flare.wBounds, snap: 2 * Theme.hugRadius })
-        var current = SafeZoneGeometry.rect(flare.start, FlareEdges.topOriginY,
+        var current = SafeZoneGeometry.rect(flare.start, ScreenGeometry.flareTopY,
             Math.max(0, flare.end - flare.start),
             Math.max(flare.currentHeight, flare.naturalContentHeight + flare.verticalPadding * 2) + Theme.hugRadius)
-        var expected = SafeZoneGeometry.rect(target.start, FlareEdges.topOriginY,
+        var expected = SafeZoneGeometry.rect(target.start, ScreenGeometry.flareTopY,
             flare.naturalContentWidth > 0 ? target.end - target.start : 0, current.height)
         var bodyVisual = SafeZoneGeometry.unionBounds(current, expected)
         var retained = flare.interactionEnvelope
         if (retained.end > retained.start)
             bodyVisual = SafeZoneGeometry.unionBounds(bodyVisual, SafeZoneGeometry.rect(
-                retained.start, FlareEdges.topOriginY, retained.end - retained.start,
+                retained.start, ScreenGeometry.flareTopY, retained.end - retained.start,
                 retained.height + Theme.hugRadius))
         return [SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(anchorVisual,
                     Interaction.safeZoneAnchorMargin), width, height),
@@ -71,29 +74,30 @@ Item {
     PanelWindow {
         id: visualLayer
         screen: root.modelData
-        anchors { top: true; bottom: true; right: true }
+        anchors { top: true; bottom: true; left: true; right: true }
         WlrLayershell.layer: WlrLayer.Top
         WlrLayershell.namespace: "hakuspace-notification-center-flare"
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
         color: "transparent"
-        implicitWidth: root.width
         // Keep Top mapped so opening the panel does not raise it over fullscreen.
         visible: true
         mask: Region {}
 
         FlareSurface {
             visible: root.panelOpen || root.closing
-            y: FlareEdges.topOriginY
+            y: ScreenGeometry.flareTopY
             width: visualLayer.width
             height: visualLayer.height - y
-            start: flare.start
-            end: flare.end
+            // Only physical screen edges may produce a hugging foot.
+            start: root.hostRect.x + flare.start
+            end: root.hostRect.x + flare.end
             currentHeight: flare.currentHeight
-            bounds: flare.wBounds
+            bounds: ScreenGeometry.horizontalBounds(root.modelData.width)
             r: Theme.largeRadius + 8
             rf: Theme.hugRadius
+            bottomRadius: Theme.hugRadius
             surfaceColor: Theme.surface
         }
     }
@@ -132,7 +136,7 @@ Item {
         // The Overlay keeps a rounded body and owns all interaction.
         Rectangle {
             x: flare.start
-            y: FlareEdges.topOriginY
+            y: ScreenGeometry.flareTopY
             width: Math.max(0, flare.end - flare.start)
             height: flare.currentHeight
             topLeftRadius: Theme.hugRadius
@@ -164,6 +168,13 @@ Item {
 
         Base.SafeZoneDebugOverlay {
             anchors.fill: parent
+            screenWidth: root.modelData.width
+            screenHeight: root.modelData.height
+            hostRect: root.hostRect
+            anchorRect: root.panelState ? root.panelState.anchorRect : null
+            localizedAnchorRect: root.localAnchorRect
+            flareStart: flare.start
+            flareEnd: flare.end
             z: 999
             closePending: lifetime.closePending
             zones: root.safeZones.map(function(zone, index) {
@@ -182,31 +193,22 @@ Item {
             Keys.onEscapePressed: UiState.closeNotifications()
         }
 
-        Item {
-            id: anchorProxy
-            x: root.panelState
-               ? root.panelState.anchorX - (root.modelData.width - root.width)
-               : root.width - Theme.pad
-            width: root.panelState ? root.panelState.anchorWidth : 1
-            height: 1
-            visible: false
-        }
-
         FlareHost {
             id: flare
-            y: FlareEdges.topOriginY
+            y: ScreenGeometry.flareTopY
             width: root.width
-            height: root.height - FlareEdges.topOriginY
+            height: root.height - ScreenGeometry.flareTopY
             surfaceColor: "transparent"
-            anchorItem: anchorProxy
+            anchorRect: root.panelState ? root.panelState.anchorRect : null
+            hostRect: root.hostRect
             shown: root.panelOpen
             content: centerComponent
-            contentProps: ({ maxHeight: Math.max(0, root.modelData.height - FlareEdges.topOriginY
+            contentProps: ({ maxHeight: Math.max(0, root.modelData.height - ScreenGeometry.flareTopY
                                                   - 48 - Theme.hugRadius),
                              maxWidth: Math.max(0, root.width - 48) })
             contentKey: "notifications"
-            maxWidth: Math.min(500, Math.max(0, root.width - FlareEdges.thickness * 2))
-            wBounds: ({ start: 0, end: root.width })
+            maxWidth: Math.min(500, Math.max(0, root.horizontalBounds.end - root.horizontalBounds.start))
+            wBounds: root.horizontalBounds
             horizontalPadding: 24
             verticalPadding: 24
             onSettled: (isShown) => {

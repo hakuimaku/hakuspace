@@ -12,10 +12,8 @@ QtObject {
     // an in-flight Navigation surface.
     property string navigationVisualScreenName: ""
     property bool dashboardVisuallyActive: false
-    property real navigationAnchorX: 0
-    property real navigationAnchorY: 0
-    property real navigationAnchorWidth: 0
-    property real navigationAnchorHeight: 0
+    // Captured module anchors use target-screen coordinates.
+    property var navigationAnchorRect: null
     property var trayMenu: null
     property var notificationPanel: null
     property string hakuMenuMode: "closed"
@@ -71,26 +69,23 @@ QtObject {
     }
 
     // Opens navigation surface with anchor coordinates and updates active panel.
-    function openNavigation(screenName, anchorX, anchorWidth, anchorHeight, anchorY) {
+    function openNavigation(screenName, anchorRect) {
         if (activePanel === "navigation" && navigationScreenName === screenName && navigationMode !== "closed")
             return
         navigationScreenName = screenName
         navigationVisualScreenName = screenName
-        navigationAnchorX = Number.isFinite(anchorX) ? anchorX : 0
-        navigationAnchorY = Number.isFinite(anchorY) ? anchorY : Theme.topBarTopPadding
-        navigationAnchorWidth = Number.isFinite(anchorWidth) ? anchorWidth : 0
-        navigationAnchorHeight = Number.isFinite(anchorHeight) ? anchorHeight : navigationAnchorWidth
+        navigationAnchorRect = anchorRect || ScreenGeometry.topBarAnchor(Theme.pad, Theme.fontSize * 1.8)
         navigationMode = "open"
         activePanel = "navigation"
     }
 
     // Toggles navigation panel visibility for the specified screen.
-    function toggleNavigation(screenName, anchorX, anchorWidth, anchorHeight, anchorY) {
+    function toggleNavigation(screenName, anchorRect) {
         if (navigationMode !== "closed" && navigationScreenName === screenName) {
             closeNavigation()
             return
         }
-        openNavigation(screenName, anchorX, anchorWidth, anchorHeight, anchorY)
+        openNavigation(screenName, anchorRect)
     }
 
     // Transitions navigation mode into handoff state for dashboard, sidebar, or settings.
@@ -114,10 +109,7 @@ QtObject {
         navigationMode = "closed"
         navigationScreenName = ""
         dashboardVisuallyActive = false
-        navigationAnchorX = 0
-        navigationAnchorY = 0
-        navigationAnchorWidth = 0
-        navigationAnchorHeight = 0
+        navigationAnchorRect = null
     }
 
     // Cleans up visual ownership after navigation close morph finishes on screen.
@@ -237,13 +229,13 @@ QtObject {
     }
 
     // Toggles notification center dropdown panel on a screen.
-    function toggleNotifications(screenName, anchorX, anchorWidth) {
+    function toggleNotifications(screenName, anchorRect) {
         if (activePanel === "notifications" && notificationPanel
                 && notificationPanel.screenName === screenName) {
             closeNotifications()
             return
         }
-        notificationPanel = { screenName: screenName, anchorX: anchorX, anchorWidth: anchorWidth }
+        notificationPanel = { screenName: screenName, anchorRect: anchorRect }
         activePanel = "notifications"
     }
 
@@ -260,13 +252,12 @@ QtObject {
     }
 
     // Opens system tray popup menu anchored to a tray item.
-    function openTrayMenu(item, handle, screenName, anchorX, anchorWidth) {
+    function openTrayMenu(item, handle, screenName, anchorRect) {
         trayMenu = {
             item: item,
             handle: handle,
             screenName: screenName,
-            anchorX: anchorX,
-            anchorWidth: anchorWidth
+            anchorRect: anchorRect
         }
         activePanel = "tray"
     }
@@ -360,10 +351,7 @@ QtObject {
         if (activePanel !== "navigation") {
             navigationMode = "closed"
             navigationScreenName = ""
-            navigationAnchorX = 0
-            navigationAnchorY = 0
-            navigationAnchorWidth = 0
-            navigationAnchorHeight = 0
+            navigationAnchorRect = null
         }
         if (activePanel !== "tray") trayMenu = null
         if (activePanel !== "notifications") notificationPanel = null

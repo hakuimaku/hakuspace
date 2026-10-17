@@ -5,6 +5,10 @@ import "FlareGeometry.js" as FG
 Item {
     id: root
     property Item anchorItem: null
+    // Captured anchors stay screen-local; only the host boundary translates them.
+    property var anchorRect: null
+    property var hostRect: ({x: 0, y: 0, width: root.width, height: root.height})
+    readonly property var localizedAnchorRect: anchorRect ? ScreenGeometry.localizeRect(anchorRect, hostRect) : null
     property real contentW: 0
     property real contentH: 0
     property bool shown: false
@@ -52,7 +56,8 @@ Item {
     
     // Resolves global horizontal start and end bounds of the anchor item.
     function anchorSpan() {
-        if (!anchorItem) return null;
+        if (!anchorItem) return localizedAnchorRect
+            ? {start: localizedAnchorRect.x, end: localizedAnchorRect.x + localizedAnchorRect.width} : null;
         var t = anchorItem;
         var pt;
         try {
@@ -65,7 +70,7 @@ Item {
     }
 
     // Resolves target flare geometry and initiates opening or retarget animations.
-    function updateTargetBounds() {
+    function updateTargetBounds(force) {
         if (!shown) return;
         var anchor = anchorSpan();
         if (!anchor) return;
@@ -99,7 +104,7 @@ Item {
         }
         
         var now = Date.now();
-        var isRetarget = FG.needsRetarget(_lastExpected, {start: eL, end: eR}, 2) || Math.abs(_lastExpected.height - eH) > 2
+        var isRetarget = force === true || FG.needsRetarget(_lastExpected, {start: eL, end: eR}, 2) || Math.abs(_lastExpected.height - eH) > 2
                          || animHeight.to !== eH;
         
         if (isRetarget) {
@@ -153,6 +158,12 @@ Item {
     }
     
     onAnchorItemChanged: { Qt.callLater(updateTargetBounds); }
+    onLocalizedAnchorRectChanged: Qt.callLater(updateTargetBounds)
+    // Explicit screen-bound changes must survive the normal two-pixel jitter filter.
+    onBoundsChanged: {
+        _lastAnimTime = 0
+        Qt.callLater(function() { root.updateTargetBounds(true) })
+    }
     
     Connections {
         target: shown && anchorItem ? anchorItem : null

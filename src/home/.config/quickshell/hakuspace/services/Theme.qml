@@ -6,21 +6,25 @@ import Quickshell.Io
 QtObject {
     id: root
 
-    property color surface: "#0b0b0b"
+    // Shell-owned surfaces remain reactive across generated theme updates.
+    readonly property color surface: ShellSettingsStore.surfaceTone === "ink" ? "#000000"
+                                      : ShellSettingsStore.surfaceTone === "soft" ? "#171717" : "#0b0b0b"
     readonly property color onAccentColor: root.surface
     property string fg: "#ffffff"
     property string fgDim: "#aaaaaa"
     property string fgMuted: "#80ffffff"
     property string border: "transparent"
     property color surfaceHi: root.accent
-    property string hoverMuted: "#2b2b2b"
+    readonly property string hoverMuted: ShellSettingsStore.surfaceTone === "ink" ? "#202020"
+                                         : ShellSettingsStore.surfaceTone === "soft" ? "#333333" : "#2b2b2b"
     property string accent: "#ffffff"
     property string workspaceDot: "#424242"
     
-    property int radius: 20
-    property int largeRadius: 24
-    property int hugRadius: 32
-    property int giantRadius: 50
+    // Preserve the generated baseline with one shell-owned radius family.
+    readonly property int radius: ShellSettingsStore.baseRadius
+    readonly property int largeRadius: radius + 4
+    readonly property int hugRadius: radius + 16
+    readonly property int giantRadius: radius + 36
     property int borderWidth: 0
     property int gap: 4
     property int pad: 10
@@ -29,7 +33,9 @@ QtObject {
     property string fontFamily: font
     property int fontSize: 14
     readonly property int topBarTopPadding: 4
-    readonly property real topBarHeight: Math.max(30, fontSize * 2.3) + topBarTopPadding
+    readonly property real topBarContentHeight: Math.max(30, fontSize * 2.3) + topBarTopPadding
+    readonly property int topBarBottomPadding: 4
+    readonly property real topBarHeight: topBarContentHeight + topBarBottomPadding
     readonly property real levelOsdWidth: Math.max(240, fontSize * 22)
     readonly property int levelOsdPadding: 8
     readonly property real levelOsdHeight: Math.max(36, fontSize * 2.4 + 2 * (levelOsdPadding + gap))
@@ -56,7 +62,6 @@ QtObject {
         if (!jsonString || jsonString.trim() === "") return;
         try {
             var conf = JSON.parse(jsonString);
-            if (conf.surface) root.surface = parseColor(conf.surface);
             if (conf.surfaceHi) root.surfaceHi = parseColor(conf.surfaceHi);
             if (conf.fg) root.fg = parseColor(conf.fg);
             if (conf.fgDim) root.fgDim = parseColor(conf.fgDim);
@@ -64,10 +69,6 @@ QtObject {
             if (conf.border) root.border = parseColor(conf.border);
             if (conf.accent) root.accent = parseColor(conf.accent);
             
-            if (conf.radius !== undefined) root.radius = conf.radius;
-            if (conf.largeRadius !== undefined) root.largeRadius = conf.largeRadius;
-            if (conf.hugRadius !== undefined) root.hugRadius = conf.hugRadius;
-            if (conf.giantRadius !== undefined) root.giantRadius = conf.giantRadius;
             if (conf.borderWidth !== undefined) root.borderWidth = conf.borderWidth;
             if (conf.gap !== undefined) root.gap = conf.gap;
             if (conf.pad !== undefined) root.pad = conf.pad;

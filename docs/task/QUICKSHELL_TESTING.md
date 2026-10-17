@@ -5,6 +5,90 @@
 
 ---
 
+## Post-P3 Settings V2 verification (2026-10-17)
+
+Status: **IMPLEMENTED / PHYSICAL VERIFY**. See
+[QUICKSHELL_STYLE.md](QUICKSHELL_STYLE.md) for schema ownership and geometry.
+
+```bash
+python3 scripts/test_hikai_settings_ctl.py
+bash scripts/test_hikai_shell.sh
+bash scripts/test_hikai_shell.sh --headless
+HAKUSPACE_TEST_SCALE=1.25 bash scripts/test_hikai_shell.sh --headless
+```
+
+The headless runner needs Labwc, grim, dbus-run-session and permission to create local
+sockets; fractional mode also needs wlr-randr. Both runners use disposable
+preferences, copied QML and isolated runtime paths. Headless mode uses a separate
+D-Bus session, HOME and two outputs. It does not change the active user's shell.
+Missing deployed avatar/stats/sidebar helpers and portal/PipeWire warnings are
+expected in that isolated fixture; QML type/reference/binding failures fail it.
+
+| Automated check | Result / coverage |
+|---|---|
+| Backend | Pass: valid/missing read, partial writes, preservation, v1 → v2 migration without read-side writes, independent screen ranges, strict types/version/enum, malformed JSON, symlink/FIFO rejection, permissions, atomic replacement/failure cleanup, reset, check and CLI JSON. |
+| Offscreen QML | Pass: actual Shell page/sliders instantiate; missing-file and v1 startup, explicit migration Apply, radius independence, border/Y independence, live/captured anchor modes; live R=4/12/24, presets, draft/dirty, Apply/reload, Discard, Reset/Discard, Reset/Apply, invalid edits and stale theme payload isolation. |
+| Labwc headless, two outputs, scale 1.0 | Pass: five rendered screen radius/border combinations, pixel checks for no top rail and independent masks, actual module-lane positioning and captured rects on the source monitor; real TopBars/RoundedScreen/Settings/Navigation, all optional modules off, zero Row widths, fixed Logo footprint, tray ownership cleanup, recording override, Labwc workspace exclusion and Keep/Discard close lifecycle. Opens Navigation/Dashboard/Sidebar/Settings at all three radii and presets; checks that the Sidebar ear tip stays inside Navigation's contour (24 px spike regression). |
+| Labwc headless, two outputs, scale 1.25 | Pass: same runtime/layout/lifecycle harness with both outputs configured by wlr-randr. Physical fractional-scale inspection remains pending. |
+
+Headless image artifacts can be retained for inspection:
+
+```bash
+HAKUSPACE_TEST_ARTIFACT_DIR=/tmp/hikai-screen-geometry scripts/test_hikai_shell.sh --headless
+```
+
+`case-0.ppm` through `case-4.ppm` correspond to 0/0, 0/6, 24/0, 24/6, 20/4.
+`test_rounded_screen_pixels.py` checks actual screen-edge pixels with TopBar hidden
+and visible. `bar-case-*.ppm` captures verify top corners follow the compositor's
+TopBar exclusive zone without doubling the side/bottom inset.
+The harness varies the reserved bar height independently of the nominal theme
+height. It also asserts the full-width TopBar host and renders real WindowTitle,
+Calendar and Notifications tooltips and HakuMenu at radius 24; pixel assertions
+cover their attachment rows to catch a one-pixel gap. At fractional surface
+origins the last physical Canvas row may be blended; checks require coverage
+there and fully opaque rail pixels immediately inside it.
+Calendar also checks that its padded body and full right foot fit inside TopBar's
+drawable window, with a pixel sample below the old fixed-height clipping boundary.
+Dashboard captures at R=4/12/24 check that its top bridge stops at the attachment
+tangent, without an extra opaque row forming a step at the right ear tip.
+Notification Center captures with four history entries at R=24 check that the
+interior bottom-left corner has no detached foot and the right foot still joins
+the physical screen edge, including on the second output and fractional scale.
+Set `QS_GEOMETRY_DEBUG=1` when starting a real Hikai session to inspect attachment,
+insets, screen/local anchors, flare span and safe-zone corridors. Debug is off by
+default and does not accept input. Keep it off during pixel-matrix tests.
+The required physical matrix is listed below.
+
+The precommit gate includes backend and offscreen QML checks when Quickshell is
+installed. Its existing untracked-source rule still applies. Before staging new
+files, the gate can run with a disposable Git index/object directory containing
+intent-to-add entries; the real index and object database remain untouched.
+
+Physical acceptance remains pending; automated/headless checks do not prove
+visual compatibility or replace the requested WM matrix:
+
+1. On Hyprland, Niri and Mango, test R=4/12/24 with TopBar, RoundedScreen,
+   Navigation, Dashboard, Sidebar, Settings, HakuMenu, ActionMenu, Wallpaper,
+   real tray menu, notification popup/center, volume OSD, tooltips and Picker.
+   Check seams, masks, negative bounds, clipping and narrow widths.
+2. Check Ink/Dark/Soft for text/accent/hover/selection/disabled contrast at scale
+   1.0 and a fractional scale. Drag the slider, use arrow keys, and verify focus.
+3. Toggle each module and combinations (minimal left/right, center off, all off).
+   Logo stays accessible; Cava remains conditional; active recording stays visible;
+   hiding the bell preserves server, popups, history and DND. Open a real tray
+   menu, hide tray and verify no stale ownership or invisible input remains.
+4. With two real outputs, change radius/tone/gates and check both outputs,
+   Navigation shift, safeSpan, right widths and tray/notification anchors.
+5. Save R=20, soft, tray=false; change wallpaper, accent, font and font size through
+   the real theme flow. Confirm those three shell values remain unchanged.
+6. Check Apply → Quickshell reload, logout/login and Hikai → Classic → Hikai.
+   Shell preferences survive and Classic files remain unchanged.
+7. Check edits → close → Keep/Discard, Apply, Reload confirmation, Reset → Discard
+   and Reset → Apply, including multiple dirty stores and backend failures.
+
+Do not record DONE from this partial runtime coverage. No repository commit or
+deployment is performed by the test runners.
+
 ## 0. Before each handoff (Gemini) and after each deployment (user)
 
 ```bash
@@ -88,17 +172,12 @@ Log out/in (or reboot) on the `hikai` backend for each WM: the bar appears and `
 
 1. **Live theme:** change the accent with `change_theme.sh` (or the Theme menu): hover/selection fills, text, icons, workspace indicators and the MPRIS icon circle change **immediately**, without restarting QS. Bar, tooltip, ordinary idle modules, Picker overlay/card and OSD backgrounds stay opaque `#000000`; Logo and Settings stay accent-filled. Also test changing the font and font size.
 2. **Live state:** `echo 0 > ~/.local/state/hakuspace/state/waybar_manual_state` → the bar hides immediately; `echo 1` → it appears again. With either value of `opaque_theme_state`, the bar and tooltip remain `#000000`.
-3. **Rounded Screen chassis (RS1–RS10):** RoundedScreen has its single source of truth directly in Quickshell code (`AppState.qml`: `roundedScreenThickness: 4`, `roundedScreenRadius: 20`, `roundedScreenColor: "#000000"`). It is decoupled from classic `rounded-screen.conf`, `rounded_screen_state`, and manager toggles.
-   - **RS1:** Default thickness = 4 displays correctly.
-   - **RS2:** Temporarily change constant thickness 4 -> 8, reload Quickshell: frame updates correctly; Flare/Navigation/Sidebar remain seamlessly connected.
-   - **RS3:** Restore thickness = 4.
-   - **RS4:** Temporarily change radius 20 -> 36, reload: all four corners update on each output.
-   - **RS5:** Restore radius = 20.
-   - **RS6:** Temporarily change color #000000 -> visible test color, reload: frame/corner mask update.
-   - **RS7:** Restore color = #000000.
-   - **RS8:** TopBar show/hide creates no seam with RoundedScreen.
-   - **RS9:** Multi-monitor uses the same canonical values but per-output geometry.
-   - **RS10:** Desktop/clients click and drag normally; no blocked input regions.
+3. **Rounded Screen chassis:** use Shell → Rounded Screen, not source-code constants.
+   Test radius/border pairs 0/0, 0/6, 24/0, 24/6 and 20/4; only left/right/bottom
+   rails reserve space. Radius 24 with border 0 still rounds corners. Base Radius
+   changes do not change the screen radius. Border changes never move Flare Y.
+   Check Apply/Discard/Reset, two outputs, scale 1.0/1.25 and desktop click-through.
+   The chassis remains independent of Classic configuration and manager toggles.
 
 ---
 
@@ -262,7 +341,7 @@ Record: idle CPU (bar not interacting), CPU while morphing, and whether any fram
 - **Performance:** Bounded prefetch window, lazy thumbnail decoding, input coalescing (85 ms), rapid navigation throttle guard (55 ms).
 
 ### 9.7 Shell frame polish & shared geometry
-- **Frame attachment:** TooltipLayer, TrayMenuPanel, NotificationPopup, NotificationCenterPanel, and LevelOsdOverlay consume shared `FlareEdges` / `AppState` frame metrics (`frameTopThickness`, `frameInnerTopY`, etc.).
+- **Frame attachment:** TooltipLayer, TrayMenuPanel, NotificationPopup, NotificationCenterPanel, and LevelOsdOverlay consume shared `ScreenGeometry` attachment/bounds and captured screen-local anchors.
 - **Level OSD:** Compact capsule layout; optical center stays fixed across 0%, 9%, 10%, 99%, 100%.
 - **TopBar recording:** Recording state (`REC` chip + timer) is restricted to right `RecorderGroup`; `CenterState` handles media/OSD only (`8f21ac42`).
 - **Calendar marker:** Current day in Clock calendar and Dashboard calendar has solid `Theme.accent` fill with black `#000000` text and 3–4px breathing room clearance (`604638ea`).

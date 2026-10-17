@@ -54,8 +54,7 @@ TopModule {
     // Calculates top bar anchor coordinates and dispatches request to open navigation surface.
     function triggerOpenNavigation() {
         TooltipManager.dismiss()
-        var point = root.mapToItem(null, 0, 0)
-        UiState.openNavigation(root.screenName, point.x, root.width, root.height, point.y)
+        UiState.openNavigation(root.screenName, ScreenGeometry.itemRect(root))
     }
 
     onHoveredChanged: {

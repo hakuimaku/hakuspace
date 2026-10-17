@@ -14,8 +14,8 @@ Item {
     required property real controllerY
     required property real circleRadius
     required property real circleDiameter
-    property real frameThickness: FlareEdges.thickness
-    property real frameTop: FlareEdges.topOriginY
+    property real sideInset: ScreenGeometry.leftInset
+    property real attachmentY: ScreenGeometry.flareTopY
     property bool expanded: false
     property real morphProgress: 0.0
 
@@ -157,9 +157,9 @@ Item {
     readonly property real maskBodyHeight: usableBodyBottom
     readonly property real maskEarX: currentBodyEnd
     readonly property real maskEarWidth: flareShell.earRadius
-    readonly property real maskEarHeight: frameTop + flareShell.earRadius
+    readonly property real maskEarHeight: attachmentY + flareShell.earRadius
     readonly property real maskFootY: usableBodyBottom
-    readonly property real maskFootWidth: bottomFlareReach + frameThickness
+    readonly property real maskFootWidth: bottomFlareReach + sideInset
     readonly property real maskFootHeight: bottomFlareReach
 
     // Legacy mask aliases for backwards compatibility
@@ -180,8 +180,8 @@ Item {
         id: flareShell
         bodyWidth: root.currentEnvelopeWidth
         bodyHeight: root.currentEnvelopeHeight
-        frameThickness: root.frameThickness
-        frameTop: root.frameTop
+        sideInset: root.sideInset
+        attachmentY: root.attachmentY
         bottomFlareReach: root.bottomFlareReach
         flareRadius: root.flareRadius
         screenWidth: root.screenWidth

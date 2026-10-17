@@ -20,8 +20,7 @@ Row {
                  : "Notifications"
         onClicked: {
             if (!NotificationStore._started) return
-            var point = bell.mapToItem(null, 0, 0)
-            UiState.toggleNotifications(root.screenName, point.x, bell.width)
+            UiState.toggleNotifications(root.screenName, ScreenGeometry.itemRect(bell))
         }
         onRightClicked: {
             if (NotificationStore._started) NotificationStore.toggleDnd()

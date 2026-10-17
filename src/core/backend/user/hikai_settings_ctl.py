@@ -1,0 +1,160 @@
+#!/usr/bin/env python3
+"""Validate and atomically persist native Hikai shell preferences."""
+import copy
+import json
+import os
+import stat
+import sys
+import tempfile
+from pathlib import Path
+
+# Keep runtime state outside this versioned preference schema.
+DEFAULTS = {
+    "version": 2,
+    "appearance": {"baseRadius": 12, "surfaceTone": "dark"},
+    "roundedScreen": {"radius": 20, "borderThickness": 4},
+    "topbar": dict.fromkeys(("workspaces", "windowTitle", "center", "cava", "tray",
+                             "quickControls", "recorder", "clock", "notifications"), True),
+}
+
+
+def validate(values, partial=False):
+    """Reject unknown fields and exact-type mismatches in documents or patches."""
+    if type(values) is not dict or set(values) - set(DEFAULTS):
+        raise ValueError("expected a shell settings object with known fields")
+    if not partial and set(values) != set(DEFAULTS):
+        raise ValueError("missing shell settings fields")
+    if "version" in values and (type(values["version"]) is not int or values["version"] != 2):
+        raise ValueError("unsupported schema version")
+    for section in ("appearance", "roundedScreen", "topbar"):
+        if section not in values:
+            continue
+        # Validate sections before merging so an invalid patch cannot erase data.
+        fields = values[section]
+        if type(fields) is not dict or set(fields) - set(DEFAULTS[section]):
+            raise ValueError(f"{section}: unknown fields or invalid object")
+        if not partial and set(fields) != set(DEFAULTS[section]):
+            raise ValueError(f"{section}: missing fields")
+        for key, value in fields.items():
+            if section == "topbar":
+                valid = type(value) is bool
+            elif section == "roundedScreen":
+                valid = type(value) is int and 0 <= value <= (24 if key == "radius" else 6)
+            elif key == "baseRadius":
+                valid = type(value) is int and 4 <= value <= 24
+            else:
+                valid = type(value) is str and value in ("ink", "dark", "soft")
+            if not valid:
+                raise ValueError(f"{section}.{key}: invalid value")
+    return values
+
+
+def migrate(values):
+    """Upgrade legacy preferences in memory while preserving every valid user choice."""
+    if type(values) is dict and type(values.get("version")) is int and values["version"] == 1:
+        if set(values) != {"version", "appearance", "topbar"} or type(values["topbar"]) is not dict:
+            raise ValueError("invalid version 1 shell settings")
+        # Legacy module omissions use their original enabled defaults.
+        validate({"topbar": values["topbar"]}, partial=True)
+        upgraded = copy.deepcopy(values)
+        upgraded.update(version=2, roundedScreen=copy.deepcopy(DEFAULTS["roundedScreen"]))
+        upgraded["topbar"] = DEFAULTS["topbar"] | values["topbar"]
+        return validate(upgraded), True
+    return validate(values), False
+
+
+def open_parent(path, create):
+    """Walk directories without following symlinks, retaining a stable parent fd."""
+    parent_fd = os.open(path.anchor, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        for part in path.parts[1:-1]:
+            if create:
+                try:
+                    os.mkdir(part, mode=0o700, dir_fd=parent_fd)
+                except FileExistsError:
+                    pass
+            next_fd = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent_fd)
+            os.close(parent_fd)
+            parent_fd = next_fd
+        return parent_fd
+    except BaseException:
+        os.close(parent_fd)
+        raise
+
+
+def read_file(parent_fd, name):
+    """Read regular user-owned files; absent preferences use private defaults."""
+    try:
+        fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent_fd)
+    except FileNotFoundError:
+        return copy.deepcopy(DEFAULTS), 0o600, False
+    with os.fdopen(fd) as stream:
+        metadata = os.fstat(stream.fileno())
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.getuid():
+            raise ValueError("settings must be a regular file owned by the current user")
+        # Retain owner access and optional group read, dropping unsafe permission bits.
+        mode = stat.S_IMODE(metadata.st_mode) & 0o640
+        values, migrated = migrate(json.load(stream))
+        return values, mode, migrated
+
+
+def replace_file(parent_fd, name, values, mode):
+    """Flush a sibling temporary file before replacing the canonical directory entry."""
+    # Use the open directory fd so parent renames cannot redirect this write.
+    fd, temp_path = tempfile.mkstemp(prefix=".hikai-shell-", dir=f"/proc/self/fd/{parent_fd}")
+    temp_name = Path(temp_path).name
+    try:
+        with os.fdopen(fd, "w") as stream:
+            os.fchmod(stream.fileno(), mode)
+            json.dump(values, stream, indent=2)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        # Recheck target ownership and type immediately before replacement.
+        try:
+            metadata = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+            if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.getuid():
+                raise ValueError("unsafe settings target")
+        except FileNotFoundError:
+            pass
+        os.replace(temp_name, name, src_dir_fd=parent_fd, dst_dir_fd=parent_fd)
+        os.fsync(parent_fd)
+    finally:
+        try:
+            os.unlink(temp_name, dir_fd=parent_fd)
+        except FileNotFoundError:
+            pass
+
+
+def run(action):
+    """Return defaults or merge validated edits without touching other config domains."""
+    if action not in ("read", "write", "check", "reset"):
+        raise ValueError("usage: hikai_settings_ctl.py read|write|check|reset")
+    path = Path(os.path.abspath(os.environ.get("HAKUSPACE_HIKAI_SETTINGS_FILE")
+                               or Path.home() / "hakucfg/hikai-shell.json"))
+    try:
+        parent_fd = open_parent(path, action in ("write", "reset"))
+    except FileNotFoundError:
+        return {"ok": True, "path": str(path), "values": copy.deepcopy(DEFAULTS), "needsMigration": False}
+    try:
+        values, mode, migrated = read_file(parent_fd, path.name)
+        if action == "write":
+            patch = validate(json.loads(os.environ.get("HAKUSPACE_HIKAI_SETTINGS_JSON", "")), partial=True)
+            for section in ("appearance", "roundedScreen", "topbar"):
+                values[section].update(patch.get(section, {}))
+        elif action == "reset":
+            values = copy.deepcopy(DEFAULTS)
+        if action in ("write", "reset"):
+            replace_file(parent_fd, path.name, values, mode)
+        return {"ok": True, "path": str(path), "values": values,
+                "needsMigration": migrated and action in ("read", "check")}
+    finally:
+        os.close(parent_fd)
+
+
+if __name__ == "__main__":
+    try:
+        print(json.dumps(run(sys.argv[1] if len(sys.argv) == 2 else "")))
+    except (OSError, ValueError, UnicodeError) as error:
+        print(str(error), file=sys.stderr)
+        sys.exit(1)

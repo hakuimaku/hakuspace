@@ -34,7 +34,7 @@ PanelWindow {
     readonly property bool interactionReady: panelOpen && !morphAnim.running && revealProgress === 1
     // Start the chassis as a small capsule on the rounded-screen rail.
     readonly property real seedSize: Math.min(Theme.fontSize * 3, cardWidth, cardHeight)
-    readonly property real seedX: Math.min(FlareEdges.thickness, Math.max(0, width - seedSize))
+    readonly property real seedX: Math.min(ScreenGeometry.leftInset, Math.max(0, width - seedSize))
 
     screen: modelData
     anchors { top: true; bottom: true; left: true; right: true }

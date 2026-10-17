@@ -8,34 +8,36 @@ import "SafeZoneGeometry.js" as SafeZoneGeometry
 
 PanelWindow {
     id: root
+    readonly property var horizontalBounds: ScreenGeometry.horizontalBounds(width)
     required property var modelData
     property bool panelOpen: false
     property bool closing: false
-    property real anchorX: 0
-    property real anchorWidth: 0
+    property var anchorRect: null
+    readonly property var hostRect: ({x: 0, y: 0, width: width, height: height})
+    readonly property var localAnchorRect: flare.localizedAnchorRect || ({x: 0, y: 0, width: 0, height: 0})
     property Component panelComponent: null
     property var panelProps: ({})
     property var panelKey: null
-    property real maxPanelContentHeight: Math.max(0, height - FlareEdges.topOriginY
+    property real maxPanelContentHeight: Math.max(0, height - ScreenGeometry.flareTopY
         - Theme.hugRadius - 16 - Theme.pad)
     signal dismissed()
     readonly property var liveSafeZones: {
         var empty = SafeZoneGeometry.rect(0, 0, 0, 0)
-        var anchorVisual = SafeZoneGeometry.rect(anchorX, 0, anchorWidth, Theme.topBarHeight)
-        var target = FlareGeometry.resolveSpan({ anchorStart: anchorX,
-            anchorEnd: anchorX + anchorWidth, contentW: flare.naturalContentWidth,
+        var anchorVisual = localAnchorRect
+        var target = FlareGeometry.resolveSpan({ anchorStart: anchorVisual.x,
+            anchorEnd: anchorVisual.x + anchorVisual.width, contentW: flare.naturalContentWidth,
             padX: flare.horizontalPadding * 2, minW: 80, maxW: flare.maxWidth,
             bounds: flare.wBounds, snap: 2 * Theme.hugRadius })
-        var current = SafeZoneGeometry.rect(flare.start, FlareEdges.topOriginY,
+        var current = SafeZoneGeometry.rect(flare.start, ScreenGeometry.flareTopY,
             Math.max(0, flare.end - flare.start),
             Math.max(flare.currentHeight, flare.naturalContentHeight + 16) + Theme.hugRadius)
-        var expected = SafeZoneGeometry.rect(target.start, FlareEdges.topOriginY,
+        var expected = SafeZoneGeometry.rect(target.start, ScreenGeometry.flareTopY,
             flare.naturalContentWidth > 0 ? target.end - target.start : 0, current.height)
         var bodyVisual = SafeZoneGeometry.unionBounds(current, expected)
         var retained = flare.interactionEnvelope
         if (retained.end > retained.start)
             bodyVisual = SafeZoneGeometry.unionBounds(bodyVisual, SafeZoneGeometry.rect(
-                retained.start, FlareEdges.topOriginY, retained.end - retained.start,
+                retained.start, ScreenGeometry.flareTopY, retained.end - retained.start,
                 retained.height + Theme.hugRadius))
         return [SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(anchorVisual,
                     Interaction.safeZoneAnchorMargin), width, height),
@@ -114,6 +116,13 @@ PanelWindow {
 
     SafeZoneDebugOverlay {
         anchors.fill: parent
+        screenWidth: root.modelData.width
+        screenHeight: root.modelData.height
+        hostRect: root.hostRect
+        anchorRect: root.anchorRect
+        localizedAnchorRect: root.localAnchorRect
+        flareStart: flare.start
+        flareEnd: flare.end
         z: 999
         closePending: lifetime.closePending
         zones: root.safeZones.map(function(zone, index) {
@@ -131,17 +140,9 @@ PanelWindow {
         Keys.onEscapePressed: root.dismissed()
     }
 
-    Item {
-        id: anchorProxy
-        x: root.anchorX
-        width: root.anchorWidth
-        height: 1
-        visible: false
-    }
-
     MouseArea {
         x: flare.start
-        y: FlareEdges.topOriginY
+        y: ScreenGeometry.flareTopY
         width: Math.max(0, flare.end - flare.start)
         height: Math.min(root.height, flare.currentHeight + Theme.hugRadius)
         onClicked: (mouse) => { mouse.accepted = true }
@@ -149,15 +150,16 @@ PanelWindow {
 
     FlareHost {
         id: flare
-        y: FlareEdges.topOriginY
+        y: ScreenGeometry.flareTopY
         width: root.width
-        height: root.height - FlareEdges.topOriginY
-        anchorItem: anchorProxy
+        height: root.height - ScreenGeometry.flareTopY
+        anchorRect: root.anchorRect
+        hostRect: root.hostRect
         shown: root.panelOpen
         content: root.panelComponent
         contentProps: root.panelProps
         contentKey: root.panelKey
-        maxWidth: Math.min(400, Math.max(0, root.width - FlareEdges.thickness * 2))
+        maxWidth: Math.min(400, Math.max(0, root.horizontalBounds.end - root.horizontalBounds.start))
         horizontalPadding: 22
         onSettled: (isShown) => {
             if (!isShown && !root.panelOpen) root.closing = false

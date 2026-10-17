@@ -83,9 +83,9 @@ PanelWindow {
         if (!trayMenuItem || !trayMenuAnchor) return
         var item = trayMenuItem
         var anchor = trayMenuAnchor
-        var x = anchor.mapToItem(null, 0, 0).x
+        var anchorRect = ScreenGeometry.itemRect(anchor)
         closeTrayMenu()
-        UiState.openTrayMenu(item, item.menu, root.modelData.name, x, anchor.width)
+        UiState.openTrayMenu(item, item.menu, root.modelData.name, anchorRect)
     }
 
     // Evaluates loaded tray menu rows and opens tray menu once content has populated.
@@ -131,6 +131,19 @@ PanelWindow {
     }
 
     Connections {
+        target: ShellSettingsStore
+        // Clear pending and open tray ownership before the hidden row can be reused.
+        function onShowTrayChanged() {
+            if (ShellSettingsStore.showTray) return
+            root.closeTrayMenu()
+            UiState.closeTrayMenuIfScreen(root.modelData.name)
+        }
+        function onValuesChanged() {
+            if (TooltipManager.activeBar === root) TooltipManager.dismiss()
+        }
+    }
+
+    Connections {
         target: UiState
         function onActivePanelChanged() {
             if (UiState.activePanel !== "") root.closeTrayMenu()
@@ -141,10 +154,24 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "hakuspace-bar"
 
-    exclusionMode: ExclusionMode.Normal
-    // Edge-hugging Flare feet extend below the content body; keep that area inside the window.
-    implicitHeight: Math.max(barH, FlareEdges.topOriginY + tipAreaH + Theme.hugRadius)
-    exclusiveZone: Math.round(barH)
+    // Keep visuals and live tooltip anchors screen-local on every compositor.
+    exclusionMode: ExclusionMode.Ignore
+    // Include animated tooltip bodies and their full feet in the drawable window.
+    implicitHeight: Math.ceil(Math.max(barH, ScreenGeometry.flareTopY
+        + Math.max(tipAreaH, tooltipLayer.surfaceHeight, osdSurface.currentHeight) + Theme.hugRadius))
+
+    // Reserve the upper chassis separately from the full-width visual window.
+    PanelWindow {
+        screen: root.modelData
+        anchors { top: true; left: true; right: true }
+        WlrLayershell.layer: WlrLayer.Top
+        WlrLayershell.namespace: "hakuspace-bar-reservation"
+        color: "transparent"
+        implicitHeight: root.barH
+        exclusiveZone: root.barH
+        visible: root.visible
+        mask: Region {}
+    }
 
     color: "transparent"
     visible: AppState.waybarManualState
@@ -171,7 +198,11 @@ PanelWindow {
         border.color: Theme.border
 
         Item {
-            anchors.fill: parent
+            id: moduleLane
+            height: Theme.topBarContentHeight
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
             anchors.leftMargin: Theme.pad
             anchors.rightMargin: Theme.pad
 
@@ -180,7 +211,8 @@ PanelWindow {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.verticalCenterOffset: Theme.topBarTopPadding / 2
-                width: movingLeftModules.x + movingLeftModules.width
+                width: movingLeftModules.visibleChildren.length > 0
+                       ? movingLeftModules.x + movingLeftModules.width : logoModule.width
                 height: Math.max(logoModule.height, movingLeftModules.height)
 
                 // Logo never participates in the horizontal displacement.
@@ -218,7 +250,7 @@ PanelWindow {
                     // Workspaces, WindowTitle and any future non-Logo left
                     // modules belong in this row so they all clear Navigation.
                     TopModules.Workspaces { screenName: root.modelData.name }
-                    TopModules.WindowTitle {}
+                    TopModules.WindowTitle { visible: ShellSettingsStore.showWindowTitle }
                 }
             }
 
@@ -242,7 +274,7 @@ PanelWindow {
                                                            && (UiState.navigationScreenName === ""
                                                                || UiState.navigationScreenName === root.modelData.name
                                                                || UiState.navigationVisualScreenName === root.modelData.name)
-                readonly property bool showCava: !hakuMenuActive && !dashboardActive
+                readonly property bool showCava: ShellSettingsStore.showCava && !hakuMenuActive && !dashboardActive
                                                   && CenterState.centerMode === "media" && Cava.available && Cava.audioVisible
                                                   && safeSpan >= cavaSlotWidth + Theme.gap + Theme.fontSize * 3
                 opacity: (CenterState.osdVisible || CenterState.osdExpansion > 0 || dashboardActive) ? 0 : 1
@@ -273,6 +305,7 @@ PanelWindow {
 
                 TopModules.CenterModule {
                     id: centerModule
+                    visible: ShellSettingsStore.showCenter && centerModule.active
                     screenName: root.modelData.name
                     maximumWidth: Math.max(0, centerCluster.safeSpan
                                              - (cavaSlot.width > 0 ? cavaSlot.width + centerCluster.spacing : 0))
@@ -286,36 +319,51 @@ PanelWindow {
                 anchors.verticalCenterOffset: Theme.topBarTopPadding / 2
                 spacing: Theme.gap
                 TopModules.TrayGroup {
+                    visible: ShellSettingsStore.showTray
                     menuOpenItem: UiState.trayMenu ? UiState.trayMenu.item : root.trayMenuItem
                     onMenuRequested: (item, anchor) => root.requestTrayMenu(item, anchor)
                 }
-                TopModules.SettingsGroup {}
+                TopModules.SettingsGroup { visible: ShellSettingsStore.showQuickControls }
                 TopModules.RecorderGroup {}
-                TopModules.ClockGroup {}
-                TopModules.NotificationGroup { screenName: root.modelData.name }
+                TopModules.ClockGroup { visible: ShellSettingsStore.showClock }
+                TopModules.NotificationGroup {
+                    visible: ShellSettingsStore.showNotifications
+                    screenName: root.modelData.name
+                }
             }
         }
     }
 
     Flare.FlareSurface {
+        id: osdSurface
         width: root.width
-        y: FlareEdges.topOriginY
+        y: ScreenGeometry.flareTopY
         start: (root.width - spanWidth) / 2
         end: (root.width + spanWidth) / 2
         currentHeight: Theme.levelOsdHeight * CenterState.osdExpansion
-        bounds: FlareEdges.getBounds(root.width)
+        bounds: ScreenGeometry.horizontalBounds(root.width)
         r: Theme.largeRadius + 8
         rf: Theme.hugRadius
         surfaceColor: Theme.surface
         visible: CenterState.osdExpansion > 0 && spanWidth > 0
 
         readonly property real spanWidth: Math.min(Theme.levelOsdWidth + Theme.levelOsdPadding * 2,
-                                                    Math.max(0, root.width - 2 * (FlareEdges.thickness + Theme.largeRadius + 8)))
+                                                    Math.max(0, bounds.end - bounds.start - 2 * (Theme.largeRadius + 8)))
+    }
+
+    SafeZoneDebugOverlay {
+        anchors.fill: parent
+        screenWidth: root.modelData.width
+        screenHeight: root.modelData.height
+        anchorRect: TooltipManager.current ? ScreenGeometry.itemRect(TooltipManager.current.target) : null
+        localizedAnchorRect: anchorRect
+        flareStart: osdSurface.start
+        flareEnd: osdSurface.end
     }
 
     TooltipLayer {
         id: tooltipLayer
-        y: FlareEdges.topOriginY
+        y: ScreenGeometry.flareTopY
         tipAreaHeight: root.tipAreaH
     }
 }

@@ -9,7 +9,7 @@ singleton NotificationStore 1.0 Notifications.qml
 singleton WM 1.0 WM/WM.qml
 singleton SysStats 1.0 SysStats.qml
 singleton TooltipManager 1.0 TooltipManager.qml
-singleton FlareEdges 1.0 FlareEdges.qml
+singleton ScreenGeometry 1.0 ScreenGeometry.qml
 singleton Audio 1.0 Audio.qml
 singleton Brightness 1.0 Brightness.qml
 singleton PpdProfile 1.0 PowerProfile.qml
@@ -23,5 +23,6 @@ singleton UserIdentity 1.0 UserIdentity.qml
 singleton DashboardTooltip 1.0 DashboardTooltip.qml
 singleton TextStore 1.0 TextStore.qml
 singleton SettingsStore 1.0 SettingsStore.qml
+singleton ShellSettingsStore 1.0 ShellSettingsStore.qml
 singleton ConfigEditorStore 1.0 ConfigEditorStore.qml
 singleton InfoStore 1.0 InfoStore.qml

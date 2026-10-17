@@ -42,14 +42,17 @@ if [ -f scripts/test_plain_text_edit_ops.js ]; then
     node scripts/test_plain_text_edit_ops.js
 fi
 node scripts/test_safe_zone_geometry.js
+node scripts/test_screen_geometry.js
 if command -v quickshell >/dev/null 2>&1; then
     bash scripts/test_safe_zone_controller.sh
     bash scripts/test_labwc_exit.sh
+    bash scripts/test_hikai_shell.sh
 fi
 
 python3 -m unittest discover -s tests/icon_accent -v
 python3 scripts/test_visual_ecosystem.py
 python3 scripts/test_setting_ctl.py
+python3 scripts/test_hikai_settings_ctl.py
 python3 scripts/test_hakucfg_editor_ctl.py
 python3 scripts/test_hakuspace_info_ctl.py
 python3 scripts/test_sidebar_pins_ctl.py

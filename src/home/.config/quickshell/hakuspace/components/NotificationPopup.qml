@@ -14,8 +14,8 @@ Item {
     readonly property real edgeInset: 48
     readonly property real groupPadding: 0
     readonly property real gap: Theme.gap * 2
-    readonly property real topOffset: FlareEdges.topOriginY
-    readonly property var frameBounds: FlareEdges.getBounds(modelData.width)
+    readonly property real topOffset: ScreenGeometry.flareTopY
+    readonly property var frameBounds: ScreenGeometry.horizontalBounds(modelData.width)
     readonly property real popupEnd: frameBounds.end - edgeInset
     readonly property real popupStart: Math.max(frameBounds.start, popupEnd - popupWidth)
     // The Top layer mirrors the tooltip topology: its shallow FlareSurface
@@ -155,7 +155,7 @@ Item {
             end: root.flareEnd
             currentHeight: root.flareVisualHeight
             bounds: root.frameBounds
-            r: 20
+            r: (Theme.largeRadius + 4)
             rf: Theme.hugRadius
             bottomRadius: 0
             surfaceColor: Theme.surface
@@ -191,7 +191,7 @@ Item {
             y: root.topOffset
             width: contentLayer.width
             height: root.revealHeight
-            radius: 20
+            radius: (Theme.largeRadius + 4)
             color: Theme.surface
             clip: true
             visible: height > 0

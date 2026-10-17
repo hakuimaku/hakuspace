@@ -12,7 +12,7 @@ PanelWindow {
     required property var modelData
     property string selectedGroup: "General"
     property string confirmation: ""
-    readonly property var settingsTabs: ["General", "Config", "Info"]
+    readonly property var settingsTabs: ["General", "Shell", "Config", "Info"]
     readonly property bool panelOpen: UiState.activePanel === "settings"
                                       && UiState.settingsScreenName === modelData.name
     // Preferred widths keep 32 px of space on each side when the screen is smaller.
@@ -64,20 +64,28 @@ PanelWindow {
     }
 
     function requestClose() {
-        if (SettingsStore.dirty || ConfigEditorStore.dirty) confirmation = "close"
+        if (ShellSettingsStore.saving || ShellSettingsStore.loading) return
+        if (SettingsStore.dirty || ShellSettingsStore.dirty || ConfigEditorStore.dirty) confirmation = "close"
         else UiState.closeSettings()
     }
     function requestReload() {
+        if (selectedGroup === "Shell") {
+            if (ShellSettingsStore.dirty) confirmation = "reload-shell"
+            else ShellSettingsStore.reload()
+            return
+        }
         if (SettingsStore.dirty) confirmation = "reload"
         else SettingsStore.reload()
     }
-    // Reload discards General only; closing discards both editable pages.
+    // Reload replaces its own domain; closing restores every editable draft.
     function confirmDiscard() {
         var action = confirmation
         confirmation = ""
-        if (action === "reload") SettingsStore.reload()
+        if (action === "reload-shell") ShellSettingsStore.reload()
+        else if (action === "reload") SettingsStore.reload()
         else {
             SettingsStore.discard()
+            ShellSettingsStore.discard()
             ConfigEditorStore.discard()
             configPage.confirmation = ""
             UiState.closeSettings()
@@ -119,6 +127,7 @@ PanelWindow {
             confirmation = ""
             if (!SettingsStore.ready) SettingsStore.load()
             else if (!SettingsStore.dirty) SettingsStore.reload()
+            if (!ShellSettingsStore.dirty) ShellSettingsStore.reload()
             if (selectedGroup === "Config" && !ConfigEditorStore.ready) ConfigEditorStore.loadFiles()
             if (selectedGroup === "Info") InfoStore.load()
             Qt.callLater(function() { if (root.panelOpen) keyHandler.forceActiveFocus() })
@@ -152,8 +161,8 @@ PanelWindow {
         transform: Rotation {
             origin.x: dropTail.tail + dropTail.diameter / 2
             origin.y: dropTail.diameter / 2
-            angle: Math.atan2(root.height / 2 - FlareEdges.topOriginY - root.circleSize / 2,
-                              root.width / 2 - FlareEdges.thickness - root.circleSize / 2) * 180 / Math.PI
+            angle: Math.atan2(root.height / 2 - ScreenGeometry.flareTopY - root.circleSize / 2,
+                              root.width / 2 - ScreenGeometry.leftInset - root.circleSize / 2) * 180 / Math.PI
         }
         ShapePath {
             fillColor: Theme.surface
@@ -194,8 +203,8 @@ PanelWindow {
 
     Rectangle {
         id: settingsBody
-        x: FlareEdges.thickness + (root.width / 2 - width / 2 - FlareEdges.thickness) * root.slideProgress
-        y: FlareEdges.topOriginY + (root.height / 2 - height / 2 - FlareEdges.topOriginY) * root.slideProgress
+        x: ScreenGeometry.leftInset + (root.width / 2 - width / 2 - ScreenGeometry.leftInset) * root.slideProgress
+        y: ScreenGeometry.flareTopY + (root.height / 2 - height / 2 - ScreenGeometry.flareTopY) * root.slideProgress
         width: root.circleSize + (root.targetBodyWidth - root.circleSize) * root.expandProgress
         height: root.circleSize + (root.targetBodyHeight - root.circleSize) * root.expandProgress
         radius: root.circleSize / 2 + (Theme.largeRadius - root.circleSize / 2) * root.expandProgress
@@ -236,7 +245,8 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                 }
                 Text {
-                    text: root.selectedGroup === "Config" ? "~/hakucfg/wm · ~/hakucfg/config"
+                    text: root.selectedGroup === "Shell" ? "~/hakucfg/hikai-shell.json"
+                          : root.selectedGroup === "Config" ? "~/hakucfg/wm · ~/hakucfg/config"
                           : root.selectedGroup === "Info" ? "HakuSpace · " + (InfoStore.loading ? "detecting…"
                               : InfoStore.repo.detected ? InfoStore.repo.version : "version unavailable")
                           : SettingsStore.settingVersion ? "setting.sh · " + SettingsStore.settingVersion : "~/hakucfg/setting.sh"
@@ -302,6 +312,7 @@ PanelWindow {
                                 target: tabButton
                                 active: tabButton.hovered || tabButton.activeFocus
                                 text: tabButton.modelData === "General" ? "Edit options in setting.sh."
+                                      : tabButton.modelData === "Shell" ? "Preview shell appearance and TopBar modules."
                                       : tabButton.modelData === "Config" ? "Browse and edit configuration files."
                                       : "View HakuSpace and system information."
                             }
@@ -328,6 +339,11 @@ PanelWindow {
                     visible: root.selectedGroup === "Config"
                     onCloseRequested: root.requestClose()
                 }
+                SettingsPages.ShellSettingsPage {
+                    anchors.fill: parent
+                    visible: root.selectedGroup === "Shell"
+                    onReloadRequested: root.requestReload()
+                }
                 SettingsPages.InfoPage {
                     anchors.fill: parent
                     visible: root.selectedGroup === "Info"
@@ -335,7 +351,7 @@ PanelWindow {
             }
         }
         Rectangle {
-            visible: root.selectedGroup !== "General" && root.confirmation === "close"
+            visible: root.selectedGroup !== "General" && root.confirmation !== ""
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
@@ -351,9 +367,8 @@ PanelWindow {
                 Text {
                     width: Math.max(80, parent.width - 180)
                     anchors.verticalCenter: parent.verticalCenter
-                    text: SettingsStore.dirty && ConfigEditorStore.dirty ? "Discard unsaved General and Config changes?"
-                          : SettingsStore.dirty ? "Discard unsaved General changes and close?"
-                          : "Discard changes to " + ConfigEditorStore.selectedFileId + " and close?"
+                    text: root.confirmation === "reload-shell" ? "Discard Shell changes and reload from disk?"
+                          : "Discard unsaved Settings changes and close?"
                     color: Theme.fg
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize

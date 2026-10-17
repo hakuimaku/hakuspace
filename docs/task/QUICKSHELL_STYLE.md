@@ -14,6 +14,57 @@
 >
 > The old TopBar-center collar/notch/shoulder mockup and the old Wallpaper dual-front/wide-Flare concept are superseded.
 
+## Post-P3 Settings V2 surface and geometry ownership
+
+This addition supersedes the fixed surface/radius assumptions in the historical
+baseline below. It does not change the accent/font flow or the P3 motion contract.
+
+`~/hakucfg/hikai-shell.json` (schema version 2) stores `appearance.baseRadius`,
+`appearance.surfaceTone`, independent `roundedScreen` geometry and the global `topbar` booleans.
+The backend's [DEFAULTS](../../src/core/backend/user/hikai_settings_ctl.py) defines the complete schema. `ShellSettingsStore` previews
+drafts live; Theme consumes them reactively. Generated `quickshell.json` owns
+accent, surfaceHi, foreground colors and font/size, and cannot override these
+shell tokens even if an older generated file still contains radius or surface.
+
+| Token | Formula | Default |
+|---|---|---|
+| radius | R | 12 |
+| largeRadius | R + 4 | 16 |
+| hugRadius | R + 16 | 28 |
+| giantRadius | R + 36 | 48 |
+
+R is an integer in 4–24 px and controls component styling only. NotificationPopup
+uses `largeRadius + 4` (20 px by default); the shared Flare ear radius uses
+`largeRadius + 8` (24 px). Neither uses the physical screen radius.
+
+RoundedScreen radius (0–24, default 20) and border (0–6, default 4) live in their
+own schema section. TopBar adds 4 px below the unchanged content lane. The shared
+`ScreenGeometry` contract supplies `flareTopY == Theme.topBarHeight`, independent
+side/bottom insets, horizontal bounds, edge hug radius and anchor localization.
+The Sidebar ear attaches inside Navigation's rounded contour as its width grows;
+its interaction zone follows the same attachment position.
+
+| Surface tone | surface | hoverMuted |
+|---|---|---|
+| ink | #000000 | #202020 |
+| dark (default) | #0b0b0b | #2b2b2b |
+| soft | #171717 | #333333 |
+
+Hard-coded radius audit: CalendarGrid navigation, DashboardMonitorCard pill,
+DashboardWidgetHost switchers, DashboardMediaCard transport controls,
+TempNoteOverlay close button and ThemeAccentPage swatch are proportional/circular
+geometry (B). Storage progress, BioWidget decorations, scrollbars, shortcut
+badges, ActionMenu micro highlights, ExitPage table furniture and Sidebar morph
+seeds are local micro-elements/geometry (C). Zero-radius attachment edges and
+WallpaperCarousel cutouts stay zero (D). NotificationPopup chassis and the shared
+Flare default are semantic surfaces (A) and now derive from Theme. Existing
+semantic cards/panels already using Theme continue to use that family.
+
+TopBar gates default on for workspaces, windowTitle, center, cava, tray,
+quickControls, recorder, clock and notifications. Logo has no preference gate.
+Workspace/Cava conditions still apply; active recording overrides the idle gate.
+No opacity-only hiding is used. Preferences are global and never rewrite Classic.
+
 ## 1. General principles (Irunu Style)
 
 1. **Two primary colours:** solid black `#000000` for shell surfaces and the dynamic **accent** for active/selected/hover states, text, icons and state indicators where defined.
@@ -41,27 +92,26 @@
 
 Reference: `base.png`.
 
-RoundedScreen is the persistent visual chassis:
+The post-P3 RoundedScreen refactor supersedes the original top-rail mockup:
 
-- follows the physical screen perimeter;
-- left/right/bottom visually reach the output edges;
-- corners are continuous;
-- top frame remains visible with TopBar ON;
-- top rail may be visually thicker/stronger than side/bottom;
-- TopBar and RoundedScreen are separate layers; never hide the frame merely to fake TopBar shape continuity.
-
-Shared per-output geometry should expose equivalent values:
-
-```text
-frameTopY
-frameTopThickness
-frameInnerTopY
-frameInnerLeftX
-frameInnerRightX
-frameInnerBottomY
-cornerRadius
-roundedEnabled
-```
+- RoundedScreen draws four independent inverted corner masks and explicit left,
+  right and bottom rails; it has no top rail or top reservation.
+- Radius and border are independent, including 0/0, 0/6, 24/0 and 24/6.
+- TopBar owns the upper chassis and reserves its total height, with 4 px of bottom
+  padding below the unchanged module lane.
+- TopBar draws in a full-width window that ignores reservations; an independent,
+  input-transparent window reserves its height, keeping live anchors screen-local.
+- RoundedScreen respects that exclusive zone: its top corners begin below a
+  visible TopBar and return to the screen top when the bar hides. Its own
+  side/bottom reservations are cancelled by visual-window margins to avoid double insets.
+- `ScreenGeometry` owns `roundedRadius`, `leftInset`, `rightInset`, `bottomInset`,
+  `flareTopY`, `edgeHugRadius`, `horizontalBounds()` and `localizeRect()`.
+- All top-attached surfaces begin at `flareTopY`; side border changes cannot move
+  them vertically. Captured anchors use full screen-local rects.
+- Shared Flare rendering overlaps the attachment edge into its parent chassis
+  to close antialiased seams. Short-body ears cannot intersect bottom rounding.
+- Visual windows remain click-through; only side/bottom reservation windows reserve
+  space, and all three disappear at border 0.
 
 ### 1.4 Navigation — radial Logo controller
 

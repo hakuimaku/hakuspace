@@ -10,8 +10,8 @@ Item {
     property real bodyHeight: 500
     property var pinsModel
     property Item tooltipHost: null
-    property real rf: Math.max(Theme.hugRadius, AppState.roundedScreenRadius)
-    property real frameThickness: FlareEdges.thickness
+    property real rf: ScreenGeometry.edgeHugRadius
+    property real sideInset: ScreenGeometry.leftInset
     property real topFlareY: 16
     property real earWidth: Math.max(32, Math.round(rf * 1.5))
     property real earRadius: Math.max(32, Math.round(rf * 1.5))

@@ -24,7 +24,7 @@ Item {
         return modelData.width * 0.40
     }
     readonly property real menuHeight: modelData.height * 0.40
-    readonly property real menuTop: FlareEdges.topOriginY
+    readonly property real menuTop: ScreenGeometry.flareTopY
     readonly property real bounceHeadroom: menuHeight * HAnimation.hakuMenuBounceHeadroom
     readonly property real windowWidth: Math.max(triggerWidth, maxMenuWidth + Theme.hugRadius * 2)
     readonly property real windowHeight: menuTop + menuHeight + bounceHeadroom
@@ -211,7 +211,7 @@ Item {
             padX: 0
             padY: 0
             snap: 0
-            bounds: ({ start: 0, end: root.modelData.width })
+            bounds: ScreenGeometry.horizontalBounds(root.modelData.width)
             openDuration: HAnimation.hakuMenuOpenDuration
             closeDuration: HAnimation.hakuMenuCloseDuration
             retargetDuration: HAnimation.hakuMenuResizeDuration

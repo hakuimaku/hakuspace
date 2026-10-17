@@ -288,9 +288,7 @@ Item {
                 width: Math.max(80, parent.width - 190)
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.confirmation ? (root.confirmation === "reload" ? "Discard changes and reload from disk?"
-                      : SettingsStore.dirty && ConfigEditorStore.dirty ? "Discard unsaved Settings changes and close?"
-                      : ConfigEditorStore.dirty ? "Discard unsaved changes to " + ConfigEditorStore.selectedFileId + " and close?"
-                      : "Discard unsaved changes and close?")
+                      : "Discard unsaved Settings changes and close?")
                       : SettingsStore.error || SettingsStore.statusMessage
                         || (SettingsStore.loading ? "Loading…" : SettingsStore.dirty ? "Unsaved changes" : "")
                 color: SettingsStore.error ? Theme.accent : Theme.fgDim

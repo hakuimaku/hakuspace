@@ -122,25 +122,23 @@ Item {
 
     // Navigation lives in one Overlay so exclusive zones cannot move it, while
     // the backing contour aligns to the shared RoundedScreen frame geometry.
-    readonly property real frameThickness: FlareEdges.thickness
-    readonly property real frameTop: FlareEdges.topOriginY
-    readonly property var frameBounds: FlareEdges.getBounds(modelData.width)
+    readonly property real sideInset: ScreenGeometry.leftInset
+    readonly property real attachmentY: ScreenGeometry.flareTopY
+    readonly property var horizontalBounds: ScreenGeometry.horizontalBounds(modelData.width)
     // Keep the steady-state backing tight around the radial controller.
     readonly property real shellPadding: 4
-    readonly property real flareExtraRight: flareExtraBottom - frameThickness
     readonly property real flareExtraBottom: 8
     readonly property real circleDiameter: Math.max(146, Theme.fontSize * 10.5)
     readonly property real circleRadius: circleDiameter / 2
     readonly property real circularShellDiameter: circleDiameter + shellPadding * 2
     readonly property real shellX: 0
     readonly property real shellY: 0
-    readonly property real surfaceStart: frameThickness
-    readonly property real surfaceWidth: circularShellDiameter + flareExtraRight
+    readonly property real surfaceStart: sideInset
+    readonly property real surfaceWidth: Math.max(0, surfaceEnd - surfaceStart)
     readonly property real surfaceHeight: circularShellDiameter + flareExtraBottom
-    readonly property real surfaceEnd: Math.min(modelData.width - frameThickness,
-                                                surfaceStart + surfaceWidth)
-    readonly property real flareTargetHeight: Math.max(1, surfaceHeight - frameTop)
-    readonly property real flareReach: Math.max(Theme.hugRadius, AppState.roundedScreenRadius)
+    readonly property real surfaceEnd: Math.min(horizontalBounds.end, circularShellDiameter + flareExtraBottom)
+    readonly property real flareTargetHeight: Math.max(1, surfaceHeight - attachmentY)
+    readonly property real flareReach: ScreenGeometry.edgeHugRadius
     readonly property real hoverOverflow: Math.ceil(circleDiameter * 0.12)
     readonly property real controllerX: shellX + shellPadding
     readonly property real controllerY: shellY + shellPadding
@@ -161,6 +159,14 @@ Item {
     readonly property real sidebarBodyY: Math.round(circularShellDiameter * 0.94)
     readonly property real sidebarEarWidth: Math.max(32, Math.round(flareReach * 1.5))
     readonly property real sidebarEarRadius: sidebarEarWidth + Theme.giantRadius * 2
+
+    // Keep the ear tip inside Navigation's rounded contour as its width grows.
+    readonly property real sidebarJoinRadius: Math.max(0, Math.min(backingCurveRadius,
+        (surfaceEnd - surfaceStart) / 2, flareTargetHeight / 2))
+    readonly property real sidebarJoinInset: Math.min(sidebarJoinRadius,
+        Math.max(0, sidebarBodyWidth + sidebarEarWidth - surfaceEnd + sidebarJoinRadius))
+    readonly property real sidebarTopFlareY: Math.max(0, surfaceHeight - sidebarBodyY - sidebarJoinRadius
+        + Math.sqrt(Math.max(0, sidebarJoinRadius * sidebarJoinRadius - sidebarJoinInset * sidebarJoinInset)))
 
     // Bridge connects the lower-left radial sector to the sidebar body:
     readonly property real bridgeX: 0
@@ -198,8 +204,8 @@ Item {
             SafeZoneGeometry.rect(0, 0, circularShellDiameter, circularShellDiameter), margin),
             modelData.width, modelData.height)
         var anchor = SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
-            SafeZoneGeometry.rect(capturedAnchorX, capturedAnchorY,
-                                  capturedAnchorWidth, capturedAnchorHeight),
+            SafeZoneGeometry.rect(capturedAnchorRect.x, capturedAnchorRect.y,
+                                  capturedAnchorRect.width, capturedAnchorRect.height),
             Interaction.safeZoneAnchorMargin), modelData.width, modelData.height)
         var bridge = sidebarInteractionVisible ? SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
             SafeZoneGeometry.rect(bridgeX, bridgeY, bridgeWidth, bridgeHeight), margin / 2),
@@ -210,7 +216,7 @@ Item {
             railVisual, margin),
             modelData.width, modelData.height) : empty
         var ear = sidebarInteractionVisible ? SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
-            SafeZoneGeometry.rect(sidebarBodyWidth, sidebarBodyY + 16,
+            SafeZoneGeometry.rect(sidebarBodyWidth, sidebarBodyY + sidebarTopFlareY,
                                   sidebarEarWidth, sidebarEarRadius), margin / 2),
             modelData.width, modelData.height) : empty
         var toolVisual = sidebarToolVisible ? SafeZoneGeometry.rect(sidebarToolX, sidebarToolY,
@@ -390,24 +396,21 @@ Item {
 
     // Logo geometry is captured when Navigation opens. Keeping this copy local
     // lets the Flare close back toward the Logo after UiState has already reset.
-    property real capturedAnchorX: frameThickness
-    property real capturedAnchorY: Theme.topBarTopPadding
-    property real capturedAnchorWidth: Theme.topBarHeight
-    property real capturedAnchorHeight: Theme.topBarHeight
+    property var capturedAnchorRect: ScreenGeometry.topBarAnchor(Theme.pad, Theme.fontSize * 1.8)
 
     readonly property real anchorStart: Math.max(0,
-                                                   Math.min(modelData.width - 1, capturedAnchorX))
+                                                   Math.min(modelData.width - 1, capturedAnchorRect.x))
     readonly property real anchorY: Math.max(0,
-                                              Math.min(modelData.height - 1, capturedAnchorY))
+                                              Math.min(modelData.height - 1, capturedAnchorRect.y))
     readonly property real anchorEnd: Math.max(anchorStart + 1,
                                                Math.min(modelData.width,
-                                                        anchorStart + capturedAnchorWidth))
-    // The Logo is clicked while hovered, so capturedAnchorWidth can be wider
+                                                        anchorStart + capturedAnchorRect.width))
+    // The Logo is clicked while hovered, so capturedAnchorRect.width can be wider
     // than the normal circular button. Opening keeps that exact footprint, but
     // closing must return to the stable circle size (the Logo height), never
     // to the hover-expanded pill width.
-    readonly property real returnAnchorSize: Math.max(1, capturedAnchorHeight)
-    readonly property real anchorBodyHeight: Math.max(1, Math.min(surfaceHeight, capturedAnchorHeight))
+    readonly property real returnAnchorSize: Math.max(1, capturedAnchorRect.height)
+    readonly property real anchorBodyHeight: Math.max(1, Math.min(surfaceHeight, capturedAnchorRect.height))
 
     property real flareStart: anchorStart
     property real flareEnd: anchorEnd
@@ -439,8 +442,8 @@ Item {
     readonly property real logoTargetY: controllerY + circleRadius - logoTargetSize / 2
     readonly property real logoProxyX: anchorStart + (logoTargetX - anchorStart) * logoMorphProgress
     readonly property real logoProxyY: anchorY + (logoTargetY - anchorY) * logoMorphProgress
-    readonly property real logoBaseWidth: (panelOpen && !closing) ? capturedAnchorWidth : returnAnchorSize
-    readonly property real logoBaseHeight: (panelOpen && !closing) ? capturedAnchorHeight : returnAnchorSize
+    readonly property real logoBaseWidth: (panelOpen && !closing) ? capturedAnchorRect.width : returnAnchorSize
+    readonly property real logoBaseHeight: (panelOpen && !closing) ? capturedAnchorRect.height : returnAnchorSize
     readonly property real logoProxyWidth: logoBaseWidth
                                             + (logoTargetSize - logoBaseWidth) * logoMorphProgress
     readonly property real logoProxyHeight: logoBaseHeight
@@ -591,14 +594,9 @@ Item {
     }
 
     function captureAnchor() {
-        capturedAnchorX = Number.isFinite(UiState.navigationAnchorX)
-                          ? UiState.navigationAnchorX : surfaceStart
-        capturedAnchorY = Number.isFinite(UiState.navigationAnchorY)
-                          ? UiState.navigationAnchorY : Theme.topBarTopPadding
-        capturedAnchorWidth = Math.max(1, Number.isFinite(UiState.navigationAnchorWidth)
-                                          ? UiState.navigationAnchorWidth : Theme.topBarHeight)
-        capturedAnchorHeight = Math.max(1, Number.isFinite(UiState.navigationAnchorHeight)
-                                           ? UiState.navigationAnchorHeight : capturedAnchorWidth)
+        capturedAnchorRect = ScreenGeometry.localizeRect(UiState.navigationAnchorRect
+            || ScreenGeometry.topBarAnchor(Theme.pad, Theme.fontSize * 1.8),
+            {x: 0, y: 0, width: modelData.width, height: modelData.height})
     }
 
     function seedLogoGeometry() {
@@ -779,15 +777,15 @@ Item {
             id: navigationFlare
             x: 0
             // Align the top-right attachment to RoundedScreen content.
-            y: root.frameTop
+            y: root.attachmentY
             width: navigationVisualLayer.width
             height: root.flareTargetHeight + root.flareReach
             start: root.flareStart
             end: root.flareEnd
             currentHeight: root.flareHeight
-            bounds: root.frameBounds
+            bounds: root.horizontalBounds
             // Match the shared RoundedScreen corner language.
-            r: Math.max(Theme.largeRadius + 8, AppState.roundedScreenRadius + 8)
+            r: Math.max(Theme.largeRadius + 8, ScreenGeometry.roundedRadius + 8)
             rf: root.flareReach
             bottomRadius: root.closing
                           ? root.backingCurveRadius * (1.0 - root.closeFlareProgress)
@@ -806,7 +804,7 @@ Item {
             currentHeight: sidebarSurface.currentHeight
             morphProgress: sidebarSurface.morphProgress
             rf: sidebarSurface.rf
-            frameThickness: sidebarSurface.frameThickness
+            sideInset: sidebarSurface.sideInset
             topFlareY: sidebarSurface.topFlareY
             earWidth: sidebarSurface.earWidth
             earRadius: sidebarSurface.earRadius
@@ -897,6 +895,12 @@ Item {
 
         Base.SafeZoneDebugOverlay {
             anchors.fill: parent
+            screenWidth: root.modelData.width
+            screenHeight: root.modelData.height
+            anchorRect: root.capturedAnchorRect
+            localizedAnchorRect: root.capturedAnchorRect
+            flareStart: root.flareStart
+            flareEnd: root.flareEnd
             z: 999
             closePending: lifetime.closePending
             zones: root.safeZones.map(function(zone, index) {
@@ -947,8 +951,8 @@ Item {
             selectedToolIndex: root.sidebarSelectedIndex
             keyboardSelected: root.sidebarKeyboardMode
             rf: root.flareReach
-            frameThickness: root.frameThickness
-            topFlareY: Math.max(0, root.surfaceHeight - root.sidebarBodyY)
+            sideInset: root.sideInset
+            topFlareY: root.sidebarTopFlareY
             earWidth: root.sidebarEarWidth
             earRadius: root.sidebarEarRadius
             cornerRadius: Theme.largeRadius + 8
@@ -1081,8 +1085,8 @@ Item {
             controllerY: root.controllerY
             circleRadius: root.circleRadius
             circleDiameter: root.circleDiameter
-            frameThickness: root.frameThickness
-            frameTop: root.frameTop
+            sideInset: root.sideInset
+            attachmentY: root.attachmentY
             expanded: root.panelOpen && root.dashboardExpanded && !root.closing
             morphProgress: root.dashboardMorphProgress
             // A full Dashboard -> closed transition reuses the Dashboard ->

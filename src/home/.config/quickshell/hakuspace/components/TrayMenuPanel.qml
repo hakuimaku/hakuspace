@@ -7,8 +7,7 @@ FlarePanelWindow {
     readonly property var menuState: UiState.trayMenu
     panelOpen: UiState.activePanel === "tray" && menuState !== null
                && menuState.screenName === modelData.name
-    anchorX: menuState ? menuState.anchorX : 0
-    anchorWidth: menuState ? menuState.anchorWidth : 0
+    anchorRect: menuState ? menuState.anchorRect : null
     panelComponent: menuComponent
     panelProps: ({ menuHandle: menuState ? menuState.handle : null,
                    maxHeight: root.maxPanelContentHeight })

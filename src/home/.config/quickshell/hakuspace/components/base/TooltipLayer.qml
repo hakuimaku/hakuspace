@@ -5,10 +5,11 @@ import "../flare"
 
 Item {
     id: root
+    readonly property var horizontalBounds: ScreenGeometry.horizontalBounds(width)
     width: parent.width
     property real tipAreaHeight: 180
     height: tipAreaHeight
-    readonly property real maxTooltipWidth: Math.min(500, Math.max(0, width - FlareEdges.thickness * 2))
+    readonly property real maxTooltipWidth: Math.min(500, Math.max(0, horizontalBounds.end - horizontalBounds.start))
     readonly property real horizontalPadding: 22
     readonly property real maxTextWidth: Math.max(0, maxTooltipWidth - horizontalPadding * 2)
     property bool menuShown: false
@@ -18,6 +19,8 @@ Item {
     property alias menuStart: flare.start
     property alias menuEnd: flare.end
     property alias menuHeight: flare.currentHeight
+    // Allocate the target body before opening while retaining the animated closing extent.
+    readonly property real surfaceHeight: Math.max(flare.currentHeight, flare.naturalContentHeight + flare.verticalPadding * 2)
     signal menuDismissed()
     
     property var windowRoot: {
@@ -39,6 +42,7 @@ Item {
         contentKey: root.menuShown ? root.menuHandle : (TooltipManager.current ? TooltipManager.current.target : null)
         maxWidth: root.menuShown ? 320 : root.maxTooltipWidth
         horizontalPadding: root.horizontalPadding
+        verticalPadding: root.menuShown ? 8 : 12
         contentFadeDuration: 0
     }
 

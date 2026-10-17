@@ -54,25 +54,25 @@ ShellRoot {
         enabled: true
         function openDefault() {
             if (Quickshell.screens.length > 0)
-                UiState.openNavigation(Quickshell.screens[0].name, Theme.pad, Theme.fontSize * 1.8, Theme.topBarHeight, Theme.topBarTopPadding)
+                UiState.openNavigation(Quickshell.screens[0].name, ScreenGeometry.topBarAnchor(Theme.pad, Theme.fontSize * 1.8))
         }
         function open(screenName: string) {
             for (var screen of Quickshell.screens) {
                 if (screen.name === screenName) {
-                    UiState.openNavigation(screenName, Theme.pad, Theme.fontSize * 1.8, Theme.topBarHeight, Theme.topBarTopPadding)
+                    UiState.openNavigation(screenName, ScreenGeometry.topBarAnchor(Theme.pad, Theme.fontSize * 1.8))
                     return
                 }
             }
         }
         function openDashboard() {
             if (Quickshell.screens.length > 0) {
-                UiState.openNavigation(Quickshell.screens[0].name, Theme.pad, Theme.fontSize * 1.8, Theme.topBarHeight, Theme.topBarTopPadding)
+                UiState.openNavigation(Quickshell.screens[0].name, ScreenGeometry.topBarAnchor(Theme.pad, Theme.fontSize * 1.8))
                 UiState.beginNavigationHandoff("dashboard")
             }
         }
         function toggleDefault() {
             if (Quickshell.screens.length > 0)
-                UiState.toggleNavigation(Quickshell.screens[0].name, Theme.pad, Theme.fontSize * 1.8, Theme.topBarHeight, Theme.topBarTopPadding)
+                UiState.toggleNavigation(Quickshell.screens[0].name, ScreenGeometry.topBarAnchor(Theme.pad, Theme.fontSize * 1.8))
         }
         function close() { UiState.closeNavigation() }
         function status(): string {
@@ -203,8 +203,8 @@ ShellRoot {
         function toggleCenter() {
             if (!NotificationStore._started || Quickshell.screens.length === 0) return
             var screen = Quickshell.screens[0]
-            UiState.toggleNotifications(screen.name, screen.width - Theme.pad - Theme.fontSize * 2,
-                                        Theme.fontSize * 2)
+            UiState.toggleNotifications(screen.name, ScreenGeometry.topBarAnchor(screen.width - Theme.pad - Theme.fontSize * 2,
+                                        Theme.fontSize * 2))
         }
         function toggleDnd() { NotificationStore.toggleDnd() }
         function clearAll() { NotificationStore.clearAll() }

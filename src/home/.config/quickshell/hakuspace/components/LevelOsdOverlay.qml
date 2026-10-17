@@ -14,19 +14,20 @@ PanelWindow {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
-    implicitHeight: FlareEdges.topOriginY + Theme.levelOsdHeight + Theme.largeRadius + 8
+    implicitHeight: ScreenGeometry.flareTopY + Theme.levelOsdHeight + Theme.largeRadius + 8
     color: "transparent"
     // The overlay is visual only and must not capture pointer input.
     mask: Region {}
 
     // Stay inside the rounded-screen border and corner radius.
+    readonly property var screenBounds: ScreenGeometry.horizontalBounds(width)
     readonly property real spanWidth: Math.min(Theme.levelOsdWidth,
-                                                Math.max(0, width - 2 * (FlareEdges.thickness + Theme.largeRadius + 8)))
+                                                Math.max(0, screenBounds.end - screenBounds.start - 2 * (Theme.largeRadius + 8)))
     readonly property real spanStart: (width - spanWidth) / 2
     Rectangle {
         id: osdBackground
         x: root.spanStart + Theme.gap
-        y: FlareEdges.topOriginY + Theme.gap
+        y: ScreenGeometry.flareTopY + Theme.gap
         width: Math.max(0, root.spanWidth - Theme.gap * 2)
         height: Math.max(0, Theme.levelOsdHeight * CenterState.osdExpansion - Theme.gap * 2)
         radius: Math.min(Theme.largeRadius + 8, height / 2)

@@ -7,7 +7,7 @@ Item {
     required property real currentHeight
     required property real morphProgress
     required property real rf
-    required property real frameThickness
+    required property real sideInset
     required property real topFlareY
     required property real earWidth
     required property real earRadius
@@ -46,12 +46,12 @@ Item {
             topLeftRadius: 0
         }
 
-        // 2. Flare foot at bottom connecting smoothly into RoundedScreen border (indented by frameThickness)
+        // 2. Flare foot at bottom connecting smoothly into RoundedScreen border (indented by sideInset)
         Rectangle {
             id: flareFootBacking
             x: 0
             y: flareFoot.y
-            width: root.frameThickness
+            width: root.sideInset
             height: root.rf
             color: root.surfaceColor
             visible: flareFoot.visible
@@ -60,7 +60,7 @@ Item {
 
         Shape {
             id: flareFoot
-            x: root.frameThickness
+            x: root.sideInset
             y: Math.max(20, 20 + root.currentHeight - 1)
             width: root.rf
             height: root.rf
