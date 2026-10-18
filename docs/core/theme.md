@@ -1,8 +1,8 @@
 # The Theming Engine in HakuSpace
 
-Have you ever noticed how your entire desktop environment—from Waybar and Rofi down to Kitty and SwayNC—magically changes color to match your new wallpaper? This isn't just magic; it's a carefully orchestrated pipeline of scripts working together. 
+Have you ever noticed how your entire desktop environment—whether using Hikai (Quickshell) or Classic (Waybar, Rofi, SwayNC), down to Kitty and your Window Manager—magically changes color to match your new wallpaper? This isn't just magic; it's a carefully orchestrated pipeline of scripts working together. 
 
-In this document, we'll take a deep dive into how the theming engine and the smart Accent Color extraction mechanism actually work under the hood. You can find all the related scripts nested inside the `src/core/theme/` directory.
+In this document, we'll take a deep dive into how the theming engine and the smart Accent Color extraction mechanism actually work under the hood. Theme controllers live under `src/core/backend/theme/`, rendering/apply helpers under `src/core/theme/`, and shared state libraries under `src/core/lib/`.
 
 ## The Complete Workflow
 
@@ -29,12 +29,12 @@ Not every color pulled from an image is suitable for a user interface. For examp
 ### 4. Generating the Theme (`gen_style.sh`)
 Once we have the perfect, validated Hex color code (e.g., `#ff6699`), it is handed to `theme_ctl.sh set-accent`, which saves canonical state and calls `gen_style.sh`. This is the workhorse of the theming engine.
 - The script takes the Hex code and translates it into various color formats (RGB, RGBA) so different applications can understand it.
-- It then dynamically generates and overwrites the `.css` and `.conf` configuration files for your desktop components. It updates the styling variables for Waybar, configures Rofi's color scheme, changes Kitty's terminal colors, and updates SwayNC's notification aesthetics.
+- It renders theme outputs for both shell backends: `quickshell.json` for Hikai, plus Waybar, Rofi, and SwayNC styles for Classic, alongside shared Kitty, Window Manager configs (Hyprland, Niri, Mango, Labwc), btop, and other generated outputs.
 
 ### 5. Applying the Changes Live (`apply_style.sh`)
 Generating the config files isn't enough; the applications need to know that their configs have changed. That's where `apply_style.sh` comes in.
 - This script wakes up all the relevant applications and tells them to reload their configurations on the fly.
-- For example, it calls `reload_config.sh` (to reload the Window Manager), and sends reload commands to SwayNC, Kitty, and Cava. Note that Waybar updates its CSS automatically via its own hot-reload mechanism.
+- For example, it calls `reload_config.sh` (to reload the Window Manager), and reloads Quickshell or Classic components (SwayNC, Kitty, Cava, Desktop Icons). Waybar reloads its CSS automatically, while Quickshell watches `quickshell.json` live.
 
 ### 6. Automated Wallpaper Transitions (`random_wallpaper.sh`)
 For those who want a dynamic desktop, `random_wallpaper.sh` automatically cycles through your wallpapers at a defined interval (`WALL_INTERVAL` in `setting.sh`).
@@ -50,38 +50,91 @@ We've designed this system to be highly customizable. If you want to tweak how i
 3. **Pick a Color Manually:** Sometimes you just want to choose the color yourself. You can run the `accent_color_picker.sh` script to open a graphical color picker. Whatever color you select there will immediately be sent through `theme_ctl.sh set-accent`, applied to your desktop, and synchronized through the HakuSpace internal icon accent engine according to `HAKU_ICON_THEME` and `HAKU_ICON_ACCENT_MODE`!
 4. **Opaque Theme Mode:** Want your panels and UI elements to be solid black rather than transparent/translucent? `opaque_theme.sh` provides this functionality. When enabled (via the Haku Menu's Setting tab), it dynamically writes solid `#000000` background rules into `THEME_RENDER_DIR/opaque/`. These rules are safely included at the bottom of Waybar, SwayNC, Rofi, GTK, and Kitty configs, allowing instant toggleable opaqueness without manual config editing.
 
----
-**Previous:** [Core Libraries](lib.md) | **Next:** [System Management](sys.md)
+## Visual Ecosystem (Icons, GTK & Cursor Sync)
 
-## Niri Animation Control Boundary
+Beyond just changing your terminal and status bar colors, HakuSpace comes with its own matching visual suite—**[Haku Cursor](https://github.com/hakuimaku/haku-cursor)**, **[Hikaide GTK](https://github.com/hakuimaku/hikade-gtk-theme)**, and **[Hikaide-Symbols](https://github.com/hakuimaku/hikaide-symbols)**—installed via `hakuspace-archive` (`./scripts/assets.sh`).
 
-Niri animation selection is split into three layers so Hikai and future UI code do not depend on Rofi:
-
-- `niri_animation_ctl.sh` is the headless backend. It parses `niri-animation.kdl`, reports the active option, and applies an explicit `<mode> <option-id>` selection.
-- `niri_animation_rofi.sh` is the Classic-only Rofi frontend. It owns the mode switcher and script-mode presentation but does not edit KDL itself.
-- `niri_animation_switcher.sh` remains the compatibility facade. Calling it without arguments opens the Classic Rofi picker in Classic mode, or the native Action Layer Menu (`haku_qs_ipc actionMenu openDefault niriAnimation`) in Hikai mode. `--list`, `--get`, and `--set` expose the headless API. The Hikai HakuMenu Theme tab and Action Layer Theme page expose **Niri Animation** actions so this control is available natively.
-
-The backend contract is:
+Even better: your folder and system icons in `Hikaide-Symbols` automatically change color to match your active accent color! Here is how that pipeline works behind the scenes:
 
 ```text
-niri_animation_ctl.sh list [--json]
-niri_animation_ctl.sh get <mode>
-niri_animation_ctl.sh set <mode> <option-id>
+Theme UI / wallpaper / CLI → theme_ctl
+                                  → save canonical state (state.env)
+                                  → gen_style
+                                  → appearance_ctl sync-accent → haku_icon_accent.py
+                                  → apply_style / reload consumers (desktop icons, WM, etc.)
 ```
 
-The Niri session check and KDL validation belong to the backend. `NIRI_BYPASS=1` exists only for controlled testing outside a Niri session.
+### 1. The Theme & Appearance Controllers (`theme_ctl.sh` & `appearance_ctl.sh`)
+Instead of having random scripts edit theme files directly, everything goes through two central controllers:
+- **`theme_ctl.sh`**: The main entry point whenever you change your accent color, font, or font size.
+  - Running `theme_ctl.sh set-accent '#AC7994'` saves the new color to `~/.local/state/hakuspace/state/state.env`, renders the new styles via `gen_style.sh`, asks `appearance_ctl.sh sync-accent` to recolor your icons first (via `haku_icon_accent.py`), and *then* reloads all desktop consumers via `apply_style.sh` so your apps immediately see the newly recolored icons.
+  - Running `theme_ctl.sh apply` reconciles everything in the same safe order: renders style, synchronizes icons, and reloads consumers.
+  - Changing only your font (`set-font`) or size (`set-size`) skips icon recoloring so it stays fast.
+- **`appearance_ctl.sh`**: Manages your GTK theme, icon theme, and mouse cursor settings.
 
-## Wallpaper Control Boundary
+```bash
+~/.local/bin/appearance_ctl.sh status
+~/.local/bin/appearance_ctl.sh verify
+~/.local/bin/appearance_ctl.sh apply
+~/.local/bin/theme_ctl.sh set-accent '#AC7994'
+~/.local/bin/theme_ctl.sh apply
+```
 
-Wallpaper selection is split into three layers so future Hikai Theme/Wallpaper UI does not depend on the Classic menu protocol:
+### 2. Customizing Your Look (`appearance.env`)
+Default settings live in `src/core/lib/haku_appearance.sh`, but you can easily override them by creating `~/.config/hakuspace/appearance.env`:
 
-- `wallpaper_ctl.sh` is the headless backend. It discovers static/video wallpapers, generates missing video previews, reports structured state, applies an explicit wallpaper, synchronizes the wallpaper-derived accent, and stops/restores lively wallpaper state.
-- `wallpaper_rofi.sh` is the Classic-only frontend. It converts backend records into the existing icon-bearing script-mode rows and owns the Classic menu geometry.
-- `wallpaper_select.sh` remains the compatibility facade. Calling it without arguments still opens the Classic selector; the legacy `--static`, `--lively`, `--exit`, and `--extend` entry points remain available.
+```bash
+HAKU_GTK_THEME=Hikaide
+HAKU_ICON_THEME=Hikaide-Symbols   # default: use HakuSpace's icon theme
+# HAKU_ICON_THEME=Papirus-Dark    # or pick another installed icon theme
+# HAKU_ICON_THEME=system          # leave your desktop icon setting untouched
 
-The structured backend contract intended for Hikai is:
+HAKU_ICON_ACCENT_MODE=auto       # default: only recolor managed Hikaide-Symbols
+# HAKU_ICON_ACCENT_MODE=on        # opt in to recoloring a custom icon theme in ~/.icons
+# HAKU_ICON_ACCENT_MODE=off       # never recolor icons
 
-```text
+HAKU_CURSOR_THEME=Haku-Dark
+HAKU_CURSOR_SIZE=24
+# HAKU_CURSOR_THEME=Haku-Light
+# Optional color variants: Haku-Blue, Haku-Blue-Light, Haku-Pink, Haku-Pink-Light
+```
+
+- **How Icon Modes Work:**
+  - `auto` (default): Only recolors `Hikaide-Symbols` when it was installed by HakuSpace. Any other icon theme is left alone.
+  - `on`: Uses the internal scanner to safely recolor a compatible user-owned icon theme inside `~/.icons` (static themes simply report `not-applicable` and are left untouched). System-wide icons in `/usr/share/icons` are never modified.
+  - `off` (or `HAKU_ICON_THEME=system`): Completely disables icon recoloring.
+- **How Cursor Themes Work:**
+  - Cursor themes are installed under `~/.icons/$HAKU_CURSOR_THEME` and written to `~/.config/environment.d/90-hakuspace-cursor.conf`.
+  - On Hyprland, the cursor updates live via `hyprctl setcursor`; on Niri and MangoWM, the new cursor environment applies on your next login session.
+  - Legacy `HAKU_CURSOR_PALETTE=blue` settings still work and automatically map to `Haku-Blue` (dark variant), though setting `HAKU_CURSOR_THEME` directly is recommended.
+
+### 3. The Built-in Icon Recoloring Engine (`haku_icon_accent.py`)
+Located at `src/core/app/icon-accent/haku_icon_accent.py` (and linked to `~/.local/bin/haku_icon_accent.py`), this pure-Python script safely updates SVG accent colors in your icon theme without needing any external dependencies.
+- **Safe Backups:** Before touching any SVG file, it saves a checksum-verified backup of the original artwork in `~/.local/state/icon-accent/`. If you manually edit an icon file yourself, the engine detects the mismatch and refuses to overwrite your work!
+- **Manual CLI:** You can check the current icon color or restore the original icons anytime:
+
+```bash
+python3 ~/.local/bin/haku_icon_accent.py --icons-dir ~/.icons status Hikaide-Symbols
+python3 ~/.local/bin/haku_icon_accent.py --icons-dir ~/.icons restore Hikaide-Symbols
+# Reapply your current HakuSpace accent after restoring:
+~/.local/bin/theme_ctl.sh apply
+```
+
+> [!NOTE]
+> After icons are recolored, simply reopen your file manager or apps to see the fresh icons (HakuSpace won't forcefully kill your open Thunar windows).
+
+---
+
+## Headless Backend Split (Wallpaper & Niri Animations)
+
+To make sure both **Classic** (Rofi) and **Hikai** (Quickshell) can control wallpapers and animations without depending on each other, these scripts are split into three clean pieces:
+
+### Wallpaper Control (`wallpaper_select.sh` / `wallpaper_ctl.sh`)
+- **`wallpaper_select.sh` (Facade):** The command bound to `SUPER + Y` and `SUPER + SHIFT + Y`. It opens the right wallpaper picker for your current shell mode, while keeping flags like `--static`, `--lively`, and `--exit` working as usual.
+- **`wallpaper_rofi.sh` (Classic UI):** Builds the Rofi grid menu with thumbnails when you're in Classic mode.
+- **`wallpaper_ctl.sh` (Headless Backend):** Discovers static/video wallpapers, generates missing video previews, applies the chosen wallpaper, and triggers accent extraction. Hikai's native QML Wallpaper Panel talks directly to this controller using JSON:
+
+```bash
 wallpaper_ctl.sh list-static --json
 wallpaper_ctl.sh list-lively --json
 wallpaper_ctl.sh apply-static <id-or-path>
@@ -92,4 +145,10 @@ wallpaper_ctl.sh status --json
 wallpaper_ctl.sh ensure-thumbnails
 ```
 
-Each JSON list record contains `id`, `kind`, `path`, `label`, `thumbnail`, and `selected`, so QML does not need to parse Classic menu escape sequences.
+### Niri Animation Switcher (`niri_animation_switcher.sh` / `niri_animation_ctl.sh`)
+- **`niri_animation_switcher.sh` (Facade):** Opens the Rofi animation picker in Classic mode, or the native Action Layer menu in Hikai mode.
+- **`niri_animation_rofi.sh` (Classic UI):** Displays the Rofi menu for Niri animation presets.
+- **`niri_animation_ctl.sh` (Headless Backend):** Reads and updates `niri-animation.kdl` (`list [--json]`, `get <mode>`, `set <mode> <option-id>`) and validates the KDL config safely.
+
+---
+**Previous:** [Core Libraries](lib.md) | **Next:** [System Management](sys.md)

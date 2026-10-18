@@ -95,13 +95,13 @@ Using `GtkLayerShell` on the `OVERLAY` layer with a negative exclusive zone, thi
 To improve the user experience, edge-triggered menus automatically close when the mouse leaves a designated "safe zone".
 - When an edge successfully triggers its command, it spawns a full-screen, invisible **guard window**.
 - Using `cairo` input shapes, the guard window has a "hole" cut out corresponding to the active menu's safe zone.
-- As long as the mouse stays inside the menu's area (the hole), clicks pass through normally. The moment the mouse moves out and touches the guard window, the script automatically sends a termination command (e.g., `pkill -x rofi` or `swaync-client -cp`) and destroys the guard window.
+- As long as the mouse stays inside the menu's area (the hole), clicks pass through normally. The moment the mouse moves out and touches the guard window, the script automatically sends a termination command (e.g., `pkill -x rofi` or `notif.sh close`) and destroys the guard window.
 
 **Current Safe Zones:**
 - **Top (`hakumenu.sh`):** Upper 60% of the screen.
 - **Bottom (`wallpaper_select.sh`):** Lower 60% of the screen.
 - **Left (`shutdown.sh`):** Leftmost 15% of the screen.
-- **Right (`swaync`):** Rightmost 40% of the screen.
+- **Right (`notif.sh toggle`):** Notification Center for the active Hikai/Classic backend (rightmost 40% of the screen).
 
 ### `edge_trigger_manager.sh` (The Controller)
 Manages the lifecycle of the Edge Trigger overlay.

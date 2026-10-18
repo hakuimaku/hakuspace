@@ -2,11 +2,14 @@
 
 See the Vietnamese version: [VN_fedora_guide.md](./vietnamese/VN_fedora_guide.md)
 
+> [!WARNING]
+> **Do not use this guide right now!** I haven't tested Haku Space on Fedora for a long time, and my current development is focused **only on Arch Linux**. Because of all the recent changes (like Hikai / Quickshell and new core packages/scripts), installing on Fedora right now will almost certainly break your experience!
+
 ## Prerequisites
 - Who wants to use Haku Space on Fedora :)
 - A computer with Fedora installed.
 - This installation guide assumes you have basic knowledge of using the terminal and installing software on Fedora.
-- I'm using Fedora Workstation 44, this guide was written for this version.
+- This legacy guide last targeted Fedora Workstation 44. It is no longer verified against the current HakuSpace codebase.
 
 ---
 

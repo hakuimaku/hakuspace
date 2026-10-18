@@ -60,8 +60,7 @@ Các ứng dụng như Thunar, xfce4, mpv, btop, cava, mimeapps.list thường x
 ### `~/hakucfg` (Không gian tùy biến cá nhân)
 Mọi thiết lập cá nhân của bạn (autostart, biến môi trường, theme riêng) nằm tại `~/hakucfg/`.
 - Quản lý bởi `scripts/hakucfg.sh`.
-- Tự động tạo các file mẫu nếu chưa có, bảo vệ tuyệt đối các file bạn đã chỉnh sửa.
-- Tự động kiểm tra phiên bản của `setting.sh` để nhắc bạn cập nhật khi có bản mới.
+- Không tự ý ghi đè cấu hình cá nhân; file mẫu thiếu sẽ được bổ sung, còn `setting.sh` chỉ được nâng version khi người dùng xác nhận (kèm backup tự động).
 
 ### `~/.local/state/hakuspace` (Trạng thái hệ thống)
 Chứa style động, theme và cache runtime.
@@ -86,7 +85,7 @@ Chứa style động, theme và cache runtime.
 
 ## 5. Hướng dẫn sử dụng thủ công (Manual Workflow)
 
-Bạn không bao giờ cần phải mở `install.sh` để copy từng dòng lệnh. Bạn có thể sử dụng các module độc lập một cách tiện lợi:
+Bạn không bao giờ cần phải mở `install.sh` để copy từng dòng lệnh. Bạn có thể sử dụng các module độc lập một cách tiện lợi (xem hướng dẫn cài đặt từng bước đầy đủ tại [Installation Guide trong README.md](../../README.md#method-2--manual--modular-installation)):
 
 ### Cài đặt Packages
 ```bash
@@ -131,6 +130,64 @@ scripts/hakucfg.sh sync
 ```bash
 ./doctor.sh
 ```
+
+---
+
+## 6. Gỡ cài đặt HakuSpace (Uninstalling)
+
+HakuSpace không dùng script gỡ cài đặt xóa trắng một lần. Quy trình gỡ an toàn phụ thuộc vào chế độ triển khai bạn đã chọn.
+
+> [!IMPORTANT]
+> `./unlink.sh` chỉ dành cho **Deep Symlink mode**. Script chỉ xóa các symlink được xác minh thuộc về HakuSpace và bảo toàn tuyệt đối file thật, symlink ngoài luồng và dữ liệu người dùng. **Không** tự ý xóa trắng `~/.local/bin` hay toàn bộ thư mục trong `~/.config`.
+
+### 1. Khôi phục cấu hình cũ (Khuyên dùng nếu có bản backup)
+```bash
+cd ~/hakuspace
+./rollback.sh
+```
+Chọn bản backup trước khi cài HakuSpace để khôi phục các file cấu hình về trạng thái ban đầu.
+
+### 2. Gỡ bỏ Symlink của HakuSpace
+Với **Symlink mode**, gỡ từng module hoặc toàn bộ module chung kèm Window Manager đã cài:
+```bash
+./unlink.sh quickshell
+./unlink.sh niri
+./unlink.sh core
+
+# Gỡ toàn bộ cấu hình chung + WM tương ứng
+./unlink.sh --all niri
+./unlink.sh --all hyprland niri mango labwc
+```
+Với **Copy mode**, hãy dùng `./rollback.sh` hoặc tự kiểm tra các thư mục cấu hình thủ công.
+
+### 3. Dọn dẹp dữ liệu Runtime & Cá nhân
+```bash
+rm -rf ~/.local/state/hakuspace
+rm -rf ~/.local/share/hakuspace
+```
+- **`~/hakucfg`** chứa tùy chỉnh cá nhân và không bị xóa tự động. Chỉ xóa (`rm -rf ~/hakucfg`) sau khi bạn đã sao lưu những thay đổi cần giữ lại.
+- **`ONCE_CONFIGS`** (`Thunar`, `xfce4`, `mpv`, `btop`, `cava`, `mimeapps.list`) là các file copy thật, nên khôi phục từ backup hoặc kiểm tra riêng từng phần.
+
+### 4. Packages & Thiết lập hệ thống
+Kiểm tra danh sách gói trước khi gỡ thủ công bằng chính công cụ của repo:
+```bash
+./packages.sh --list
+./packages.sh --dry-run core service niri
+```
+Đồng thời kiểm tra lại login shell mặc định (Fish), display manager (Ly), desktop defaults và cấu hình `/etc/nixos` nếu có sử dụng.
+
+### 5. Dọn dẹp Assets
+```bash
+rm -rf ~/hakuspace-archive
+```
+Chỉ xóa các icon/theme/wallpaper thuộc HakuSpace trong `~/.icons`, `~/.themes`, `~/Pictures/Wallpapers`.
+
+### 6. Xóa Repository (BƯỚC CUỐI CÙNG)
+Sau khi đã hoàn tất các bước trên và kiểm tra hệ thống ổn định:
+```bash
+rm -rf ~/hakuspace
+```
+Giữ lại `~/.backup/Backup_*` cho đến khi chắc chắn không cần khôi phục nữa.
 
 ---
 **Tiếp theo:** [Thư viện Lõi (Core Libraries)](../core/lib.md) ➡️

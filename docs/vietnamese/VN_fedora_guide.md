@@ -2,11 +2,14 @@
 
 Xem bản tiếng Anh: [Fedora Guide](../fedora_guide.md)
 
+> [!WARNING]
+> **Không nên sử dụng lúc này!** Mình đã không test HakuSpace trên Fedora (cũng như NixOS) một thời gian rất dài rồi, vì hiện tại hướng phát triển của mình **chỉ tập trung trên Arch Linux**. Nếu bạn cài trên Fedora ngay bây giờ, chắc chắn sẽ phát sinh lỗi và làm hỏng trải nghiệm của bạn!
+
 ## Điều kiện tiên quyết
 - Ai muốn dùng HakuSpace trên Fedora :)
 - Một máy tính đã cài Fedora Workstation.
 - Bạn biết những thao tác terminal cơ bản và cách cài phần mềm trên Fedora.
-- Hướng dẫn này được viết và kiểm thử trên Fedora Workstation 44. Các phiên bản khác có thể có tên package hoặc cách cài hơi khác.
+- Bản hướng dẫn cũ này từng nhắm tới Fedora Workstation 44, nhưng hiện không còn được kiểm thử với HakuSpace mới. Các phiên bản khác có thể có tên package hoặc cách cài hơi khác.
 
 ---
 

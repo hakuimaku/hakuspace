@@ -35,7 +35,7 @@ A robust wrapper around your Wayland screen capture tools.
 ### Screen recording
 Screen recording keeps the long-standing `record.sh` keybind command, but selection and capture lifecycle are now separated.
 
-- **`record.sh` (compatibility facade):** with no arguments it preserves the old toggle behavior: stop an active recording, otherwise open the Classic picker. It also exposes explicit `--status`, `--list-modes`, `--list-sources`, `--start`, and `--stop` commands for non-Rofi callers.
+- **`record.sh` (compatibility facade):** with no arguments it preserves the old toggle behavior: stops an active recording if running, otherwise opens the picker UI based on the active backend — `record_rofi.sh` in Classic mode, or Quickshell's Action Layer Menu (`actionMenu openDefault record`) in Hikai mode. It also exposes explicit `--status`, `--list-modes`, `--list-sources`, `--start`, and `--stop` commands for headless callers.
 - **`record_ctl.sh` (headless backend):** owns `wl-screenrec`, PipeWire/Pulse setup, physical source discovery, virtual mic+system mixing, timer/state files, and stop/cleanup. Stable mode IDs are `system-audio`, `mic-system`, and `no-audio`.
 - **`record_rofi.sh` (Classic frontend):** owns only the mode and microphone/source menus, then delegates the selected stable IDs to `record_ctl.sh`.
 
@@ -44,10 +44,10 @@ Recordings still default to `~/Videos`, and invoking the public facade again whi
 ## Quality of Life Toggles
 
 ### Clipboard history
-Clipboard history is split into a headless controller and the Classic picker while keeping the existing public command stable.
+Clipboard history is split into a headless controller and frontends while keeping the existing public command stable.
 - `clipboard_ctl.sh` owns `cliphist` history actions and the `wl-paste` watcher lifecycle. Its explicit commands are `ensure-watchers`, `list`, `copy`, and `wipe`; it does not own picker UI.
 - `clipboard_rofi.sh` is the Classic picker. It asks the controller to ensure watchers, displays the raw history rows, then sends the selected row back to `copy`.
-- `clipboard_menu.sh` remains the compatibility facade used by existing keybinds. No arguments open the Classic picker; `--wipe` preserves the old clear-history behavior. Headless callers may use `--ensure-watchers`, `--list`, and `--copy`.
+- `clipboard_menu.sh` remains the compatibility facade used by existing keybinds. With no arguments, it opens the history picker based on your backend: `clipboard_rofi.sh` in Classic mode, or Quickshell's Action Layer Menu (`actionMenu openDefault clipboard`) in Hikai mode. Passing `--wipe` clears the history via `clipboard_ctl.sh`, and headless callers can use `--ensure-watchers`, `--list`, and `--copy`.
 
 ### `nightlight_toggle.sh`
 Saves your eyes during late-night coding sessions.
