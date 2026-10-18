@@ -105,7 +105,11 @@ import signal
 def kill_process(edge):
     try:
         if edge == EDGE_RIGHT:
-            subprocess.run(['swaync-client', '-cp'], check=False)
+            notif_cmd = os.path.expanduser('~/.local/bin/notif.sh')
+            if os.path.exists(notif_cmd):
+                subprocess.run([notif_cmd, 'close'], check=False)
+            else:
+                subprocess.run(['swaync-client', '-cp'], check=False)
         else:
             guard_data = active_guards.get(edge)
             proc_pid = guard_data.get('proc_pid') if guard_data else None
@@ -174,11 +178,19 @@ def check_alive(edge):
         
     try:
         if edge == EDGE_RIGHT:
-            result = subprocess.run(['swaync-client', '-c'], capture_output=True, text=True)
-            if result.stdout.strip() == 'false':
-                print(f"Swaync no longer alive for edge {edge}, cleaning up guard.")
-                cleanup_guard(edge)
-                return False
+            notif_cmd = os.path.expanduser('~/.local/bin/notif.sh')
+            if os.path.exists(notif_cmd):
+                result = subprocess.run([notif_cmd, 'count'], capture_output=True, text=True)
+                if result.returncode != 0 or result.stdout.strip() == 'false':
+                    print(f"Notification service no longer alive for edge {edge}, cleaning up guard.")
+                    cleanup_guard(edge)
+                    return False
+            else:
+                result = subprocess.run(['swaync-client', '-c'], capture_output=True, text=True)
+                if result.stdout.strip() == 'false':
+                    print(f"Swaync no longer alive for edge {edge}, cleaning up guard.")
+                    cleanup_guard(edge)
+                    return False
         else:
             proc_pid = guard_data.get('proc_pid')
             rofi_pid = guard_data.get('rofi_pid')

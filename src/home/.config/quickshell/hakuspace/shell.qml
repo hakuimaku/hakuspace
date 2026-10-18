@@ -206,6 +206,9 @@ ShellRoot {
             UiState.toggleNotifications(screen.name, ScreenGeometry.topBarAnchor(screen.width - Theme.pad - Theme.fontSize * 2,
                                         Theme.fontSize * 2))
         }
+        function closeCenter() {
+            UiState.closeNotifications()
+        }
         function toggleDnd() { NotificationStore.toggleDnd() }
         function clearAll() { NotificationStore.clearAll() }
         function count(): string { return String(NotificationStore.count) }
