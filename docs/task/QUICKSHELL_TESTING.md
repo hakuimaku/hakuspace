@@ -18,6 +18,7 @@ node scripts/test_dock_geometry.js
 bash scripts/test_hikai_dock.sh
 HAKUSPACE_DOCK_INPUT=1 bash scripts/test_hikai_dock.sh
 HAKUSPACE_DOCK_REORDER=1 bash scripts/test_hikai_dock.sh
+HAKUSPACE_HAKUMENU_TEST=1 HAKUSPACE_DOCK_TOOLTIP=1 bash scripts/test_hikai_dock.sh --current
 bash scripts/test_hikai_dock.sh --niri
 bash scripts/test_hikai_dock.sh --mango
 ```
@@ -34,8 +35,13 @@ local pin/unpin feedback without overlapping tooltips,
 high-RAM confirmation/cancellation, autohide and live frame insets. Moving from a
 middle-clicked icon to another icon must hide the old tooltip while Dock keyboard
 focus stays on the clicked item. Escape must hide both the warning and tooltip
-even if the pointer remains over that item. Backend tests
-use disposable processes to check first-click SIGTERM below the threshold,
+even if the pointer remains over that item. The HakuMenu input suite
+also covers rapid App Menu toggles, tooltip suppression while HakuMenu owns input,
+window-focus restoration, and switching between Tab navigation and pointer hover.
+These tooltip checks pass on the live desktop and isolated Labwc. An earlier full live
+HakuMenu run stopped at its fullscreen click-through fixture (expected one
+client click, observed zero); the complete isolated HakuMenu run passes.
+Backend tests use disposable processes to check first-click SIGTERM below the threshold,
 second-click confirmation above it, PID identity changes and shell protection.
 On Labwc, the input suite separately checks real native close requests against
 fixture windows: first-click confirmation, refreshed confirmation after window

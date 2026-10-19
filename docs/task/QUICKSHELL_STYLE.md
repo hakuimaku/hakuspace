@@ -49,9 +49,13 @@ Classic/Hikai pin file. Escape, outside drops, manual OFF and external pin chang
 cancel the gesture. Dragging leases autohide and suppresses tooltips and activation.
 Pin/unpin results appear above the originating Dock for two seconds without system
 notifications. Feedback briefly leases autohide and yields to dragging or termination.
-Tooltips appear immediately. Mouse focus does not retain them after pointer exit;
-Escape dismisses them until the next hover/click. Keyboard focus still exposes
-labels and keyboard-triggered warnings. Right-click toggles pin/unpin directly. On
+Tooltips appear immediately and share the Dock's pointer/keyboard mode. Pointer
+tooltips require the current shared pointer position inside that icon's slot;
+restored window focus cannot create a keyboard tooltip. Tab selects one keyboard
+tooltip, and pointer motion returns ownership to the hovered icon. HakuMenu hides
+Dock tooltips while open. Escape dismisses them until the next hover/click.
+Keyboard focus still exposes labels and keyboard-triggered warnings.
+Right-click toggles pin/unpin directly. On
 Niri/Hyprland/Mango, middle-click sends SIGTERM to compositor-reported app PIDs
 and descendants. At or above Exit's saved `RAM_THRESHOLD_MB`, a tooltip requires
 a second middle-click on the

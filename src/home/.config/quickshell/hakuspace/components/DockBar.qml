@@ -63,6 +63,7 @@ Item {
         targetWidth + Theme.hugRadius * 2, targetHeight + bottomInset,
         morph.width + Theme.hugRadius * 2, morph.height + bottomInset, headroom)
     readonly property var safeZones: shown ? [triggerRect, safeRect] : []
+    readonly property bool tooltipsEnabled: shown && !hakuMenuDockLease && !reorderKey && !pinMessage
 
     // Keep extended stats subscribed only while this output has a Dock.
     onEnabledDockChanged: {
@@ -86,6 +87,11 @@ Item {
     // Revealing persistent chrome does not change UiState's transient panel ownership.
     function reveal() { if (enabledDock && !always) revealed = true }
     function close() { cancelTermination(); revealed = false }
+    // Only actual key or pointer input changes the tooltip's interaction mode.
+    function setInputMode(keyboard) {
+        if (keyboard) lifetime.beginKeyboardLease()
+        else lifetime.forcePointerMode()
+    }
     // Translate the real scrolled icon from the bounded bottom window into output-local coordinates.
     function menuAnchor(item) {
         var point = item.mapToItem(dockWindow.contentItem, item.iconRect.x, item.iconRect.y)
@@ -261,6 +267,13 @@ Item {
         visible: root.enabledDock || morph.height > 0
         color: "transparent"
         implicitHeight: root.targetHeight + 180
+        // Keyboard navigation ends when an application or another panel takes focus.
+        Connections {
+            target: dockWindow.contentItem.Window.window
+            function onActiveChanged() {
+                if (!dockWindow.contentItem.Window.active) lifetime.releaseKeyboardLease()
+            }
+        }
         mask: Region {
             x: root.triggerRect.x; y: root.triggerRect.y
             width: root.enabledDock ? root.triggerRect.width : 0
@@ -387,7 +400,9 @@ Item {
                             reorderable: !!appSlot.app && (appSlot.app.pinned || appSlot.app.type === "system") && !TaskbarPins.busy
                             reordering: root.reorderKey === appSlot.modelData
                             reorderOffset: reordering ? root.reorderPointerX - appSlot.x - root.reorderGrabX : 0
-                            tooltipEnabled: !root.reorderKey && !root.pinMessage
+                            tooltipEnabled: root.tooltipsEnabled
+                            keyboardMode: lifetime.keyboardLease
+                            onInputModeRequested: keyboard => root.setInputMode(keyboard)
                             onReorderStarted: (x, y) => root.beginReorder(appSlot.app, appIcon, x, y)
                             onReorderMoved: (x, y) => root.updateReorder(appIcon, x, y)
                             onReorderFinished: (x, y) => root.finishReorder(appIcon, x, y)
@@ -419,7 +434,9 @@ Item {
                     model: root.places
                     delegate: Dock.DockItem {
                         required property var modelData
-                        tooltipEnabled: !root.reorderKey && !root.pinMessage
+                        tooltipEnabled: root.tooltipsEnabled
+                        keyboardMode: lifetime.keyboardLease
+                        onInputModeRequested: keyboard => root.setInputMode(keyboard)
                         iconSize: root.iconSize
                         hoverX: root.hoverX - x
                         label: modelData.target + " · " + modelData.percent + "% used"
@@ -428,7 +445,9 @@ Item {
                     }
                 }
                 Dock.DockItem {
-                    tooltipEnabled: !root.reorderKey && !root.pinMessage
+                    tooltipEnabled: root.tooltipsEnabled
+                    keyboardMode: lifetime.keyboardLease
+                    onInputModeRequested: keyboard => root.setInputMode(keyboard)
                     iconSize: root.iconSize
                     hoverX: root.hoverX - x
                     label: "Trash"

@@ -23,7 +23,13 @@ ShellRoot {
     property bool openingProbeObserved: false
     property bool openingInputObserved: false
     property var openingPanel: null
+    property int tooltipClicks: 0
     readonly property var output: outputs.find(function(surface) { return surface.modelData.name === "HEADLESS-1" }) || outputs[0] || null
+    // Isolate tooltip gestures from unrelated fullscreen-client checks on a live desktop.
+    Component.onCompleted: if (Quickshell.env("HAKUSPACE_DOCK_TOOLTIP") === "1") {
+        phase = 40
+        toggleDock()
+    }
     FloatingWindow {
         id: client
         screen: Quickshell.screens.find(function(screen) { return screen.name === "HEADLESS-1" }) || Quickshell.screens[0]
@@ -96,6 +102,36 @@ ShellRoot {
         expectedAnchor = output.dock.menuAnchor(item)
         var point = item.mapToItem(null, item.width / 2, item.height / 2)
         move(ScreenGeometry.leftInset + point.x, output.modelData.height - output.dock.targetHeight - 180 + point.y, 272)
+    }
+    // Stress focus restoration while the floating menu reverses its animation.
+    Timer {
+        id: tooltipBurst
+        interval: 100
+        repeat: true
+        onTriggered: {
+            var tooltips = root.dockTooltips()
+            root.check(tooltips.length <= 1, "rapid menu toggles never leave competing Dock tooltips")
+            if (root.output.dock.hakuMenuDockLease)
+                root.check(tooltips.length === 0, "floating menu suppresses Dock tooltips")
+            if (++root.tooltipClicks <= 12) root.clickAppMenu()
+            else {
+                stop()
+                UiState.closeHakuMenu()
+                var trash = root.find(root.output.dock, function(item) { return item.label === "Trash" })
+                var point = trash.mapToItem(null, trash.width / 2, trash.height / 2)
+                root.move(ScreenGeometry.leftInset + point.x, root.output.modelData.height - root.output.dock.targetHeight - 180 + point.y)
+            }
+        }
+    }
+    // Collect visible Dock tooltips through the real composed object tree.
+    function dockTooltips() {
+        var tooltips = []
+        find(output.dock, function(item) {
+            if (item.immediate === true && item.target && typeof item.target.iconLift === "number" && item.visible)
+                tooltips.push(item)
+            return false
+        })
+        return tooltips
     }
     function toggleDock() {
         writer.command = ["env", "HOME=" + Quickshell.shellPath("../../../"), "bash", Quickshell.env("HAKUSPACE_TEST_TASKBAR_CTL"), "--toggle"]
@@ -349,7 +385,8 @@ ShellRoot {
                 root.move(rect.x + rect.width / 2 + 20, rect.y + 20)
             } else if (root.phase === 33) root.move(10, height - 20, 272)
             else if (root.phase === 34) {
-                root.check(UiState.activePanel === "" && root.clientClicks === 1, "pointer exit closes and transparent outside remains clickable")
+                root.check(UiState.activePanel === "" && root.clientClicks === 1,
+                    "pointer exit closes and transparent outside remains clickable: panel=" + UiState.activePanel + " clicks=" + root.clientClicks)
                 fullscreenClient.visible = false
                 ShellSettingsStore.discard()
                 UiState.openHakuMenu(root.output.modelData.name, "drun", "dockFloating", {x: NaN, y: 0, width: 10, height: 10})
@@ -381,6 +418,36 @@ ShellRoot {
             } else if (root.phase === 40) {
                 SysStats.mounts = []
                 ShellSettingsStore.discard()
+                ShellSettingsStore.setValue("dock", "visibilityMode", "always")
+                tooltipBurst.start()
+            } else if (root.phase === 41) {
+                if (tooltipBurst.running) return
+                var tooltips = root.dockTooltips()
+                root.check(tooltips.length === 1 && tooltips[0].text === "Trash",
+                    "menu click burst leaves only the hovered icon tooltip: " + tooltips.map(function(item) { return item.text }).join(", "))
+                var trash = root.find(root.output.dock, function(item) { return item.label === "Trash" })
+                var point = trash.mapToItem(null, trash.width / 2, trash.height / 2)
+                root.move(ScreenGeometry.leftInset + point.x, height - root.output.dock.targetHeight - 180 + point.y, 274)
+            } else if (root.phase === 42) {
+                var trash = root.find(root.output.dock, function(item) { return item.label === "Trash" })
+                root.check(trash.activeFocus, "middle click focuses the Dock without launching Trash")
+                root.appMenu().forceActiveFocus(Qt.ActiveWindowFocusReason)
+            } else if (root.phase === 43) {
+                var tooltips = root.dockTooltips()
+                root.check(tooltips.length === 1 && tooltips[0].text === "Trash",
+                    "restoring menu focus cannot resurrect its tooltip over another hovered icon: " + tooltips.map(function(item) { return item.text }).join(", "))
+                root.key(15)
+            } else if (root.phase === 44) {
+                var tooltips = root.dockTooltips()
+                root.check(tooltips.length === 1 && tooltips[0].target.activeFocus && tooltips[0].text !== "Trash",
+                    "Tab shows only the keyboard-selected tooltip while the pointer stays over Trash: "
+                        + tooltips.map(function(item) { return item.text + " focused=" + item.target.activeFocus }).join(", "))
+                var trash = root.find(root.output.dock, function(item) { return item.label === "Trash" })
+                var point = trash.mapToItem(null, trash.width / 2 + 4, trash.height / 2)
+                root.move(ScreenGeometry.leftInset + point.x, height - root.output.dock.targetHeight - 180 + point.y)
+            } else if (root.phase === 45) {
+                var tooltips = root.dockTooltips()
+                root.check(tooltips.length === 1 && tooltips[0].text === "Trash", "pointer motion replaces the keyboard tooltip")
                 root.done()
             }
             root.phase++

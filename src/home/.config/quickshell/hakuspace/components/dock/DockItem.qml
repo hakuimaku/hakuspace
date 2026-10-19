@@ -22,14 +22,12 @@ Item {
     property real reorderOffset: 0
     transform: Translate { x: root.reorderOffset }
     onReorderingChanged: if (reordering) {
-        pointerFocus = true
         tooltipDismissed = true
         forceActiveFocus(Qt.MouseFocusReason)
     }
-    // Pointer clicks retain keyboard access without keeping a hover tooltip alive.
-    property bool pointerFocus: false
+    // Window focus restoration does not count as keyboard navigation.
+    property bool keyboardMode: false
     property bool tooltipDismissed: false
-    onActiveFocusChanged: if (!activeFocus) pointerFocus = false
     readonly property bool hovered: pointer.containsMouse
     // Pointer coordinates are shared across slots to keep the lift wave continuous.
     property real hoverX: NaN
@@ -59,6 +57,7 @@ Item {
     signal pinRequested()
     signal terminateRequested()
     signal dismissRequested()
+    signal inputModeRequested(bool keyboard)
     signal reorderStarted(real x, real y)
     signal reorderMoved(real x, real y)
     signal reorderFinished(real x, real y)
@@ -70,12 +69,13 @@ Item {
     Accessible.role: Accessible.Button
     Accessible.name: label
     Accessible.onPressAction: if (!reordering) activated()
-    Keys.onReturnPressed: if (!reordering) activated()
-    Keys.onSpacePressed: if (!reordering) activated()
-    Keys.onMenuPressed: if (appActions && !reordering) pinRequested()
+    Keys.onPressed: event => { inputModeRequested(true); event.accepted = false }
+    Keys.onReturnPressed: if (!reordering) { inputModeRequested(true); activated() }
+    Keys.onSpacePressed: if (!reordering) { inputModeRequested(true); activated() }
+    Keys.onMenuPressed: if (appActions && !reordering) { inputModeRequested(true); pinRequested() }
     Keys.onDeletePressed: {
         if (appActions && runningCount && !reordering) {
-            pointerFocus = false
+            inputModeRequested(true)
             tooltipDismissed = false
             terminateRequested()
         }
@@ -133,6 +133,7 @@ Item {
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
         onPressed: mouse => {
             if (root.reordering) return
+            root.inputModeRequested(false)
             held = false
             pressPoint = Qt.point(mouse.x, mouse.y)
         }
@@ -164,7 +165,6 @@ Item {
         onExited: root.tooltipDismissed = false
         onClicked: mouse => {
             if (held || root.reordering) return
-            root.pointerFocus = true
             root.tooltipDismissed = false
             root.forceActiveFocus(Qt.MouseFocusReason)
             if (mouse.button === Qt.RightButton && root.appActions) root.pinRequested()
@@ -178,7 +178,8 @@ Item {
         target: root
         immediate: true
         active: root.visible && root.enabled && root.tooltipEnabled && !root.tooltipDismissed
-            && (root.hovered || (root.activeFocus && !root.pointerFocus))
+            && (root.keyboardMode ? root.activeFocus && root.Window.active
+                : root.hovered && root.hoverX >= 0 && root.hoverX < root.width)
         text: root.actionMessage || root.label
         y: -height - 10 - root.iconLift - root.iconSize * (root.iconScale - 1)
     }
