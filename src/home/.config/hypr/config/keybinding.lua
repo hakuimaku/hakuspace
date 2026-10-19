@@ -17,28 +17,12 @@ local mainMod = "SUPER" -- Sets "Windows" key as main modifier
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd("kitty"))
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd("xdg-open $HOME"))
-hl.bind(mainMod .. " + Z", hl.dsp.window.float({ action = "toggle" }))
-hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("$HOME/.local/bin/launcher.sh drun"))
+hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("$HOME/.local/bin/launcher.sh drun"))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("$HOME/.local/bin/open_browser.sh"))
 hl.bind(mainMod .. " + SLASH", hl.dsp.exec_cmd("$HOME/.local/bin/launcher.sh emoji"))
-hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))
-hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("$HOME/.local/bin/notif.sh toggle"))
-hl.bind(mainMod .. " + K", hl.dsp.exec_cmd("$HOME/.local/bin/lock.sh"))
 hl.bind(mainMod .. " + ESCAPE", hl.dsp.exec_cmd("$HOME/.local/bin/haku_backend.sh set classic"))
 
--- Column resize keybindings (Scroller layout)
-hl.bind(mainMod .. " + D", hl.dsp.layout("colresize +0.1"))
-hl.bind(mainMod .. " + SHIFT + D", hl.dsp.layout("colresize -0.1"))
-
--- Scroller layout keybindings
-hl.bind(mainMod .. " + SHIFT + A", hl.dsp.layout("swapcol l"))
-hl.bind(mainMod .. " + SHIFT + left", hl.dsp.layout("swapcol l"))
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.layout("swapcol r"))
-hl.bind(mainMod .. " + SHIFT + right", hl.dsp.layout("swapcol r"))
-hl.bind(mainMod .. " + SHIFT + Z", hl.dsp.layout("consume"))
-
--- Script keybindings
 hl.bind(mainMod .. " + V",    hl.dsp.exec_cmd("$HOME/.local/bin/clipboard_menu.sh"))
 hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("$HOME/.local/bin/clipboard_menu.sh --wipe"))
 hl.bind(mainMod .. " + F11",   hl.dsp.exec_cmd("$HOME/.local/bin/record.sh"))
@@ -52,9 +36,25 @@ hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.exec_cmd("$HOME/.local/bin/shutdown.sh
 hl.bind(mainMod .. " + T",     hl.dsp.exec_cmd("$HOME/.local/bin/cava_manager.sh"))
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh"))
 hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh --fullscreen"))
-hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("$HOME/.local/bin/waybar_manager.sh --cycle"))
-hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("$HOME/.local/bin/taskbar_manager.sh --toggle"))
-hl.bind(mainMod .. " + CTRL + W", hl.dsp.exec_cmd("$HOME/.local/bin/waybar_manager.sh --toggle"))
+
+hl.bind(mainMod .. " + SHIFT + Z", hl.dsp.exec_cmd("$HOME/.local/bin/waybar_manager.sh --cycle"))
+hl.bind(mainMod .. " + Z", hl.dsp.exec_cmd("$HOME/.local/bin/taskbar_manager.sh --toggle"))
+hl.bind(mainMod .. " + CTRL + Z", hl.dsp.exec_cmd("$HOME/.local/bin/waybar_manager.sh --toggle"))
+
+-- Window management keybindings
+hl.bind(mainMod .. " + W", hl.dsp.window.float({ action = "toggle" }))
+hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))
+hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
+
+-- Scroller layout keybindings
+hl.bind(mainMod .. " + D", hl.dsp.layout("colresize +0.1"))
+hl.bind(mainMod .. " + SHIFT + D", hl.dsp.layout("colresize -0.1"))
+
+hl.bind(mainMod .. " + SHIFT + A", hl.dsp.layout("swapcol l"))
+hl.bind(mainMod .. " + SHIFT + left", hl.dsp.layout("swapcol l"))
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.layout("swapcol r"))
+hl.bind(mainMod .. " + SHIFT + right", hl.dsp.layout("swapcol r"))
+hl.bind(mainMod .. " + SHIFT + Z", hl.dsp.layout("consume"))
 
 -- Move focus with mainMod + arrow keys
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
@@ -99,45 +99,20 @@ hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = tr
 hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
 
--- Minimize windows to a special workspace with mainMod + M. Press again to restore.
-hl.bind(mainMod .. " + M", function ()
-    if hl.get_workspace("special:minimized") then
-        hl.dispatch(hl.dsp.window.move({ workspace = hl.get_active_workspace(), window = "tag:minimized" }))
-        hl.dispatch(hl.dsp.window.clear_tags({ window = "tag:minimized" }))
-    else
-        hl.dispatch(hl.dsp.window.tag({ tag = "minimized", window = hl.get_active_window() }))
-        hl.dispatch(hl.dsp.window.move({ workspace = "special:minimized", follow = false }))
-    end
-end)
-
--- Move focus between tiled and floating windows
-hl.bind(mainMod .. " + space", function()
-    hl.dispatch(hl.dsp.window.cycle_next({
-        floating = not hl.get_active_window().floating
-    }))
-end, { description = "Switch focus between tiled and floating windows" })
-
--- Center-focused mode keybinding: big gaps_out, small gaps_in
-local centerfocused_mode = false
+-- No gap keybinding
+local no_gap_mode = false
 hl.bind(mainMod .. " + F1", function ()
-    if centerfocused_mode == true then
+    if no_gap_mode == true then
         hl.exec_cmd("hyprctl reload")
-        centerfocused_mode = false
+        no_gap_mode = false
         return
     else
         hl.config({
             general = {
-                gaps_in = 10, gaps_out = 80,
+                gaps_in = 0, gaps_out = 0,
             },
-    
-            decoration = {
-
-                shadow = {
-                    offset = { 6, 4 },
-                },
-            }
         })
-        centerfocused_mode = true
+        no_gap_mode = true
     end
 end)
 
@@ -200,33 +175,3 @@ end)
 hl.bind(mainMod .. " + minus", function()
     zoom(-0.5)
 end)
-
--- Move All Windows In Current Workspace To Another 
-local function moveWindowsCurrentWorkspace(ws, f)
-    local cws = hl.get_active_workspace()
-    local windows = hl.get_windows({ workspace = cws })
-
-    for _,w in pairs(windows) do
-        hl.dispatch(
-            hl.dsp.window.move({
-                window = w ,
-                workspace = ws ,
-                follow = f
-            })
-        )
-    end
-end
-
-for i = 1, 10 do
-    local key = i % 10
-    hl.bind("SUPER+SHIFT+ALT+" .. key, function()
-        moveWindowsCurrentWorkspace(i, true)
-    end)
-end
-
-for i = 1, 10 do
-    local key = i % 10
-    hl.bind("SUPER+CTRL+ALT+" .. key, function()
-        moveWindowsCurrentWorkspace(i, false)
-    end)
-end

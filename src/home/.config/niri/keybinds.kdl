@@ -10,7 +10,16 @@
 binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
-    // Custom Script Launchers
+    // Main keybindings
+    Mod+Q            hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
+    Mod+C            repeat=false { close-window; }
+    Mod+E            hotkey-overlay-title="Open File Manager" { spawn "sh" "-c" "xdg-open \"$HOME\""; }
+    Mod+Space        hotkey-overlay-title="Run Application Menu" { spawn "sh" "-c" "$HOME/.local/bin/launcher.sh drun"; }
+    Mod+B            hotkey-overlay-title="Open Browser" { spawn "sh" "-c" "$HOME/.local/bin/open_browser.sh"; }
+    Mod+Slash        hotkey-overlay-title="Open Emoji Menu" { spawn "sh" "-c" "$HOME/.local/bin/launcher.sh emoji"; }
+    Mod+N            hotkey-overlay-title="Open Notification Center" { spawn "sh" "-c" "$HOME/.local/bin/notif.sh toggle"; }
+    Mod+Escape       hotkey-overlay-title="Emergency Classic Backend" { spawn "sh" "-c" "$HOME/.local/bin/haku_backend.sh set classic"; }
+
     Mod+V            hotkey-overlay-title="Clipboard Menu" { spawn "sh" "-c" "$HOME/.local/bin/clipboard_menu.sh"; }
     Mod+Shift+V      hotkey-overlay-title="Wipe Clipboard" { spawn "sh" "-c" "$HOME/.local/bin/clipboard_menu.sh --wipe"; }
     Mod+F11          hotkey-overlay-title="Record Screen" { spawn "sh" "-c" "$HOME/.local/bin/record.sh"; }
@@ -21,42 +30,25 @@ binds {
     Mod+Shift+E      hotkey-overlay-title="Exit Session" { spawn "sh" "-c" "$HOME/.local/bin/exit.sh"; }
     Mod+Shift+Q      hotkey-overlay-title="Power Menu" { spawn "sh" "-c" "$HOME/.local/bin/shutdown.sh"; }
 
-    Mod+Shift+W      hotkey-overlay-title="Cycle Waybar Mode" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --cycle"; }
-    Mod+W            hotkey-overlay-title="Toggle Taskbar" { spawn "sh" "-c" "$HOME/.local/bin/taskbar_manager.sh --toggle"; }
-    Mod+Ctrl+W       hotkey-overlay-title="Toggle Waybar" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --toggle"; }
     Mod+T            hotkey-overlay-title="Cava Underbar" { spawn "sh" "-c" "$HOME/.local/bin/cava_manager.sh"; }
-
-    // Application Launchers
-    Mod+Q            hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
-    Mod+R            hotkey-overlay-title="Run Application Menu: rofi" { spawn "sh" "-c" "$HOME/.local/bin/launcher.sh drun"; }
-    Mod+E            hotkey-overlay-title="Open File Manager" { spawn "sh" "-c" "xdg-open \"$HOME\""; }
-    Mod+B            hotkey-overlay-title="Open Browser" { spawn "sh" "-c" "$HOME/.local/bin/open_browser.sh"; }
-    Mod+Slash        hotkey-overlay-title="Open Emoji Menu" { spawn "sh" "-c" "$HOME/.local/bin/launcher.sh emoji"; }
-    Mod+N            hotkey-overlay-title="Open Notification Center" { spawn "sh" "-c" "$HOME/.local/bin/notif.sh toggle"; }
-    Mod+Escape       hotkey-overlay-title="Emergency Classic Backend" { spawn "sh" "-c" "$HOME/.local/bin/haku_backend.sh set classic"; }
-
-    // Screenshots
-    Print           { screenshot; }
-    Ctrl+Print      { screenshot-screen; }
-    Alt+Print       { screenshot-window; }
-
     Mod+P           { screenshot; }
     Mod+Shift+P     { screenshot-screen; }
     Mod+Alt+P       { screenshot-window; }
 
-    // Misc actions
-    Ctrl+Alt+Delete { quit; }
+    Mod+Shift+Z      hotkey-overlay-title="Cycle Waybar Mode" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --cycle"; }
+    Mod+Z            hotkey-overlay-title="Toggle Taskbar" { spawn "sh" "-c" "$HOME/.local/bin/taskbar_manager.sh --toggle"; }
+    Mod+Ctrl+Z       hotkey-overlay-title="Toggle Waybar" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --toggle"; }
 
-    // Window Management
-    Mod+C            repeat=false { close-window; }
-    Mod+Z            { toggle-window-floating; }
-    Mod+X            repeat=false { toggle-overview; }
-    Mod+D            { switch-preset-column-width; }
-    Mod+Shift+D      { switch-focus-between-floating-and-tiling; }
+    // Window management keybindings
+    Mod+W            { toggle-window-floating; }
+    Mod+G            repeat=false { toggle-overview; }
+
+    Mod+D            { set-column-width "+10%"; }
+    Mod+Shift+D      { set-column-width "-10%"; }
+
     Mod+F            { maximize-column; }
     Mod+Shift+F      { fullscreen-window; }
     Mod+Alt+F        { maximize-window-to-edges; }
-    Mod+Ctrl+F       { expand-column-to-available-width; }
     Mod+M            { maximize-window-to-edges; }
 
     Mod+Left  { focus-column-left; }
@@ -72,34 +64,6 @@ binds {
     Mod+Shift+Down  { move-window-down; }
     Mod+Shift+Up    { move-window-up; }
     Mod+Shift+Right { move-column-right; }
-
-    Mod+Ctrl+Left    { consume-or-expel-window-left; }
-    Mod+Ctrl+Right   { consume-or-expel-window-right; }
-    Mod+Ctrl+A       { consume-or-expel-window-left; }
-    Mod+Ctrl+S       { consume-or-expel-window-right; }
-    Mod+BracketLeft  { consume-or-expel-window-left; }
-    Mod+BracketRight { consume-or-expel-window-right; }
-    Mod+period       { consume-window-into-column; }
-    Mod+comma        { expel-window-from-column; }
-
-    Mod+Home        { focus-column-first; }
-    Mod+End         { focus-column-last; }
-    Mod+Ctrl+Home   { move-column-to-first; }
-    Mod+Ctrl+End    { move-column-to-last; }
-
-    Mod+Shift+R      { switch-preset-column-width-back; }
-    Mod+Ctrl+Shift+R { switch-preset-window-height; }
-    Mod+Ctrl+R       { reset-window-height; }
-
-    Mod+G            { center-column; }
-    Mod+H            { center-visible-columns; }
-
-    Mod+Minus       { set-column-width "-10%"; }
-    Mod+Equal       { set-column-width "+10%"; }
-    Mod+Shift+Minus { set-window-height "-10%"; }
-    Mod+Shift+Equal { set-window-height "+10%"; }
-
-    Mod+Shift+X { toggle-column-tabbed-display; }
 
     // Mouse & Touchpad Wheels
     Mod+WheelScrollDown      cooldown-ms=150 { focus-workspace-down; }
@@ -127,15 +91,15 @@ binds {
     Mod+7 { focus-workspace 7; }
     Mod+8 { focus-workspace 8; }
     Mod+9 { focus-workspace 9; }
-    Mod+Ctrl+1 { move-column-to-workspace 1; }
-    Mod+Ctrl+2 { move-column-to-workspace 2; }
-    Mod+Ctrl+3 { move-column-to-workspace 3; }
-    Mod+Ctrl+4 { move-column-to-workspace 4; }
-    Mod+Ctrl+5 { move-column-to-workspace 5; }
-    Mod+Ctrl+6 { move-column-to-workspace 6; }
-    Mod+Ctrl+7 { move-column-to-workspace 7; }
-    Mod+Ctrl+8 { move-column-to-workspace 8; }
-    Mod+Ctrl+9 { move-column-to-workspace 9; }
+    Mod+Shift+1 { move-column-to-workspace 1; }
+    Mod+Shift+2 { move-column-to-workspace 2; }
+    Mod+Shift+3 { move-column-to-workspace 3; }
+    Mod+Shift+4 { move-column-to-workspace 4; }
+    Mod+Shift+5 { move-column-to-workspace 5; }
+    Mod+Shift+6 { move-column-to-workspace 6; }
+    Mod+Shift+7 { move-column-to-workspace 7; }
+    Mod+Shift+8 { move-column-to-workspace 8; }
+    Mod+Shift+9 { move-column-to-workspace 9; }
 
     // Audio - Media Controls
     XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "$HOME/.local/bin/level_control.sh volume-up"; }

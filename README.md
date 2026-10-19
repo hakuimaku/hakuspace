@@ -270,7 +270,7 @@ Haku Space's bundled Hyprland, Niri, MangoWM, and Labwc configs already call thi
 ### After Installation
 
 1. **Change the GTK theme**
-   - Open `GTK Settings` from the Rofi App Menu (`SUPER + R`).
+   - Open `GTK Settings` from the Rofi App Menu (`SUPER + Space`).
    - Change the theme, icons, and mouse cursor to your preference.
 
 2. **Install `waybar-cava` if you use the Classic Waybar cava module**
@@ -415,42 +415,69 @@ See more in `~/hakucfg/wm/hyprland-custom.lua` or [here](src/home/hakucfg/wm/hyp
 
 ## Keybinding
 
-- See more keybinding in: [Hyprland](src/home/.config/hypr/config/keybinding.lua) | [Niri](src/home/.config/niri/keybinds.kdl) | [MangoWM](src/home/.config/mango/bind.conf) | [Labwc](src/home/.config/labwc/rc.xml#L263)
-- Hotkeys:
+- See more keybinding in: [Hyprland](src/home/.config/hypr/config/keybinding.lua) | [Niri](src/home/.config/niri/keybinds.kdl) | [MangoWM](src/home/.config/mango/bind.conf) | [Labwc](src/home/.config/labwc/rc.xml#L267)
+- Common Hotkeys:
 
 | Bind | Function |
 |------|----------|
+| SUPER + Space | App Menu (Launcher) |
 | SUPER + Q | Open Kitty Terminal |
-| SUPER + C | Kill Focus Window |
-| SUPER + TAB | Open Menu |
-| SUPER + GRAVE | Toggle Hikai Navigation |
+| SUPER + C | Kill / Close Focus Window |
+| SUPER + E | Open File Manager |
+| SUPER + B | Open Browser |
+| SUPER + / | Open Emoji Menu |
+| SUPER + TAB | Open Haku Menu |
+| SUPER + GRAVE ( \` ) | Toggle Hikai Navigation |
 | SUPER + N | Open Notification Center (routes to active backend) |
 | SUPER + ESCAPE | Emergency switch to Classic backend |
-| SUPER + R | App Menu |
-| SUPER + W | Toggle Taskbar |
-| SUPER + P | Screenshot |
-| SUPER + Z | Toggle Floating |
 | SUPER + V | Open Clipboard History |
-| SUPER + A/S | Focus Left/Right Window |
+| SUPER + SHIFT + V | Wipe Clipboard History |
+| SUPER + P | Screenshot |
+| SUPER + SHIFT + P | Fullscreen Screenshot |
+| SUPER + F11 | Record Screen |
+| SUPER + T | Toggle Cava Underbar |
 | SUPER + Y | Wallpaper Select |
-| SUPER + SHIFT + Y | Lively Wallpaper Select |
-| SUPER + SHIFT + W | Cycle Waybar Mode |
-| SUPER + L | Cycle Hyprland Layout (Hyprland Only) |
-| SUPER + SHIFT + D | Switch Focus Between Tiling and Floating (Niri Only) |
-| SUPER + O | Toggle Overlay (MangoWM Only) |
-| SUPER + X | Toggle Special Workspace (Hyprland), Overview (Niri), or Scratchpad (MangoWM) |
+| SUPER + SHIFT + Y | Change Theme |
+| SUPER + SHIFT + E | Exit Session |
+| SUPER + SHIFT + Q | Power Menu / Shutdown |
+| SUPER + Z | Toggle Taskbar (Classic) |
+| SUPER + SHIFT + Z | Cycle Waybar Mode |
+| SUPER + CTRL + Z | Toggle Waybar |
+| SUPER + W | Toggle Floating Window (Hyprland, Niri, MangoWM) |
+| SUPER + F | Maximize / Fullscreen Window |
+| SUPER + SHIFT + F | Fullscreen Window (Hyprland, Niri, MangoWM) |
+| SUPER + A / S | Focus Left / Right Window (or Arrow keys) |
+| SUPER + SHIFT + A / S | Move / Swap Window Left / Right |
+| SUPER + 1..9 | Switch Workspace |
+| SUPER + SHIFT + 1..9 | Move Window to Workspace |
 
-- Labwc:
+- Specific Window Manager Keybindings:
 
-| Bind | Function |
-|------|----------|
-| SUPER + Space | Open Root Menu |
-| SUPER + X | Open Client Menu |
-| ALT + ` | Open Combined Client Menu |
-| SUPER + A | Maximize |
-| SUPER + S | Iconify |
-| SUPER + D | Show Desktop |
-| SUPER + Z | Shrink Size Window (-10%) |
+| Window Manager | Bind | Function |
+|---|---|---|
+| **Hyprland** | SUPER + D / SHIFT + D | Scroller Column Resize (+0.1 / -0.1) |
+| | SUPER + L | Cycle Layout (scrolling, dwindle, master) |
+| | SUPER + X | Toggle Special Workspace (Scratchpad) |
+| | SUPER + F1 | Toggle No-gap Mode |
+| | SUPER + U / = / - | Cursor Zoom |
+| **Niri** | SUPER + G | Toggle Overview |
+| | SUPER + D / SHIFT + D | Set Column Width (+10% / -10%) |
+| | SUPER + M / ALT + F | Maximize Window to Edges |
+| | Mod + Shift + / | Show Hotkey Overlay |
+| **MangoWM** | SUPER + G / ALT + TAB | Toggle Overview |
+| | SUPER + D | Switch Proportion Preset |
+| | SUPER + ALT + R | Reload Config |
+| | SUPER + SHIFT + Arrows | Focus Monitor |
+| | SUPER + ALT + Arrows | Tag Window to Monitor |
+| | CTRL + ALT + Delete | Quit MangoWM |
+| **Labwc** | SUPER + M | Toggle Maximize |
+| | SUPER + S | Iconify (Minimize) |
+| | SUPER + D | Toggle Show Desktop |
+| | SUPER + F | Toggle Fullscreen |
+| | ALT + GRAVE ( \` ) | Open Client Menu |
+| | ALT + Tab / SHIFT + Tab | Next / Previous Window |
+| | ALT + WASD / SHIFT + WASD | Resize Window (+20% / -20%) |
+| | SUPER + Arrows | Snap Window to Edge |
 
 ---
 

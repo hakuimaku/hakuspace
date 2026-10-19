@@ -265,9 +265,6 @@
 
         <!-- Default keybinds -->
         <keybind key="W-space">
-        <action name="ShowMenu" menu="root-menu" />
-        </keybind>
-        <keybind key="W-r">
         <action name="Execute" command="~/.local/bin/launcher.sh drun" />
         </keybind>
         <keybind key="W-q">
@@ -302,13 +299,13 @@
         <keybind key="W-grave">
         <action name="Execute" command="~/.local/bin/navigation.sh toggle" />
         </keybind>
-        <keybind key="W-w">
+        <keybind key="W-z">
         <action name="Execute" command="~/.local/bin/taskbar_manager.sh --toggle" />
         </keybind>
-        <keybind key="W-S-w">
+        <keybind key="W-S-z">
         <action name="Execute" command="~/.local/bin/waybar_manager.sh --cycle" />
         </keybind>
-        <keybind key="W-C-w">
+        <keybind key="W-C-z">
         <action name="Execute" command="~/.local/bin/waybar_manager.sh --toggle" />
         </keybind>
         <keybind key="W-v">
@@ -342,35 +339,24 @@
         <keybind key="W-S-p">
         <action name="Execute" command="~/.local/bin/screenshot.sh --fullscreen" />
         </keybind>
+
         <!-- keybind for Show Menu -->
         <keybind key="A-grave">
-        <action name="ShowMenu" menu="client-list-combined-menu" />
+        <action name="ShowMenu" menu="client-menu" />
         <position>
             <x>center</x>
             <y>center</y>
         </position>
         </keybind>
-        <keybind key="W-x">
-        <action name="ShowMenu" menu="client-menu" atCursor="yes" />
-        </keybind>
 
         <!-- Window management -->
-        <keybind key="W-z">
-        <action name="ResizeRelative" left="-10%" right="-10%" top="-10%" bottom="-10%" />
-        </keybind>
-        <keybind key="W-S-z">
-        <action name="ResizeRelative" left="10%" right="10%" top="10%" bottom="10%" />
-        </keybind>
         <keybind key="A-Tab">
         <action name="NextWindow" />
         </keybind>
         <keybind key="A-S-Tab">
         <action name="PreviousWindow" />
         </keybind>
-        <keybind key="W-Return">
-        <action name="Execute" command="lab-sensible-terminal" />
-        </keybind>
-        <keybind key="W-a">
+        <keybind key="W-m">
         <action name="ToggleMaximize" />
         </keybind>
         <keybind key="W-d">
