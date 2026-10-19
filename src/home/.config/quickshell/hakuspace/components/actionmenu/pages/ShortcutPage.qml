@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell
 import Quickshell.Io
 import "../../../services"
 import "../../shortcut" as Shortcut
@@ -7,8 +6,7 @@ import ".." as ActionMenu
 
 ActionMenu.ActionMenuPage {
     id: root
-    readonly property bool pinToSidebar: UiState.actionMenuFlow === "sidebarPin"
-    title: pinToSidebar ? "Pin App" : "Add Desktop Shortcut"
+    title: "Add Desktop Shortcut"
     subtitle: "Choose an installed app"
     icon: "󰀻"
     geometryProfile: "option"
@@ -29,13 +27,6 @@ ActionMenu.ActionMenuPage {
         anchors.fill: parent
         onShortcutChosen: path => {
             root.errorMessage = ""
-            if (root.pinToSidebar) {
-                root.requestClose()
-                Qt.callLater(function() {
-                    Quickshell.execDetached([Env.binDir + "/sidebar_pins_ctl.py", "add-app", path])
-                })
-                return
-            }
             addProc.command = [Env.binDir + "/gen_shortcut.sh", "--add", path]
             addProc.running = true
         }

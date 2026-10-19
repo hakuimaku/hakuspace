@@ -158,6 +158,15 @@ ShellRoot {
                     var dx = nav.sidebarBodyWidth + nav.sidebarEarWidth - (nav.surfaceEnd - nav.sidebarJoinRadius)
                     var dy = nav.sidebarBodyY + nav.sidebarTopFlareY - 1 - (nav.surfaceHeight - nav.sidebarJoinRadius)
                     root.check(nav.sidebarExpanded && nav.sidebarTopFlareY >= 0, "Sidebar opens at radius " + radius)
+                    var rail = root.module(nav, "SidebarSurface")
+                    root.check(rail.tools.map(function(tool) { return tool.key }).join(",") === "quickActions,clipboard,tempNote",
+                        "Sidebar contains only its three utility controls")
+                    root.check(rail.preferredBodyHeight === rail.listTopPadding + 3 * rail.itemDiameter + 2 * rail.itemSpacing + rail.listBottomPadding,
+                        "Sidebar height fits its remaining utility controls")
+                    nav.moveSidebarSelection(100)
+                    root.check(nav.sidebarSelectedIndex === 2, "rail keyboard cursor stops at Temp Note")
+                    nav.moveSidebarSelection(-100)
+                    root.check(nav.sidebarSelectedIndex === 0, "rail keyboard cursor stops at Quick Actions")
                     root.check(dx <= 0 || dy <= 0 || dx * dx + dy * dy <= nav.sidebarJoinRadius * nav.sidebarJoinRadius,
                         "Sidebar ear stays inside Navigation at radius " + radius)
                 }

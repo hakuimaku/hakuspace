@@ -37,7 +37,7 @@ Item {
                 selectedIndex = 0
                 hoveredIndex = -1
                 Qt.callLater(function() {
-                    if (root.panelOpen && !lifetime.externallyLeased)
+                    if (root.panelOpen)
                         keyHandler.forceActiveFocus()
                 })
             }
@@ -72,7 +72,6 @@ Item {
     }
     property bool closing: false
     property bool closingFromDashboard: false
-    property int pendingPinIndex: -1
     property int selectedIndex: 0
     property int hoveredIndex: -1
 
@@ -180,18 +179,13 @@ Item {
     property int sidebarSelectedIndex: 0
     property bool sidebarKeyboardMode: false
     property alias keyboardLease: lifetime.keyboardLease
-    readonly property bool externalDialogLease: lifetime.externallyLeased
     readonly property bool sidebarToolOpen: activeSidebarTool.length > 0
     readonly property bool sidebarToolVisible: sidebarToolOpen || (sidebarToolLayer && sidebarToolLayer.activeProgress > 0.001)
     readonly property bool sidebarInteractionVisible: sidebarExpanded || sidebarToolVisible
     readonly property real sidebarToolX: sidebarBodyWidth + 30
-    readonly property real sidebarToolY: Math.max(0, Math.min(
-        renderedSidebarTool === "shortcutManager"
-            ? sidebarBodyY + sidebarSurface.addY + (sidebarControlDiameter - sidebarToolPreferredHeight) / 2
-            : sidebarBodyY + 40,
+    readonly property real sidebarToolY: Math.max(0, Math.min(sidebarBodyY + 40,
         modelData.height - sidebarToolPreferredHeight - 12))
-    readonly property real sidebarToolPreferredWidth: renderedSidebarTool === "quickActions" ? 540
-        : renderedSidebarTool === "clipboard" ? 460 : 120
+    readonly property real sidebarToolPreferredWidth: renderedSidebarTool === "quickActions" ? 540 : 460
     readonly property real sidebarToolPreferredHeight: renderedSidebarTool === "quickActions" ? 240 : 360
     readonly property real sidebarToolWidth: Math.max(1, Math.min(sidebarToolPreferredWidth,
         modelData.width - sidebarToolX - 12))
@@ -246,14 +240,6 @@ Item {
         onCloseRequested: root.requestClose()
     }
 
-    Sidebar.SidebarPinsModel {
-        id: sidebarPinsModel
-        onPinsChanged: {
-            root.sidebarSelectedIndex = Math.min(root.sidebarSelectedIndex, sidebarSurface.navigationCount - 1)
-            sidebarSurface.revealIndex(root.sidebarSelectedIndex)
-        }
-    }
-
     onSidebarExpandedChanged: {
         if (!sidebarExpanded) {
             if (sidebarToolOpen) closeSidebarTool()
@@ -285,8 +271,7 @@ Item {
 
     // Replace content in the existing attached shell.
     function openSidebarTool(key, fromKeyboard) {
-        var index = key === "shortcutManager" ? sidebarSurface.navigationCount - 1
-            : sidebarSurface.tools.findIndex(function(tool) { return tool.key === key })
+        var index = sidebarSurface.tools.findIndex(function(tool) { return tool.key === key })
         if (index < 0) return
         sidebarSelectedIndex = index
         if (!sidebarExpanded) UiState.beginNavigationHandoff("sidebar")
@@ -315,23 +300,14 @@ Item {
         else openSidebarTool(key, fromKeyboard)
     }
 
-    // Keep the rail cursor within utilities, pins and Add.
+    // Keep the rail cursor within the available utilities.
     function moveSidebarSelection(delta) {
-        sidebarSelectedIndex = Math.max(0, Math.min(sidebarSurface.navigationCount - 1, sidebarSelectedIndex + delta))
-        sidebarSurface.revealIndex(sidebarSelectedIndex)
+        sidebarSelectedIndex = Math.max(0, Math.min(sidebarSurface.tools.length - 1, sidebarSelectedIndex + delta))
     }
 
     // Activate the rail cursor without changing hover state.
     function activateSidebarSelection() {
-        var kind = sidebarSurface.entryKind(sidebarSelectedIndex)
-        if (kind === "pin") launchSidebarPin(Number(sidebarSurface.entryKey(sidebarSelectedIndex)))
-        else toggleSidebarTool(sidebarSurface.entryKey(sidebarSelectedIndex), true)
-    }
-
-    function launchSidebarPin(index) {
-        if (!panelOpen || index < 0 || index >= sidebarPinsModel.pins.length) return
-        pendingPinIndex = index
-        UiState.closeNavigation()
+        toggleSidebarTool(sidebarSurface.tools[sidebarSelectedIndex].key, true)
     }
 
     // Keep dispatch in the parent so closing the tool cannot cancel its command.
@@ -346,7 +322,7 @@ Item {
     }
 
     function requestClose() {
-        if (!panelOpen || externalDialogLease) return
+        if (!panelOpen) return
         if (sidebarToolOpen) closeSidebarTool()
         if (sidebarExpanded || dashboardExpanded) UiState.cancelNavigationHandoff()
         UiState.closeNavigation()
@@ -615,8 +591,6 @@ Item {
         closeMorph.stop()
 
         if (panelOpen) {
-            pendingPinIndex = -1
-            sidebarPinsModel.reload()
             sidebarKeyboardMode = false
             closing = false
             closingFromDashboard = false
@@ -819,21 +793,11 @@ Item {
         anchors { top: true; left: true; right: true; bottom: true }
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "hakuspace-navigation"
-        WlrLayershell.keyboardFocus: !root.panelOpen || root.externalDialogLease
-            ? WlrKeyboardFocus.None : WlrKeyboardFocus.OnDemand
+        WlrLayershell.keyboardFocus: root.panelOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
         color: "transparent"
         visible: root.panelOpen || root.closing
-        // The layer keeps its safe-zone mask until the close animation ends.
-        onVisibleChanged: if (!visible && root.pendingPinIndex >= 0) {
-            var index = root.pendingPinIndex
-            root.pendingPinIndex = -1
-            Qt.callLater(function() {
-                if (!root.panelOpen && !navigationLayer.visible) sidebarPinsModel.launch(index)
-            })
-        }
-
         mask: Region {
             Region {
                 x: root.safeZone(0).x; y: root.safeZone(0).y
@@ -944,7 +908,6 @@ Item {
             bodyWidth: root.sidebarBodyWidth
             bodyHeight: root.sidebarBodyHeight
             controlDiameter: root.sidebarControlDiameter
-            pinsModel: sidebarPinsModel
             tooltipHost: sidebarTooltipLayer
             expanded: root.panelOpen && root.sidebarExpanded && !root.closing && !root.dashboardVisuallyActive
             activeToolKey: root.activeSidebarTool
@@ -962,11 +925,6 @@ Item {
                 root.keyboardLease = false
                 root.toggleSidebarTool(key, false)
             }
-            onPinRequested: index => {
-                root.keyboardLease = false
-                root.launchSidebarPin(index)
-            }
-            onUnpinRequested: index => sidebarPinsModel.remove(index)
             onPointerMoved: (px, py) => {
                 root.hoveredIndex = 1
                 root.selectedIndex = 1
@@ -981,16 +939,12 @@ Item {
             y: root.sidebarToolY
             targetWidth: root.sidebarToolWidth
             targetHeight: root.sidebarToolHeight
-            contentPadding: root.renderedSidebarTool === "shortcutManager" ? 8 : 24
             title: root.renderedSidebarTool === "quickActions" ? "Quick Actions"
-                : root.renderedSidebarTool === "shortcutManager" ? "Add Shortcut"
                 : root.renderedSidebarTool === "clipboard" ? "Clipboard" : ""
             showHeader: root.renderedSidebarTool === "clipboard"
             icon: root.renderedSidebarTool === "quickActions" ? "󰀻"
-                : root.renderedSidebarTool === "shortcutManager" ? "󰐕"
                 : root.renderedSidebarTool === "clipboard" ? "󰅌" : ""
             toolContent: root.renderedSidebarTool === "quickActions" ? quickActionsContent
-                : root.renderedSidebarTool === "shortcutManager" ? shortcutManagerContent
                 : root.renderedSidebarTool === "clipboard" ? clipboardContent : null
             focusContent: !root.sidebarKeyboardMode
             open: root.panelOpen && root.sidebarExpanded && root.sidebarToolOpen && !root.closing && !root.dashboardVisuallyActive
@@ -1027,36 +981,6 @@ Item {
                     else root.closeSidebarTool()
                 }
                 onActionRequested: key => root.runQuickAction(key)
-            }
-        }
-        Component {
-            id: shortcutManagerContent
-            Sidebar.SidebarShortcutManager {
-                tooltipHost: sidebarTooltipLayer
-                onRailFocusRequested: root.focusSidebarRail(true)
-                onCloseRequested: keyboard => {
-                    if (keyboard) UiState.closeNavigation()
-                    else root.closeSidebarTool()
-                }
-                onAppRequested: {
-                    UiState.closeNavigation()
-                    UiState.openActionMenu(root.modelData.name, "sidebarPin")
-                }
-                onPinRequested: (kind, path) => {
-                    UiState.closeNavigation()
-                    if (kind === "file") sidebarPinsModel.addFile(path)
-                    else sidebarPinsModel.addFolder(path)
-                }
-                onDialogLeaseRequested: (token, active) => {
-                    if (active) {
-                        lifetime.acquireExternalLease(token)
-                    } else {
-                        Qt.callLater(function() {
-                            lifetime.releaseExternalLease(token, true)
-                            root.focusActiveSidebarTool()
-                        })
-                    }
-                }
             }
         }
         Component {
@@ -1204,7 +1128,7 @@ Item {
             Keys.onPressed: event => {
                 if (!root.sidebarKeyboardMode) return
                 if (event.key === Qt.Key_Home) root.sidebarSelectedIndex = 0
-                else if (event.key === Qt.Key_End) root.sidebarSelectedIndex = sidebarSurface.navigationCount - 1
+                else if (event.key === Qt.Key_End) root.sidebarSelectedIndex = sidebarSurface.tools.length - 1
                 else return
                 root.keyboardLease = true
                 event.accepted = true
@@ -1230,7 +1154,7 @@ Item {
                 }
             }
             Keys.onEscapePressed: event => {
-                if (!root.externalDialogLease) UiState.closeNavigation()
+                UiState.closeNavigation()
                 event.accepted = true
             }
         }

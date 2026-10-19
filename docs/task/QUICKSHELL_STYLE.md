@@ -251,8 +251,8 @@ Sidebar is a left-edge expansion from the Navigation Sidebar region.
 - use an invisible interaction bridge/union if needed;
 - visible body is an elongated rounded lobe, not a generic drawer;
 - option controls are circles;
-- plus action is circular;
-- the mockup defines shape, not the semantics of each dot; do not invent unknown actions.
+- the rail contains Quick Actions, Clipboard and Temp Note;
+- the body height fits these three utility controls.
 
 ### 1.7 Settings
 

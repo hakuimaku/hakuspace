@@ -56,7 +56,7 @@ Haku Space now comes with two interchangeable desktop shells. Your chosen mode i
 **Hikai** is the new Quickshell-based interface for Haku Space. Quickshell owns the main shell UI instead of running Waybar, Rofi, and SwayNC in parallel:
 
 - **Top Bar & Navigation**: Workspace indicators, active window title, system tray, clock, recorder status, and smooth Flare animations to open the Dashboard, Sidebar, and Settings.
-- **Dashboard & Sidebar**: User profile, media player, Cava audio visualizer, calendar, CPU/RAM/GPU/storage monitors, quick toggles, clipboard history, pinned apps, and floating temp notes.
+- **Dashboard & Sidebar**: User profile, media player, Cava audio visualizer, calendar, CPU/RAM/GPU/storage monitors, quick toggles, clipboard history, and floating temp notes.
 - **Native Notifications & Menus**: Built-in Notification Center & popups, Haku Menu, Wallpaper Picker, Action Menu, volume/brightness OSDs, and a native **Settings & Config Editor** for `~/hakucfg`.
 
 > [!note]

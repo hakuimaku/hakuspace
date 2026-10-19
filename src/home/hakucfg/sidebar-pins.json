@@ -1,7 +1,0 @@
-[
-  {
-    "label": "Home",
-    "icon": "󰋜",
-    "command": ["xdg-open", "$HOME"]
-  }
-]

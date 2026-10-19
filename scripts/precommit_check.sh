@@ -68,7 +68,6 @@ python3 scripts/test_dock_app_ctl.py
 python3 scripts/test_dock_icon_watch.py
 python3 scripts/test_hakucfg_editor_ctl.py
 python3 scripts/test_hakuspace_info_ctl.py
-python3 scripts/test_sidebar_pins_ctl.py
 python3 scripts/test_shortcut_metadata.py
 python3 scripts/test_quick_actions_ctl.py
 
