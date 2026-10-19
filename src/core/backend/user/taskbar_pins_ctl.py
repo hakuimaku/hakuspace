@@ -194,8 +194,11 @@ def edit(raw, action, args):
             raise ValueError('pin index out of range')
         # Ordered pin indices exclude any non-image Waybar modules.
         slots = [index for index, name in enumerate(modules) if name.startswith('image#')]
-        ordered = [modules[index] for index in slots]
-        ordered.insert(target, ordered.pop(source))
+        identities = [pin['id'] for pin in pins]
+        identities.insert(target, identities.pop(source))
+        # Move every alias of a visible app together without dropping shared modules.
+        ordered = [modules[index] for identity in identities for index in slots
+                   if app_id(modules[index][6:]) == identity]
         for index, name in zip(slots, ordered):
             modules[index] = name
     else:

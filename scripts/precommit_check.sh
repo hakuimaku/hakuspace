@@ -54,6 +54,7 @@ if command -v quickshell >/dev/null 2>&1; then
     if command -v labwc >/dev/null 2>&1; then
         bash scripts/test_hikai_dock.sh
         HAKUSPACE_DOCK_INPUT=1 bash scripts/test_hikai_dock.sh
+        HAKUSPACE_DOCK_REORDER=1 bash scripts/test_hikai_dock.sh
         bash scripts/test_hikai_hakumenu.sh
     fi
 fi

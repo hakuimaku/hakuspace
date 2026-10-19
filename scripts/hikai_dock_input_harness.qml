@@ -206,10 +206,17 @@ ShellRoot {
             } else if (root.phase === 8) root.pointAt(root.appIcon(), 273)
             else if (root.phase === 9) {
                 root.check(root.app().pinned, "right click directly pins the app")
+                var feedback = root.find(root.dock, function(item) { return item.objectName === "dock-pin-feedback" })
+                root.check(root.dock.pinMessage.indexOf("Pinned “") === 0 && feedback && feedback.visible,
+                    "successful pin shows feedback above its Dock")
+                root.check(root.outputs.slice(1).every(function(output) { return !output.dock.pinMessage }),
+                    "pin feedback stays on the originating output")
+                root.check(!root.appTooltip().visible, "pin feedback replaces the hover tooltip")
                 root.check(!root.find(root.dock, function(item) { return item.objectName === "dock-context-menu" }), "pin popup is removed")
                 tooltipCheck.start()
                 root.pointAt(root.appIcon(), 274)
             } else if (root.phase === 10) {
+                root.check(!root.dock.pinMessage, "termination confirmation dismisses pin feedback")
                 root.check(root.dock.terminationRoots.length === 1 && root.appIcon().actionMessage.indexOf("512 MB") >= 0,
                     "middle click shows the high RAM confirmation tooltip")
                 root.check(root.terminationRequests === "[]", "warning sends no confirmed termination")
@@ -233,6 +240,7 @@ ShellRoot {
                 root.pointAt(root.appIcon(), 273)
             } else if (root.phase === 15) {
                 root.check(!root.app().pinned, "right click directly unpins the app")
+                root.check(root.dock.pinMessage.indexOf("Unpinned “") === 0, "successful unpin shows feedback")
                 root.pointAt(root.appIcon(), 274)
             } else if (root.phase === 16) {
                 root.check(!root.app().pinned && root.app().runningCount === 2, "unpin retains running application")
@@ -341,6 +349,7 @@ ShellRoot {
                 root.pointAt(root.appIcon(), 273)
             } else if (root.phase === 34) {
                 root.check(!root.app().pinned && root.dock.terminationKey === "", "right click unpins and cancels confirmation")
+                root.check(root.dock.pinMessage.indexOf("Unpinned “") === 0, "raised icon unpin shows feedback")
                 root.pointAt(root.appIcon())
             } else if (root.phase === 35) {
                 ShellSettingsStore.setValue("dock", "hoverLift", 0)
@@ -355,6 +364,7 @@ ShellRoot {
                     "hover settings preserve Dock and slot widths")
                 ShellSettingsStore.discard()
             } else if (root.phase === 38) {
+                root.check(!root.dock.pinMessage, "pin feedback expires automatically")
                 root.check(Math.abs(root.appIcon().iconLift - 14) < 0.1 && root.appIcon().iconScale === 1,
                     "Discard restores the default hover effect")
                 root.move(10, 100)

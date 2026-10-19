@@ -11,6 +11,10 @@ QtObject {
     property string error: ""
     onErrorChanged: if (error) console.warn(error)
     property bool pendingReload: false
+    // Match mutation completion to the Dock that initiated it.
+    property string action: "list"
+    property string actionId: ""
+    signal mutationFinished(string action, string id, bool success)
     readonly property bool busy: controller.running
     readonly property string path: Quickshell.env("HAKUSPACE_TASKBAR_PINS_FILE")
         || (Quickshell.env("HOME") || "") + "/hakucfg/config/taskbar-pin-apps"
@@ -23,6 +27,8 @@ QtObject {
     // Resolve installed and source-tree controllers without interpolating application IDs.
     function run(action, args) {
         if (busy) return
+        root.action = action
+        root.actionId = args.length ? args[0] : ""
         controller.command = ["sh", "-c",
             'for script in "$1" "$2" "$3"; do if [ -x "$script" ]; then shift 3; exec "$script" "$@"; fi; done; exit 127',
             "--", (Quickshell.env("HOME") || "") + "/.local/bin/taskbar_pins_ctl.py",
@@ -56,6 +62,8 @@ QtObject {
                     root.error = ""
                 } catch (error) { root.error = "Invalid taskbar pin response" }
             }
+            if (root.action === "add" || root.action === "remove")
+                root.mutationFinished(root.action, root.actionId, !root.error)
             if (root.pendingReload) {
                 root.pendingReload = false
                 Qt.callLater(root.reload)

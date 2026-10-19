@@ -16,6 +16,16 @@ Item {
     property bool appActions: false
     property string actionMessage: ""
     property bool tooltipEnabled: true
+    // The Dock owns reorder state so Escape and external pin changes can cancel it.
+    property bool reorderable: false
+    property bool reordering: false
+    property real reorderOffset: 0
+    transform: Translate { x: root.reorderOffset }
+    onReorderingChanged: if (reordering) {
+        pointerFocus = true
+        tooltipDismissed = true
+        forceActiveFocus(Qt.MouseFocusReason)
+    }
     // Pointer clicks retain keyboard access without keeping a hover tooltip alive.
     property bool pointerFocus: false
     property bool tooltipDismissed: false
@@ -23,7 +33,7 @@ Item {
     readonly property bool hovered: pointer.containsMouse
     // Pointer coordinates are shared across slots to keep the lift wave continuous.
     property real hoverX: NaN
-    readonly property real hoverWeight: Geometry.hoverInfluence(hoverX, width / 2, width * 2.5)
+    readonly property real hoverWeight: reordering ? 1 : Geometry.hoverInfluence(hoverX, width / 2, width * 2.5)
     property real iconLift: hoverWeight * ShellSettingsStore.dockHoverLift
     property real iconScale: 1 + hoverWeight * ShellSettingsStore.dockHoverScale / 100
     // Reserve the full configured rise before the pointer reaches enlarged artwork.
@@ -49,24 +59,29 @@ Item {
     signal pinRequested()
     signal terminateRequested()
     signal dismissRequested()
+    signal reorderStarted(real x, real y)
+    signal reorderMoved(real x, real y)
+    signal reorderFinished(real x, real y)
+    signal reorderCanceled()
     width: iconSize + 16
     // Reserve seven pixels above artwork, a two-pixel gap and four-pixel dots.
     height: iconSize + 13
     activeFocusOnTab: true
     Accessible.role: Accessible.Button
     Accessible.name: label
-    Accessible.onPressAction: activated()
-    Keys.onReturnPressed: activated()
-    Keys.onSpacePressed: activated()
-    Keys.onMenuPressed: if (appActions) pinRequested()
+    Accessible.onPressAction: if (!reordering) activated()
+    Keys.onReturnPressed: if (!reordering) activated()
+    Keys.onSpacePressed: if (!reordering) activated()
+    Keys.onMenuPressed: if (appActions && !reordering) pinRequested()
     Keys.onDeletePressed: {
-        if (appActions && runningCount) {
+        if (appActions && runningCount && !reordering) {
             pointerFocus = false
             tooltipDismissed = false
             terminateRequested()
         }
     }
     Keys.onEscapePressed: {
+        if (reordering) reorderCanceled()
         tooltipDismissed = true
         dismissRequested()
     }
@@ -109,10 +124,46 @@ Item {
         width: parent.width
         height: parent.height + root.hoverHeadroom
         hoverEnabled: true
+        property bool held: false
+        property point pressPoint: Qt.point(0, 0)
+        pressAndHoldInterval: 250
+        // Reserve pin gestures before the Flickable can claim the initial movement.
+        preventStealing: root.reorderable || root.reordering
+        cursorShape: root.reordering ? Qt.ClosedHandCursor : Qt.ArrowCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+        onPressed: mouse => {
+            if (root.reordering) return
+            held = false
+            pressPoint = Qt.point(mouse.x, mouse.y)
+        }
+        // Preserve the original grab point when motion starts before the hold timeout.
+        function startReorder() {
+            held = true
+            var point = mapToItem(root, pressPoint.x, pressPoint.y)
+            root.reorderStarted(point.x, point.y)
+        }
+        onPressAndHold: mouse => {
+            if (held || !root.reorderable || mouse.button !== Qt.LeftButton) { mouse.accepted = false; return }
+            startReorder()
+        }
+        onPositionChanged: mouse => {
+            if (!held && root.reorderable && (pressedButtons & Qt.LeftButton)
+                && Math.hypot(mouse.x - pressPoint.x, mouse.y - pressPoint.y) >= drag.threshold)
+                startReorder()
+            if (!root.reordering) return
+            var point = mapToItem(root, mouse.x, mouse.y)
+            root.reorderMoved(point.x, point.y)
+        }
+        onReleased: mouse => {
+            if (!root.reordering || mouse.button !== Qt.LeftButton) return
+            var point = mapToItem(root, mouse.x, mouse.y)
+            root.reorderFinished(point.x, point.y)
+        }
+        onCanceled: if (root.reordering) root.reorderCanceled()
         onEntered: root.tooltipDismissed = false
         onExited: root.tooltipDismissed = false
         onClicked: mouse => {
+            if (held || root.reordering) return
             root.pointerFocus = true
             root.tooltipDismissed = false
             root.forceActiveFocus(Qt.MouseFocusReason)

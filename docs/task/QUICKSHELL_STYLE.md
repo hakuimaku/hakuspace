@@ -41,6 +41,14 @@ hover lift from 0–48 px (default 14) and enlargement from 0–100% (default 0)
 Zero disables each effect independently; 100% enlargement doubles artwork size.
 Artwork grows upward with weaker effects on neighbors; slots and full-accent dots
 stay fixed. The viewport, pointer headroom and captured anchors follow both effects.
+Drag a pinned icon (including Applications) past the platform movement threshold,
+or hold it for 250 ms, to reorder it.
+The grabbed icon follows the pointer and an accent marker shows the drop position;
+crowded docks scroll at their edges. Release commits one move to the shared
+Classic/Hikai pin file. Escape, outside drops, manual OFF and external pin changes
+cancel the gesture. Dragging leases autohide and suppresses tooltips and activation.
+Pin/unpin results appear above the originating Dock for two seconds without system
+notifications. Feedback briefly leases autohide and yields to dragging or termination.
 Tooltips appear immediately. Mouse focus does not retain them after pointer exit;
 Escape dismisses them until the next hover/click. Keyboard focus still exposes
 labels and keyboard-triggered warnings. Right-click toggles pin/unpin directly. On

@@ -96,16 +96,21 @@ def main():
         send(connection, 1, 0, struct.pack('=I', pointer_id + 1))
         while receive(connection)[0] != pointer_id + 1:
             pass
-        # Each line moves the pointer and optionally clicks a Linux input button code.
+        # An optional sixth value sends one press/release for held-button gestures.
         for line in sys.stdin:
-            x, y, width, height, button = map(int, line.split())
+            values = list(map(int, line.split()))
+            if len(values) not in (5, 6):
+                raise ValueError('invalid pointer fixture event')
+            x, y, width, height, button = values[:5]
             if not (0 <= x < width and 0 <= y < height and button in (0, 272, 273, 274)):
                 raise ValueError('invalid pointer fixture coordinates or button')
+            if len(values) == 6 and (not button or values[5] not in (0, 1)):
+                raise ValueError('invalid pointer fixture button state')
             timestamp = int(time.monotonic() * 1000) & 0xffffffff
             send(connection, pointer_id, 1, struct.pack('=IIIII', timestamp, x, y, width, height))
             send(connection, pointer_id, 4)
             if button:
-                for state in (1, 0):
+                for state in ((values[5],) if len(values) == 6 else (1, 0)):
                     send(connection, pointer_id, 2, struct.pack('=III', timestamp, button, state))
                     send(connection, pointer_id, 4)
 

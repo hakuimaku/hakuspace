@@ -17,6 +17,7 @@ node scripts/test_dock_app_model.js
 node scripts/test_dock_geometry.js
 bash scripts/test_hikai_dock.sh
 HAKUSPACE_DOCK_INPUT=1 bash scripts/test_hikai_dock.sh
+HAKUSPACE_DOCK_REORDER=1 bash scripts/test_hikai_dock.sh
 bash scripts/test_hikai_dock.sh --niri
 bash scripts/test_hikai_dock.sh --mango
 ```
@@ -29,6 +30,7 @@ grace re-entry, click-through, pin/unpin, window grouping/cycling, fullscreen co
 App Menu routing, launch, drives and Trash. Hover checks cover peak/neighbor lift,
 zero/maximum lift and enlargement, fixed slots/width, clipping bounds, raised hit
 areas, enlarged anchors, immediate tooltips, direct right-click pinning,
+local pin/unpin feedback without overlapping tooltips,
 high-RAM confirmation/cancellation, autohide and live frame insets. Moving from a
 middle-clicked icon to another icon must hide the old tooltip while Dock keyboard
 focus stays on the clicked item. Escape must hide both the warning and tooltip
@@ -39,6 +41,12 @@ On Labwc, the input suite separately checks real native close requests against
 fixture windows: first-click confirmation, refreshed confirmation after window
 membership changes, closing every confirmed window, and minimized-window restore.
 The native path never invokes the PID termination fixture.
+The reorder harness sends separate press, motion and release events to test
+early-motion and long-press dragging, shared-file persistence/reload, Applications ordering, Escape,
+outside-drop and external-edit cancellation, autohide leases, crowded edge scrolling
+and manual OFF during a gesture. It also checks feedback placement, expiry, backend
+errors and autohide release after removing a stopped pin. Fixture desktop entries
+prevent accidental app launches.
 The regular harness checks maximized
 client reservation, fixed frame dimensions across exclusive ON/OFF and manual OFF,
 draft/Discard/persistence, external pin edits and malformed

@@ -106,6 +106,16 @@ class TaskbarPinsTests(unittest.TestCase):
         self.run_ctl('remove', 'x')
         self.assertEqual([pin['id'] for pin in self.run_ctl('list')], ['menu'])
 
+    def test_move_keeps_aliases_together_and_non_image_slots_unchanged(self):
+        """Visible pin indices refer to unique apps, including desktop-suffixed aliases."""
+        self.path.write_text('{"group/pin":{"modules":["image#menu","clock","image#x",'
+                             '"image#x.desktop","image#y"]},"image#x":{"size":40}}')
+        self.run_ctl('move', '2', '1')
+        data = json.loads(self.path.read_text())
+        self.assertEqual([pin['id'] for pin in self.run_ctl('list')], ['menu', 'y', 'x'])
+        self.assertEqual(data['group/pin']['modules'], ['image#menu', 'clock', 'image#y', 'image#x', 'image#x.desktop'])
+        self.assertEqual(data['image#x'], {'size': 40})
+
 
 if __name__ == '__main__':
     unittest.main()

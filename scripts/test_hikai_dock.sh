@@ -3,7 +3,16 @@ set -euo pipefail
 
 # Mirror shell-relative paths with private state, settings and shared pin fixtures.
 test_root=$(mktemp -d)
-trap 'rm -rf "$test_root"' EXIT
+# D-Bus helpers can briefly recreate private data directories while exiting.
+cleanup() {
+    local attempt
+    for attempt in 1 2 3; do
+        if rm -rf "$test_root"; then return 0; fi
+        sleep 0.1
+    done
+    return 1
+}
+trap cleanup EXIT
 shell_root="$test_root/src/home/.config/quickshell/hakuspace"
 mkdir -p "$shell_root" "$test_root/src/core/backend/user" "$test_root/runtime" "$test_root/labwc" \
     "$test_root/src/home/.local/state/hakuspace/state" "$test_root/home/hakucfg/config"
@@ -15,6 +24,8 @@ if [[ ${HAKUSPACE_HAKUMENU_TEST:-0} == 1 ]]; then
     cp scripts/hikai_hakumenu_harness.qml "$shell_root/shell.qml"
 elif [[ ${HAKUSPACE_DOCK_INPUT:-0} == 1 ]]; then
     cp scripts/hikai_dock_input_harness.qml "$shell_root/shell.qml"
+elif [[ ${HAKUSPACE_DOCK_REORDER:-0} == 1 ]]; then
+    cp scripts/hikai_dock_reorder_harness.qml "$shell_root/shell.qml"
 else
     cp scripts/hikai_dock_harness.qml "$shell_root/shell.qml"
 fi
@@ -31,6 +42,13 @@ cat > "$test_root/bin/gio" <<'GIO'
 printf '%s\n' "$@" > "$HAKUSPACE_TEST_GIO_LOG"
 GIO
 chmod +x "$test_root/bin/fixture-app" "$test_root/bin/gio"
+# Pinned test icons must never launch installed applications if a drag becomes a click.
+if [[ ${HAKUSPACE_DOCK_REORDER:-0} == 1 ]]; then
+    for app in kitty thunar firefox; do
+        printf '[Desktop Entry]\nType=Application\nName=Reorder %s\nExec=%s/bin/fixture-app\nIcon=application-x-executable\n' \
+            "$app" "$test_root" > "$test_root/data/applications/$app.desktop"
+    done
+fi
 printf '[Desktop Entry]\nType=Application\nName=Dock Launch Fixture\nExec=%s/bin/fixture-app\nIcon=application-x-executable\n' \
     "$test_root" > "$test_root/data/applications/hikai-dock-launch.desktop"
 # Exercise the UI confirmation contract without signalling the Quickshell test client.
