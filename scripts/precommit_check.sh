@@ -62,6 +62,7 @@ python3 -m unittest discover -s tests/icon_accent -v
 python3 scripts/test_visual_ecosystem.py
 python3 scripts/test_setting_ctl.py
 python3 scripts/test_hikai_settings_ctl.py
+python3 scripts/test_hakucfg_hikai.py
 python3 scripts/test_taskbar_pins_ctl.py
 python3 scripts/test_dock_app_ctl.py
 python3 scripts/test_dock_icon_watch.py

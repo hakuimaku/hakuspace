@@ -11,6 +11,7 @@
 python3 scripts/test_taskbar_pins_ctl.py
 python3 scripts/test_dock_app_ctl.py
 python3 scripts/test_dock_icon_watch.py
+python3 scripts/test_hakucfg_hikai.py
 bash scripts/test_hikai_resource_refresh.sh
 node scripts/test_dock_app_model.js
 node scripts/test_dock_geometry.js
@@ -44,6 +45,9 @@ surface and fading icons stay visible, item input stops immediately, and manual
 OFF clears the input mask before the visual window unmaps after the animation.
 The settings harness checks the actual hover sliders, Apply/Discard/Reset and
 reload persistence, including migration from version 3 without losing Dock choices.
+Hikai settings live in `~/hakucfg/hikai/`. Deployment tests verify
+legacy relocation, preserved bytes and permissions, existing-destination priority,
+repeated sync and controller writes through the new default paths.
 
 See [HIKAI_DOCK_D0_PROBE.md](HIKAI_DOCK_D0_PROBE.md) for the window-source probe.
 The implementation report records the final runtime and physical coverage.

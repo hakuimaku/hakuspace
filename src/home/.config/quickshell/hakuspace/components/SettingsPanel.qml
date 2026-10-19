@@ -245,7 +245,7 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                 }
                 Text {
-                    text: root.selectedGroup === "Shell" ? "~/hakucfg/hikai-shell.json"
+                    text: root.selectedGroup === "Shell" ? "~/hakucfg/hikai/hikai-shell.json"
                           : root.selectedGroup === "Config" ? "~/hakucfg/wm · ~/hakucfg/config"
                           : root.selectedGroup === "Info" ? "HakuSpace · " + (InfoStore.loading ? "detecting…"
                               : InfoStore.repo.detected ? InfoStore.repo.version : "version unavailable")

@@ -30,7 +30,7 @@ START
         -u GDK_BACKEND HOME="$test_root/home" XDG_CURRENT_DESKTOP=labwc \
         XDG_CONFIG_HOME="$test_root/home/.config" XDG_RUNTIME_DIR="$test_root/runtime" \
         WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=2 WLR_RENDERER=pixman \
-        QT_QPA_PLATFORM=wayland HAKUSPACE_GEOMETRY_ARTIFACT_DIR="$artifact_dir" HAKUSPACE_HIKAI_SETTINGS_FILE="$test_root/hakucfg/hikai-shell.json" \
+        QT_QPA_PLATFORM=wayland HAKUSPACE_GEOMETRY_ARTIFACT_DIR="$artifact_dir" HAKUSPACE_HIKAI_SETTINGS_FILE="$test_root/hakucfg/hikai/hikai-shell.json" \
         timeout 60s dbus-run-session -- labwc -C "$test_root/labwc" \
         -S "bash $test_root/start.sh $shell_root/shell.qml" > "$test_root/quickshell.log" 2>&1 || status=$?
 else
@@ -38,9 +38,9 @@ else
     # Exercise both missing-file startup and a read-only legacy migration in QML.
     for scenario in missing v1 v3; do
         if [[ $scenario == v1 ]]; then
-            printf '%s\n' '{"version":1,"appearance":{"baseRadius":12,"surfaceTone":"dark"},"topbar":{}}' > "$test_root/hakucfg/hikai-shell.json"
+            printf '%s\n' '{"version":1,"appearance":{"baseRadius":12,"surfaceTone":"dark"},"topbar":{}}' > "$test_root/hakucfg/hikai/hikai-shell.json"
         elif [[ $scenario == v3 ]]; then
-            python3 - "$test_root/hakucfg/hikai-shell.json" <<'PY'
+            python3 - "$test_root/hakucfg/hikai/hikai-shell.json" <<'PY'
 """Remove hover fields to exercise the previous Dock schema."""
 import json
 import sys
@@ -56,7 +56,7 @@ PY
         fi
         env -u DISPLAY -u WAYLAND_DISPLAY -u QT_QPA_PLATFORMTHEME -u QT_QPA_PLATFORMTHEME_QT6 \
             -u GDK_BACKEND XDG_RUNTIME_DIR="$test_root/runtime" QT_QPA_PLATFORM=offscreen \
-            HAKUSPACE_HIKAI_SETTINGS_FILE="$test_root/hakucfg/hikai-shell.json" \
+            HAKUSPACE_HIKAI_SETTINGS_FILE="$test_root/hakucfg/hikai/hikai-shell.json" \
             timeout 10s quickshell -p "$shell_root/shell.qml" > "$test_root/$scenario.log" 2>&1 || status=$?
         cat "$test_root/$scenario.log" >> "$test_root/quickshell.log"
         if [[ ${status:-0} -ne 0 ]]; then break; fi
@@ -67,7 +67,7 @@ if [[ ${status:-0} -ne 0 ]] || ! grep -Eq 'Hikai (settings|runtime) checks passe
     grep -Eq 'TypeError|ReferenceError|is not a type|Binding loop|Hikai (settings|runtime) failed|Failed to load configuration' "$test_root/quickshell.log"; then
     exit 1
 fi
-python3 - "$test_root/hakucfg/hikai-shell.json" <<'PY'
+python3 - "$test_root/hakucfg/hikai/hikai-shell.json" <<'PY'
 """Confirm that Reset followed by Apply reached disk in the isolated runtime."""
 import json
 import sys

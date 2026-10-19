@@ -100,7 +100,7 @@ env -u DISPLAY -u WAYLAND_DISPLAY -u QT_QPA_PLATFORMTHEME -u QT_QPA_PLATFORMTHEM
     PATH="$test_root/bin:$PATH" XDG_DATA_HOME="$test_root/data" \
     HAKUSPACE_TEST_TERMINATION_LOG="$test_root/termination.log" \
     HAKUSPACE_TEST_LAUNCH_LOG="$test_root/launch.log" HAKUSPACE_TEST_GIO_LOG="$test_root/gio.log" \
-    QT_QPA_PLATFORM=wayland HAKUSPACE_HIKAI_SETTINGS_FILE="$test_root/home/hakucfg/hikai-shell.json" \
+    QT_QPA_PLATFORM=wayland HAKUSPACE_HIKAI_SETTINGS_FILE="$test_root/home/hakucfg/hikai/hikai-shell.json" \
     HAKUSPACE_TEST_TASKBAR_CTL="$PWD/src/core/backend/desktop/taskbar_ctl.sh" \
     HAKUSPACE_TEST_POINTER="$PWD/scripts/wayland_pointer_fixture.py" \
     HAKUSPACE_TEST_POINTER_OUTPUT="$pointer_output" \

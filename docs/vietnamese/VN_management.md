@@ -60,6 +60,7 @@ Các ứng dụng như Thunar, xfce4, mpv, btop, cava, mimeapps.list thường x
 ### `~/hakucfg` (Không gian tùy biến cá nhân)
 Mọi thiết lập cá nhân của bạn (autostart, biến môi trường, theme riêng) nằm tại `~/hakucfg/`.
 - Quản lý bởi `scripts/hakucfg.sh`.
+- Cấu hình riêng của Quickshell nằm tại `~/hakucfg/hikai/hikai-shell.json`. Sync chuyển file cũ ở thư mục gốc khi chưa có file đích; nếu cả hai cùng tồn tại thì giữ nguyên cả hai và dùng file trong `hikai/`. Cấu hình dùng chung Classic/Hikai giữ đường dẫn chung.
 - Không tự ý ghi đè cấu hình cá nhân; file mẫu thiếu sẽ được bổ sung, còn `setting.sh` chỉ được nâng version khi người dùng xác nhận (kèm backup tự động).
 
 ### `~/.local/state/hakuspace` (Trạng thái hệ thống)

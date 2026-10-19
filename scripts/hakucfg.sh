@@ -63,6 +63,30 @@ hakucfg_sync() {
     ensure_dir "$DEST_CUSTOM_DIR/config/waybar"
     ensure_dir "$DEST_CUSTOM_DIR/config/rofi"
 
+    # Move legacy shell settings without overwriting an existing Hikai document.
+    if [[ -L "$DEST_CUSTOM_DIR/hikai" ]]; then
+        log_error "Cannot migrate Hikai configuration into a symlinked directory."
+        return 1
+    fi
+    ensure_dir "$DEST_CUSTOM_DIR/hikai"
+    local legacy="$DEST_CUSTOM_DIR/hikai-shell.json"
+    local destination="$DEST_CUSTOM_DIR/hikai/hikai-shell.json"
+    if [[ -L "$destination" || ( -e "$destination" && ! -f "$destination" ) ]]; then
+        log_error "Cannot use non-regular Hikai configuration: $(shorten_path "$destination")"
+        return 1
+    fi
+    if [[ -e "$legacy" || -L "$legacy" ]]; then
+        if [[ -e "$destination" || -L "$destination" ]]; then
+            log_warn "Keeping existing $(shorten_path "$destination"); legacy file retained at $(shorten_path "$legacy")."
+        elif [[ -L "$legacy" || ! -f "$legacy" ]]; then
+            log_error "Cannot migrate non-regular Hikai configuration: $(shorten_path "$legacy")"
+            return 1
+        else
+            mv -n -- "$legacy" "$destination"
+            log_info "Moved Hikai configuration to $(shorten_path "$destination")."
+        fi
+    fi
+
     while IFS= read -r file; do
         [[ -z "$file" ]] && continue
         local target="$DEST_CUSTOM_DIR/$file"

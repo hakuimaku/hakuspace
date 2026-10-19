@@ -156,7 +156,7 @@ def run(action):
     if action not in ("read", "write", "check", "reset"):
         raise ValueError("usage: hikai_settings_ctl.py read|write|check|reset")
     path = Path(os.path.abspath(os.environ.get("HAKUSPACE_HIKAI_SETTINGS_FILE")
-                               or Path.home() / "hakucfg/hikai-shell.json"))
+                               or Path.home() / "hakucfg/hikai/hikai-shell.json"))
     try:
         parent_fd = open_parent(path, action in ("write", "reset"))
     except FileNotFoundError:

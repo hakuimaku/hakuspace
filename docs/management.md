@@ -60,6 +60,7 @@ Certain applications (Thunar, xfce4, mpv, btop, cava, mimeapps.list) frequently 
 ### `~/hakucfg` (User Custom Space)
 All personal customizations (autostarts, environment variables, theme overrides) belong in `~/hakucfg/`.
 - Managed by `scripts/hakucfg.sh`.
+- Quickshell-specific configuration lives in `~/hakucfg/hikai/hikai-shell.json`. Sync moves the legacy root file when the destination is absent; an existing destination takes precedence and the legacy file is retained. Shared Classic/Hikai files keep their shared paths.
 - Preserved by default: missing templates are seeded, and version-mismatched `setting.sh` is only replaced after user confirmation (with an automatic backup).
 
 ### `~/.local/state/hakuspace` (Runtime State)

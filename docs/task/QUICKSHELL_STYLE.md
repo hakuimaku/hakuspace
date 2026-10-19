@@ -19,7 +19,7 @@
 This addition supersedes the fixed surface/radius assumptions in the historical
 baseline below. It does not change the accent/font flow or the P3 motion contract.
 
-`~/hakucfg/hikai-shell.json` (schema version 4) stores `appearance.baseRadius`,
+`~/hakucfg/hikai/hikai-shell.json` (schema version 4) stores `appearance.baseRadius`,
 `appearance.surfaceTone`, independent `roundedScreen` geometry, the global `topbar`
 booleans, and `dock.visibilityMode`, `dock.exclusiveSpace`, `dock.iconSize`,
 `dock.hoverLift`, `dock.hoverScale`.

@@ -29,7 +29,7 @@ class ShellSettingsTests(unittest.TestCase):
         """Create an isolated HOME override for backend operations."""
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.path = Path(self.temp.name) / "hakucfg/hikai-shell.json"
+        self.path = Path(self.temp.name) / "hakucfg/hikai/hikai-shell.json"
         self.environment = patch.dict(os.environ, HAKUSPACE_HIKAI_SETTINGS_FILE=str(self.path))
         self.environment.start()
         self.addCleanup(self.environment.stop)
@@ -83,7 +83,7 @@ class ShellSettingsTests(unittest.TestCase):
 
     def test_invalid_document_and_payload(self):
         """Malformed or incomplete documents report failure without replacement."""
-        self.path.parent.mkdir()
+        self.path.parent.mkdir(parents=True)
         for content in ("{broken", "[]", '{"version": 1}', json.dumps(dict(ctl.DEFAULTS, version=5))):
             self.path.write_text(content)
             for action in ("read", "check", "reset"):
@@ -96,7 +96,7 @@ class ShellSettingsTests(unittest.TestCase):
 
     def test_symlink_and_nonregular_rejected(self):
         """Neither file symlinks, directory symlinks nor FIFOs can redirect reads/writes."""
-        self.path.parent.mkdir()
+        self.path.parent.mkdir(parents=True)
         target = Path(self.temp.name) / "other.json"
         target.write_text(json.dumps(ctl.DEFAULTS))
         for dangling in (False, True):
@@ -141,7 +141,7 @@ class ShellSettingsTests(unittest.TestCase):
 
     def test_v1_migration_without_read_writes(self):
         """Read/check migrate in memory; the next explicit Apply persists version 4."""
-        self.path.parent.mkdir()
+        self.path.parent.mkdir(parents=True)
         legacy = {"version": 1, "appearance": {"baseRadius": 24, "surfaceTone": "soft"}, "topbar": {"tray": False}}
         self.path.write_text(json.dumps(legacy))
         original = self.path.read_bytes()
@@ -160,7 +160,7 @@ class ShellSettingsTests(unittest.TestCase):
 
     def test_v2_migration_and_dock_persistence(self):
         """Migration injects Dock defaults and keeps every previous preference."""
-        self.path.parent.mkdir()
+        self.path.parent.mkdir(parents=True)
         legacy = json.loads(json.dumps(ctl.DEFAULTS))
         legacy.pop("dock")
         legacy["version"] = 2
@@ -189,7 +189,7 @@ class ShellSettingsTests(unittest.TestCase):
 
     def test_v3_hover_migration_and_ranges(self):
         """Old Dock choices survive migration; zero and both upper bounds persist."""
-        self.path.parent.mkdir()
+        self.path.parent.mkdir(parents=True)
         legacy = json.loads(json.dumps(ctl.DEFAULTS))
         legacy["version"] = 3
         legacy["dock"] = {"visibilityMode": "always", "exclusiveSpace": True, "iconSize": 72}
@@ -210,7 +210,7 @@ class ShellSettingsTests(unittest.TestCase):
 
     def test_incomplete_v3_dock_is_rejected(self):
         """Migration never masks missing, unknown or invalid legacy Dock fields."""
-        self.path.parent.mkdir()
+        self.path.parent.mkdir(parents=True)
         for dock in ({"iconSize": 48},
                      {"iconSize": 48, "visibilityMode": "always", "exclusiveSpace": False, "extra": 0},
                      {"iconSize": True, "visibilityMode": "always", "exclusiveSpace": False}):
