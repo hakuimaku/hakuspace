@@ -87,8 +87,13 @@ Item {
                 root.check(!ShellSettingsStore.dirty && ShellSettingsStore.valid, "initial defaults")
                 root.checkPinSize(40)
                 ShellSettingsStore.setValue("dock", "iconSize", 64)
+                ShellSettingsStore.setValue("dock", "style", "bar")
+                ShellSettingsStore.setValue("dock", "showTrash", false)
+                ShellSettingsStore.setValue("dock", "showDevices", false)
                 root.checkPinSize(40)
                 ShellSettingsStore.discard()
+                root.check(ShellSettingsStore.dockStyle === "dock" && ShellSettingsStore.dockShowTrash && ShellSettingsStore.dockShowDevices,
+                    "Discard restores Dock style and accessories")
                 root.checkPinSize(40)
                 root.check(anchorMorph.anchorSpan().start === 180 && anchorMorph.anchorSpan().end === 212, "captured anchor localization")
                 anchorMorph.anchorItem = liveAnchor
@@ -137,6 +142,9 @@ Item {
                 }
                 ShellSettingsStore.setValue("appearance", "baseRadius", 20)
                 ShellSettingsStore.setValue("dock", "iconSize", 64)
+                ShellSettingsStore.setValue("dock", "style", "bar")
+                ShellSettingsStore.setValue("dock", "showTrash", false)
+                ShellSettingsStore.setValue("dock", "showDevices", false)
                 ShellSettingsStore.setValue("appearance", "surfaceTone", "soft")
                 ShellSettingsStore.setValue("topbar", "tray", false)
                 ShellSettingsStore.setValue("roundedScreen", "radius", 24)
@@ -153,6 +161,8 @@ Item {
                 ShellSettingsStore.apply()
             } else if (root.phase === 1) {
                 root.checkPinSize(64)
+                root.check(ShellSettingsStore.dockStyle === "bar" && !ShellSettingsStore.dockShowTrash && !ShellSettingsStore.dockShowDevices,
+                    "Apply persists style and accessory switches")
                 root.check(!ShellSettingsStore.dirty && ShellSettingsStore.savedValues.appearance.baseRadius === 20, "apply snapshot")
                 root.check(ShellSettingsStore.savedValues.dock.hoverLift === 48 && ShellSettingsStore.savedValues.dock.hoverScale === 100,
                     "Apply saves both hover preferences")
@@ -162,6 +172,8 @@ Item {
                 boundsMorph.bounds = {start: 1, end: 319}
                 ShellSettingsStore.reload()
             } else if (root.phase === 2) {
+                root.check(ShellSettingsStore.dockStyle === "bar" && !ShellSettingsStore.dockShowTrash && !ShellSettingsStore.dockShowDevices,
+                    "Reload retains style and accessory switches")
                 root.check(boundsMorph.mStart === 1, "one-pixel border change retargets an open Flare")
                 root.check(Theme.radius === 20 && !ShellSettingsStore.showTray, "persistence after reload")
                 root.check(ShellSettingsStore.dockHoverLift === 48 && ShellSettingsStore.dockHoverScale === 100, "hover persistence after reload")

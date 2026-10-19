@@ -10,9 +10,18 @@ QtObject {
     readonly property real leftInset: borderThickness
     readonly property real rightInset: borderThickness
     readonly property real bottomInset: borderThickness
-    // Share the Dock's fixed zone so frame visuals can cancel its inward offset.
+    // Share logical Dock visibility independently for each output.
     readonly property real dockHeight: ShellSettingsStore.dockIconSize + 17
-    readonly property real dockReservedHeight: AppState.taskbarManualState && ShellSettingsStore.dockExclusiveSpace ? dockHeight : 0
+    property var shownDocks: ({})
+    function setDockShown(name, shown) {
+        if (!name || !!shownDocks[name] === shown) return
+        var next = Object.assign({}, shownDocks)
+        if (shown) next[name] = true
+        else delete next[name]
+        shownDocks = next
+    }
+    // Cancel only the zone actually reserved on this output.
+    function dockReservation(name) { return shownDocks[name] && ShellSettingsStore.dockExclusiveSpace ? dockHeight : 0 }
     readonly property real flareTopY: Theme.topBarHeight
     readonly property real edgeHugRadius: Math.max(Theme.hugRadius, roundedRadius)
 

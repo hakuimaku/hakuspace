@@ -38,22 +38,25 @@ START
 else
     cp scripts/hikai_settings_harness.qml "$shell_root/shell.qml"
     # Exercise both missing-file startup and a read-only legacy migration in QML.
-    for scenario in missing v1 v3; do
+    for scenario in missing v1 v3 v4; do
         cp src/home/hakucfg/config/taskbar-pin-apps "$test_root/taskbar-pin-apps"
         if [[ $scenario == v1 ]]; then
             printf '%s\n' '{"version":1,"appearance":{"baseRadius":12,"surfaceTone":"dark"},"topbar":{}}' > "$test_root/hakucfg/hikai/hikai-shell.json"
-        elif [[ $scenario == v3 ]]; then
-            python3 - "$test_root/hakucfg/hikai/hikai-shell.json" <<'PY'
-"""Remove hover fields to exercise the previous Dock schema."""
+        elif [[ $scenario == v3 || $scenario == v4 ]]; then
+            python3 - "$test_root/hakucfg/hikai/hikai-shell.json" "$scenario" <<'PY'
+"""Remove new fields to exercise legacy Dock schemas."""
 import json
 import sys
 from pathlib import Path
 
 path = Path(sys.argv[1])
 values = json.loads(path.read_text())
-values["version"] = 3
-values["dock"].pop("hoverLift")
-values["dock"].pop("hoverScale")
+values["version"] = int(sys.argv[2][1:])
+for key in ("style", "showTrash", "showDevices"):
+    values["dock"].pop(key)
+if values["version"] == 3:
+    values["dock"].pop("hoverLift")
+    values["dock"].pop("hoverScale")
 path.write_text(json.dumps(values))
 PY
         fi
@@ -79,12 +82,12 @@ from pathlib import Path
 import re
 
 values = json.loads(Path(sys.argv[1]).read_text())
-assert values["version"] == 4
+assert values["version"] == 5
 assert values["roundedScreen"] == {"radius": 20, "borderThickness": 4}
 assert values["appearance"] == {"baseRadius": 12, "surfaceTone": "dark"}
 assert all(values["topbar"].values())
 assert values["dock"] == {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 48,
-                          "hoverLift": 14, "hoverScale": 0}
+                          "hoverLift": 14, "hoverScale": 0, "style": "dock", "showTrash": True, "showDevices": True}
 assert set(re.findall(r'"size"\s*:\s*(\d+)', Path(sys.argv[2]).read_text())) == {"48"}
 PY
 

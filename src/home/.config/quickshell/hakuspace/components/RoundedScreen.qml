@@ -26,7 +26,7 @@ Item {
         margins {
             left: -ScreenGeometry.leftInset
             right: -ScreenGeometry.rightInset
-            bottom: -ScreenGeometry.bottomInset - ScreenGeometry.dockReservedHeight
+            bottom: -ScreenGeometry.bottomInset - ScreenGeometry.dockReservation(rootItem.modelData ? rootItem.modelData.name : "")
         }
         mask: Region {}
 

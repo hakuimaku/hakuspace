@@ -22,11 +22,12 @@ PanelWindow {
     readonly property real contentProgress: Math.max(0, (revealProgress - 0.55) / 0.45)
     readonly property bool interactionReady: panelOpen && revealProgress === 1
     readonly property real floatingGap: Theme.pad * 2
+    readonly property real dockBottomInset: AppState.taskbarManualState && ShellSettingsStore.dockStyle === "bar" ? 0 : ScreenGeometry.bottomInset
     readonly property var finalRect: Geometry.finalRect(width, height, ScreenGeometry.leftInset,
         (AppState.waybarManualState ? ScreenGeometry.flareTopY : 0) + floatingGap,
-        ScreenGeometry.bottomInset, AppState.taskbarManualState ? ScreenGeometry.dockHeight : 0, floatingGap)
+        dockBottomInset, AppState.taskbarManualState ? ScreenGeometry.dockHeight : 0, floatingGap)
     readonly property var seedRect: Geometry.seedRect(capturedAnchor, width, height, ShellSettingsStore.dockIconSize,
-        ScreenGeometry.bottomInset, floatingGap, finalRect)
+        dockBottomInset, floatingGap, finalRect)
     readonly property var currentRect: Geometry.mixRect(seedRect, finalRect, revealProgress)
     // The anchor relay leaves the rest of the Top-layer Dock available to the desktop.
     readonly property var safeZones: {
@@ -67,7 +68,6 @@ PanelWindow {
     WlrLayershell.namespace: "hakuspace-hakumenu-floating"
     WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
-    exclusiveZone: 0
     color: "transparent"
     visible: panelOpen || morphProgress > 0.001
     onPanelOpenChanged: {

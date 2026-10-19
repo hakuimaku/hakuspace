@@ -77,8 +77,10 @@ class ShellSettingsTests(unittest.TestCase):
         patches += [{"dock": {"hoverScale": value}} for value in (-1, 101, True, 25.0, "25", None)]
         patches += [{"dock": {"exclusiveSpace": value}} for value in (0, "false", None)]
         patches += [{"dock": {"visibilityMode": value}} for value in ("hidden", True, None)]
+        patches += [{"dock": {key: value}} for key in ("showTrash", "showDevices") for value in (0, "false", None)]
+        patches += [{"dock": {"style": value}} for value in ("full", True, 1, None)]
         patches += [{"dock": {"enabled": True}}]
-        patches += [{"appearance": {"surfaceTone": "black"}}, {"version": True}, {"version": 5}, {"version": 1},
+        patches += [{"appearance": {"surfaceTone": "black"}}, {"version": True}, {"version": 6}, {"version": 1},
                     {"appearance": []}, {"topbar": {"logo": False}}, {"unknown": 1}, []]
         for payload in patches:
             with self.subTest(payload=payload), self.assertRaises(ValueError):
@@ -88,7 +90,7 @@ class ShellSettingsTests(unittest.TestCase):
     def test_invalid_document_and_payload(self):
         """Malformed or incomplete documents report failure without replacement."""
         self.path.parent.mkdir(parents=True)
-        for content in ("{broken", "[]", '{"version": 1}', json.dumps(dict(ctl.DEFAULTS, version=5))):
+        for content in ("{broken", "[]", '{"version": 1}', json.dumps(dict(ctl.DEFAULTS, version=6))):
             self.path.write_text(content)
             for action in ("read", "check", "reset"):
                 with self.subTest(action=action, content=content), self.assertRaises(ValueError):
@@ -144,7 +146,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
 
     def test_v1_migration_without_read_writes(self):
-        """Read/check migrate in memory; the next explicit Apply persists version 4."""
+        """Read/check migrate in memory; the next explicit Apply persists version 5."""
         self.path.parent.mkdir(parents=True)
         legacy = {"version": 1, "appearance": {"baseRadius": 24, "surfaceTone": "soft"}, "topbar": {"tray": False}}
         self.path.write_text(json.dumps(legacy))
@@ -152,14 +154,14 @@ class ShellSettingsTests(unittest.TestCase):
         for action in ("read", "check"):
             data = ctl.run(action)
             self.assertTrue(data["needsMigration"])
-            self.assertEqual(data["values"]["version"], 4)
+            self.assertEqual(data["values"]["version"], 5)
             self.assertEqual(data["values"]["roundedScreen"], {"radius": 20, "borderThickness": 4})
             self.assertEqual(data["values"]["appearance"], legacy["appearance"])
             self.assertFalse(data["values"]["topbar"]["tray"])
             self.assertTrue(data["values"]["topbar"]["clock"])
             self.assertEqual(self.path.read_bytes(), original)
         self.write({})
-        self.assertEqual(json.loads(self.path.read_text())["version"], 4)
+        self.assertEqual(json.loads(self.path.read_text())["version"], 5)
         self.assertFalse(ctl.run("read")["needsMigration"])
 
     def test_v2_migration_and_dock_persistence(self):
@@ -203,11 +205,11 @@ class ShellSettingsTests(unittest.TestCase):
         for action in ("read", "check"):
             result = ctl.run(action)
             self.assertTrue(result["needsMigration"])
-            self.assertEqual(result["values"]["dock"], legacy["dock"] | {"hoverLift": 14, "hoverScale": 0})
+            self.assertEqual(result["values"]["dock"], ctl.DEFAULTS["dock"] | legacy["dock"])
             self.assertEqual(self.path.read_bytes(), original)
         for lift, scale in ((0, 0), (48, 100), (13, 37)):
             values = self.write({"dock": {"hoverLift": lift, "hoverScale": scale}})
-            self.assertEqual(values["dock"], legacy["dock"] | {"hoverLift": lift, "hoverScale": scale})
+            self.assertEqual(values["dock"], ctl.DEFAULTS["dock"] | legacy["dock"] | {"hoverLift": lift, "hoverScale": scale})
             self.assertEqual(values["appearance"], legacy["appearance"])
             self.assertEqual(ctl.run("read")["values"], values)
             self.assertFalse(ctl.run("read")["needsMigration"])
@@ -225,7 +227,6 @@ class ShellSettingsTests(unittest.TestCase):
                 self.write({})
             self.assertEqual(self.path.read_bytes(), original)
 
-
     def test_icon_size_sync_and_reset(self):
         """Only saving icon size or Reset changes the shared pin document."""
         import taskbar_pins_ctl
@@ -240,6 +241,24 @@ class ShellSettingsTests(unittest.TestCase):
         ctl.run("reset")
         data = json.loads(taskbar_pins_ctl.jsonc_text(self.pins.read_text()))
         self.assertTrue(all(data[module]["size"] == 48 for module in data["group/pin"]["modules"]))
+
+    def test_v4_migration_and_dock_presentation(self):
+        """Legacy choices survive; presentation and accessories persist independently."""
+        self.path.parent.mkdir(parents=True)
+        legacy = json.loads(json.dumps(ctl.DEFAULTS))
+        legacy["version"] = 4
+        for key in ("style", "showTrash", "showDevices"):
+            legacy["dock"].pop(key)
+        legacy["dock"].update(iconSize=60, hoverLift=32, exclusiveSpace=True)
+        self.path.write_text(json.dumps(legacy))
+        original = self.path.read_bytes()
+        result = ctl.run("read")
+        self.assertTrue(result["needsMigration"])
+        self.assertEqual(result["values"]["dock"], ctl.DEFAULTS["dock"] | legacy["dock"])
+        self.assertEqual(self.path.read_bytes(), original)
+        self.write({"dock": {"style": "bar", "showTrash": False, "showDevices": False}})
+        self.assertEqual(ctl.run("read")["values"]["dock"], legacy["dock"] | {"style": "bar", "showTrash": False, "showDevices": False})
+        self.assertEqual(ctl.run("reset")["values"], ctl.DEFAULTS)
 
     def test_invalid_pin_config_blocks_size_save(self):
         """A failed pin update reports failure before saving a mismatched shell size."""

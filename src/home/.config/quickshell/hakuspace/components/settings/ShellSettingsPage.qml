@@ -162,8 +162,11 @@ Item {
                     font.weight: Font.DemiBold
                 }
                 Repeater {
-                    model: [{key: "visibilityMode", label: "Visibility", labels: ["Auto Hide", "Always"]},
-                        {key: "exclusiveSpace", label: "Reserve space", labels: ["Off", "On"]}]
+                    model: [{key: "style", label: "Style", labels: ["Dock", "Full bar"], hint: "Use a compact Dock or a full-width gradient taskbar."},
+                        {key: "visibilityMode", label: "Visibility", labels: ["Auto Hide", "Always"], hint: "Reveal at the bottom center or keep the Dock visible."},
+                        {key: "exclusiveSpace", label: "Reserve space", labels: ["Off", "On"], hint: "Reserve space while shown; release it when hidden."},
+                        {key: "showTrash", label: "Trash", labels: ["Hide", "Show"], hint: "Show the Trash shortcut."},
+                        {key: "showDevices", label: "Mounted devices", labels: ["Hide", "Show"], hint: "Show mounted storage shortcuts."}]
                     delegate: Row {
                         required property var modelData
                         width: form.width
@@ -180,12 +183,13 @@ Item {
                             width: 186
                             labels: modelData.labels
                             available: root.editable
-                            checked: modelData.key === "visibilityMode" ? ShellSettingsStore.dockVisibilityMode === "always"
-                                : ShellSettingsStore.dockExclusiveSpace
-                            hint: modelData.key === "visibilityMode" ? "Reveal at the bottom center or keep the Dock visible."
-                                : "Keep a fixed bottom reservation even while the Dock is hidden."
+                            checked: modelData.key === "style" ? ShellSettingsStore.dockStyle === "bar"
+                                : modelData.key === "visibilityMode" ? ShellSettingsStore.dockVisibilityMode === "always"
+                                : ShellSettingsStore.values.dock[modelData.key]
+                            hint: modelData.hint
                             onToggled: value => ShellSettingsStore.setValue("dock", modelData.key,
-                                modelData.key === "visibilityMode" ? (value ? "always" : "autohide") : value)
+                                modelData.key === "style" ? (value ? "bar" : "dock")
+                                    : modelData.key === "visibilityMode" ? (value ? "always" : "autohide") : value)
                         }
                     }
                 }

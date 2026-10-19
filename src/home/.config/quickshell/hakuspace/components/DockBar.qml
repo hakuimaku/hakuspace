@@ -13,15 +13,17 @@ Item {
     // Release input and reservations immediately while preserving closing frames.
     readonly property bool enabledDock: !!modelData && AppState.taskbarManualState
     readonly property bool always: ShellSettingsStore.dockVisibilityMode === "always"
+    readonly property bool fullWidth: ShellSettingsStore.dockStyle === "bar"
     readonly property int iconSize: ShellSettingsStore.dockIconSize
     // Four pixels above the item; indicators meet the surface's bottom edge.
     readonly property real targetHeight: ScreenGeometry.dockHeight
     // Follow frame reservations explicitly without consuming the Dock's own zone.
-    readonly property real bottomInset: ScreenGeometry.bottomInset
+    readonly property real bottomInset: fullWidth ? 0 : ScreenGeometry.bottomInset
+    readonly property real sideInset: fullWidth ? 0 : ScreenGeometry.leftInset
     readonly property real horizontalPadding: 24
     // A removed output becomes null before its Variants delegate is destroyed.
     readonly property real targetWidth: modelData
-        ? Math.min(Math.max(0, modelData.width - ScreenGeometry.leftInset - ScreenGeometry.rightInset - Theme.hugRadius * 2),
+        ? fullWidth ? modelData.width : Math.min(Math.max(0, modelData.width - ScreenGeometry.leftInset - ScreenGeometry.rightInset - Theme.hugRadius * 2),
             items.implicitWidth + horizontalPadding * 2) : 0
     // Only the Dock presentation keeps its owning output's autohide surface alive.
     readonly property bool hakuMenuDockLease: !!modelData && UiState.activePanel === "hakumenu"
@@ -39,6 +41,8 @@ Item {
         ? hover.point.position.x - viewport.x + viewport.contentX - items.x : NaN
     // Balance subscriptions across initial state, manual toggles and output removal.
     property bool statsSubscribed: false
+    // Release geometry state when the output disappears.
+    property string registeredOutput: ""
     // Confirmation belongs to the app and is dismissed when its hover ends.
     property string terminationKey: ""
     property string terminationMessage: ""
@@ -55,14 +59,15 @@ Item {
     property real reorderGrabX: 0
     property var reorderSnapshot: []
     property rect reorderMarker: Qt.rect(0, 0, 0, 0)
-    readonly property var places: SysStats.mounts.filter(function(mount) {
+    readonly property var places: ShellSettingsStore.dockShowDevices ? SysStats.mounts.filter(function(mount) {
         return mount.target && mount.target !== "/" && !/^\/(boot|home|usr|var|etc|nix)(\/|$)/.test(mount.target)
-    })
+    }) : []
     readonly property var triggerRect: Geometry.trigger(dockWindow.width, dockWindow.height)
     readonly property var safeRect: Geometry.envelope(dockWindow.width, dockWindow.height,
-        targetWidth + Theme.hugRadius * 2, targetHeight + bottomInset,
-        morph.width + Theme.hugRadius * 2, morph.height + bottomInset, headroom)
-    readonly property var safeZones: shown ? [triggerRect, safeRect] : []
+        (fullWidth ? viewport.width : targetWidth) + Theme.hugRadius * 2, targetHeight + bottomInset,
+        (fullWidth ? viewport.width : morph.width) + Theme.hugRadius * 2, morph.height + bottomInset, headroom)
+    readonly property var barRect: Qt.rect(0, dockWindow.height - targetHeight, dockWindow.width, targetHeight)
+    readonly property var safeZones: shown ? fullWidth ? [triggerRect, safeRect, barRect] : [triggerRect, safeRect] : []
     readonly property bool tooltipsEnabled: shown && !hakuMenuDockLease && !reorderKey && !pinMessage
 
     // Keep extended stats subscribed only while this output has a Dock.
@@ -70,9 +75,13 @@ Item {
         syncStats()
         if (!enabledDock) { revealed = false; cancelTermination(); cancelReorder(); clearPinFeedback() }
     }
-    Component.onCompleted: syncStats()
-    Component.onDestruction: if (statsSubscribed) SysStats.releaseExtended()
+    Component.onCompleted: { syncStats(); syncGeometry() }
+    Component.onDestruction: {
+        if (statsSubscribed) SysStats.releaseExtended()
+        ScreenGeometry.setDockShown(registeredOutput, false)
+    }
     onShownChanged: {
+        syncGeometry()
         if (!shown) { cancelTermination(); cancelReorder(); clearPinFeedback() }
         else Qt.callLater(function() {
             lifetime.forcePointerMode()
@@ -87,6 +96,13 @@ Item {
     // Revealing persistent chrome does not change UiState's transient panel ownership.
     function reveal() { if (enabledDock && !always) revealed = true }
     function close() { cancelTermination(); revealed = false }
+    // Remove stale output entries before publishing the current visible state.
+    function syncGeometry() {
+        var name = modelData ? modelData.name : ""
+        if (registeredOutput && registeredOutput !== name) ScreenGeometry.setDockShown(registeredOutput, false)
+        registeredOutput = name
+        ScreenGeometry.setDockShown(name, shown)
+    }
     // Only actual key or pointer input changes the tooltip's interaction mode.
     function setInputMode(keyboard) {
         if (keyboard) lifetime.beginKeyboardLease()
@@ -95,7 +111,7 @@ Item {
     // Translate the real scrolled icon from the bounded bottom window into output-local coordinates.
     function menuAnchor(item) {
         var point = item.mapToItem(dockWindow.contentItem, item.iconRect.x, item.iconRect.y)
-        return {x: ScreenGeometry.leftInset + point.x, y: modelData.height - dockWindow.height + point.y,
+        return {x: sideInset + point.x, y: modelData.height - dockWindow.height + point.y,
             width: item.iconRect.width, height: item.iconRect.height}
     }
     // Acquire the shared mount feed once per enabled output.
@@ -241,13 +257,13 @@ Item {
         }
     }
 
-    // A separate stable zone prevents tiled clients resizing during reveal animations.
+    // Reserve once per reveal; visual animation never changes the zone's height.
     PanelWindow {
         screen: root.modelData
         anchors { bottom: true; left: true; right: true }
         WlrLayershell.layer: WlrLayer.Bottom
         WlrLayershell.namespace: "hakuspace-dock-reservation"
-        visible: root.enabledDock && ShellSettingsStore.dockExclusiveSpace
+        visible: root.shown && ShellSettingsStore.dockExclusiveSpace
         color: "transparent"
         implicitHeight: root.targetHeight
         exclusiveZone: root.targetHeight
@@ -261,9 +277,8 @@ Item {
         WlrLayershell.namespace: "hakuspace-dock"
         WlrLayershell.keyboardFocus: root.shown ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
-        margins.left: ScreenGeometry.leftInset
-        margins.right: ScreenGeometry.rightInset
-        exclusiveZone: 0
+        margins.left: root.sideInset
+        margins.right: root.sideInset
         visible: root.enabledDock || morph.height > 0
         color: "transparent"
         implicitHeight: root.targetHeight + 180
@@ -283,6 +298,12 @@ Item {
                 y: root.shown ? root.safeRect.y : dockWindow.height - root.bottomInset - morph.height
                 width: !root.enabledDock ? 0 : root.shown ? root.safeRect.width : morph.width
                 height: !root.enabledDock ? 0 : root.shown ? root.safeRect.height : morph.height
+            }
+            Region {
+                x: 0
+                y: dockWindow.height - (root.shown ? root.targetHeight : morph.height)
+                width: root.enabledDock && root.fullWidth ? dockWindow.width : 0
+                height: root.enabledDock && root.fullWidth ? (root.shown ? root.targetHeight : morph.height) : 0
             }
         }
         HoverHandler {
@@ -305,7 +326,20 @@ Item {
             y: dockWindow.height - root.bottomInset - height
             width: morph.width
             height: morph.height
-            visible: height > 0.1
+            visible: !root.fullWidth && height > 0.1
+        }
+        // Feather the full bar upward, keeping the darkest edge at half opacity.
+        Rectangle {
+            objectName: "dock-full-bar"
+            x: 0
+            y: dockWindow.height - height
+            width: dockWindow.width
+            height: morph.height
+            visible: root.fullWidth && height > 0.1
+            gradient: Gradient {
+                GradientStop { position: 0; color: "transparent" }
+                GradientStop { position: 1; color: Qt.rgba(0, 0, 0, 0.5) }
+            }
         }
         // Paint transient feedback above the lifted icons without taking pointer input.
         Rectangle {
@@ -337,7 +371,9 @@ Item {
             id: viewport
             x: (dockWindow.width - width) / 2
             y: dockWindow.height - root.bottomInset - height
-            width: Math.max(0, morph.width - root.horizontalPadding * 2) + root.hoverPadding * 2
+            width: root.fullWidth ? Math.max(0, Math.min(items.implicitWidth + root.hoverPadding * 2,
+                dockWindow.width - root.horizontalPadding * 2))
+                : Math.max(0, morph.width - root.horizontalPadding * 2) + root.hoverPadding * 2
             height: Math.max(0, morph.height - 4) + root.headroom
             contentWidth: items.implicitWidth + root.hoverPadding * 2
             contentHeight: height
@@ -421,7 +457,7 @@ Item {
                             onTerminateRequested: root.terminate(appSlot.app)
                         }
                         Rectangle {
-                            width: visible ? 1 : 0
+                            width: 1
                             height: root.iconSize * 0.6
                             anchors.verticalCenter: parent.verticalCenter
                             visible: !!appSlot.app && appSlot.app.type === "system"
@@ -429,7 +465,10 @@ Item {
                         }
                     }
                 }
-                Rectangle { width: 1; height: root.iconSize * 0.6; y: 12; color: Theme.border }
+                Rectangle {
+                    visible: ShellSettingsStore.dockShowTrash || root.places.length > 0
+                    width: 1; height: root.iconSize * 0.6; y: 12; color: Theme.border
+                }
                 Repeater {
                     model: root.places
                     delegate: Dock.DockItem {
@@ -445,6 +484,7 @@ Item {
                     }
                 }
                 Dock.DockItem {
+                    visible: ShellSettingsStore.dockShowTrash
                     tooltipEnabled: root.tooltipsEnabled
                     keyboardMode: lifetime.keyboardLease
                     onInputModeRequested: keyboard => root.setInputMode(keyboard)

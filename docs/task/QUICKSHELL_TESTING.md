@@ -54,10 +54,13 @@ outside-drop and external-edit cancellation, autohide leases, crowded edge scrol
 and manual OFF during a gesture. It also checks feedback placement, expiry, backend
 errors and autohide release after removing a stopped pin. Fixture desktop entries
 prevent accidental app launches.
-The regular harness checks maximized
-client reservation, fixed frame dimensions across exclusive ON/OFF and manual OFF,
-draft/Discard/persistence, external pin edits and malformed
-JSONC recovery. `--current` runs on the current compositor; input mode there
+The regular harness checks maximized client reservation, fixed frame dimensions
+in both Dock styles, full-width gradient geometry, accessory switches, per-output
+autohide zone release/reveal and manual OFF, including nested Niri. It also checks
+draft/Discard/persistence, external pin edits and malformed JSONC recovery.
+Exact maximized-client heights are checked on Labwc; Niri's tiled fixtures use
+actual frame surface bounds to verify compositor zones.
+`--current` runs on the current compositor; input mode there
 moves the real session pointer and briefly opens fixture windows.
 Both manual OFF and pointer-driven autohide sample the closing animation: the
 surface and fading icons stay visible, item input stops immediately, and manual
@@ -71,7 +74,7 @@ repeated sync and controller writes through the new default paths.
 See [HIKAI_DOCK_D0_PROBE.md](HIKAI_DOCK_D0_PROBE.md) for the window-source probe.
 The implementation report records the final runtime and physical coverage.
 
-## Post-P3 Settings verification (updated for V3)
+## Post-P3 Settings verification (updated for V5)
 
 Status: **IMPLEMENTED / PHYSICAL VERIFY**. See
 [QUICKSHELL_STYLE.md](QUICKSHELL_STYLE.md) for schema ownership and geometry.
@@ -384,9 +387,10 @@ Record: idle CPU (bar not interacting), CPU while morphing, and whether any fram
   - Monitor card: 2×2 grid showing ROM, RAM, CPU, GPU (or `N/A` if unavailable). Single non-shell `SysStats` poller with 2000 ms cadence.
 
 ### 9.3 Sidebar
-- **Visual:** Left-edge elongated rounded lobe attached to RoundedScreen left edge, circular action dots and plus button.
+- **Visual:** Left-edge rounded lobe attached to RoundedScreen, sized for three circular utility controls.
+- **Controls:** Quick Actions, Clipboard and Temp Note; keyboard selection stays within these three entries.
 - **Handoff:** Hovering Navigation Sidebar sector expands Sidebar immediately via invisible transition bridge without flicker.
-- **Lifecycle:** Sidebar stays open while pointer remains in sector ∪ bridge ∪ Sidebar. Leaving that union closes reliably. Escape closes. Dot/plus actions remain explicit stubs.
+- **Lifecycle:** Sidebar stays open while pointer remains in sector ∪ bridge ∪ Sidebar. Leaving that union closes reliably. Escape closes.
 
 ### 9.4 Settings stub
 - **Visual:** Centered inner surface with backdrop separation (`still working rn...` placeholder).

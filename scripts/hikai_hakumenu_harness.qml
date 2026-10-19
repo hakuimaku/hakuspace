@@ -101,7 +101,7 @@ ShellRoot {
         var item = appMenu()
         expectedAnchor = output.dock.menuAnchor(item)
         var point = item.mapToItem(null, item.width / 2, item.height / 2)
-        move(ScreenGeometry.leftInset + point.x, output.modelData.height - output.dock.targetHeight - 180 + point.y, 272)
+        move(output.dock.sideInset + point.x, output.modelData.height - output.dock.targetHeight - 180 + point.y, 272)
     }
     // Stress focus restoration while the floating menu reverses its animation.
     Timer {
@@ -119,7 +119,7 @@ ShellRoot {
                 UiState.closeHakuMenu()
                 var trash = root.find(root.output.dock, function(item) { return item.label === "Trash" })
                 var point = trash.mapToItem(null, trash.width / 2, trash.height / 2)
-                root.move(ScreenGeometry.leftInset + point.x, root.output.modelData.height - root.output.dock.targetHeight - 180 + point.y)
+                root.move(root.output.dock.sideInset + point.x, root.output.modelData.height - root.output.dock.targetHeight - 180 + point.y)
             }
         }
     }
@@ -398,6 +398,7 @@ ShellRoot {
                 root.check(UiState.activePanel === "" && !root.output.dock.hakuMenuDockLease, "floating Escape releases lease")
                 SysStats.mounts = Array.from({length: 30}, function(value, index) { return {target: "/media/Drive" + index, percent: 37} })
                 ShellSettingsStore.setValue("dock", "visibilityMode", "always")
+                ShellSettingsStore.setValue("dock", "style", "bar")
             } else if (root.phase === 37) {
                 var motion = root.find(root.output.dock, function(item) { return typeof item.moving === "boolean" && typeof item.targetWidth === "number" })
                 if (motion.moving) return
@@ -427,7 +428,7 @@ ShellRoot {
                     "menu click burst leaves only the hovered icon tooltip: " + tooltips.map(function(item) { return item.text }).join(", "))
                 var trash = root.find(root.output.dock, function(item) { return item.label === "Trash" })
                 var point = trash.mapToItem(null, trash.width / 2, trash.height / 2)
-                root.move(ScreenGeometry.leftInset + point.x, height - root.output.dock.targetHeight - 180 + point.y, 274)
+                root.move(root.output.dock.sideInset + point.x, height - root.output.dock.targetHeight - 180 + point.y, 274)
             } else if (root.phase === 42) {
                 var trash = root.find(root.output.dock, function(item) { return item.label === "Trash" })
                 root.check(trash.activeFocus, "middle click focuses the Dock without launching Trash")
@@ -444,7 +445,7 @@ ShellRoot {
                         + tooltips.map(function(item) { return item.text + " focused=" + item.target.activeFocus }).join(", "))
                 var trash = root.find(root.output.dock, function(item) { return item.label === "Trash" })
                 var point = trash.mapToItem(null, trash.width / 2 + 4, trash.height / 2)
-                root.move(ScreenGeometry.leftInset + point.x, height - root.output.dock.targetHeight - 180 + point.y)
+                root.move(root.output.dock.sideInset + point.x, height - root.output.dock.targetHeight - 180 + point.y)
             } else if (root.phase === 45) {
                 var tooltips = root.dockTooltips()
                 root.check(tooltips.length === 1 && tooltips[0].text === "Trash", "pointer motion replaces the keyboard tooltip")

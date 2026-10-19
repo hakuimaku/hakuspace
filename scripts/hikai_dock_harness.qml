@@ -18,7 +18,8 @@ ShellRoot {
     property real fixtureHeight: 0
     property real reservedHeight: 0
     property bool closeAnimationObserved: false
-    FloatingWindow { id: first; title: "Dock fixture A"; visible: false; implicitWidth: 200; implicitHeight: 100 }
+    property bool autohideReservationObserved: false
+    FloatingWindow { id: first; title: "Dock fixture A"; visible: false; implicitWidth: 200; implicitHeight: 100; color: "#607080" }
     FloatingWindow { id: second; title: "Dock fixture B"; visible: false; implicitWidth: 200; implicitHeight: 100 }
     FileView { id: pinFile; path: TaskbarPins.path; onLoaded: root.initialPinText = text() }
     Process {
@@ -58,6 +59,33 @@ ShellRoot {
     function dockWindow(dock) {
         return dock.data.find(function(item) { return item.contentItem && item.anchors.bottom && item.height > dock.targetHeight })
     }
+    // Resolve composed visual controls without adding production test hooks.
+    function find(item, predicate) {
+        if (predicate(item)) return item
+        var children = item.contentItem ? item.contentItem.children : item.children || []
+        if (!item.contentItem && item.data && typeof item.data !== "function" && typeof item.data.length === "number") children = item.data
+        for (var child of children) {
+            var found = find(child, predicate)
+            if (found) return found
+        }
+        return null
+    }
+    // Observe a real reservation before pointer-free autohide closes the revealed Dock.
+    Timer {
+        id: reservationProbe
+        interval: 100
+        onTriggered: {
+            var dock = root.outputs[0].dock
+            root.check(dock.shown && ScreenGeometry.dockReservation(dock.modelData.name) === dock.targetHeight,
+                "autohide reveal restores its exclusive zone")
+            root.checkClientHeight(root.fixtureHeight - dock.targetHeight, "autohide reveal reserves client space")
+            root.checkFrames()
+            if (root.outputs.length > 1)
+                root.check(ScreenGeometry.dockReservation(root.outputs[1].modelData.name) === 0,
+                    "revealing one full bar leaves the other output's usable area untouched")
+            root.autohideReservationObserved = true
+        }
+    }
     // Fail the runner immediately when a behavioral assertion is false.
     function check(ok, message) {
         if (ok) return
@@ -82,7 +110,12 @@ ShellRoot {
             return item.contentItem && item.anchors.top && item.anchors.bottom && item.anchors.left && item.anchors.right
         })
     }
-    // Dock reservations must never shrink or shift the physical frame surface.
+    // Niri retiles fixture windows; its actual reservation is checked through frame bounds.
+    function checkClientHeight(expected, message) {
+        if (Quickshell.env("XDG_CURRENT_DESKTOP") === "niri") return
+        root.check(Math.abs(first.height - expected) <= 1, message + ": " + first.height + " expected=" + expected)
+    }
+    // Both Dock styles preserve the physical frame across reservation changes.
     function checkFrames() {
         for (var output of root.outputs) {
             var frame = frameWindow(output)
@@ -97,8 +130,17 @@ ShellRoot {
             required property var modelData
             property alias dock: dock
             property alias rounded: rounded
-            RoundedScreen { id: rounded; modelData: output.modelData }
+            // Keep the gradient's backdrop stable outside maximized client bounds.
+            PanelWindow {
+                screen: output.modelData
+                anchors { top: true; bottom: true; left: true; right: true }
+                WlrLayershell.layer: WlrLayer.Background
+                exclusionMode: ExclusionMode.Ignore
+                color: "#607080"
+                mask: Region {}
+            }
             DockBar { id: dock; modelData: output.modelData }
+            RoundedScreen { id: rounded; modelData: output.modelData }
             Component.onCompleted: root.outputs.push(output)
             Component.onDestruction: root.outputs = root.outputs.filter(function(item) { return item !== output })
         }
@@ -141,24 +183,25 @@ ShellRoot {
                 root.check(dock.iconSize === 72 && dock.targetHeight === 89, "live size preview")
                 ShellSettingsStore.discard()
                 root.check(dock.iconSize === 48, "Discard restores size")
+                ShellSettingsStore.setValue("dock", "visibilityMode", "always")
                 ShellSettingsStore.setValue("dock", "exclusiveSpace", true)
                 ShellSettingsStore.apply()
             } else if (root.phase === 4) {
                 root.checkFrames()
-                root.check(Math.abs(root.fixtureHeight - first.height - dock.targetHeight) <= 1,
-                    "reservation adds Dock height above the existing frame: " + root.fixtureHeight + " -> " + first.height)
+                root.checkClientHeight(root.fixtureHeight - dock.targetHeight, "reservation adds Dock height above the existing frame")
                 root.reservedHeight = first.height
                 dock.reveal()
                 ShellSettingsStore.reload()
             } else if (root.phase === 5) {
                 root.checkFrames()
-                root.check(first.height === root.reservedHeight, "reveal leaves client geometry stable")
+                root.checkClientHeight(root.reservedHeight, "reveal leaves client geometry stable")
                 first.visible = false
                 second.visible = false
             } else if (root.phase === 6) {
                 root.check(ShellSettingsStore.dockExclusiveSpace, "exclusive preference persisted")
                 root.check(!DockApps.runningGroups.some(function(app) { return app.windows.some(function(window) { return window.title === first.title }) }), "close removes running group")
-                root.check(dock.targetWidth === root.initialWidth, "close retargets width")
+                root.check(dock.targetWidth === root.initialWidth, "close retargets width: " + root.initialWidth + " -> "
+                    + dock.targetWidth + " apps=" + DockApps.renderedApps.map(function(app) { return app.key }).join(",") + " places=" + dock.places.length)
                 TaskbarPins.add("hikai-test-missing-app")
             } else if (root.phase === 7) {
                 root.check(TaskbarPins.pins.length === root.initialPins + 1, "pin updates model")
@@ -196,18 +239,75 @@ ShellRoot {
                 ShellSettingsStore.setValue("dock", "exclusiveSpace", false)
             } else if (root.phase === 15) {
                 root.checkFrames()
-                root.check(first.height === root.fixtureHeight, "exclusive OFF restores the client's frame-only work area")
+                root.checkClientHeight(root.fixtureHeight, "exclusive OFF restores the client's frame-only work area")
                 ShellSettingsStore.setValue("dock", "exclusiveSpace", true)
             } else if (root.phase === 16) {
                 root.checkFrames()
-                root.check(root.fixtureHeight - first.height === dock.targetHeight, "exclusive ON restores the inner Dock zone")
+                root.checkClientHeight(root.fixtureHeight - dock.targetHeight, "exclusive ON restores the inner Dock zone")
                 root.toggleTaskbar()
             } else if (root.phase === 17) {
                 root.checkFrames()
-                root.check(first.height === root.fixtureHeight, "manual OFF restores the client's frame-only work area")
+                root.checkClientHeight(root.fixtureHeight, "manual OFF restores the client's frame-only work area")
                 root.check(root.outputs.every(function(output) { return !output.dock.shown }), "manual OFF hides every output")
                 root.check(root.closeAnimationObserved && root.outputs.every(function(output) { return !root.dockWindow(output.dock).visible }),
                     "every output unmaps only after its close animation")
+                root.toggleTaskbar()
+            } else if (root.phase === 18) {
+                SysStats.mounts = [{target: "/media/Drive", percent: 37}]
+                root.check(dock.places.length === 1, "mounted device shortcut starts visible")
+                ShellSettingsStore.setValue("dock", "showTrash", false)
+                ShellSettingsStore.setValue("dock", "showDevices", false)
+            } else if (root.phase === 19) {
+                var trash = root.find(dock, function(item) { return item.label === "Trash" })
+                root.check(trash && !trash.visible && !dock.places.length, "accessory switches remove Trash and device slots")
+                ShellSettingsStore.setValue("dock", "showTrash", true)
+                ShellSettingsStore.setValue("dock", "showDevices", true)
+                ShellSettingsStore.setValue("dock", "style", "bar")
+                ShellSettingsStore.setValue("dock", "exclusiveSpace", false)
+            } else if (root.phase === 20) {
+                var window = root.dockWindow(dock)
+                var background = root.find(dock, function(item) { return item.objectName === "dock-full-bar" })
+                root.check(window.width === dock.modelData.width && window.margins.left === 0 && window.margins.right === 0
+                    && dock.bottomInset === 0 && dock.targetWidth === dock.modelData.width, "full bar reaches physical screen edges")
+                root.check(background && background.visible && background.y + background.height === window.height,
+                    "full-width gradient attaches to the physical bottom")
+                root.check(Math.abs(background.gradient.stops[1].color.a - 0.5) < 0.01 && background.gradient.stops[0].color.a === 0,
+                    "gradient fades from half-opacity black to transparent")
+                root.checkFrames()
+                root.checkClientHeight(root.fixtureHeight, "full bar without exclusivity leaves client space unchanged")
+                root.check(root.find(dock, function(item) { return item.label === "Trash" }).visible && dock.places.length === 1,
+                    "accessories can be enabled again")
+                if (Quickshell.env("HAKUSPACE_DOCK_ARTIFACT_DIR")) {
+                    writer.command = ["grim", "-o", dock.modelData.name, Quickshell.env("HAKUSPACE_DOCK_ARTIFACT_DIR") + "/full-bar.png"]
+                    writer.running = true
+                }
+                ShellSettingsStore.apply()
+            } else if (root.phase === 21) {
+                ShellSettingsStore.reload()
+            } else if (root.phase === 22) {
+                root.check(dock.fullWidth, "full bar style survives Apply and Reload")
+                ShellSettingsStore.setValue("dock", "visibilityMode", "autohide")
+                ShellSettingsStore.setValue("dock", "exclusiveSpace", true)
+            } else if (root.phase === 23) {
+                root.check(!dock.shown && ScreenGeometry.dockReservation(dock.modelData.name) === 0, "hidden autohide bar has no exclusive zone")
+                root.checkClientHeight(root.fixtureHeight, "hidden bar releases client space")
+                root.checkFrames()
+                dock.reveal()
+                reservationProbe.start()
+            } else if (root.phase === 24) {
+                root.check(root.autohideReservationObserved && !dock.shown, "autohide releases the exclusive zone")
+                root.checkClientHeight(root.fixtureHeight, "autohide restores client height")
+                root.checkFrames()
+                ShellSettingsStore.setValue("dock", "style", "dock")
+                ShellSettingsStore.setValue("dock", "visibilityMode", "always")
+            } else if (root.phase === 25) {
+                root.checkFrames()
+                ShellSettingsStore.setValue("dock", "visibilityMode", "autohide")
+            } else if (root.phase === 26) {
+                root.check(!dock.shown && ScreenGeometry.dockReservation(dock.modelData.name) === 0,
+                    "compact autohide Dock also releases its exclusive zone")
+                root.checkClientHeight(root.fixtureHeight, "hidden compact Dock releases client space")
+                root.checkFrames()
                 console.info("Hikai Dock checks passed")
                 Qt.quit()
             }

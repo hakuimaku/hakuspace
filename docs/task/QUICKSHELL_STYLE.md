@@ -14,17 +14,17 @@
 >
 > The old TopBar-center collar/notch/shoulder mockup and the old Wallpaper dual-front/wide-Flare concept are superseded.
 
-## Post-P3 Settings V3 surface and geometry ownership
+## Post-P3 Settings surface and geometry ownership
 
 This addition supersedes the fixed surface/radius assumptions in the historical
 baseline below. It does not change the accent/font flow or the P3 motion contract.
 
-`~/hakucfg/hikai/hikai-shell.json` (schema version 4) stores `appearance.baseRadius`,
+`~/hakucfg/hikai/hikai-shell.json` (schema version 5) stores `appearance.baseRadius`,
 `appearance.surfaceTone`, independent `roundedScreen` geometry, the global `topbar`
 booleans, and `dock.visibilityMode`, `dock.exclusiveSpace`, `dock.iconSize`,
-`dock.hoverLift`, `dock.hoverScale`.
-Versions 1–3 migrate in memory; Apply persists the upgraded document. Dock
-visibility uses `autohide` or `always`, with optional fixed reservation and
+`dock.hoverLift`, `dock.hoverScale`, `dock.style`, `dock.showTrash`, `dock.showDevices`.
+Versions 1–4 migrate in memory; Apply persists the upgraded document. Dock
+visibility uses `autohide` or `always`, with optional reservation while shown and
 32–72 px icons in 4 px steps (default 48). `taskbar_manual_state` remains the only
 ON/OFF source; there is no `dock.enabled` setting. Shared pins remain in
 `~/hakucfg/config/taskbar-pin-apps`, including the reserved `image#menu` item.
@@ -36,6 +36,12 @@ The complete side extension fits inside `hugRadius`; top rounding uses `radius`,
 capped at one quarter of the height/width, while bottom flares use half that theme
 radius, capped at one eighth of the height. It has 24 px horizontal padding,
 zero bottom padding and a 2 px artwork-to-dot gap.
+The optional `bar` style spans the physical bottom edge with centered icons and a
+black gradient fading from 0.5 opacity at the bottom to transparent at the top.
+RoundedScreen stays fixed at the physical screen edges in both styles. Trash and
+mounted-device shortcuts can be hidden independently, without empty slots or separators.
+Exclusive zones appear on reveal and disappear on hide, independently on each output;
+the zone height stays fixed throughout the visual animation.
 Dock icons have no hover, pressed or focused background. Settings sliders control
 hover lift from 0–48 px (default 14) and enlargement from 0–100% (default 0).
 Zero disables each effect independently; 100% enlargement doubles artwork size.
