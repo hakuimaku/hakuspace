@@ -19,8 +19,17 @@ Item {
         throw new Error(message)
     }
     // Exercise the actual page and slider types while using an isolated backend.
-    Settings.ShellSettingsPage { width: 580; height: 580 }
+    Settings.ShellSettingsPage { id: page; width: 580; height: 580 }
     Settings.SettingsSlider { id: slider; from: 4; to: 24; visible: false; value: ShellSettingsStore.baseRadius }
+    // Locate the actual zero-based Dock controls rendered by the settings page.
+    function dockSlider(item, maximum) {
+        if (item.from === 0 && item.to === maximum) return item
+        for (var child of item.children || []) {
+            var control = dockSlider(child, maximum)
+            if (control) return control
+        }
+        return null
+    }
     Item { id: liveAnchor; x: 33; y: 8; width: 24; height: 20 }
     Flare.FlareMorph {
         id: anchorMorph
@@ -95,6 +104,18 @@ Item {
                 }
                 ShellSettingsStore.discard()
                 root.check(Theme.radius === 12 && String(Theme.surface) === "#0b0b0b" && !ShellSettingsStore.dirty, "discard live preview")
+                for (var setting of [{key: "hoverLift", maximum: 48}, {key: "hoverScale", maximum: 100}]) {
+                    var control = root.dockSlider(page, setting.maximum)
+                    root.check(control && control.enabled && control.stepSize === 1, "Dock hover slider exists and accepts input")
+                    control.value = 0
+                    control.moved()
+                    root.check(ShellSettingsStore.values.dock[setting.key] === 0, "slider disables " + setting.key)
+                    control.value = setting.maximum
+                    control.moved()
+                    root.check(ShellSettingsStore.values.dock[setting.key] === setting.maximum, "slider previews " + setting.key)
+                    ShellSettingsStore.setValue("dock", setting.key, setting.maximum + 1)
+                    root.check(ShellSettingsStore.values.dock[setting.key] === setting.maximum, "invalid hover preview rejected")
+                }
                 ShellSettingsStore.setValue("appearance", "baseRadius", 20)
                 ShellSettingsStore.setValue("appearance", "surfaceTone", "soft")
                 ShellSettingsStore.setValue("topbar", "tray", false)
@@ -112,6 +133,8 @@ Item {
                 ShellSettingsStore.apply()
             } else if (root.phase === 1) {
                 root.check(!ShellSettingsStore.dirty && ShellSettingsStore.savedValues.appearance.baseRadius === 20, "apply snapshot")
+                root.check(ShellSettingsStore.savedValues.dock.hoverLift === 48 && ShellSettingsStore.savedValues.dock.hoverScale === 100,
+                    "Apply saves both hover preferences")
                 root.check(ShellSettingsStore.savedValues.roundedScreen.radius === 24
                     && ShellSettingsStore.savedValues.roundedScreen.borderThickness === 6, "Apply saves both screen preferences")
                 boundsMorph._lastAnimTime = Date.now()
@@ -120,13 +143,16 @@ Item {
             } else if (root.phase === 2) {
                 root.check(boundsMorph.mStart === 1, "one-pixel border change retargets an open Flare")
                 root.check(Theme.radius === 20 && !ShellSettingsStore.showTray, "persistence after reload")
+                root.check(ShellSettingsStore.dockHoverLift === 48 && ShellSettingsStore.dockHoverScale === 100, "hover persistence after reload")
                 root.check(ScreenGeometry.roundedRadius === 24 && ScreenGeometry.borderThickness === 6, "reload preserves both screen preferences")
                 ShellSettingsStore.reset()
                 root.check(Theme.radius === 12 && ShellSettingsStore.showTray && ShellSettingsStore.dirty, "reset previews defaults")
                 root.check(ScreenGeometry.roundedRadius === 20 && ScreenGeometry.borderThickness === 4, "Reset previews screen defaults")
+                root.check(ShellSettingsStore.dockHoverLift === 14 && ShellSettingsStore.dockHoverScale === 0, "Reset previews hover defaults")
                 ShellSettingsStore.discard()
                 root.check(Theme.radius === 20 && !ShellSettingsStore.showTray && !ShellSettingsStore.dirty, "reset then discard")
                 root.check(ScreenGeometry.roundedRadius === 24 && ScreenGeometry.borderThickness === 6, "Discard restores both screen preferences")
+                root.check(ShellSettingsStore.dockHoverLift === 48 && ShellSettingsStore.dockHoverScale === 100, "Discard restores hover preferences")
                 ShellSettingsStore.reset()
                 ShellSettingsStore.apply()
             } else if (root.phase === 3) {

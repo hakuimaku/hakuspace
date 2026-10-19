@@ -18,6 +18,9 @@ QtObject {
     property var notificationPanel: null
     property string hakuMenuMode: "closed"
     property string hakuMenuScreenName: ""
+    // Legacy callers keep the top presentation; Dock callers supply a local anchor.
+    property string hakuMenuStyle: "topFlare"
+    property var hakuMenuAnchorRect: null
     property string hakuMenuQuery: ""
     property string hakuMenuSelectionLabel: ""
     property string wallpaperScreenName: ""
@@ -129,12 +132,24 @@ QtObject {
     }
 
     // Opens HakuMenu panel in specified tab mode on the given screen.
-    function openHakuMenu(screenName, mode) {
+    function openHakuMenu(screenName, mode, style, anchorRect) {
+        hakuMenuStyle = style === "dockFloating" ? "dockFloating" : "topFlare"
+        hakuMenuAnchorRect = hakuMenuStyle === "dockFloating" && anchorRect
+            && [anchorRect.x, anchorRect.y, anchorRect.width, anchorRect.height].every(Number.isFinite)
+            && anchorRect.width > 0 && anchorRect.height > 0
+            ? {x: anchorRect.x, y: anchorRect.y, width: anchorRect.width, height: anchorRect.height} : null
         hakuMenuScreenName = screenName
         hakuMenuMode = (mode === "drun" || mode === "theme" || mode === "general") ? mode : "general"
         hakuMenuQuery = ""
         hakuMenuSelectionLabel = ""
         activePanel = "hakumenu"
+    }
+
+    // Toggle only matching ownership; other styles or outputs open a new presentation.
+    function toggleHakuMenu(screenName, mode, style, anchorRect) {
+        var nextStyle = style === "dockFloating" ? "dockFloating" : "topFlare"
+        if (activePanel === "hakumenu" && hakuMenuScreenName === screenName && hakuMenuStyle === nextStyle) closeHakuMenu()
+        else openHakuMenu(screenName, mode, nextStyle, anchorRect)
     }
 
     // Switches HakuMenu tab mode (general, drun, theme).
@@ -172,6 +187,8 @@ QtObject {
         hakuMenuScreenName = ""
         hakuMenuQuery = ""
         hakuMenuSelectionLabel = ""
+        hakuMenuStyle = "topFlare"
+        hakuMenuAnchorRect = null
     }
 
     // Closes HakuMenu if active on the specified screen.
@@ -369,6 +386,8 @@ QtObject {
             hakuMenuScreenName = ""
             hakuMenuQuery = ""
             hakuMenuSelectionLabel = ""
+            hakuMenuStyle = "topFlare"
+            hakuMenuAnchorRect = null
         }
         if (activePanel !== "settings") {
             settingsScreenName = ""

@@ -32,23 +32,35 @@ QtObject {
     readonly property bool showRecorder: values.topbar.recorder
     readonly property bool showClock: values.topbar.clock
     readonly property bool showNotifications: values.topbar.notifications
+    // Dock preferences preview immediately on every output.
+    readonly property string dockVisibilityMode: values.dock.visibilityMode
+    readonly property bool dockExclusiveSpace: values.dock.exclusiveSpace
+    readonly property int dockIconSize: values.dock.iconSize
+    readonly property int dockHoverLift: values.dock.hoverLift
+    readonly property int dockHoverScale: values.dock.hoverScale
 
     // Produce independent snapshots so Discard never shares mutable nested objects.
     function defaults() {
-        return {version: 2, appearance: {baseRadius: 12, surfaceTone: "dark"},
+        return {version: 4, appearance: {baseRadius: 12, surfaceTone: "dark"},
             roundedScreen: {radius: 20, borderThickness: 4},
+            dock: {visibilityMode: "autohide", exclusiveSpace: false, iconSize: 48, hoverLift: 14, hoverScale: 0},
             topbar: {workspaces: true, windowTitle: true, center: true, cava: true, tray: true,
                 quickControls: true, recorder: true, clock: true, notifications: true}}
     }
     // Mirror the backend contract before applying or accepting a response.
     function validate(draft) {
         var schema = defaults()
-        if (!draft || draft.version !== 2 || Object.keys(draft).length !== 4) return false
-        for (var section of ["appearance", "roundedScreen", "topbar"]) {
+        if (!draft || draft.version !== 4 || Object.keys(draft).length !== 5) return false
+        for (var section of ["appearance", "roundedScreen", "topbar", "dock"]) {
             if (!draft[section] || Object.keys(draft[section]).length !== Object.keys(schema[section]).length) return false
             for (var key in schema[section]) {
                 var value = draft[section][key]
                 if (section === "topbar" && typeof value !== "boolean") return false
+                if (key === "visibilityMode" && ["autohide", "always"].indexOf(value) < 0) return false
+                if (key === "exclusiveSpace" && typeof value !== "boolean") return false
+                if (key === "iconSize" && (!Number.isInteger(value) || value < 32 || value > 72 || value % 4 !== 0)) return false
+                if (key === "hoverLift" && (!Number.isInteger(value) || value < 0 || value > 48)) return false
+                if (key === "hoverScale" && (!Number.isInteger(value) || value < 0 || value > 100)) return false
                 if (section === "roundedScreen" && (!Number.isInteger(value) || value < 0 || value > (key === "radius" ? 24 : 6))) return false
                 if (key === "baseRadius" && (!Number.isInteger(value) || value < 4 || value > 24)) return false
                 if (key === "surfaceTone" && ["ink", "dark", "soft"].indexOf(value) < 0) return false
@@ -100,7 +112,7 @@ QtObject {
     function apply() {
         if (!ready || (!dirty && !migrationPending) || !valid || loading || saving) return
         var patch = {}
-        for (var section of ["appearance", "roundedScreen", "topbar"]) {
+        for (var section of ["appearance", "roundedScreen", "topbar", "dock"]) {
             for (var key in values[section]) {
                 if (values[section][key] === savedValues[section][key]) continue
                 if (!patch[section]) patch[section] = {}

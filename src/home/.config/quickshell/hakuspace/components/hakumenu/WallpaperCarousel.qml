@@ -11,6 +11,7 @@ Item {
     property var livelyItems: []
     property string loadError: ""
     property bool modelLoaded: false
+    property bool refreshPending: false
 
     // Static and Lively carousel modes maintain distinct caches and selection indices.
     property string activeKind: "static"
@@ -464,19 +465,19 @@ Item {
 
     function fileUrl(path) {
         if (!path || path.length === 0 || path[0] !== "/") return ""
-        return "file://" + path
+        return "file://" + path.split("/").map(encodeURIComponent).join("/")
     }
 
-    function refresh(force) {
-        if (!force && modelLoaded) return
+    // Re-read directories on every open and serialize overlapping requests.
+    function refresh() {
+        if (staticProcess.running || livelyProcess.running) { refreshPending = true; return }
+        refreshPending = false
         loadError = ""
         staticSelectedIndex = -1
         livelySelectedIndex = -1
         staticWarm = false
         livelyWarm = false
         modelLoaded = false
-        staticProcess.running = false
-        livelyProcess.running = false
         staticProcess.command = [Env.binDir + "/wallpaper_ctl.sh", "list-static", "--json"]
         staticProcess.running = true
     }
@@ -584,25 +585,15 @@ Item {
 
     onVisibleChanged: {
         if (visible) {
-            if (!modelLoaded) {
-                beginOpenAnimation()
-                refresh(false)
-            } else {
-                beginOpenAnimation()
-            }
-        } else {
-            resetOpenAnimation()
-        }
+            refresh()
+            beginOpenAnimation()
+        } else resetOpenAnimation()
     }
 
     Component.onCompleted: {
-        if (visible) {
-            if (!modelLoaded) {
-                beginOpenAnimation()
-                refresh(false)
-            } else {
-                beginOpenAnimation()
-            }
+        if (visible && !staticProcess.running && !livelyProcess.running) {
+            refresh()
+            beginOpenAnimation()
         }
     }
 
@@ -719,9 +710,10 @@ Item {
             root.livelyItems = exitCode === 0 ? root.parseRecords(output, "lively") : []
             if (exitCode !== 0 && root.loadError.length === 0)
                 root.loadError = "Unable to list lively wallpapers"
+            if (root.refreshPending) { root.refresh(); return }
             root.resetSelectionsFromBackend()
             root.modelLoaded = true
-            if (root.visible) root.beginOpenAnimation()
+            if (root.visible && !root.closing) root.beginOpenAnimation()
         }
     }
 
@@ -955,7 +947,8 @@ Item {
                 Image {
                     id: preview
                     anchors.fill: parent
-                    source: card.active && card.record ? root.fileUrl(card.previewPath) : ""
+                    source: card.active && card.record ? root.fileUrl(card.previewPath)
+                        + (card.record.previewVersion ? "?v=" + card.record.previewVersion : "") : ""
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     cache: true

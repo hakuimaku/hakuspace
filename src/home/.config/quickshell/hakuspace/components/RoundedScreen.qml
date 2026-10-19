@@ -22,11 +22,11 @@ Item {
 
         WlrLayershell.layer: WlrLayer.Top
         exclusiveZone: 0
-        // Respect TopBar's zone while cancelling this component's own edge reservations.
+        // Respect TopBar while keeping the physical frame outside the Dock's zone.
         margins {
             left: -ScreenGeometry.leftInset
             right: -ScreenGeometry.rightInset
-            bottom: -ScreenGeometry.bottomInset
+            bottom: -ScreenGeometry.bottomInset - ScreenGeometry.dockReservedHeight
         }
         mask: Region {}
 
@@ -91,13 +91,13 @@ Item {
         }
     }
 
-    // Reserve window borders so tiled windows respect the frame.
+    // Reserve physical borders before the lower-layer Dock reserves its inner space.
     // Top edge is reserved by TopBar; bottom, left, and right are reserved here.
     PanelWindow {
         id: bottomReservation
         screen: rootItem.modelData
         color: "transparent"
-        WlrLayershell.layer: WlrLayer.Bottom
+        WlrLayershell.layer: WlrLayer.Top
         exclusionMode: ExclusionMode.Normal
         anchors { bottom: true; left: true; right: true }
         exclusiveZone: ScreenGeometry.bottomInset
@@ -110,7 +110,7 @@ Item {
         id: leftReservation
         screen: rootItem.modelData
         color: "transparent"
-        WlrLayershell.layer: WlrLayer.Bottom
+        WlrLayershell.layer: WlrLayer.Top
         exclusionMode: ExclusionMode.Normal
         anchors { top: true; bottom: true; left: true }
         exclusiveZone: ScreenGeometry.leftInset
@@ -123,7 +123,7 @@ Item {
         id: rightReservation
         screen: rootItem.modelData
         color: "transparent"
-        WlrLayershell.layer: WlrLayer.Bottom
+        WlrLayershell.layer: WlrLayer.Top
         exclusionMode: ExclusionMode.Normal
         anchors { top: true; bottom: true; right: true }
         exclusiveZone: ScreenGeometry.rightInset

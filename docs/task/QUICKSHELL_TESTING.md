@@ -5,7 +5,50 @@
 
 ---
 
-## Post-P3 Settings V2 verification (2026-10-17)
+## Native Dock verification (2026-10-19)
+
+```bash
+python3 scripts/test_taskbar_pins_ctl.py
+python3 scripts/test_dock_app_ctl.py
+python3 scripts/test_dock_icon_watch.py
+bash scripts/test_hikai_resource_refresh.sh
+node scripts/test_dock_app_model.js
+node scripts/test_dock_geometry.js
+bash scripts/test_hikai_dock.sh
+HAKUSPACE_DOCK_INPUT=1 bash scripts/test_hikai_dock.sh
+bash scripts/test_hikai_dock.sh --niri
+bash scripts/test_hikai_dock.sh --mango
+```
+
+The default mode uses two headless Labwc outputs. Nested modes require a running
+parent Wayland display. Every runner uses copied QML, private HOME/state/settings,
+shared-pin fixtures and D-Bus. Input mode sends real Wayland virtual-pointer
+events and mocks application/file-manager launches and termination responses. It checks edge activation,
+grace re-entry, click-through, pin/unpin, window grouping/cycling, fullscreen coverage of the Top-layer trigger,
+App Menu routing, launch, drives and Trash. Hover checks cover peak/neighbor lift,
+zero/maximum lift and enlargement, fixed slots/width, clipping bounds, raised hit
+areas, enlarged anchors, immediate tooltips, direct right-click pinning,
+high-RAM confirmation/cancellation, autohide and live frame insets. Moving from a
+middle-clicked icon to another icon must hide the old tooltip while Dock keyboard
+focus stays on the clicked item. Escape must hide both the warning and tooltip
+even if the pointer remains over that item. Backend tests
+use disposable processes to check first-click SIGTERM below the threshold,
+second-click confirmation above it, PID identity changes and shell protection.
+The regular harness checks maximized
+client reservation, fixed frame dimensions across exclusive ON/OFF and manual OFF,
+draft/Discard/persistence, external pin edits and malformed
+JSONC recovery. `--current` runs on the current compositor; input mode there
+moves the real session pointer and briefly opens fixture windows.
+Both manual OFF and pointer-driven autohide sample the closing animation: the
+surface and fading icons stay visible, item input stops immediately, and manual
+OFF clears the input mask before the visual window unmaps after the animation.
+The settings harness checks the actual hover sliders, Apply/Discard/Reset and
+reload persistence, including migration from version 3 without losing Dock choices.
+
+See [HIKAI_DOCK_D0_PROBE.md](HIKAI_DOCK_D0_PROBE.md) for the window-source probe.
+The implementation report records the final runtime and physical coverage.
+
+## Post-P3 Settings verification (updated for V3)
 
 Status: **IMPLEMENTED / PHYSICAL VERIFY**. See
 [QUICKSHELL_STYLE.md](QUICKSHELL_STYLE.md) for schema ownership and geometry.
@@ -327,14 +370,34 @@ Record: idle CPU (bar not interacting), CPU while morphing, and whether any fram
 - **Lifecycle:** Opened from Navigation Settings sector; Escape or outside click closes.
 
 ### 9.5 HakuMenu
-- **Layers:** Split layer shell — Top layer owns visual Flare/background shell; Overlay layer owns rounded content, search field, list view, and input focus.
+- **Presentations:** `topFlare` keeps the existing top trigger and split Top-visual/Overlay-input windows. Dock App Menu toggles `dockFloating`, a bottom-center Overlay card with a narrow input mask, bottom controls and reversible Temp Note motion. Legacy IPC/launcher calls keep `topFlare`.
 - **Tabs:** Segmented controller with moving `SelectionPill`:
   - **General:** Compact width (38% output width), actions populated from `hm_general.sh`.
   - **Drun:** Standard width (40% output width), `DesktopEntries` model, instant search filtering, keyboard/click launch. Super+R routes here.
   - **Theme:** Wide layout with a right-hand state rail. Cava Underbar, Desktop Icons, Taskbar, and Auto Random Wallpaper render ON/OFF pills; toggle rows keep HakuMenu open. Niri Animation is available as an action. The backend switch is the final row, has no state pill, and is labeled `Go back to Surface` in Hikai / `Explore the Abyss` in Classic.
-- **Auto-close:** Pointer-union safe auto-close across TopBar, HakuMenu, and outside area with grace timer (`3e1b8048`). Outside click and Escape close reliably.
+- **Auto-close:** Each presentation uses its own safe-zone geometry and the shared grace controller. Floating zones include the real Dock anchor, handoff corridor and current/final card. Typing retains keyboard lease; pointer movement inside releases it. Outside remains click-through; Escape, App Menu toggle and leaving the zones close the menu.
+
+Run `node scripts/test_hakumenu_geometry.js` and `bash scripts/test_hikai_hakumenu.sh`
+for two isolated outputs (1280×720 and 1024×768), real virtual-keyboard/pointer
+events, legacy trigger/prefix/launch/Escape behavior, floating morph reversal,
+first-frame readiness without disabled-item fading, tab clicks and typing during
+the remaining opening bounce,
+footer placement, stable widths, cross-style/output ownership, fullscreen,
+disabled-Dock fallback and crowded/scrolled icon anchors. `--current` moves input
+on the current compositor while keeping HOME/state/settings/pins disposable.
+`HAKUSPACE_HAKUMENU_ARTIFACT_DIR` selects an existing directory for screenshots.
 
 ### 9.6 Wallpaper carousel
+
+- **Refresh:** Re-read static/lively directories on every open. Close/reopen during
+  loading queues one fresh scan. Added/removed files and newly saved wallpaper
+  directories appear on reopen; previews carry file versions to invalidate stale
+  image textures without discarding the bounded preview cache.
+- **Regression:** `scripts/test_hikai_resource_refresh.sh` runs actual discovery
+  and QML against private files. It covers add/remove/overwrite, static/lively,
+  rapid reopen, escaped filenames and rendered Dock icon pixels across edits and
+  theme changes. `scripts/test_dock_icon_watch.py` covers native file events,
+  atomic replacement, delete/restore/add, theme switches and batched stdin.
 - **Visual:** Standalone full-screen Overlay without generic background panel. Fixed physical center slot with overlapping/stacked side cards. Soft blurred shadows on cards.
 - **Navigation:** Left / Right arrow keys, mouse wheel, or pointer selection.
 - **Apply:** Enter key or center card click initiates async apply (static image via `wallpaper_ctl.sh` or lively via backend) and triggers animated close sequence.

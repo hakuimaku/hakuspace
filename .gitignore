@@ -1,6 +1,7 @@
 *.log
 *.cache
 .cache/
+__pycache__/
 node_modules/
 dist/
 build/

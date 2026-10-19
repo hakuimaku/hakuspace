@@ -7,6 +7,8 @@ Item {
     property bool checked: false
     property bool available: true
     property string hint: ""
+    // Two-state settings may provide descriptive labels instead of Off/On.
+    property var labels: ["Off", "On"]
     signal toggled(bool value)
     width: 126
     height: 32
@@ -29,7 +31,7 @@ Item {
             targetRadius: Theme.radius
         }
         Repeater {
-            model: ["Off", "On"]
+            model: root.labels
             delegate: Motion.MorphButton {
                 id: segment
                 required property string modelData

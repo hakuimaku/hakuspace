@@ -14,13 +14,49 @@
 >
 > The old TopBar-center collar/notch/shoulder mockup and the old Wallpaper dual-front/wide-Flare concept are superseded.
 
-## Post-P3 Settings V2 surface and geometry ownership
+## Post-P3 Settings V3 surface and geometry ownership
 
 This addition supersedes the fixed surface/radius assumptions in the historical
 baseline below. It does not change the accent/font flow or the P3 motion contract.
 
-`~/hakucfg/hikai-shell.json` (schema version 2) stores `appearance.baseRadius`,
-`appearance.surfaceTone`, independent `roundedScreen` geometry and the global `topbar` booleans.
+`~/hakucfg/hikai-shell.json` (schema version 4) stores `appearance.baseRadius`,
+`appearance.surfaceTone`, independent `roundedScreen` geometry, the global `topbar`
+booleans, and `dock.visibilityMode`, `dock.exclusiveSpace`, `dock.iconSize`,
+`dock.hoverLift`, `dock.hoverScale`.
+Versions 1–3 migrate in memory; Apply persists the upgraded document. Dock
+visibility uses `autohide` or `always`, with optional fixed reservation and
+32–72 px icons in 4 px steps (default 48). `taskbar_manual_state` remains the only
+ON/OFF source; there is no `dock.enabled` setting. Shared pins remain in
+`~/hakucfg/config/taskbar-pin-apps`, including the reserved `image#menu` item.
+Dock content follows RoundedScreen's side/bottom insets while its activation strip
+stays at the physical bottom edge. Dock visuals and input use Top exclusively;
+fullscreen clients may cover the Dock and its trigger. Its borderless surface is a trapezoid with
+straight slanted sides, rounded top corners and small concave bottom flares.
+The complete side extension fits inside `hugRadius`; top rounding uses `radius`,
+capped at one quarter of the height/width, while bottom flares use half that theme
+radius, capped at one eighth of the height. It has 24 px horizontal padding,
+zero bottom padding and a 2 px artwork-to-dot gap.
+Dock icons have no hover, pressed or focused background. Settings sliders control
+hover lift from 0–48 px (default 14) and enlargement from 0–100% (default 0).
+Zero disables each effect independently; 100% enlargement doubles artwork size.
+Artwork grows upward with weaker effects on neighbors; slots and full-accent dots
+stay fixed. The viewport, pointer headroom and captured anchors follow both effects.
+Tooltips appear immediately. Mouse focus does not retain them after pointer exit;
+Escape dismisses them until the next hover/click. Keyboard focus still exposes
+labels and keyboard-triggered warnings. Right-click toggles pin/unpin directly. Middle-click
+sends SIGTERM to the app's compositor-reported PIDs and descendants. At or above
+Exit's saved `RAM_THRESHOLD_MB`, a tooltip requires a second middle-click on the
+same app; moving away, Escape or another action cancels confirmation. Process
+identity is checked again before signalling; unavailable PIDs leave an error
+tooltip instead of guessing from names. Niri/Hyprland/Mango provide PID queries;
+compositors without PID data cannot use this action.
+Dock icons use one `dock_icon_watch.py` process while manual Dock state is ON.
+It follows GTK settings/GSettings, active and inherited theme directories, and
+resolved icon files with native GIO monitors. File URLs carry modification versions
+and bypass the Qt image cache; icon refreshes leave app keys, focus and slots intact.
+No timer polls or full shell reloads are used for icon edits or theme changes.
+Dock open/close durations are 360/224 ms. HakuMenu uses 360/308 ms for `topFlare`
+and 504/280 ms for `dockFloating`, reducing open time by 10% and close time by 30%.
 The backend's [DEFAULTS](../../src/core/backend/user/hikai_settings_ctl.py) defines the complete schema. `ShellSettingsStore` previews
 drafts live; Theme consumes them reactively. Generated `quickshell.json` owns
 accent, surfaceHi, foreground colors and font/size, and cannot override these
@@ -103,7 +139,9 @@ The post-P3 RoundedScreen refactor supersedes the original top-rail mockup:
   input-transparent window reserves its height, keeping live anchors screen-local.
 - RoundedScreen respects that exclusive zone: its top corners begin below a
   visible TopBar and return to the screen top when the bar hides. Its own
-  side/bottom reservations are cancelled by visual-window margins to avoid double insets.
+  side/bottom reservations and the optional Dock reservation are cancelled by
+  visual-window margins so its rails remain at the physical output edges.
+  Frame reservations use Top; the Dock reservation uses Bottom and follows the frame.
 - `ScreenGeometry` owns `roundedRadius`, `leftInset`, `rightInset`, `bottomInset`,
   `flareTopY`, `edgeHugRadius`, `horizontalBounds()` and `localizeRect()`.
 - All top-attached surfaces begin at `flareTopY`; side border changes cannot move
@@ -409,7 +447,7 @@ HakuMenu shell-open motion remains a separate profile: ordinary controls must no
 - **Dashboard:** avatar + four mockup-defined cards; reserved empty space stays empty.
 - **Sidebar:** left-attached rounded lobe with circular options; immediate hover handoff from Navigation.
 - **Settings:** large centered stub only; no settings framework in P3.
-- **HakuMenu:** physical-center shell surface with General/Drun/Theme; stable center/height with approved width morph (General 95% of standard width); Theme-only state rail. Tabs use a moving selection pill and shared button motion. Its layer-shell is split: Top owns the visual-only Flare/background; Overlay owns the rounded body, content, input and keyboard focus so the menu remains usable over fullscreen clients.
+- **HakuMenu:** two presentations reuse `HakuMenuContent` and the existing General/Drun/Theme lists. `topFlare` preserves the top trigger, 38/40/42% widths, ceiling motion, top controls and Top-visual/Overlay-input split. Dock App Menu toggles `dockFloating`: a stable 42% floating chassis above the Dock, bottom controls and Temp Note motion from the actual lifted icon. Only this presentation leases the owning Dock. Both retain search prefixes and keyboard behavior; old IPC callers still open `topFlare`.
 - **Wallpaper:** centered selected item with stacked side carousel; no large background panel and no dual-front reveal.
 - **Notification popup:** native P2 model, borderless HakuSpace/Flare visual treatment.
 - **Notification Center:** native P2 behavior, P3 spacing/height/primary-Clear polish.

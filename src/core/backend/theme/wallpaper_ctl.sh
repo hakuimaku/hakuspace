@@ -218,12 +218,18 @@ if os.path.isdir(directory):
                 if os.path.isfile(candidate):
                     thumb = candidate
                     break
+        try:
+            stamp = os.stat(thumb)
+            preview_version = f"{stamp.st_mtime_ns}-{stamp.st_ctime_ns}"
+        except OSError:
+            preview_version = ""
         items.append({
             "id": name,
             "kind": kind,
             "path": path,
             "label": name,
             "thumbnail": thumb,
+            "previewVersion": preview_version,
             "selected": os.path.abspath(path) == os.path.abspath(current) if current else False,
         })
 json.dump(items, sys.stdout, ensure_ascii=False, separators=(",", ":"))

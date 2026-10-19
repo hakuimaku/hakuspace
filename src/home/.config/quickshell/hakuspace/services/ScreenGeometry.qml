@@ -10,6 +10,9 @@ QtObject {
     readonly property real leftInset: borderThickness
     readonly property real rightInset: borderThickness
     readonly property real bottomInset: borderThickness
+    // Share the Dock's fixed zone so frame visuals can cancel its inward offset.
+    readonly property real dockHeight: ShellSettingsStore.dockIconSize + 17
+    readonly property real dockReservedHeight: AppState.taskbarManualState && ShellSettingsStore.dockExclusiveSpace ? dockHeight : 0
     readonly property real flareTopY: Theme.topBarHeight
     readonly property real edgeHugRadius: Math.max(Theme.hugRadius, roundedRadius)
 

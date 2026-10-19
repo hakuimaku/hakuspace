@@ -68,7 +68,13 @@ class ShellSettingsTests(unittest.TestCase):
         patches += [{"topbar": {"tray": value}} for value in (0, 1, "false", None)]
         patches += [{"roundedScreen": {"radius": value}} for value in (-1, 25, True, 20.0, "20", None)]
         patches += [{"roundedScreen": {"borderThickness": value}} for value in (-1, 7, True, 4.0, "4", None)]
-        patches += [{"appearance": {"surfaceTone": "black"}}, {"version": True}, {"version": 3}, {"version": 1},
+        patches += [{"dock": {"iconSize": value}} for value in (31, 73, 33, True, 48.0, "48", None)]
+        patches += [{"dock": {"hoverLift": value}} for value in (-1, 49, True, 14.0, "14", None)]
+        patches += [{"dock": {"hoverScale": value}} for value in (-1, 101, True, 25.0, "25", None)]
+        patches += [{"dock": {"exclusiveSpace": value}} for value in (0, "false", None)]
+        patches += [{"dock": {"visibilityMode": value}} for value in ("hidden", True, None)]
+        patches += [{"dock": {"enabled": True}}]
+        patches += [{"appearance": {"surfaceTone": "black"}}, {"version": True}, {"version": 5}, {"version": 1},
                     {"appearance": []}, {"topbar": {"logo": False}}, {"unknown": 1}, []]
         for payload in patches:
             with self.subTest(payload=payload), self.assertRaises(ValueError):
@@ -78,7 +84,7 @@ class ShellSettingsTests(unittest.TestCase):
     def test_invalid_document_and_payload(self):
         """Malformed or incomplete documents report failure without replacement."""
         self.path.parent.mkdir()
-        for content in ("{broken", "[]", '{"version": 1}', json.dumps(dict(ctl.DEFAULTS, version=3))):
+        for content in ("{broken", "[]", '{"version": 1}', json.dumps(dict(ctl.DEFAULTS, version=5))):
             self.path.write_text(content)
             for action in ("read", "check", "reset"):
                 with self.subTest(action=action, content=content), self.assertRaises(ValueError):
@@ -134,7 +140,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
 
     def test_v1_migration_without_read_writes(self):
-        """Read/check migrate in memory; the next explicit Apply persists version 2."""
+        """Read/check migrate in memory; the next explicit Apply persists version 4."""
         self.path.parent.mkdir()
         legacy = {"version": 1, "appearance": {"baseRadius": 24, "surfaceTone": "soft"}, "topbar": {"tray": False}}
         self.path.write_text(json.dumps(legacy))
@@ -142,15 +148,36 @@ class ShellSettingsTests(unittest.TestCase):
         for action in ("read", "check"):
             data = ctl.run(action)
             self.assertTrue(data["needsMigration"])
-            self.assertEqual(data["values"]["version"], 2)
+            self.assertEqual(data["values"]["version"], 4)
             self.assertEqual(data["values"]["roundedScreen"], {"radius": 20, "borderThickness": 4})
             self.assertEqual(data["values"]["appearance"], legacy["appearance"])
             self.assertFalse(data["values"]["topbar"]["tray"])
             self.assertTrue(data["values"]["topbar"]["clock"])
             self.assertEqual(self.path.read_bytes(), original)
         self.write({})
-        self.assertEqual(json.loads(self.path.read_text())["version"], 2)
+        self.assertEqual(json.loads(self.path.read_text())["version"], 4)
         self.assertFalse(ctl.run("read")["needsMigration"])
+
+    def test_v2_migration_and_dock_persistence(self):
+        """Migration injects Dock defaults and keeps every previous preference."""
+        self.path.parent.mkdir()
+        legacy = json.loads(json.dumps(ctl.DEFAULTS))
+        legacy.pop("dock")
+        legacy["version"] = 2
+        legacy["roundedScreen"] = {"radius": 9, "borderThickness": 2}
+        legacy["topbar"]["clock"] = False
+        self.path.write_text(json.dumps(legacy))
+        original = self.path.read_bytes()
+        result = ctl.run("read")
+        self.assertTrue(result["needsMigration"])
+        self.assertEqual(result["values"]["dock"], ctl.DEFAULTS["dock"])
+        self.assertEqual(self.path.read_bytes(), original)
+        for size in range(32, 73, 4):
+            values = self.write({"dock": {"iconSize": size, "visibilityMode": "always", "exclusiveSpace": True}})
+            self.assertEqual(values["dock"]["iconSize"], size)
+            self.assertEqual(values["roundedScreen"], legacy["roundedScreen"])
+            self.assertFalse(values["topbar"]["clock"])
+        self.assertEqual(ctl.run("read")["values"], values)
 
     def test_rounded_ranges_and_independence(self):
         """Screen geometry accepts its full ranges without changing component radius."""
@@ -159,6 +186,40 @@ class ShellSettingsTests(unittest.TestCase):
                 values = self.write({"roundedScreen": {"radius": radius, "borderThickness": border}})
                 self.assertEqual(values["roundedScreen"], {"radius": radius, "borderThickness": border})
                 self.assertEqual(values["appearance"]["baseRadius"], 12)
+
+    def test_v3_hover_migration_and_ranges(self):
+        """Old Dock choices survive migration; zero and both upper bounds persist."""
+        self.path.parent.mkdir()
+        legacy = json.loads(json.dumps(ctl.DEFAULTS))
+        legacy["version"] = 3
+        legacy["dock"] = {"visibilityMode": "always", "exclusiveSpace": True, "iconSize": 72}
+        legacy["appearance"]["baseRadius"] = 18
+        self.path.write_text(json.dumps(legacy))
+        original = self.path.read_bytes()
+        for action in ("read", "check"):
+            result = ctl.run(action)
+            self.assertTrue(result["needsMigration"])
+            self.assertEqual(result["values"]["dock"], legacy["dock"] | {"hoverLift": 14, "hoverScale": 0})
+            self.assertEqual(self.path.read_bytes(), original)
+        for lift, scale in ((0, 0), (48, 100), (13, 37)):
+            values = self.write({"dock": {"hoverLift": lift, "hoverScale": scale}})
+            self.assertEqual(values["dock"], legacy["dock"] | {"hoverLift": lift, "hoverScale": scale})
+            self.assertEqual(values["appearance"], legacy["appearance"])
+            self.assertEqual(ctl.run("read")["values"], values)
+            self.assertFalse(ctl.run("read")["needsMigration"])
+
+    def test_incomplete_v3_dock_is_rejected(self):
+        """Migration never masks missing, unknown or invalid legacy Dock fields."""
+        self.path.parent.mkdir()
+        for dock in ({"iconSize": 48},
+                     {"iconSize": 48, "visibilityMode": "always", "exclusiveSpace": False, "extra": 0},
+                     {"iconSize": True, "visibilityMode": "always", "exclusiveSpace": False}):
+            document = dict(ctl.DEFAULTS, version=3, dock=dock)
+            self.path.write_text(json.dumps(document))
+            original = self.path.read_bytes()
+            with self.assertRaises(ValueError):
+                self.write({})
+            self.assertEqual(self.path.read_bytes(), original)
 
 
 if __name__ == "__main__":

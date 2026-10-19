@@ -234,6 +234,12 @@ ShellRoot {
         TopBar {}
     }
 
+    // Persistent taskbars share pins and running applications across outputs.
+    Variants {
+        model: Quickshell.screens
+        DockBar {}
+    }
+
 
     Variants {
         model: Quickshell.screens

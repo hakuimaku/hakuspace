@@ -1,0 +1,217 @@
+import QtQuick
+import Quickshell
+import Quickshell.Io
+import Quickshell.Wayland
+import "services"
+import "components"
+
+ShellRoot {
+    id: root
+    // Retain real output surfaces for lifecycle and reservation assertions.
+    property var outputs: []
+    property int phase: 0
+    property int ticks: 0
+    property real initialWidth: 0
+    property int initialPins: 0
+    property var snapshot: null
+    property string initialPinText: ""
+    property real fixtureHeight: 0
+    property real reservedHeight: 0
+    property bool closeAnimationObserved: false
+    FloatingWindow { id: first; title: "Dock fixture A"; visible: false; implicitWidth: 200; implicitHeight: 100 }
+    FloatingWindow { id: second; title: "Dock fixture B"; visible: false; implicitWidth: 200; implicitHeight: 100 }
+    FileView { id: pinFile; path: TaskbarPins.path; onLoaded: root.initialPinText = text() }
+    Process {
+        id: writer
+        // All writes target disposable preferences, pins or manual state.
+        onExited: code => {
+            root.check(code === 0, "fixture write")
+        }
+    }
+    // Sample the manual-OFF transition before its close animation completes.
+    Connections {
+        target: AppState
+        function onTaskbarManualStateChanged() {
+            if (!AppState.taskbarManualState && root.phase === 17) closeProbe.restart()
+        }
+    }
+    Timer {
+        id: closeProbe
+        interval: 60
+        onTriggered: {
+            for (var output of root.outputs) {
+                var dock = output.dock
+                var motion = dock.children.find(function(item) { return typeof item.phase === "string" && typeof item.moving === "boolean" })
+                var window = root.dockWindow(dock)
+                var viewport = window.contentItem.children.find(function(item) { return typeof item.contentX === "number" })
+                root.check(!dock.enabledDock && !dock.shown && motion.moving
+                    && motion.height > 1 && motion.height < dock.targetHeight, "manual OFF animates through intermediate heights")
+                root.check(window.visible, "Dock window remains mapped until manual-OFF animation finishes")
+                root.check(viewport.visible && !viewport.enabled && viewport.opacity > 0 && viewport.opacity < 1,
+                    "icons remain painted and fade without accepting input during close")
+                root.check(window.mask.width === 0 && window.mask.height === 0, "manual OFF clears input before unmapping")
+            }
+            root.closeAnimationObserved = true
+        }
+    }
+    // Locate the visual window without confusing it with the shorter reservation.
+    function dockWindow(dock) {
+        return dock.data.find(function(item) { return item.contentItem && item.anchors.bottom && item.height > dock.targetHeight })
+    }
+    // Fail the runner immediately when a behavioral assertion is false.
+    function check(ok, message) {
+        if (ok) return
+        console.error("Hikai Dock failed: " + message)
+        Qt.exit(1)
+        throw new Error(message)
+    }
+    // Replace fixture files through the platform process API without shell interpolation.
+    function write(path, contents) {
+        writer.command = ["python3", "-c", "import pathlib,sys; pathlib.Path(sys.argv[1]).write_text(sys.argv[2])", path, contents]
+        writer.running = true
+    }
+    // Exercise the existing Hikai ON/OFF controller against the fixture HOME.
+    function toggleTaskbar() {
+        writer.command = ["env", "HOME=" + Quickshell.shellPath("../../../"), "bash",
+            Quickshell.env("HAKUSPACE_TEST_TASKBAR_CTL"), "--toggle"]
+        writer.running = true
+    }
+    // Read the real frame surface rather than its declarative geometry bindings.
+    function frameWindow(output) {
+        return output.rounded.data.find(function(item) {
+            return item.contentItem && item.anchors.top && item.anchors.bottom && item.anchors.left && item.anchors.right
+        })
+    }
+    // Dock reservations must never shrink or shift the physical frame surface.
+    function checkFrames() {
+        for (var output of root.outputs) {
+            var frame = frameWindow(output)
+            root.check(frame.width === output.modelData.width && frame.height === output.modelData.height,
+                "RoundedScreen remains at physical edges: " + frame.width + "x" + frame.height)
+        }
+    }
+    Variants {
+        model: Quickshell.screens
+        Item {
+            id: output
+            required property var modelData
+            property alias dock: dock
+            property alias rounded: rounded
+            RoundedScreen { id: rounded; modelData: output.modelData }
+            DockBar { id: dock; modelData: output.modelData }
+            Component.onCompleted: root.outputs.push(output)
+            Component.onDestruction: root.outputs = root.outputs.filter(function(item) { return item !== output })
+        }
+    }
+    Timer {
+        interval: 700
+        repeat: true
+        running: true
+        onTriggered: {
+            root.check(++root.ticks < 50, "timeout: " + ShellSettingsStore.error + " " + TaskbarPins.error)
+            if (!ShellSettingsStore.ready || ShellSettingsStore.loading || ShellSettingsStore.saving || TaskbarPins.busy || writer.running || !root.outputs.length) return
+            var dock = root.outputs[0].dock
+            if (root.phase === 0) {
+                root.check(!AppState.taskbarManualState && !dock.shown, "manual OFF startup")
+                root.check(TaskbarPins.pins.length === 4, "shared pins load")
+                root.initialPins = TaskbarPins.pins.length
+                root.toggleTaskbar()
+            } else if (root.phase === 1) {
+                root.check(AppState.taskbarManualState && !dock.shown, "ON retains autohide")
+                for (var output of root.outputs) output.dock.reveal()
+                root.check(dock.shown, "reveal")
+            } else if (root.phase === 2) {
+                root.check(!dock.shown, "safe-zone closes without pointer")
+                root.check(dock.triggerRect.width === (dock.modelData.width - ScreenGeometry.leftInset - ScreenGeometry.rightInset) * 0.2, "local center trigger")
+                root.check(dock.safeRect.y + dock.safeRect.height === dock.targetHeight + 180, "safe envelope touches bottom")
+                root.initialWidth = dock.targetWidth
+                first.visible = true
+                second.visible = true
+                first.maximized = true
+                ShellSettingsStore.setValue("dock", "visibilityMode", "always")
+            } else if (root.phase === 3) {
+                var group = DockApps.runningGroups.find(function(app) { return app.windows.some(function(window) { return window.title === first.title }) })
+                root.check(group && group.runningCount === 2, "real toplevel group has two windows")
+                root.check(dock.targetWidth > root.initialWidth, "new running app expands target width")
+                root.fixtureHeight = first.height
+                root.checkFrames()
+                dock.close()
+                root.check(dock.shown, "Always survives close request")
+                ShellSettingsStore.setValue("dock", "iconSize", 72)
+                root.check(dock.iconSize === 72 && dock.targetHeight === 89, "live size preview")
+                ShellSettingsStore.discard()
+                root.check(dock.iconSize === 48, "Discard restores size")
+                ShellSettingsStore.setValue("dock", "exclusiveSpace", true)
+                ShellSettingsStore.apply()
+            } else if (root.phase === 4) {
+                root.checkFrames()
+                root.check(Math.abs(root.fixtureHeight - first.height - dock.targetHeight) <= 1,
+                    "reservation adds Dock height above the existing frame: " + root.fixtureHeight + " -> " + first.height)
+                root.reservedHeight = first.height
+                dock.reveal()
+                ShellSettingsStore.reload()
+            } else if (root.phase === 5) {
+                root.checkFrames()
+                root.check(first.height === root.reservedHeight, "reveal leaves client geometry stable")
+                first.visible = false
+                second.visible = false
+            } else if (root.phase === 6) {
+                root.check(ShellSettingsStore.dockExclusiveSpace, "exclusive preference persisted")
+                root.check(!DockApps.runningGroups.some(function(app) { return app.windows.some(function(window) { return window.title === first.title }) }), "close removes running group")
+                root.check(dock.targetWidth === root.initialWidth, "close retargets width")
+                TaskbarPins.add("hikai-test-missing-app")
+            } else if (root.phase === 7) {
+                root.check(TaskbarPins.pins.length === root.initialPins + 1, "pin updates model")
+                root.snapshot = TaskbarPins.pins
+                root.write(TaskbarPins.path, "{malformed")
+            } else if (root.phase === 8) {
+                root.check(!!TaskbarPins.error && TaskbarPins.pins.length === root.snapshot.length, "malformed pin file keeps last-known-good")
+                root.write(TaskbarPins.path, root.initialPinText)
+            } else if (root.phase === 9) {
+                root.check(!TaskbarPins.error && TaskbarPins.pins.length === root.initialPins, "external valid edit recovers")
+                ShellSettingsStore.setValue("dock", "visibilityMode", "always")
+            } else if (root.phase === 10) {
+                root.check(root.outputs.every(function(output) { return output.dock.shown }), "Always on every output")
+                SysStats.mounts = [{target: "/", percent: 20}, {target: "/boot", percent: 10}, {target: "/media/Drive", percent: 37}]
+                root.check(dock.places.length === 1, "storage mount filtering")
+                if (Quickshell.env("HAKUSPACE_DOCK_ARTIFACT_DIR")) {
+                    writer.command = ["grim", "-o", dock.modelData.name, Quickshell.env("HAKUSPACE_DOCK_ARTIFACT_DIR") + "/dock.png"]
+                    writer.running = true
+                }
+            } else if (root.phase === 11) {
+                if (root.outputs.some(function(output) { return output.modelData.name === "HEADLESS-2" })) {
+                    writer.command = ["wlr-randr", "--output", "HEADLESS-2", "--off"]
+                    writer.running = true
+                } else root.phase = 13
+            } else if (root.phase === 12) {
+                root.check(root.outputs.length === 1 && SysStats._extendedSubscribers === 1, "output removal releases its Dock subscription")
+                writer.command = ["wlr-randr", "--output", "HEADLESS-2", "--on"]
+                writer.running = true
+            } else if (root.phase === 13) {
+                root.check(root.outputs.length === 2 && SysStats._extendedSubscribers === 2, "output return acquires exactly one subscription")
+                root.check(root.outputs.every(function(output) { return output.dock.shown }), "new output restores Always Dock")
+            } else if (root.phase === 14) {
+                root.checkFrames()
+                first.visible = true
+                ShellSettingsStore.setValue("dock", "exclusiveSpace", false)
+            } else if (root.phase === 15) {
+                root.checkFrames()
+                root.check(first.height === root.fixtureHeight, "exclusive OFF restores the client's frame-only work area")
+                ShellSettingsStore.setValue("dock", "exclusiveSpace", true)
+            } else if (root.phase === 16) {
+                root.checkFrames()
+                root.check(root.fixtureHeight - first.height === dock.targetHeight, "exclusive ON restores the inner Dock zone")
+                root.toggleTaskbar()
+            } else if (root.phase === 17) {
+                root.checkFrames()
+                root.check(first.height === root.fixtureHeight, "manual OFF restores the client's frame-only work area")
+                root.check(root.outputs.every(function(output) { return !output.dock.shown }), "manual OFF hides every output")
+                root.check(root.closeAnimationObserved && root.outputs.every(function(output) { return !root.dockWindow(output.dock).visible }),
+                    "every output unmaps only after its close animation")
+                console.info("Hikai Dock checks passed")
+                Qt.quit()
+            }
+            root.phase++
+        }
+    }
+}

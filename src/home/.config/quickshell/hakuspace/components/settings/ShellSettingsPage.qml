@@ -153,6 +153,88 @@ Item {
                         }
                     }
                 }
+                // Dock controls share the existing draft, Apply and Discard lifecycle.
+                Text {
+                    text: "Dock"
+                    color: Theme.fg
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize + 3
+                    font.weight: Font.DemiBold
+                }
+                Repeater {
+                    model: [{key: "visibilityMode", label: "Visibility", labels: ["Auto Hide", "Always"]},
+                        {key: "exclusiveSpace", label: "Reserve space", labels: ["Off", "On"]}]
+                    delegate: Row {
+                        required property var modelData
+                        width: form.width
+                        spacing: Theme.pad
+                        Text {
+                            width: Math.max(0, parent.width - 186 - Theme.pad)
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: modelData.label
+                            color: Theme.fg
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize
+                        }
+                        SettingsSegmentedToggle {
+                            width: 186
+                            labels: modelData.labels
+                            available: root.editable
+                            checked: modelData.key === "visibilityMode" ? ShellSettingsStore.dockVisibilityMode === "always"
+                                : ShellSettingsStore.dockExclusiveSpace
+                            hint: modelData.key === "visibilityMode" ? "Reveal at the bottom center or keep the Dock visible."
+                                : "Keep a fixed bottom reservation even while the Dock is hidden."
+                            onToggled: value => ShellSettingsStore.setValue("dock", modelData.key,
+                                modelData.key === "visibilityMode" ? (value ? "always" : "autohide") : value)
+                        }
+                    }
+                }
+                Text {
+                    text: "Icon size · " + ShellSettingsStore.dockIconSize + " px"
+                    color: Theme.fgDim
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                }
+                SettingsSlider {
+                    width: Math.min(360, parent.width)
+                    from: 32
+                    to: 72
+                    stepSize: 4
+                    value: ShellSettingsStore.dockIconSize
+                    enabled: root.editable
+                    Accessible.name: "Dock icon size"
+                    onMoved: ShellSettingsStore.setValue("dock", "iconSize", Math.round(value / 4) * 4)
+                }
+                Text {
+                    text: "Hover lift · " + ShellSettingsStore.dockHoverLift + " px"
+                    color: Theme.fgDim
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                }
+                SettingsSlider {
+                    width: Math.min(360, parent.width)
+                    from: 0
+                    to: 48
+                    value: ShellSettingsStore.dockHoverLift
+                    enabled: root.editable
+                    Accessible.name: "Dock hover lift"
+                    onMoved: ShellSettingsStore.setValue("dock", "hoverLift", Math.round(value))
+                }
+                Text {
+                    text: "Hover enlargement · " + ShellSettingsStore.dockHoverScale + "%"
+                    color: Theme.fgDim
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                }
+                SettingsSlider {
+                    width: Math.min(360, parent.width)
+                    from: 0
+                    to: 100
+                    value: ShellSettingsStore.dockHoverScale
+                    enabled: root.editable
+                    Accessible.name: "Dock hover enlargement"
+                    onMoved: ShellSettingsStore.setValue("dock", "hoverScale", Math.round(value))
+                }
                 Text {
                     text: "Top Bar"
                     color: Theme.fg
@@ -205,7 +287,7 @@ Item {
             Text {
                 width: parent.width
                 text: ShellSettingsStore.error || ShellSettingsStore.statusMessage
-                      || (ShellSettingsStore.migrationPending ? "Version 1 loaded · Apply to upgrade" : ShellSettingsStore.loading ? "Loading…" : ShellSettingsStore.dirty ? "Unsaved changes · Live preview" : "Live preview · Apply to save")
+                      || (ShellSettingsStore.migrationPending ? "Legacy settings loaded · Apply to upgrade" : ShellSettingsStore.loading ? "Loading…" : ShellSettingsStore.dirty ? "Unsaved changes · Live preview" : "Live preview · Apply to save")
                 color: ShellSettingsStore.error ? Theme.accent : Theme.fgDim
                 font.family: Theme.fontFamily
                 font.pixelSize: Math.max(10, Theme.fontSize - 2)

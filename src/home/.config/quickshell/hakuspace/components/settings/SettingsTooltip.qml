@@ -6,6 +6,7 @@ ToolTip {
     id: root
     property Item target: null
     property bool active: false
+    property bool immediate: false
 
     parent: target
     x: target ? (target.width - width) / 2 : 0
@@ -15,18 +16,18 @@ ToolTip {
     padding: 8
     closePolicy: Popup.NoAutoClose
     enter: Transition {
-        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: HAnimation.slow; easing.bezierCurve: HAnimation.tooltipCurve }
+        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: root.immediate ? 0 : HAnimation.slow; easing.bezierCurve: HAnimation.tooltipCurve }
     }
     exit: Transition {
-        NumberAnimation { property: "opacity"; from: 1; to: 0; duration: HAnimation.slow; easing.bezierCurve: HAnimation.tooltipCurve }
+        NumberAnimation { property: "opacity"; from: 1; to: 0; duration: root.immediate ? 0 : HAnimation.slow; easing.bezierCurve: HAnimation.tooltipCurve }
     }
 
     onActiveChanged: {
-        if (active && text.length) showDelay.restart()
+        if (active && text.length) { if (immediate) open(); else showDelay.restart() }
         else { showDelay.stop(); close() }
     }
     onTextChanged: {
-        if (active && text.length && !visible) showDelay.restart()
+        if (active && text.length && !visible) { if (immediate) open(); else showDelay.restart() }
         else if (!text.length) { showDelay.stop(); close() }
     }
 

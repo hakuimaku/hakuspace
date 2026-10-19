@@ -10,9 +10,11 @@ from pathlib import Path
 
 # Keep runtime state outside this versioned preference schema.
 DEFAULTS = {
-    "version": 2,
+    "version": 4,
     "appearance": {"baseRadius": 12, "surfaceTone": "dark"},
     "roundedScreen": {"radius": 20, "borderThickness": 4},
+    "dock": {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 48,
+             "hoverLift": 14, "hoverScale": 0},
     "topbar": dict.fromkeys(("workspaces", "windowTitle", "center", "cava", "tray",
                              "quickControls", "recorder", "clock", "notifications"), True),
 }
@@ -24,9 +26,9 @@ def validate(values, partial=False):
         raise ValueError("expected a shell settings object with known fields")
     if not partial and set(values) != set(DEFAULTS):
         raise ValueError("missing shell settings fields")
-    if "version" in values and (type(values["version"]) is not int or values["version"] != 2):
+    if "version" in values and (type(values["version"]) is not int or values["version"] != 4):
         raise ValueError("unsupported schema version")
-    for section in ("appearance", "roundedScreen", "topbar"):
+    for section in ("appearance", "roundedScreen", "topbar", "dock"):
         if section not in values:
             continue
         # Validate sections before merging so an invalid patch cannot erase data.
@@ -36,7 +38,16 @@ def validate(values, partial=False):
         if not partial and set(fields) != set(DEFAULTS[section]):
             raise ValueError(f"{section}: missing fields")
         for key, value in fields.items():
-            if section == "topbar":
+            if section == "dock":
+                if key == "visibilityMode":
+                    valid = type(value) is str and value in ("autohide", "always")
+                elif key == "exclusiveSpace":
+                    valid = type(value) is bool
+                elif key == "iconSize":
+                    valid = type(value) is int and 32 <= value <= 72 and value % 4 == 0
+                else:
+                    valid = type(value) is int and 0 <= value <= (48 if key == "hoverLift" else 100)
+            elif section == "topbar":
                 valid = type(value) is bool
             elif section == "roundedScreen":
                 valid = type(value) is int and 0 <= value <= (24 if key == "radius" else 6)
@@ -51,7 +62,8 @@ def validate(values, partial=False):
 
 def migrate(values):
     """Upgrade legacy preferences in memory while preserving every valid user choice."""
-    if type(values) is dict and type(values.get("version")) is int and values["version"] == 1:
+    original_version = values.get("version") if type(values) is dict else None
+    if type(original_version) is int and original_version == 1:
         if set(values) != {"version", "appearance", "topbar"} or type(values["topbar"]) is not dict:
             raise ValueError("invalid version 1 shell settings")
         # Legacy module omissions use their original enabled defaults.
@@ -59,7 +71,20 @@ def migrate(values):
         upgraded = copy.deepcopy(values)
         upgraded.update(version=2, roundedScreen=copy.deepcopy(DEFAULTS["roundedScreen"]))
         upgraded["topbar"] = DEFAULTS["topbar"] | values["topbar"]
-        return validate(upgraded), True
+        values = upgraded
+    if type(original_version) is int and original_version in (1, 2):
+        if set(values) != {"version", "appearance", "roundedScreen", "topbar"}:
+            raise ValueError("invalid version 2 shell settings")
+        values = copy.deepcopy(values)
+        values.update(version=4, dock=copy.deepcopy(DEFAULTS["dock"]))
+        return validate(values), True
+    if type(original_version) is int and original_version == 3:
+        if type(values.get("dock")) is not dict or set(values["dock"]) != {"visibilityMode", "exclusiveSpace", "iconSize"}:
+            raise ValueError("invalid version 3 shell settings")
+        values = copy.deepcopy(values)
+        values["version"] = 4
+        values["dock"].update(hoverLift=14, hoverScale=0)
+        return validate(values), True
     return validate(values), False
 
 
@@ -140,7 +165,7 @@ def run(action):
         values, mode, migrated = read_file(parent_fd, path.name)
         if action == "write":
             patch = validate(json.loads(os.environ.get("HAKUSPACE_HIKAI_SETTINGS_JSON", "")), partial=True)
-            for section in ("appearance", "roundedScreen", "topbar"):
+            for section in ("appearance", "roundedScreen", "topbar", "dock"):
                 values[section].update(patch.get(section, {}))
         elif action == "reset":
             values = copy.deepcopy(DEFAULTS)

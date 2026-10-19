@@ -36,9 +36,23 @@ START
 else
     cp scripts/hikai_settings_harness.qml "$shell_root/shell.qml"
     # Exercise both missing-file startup and a read-only legacy migration in QML.
-    for scenario in missing v1; do
+    for scenario in missing v1 v3; do
         if [[ $scenario == v1 ]]; then
             printf '%s\n' '{"version":1,"appearance":{"baseRadius":12,"surfaceTone":"dark"},"topbar":{}}' > "$test_root/hakucfg/hikai-shell.json"
+        elif [[ $scenario == v3 ]]; then
+            python3 - "$test_root/hakucfg/hikai-shell.json" <<'PY'
+"""Remove hover fields to exercise the previous Dock schema."""
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+values = json.loads(path.read_text())
+values["version"] = 3
+values["dock"].pop("hoverLift")
+values["dock"].pop("hoverScale")
+path.write_text(json.dumps(values))
+PY
         fi
         env -u DISPLAY -u WAYLAND_DISPLAY -u QT_QPA_PLATFORMTHEME -u QT_QPA_PLATFORMTHEME_QT6 \
             -u GDK_BACKEND XDG_RUNTIME_DIR="$test_root/runtime" QT_QPA_PLATFORM=offscreen \
@@ -60,10 +74,12 @@ import sys
 from pathlib import Path
 
 values = json.loads(Path(sys.argv[1]).read_text())
-assert values["version"] == 2
+assert values["version"] == 4
 assert values["roundedScreen"] == {"radius": 20, "borderThickness": 4}
 assert values["appearance"] == {"baseRadius": 12, "surfaceTone": "dark"}
 assert all(values["topbar"].values())
+assert values["dock"] == {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 48,
+                          "hoverLift": 14, "hoverScale": 0}
 PY
 
 if [[ ${1:-} == --headless ]]; then

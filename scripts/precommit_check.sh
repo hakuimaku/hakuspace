@@ -43,16 +43,28 @@ if [ -f scripts/test_plain_text_edit_ops.js ]; then
 fi
 node scripts/test_safe_zone_geometry.js
 node scripts/test_screen_geometry.js
+node scripts/test_dock_app_model.js
+node scripts/test_dock_geometry.js
+node scripts/test_hakumenu_geometry.js
 if command -v quickshell >/dev/null 2>&1; then
     bash scripts/test_safe_zone_controller.sh
     bash scripts/test_labwc_exit.sh
     bash scripts/test_hikai_shell.sh
+    bash scripts/test_hikai_resource_refresh.sh
+    if command -v labwc >/dev/null 2>&1; then
+        bash scripts/test_hikai_dock.sh
+        HAKUSPACE_DOCK_INPUT=1 bash scripts/test_hikai_dock.sh
+        bash scripts/test_hikai_hakumenu.sh
+    fi
 fi
 
 python3 -m unittest discover -s tests/icon_accent -v
 python3 scripts/test_visual_ecosystem.py
 python3 scripts/test_setting_ctl.py
 python3 scripts/test_hikai_settings_ctl.py
+python3 scripts/test_taskbar_pins_ctl.py
+python3 scripts/test_dock_app_ctl.py
+python3 scripts/test_dock_icon_watch.py
 python3 scripts/test_hakucfg_editor_ctl.py
 python3 scripts/test_hakuspace_info_ctl.py
 python3 scripts/test_sidebar_pins_ctl.py

@@ -38,13 +38,18 @@ QtObject {
     property int sidebarToolCloseDuration: 400
     property list<real> sidebarToolOpenCurve: [0.16, 1.08, 0.30, 1.0, 1, 1]
     property list<real> sidebarToolCloseCurve: [0.32, 0.0, 0.22, 1.0, 1, 1]
+    // Floating panels retain the Temp Note curves with shorter reveal and collapse times.
+    readonly property int floatingPanelOpenDuration: Math.round(sidebarToolOpenDuration * 0.9)
+    readonly property int floatingPanelCloseDuration: Math.round(sidebarToolCloseDuration * 0.7)
+    readonly property list<real> floatingPanelOpenCurve: sidebarToolOpenCurve
+    readonly property list<real> floatingPanelCloseCurve: sidebarToolCloseCurve
 
     // Dashboard Dynamic Widget Switch Motion (subtle directional card slide-fade)
     property int dashboardWidgetSwitchDuration: 260
     property list<real> dashboardWidgetSwitchCurve: [0.20, 0.80, 0.20, 1.0, 1, 1]
 
-    property int hakuMenuOpenDuration: 400
-    property int hakuMenuCloseDuration: 440
+    property int hakuMenuOpenDuration: 360
+    property int hakuMenuCloseDuration: 308
     property list<real> hakuMenuOpenCurve: [0.88, 1.31, 0.25, 0.98, 1, 1]
     property list<real> hakuMenuCloseCurve: [1, 0.3, 0.25, 1, 1, 1]
     // Tab-to-tab width morph is intentionally calmer than the bouncy open curve.
@@ -53,6 +58,13 @@ QtObject {
     property real hakuMenuBounceHeadroom: 0.04
     property int settingsResizeDuration: 280
     property list<real> settingsResizeCurve: [0.7, 1.0, 0.6, 0.98, 1, 1]
+
+    // Bottom Dock reveal, collapse and dynamic-width motion.
+    property int dockOpenDuration: 360
+    property int dockCloseDuration: 224
+    property int dockResizeDuration: 280
+    property list<real> dockOpenCurve: [0.16, 1.0, 0.3, 1.0, 1, 1]
+    property list<real> dockCloseCurve: [0.4, 0.0, 0.2, 1.0, 1, 1]
 
     // Six control values drive the asymmetric workspace and flare motion.
     property list<real> spatialCurve: [0.5, 1.21, 0.22, 1, 1, 1]
