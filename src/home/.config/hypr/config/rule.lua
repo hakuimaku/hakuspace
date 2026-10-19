@@ -204,7 +204,7 @@ suppressMaximizeRule:set_enabled(true)
 hyprlandRunRule:set_enabled(true)
 fixXwaylandDrags:set_enabled(true)
 
-codeSpecialWorkspace:set_enabled(true) -- VS Code in special workspace (SUPER + `)
+codeSpecialWorkspace:set_enabled(false) -- VS Code in special workspace
 fullscreenBorder:set_enabled(false) -- Red border for fullscreen windows
 
 -- Scrolling layout rules

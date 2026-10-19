@@ -40,9 +40,9 @@ hl.animation({ leaf = "border", enabled = true, duration = 1, speed = 10, bezier
 hl.animation({ leaf = "borderangle", enabled = true, duration = 1, speed = 30, bezier = "default", loop = true })
 
 -- Workspaces
-hl.animation({ leaf = "workspaces", enabled = true, duration = 1, speed = 8, bezier = "smoothzz", style = "slidevert" })
-hl.animation({ leaf = "workspacesIn", enabled = true, duration = 1, speed = 8, bezier = "smoothzz", style = "slidevert" })
-hl.animation({ leaf = "workspacesOut", enabled = true, duration = 1, speed = 8, bezier = "smoothzz", style = "slidevert" })
+hl.animation({ leaf = "workspaces", enabled = true, duration = 1, speed = 10, bezier = "smoothzz", style = "slidevert" })
+hl.animation({ leaf = "workspacesIn", enabled = true, duration = 1, speed = 10, bezier = "smoothzz", style = "slidevert" })
+hl.animation({ leaf = "workspacesOut", enabled = true, duration = 1, speed = 10, bezier = "smoothzz", style = "slidevert" })
 
 -- Special workspace
 hl.animation({ leaf = "specialWorkspace", enabled = true, duration = 1, speed = 6, bezier = "smoothzz", style = "fade" })
