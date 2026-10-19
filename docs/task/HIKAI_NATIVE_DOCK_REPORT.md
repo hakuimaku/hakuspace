@@ -40,6 +40,7 @@ Quickshell **0.3.2**. See [D0 probe](HIKAI_DOCK_D0_PROBE.md) for the source gate
 | Niri 26.04, current physical eDP-1 session | PASS | Source/model behavior also exercised by pointer suite | PASS: full input suite, including fullscreen, launch, App Menu, pin/cycle, drive and Trash dispatch. |
 | MangoWM 0.18.0, nested Wayland | PASS | PASS | PASS: full input suite. Primary-session smoke remains pending. |
 | Labwc, two isolated headless outputs | PASS through real fixtures | PASS, including simulated hotplug | PASS: full input suite. |
+| Labwc 0.20.2, physical session | PASS through real fixtures | Source/model behavior also exercised by pointer suite | PASS: full input suite, native close confirmation, changed-window protection and minimized-window restore. |
 
 The subsequent style update passed the full repository check and expanded pointer
 suite on Labwc and the current Niri session. The suite previews a 6 px frame border
@@ -85,6 +86,12 @@ Exit's saved `RAM_THRESHOLD_MB` (default 300 MB). Moving away, Escape, left/righ
 click or closing the Dock clears the confirmation. PID roots must still have the
 same start times; signals use pidfds, and the calling desktop shell is protected.
 Unknown compositor PIDs produce a tooltip error instead of process-name guessing.
+
+Labwc uses native Wayland close requests with an explicit confirmation because
+app PID/RAM metadata is unavailable. Confirmation covers the exact current window
+objects and is refreshed if membership changes. Applications may refuse the close
+request or prompt to save; this path never guesses process names or sends signals.
+Activation explicitly restores minimized windows before requesting focus.
 
 Niri PID lookup and actual SIGTERM passed against a separately created, disposable
 Quickshell window. No running user app was terminated. Seven backend tests cover

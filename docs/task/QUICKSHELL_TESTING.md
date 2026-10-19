@@ -35,6 +35,10 @@ focus stays on the clicked item. Escape must hide both the warning and tooltip
 even if the pointer remains over that item. Backend tests
 use disposable processes to check first-click SIGTERM below the threshold,
 second-click confirmation above it, PID identity changes and shell protection.
+On Labwc, the input suite separately checks real native close requests against
+fixture windows: first-click confirmation, refreshed confirmation after window
+membership changes, closing every confirmed window, and minimized-window restore.
+The native path never invokes the PID termination fixture.
 The regular harness checks maximized
 client reservation, fixed frame dimensions across exclusive ON/OFF and manual OFF,
 draft/Discard/persistence, external pin edits and malformed

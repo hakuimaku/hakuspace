@@ -17,6 +17,9 @@ ShellRoot {
     property string gioRequest: ""
     property string terminationRequests: ""
     property bool autohideAnimationObserved: false
+    property bool labwcSession: false
+    property int nativeClosed: 0
+    property string nativeTerminationLog: ""
     // Capture logical geometry before hover to detect layout motion.
     property var hoverSlot: null
     property real hoverWidth: 0
@@ -29,9 +32,17 @@ ShellRoot {
         visible: false
         maximized: true
         color: "#597987"
+        onClosed: { root.nativeClosed++; visible = false }
         MouseArea { anchors.fill: parent; onClicked: root.clientClicks++ }
     }
-    FloatingWindow { id: second; screen: Quickshell.screens[0]; title: "Dock input B"; visible: false; implicitWidth: 240; implicitHeight: 160 }
+    FloatingWindow {
+        id: second
+        screen: Quickshell.screens[0]
+        title: "Dock input B"
+        visible: false
+        implicitWidth: 240; implicitHeight: 160
+        onClosed: { root.nativeClosed++; visible = false }
+    }
     Process {
         id: pointer
         command: ["python3", Quickshell.env("HAKUSPACE_TEST_POINTER")]
@@ -157,6 +168,9 @@ ShellRoot {
             var width = root.dock.modelData.width
             var height = root.dock.modelData.height
             if (root.phase === 0) {
+                // Exercise mocked PID confirmation separately from native Labwc close requests.
+                root.labwcSession = WM.labwcSession
+                WM.labwcSession = false
                 root.check(HAnimation.dockOpenDuration === 360 && HAnimation.dockCloseDuration === 224
                     && HAnimation.hakuMenuOpenDuration === 360 && HAnimation.hakuMenuCloseDuration === 308
                     && HAnimation.floatingPanelOpenDuration === 504 && HAnimation.floatingPanelCloseDuration === 280,
@@ -346,8 +360,47 @@ ShellRoot {
                 root.move(10, 100)
             } else if (root.phase === 39) {
                 root.check(!root.dock.shown, "autohide still closes after hover")
-                root.toggle()
+                if (!root.labwcSession) {
+                    root.toggle()
+                    root.phase = 48
+                } else {
+                    WM.labwcSession = true
+                    root.nativeTerminationLog = root.terminationRequests
+                    ShellSettingsStore.setValue("dock", "visibilityMode", "always")
+                }
             } else if (root.phase === 40) {
+                root.pointAt(root.appIcon(), 274)
+            } else if (root.phase === 41) {
+                root.check(root.dock.terminationRoots.length === 1 && root.appIcon().actionMessage.indexOf("RAM usage is unavailable") >= 0,
+                    "Labwc middle click requests confirmation when RAM cannot be inspected")
+                root.check(root.nativeClosed === 0 && first.visible && root.terminationRequests === root.nativeTerminationLog,
+                    "Labwc warning neither closes nor signals processes")
+                second.visible = true
+            } else if (root.phase === 42) {
+                root.pointAt(root.appIcon(), 274)
+            } else if (root.phase === 43) {
+                root.check(root.dock.terminationRoots.length === 2 && root.nativeClosed === 0 && first.visible && second.visible,
+                    "changed window membership requires fresh confirmation")
+                root.pointAt(root.appIcon(), 274)
+            } else if (root.phase === 44) {
+                root.check(root.nativeClosed === 2 && !first.visible && !second.visible && root.dock.terminationKey === "",
+                    "confirmed Labwc action closes both real windows through Wayland")
+                root.check(root.terminationRequests === root.nativeTerminationLog, "native close never invokes PID termination")
+                first.visible = true
+            } else if (root.phase === 45) {
+                root.app().windows[0].minimized = true
+            } else if (root.phase === 46) {
+                root.check(root.app().windows[0].minimized, "Labwc fixture is minimized before activation")
+                root.pointAt(root.appIcon(), 272)
+            } else if (root.phase === 47) {
+                root.check(!root.app().windows[0].minimized && root.app().windows[0].activated,
+                    "Dock activation restores and focuses a minimized Labwc window")
+                ShellSettingsStore.discard()
+                root.move(10, 100)
+            } else if (root.phase === 48) {
+                root.check(!root.dock.shown, "autohide still works after native window operations")
+                root.toggle()
+            } else if (root.phase === 49) {
                 root.check(!root.dock.shown && SysStats._extendedSubscribers === 0, "manual OFF releases all output subscriptions")
                 console.info("Hikai Dock checks passed")
                 Qt.quit()

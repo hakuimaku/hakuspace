@@ -43,13 +43,17 @@ Artwork grows upward with weaker effects on neighbors; slots and full-accent dot
 stay fixed. The viewport, pointer headroom and captured anchors follow both effects.
 Tooltips appear immediately. Mouse focus does not retain them after pointer exit;
 Escape dismisses them until the next hover/click. Keyboard focus still exposes
-labels and keyboard-triggered warnings. Right-click toggles pin/unpin directly. Middle-click
-sends SIGTERM to the app's compositor-reported PIDs and descendants. At or above
-Exit's saved `RAM_THRESHOLD_MB`, a tooltip requires a second middle-click on the
+labels and keyboard-triggered warnings. Right-click toggles pin/unpin directly. On
+Niri/Hyprland/Mango, middle-click sends SIGTERM to compositor-reported app PIDs
+and descendants. At or above Exit's saved `RAM_THRESHOLD_MB`, a tooltip requires
+a second middle-click on the
 same app; moving away, Escape or another action cancels confirmation. Process
 identity is checked again before signalling; unavailable PIDs leave an error
-tooltip instead of guessing from names. Niri/Hyprland/Mango provide PID queries;
-compositors without PID data cannot use this action.
+tooltip instead of guessing from names.
+Labwc uses native Wayland close requests because its Dock protocol exposes no
+app PID/RAM metadata. It always asks for confirmation, rechecks the exact window
+objects, and requests closing only those windows; it does not force-terminate
+unresponsive apps. Dock activation restores minimized windows before focusing them.
 Dock icons use one `dock_icon_watch.py` process while manual Dock state is ON.
 It follows GTK settings/GSettings, active and inherited theme directories, and
 resolved icon files with native GIO monitors. File URLs carry modification versions

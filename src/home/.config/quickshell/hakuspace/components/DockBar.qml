@@ -114,8 +114,8 @@ Item {
             if (key !== root.terminationKey || !root.shown) return
             if (result.status === "confirmation") {
                 root.terminationRoots = result.roots
-                root.terminationMessage = Math.round(result.ramMb) + " MB RAM (warning at " + result.thresholdMb
-                    + " MB).\nMiddle-click again to close. Esc to cancel."
+                root.terminationMessage = result.message || (Math.round(result.ramMb) + " MB RAM (warning at " + result.thresholdMb
+                    + " MB).\nMiddle-click again to close. Esc to cancel.")
             } else if (result.status === "error") root.terminationMessage = result.message
             else root.cancelTermination()
         }

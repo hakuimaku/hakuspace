@@ -34,6 +34,7 @@ QtObject {
         var window = Model.nextWindow(app.windows, focusedWindows[app.key])
         if (window) {
             focusedWindows[app.key] = window
+            window.minimized = false
             window.activate()
         }
         else if (app.entry) app.entry.execute()
@@ -66,9 +67,21 @@ QtObject {
     property string terminationKey: ""
     signal terminationFinished(string key, var result)
 
-    // Resolve the controller as an argument vector, keeping app IDs out of shell text.
+    // Use native Labwc close requests or pass app IDs as arguments to the PID controller.
     function terminate(app, confirmedRoots) {
         if (terminationBusy || !app.runningCount) return false
+        // Labwc exposes window close requests without app PID or RAM metadata.
+        if (WM.labwcSession) {
+            var windows = app.windows.slice()
+            if (windows.length !== confirmedRoots.length || windows.some(function(window, index) { return window !== confirmedRoots[index] })) {
+                terminationFinished(app.key, {status: "confirmation", roots: windows,
+                    message: "RAM usage is unavailable on Labwc.\nMiddle-click again to request closing these windows. Esc to cancel."})
+            } else {
+                for (var window of windows) window.close()
+                terminationFinished(app.key, {status: "terminated"})
+            }
+            return true
+        }
         var ids = app.windows.map(function(window) { return window.appId }).filter(function(id) { return !!id })
         if (!ids.length) return false
         terminationKey = app.key
