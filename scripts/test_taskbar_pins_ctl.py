@@ -116,6 +116,39 @@ class TaskbarPinsTests(unittest.TestCase):
         self.assertEqual(data['group/pin']['modules'], ['image#menu', 'clock', 'image#y', 'image#x', 'image#x.desktop'])
         self.assertEqual(data['image#x'], {'size': 40})
 
+    def test_size_preserves_jsonc_and_new_pins_inherit_it(self):
+        """Resize edits touch only size values; future pins keep the same size."""
+        original = self.path.read_text()
+        self.run_ctl('size', '64')
+        self.assertEqual(self.path.read_text(), original.replace('"size": 40', '"size": 64'))
+        inode = self.path.stat().st_ino
+        self.run_ctl('size', '64')
+        self.assertEqual(self.path.stat().st_ino, inode)
+        self.run_ctl('add', 'new-app')
+        self.assertEqual(json.loads(ctl.jsonc_text(self.path.read_text()))['image#new-app']['size'], 64)
+        original = self.path.read_bytes()
+        for size in ('31', '73', '33', '48.0', 'bad'):
+            with self.subTest(size=size), self.assertRaises(ValueError):
+                self.run_ctl('size', size)
+            self.assertEqual(self.path.read_bytes(), original)
+
+    def test_size_missing_fields_aliases_and_reused_blocks(self):
+        """Handle missing sizes and blocks without altering other modules or commands."""
+        self.path.write_text('{/* keep */ "group/pin":{"modules":["image#menu","clock","image#x","image#x.desktop"]},'
+                             '"image#menu":{}, "image#x":{"on-click":"x", /* keep x */},'
+                             '"clock":{"size":9}, "image#saved":{"size":20,"on-click":"saved"}}')
+        self.run_ctl('size', '60')
+        data = json.loads(ctl.jsonc_text(self.path.read_text()))
+        self.assertEqual(data['clock'], {'size': 9})
+        self.assertEqual(data['image#saved']['size'], 20)
+        for module in ('image#menu', 'image#x', 'image#x.desktop'):
+            self.assertEqual(data[module]['size'], 60)
+        self.assertEqual(data['image#x']['on-click'], 'x')
+        self.assertIn('/* keep x */', self.path.read_text())
+        self.run_ctl('add', 'saved')
+        data = json.loads(ctl.jsonc_text(self.path.read_text()))
+        self.assertEqual(data['image#saved'], {'size': 60, 'on-click': 'saved'})
+
 
 if __name__ == '__main__':
     unittest.main()

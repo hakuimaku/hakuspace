@@ -17,6 +17,7 @@ sys.dont_write_bytecode = True
 # Import the same controller used by the deployed shell.
 ROOT = Path(__file__).resolve().parents[1]
 CONTROLLER = ROOT / "src/core/backend/user/hikai_settings_ctl.py"
+sys.path.insert(0, str(CONTROLLER.parent))
 SPEC = importlib.util.spec_from_file_location("hikai_settings_ctl", CONTROLLER)
 ctl = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(ctl)
@@ -30,7 +31,10 @@ class ShellSettingsTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / "hakucfg/hikai/hikai-shell.json"
-        self.environment = patch.dict(os.environ, HAKUSPACE_HIKAI_SETTINGS_FILE=str(self.path))
+        self.pins = Path(self.temp.name) / "taskbar-pin-apps"
+        self.pins.write_text((ROOT / "src/home/hakucfg/config/taskbar-pin-apps").read_text())
+        self.environment = patch.dict(os.environ, HAKUSPACE_HIKAI_SETTINGS_FILE=str(self.path),
+                                      HAKUSPACE_TASKBAR_PINS_FILE=str(self.pins))
         self.environment.start()
         self.addCleanup(self.environment.stop)
 
@@ -220,6 +224,32 @@ class ShellSettingsTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.write({})
             self.assertEqual(self.path.read_bytes(), original)
+
+
+    def test_icon_size_sync_and_reset(self):
+        """Only saving icon size or Reset changes the shared pin document."""
+        import taskbar_pins_ctl
+        original = self.pins.read_text()
+        self.write({"dock": {"hoverLift": 28}})
+        self.assertEqual(self.pins.read_text(), original)
+        self.write({"dock": {"iconSize": 64}})
+        self.assertEqual(self.pins.read_text(), original.replace('"size": 40', '"size": 64'))
+        taskbar_pins_ctl.run("add", ["new-app"])
+        data = json.loads(taskbar_pins_ctl.jsonc_text(self.pins.read_text()))
+        self.assertEqual(data["image#new-app"]["size"], 64)
+        ctl.run("reset")
+        data = json.loads(taskbar_pins_ctl.jsonc_text(self.pins.read_text()))
+        self.assertTrue(all(data[module]["size"] == 48 for module in data["group/pin"]["modules"]))
+
+    def test_invalid_pin_config_blocks_size_save(self):
+        """A failed pin update reports failure before saving a mismatched shell size."""
+        self.write({})
+        original = self.path.read_bytes()
+        self.pins.write_text("{broken")
+        with self.assertRaises(ValueError):
+            self.write({"dock": {"iconSize": 64}})
+        self.assertEqual(self.path.read_bytes(), original)
+        self.assertEqual(self.pins.read_text(), "{broken")
 
 
 if __name__ == "__main__":

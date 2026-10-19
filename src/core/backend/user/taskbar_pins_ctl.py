@@ -113,7 +113,7 @@ def normalize(document):
 
 
 # Launch new Classic pins through their desktop file so Exec placeholders remain valid.
-def classic_block(identity):
+def classic_block(identity, size):
     data_home = Path(os.environ.get('XDG_DATA_HOME', Path.home() / '.local/share'))
     data_dirs = [data_home, *(Path(p) for p in os.environ.get('XDG_DATA_DIRS', '/usr/local/share:/usr/share').split(':') if p)]
     for directory in data_dirs:
@@ -133,7 +133,23 @@ def classic_block(identity):
     else:
         command = shlex.quote(identity)
     return {'exec': '$HOME/.local/bin/taskbar_geticon.sh ' + shlex.quote(identity),
-            'size': 40, 'interval': 'once', 'on-click': command}
+            'size': size, 'interval': 'once', 'on-click': command}
+
+
+# Replace only an image's size, retaining comments, commands and custom fields.
+def size_edits(cleaned, root_fields, module, size):
+    if module not in root_fields:
+        end = list(root_fields.values())[-1][2]
+        return [(end, end, ',\n    ' + json.dumps(module) + ': {"size": ' + str(size) + '}')]
+    _, start, end = root_fields[module]
+    if cleaned[start] != '{':
+        raise ValueError(f'{module} must be an object')
+    fields = members(cleaned, start)
+    if 'size' in fields:
+        _, start, end = fields['size']
+        return [(start, end, str(size))]
+    end = list(fields.values())[-1][2] if fields else start + 1
+    return [(end, end, (', ' if fields else '') + '"size": ' + str(size))]
 
 
 # Apply narrow edits so unrelated Waybar values, comments and formatting survive.
@@ -150,6 +166,10 @@ def edit(raw, action, args):
     group_start = root_fields['group/pin'][1]
     _, modules_start, modules_end = members(cleaned, group_start)['modules']
     edits = []
+    # New pins inherit the shared group's current size instead of reverting to 40 px.
+    size = next((document[name]['size'] for name in modules if name.startswith('image#')
+                 and isinstance(document.get(name), dict) and type(document[name].get('size')) is int
+                 and document[name]['size'] > 0), 40)
     if action in ('add', 'remove') and len(args) == 1:
         identity = app_id(args[0])
         if identity == 'menu':
@@ -161,9 +181,11 @@ def edit(raw, action, args):
                 return raw, pins
             modules.append(module)
             if module not in document:
-                block = json.dumps(classic_block(identity), ensure_ascii=False, indent=4).replace('\n', '\n    ')
+                block = json.dumps(classic_block(identity, size), ensure_ascii=False, indent=4).replace('\n', '\n    ')
                 last_end = list(root_fields.values())[-1][2]
                 edits.append((last_end, last_end, ',\n    ' + json.dumps(module) + ': ' + block))
+            else:
+                edits.extend(size_edits(cleaned, root_fields, module, size))
         else:
             if not existing:
                 return raw, pins
@@ -201,9 +223,17 @@ def edit(raw, action, args):
                    if app_id(modules[index][6:]) == identity]
         for index, name in zip(slots, ordered):
             modules[index] = name
+    elif action == 'size' and len(args) == 1:
+        size = int(args[0])
+        if not 32 <= size <= 72 or size % 4:
+            raise ValueError('icon size must be 32–72 px in steps of 4')
+        for module in dict.fromkeys(modules):
+            if module.startswith('image#'):
+                edits.extend(size_edits(cleaned, root_fields, module, size))
     else:
-        raise ValueError('usage: taskbar_pins_ctl.py list|reload|add ID|remove ID|move FROM TO')
-    edits.append((modules_start, modules_end, json.dumps(modules, ensure_ascii=False, indent=4).replace('\n', '\n        ')))
+        raise ValueError('usage: taskbar_pins_ctl.py list|reload|add ID|remove ID|move FROM TO|size PX')
+    if action != 'size':
+        edits.append((modules_start, modules_end, json.dumps(modules, ensure_ascii=False, indent=4).replace('\n', '\n        ')))
     # Adjacent alias blocks can share the comma selected for deletion.
     deletions = []
     for start, end, replacement in sorted(edits):

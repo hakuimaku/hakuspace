@@ -172,6 +172,7 @@ ShellRoot {
                 }
                 else UiState.openSettings(first.modelData.name)
             } else if (root.phase === 18) {
+                ShellSettingsStore.setValue("dock", "iconSize", 64)
                 ShellSettingsStore.apply()
             } else if (root.phase === 19) {
                 ShellSettingsStore.reset()

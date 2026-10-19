@@ -1,4 +1,6 @@
 import QtQuick
+import Quickshell
+import Quickshell.Io
 import "services"
 import "components/settings" as Settings
 import "components/flare" as Flare
@@ -10,6 +12,18 @@ Item {
     // Advance only after each asynchronous backend operation finishes.
     property int phase: 0
     property int ticks: 0
+    FileView {
+        id: pinFile
+        path: Quickshell.env("HAKUSPACE_TASKBAR_PINS_FILE")
+    }
+    // Read the actual shared document at each preview and persistence boundary.
+    function checkPinSize(size) {
+        pinFile.reload()
+        pinFile.waitForJob()
+        var sizes = pinFile.text().match(/"size"\s*:\s*\d+/g) || []
+        root.check(sizes.length === 4 && sizes.every(function(field) { return Number(field.split(":")[1]) === size }),
+            "phase " + root.phase + ": shared pin size is " + size + ", found " + sizes.join(", "))
+    }
 
     // Fail the process as well as the QML assertion so CI cannot accept a warning.
     function check(ok, message) {
@@ -71,6 +85,11 @@ Item {
                     return
                 }
                 root.check(!ShellSettingsStore.dirty && ShellSettingsStore.valid, "initial defaults")
+                root.checkPinSize(40)
+                ShellSettingsStore.setValue("dock", "iconSize", 64)
+                root.checkPinSize(40)
+                ShellSettingsStore.discard()
+                root.checkPinSize(40)
                 root.check(anchorMorph.anchorSpan().start === 180 && anchorMorph.anchorSpan().end === 212, "captured anchor localization")
                 anchorMorph.anchorItem = liveAnchor
                 root.check(anchorMorph.anchorSpan().start === 33 && anchorMorph.anchorSpan().end === 57, "live anchor keeps priority")
@@ -117,6 +136,7 @@ Item {
                     root.check(ShellSettingsStore.values.dock[setting.key] === setting.maximum, "invalid hover preview rejected")
                 }
                 ShellSettingsStore.setValue("appearance", "baseRadius", 20)
+                ShellSettingsStore.setValue("dock", "iconSize", 64)
                 ShellSettingsStore.setValue("appearance", "surfaceTone", "soft")
                 ShellSettingsStore.setValue("topbar", "tray", false)
                 ShellSettingsStore.setValue("roundedScreen", "radius", 24)
@@ -132,6 +152,7 @@ Item {
                 root.check(!ShellSettingsStore.showTray && Theme.radius === 20, "invalid edits rejected")
                 ShellSettingsStore.apply()
             } else if (root.phase === 1) {
+                root.checkPinSize(64)
                 root.check(!ShellSettingsStore.dirty && ShellSettingsStore.savedValues.appearance.baseRadius === 20, "apply snapshot")
                 root.check(ShellSettingsStore.savedValues.dock.hoverLift === 48 && ShellSettingsStore.savedValues.dock.hoverScale === 100,
                     "Apply saves both hover preferences")
@@ -146,16 +167,19 @@ Item {
                 root.check(ShellSettingsStore.dockHoverLift === 48 && ShellSettingsStore.dockHoverScale === 100, "hover persistence after reload")
                 root.check(ScreenGeometry.roundedRadius === 24 && ScreenGeometry.borderThickness === 6, "reload preserves both screen preferences")
                 ShellSettingsStore.reset()
+                root.checkPinSize(64)
                 root.check(Theme.radius === 12 && ShellSettingsStore.showTray && ShellSettingsStore.dirty, "reset previews defaults")
                 root.check(ScreenGeometry.roundedRadius === 20 && ScreenGeometry.borderThickness === 4, "Reset previews screen defaults")
                 root.check(ShellSettingsStore.dockHoverLift === 14 && ShellSettingsStore.dockHoverScale === 0, "Reset previews hover defaults")
                 ShellSettingsStore.discard()
+                root.checkPinSize(64)
                 root.check(Theme.radius === 20 && !ShellSettingsStore.showTray && !ShellSettingsStore.dirty, "reset then discard")
                 root.check(ScreenGeometry.roundedRadius === 24 && ScreenGeometry.borderThickness === 6, "Discard restores both screen preferences")
                 root.check(ShellSettingsStore.dockHoverLift === 48 && ShellSettingsStore.dockHoverScale === 100, "Discard restores hover preferences")
                 ShellSettingsStore.reset()
                 ShellSettingsStore.apply()
             } else if (root.phase === 3) {
+                root.checkPinSize(48)
                 root.check(Theme.radius === 12 && ShellSettingsStore.showTray && !ShellSettingsStore.dirty, "reset then apply")
                 ShellSettingsStore.reload()
             } else {

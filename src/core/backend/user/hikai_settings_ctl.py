@@ -152,7 +152,7 @@ def replace_file(parent_fd, name, values, mode):
 
 
 def run(action):
-    """Return defaults or merge validated edits without touching other config domains."""
+    """Persist shell edits and synchronize explicitly saved Dock icon sizes."""
     if action not in ("read", "write", "check", "reset"):
         raise ValueError("usage: hikai_settings_ctl.py read|write|check|reset")
     path = Path(os.path.abspath(os.environ.get("HAKUSPACE_HIKAI_SETTINGS_FILE")
@@ -170,6 +170,10 @@ def run(action):
         elif action == "reset":
             values = copy.deepcopy(DEFAULTS)
         if action in ("write", "reset"):
+            if action == "reset" or "iconSize" in patch.get("dock", {}):
+                # Import after initialization because pins reuse this module's safe path walker.
+                from taskbar_pins_ctl import run as update_pins
+                update_pins("size", [str(values["dock"]["iconSize"])])
             replace_file(parent_fd, path.name, values, mode)
         return {"ok": True, "path": str(path), "values": values,
                 "needsMigration": migrated and action in ("read", "check")}

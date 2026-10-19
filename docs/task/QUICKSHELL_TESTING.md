@@ -32,6 +32,7 @@ App Menu routing, launch, drives and Trash. Hover checks cover peak/neighbor lif
 zero/maximum lift and enlargement, fixed slots/width, clipping bounds, raised hit
 areas, enlarged anchors, immediate tooltips, direct right-click pinning,
 local pin/unpin feedback without overlapping tooltips,
+shared icon-size persistence on Apply, untouched pin files during preview/Discard,
 high-RAM confirmation/cancellation, autohide and live frame insets. Moving from a
 middle-clicked icon to another icon must hide the old tooltip while Dock keyboard
 focus stays on the clicked item. Escape must hide both the warning and tooltip

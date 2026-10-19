@@ -39,6 +39,9 @@ zero bottom padding and a 2 px artwork-to-dot gap.
 Dock icons have no hover, pressed or focused background. Settings sliders control
 hover lift from 0–48 px (default 14) and enlargement from 0–100% (default 0).
 Zero disables each effect independently; 100% enlargement doubles artwork size.
+Applying icon size also updates image modules in `~/hakucfg/config/taskbar-pin-apps`
+while preserving comments and commands. Newly pinned apps inherit the group's size;
+preview and Discard leave the shared file untouched.
 Artwork grows upward with weaker effects on neighbors; slots and full-accent dots
 stay fixed. The viewport, pointer headroom and captured anchors follow both effects.
 Drag a pinned icon (including Applications) past the platform movement threshold,
