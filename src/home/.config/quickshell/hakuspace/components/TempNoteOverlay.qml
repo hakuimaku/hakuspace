@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 import Quickshell
 import Quickshell.Wayland
 import "../services"
@@ -24,6 +25,10 @@ PanelWindow {
     property point dragOffset: Qt.point(0, 0)
     // Drive reversible opening and closing from one animation value.
     property real morphProgress: 0
+    // Defer an explicit keyboard handoff until the editor is interactive.
+    property bool focusPending: false
+    // Claim keyboard input only after an explicit Sidebar handoff.
+    property bool keyboardRequested: false
     // Bound overshoot from the shared Sidebar easing before computing geometry.
     readonly property real revealProgress: Math.max(0, Math.min(1, morphProgress))
     // Release the connecting flare as the card reaches its floating position.
@@ -40,12 +45,14 @@ PanelWindow {
     anchors { top: true; bottom: true; left: true; right: true }
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "hakuspace-temp-note"
-    WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: !panelOpen || (!interactionReady && !keyboardRequested)
+        ? WlrKeyboardFocus.None : keyboardRequested ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     color: "transparent"
     visible: panelOpen || morphProgress > 0.001
-    mask: Region { item: noteCard; radius: noteCard.radius }
+    // The opening capsule must not intercept the Sidebar button beneath it.
+    mask: Region { item: root.interactionReady ? noteCard : null; radius: noteCard.radius }
 
     // Reset transient coordinates whenever ownership ends or a note opens.
     function resetPosition() {
@@ -59,18 +66,33 @@ PanelWindow {
 
     onPanelOpenChanged: {
         morphAnim.stop()
+        focusPending = false
+        keyboardRequested = false
         if (panelOpen && morphProgress <= 0.001) resetPosition()
         morphAnim.to = panelOpen ? 1 : 0
         morphAnim.duration = Math.round((panelOpen ? HAnimation.sidebarToolOpenDuration
             : HAnimation.sidebarToolCloseDuration) * Math.abs(morphAnim.to - morphProgress))
         morphAnim.easing.bezierCurve = panelOpen ? HAnimation.sidebarToolOpenCurve : HAnimation.sidebarToolCloseCurve
         morphAnim.start()
-        Qt.callLater(function() { if (root && root.panelOpen && !root.interactionReady) noteCard.forceActiveFocus() })
     }
     Component.onDestruction: UiState.closeTempNoteIfScreen(modelData.name)
 
     Connections {
         target: UiState
+        // Keep opening passive; Right from the Sidebar requests editor focus.
+        function onTempNoteFocusRequested(screenName) {
+            if (!root.panelOpen || screenName !== root.modelData.name) return
+            root.keyboardRequested = true
+            if (root.interactionReady) noteContent.forceFocus()
+            else {
+                root.focusPending = true
+                noteCard.forceActiveFocus()
+            }
+        }
+        // A dismissed Sidebar ends its keyboard handoff without closing the note.
+        function onNavigationModeChanged() {
+            if (UiState.navigationMode === "closed") root.keyboardRequested = false
+        }
         // Finish editing before state hides this surface or transfers ownership.
         function onTempNoteClosing(screenName) {
             if (screenName !== root.modelData.name) return
@@ -85,13 +107,23 @@ PanelWindow {
         }
     }
 
+    // Release the keyboard claim when another surface takes focus.
+    Connections {
+        target: root.contentItem.Window.window
+        function onActiveChanged() {
+            if (!root.contentItem.Window.active) root.keyboardRequested = false
+        }
+    }
+
     NumberAnimation {
         id: morphAnim
         target: root
         property: "morphProgress"
         onFinished: {
-            if (root.panelOpen) noteContent.forceFocus()
-            else root.resetPosition()
+            if (root.panelOpen && root.focusPending) {
+                root.focusPending = false
+                noteContent.forceFocus()
+            } else if (!root.panelOpen) root.resetPosition()
         }
     }
 

@@ -302,7 +302,11 @@ Item {
     // A second activation closes the current tool.
     function toggleSidebarTool(key, fromKeyboard) {
         if (key === "tempNote") {
+            if (sidebarToolOpen) closeSidebarTool(fromKeyboard)
+            sidebarSelectedIndex = sidebarSurface.tools.findIndex(tool => tool.key === key)
             UiState.toggleTempNote(modelData.name)
+            focusSidebarRail(true)
+            keyboardLease = !!fromKeyboard
             return
         }
         if (activeSidebarTool === key) closeSidebarTool(fromKeyboard)
@@ -831,7 +835,8 @@ Item {
         anchors { top: true; left: true; right: true; bottom: true }
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "hakuspace-navigation"
-        WlrLayershell.keyboardFocus: root.panelOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+        WlrLayershell.keyboardFocus: !root.panelOpen ? WlrKeyboardFocus.None
+            : root.sidebarKeyboardMode ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
         color: "transparent"
@@ -1152,7 +1157,12 @@ Item {
             Keys.onRightPressed: event => {
                 if (root.dashboardVisuallyActive || (root.sidebarToolOpen && !root.sidebarKeyboardMode)) return
                 root.keyboardLease = true
-                if (root.sidebarKeyboardMode && root.sidebarToolOpen) {
+                if (root.sidebarKeyboardMode && sidebarSurface.tools[root.sidebarSelectedIndex].key === "tempNote"
+                        && UiState.tempNoteOpen && UiState.tempNoteScreenName === root.modelData.name) {
+                    root.sidebarKeyboardMode = false
+                    UiState.tempNoteFocusRequested(root.modelData.name)
+                    root.keyboardLease = false
+                } else if (root.sidebarKeyboardMode && root.sidebarToolOpen) {
                     root.sidebarKeyboardMode = false
                     root.focusActiveSidebarTool()
                 } else if (root.sidebarKeyboardMode) root.moveSidebarSelection(1)

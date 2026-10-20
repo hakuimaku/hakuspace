@@ -32,6 +32,38 @@ ShellRoot {
         property bool reloaded: false
     }
     Process { id: capture }
+    // Reopen during the morph to catch transient input masks over the rail button.
+    Timer {
+        id: noteClicks
+        interval: 80
+        repeat: true
+        property string command: ""
+        property int remaining: 0
+        onTriggered: {
+            pointer.write(command)
+            remaining--
+            if (remaining === 0) stop()
+        }
+    }
+    property int noteFocusRequests: 0
+    Connections {
+        target: UiState
+        function onTempNoteFocusRequested(screenName) { root.noteFocusRequests++ }
+    }
+    Process {
+        id: pointer
+        command: ["python3", Quickshell.env("HAKUSPACE_TEST_POINTER")]
+        environment: ({HAKUSPACE_TEST_POINTER_OUTPUT: root.outputs.length ? root.outputs[0].modelData.name : ""})
+        running: root.outputs.length === 2 && !reloadMemory.reloaded
+        stdinEnabled: true
+    }
+    // Send real key events to the focused Sidebar or floating note.
+    Process {
+        id: keyboard
+        command: ["python3", Quickshell.env("HAKUSPACE_TEST_KEYBOARD")]
+        running: !reloadMemory.reloaded
+        stdinEnabled: true
+    }
     // A private AppIndicator exercises the real QsMenuOpener and item-removal path.
     Process {
         id: trayFixture
@@ -110,6 +142,7 @@ ShellRoot {
             property alias osd: osd
             property alias popup: popup
             property alias navigation: navigation
+            property alias note: note
             property alias settings: settings
             PanelWindow {
                 screen: output.modelData
@@ -128,6 +161,7 @@ ShellRoot {
             NavigationPanel { id: navigation; modelData: output.modelData }
             SettingsPanel { id: settings; modelData: output.modelData }
             LevelOsdOverlay { id: osd; modelData: output.modelData }
+            TempNoteOverlay { id: note; modelData: output.modelData }
             TrayMenuPanel { modelData: output.modelData }
             Component.onCompleted: root.outputs.push(output)
         }
@@ -137,7 +171,7 @@ ShellRoot {
         repeat: true
         running: true
         onTriggered: {
-            root.check(++root.ticks < 65, "timeout")
+            root.check(++root.ticks < 90, "timeout")
             if (!ShellSettingsStore.ready || TaskbarPins.busy || capture.running || outputs.length !== 2) return
             var output = outputs[0]
             if (reloadMemory.reloaded) {
@@ -395,6 +429,77 @@ ShellRoot {
                 AppState.taskbarManualState = false
                 AppState.dockbarManualState = false
                 ShellSettingsStore.reset()
+                pointer.write([Math.round(output.modelData.width / 2), Math.round(output.modelData.height / 2),
+                    output.modelData.width, output.modelData.height, 0].join(" ") + "\n")
+            } else if (phase >= 26 && phase < 50) {
+                var step = (phase - 26) % 12
+                var mode = phase < 38 ? "Topbar" : "Taskbar"
+                var nav = output.navigation
+                var rail = root.module(nav, "SidebarSurface")
+                var editor = root.find(output.note, value => typeof value.insert === "function" && value.preeditText !== undefined)
+                if (step === 0) {
+                    AppState.taskbarManualState = phase >= 38
+                    UiState.openNavigation(output.modelData.name)
+                    UiState.beginNavigationHandoff("sidebar")
+                } else if (step === 1) {
+                    if (Math.abs(rail.morphProgress - 1) > 0.0001) return
+                    var button = root.find(rail, value => value.text === rail.tools[2].icon && typeof value.clicked === "function")
+                    root.check(button, mode + " Temp Note button is available")
+                    var point = button.mapToItem(null, button.width / 2, button.height / 2)
+                    noteClicks.command = [Math.round(point.x), Math.round(point.y), output.modelData.width,
+                        output.modelData.height, 272].join(" ") + "\n"
+                    pointer.write(noteClicks.command)
+                    noteClicks.remaining = 2
+                    noteClicks.start()
+                } else if (step === 2) {
+                    if (!output.note.interactionReady) return
+                    root.check(nav.panelOpen && nav.sidebarExpanded && nav.sidebarKeyboardMode
+                        && nav.sidebarSelectedIndex === 2 && editor && !editor.activeFocus
+                        && !output.note.contentItem.Window.active,
+                        mode + " clicking Temp Note keeps Sidebar focus without a second hover")
+                    keyboard.write("key 103\n")
+                } else if (step === 3) {
+                    root.check(nav.panelOpen && nav.sidebarSelectedIndex === 1,
+                        mode + " Up works immediately after opening Temp Note")
+                    keyboard.write("key 108\n")
+                } else if (step === 4) {
+                    root.check(nav.sidebarSelectedIndex === 2, mode + " Down returns to Temp Note")
+                    keyboard.write("key 106\n")
+                } else if (step === 5) {
+                    root.check(editor.activeFocus && nav.panelOpen,
+                        mode + " Right transfers focus into the editor; requests=" + root.noteFocusRequests)
+                    UiState.closeTempNote()
+                    nav.focusSidebarRail(true)
+                } else if (step === 6) {
+                    keyboard.write("key 28\n")
+                } else if (step === 7) {
+                    if (!output.note.interactionReady) return
+                    root.check(nav.panelOpen && nav.sidebarSelectedIndex === 2 && !editor.activeFocus,
+                        mode + " Enter opens Temp Note while retaining Sidebar keyboard input")
+                    keyboard.write("key 1\n")
+                } else if (step === 8) {
+                    root.check(!nav.panelOpen && UiState.tempNoteOpen,
+                        mode + " Escape dismisses Sidebar while preserving the note")
+                    UiState.openNavigation(output.modelData.name)
+                    UiState.beginNavigationHandoff("sidebar")
+                    root.module(nav, "SafeZoneController").releaseKeyboardLease()
+                    pointer.write([Math.round(output.modelData.width / 2), Math.round(output.modelData.height / 2),
+                        output.modelData.width, output.modelData.height, 0].join(" ") + "\n")
+                } else if (step === 9) {
+                    root.check(!nav.panelOpen && UiState.tempNoteOpen,
+                        mode + " pointer exit dismisses Sidebar while preserving the note")
+                    var point = editor.mapToItem(null, 80, 20)
+                    pointer.write([Math.round(point.x), Math.round(point.y), output.modelData.width,
+                        output.modelData.height, 272].join(" ") + "\n")
+                } else if (step === 10) {
+                    root.check(editor.activeFocus && output.note.contentItem.Window.active,
+                        mode + " clicking the passive note activates its editor")
+                    keyboard.write("key 107\ntext x\n")
+                } else {
+                    root.check(TextStore.scratchDraft.endsWith("x"), mode + " note receives typed input")
+                    UiState.closeTempNote()
+                    AppState.taskbarManualState = false
+                }
             } else {
                 root.checkTopology(false, false)
                 reloadMemory.reloaded = true

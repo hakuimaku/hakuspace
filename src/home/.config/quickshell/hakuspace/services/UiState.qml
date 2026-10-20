@@ -36,6 +36,8 @@ QtObject {
     property string tempNoteScreenName: ""
     // Let the owning overlay flush and reset before hiding or transferring it.
     signal tempNoteClosing(string screenName)
+    // Transfer keyboard input only after an explicit note focus request.
+    signal tempNoteFocusRequested(string screenName)
     readonly property string hakuMenuTabLabel: hakuMenuMode === "general" ? "General"
                                                    : hakuMenuMode === "drun" ? "Drun"
                                                    : hakuMenuMode === "theme" ? "Theme"

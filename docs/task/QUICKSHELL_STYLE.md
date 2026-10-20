@@ -318,7 +318,9 @@ Sidebar is a left-edge expansion from the Navigation Sidebar region.
 - visible body is an elongated rounded lobe, not a generic drawer;
 - option controls are circles;
 - the rail contains Quick Actions, Clipboard and Temp Note;
-- the body height fits these three utility controls.
+- the body height fits these three utility controls;
+- opening Temp Note keeps keyboard focus and selection on its Sidebar button in both modes; its morph is input-transparent until settled, and Right transfers focus into the open note;
+- Temp Note does not pin Sidebar: Escape and pointer exit still dismiss Sidebar without closing the note.
 
 ### 1.7 Settings
 

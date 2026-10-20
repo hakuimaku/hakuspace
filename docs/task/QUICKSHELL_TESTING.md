@@ -37,7 +37,7 @@ absence of Center/Cava in the bottom lane, calendar tooltip ownership and upward
 placement, HakuMenu presentation/default anchors, Notification Center input bounds,
 top-centered popup layers/DND/history, a real private AppIndicator custom menu/removal,
 native tray fallback coordinates, Navigation handoffs,
-Settings, top-centered OSD, 40% Taskbar HakuMenu height and top controls, active-panel topology transfers and shell reload. Set
+Settings, top-centered OSD, 40% Taskbar HakuMenu height and top controls, real Temp Note button clicks followed by Up/Down/Right without pointer re-entry, Enter/Escape and note typing in both modes, active-panel topology transfers and shell reload. Set
 `HAKUSPACE_DOCK_ARTIFACT_DIR` to an existing directory to retain screenshots.
 The existing top-layout harness retains its tooltip/frame/ear pixel checks;
 HakuMenu source tests cover the restored top-edge presentation with Dockbar OFF and ON.

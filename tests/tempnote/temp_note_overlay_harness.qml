@@ -110,6 +110,7 @@ ShellRoot {
                 overlay.dragOffset = Qt.point(-10000, -10000)
                 root.check(root.card.x === 0 && root.card.y === 0, "upper drag bounds")
                 overlay.dragOffset = Qt.point(40, 20)
+                UiState.tempNoteFocusRequested(root.screenName)
                 TextStore.setScratchDraft("Tiếng Việt")
                 input.keyClick(Qt.Key_End, Qt.NoModifier, 0)
                 input.keyClick(Qt.Key_X, Qt.NoModifier, 0)
