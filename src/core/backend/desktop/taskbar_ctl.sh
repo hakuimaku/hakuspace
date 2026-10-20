@@ -126,9 +126,7 @@ startup_taskbar() {
 }
 
 toggle_taskbar() {
-    # Hikai owns no Waybar taskbar surface. Keep the persisted manual state as
-    # the contract so native UI can expose an ON/OFF toggle without starting a
-    # legacy Waybar process or requiring Waybar to be installed.
+    # In Hikai this flag selects Taskbar Mode without starting a Waybar process.
     if haku_qs_mode; then
         if [[ "$(cat "$MANUAL_STATE")" == "0" ]]; then
             echo "1" > "$MANUAL_STATE"

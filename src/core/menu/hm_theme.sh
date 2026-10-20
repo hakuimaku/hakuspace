@@ -60,7 +60,11 @@ case "$chosen" in
     *"Go back to Surface"*|*"Explore the Abyss"*) spawn $HOME/.local/bin/haku_backend.sh --toggle ;;
     *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh ;;
     *"Desktop Icons"*) spawn $HOME/.local/bin/desktop_icons_manager.sh --toggle ;;
-    *"Taskbar"*) spawn $HOME/.local/bin/taskbar_manager.sh --toggle ;;
+    *"Dockbar"*)
+        if [[ "$(cat "$STATE_DIR/shell_backend" 2>/dev/null)" == hikai && "$(cat "$STATE_DIR/taskbar_manual_state" 2>/dev/null)" != 1 ]]; then
+            spawn "$HOME/.local/bin/dockbar_manager.sh" --toggle
+        fi ;;
+    *"Taskbar Mode"*|*"Taskbar"*) spawn $HOME/.local/bin/taskbar_manager.sh --toggle ;;
     *"Niri Animation"*) spawn $HOME/.local/bin/niri_animation_switcher.sh ;;
     *"Change Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh ;;
     *"Kill Lively Wallpaper"*) spawn $HOME/.local/bin/wallpaper_select.sh --exit ;;

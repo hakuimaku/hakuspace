@@ -17,7 +17,8 @@ FocusScope {
         { key: "bluetooth", icon: "󰂯", label: "Bluetooth", toggle: true },
         { key: "idleInhibit", icon: "󰈈", label: "Idle Inhibit", toggle: true },
         { key: "nightLight", icon: "󰖔", label: "Night Light", toggle: true },
-        { key: "taskbar", icon: "󰧨", label: "Taskbar", toggle: true },
+        { key: "taskbar", icon: "󰧨", label: "Taskbar Mode", toggle: true },
+        { key: "dockbar", icon: "󰐃", label: "Dockbar", toggle: true },
         { key: "desktopIcons", icon: "󰀻", label: "Desktop Icons", toggle: true },
         { key: "cava", icon: "󰝚", label: "Cava Underbar", toggle: true },
         { key: "screenshot", icon: "󰄄", label: "Screenshot", toggle: false },
@@ -25,8 +26,16 @@ FocusScope {
         { key: "wallpaper", icon: "󰸉", label: "Wallpaper", toggle: false }
     ]
 
+    readonly property int columnCount: 5
+    readonly property int rowCount: Math.ceil(actions.length / columnCount)
+    readonly property real cellSpacing: 8
+
     function forceFocus() { root.forceActiveFocus() }
-    function stateFor(key) { return toggleStates[key] || { available: false, enabled: false } }
+    function stateFor(key) {
+        if (key === "dockbar" && ChromeLayout.taskbarMode)
+            return {available: false, enabled: AppState.dockbarManualState}
+        return toggleStates[key] || { available: false, enabled: false }
+    }
 
     // Refresh from system owners after each completed toggle.
     function refresh() {
@@ -45,28 +54,24 @@ FocusScope {
         toggleProc.running = true
     }
 
+    // Preserve rows horizontally and clamp downward movement into the incomplete last row.
+    function moveSelection(dx, dy) {
+        keyboardCursor = true
+        var column = selectedIndex % columnCount
+        if (dx < 0 && column === 0) { railFocusRequested(); return }
+        if (dx !== 0) {
+            var next = selectedIndex + dx
+            if (next >= 0 && next < actions.length && column + dx < columnCount) selectedIndex = next
+        } else if (dy < 0 && selectedIndex >= columnCount) selectedIndex -= columnCount
+        else if (dy > 0 && Math.floor(selectedIndex / columnCount) < rowCount - 1)
+            selectedIndex = Math.min(actions.length - 1, selectedIndex + columnCount)
+    }
+
     Component.onCompleted: refresh()
-    Keys.onLeftPressed: event => {
-        keyboardCursor = true
-        if (selectedIndex % 5 > 0) selectedIndex--
-        else railFocusRequested()
-        event.accepted = true
-    }
-    Keys.onRightPressed: event => {
-        keyboardCursor = true
-        if (selectedIndex % 5 < 4 && selectedIndex < actions.length - 1) selectedIndex++
-        event.accepted = true
-    }
-    Keys.onUpPressed: event => {
-        keyboardCursor = true
-        if (selectedIndex >= 5) selectedIndex -= 5
-        event.accepted = true
-    }
-    Keys.onDownPressed: event => {
-        keyboardCursor = true
-        if (selectedIndex < 5) selectedIndex += 5
-        event.accepted = true
-    }
+    Keys.onLeftPressed: event => { moveSelection(-1, 0); event.accepted = true }
+    Keys.onRightPressed: event => { moveSelection(1, 0); event.accepted = true }
+    Keys.onUpPressed: event => { moveSelection(0, -1); event.accepted = true }
+    Keys.onDownPressed: event => { moveSelection(0, 1); event.accepted = true }
     Keys.onReturnPressed: event => { keyboardCursor = true; activate(selectedIndex); event.accepted = true }
     Keys.onEnterPressed: event => { keyboardCursor = true; activate(selectedIndex); event.accepted = true }
     Keys.onSpacePressed: event => { keyboardCursor = true; activate(selectedIndex); event.accepted = true }
@@ -92,8 +97,8 @@ FocusScope {
 
     Grid {
         anchors.fill: parent
-        columns: 5
-        spacing: 8
+        columns: root.columnCount
+        spacing: root.cellSpacing
         Repeater {
             model: root.actions
             delegate: SidebarMorphButton {
@@ -101,8 +106,8 @@ FocusScope {
                 required property var modelData
                 readonly property bool checked: modelData.toggle && root.stateFor(modelData.key).enabled
                 readonly property bool cursor: root.keyboardCursor && root.activeFocus && root.selectedIndex === index
-                width: Math.max(1, (root.width - 32) / 5)
-                height: Math.max(1, (root.height - 8) / 2)
+                width: Math.max(1, (root.width - (root.columnCount - 1) * root.cellSpacing) / root.columnCount)
+                height: Math.max(1, (root.height - (root.rowCount - 1) * root.cellSpacing) / root.rowCount)
                 radius: Theme.radius
                 enabled: !modelData.toggle || root.stateFor(modelData.key).available
                 selected: checked || cursor
@@ -126,7 +131,7 @@ FocusScope {
                     }
                     Text {
                         width: parent.width
-                        text: modelData.label
+                        text: modelData.key === "dockbar" && ChromeLayout.taskbarMode ? "Dockbar\nTopBar only" : modelData.label
                         horizontalAlignment: Text.AlignHCenter
                         wrapMode: Text.WordWrap
                         font.family: Theme.fontFamily

@@ -14,6 +14,7 @@ SCRIPTS = {
     "idleInhibit": ("idle_inhibit.sh", "--check", "--toggle"),
     "nightLight": ("nightlight_toggle.sh", "--check", None),
     "taskbar": ("taskbar_manager.sh", "--status", "--toggle"),
+    "dockbar": ("dockbar_manager.sh", "--status", "--toggle"),
     "desktopIcons": ("desktop_icons_manager.sh", "--status", "--toggle"),
     "cava": ("cava_manager.sh", "--status", "toggle"),
 }
@@ -55,7 +56,10 @@ def state(key):
         return {"available": result.returncode == 0 or (result.returncode == 1 and valid_off),
                 "enabled": result.returncode == 0}
     value = result.stdout.strip().lower() if result.returncode == 0 else ""
-    return {"available": value in ("enabled", "disabled"), "enabled": value == "enabled"}
+    available = value in ("enabled", "disabled")
+    if key == "dockbar" and state("taskbar")["enabled"]:
+        available = False
+    return {"available": available, "enabled": value == "enabled"}
 
 
 # Toggle only a known, available action and let the caller refresh its state.

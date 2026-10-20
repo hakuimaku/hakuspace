@@ -86,6 +86,7 @@ Item {
     
     FlareSurface {
         id: surface
+        attach: root.attach
         start: morph.mStart
         end: morph.mEnd
         currentHeight: morph.mHeight

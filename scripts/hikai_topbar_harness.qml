@@ -95,6 +95,7 @@ ShellRoot {
             if (root.phase === 0) {
                 root.check(!WM.supported && WM.labwcSession, "isolated Labwc backend")
                 root.check(first.bar.width === first.modelData.width, "TopBar spans the full output: " + first.bar.width)
+                root.check(first.navigation.regions.map(value => value.labelAngle).join(",") === "270,150,30", "top Navigation option order remains unchanged")
                 var initialLogo = root.module(first.bar.contentItem, "Logo")
                 var initialRect = ScreenGeometry.itemRect(initialLogo)
                 var laneRect = ScreenGeometry.topBarAnchor(initialRect.x, initialRect.width)
@@ -183,7 +184,7 @@ ShellRoot {
                 if (mode === 0) {
                     UiState.closeSettings()
                     UiState.closeNavigation()
-                    AppState.waybarManualState = false
+                    for (var output of root.outputs) output.bar.visible = false
                     ShellSettingsStore.setValue("roundedScreen", "radius", root.geometryCases[index][0])
                     ShellSettingsStore.setValue("roundedScreen", "borderThickness", root.geometryCases[index][1])
                 } else if (mode === 1) {
@@ -198,7 +199,7 @@ ShellRoot {
                         root.check(ScreenGeometry.flareTopY === Theme.topBarHeight, "border cannot move attachment")
                     }
                 } else if (mode === 2) {
-                    AppState.waybarManualState = true
+                    for (var output of root.outputs) output.bar.visible = Qt.binding(function() { return ChromeLayout.topStatusBarVisible })
                     UiState.openNavigation(first.modelData.name, ScreenGeometry.topBarAnchor(Theme.pad, Theme.fontSize * 1.8))
                 } else UiState.beginNavigationHandoff("sidebar")
             } else if (root.phase === 40) {
@@ -256,7 +257,7 @@ ShellRoot {
                 if ((root.phase - 45) % 2 === 0) {
                     UiState.closeNavigation()
                     CenterState.transientMode = ""
-                    AppState.waybarManualState = true
+                    for (var output of root.outputs) output.bar.visible = Qt.binding(function() { return ChromeLayout.topStatusBarVisible })
                     for (var output of root.outputs) output.bar.barH = Theme.topBarHeight + index
                     ShellSettingsStore.setValue("roundedScreen", "radius", root.geometryCases[index][0])
                     ShellSettingsStore.setValue("roundedScreen", "borderThickness", root.geometryCases[index][1])

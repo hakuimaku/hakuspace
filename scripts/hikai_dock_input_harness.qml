@@ -122,6 +122,9 @@ ShellRoot {
         pointer.write([Math.round(x), Math.round(y), dock.modelData.width, dock.modelData.height, button || 0].join(" ") + "\n")
     }
     // Locate existing controls without exposing test-only production API.
+    function content(host) {
+        return find(host, function(item) { return typeof item.activationSource === "string" && typeof item.menuAnchor === "function" })
+    }
     function find(item, predicate) {
         if (predicate(item)) return item
         var children = item.contentItem ? item.contentItem.children : item.children || []
@@ -144,7 +147,7 @@ ShellRoot {
     function appIcon() { return find(dock, function(item) { return item.appActions && item.label.indexOf(app().name + " ·") === 0 }) }
     function appTooltip() { return find(appIcon(), function(item) { return item.immediate === true }) }
     function toggle() {
-        writer.command = ["env", "HOME=" + Quickshell.shellPath("../../../"), "bash", Quickshell.env("HAKUSPACE_TEST_TASKBAR_CTL"), "--toggle"]
+        writer.command = ["env", "HOME=" + Quickshell.shellPath("../../../"), "bash", Quickshell.env("HAKUSPACE_TEST_DOCKBAR_CTL"), "--toggle"]
         writer.running = true
     }
     Variants {
@@ -207,22 +210,22 @@ ShellRoot {
             else if (root.phase === 9) {
                 root.check(root.app().pinned, "right click directly pins the app")
                 var feedback = root.find(root.dock, function(item) { return item.objectName === "dock-pin-feedback" })
-                root.check(root.dock.pinMessage.indexOf("Pinned “") === 0 && feedback && feedback.visible,
+                root.check(root.content(root.dock).pinMessage.indexOf("Pinned “") === 0 && feedback && feedback.visible,
                     "successful pin shows feedback above its Dock")
-                root.check(root.outputs.slice(1).every(function(output) { return !output.dock.pinMessage }),
+                root.check(root.outputs.slice(1).every(function(output) { return !root.content(output.dock).pinMessage }),
                     "pin feedback stays on the originating output")
                 root.check(!root.appTooltip().visible, "pin feedback replaces the hover tooltip")
                 root.check(!root.find(root.dock, function(item) { return item.objectName === "dock-context-menu" }), "pin popup is removed")
                 tooltipCheck.start()
                 root.pointAt(root.appIcon(), 274)
             } else if (root.phase === 10) {
-                root.check(!root.dock.pinMessage, "termination confirmation dismisses pin feedback")
-                root.check(root.dock.terminationRoots.length === 1 && root.appIcon().actionMessage.indexOf("512 MB") >= 0,
+                root.check(!root.content(root.dock).pinMessage, "termination confirmation dismisses pin feedback")
+                root.check(root.content(root.dock).terminationRoots.length === 1 && root.appIcon().actionMessage.indexOf("512 MB") >= 0,
                     "middle click shows the high RAM confirmation tooltip")
                 root.check(root.terminationRequests === "[]", "warning sends no confirmed termination")
                 root.pointAt(root.find(root.dock, function(item) { return item.label === "Trash" }))
             } else if (root.phase === 11) {
-                root.check(root.dock.terminationKey === "", "leaving the app dismisses confirmation")
+                root.check(root.content(root.dock).terminationKey === "", "leaving the app dismisses confirmation")
                 root.check(root.dock.shown && !root.appIcon().hovered && root.appIcon().activeFocus,
                     "moving to another icon retains the clicked item's keyboard focus")
                 root.check(!root.appTooltip().visible, "mouse focus cannot keep the previous tooltip open")
@@ -240,14 +243,14 @@ ShellRoot {
                 root.pointAt(root.appIcon(), 273)
             } else if (root.phase === 15) {
                 root.check(!root.app().pinned, "right click directly unpins the app")
-                root.check(root.dock.pinMessage.indexOf("Unpinned “") === 0, "successful unpin shows feedback")
+                root.check(root.content(root.dock).pinMessage.indexOf("Unpinned “") === 0, "successful unpin shows feedback")
                 root.pointAt(root.appIcon(), 274)
             } else if (root.phase === 16) {
                 root.check(!root.app().pinned && root.app().runningCount === 2, "unpin retains running application")
-                root.check(root.dock.terminationRoots.length === 1, "repeated middle click requests fresh confirmation")
+                root.check(root.content(root.dock).terminationRoots.length === 1, "repeated middle click requests fresh confirmation")
                 root.pointAt(root.appIcon(), 274)
             } else if (root.phase === 17) {
-                root.check(root.dock.terminationKey === "" && root.terminationRequests.split("\n").length === 3,
+                root.check(root.content(root.dock).terminationKey === "" && root.terminationRequests.split("\n").length === 3,
                     "second middle click confirms and dismisses the warning")
                 root.check(JSON.parse(root.terminationRequests.split("\n")[2])[0].startTime === "fixture",
                     "confirmation preserves the process identity")
@@ -313,7 +316,7 @@ ShellRoot {
                 root.check(Math.abs(icon.iconLift - ShellSettingsStore.dockHoverLift) < 0.1, "hover lifts the icon to its configured peak")
                 root.check(Math.abs(icon.iconScale - 2) < 0.01 && Math.abs(icon.iconRect.width - icon.iconSize * 2) < 0.1,
                     "100 percent enlargement doubles the painted artwork")
-                var seed = root.dock.menuAnchor(icon)
+                var seed = root.content(root.dock).menuAnchor(icon)
                 root.check(seed.width === icon.iconRect.width && seed.height === icon.iconRect.height,
                     "HakuMenu captures the enlarged artwork dimensions")
                 root.check(point.x === root.hoverSlot.x && point.y === root.hoverSlot.y
@@ -340,16 +343,16 @@ ShellRoot {
                 root.check(root.app().pinned, "direct pin works on a raised icon")
                 root.pointAt(root.appIcon(), 274)
             } else if (root.phase === 32) {
-                root.check(root.dock.terminationRoots.length === 1 && root.appIcon().actionMessage.length > 0,
+                root.check(root.content(root.dock).terminationRoots.length === 1 && root.appIcon().actionMessage.length > 0,
                     "high RAM confirmation works after hover")
                 keyboard.write("key 1\n")
             } else if (root.phase === 33) {
-                root.check(root.dock.terminationKey === "" && root.appIcon().hovered && !root.appTooltip().visible,
+                root.check(root.content(root.dock).terminationKey === "" && root.appIcon().hovered && !root.appTooltip().visible,
                     "Escape closes confirmation and its tooltip while still hovering")
                 root.pointAt(root.appIcon(), 273)
             } else if (root.phase === 34) {
-                root.check(!root.app().pinned && root.dock.terminationKey === "", "right click unpins and cancels confirmation")
-                root.check(root.dock.pinMessage.indexOf("Unpinned “") === 0, "raised icon unpin shows feedback")
+                root.check(!root.app().pinned && root.content(root.dock).terminationKey === "", "right click unpins and cancels confirmation")
+                root.check(root.content(root.dock).pinMessage.indexOf("Unpinned “") === 0, "raised icon unpin shows feedback")
                 root.pointAt(root.appIcon())
             } else if (root.phase === 35) {
                 ShellSettingsStore.setValue("dock", "hoverLift", 0)
@@ -364,7 +367,7 @@ ShellRoot {
                     "hover settings preserve Dock and slot widths")
                 ShellSettingsStore.discard()
             } else if (root.phase === 38) {
-                root.check(!root.dock.pinMessage, "pin feedback expires automatically")
+                root.check(!root.content(root.dock).pinMessage, "pin feedback expires automatically")
                 root.check(Math.abs(root.appIcon().iconLift - 14) < 0.1 && root.appIcon().iconScale === 1,
                     "Discard restores the default hover effect")
                 root.move(10, 100)
@@ -381,7 +384,7 @@ ShellRoot {
             } else if (root.phase === 40) {
                 root.pointAt(root.appIcon(), 274)
             } else if (root.phase === 41) {
-                root.check(root.dock.terminationRoots.length === 1 && root.appIcon().actionMessage.indexOf("RAM usage is unavailable") >= 0,
+                root.check(root.content(root.dock).terminationRoots.length === 1 && root.appIcon().actionMessage.indexOf("RAM usage is unavailable") >= 0,
                     "Labwc middle click requests confirmation when RAM cannot be inspected")
                 root.check(root.nativeClosed === 0 && first.visible && root.terminationRequests === root.nativeTerminationLog,
                     "Labwc warning neither closes nor signals processes")
@@ -389,11 +392,11 @@ ShellRoot {
             } else if (root.phase === 42) {
                 root.pointAt(root.appIcon(), 274)
             } else if (root.phase === 43) {
-                root.check(root.dock.terminationRoots.length === 2 && root.nativeClosed === 0 && first.visible && second.visible,
+                root.check(root.content(root.dock).terminationRoots.length === 2 && root.nativeClosed === 0 && first.visible && second.visible,
                     "changed window membership requires fresh confirmation")
                 root.pointAt(root.appIcon(), 274)
             } else if (root.phase === 44) {
-                root.check(root.nativeClosed === 2 && !first.visible && !second.visible && root.dock.terminationKey === "",
+                root.check(root.nativeClosed === 2 && !first.visible && !second.visible && root.content(root.dock).terminationKey === "",
                     "confirmed Labwc action closes both real windows through Wayland")
                 root.check(root.terminationRequests === root.nativeTerminationLog, "native close never invokes PID termination")
                 first.visible = true

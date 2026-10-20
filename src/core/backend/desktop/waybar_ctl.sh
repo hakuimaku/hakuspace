@@ -138,11 +138,6 @@ startup_waybar() {
 
 toggle_waybar() {
     if haku_qs_mode; then
-        if waybar_enabled; then
-            printf '0\n' > "$STATUS_FILE"
-        else
-            printf '1\n' > "$STATUS_FILE"
-        fi
         return 0
     fi
 
@@ -229,6 +224,10 @@ Commands:
 EOF_HELP
 }
 
+# A Hikai toggle must also preserve absent or malformed Classic preferences.
+if haku_qs_mode && [[ "${1:-}" == "toggle" || "${1:-}" == "--toggle" ]]; then
+    exit 0
+fi
 ensure_state
 
 case "${1:-}" in

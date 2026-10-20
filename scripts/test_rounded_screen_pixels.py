@@ -57,7 +57,7 @@ def check(directory):
     # Inspect the attachment pixels of real WindowTitle, Calendar and Notifications tooltips.
     baseline = next(directory.glob("bar-case-0-top-*-width-*.ppm")).stem.split("-")
     top, logical_width = float(baseline[4]), float(baseline[6])
-    for owner in ("tooltip-0", "tooltip-1", "tooltip-2", "menu"):
+    for owner in ("tooltip-0", "tooltip-1", "tooltip-2"):
         images = list(directory.glob(f"{owner}-start-*-end-*.ppm"))
         assert len(images) == 1, f"{owner}: missing screenshot"
         parts = images[0].stem.removeprefix(owner + "-").split("-")

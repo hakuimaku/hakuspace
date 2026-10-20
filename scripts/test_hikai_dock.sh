@@ -18,9 +18,15 @@ mkdir -p "$shell_root" "$test_root/src/core/backend/user" "$test_root/runtime" "
     "$test_root/src/home/.local/state/hakuspace/state" "$test_root/home/hakucfg/config"
 mkdir -p "$test_root/bin" "$test_root/data/applications"
 chmod 700 "$test_root/runtime"
+if [[ ${HAKUSPACE_CHROME_TEST:-0} == 1 ]]; then
+    export HAKUSPACE_DOCK_ARTIFACT_DIR=${HAKUSPACE_DOCK_ARTIFACT_DIR:-"$test_root/chrome-artifacts"}
+    mkdir -p "$HAKUSPACE_DOCK_ARTIFACT_DIR"
+fi
 cp -R src/home/.config/quickshell/hakuspace/{components,services} "$shell_root/"
 cp src/core/backend/user/{hikai_settings_ctl.py,taskbar_pins_ctl.py,dock_app_ctl.py,dock_icon_watch.py,setting_ctl.py} "$test_root/src/core/backend/user/"
-if [[ ${HAKUSPACE_HAKUMENU_TEST:-0} == 1 ]]; then
+if [[ ${HAKUSPACE_CHROME_TEST:-0} == 1 ]]; then
+    cp scripts/hikai_chrome_harness.qml "$shell_root/shell.qml"
+elif [[ ${HAKUSPACE_HAKUMENU_TEST:-0} == 1 ]]; then
     cp scripts/hikai_hakumenu_harness.qml "$shell_root/shell.qml"
 elif [[ ${HAKUSPACE_DOCK_INPUT:-0} == 1 ]]; then
     cp scripts/hikai_dock_input_harness.qml "$shell_root/shell.qml"
@@ -31,6 +37,7 @@ else
 fi
 cp src/home/hakucfg/config/taskbar-pin-apps "$test_root/home/hakucfg/config/"
 printf '0\n' > "$test_root/src/home/.local/state/hakuspace/state/taskbar_manual_state"
+printf '0\n' > "$test_root/src/home/.local/state/hakuspace/state/dockbar_manual_state"
 printf 'hikai\n' > "$test_root/src/home/.local/state/hakuspace/state/shell_backend"
 printf '<labwc_config/>\n' > "$test_root/labwc/rc.xml"
 cat > "$test_root/bin/fixture-app" <<'APP'
@@ -103,6 +110,9 @@ esac
 cat > "$test_root/start.sh" <<START
 #!/usr/bin/env bash
 status=0
+if [[ \${HAKUSPACE_TEST_SCALE:-1} != 1 && \${XDG_CURRENT_DESKTOP:-} == labwc ]]; then
+    wlr-randr --output HEADLESS-1 --scale "\$HAKUSPACE_TEST_SCALE" --output HEADLESS-2 --scale "\$HAKUSPACE_TEST_SCALE" || exit 1
+fi
 if [[ \${HAKUSPACE_HAKUMENU_TEST:-0} == 1 && \${XDG_CURRENT_DESKTOP:-} == labwc ]]; then
     wlr-randr --output HEADLESS-2 --custom-mode 1024x768 --pos 1280,0 || exit 1
 fi
@@ -120,14 +130,19 @@ env -u DISPLAY -u WAYLAND_DISPLAY -u QT_QPA_PLATFORMTHEME -u QT_QPA_PLATFORMTHEM
     HAKUSPACE_TEST_LAUNCH_LOG="$test_root/launch.log" HAKUSPACE_TEST_GIO_LOG="$test_root/gio.log" \
     QT_QPA_PLATFORM=wayland HAKUSPACE_HIKAI_SETTINGS_FILE="$test_root/home/hakucfg/hikai/hikai-shell.json" \
     HAKUSPACE_TEST_TASKBAR_CTL="$PWD/src/core/backend/desktop/taskbar_ctl.sh" \
+    HAKUSPACE_TEST_DOCKBAR_CTL="$PWD/src/core/backend/desktop/dockbar_ctl.sh" \
+    HAKUSPACE_TEST_TRAY_FIXTURE="$PWD/scripts/tray_short_fixture.py" \
     HAKUSPACE_TEST_POINTER="$PWD/scripts/wayland_pointer_fixture.py" \
     HAKUSPACE_TEST_POINTER_OUTPUT="$pointer_output" \
     HAKUSPACE_TEST_KEYBOARD="$PWD/scripts/wayland_keyboard_fixture.py" \
     HAKUSPACE_TASKBAR_PINS_FILE="$test_root/home/hakucfg/config/taskbar-pin-apps" \
-    timeout 40s dbus-run-session -- "${launch[@]}" > "$test_root/compositor.log" 2>&1 || status=$?
+    timeout 60s dbus-run-session -- "${launch[@]}" > "$test_root/compositor.log" 2>&1 || status=$?
 cat "$test_root/compositor.log" "${test_root}/shell.log" > "$test_root/dock.log"
 cat "$test_root/dock.log"
-if [[ ${status:-0} -ne 0 ]] || ! grep -Eq 'Hikai (Dock|HakuMenu) checks passed' "$test_root/dock.log" || \
-    grep -Eq 'TypeError|ReferenceError|is not a type|Binding loop|Cannot assign|non-existent|Failed to load configuration|Hikai (Dock|HakuMenu) failed' "$test_root/dock.log"; then
+if [[ ${status:-0} -ne 0 ]] || ! grep -Eq 'Hikai (Dock|HakuMenu|Chrome) checks passed' "$test_root/dock.log" || \
+    grep -Eq 'TypeError|ReferenceError|is not a type|Binding loop|Cannot assign|non-existent|Failed to load configuration|Hikai (Dock|HakuMenu|Chrome) failed' "$test_root/dock.log"; then
     exit 1
+fi
+if [[ ${HAKUSPACE_CHROME_TEST:-0} == 1 ]]; then
+    python3 scripts/test_taskbar_pixels.py "$HAKUSPACE_DOCK_ARTIFACT_DIR" "${HAKUSPACE_TEST_SCALE:-1}"
 fi

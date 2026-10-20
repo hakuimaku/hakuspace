@@ -19,29 +19,57 @@
 This addition supersedes the fixed surface/radius assumptions in the historical
 baseline below. It does not change the accent/font flow or the P3 motion contract.
 
-`~/hakucfg/hikai/hikai-shell.json` (schema version 5) stores `appearance.baseRadius`,
-`appearance.surfaceTone`, independent `roundedScreen` geometry, the global `topbar`
-booleans, and `dock.visibilityMode`, `dock.exclusiveSpace`, `dock.iconSize`,
-`dock.hoverLift`, `dock.hoverScale`, `dock.style`, `dock.showTrash`, `dock.showDevices`.
-Versions 1–4 migrate in memory; Apply persists the upgraded document. Dock
-visibility uses `autohide` or `always`, with optional reservation while shown and
-32–72 px icons in 4 px steps (default 48). `taskbar_manual_state` remains the only
-ON/OFF source; there is no `dock.enabled` setting. Shared pins remain in
-`~/hakucfg/config/taskbar-pin-apps`, including the reserved `image#menu` item.
-Dock content follows RoundedScreen's side/bottom insets while its activation strip
-stays at the physical bottom edge. Dock visuals and input use Top exclusively;
-fullscreen clients may cover the Dock and its trigger. Its borderless surface is a trapezoid with
-straight slanted sides, rounded top corners and small concave bottom flares.
-The complete side extension fits inside `hugRadius`; top rounding uses `radius`,
-capped at one quarter of the height/width, while bottom flares use half that theme
-radius, capped at one eighth of the height. It has 24 px horizontal padding,
-zero bottom padding and a 2 px artwork-to-dot gap.
-The optional `bar` style spans the physical bottom edge with centered icons and a
-black gradient fading from 0.5 opacity at the bottom to transparent at the top.
-RoundedScreen stays fixed at the physical screen edges in both styles. Trash and
-mounted-device shortcuts can be hidden independently, without empty slots or separators.
-Exclusive zones appear on reveal and disappear on hide, independently on each output;
-the zone height stays fixed throughout the visual animation.
+`~/hakucfg/hikai/hikai-shell.json` (schema version 6) stores appearance,
+RoundedScreen geometry, TopBar module preferences and shared app artwork/Dockbar
+preferences. The `dock` section contains `visibilityMode`, `exclusiveSpace`,
+`iconSize`, `hoverLift`, `hoverScale`, `showTrash` and `showDevices`. There is no style
+selector. Icons range from 32–72 px in 4 px steps (default 36); explicit legacy sizes
+survive migration. Shared pins remain in `~/hakucfg/config/taskbar-pin-apps`.
+
+`taskbar_manual_state` enables Taskbar Mode; `dockbar_manual_state` independently
+requests the compact Dockbar. `ChromeLayout` derives effective owners:
+
+| Taskbar Mode | Dockbar requested | Effective chrome | Default / top-edge HakuMenu |
+|---|---|---|---|
+| OFF | OFF | TopBar | topFlare |
+| OFF | ON | TopBar + compact Dockbar | topFlare |
+| ON | either | Taskbar only | bottomFlare / no top trigger |
+
+`Taskbar.qml` owns one full-width bottom surface, status lanes and a physically
+centered app viewport. It stays visible and reserves its full height. Its App Menu
+opens `bottomFlare`. TopBar and compact Dockbar are suppressed while their stored
+preferences remain intact. Center/Cava are absent from the bottom status lane.
+
+`DockBar.qml` owns only the compact dock inside TopBar mode. It keeps autohide/always
+and optional exclusive-space behavior. Its App Menu explicitly opens `dockFloating`;
+keyboard/IPC calls always use the topology default. Both hosts reuse
+`appbar/AppBarContent.qml` for app actions, pins, dragging, devices and Trash.
+
+The compact surface remains a borderless trapezoid with straight slanted sides,
+rounded upper corners and concave bottom flares. Content follows RoundedScreen's
+side/bottom insets; its 20% activation strip stays at the physical bottom edge.
+Visuals and input use Top, so fullscreen clients may cover the Dockbar and its trigger.
+It has 24 px horizontal padding, zero bottom padding and a 2 px artwork-to-dot gap.
+
+`ScreenGeometry` separates Taskbar's fixed reservation from per-output Dockbar
+reservations. RoundedScreen terminates above Taskbar and returns to the physical
+bottom in TopBar mode, regardless of Dockbar presence. Tooltip, tray, Notification Center,
+Navigation, Dashboard, Sidebar and Settings motion follow Taskbar vs TopBar attachment.
+Level OSD and notification popups always use the top center, below TopBar when it
+exists and at the physical top in Taskbar Mode. They retain Top Flare visuals and
+Overlay content. Only background Flare geometry reflects; content stays upright.
+
+The supervisor runs `hikai_chrome_state_ctl.py migrate` before every Quickshell start,
+covering both login and backend switching. A journal makes the v5 state split
+restartable and idempotent; settings migrate directly from v1–v5 to v6. Legacy
+shared ON + bar becomes Taskbar ON/Dockbar OFF, ON + dock becomes OFF/ON, and OFF
+becomes OFF/OFF. Later toggles never erase the other requested state.
+
+Hikai ignores `waybar_manual_state`; its Waybar toggle preserves Classic preferences.
+Classic Taskbar process behavior remains unchanged. Dockbar control never launches
+Waybar. Trash and mounted-device shortcuts can be hidden independently without
+empty slots. Compact reservations appear on reveal and release on hide, per output.
+
 Dock icons have no hover, pressed or focused background. Settings sliders control
 hover lift from 0–48 px (default 14) and enlargement from 0–100% (default 0).
 Zero disables each effect independently; 100% enlargement doubles artwork size.
@@ -80,7 +108,7 @@ It follows GTK settings/GSettings, active and inherited theme directories, and
 resolved icon files with native GIO monitors. File URLs carry modification versions
 and bypass the Qt image cache; icon refreshes leave app keys, focus and slots intact.
 No timer polls or full shell reloads are used for icon edits or theme changes.
-Dock open/close durations are 360/224 ms. HakuMenu uses 360/308 ms for `topFlare`
+Dock open/close durations are 360/224 ms. HakuMenu uses 360/308 ms for `bottomFlare`
 and 504/280 ms for `dockFloating`, reducing open time by 10% and close time by 30%.
 The backend's [DEFAULTS](../../src/core/backend/user/hikai_settings_ctl.py) defines the complete schema. `ShellSettingsStore` previews
 drafts live; Theme consumes them reactively. Generated `quickshell.json` owns
@@ -156,7 +184,8 @@ Reference: `base.png`.
 The post-P3 RoundedScreen refactor supersedes the original top-rail mockup:
 
 - RoundedScreen draws four independent inverted corner masks and explicit left,
-  right and bottom rails; it has no top rail or top reservation.
+  right rails and the horizontal rail opposite the active bar: bottom in TopBar
+  mode, top in Taskbar mode. Only that horizontal frame edge reserves space.
 - Radius and border are independent, including 0/0, 0/6, 24/0 and 24/6.
 - TopBar owns the upper chassis and reserves its total height, with 4 px of bottom
   padding below the unchanged module lane.
@@ -167,13 +196,13 @@ The post-P3 RoundedScreen refactor supersedes the original top-rail mockup:
   side/bottom reservations and the optional Dock reservation are cancelled by
   visual-window margins so its rails remain at the physical output edges.
   Frame reservations use Top; the Dock reservation uses Bottom and follows the frame.
-- `ScreenGeometry` owns `roundedRadius`, `leftInset`, `rightInset`, `bottomInset`,
+- `ScreenGeometry` owns `roundedRadius`, `leftInset`, `rightInset`, `topBorderThickness`, `bottomInset`,
   `flareTopY`, `edgeHugRadius`, `horizontalBounds()` and `localizeRect()`.
 - All top-attached surfaces begin at `flareTopY`; side border changes cannot move
   them vertically. Captured anchors use full screen-local rects.
 - Shared Flare rendering overlaps the attachment edge into its parent chassis
   to close antialiased seams. Short-body ears cannot intersect bottom rounding.
-- Visual windows remain click-through; only side/bottom reservation windows reserve
+- Visual windows remain click-through; only side and active horizontal reservation windows reserve
   space, and all three disappear at border 0.
 
 ### 1.4 Navigation — radial Logo controller
@@ -197,6 +226,13 @@ Style contract:
 - do not substitute a rectangular menu;
 - interaction hitboxes may be simpler than the visible wedge geometry for reliability;
 - keyboard/focus access remains available.
+
+In Taskbar Mode, the radial controller occupies the physical bottom-left corner,
+including the bar's Logo footprint. Its three sectors reflect vertically:
+Sidebar upper-left, Settings upper-right, Dashboard below. Icon glyphs remain
+upright; sector drawing, highlight and hit-testing use the same region angles.
+The Sidebar rail gains 20 px through 30 px top/bottom padding in both layouts;
+its control stack is centered across the painted attachment overlap.
 
 ### 1.5 Dashboard
 
@@ -265,6 +301,11 @@ Card rules:
 - calendar month changes do not resize the card;
 - monitor updates do not reflow card geometry.
 
+Taskbar Dashboard uses one upright content plane inside the upward Flare body.
+Avatar and first-row cards align at the top; profile text remains below the
+avatar. The distal Flare reach is excluded from the content envelope so cards
+cannot protrude through its upper rounded edge.
+
 ### 1.6 Sidebar
 
 Reference: `sidebar.png`.
@@ -295,7 +336,7 @@ Settings is intentionally a **P3 stub**:
 
 Reference: `hakumenu.png`.
 
-HakuMenu is a distinct top-center surface and must remain separate from Navigation.
+HakuMenu remains separate from Navigation. Taskbar uses a bottom-attached Flare. TopBar edge/default callers use a downward top Flare; an explicit compact Dockbar App Menu click uses a floating card.
 
 Physical rule:
 
@@ -349,9 +390,9 @@ Motion is carousel movement around one `selectedIndex`, not a dual-front mask re
 
 The new P3 mockups do not cancel these established style directions:
 
-- **Notification popup:** borderless black Flare/toast; source X from Notification control, frame-derived Y; no generic card stroke.
+- **Notification popup:** borderless, always horizontally centered at the top. A full-height Top Flare and a centered rounded Overlay share the revealed stack; no generic card stroke. TopBar mode attaches below TopBar; Taskbar mode attaches at physical Y=0.
 - **Notification Center:** non-modal right-side shell surface, wider spacing, taller history viewport, `Clear` uses accent fill + black text; hover may grow label without changing allocated geometry.
-- **Level OSD:** compact, physical-center stable, fixed percentage slot, same layout for volume/brightness, frame-derived attachment. Treat icon + level track + percentage as one optically centered group; do not let asymmetric slots bias the content to one side.
+- **Level OSD:** compact, always at the top center, fixed percentage slot, same layout for volume/brightness. It attaches below TopBar when present and at physical Y=0 in Taskbar mode, with Top Flare and Overlay content. Treat icon + level track + percentage as one optically centered group; do not let asymmetric slots bias the content to one side.
 ### 1.11 Shared Action Layer (ActionMenu)
 
 Shared modal action menu host replacing standalone Rofi dialogs in Hikai:
@@ -472,9 +513,9 @@ HakuMenu shell-open motion remains a separate profile: ordinary controls must no
 - **Dashboard:** avatar + four mockup-defined cards; reserved empty space stays empty.
 - **Sidebar:** left-attached rounded lobe with circular options; immediate hover handoff from Navigation.
 - **Settings:** large centered stub only; no settings framework in P3.
-- **HakuMenu:** two presentations reuse `HakuMenuContent` and the existing General/Drun/Theme lists. `topFlare` preserves the top trigger, 38/40/42% widths, ceiling motion, top controls and Top-visual/Overlay-input split. Dock App Menu toggles `dockFloating`: a stable 42% floating chassis above the Dock, bottom controls and Temp Note motion from the actual lifted icon. Only this presentation leases the owning Dock. Both retain search prefixes and keyboard behavior; old IPC callers still open `topFlare`.
+- **HakuMenu:** three source-resolved presentations share `HakuMenuContent`. TopBar mode enables a centered 4 px × 20% top-edge hover trigger, with or without Dockbar. Edge/default callers use `topFlare`; Taskbar/default callers in Taskbar Mode use `bottomFlare`; explicit active Dockbar clicks use `dockFloating` with a real icon anchor and owner lease. Attached presentations share `HakuMenuAttachedFlare`, preserving split Top visual/Overlay input, focus, safe zones and tab motion. Taskbar menus remain physically centered despite off-center App Menu icons and use 50% of the output height; top-attached menus retain 40%. Only one logical menu owns focus at a time.
 - **Wallpaper:** centered selected item with stacked side carousel; no large background panel and no dual-front reveal.
-- **Notification popup:** native P2 model, borderless HakuSpace/Flare visual treatment.
+- **Notification popup:** native P2 model, always top-centered, with complete Top Flare and Overlay surfaces and a downward reveal in both shell modes.
 - **Notification Center:** native P2 behavior, P3 spacing/height/primary-Clear polish.
 - **Level OSD:** compact body, fixed percentage slot, optical/physical center stability.
 - **Picker:** retains the current generic picker styling for workflows that still use it; do not force Wallpaper/HakuMenu into the generic Picker silhouette.

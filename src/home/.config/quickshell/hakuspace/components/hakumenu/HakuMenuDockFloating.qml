@@ -9,7 +9,7 @@ import "HakuMenuGeometry.js" as Geometry
 PanelWindow {
     id: root
     required property var modelData
-    readonly property bool panelOpen: !!modelData && UiState.activePanel === "hakumenu"
+    readonly property bool panelOpen: !!modelData && ChromeLayout.dockbarActive && UiState.activePanel === "hakumenu"
         && UiState.hakuMenuStyle === "dockFloating" && UiState.hakuMenuScreenName === modelData.name
     // Snapshot seed and content so closing survives the transient state's reset.
     property var capturedAnchor: null
@@ -22,10 +22,10 @@ PanelWindow {
     readonly property real contentProgress: Math.max(0, (revealProgress - 0.55) / 0.45)
     readonly property bool interactionReady: panelOpen && revealProgress === 1
     readonly property real floatingGap: Theme.pad * 2
-    readonly property real dockBottomInset: AppState.taskbarManualState && ShellSettingsStore.dockStyle === "bar" ? 0 : ScreenGeometry.bottomInset
+    readonly property real dockBottomInset: ScreenGeometry.bottomInset
     readonly property var finalRect: Geometry.finalRect(width, height, ScreenGeometry.leftInset,
-        (AppState.waybarManualState ? ScreenGeometry.flareTopY : 0) + floatingGap,
-        dockBottomInset, AppState.taskbarManualState ? ScreenGeometry.dockHeight : 0, floatingGap)
+        (ChromeLayout.topStatusBarVisible ? Theme.topBarHeight : 0) + floatingGap,
+        dockBottomInset, ScreenGeometry.dockbarHeight, floatingGap)
     readonly property var seedRect: Geometry.seedRect(capturedAnchor, width, height, ShellSettingsStore.dockIconSize,
         dockBottomInset, floatingGap, finalRect)
     readonly property var currentRect: Geometry.mixRect(seedRect, finalRect, revealProgress)
@@ -42,7 +42,8 @@ PanelWindow {
     function zone(index) { return safeZones[index] || Safe.rect(0, 0, 0, 0) }
     // Release visual ownership immediately when another style/output opens.
     function syncOwnership() {
-        if (UiState.activePanel !== "hakumenu" || panelOpen) return
+        if (UiState.activePanel !== "hakumenu" || (modelData
+            && UiState.hakuMenuStyle === "dockFloating" && UiState.hakuMenuScreenName === modelData.name)) return
         morphAnim.stop()
         morphProgress = 0
         capturedAnchor = null
@@ -69,7 +70,7 @@ PanelWindow {
     WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
-    visible: panelOpen || morphProgress > 0.001
+    visible: ChromeLayout.dockbarActive && (panelOpen || morphProgress > 0.001)
     onPanelOpenChanged: {
         if (panelOpen) contentLoaded = true
         Qt.callLater(animate)
@@ -166,6 +167,6 @@ PanelWindow {
         width: root.zone(2).width
         height: root.zone(2).height
         enabled: root.visible && !!root.capturedAnchor
-        onClicked: UiState.toggleHakuMenu(root.modelData.name, "drun", "dockFloating", root.capturedAnchor)
+        onClicked: UiState.toggleHakuMenu(root.modelData.name, "drun", "dockbar", root.capturedAnchor)
     }
 }

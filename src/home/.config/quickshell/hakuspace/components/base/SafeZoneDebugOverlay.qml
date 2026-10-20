@@ -16,7 +16,7 @@ Item {
     property real flareStart: -1
     property real flareEnd: -1
     readonly property var guides: geometryDebug ? [
-        {rect: {x: 0, y: ScreenGeometry.flareTopY, width: screenWidth, height: 1}, label: "TopBar / flareTopY"},
+        {rect: {x: 0, y: ScreenGeometry.chromeAttachmentY(root.screenHeight), width: screenWidth, height: 1}, label: "chrome attachment"},
         {rect: {x: ScreenGeometry.leftInset, y: 0, width: 1, height: screenHeight}, label: "leftInset"},
         {rect: {x: screenWidth - ScreenGeometry.rightInset - 1, y: 0, width: 1, height: screenHeight}, label: "rightInset"},
         {rect: {x: 0, y: screenHeight - ScreenGeometry.bottomInset - 1, width: screenWidth, height: 1}, label: "bottomInset"}
@@ -51,13 +51,13 @@ Item {
     }
     Rectangle {
         visible: root.geometryDebug && root.flareEnd > root.flareStart
-        x: root.flareStart; y: ScreenGeometry.flareTopY - root.hostRect.y
+        x: root.flareStart; y: ScreenGeometry.chromeAttachmentY(root.screenHeight) - root.hostRect.y
         width: Math.max(0, root.flareEnd - root.flareStart); height: 2
         color: "#ff8800"
     }
     Text {
         visible: root.geometryDebug && root.anchorRect !== null
-        y: ScreenGeometry.flareTopY - root.hostRect.y + 3
+        y: ScreenGeometry.chromeAttachmentY(root.screenHeight) - root.hostRect.y + 3
         text: "screen anchor: " + JSON.stringify(root.anchorRect) + "\nlocal anchor: " + JSON.stringify(root.localizedAnchorRect)
         color: "#ffff00"; font.pixelSize: 10
     }

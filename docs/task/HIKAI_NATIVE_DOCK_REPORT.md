@@ -1,5 +1,138 @@
 # Hikai Native Dock implementation report
 
+> The unified-bottom and original Dock sections below are historical verification records.
+> The current Taskbar/Dockbar contract is in [QUICKSHELL_STYLE.md](QUICKSHELL_STYLE.md)
+> and [QUICKSHELL_TESTING.md](QUICKSHELL_TESTING.md). Independent state/source verification is recorded there.
+
+
+## Mode-dependent frame rails (2026-10-20)
+
+RoundedScreen keeps its side rails in both modes. TopBar mode omits the top
+rail and reserves the bottom rail; Taskbar mode omits the bottom rail and
+reserves the top rail. Corner masks use the corresponding inner bounds.
+Taskbar geometry and pixel checks cover both edges, including fractional scale;
+the TopBar pixel matrix retains its existing expectations.
+
+## Top OSD and notification placement (2026-10-20)
+
+Level OSD and notification popups remain centered at the top in both chrome
+modes: physical output top in Taskbar mode, below TopBar in TopBar mode.
+Taskbar no longer owns an OSD bridge; the dedicated Top surface supplies it.
+Notifications reveal downward with a complete Top Flare and Overlay pair.
+The attached Taskbar HakuMenu uses 50% of output height; the top menu retains 40%.
+
+Verification passed: complete precommit, TopBar runtime/pixel matrix and Taskbar
+geometry/render checks at 100% and 125%. Captured OSD, notification and HakuMenu
+surfaces were visually inspected. The live shell was reloaded. Physical
+multi-monitor behavior and hardware OSD keys were not exercised in this check.
+
+## Taskbar layer correction (2026-10-20)
+
+A live Hyprland report exposed a doubled frame inset and Taskbar movement while
+status tooltips opened. The frame's Normal exclusion had already consumed the
+53 px Taskbar reservation before its positive bottom margin applied it again:
+Hyprland reported a 974 px visual frame on a 1080 px output instead of 1027 px.
+Taskbar mode now positions the frame against physical output bounds with Ignore
+exclusion, while TopBar mode retains its existing reservation behavior.
+
+Taskbar uses a stable full-output drawable window with its narrow input mask and
+53 px painted/reserved bar. Calendar content can grow upward without resizing
+the owning window or moving its status anchors. Navigation's backing now meets
+the corrected frame and opaque bar at the same seam.
+
+Verification passed: complete precommit; TopBar runtime/pixel matrix; two-output
+Taskbar geometry and rendered pixel checks at 100%/125%; calendar and Navigation
+screenshots. New checks reject a doubled horizontal rail and an uncovered physical
+bottom, and assert that opening the calendar preserves Taskbar geometry. The live
+Hyprland shell was reloaded; its frame measured 1027 px afterward, and its drawable
+Taskbar window retained its output bounds during real calendar hover. The pointer
+was restored after the hover check. No commit was created. Physical multi-monitor
+and other compositor acceptance remain separate.
+
+## Independent Taskbar / Dockbar implementation (2026-10-20)
+
+The separation plan is implemented against the existing working tree. Taskbar Mode
+and compact Dockbar have independent watched state files and public managers.
+`ChromeLayout` derives effective ownership without erasing Dockbar requests.
+`Taskbar.qml` fixes full width, visibility and exclusivity; compact `DockBar.qml`
+retains autohide and optional reservation. Both reuse `AppBarContent.qml` for app
+semantics and rendering. The icon watcher runs for either effective owner.
+
+HakuMenu resolves `edge`, `taskbar`, `dockbar` and `default` centrally. TopBar mode
+restores a centered 4 px × 20% trigger independently of Dockbar. Top/bottom owners
+share attached-Flare geometry; only explicit active Dockbar sources can float.
+The trigger retains its own input across source changes, preventing a stationary
+pointer from reopening a top menu during cross-output transfer. Floating ownership
+checks read the requested output directly, preserving mid-close reopen motion.
+
+Schema v6 removes the old style field while retaining all other preferences.
+The supervisor runs the journaled migration before starting QML, covering login,
+backend switching and crash recovery. Theme exposes Taskbar Mode and Dockbar
+separately; Quick Actions has eleven entries with dynamic row sizing and keyboard
+bounds. Dockbar controls communicate suppression while preserving requested state.
+No installed state was migrated or shell session restarted during implementation.
+
+| Verification | Result |
+| --- | --- |
+| Complete precommit, QML syntax, diff check | PASS; temporary index only, real index unchanged |
+| v1–v5 settings migration, interruption recovery, idempotence and supervisor order | PASS |
+| Independent managers, Classic/Hikai isolation, Theme action routing and Quick Actions availability | PASS |
+| Two-output topology matrix and real maximized-client reservations | PASS |
+| Fixed Taskbar, compact autohide/exclusive policy and requested-state restoration | PASS |
+| Real HakuMenu pointer/keyboard/default/source/output transfers and repeated clicks | PASS |
+| Shared app hover, focus, pin/unpin, dragging, termination and icon refresh | PASS |
+| Top layout runtime and frame/tooltip/ear pixel matrix | PASS |
+| Two headless outputs at 125% scale, attached panels and real tray fixture | PASS |
+| Primary Hyprland/Niri/MangoWM sessions, physical multi-monitor/hotplug and hardware OSD | PENDING; headless results do not establish physical acceptance |
+
+Optional screenshots were retained outside the repository in
+`/tmp/hikai-split-menu-artifacts` and `/tmp/hikai-split-chrome-artifacts`.
+The narrow logical Dashboard fixture still uses the existing minimum card sizes;
+card overflow on such small outputs is outside this state/owner separation.
+
+## Unified bottom chrome implementation (2026-10-20)
+
+The existing Full bar WIP is retained. `ChromeLayout` now selects TopBar plus
+compact Dock or one unified bottom Dock owner. The bottom owner renders reusable
+status lanes and a physically centered, bounded app viewport; Center/Cava are
+loaded only in the top presentation. A shared tray controller retains custom
+menu resolution, the 1500 ms native fallback and owner-local coordinates.
+`ScreenGeometry` and Flare attachment drive tooltips, tray panels, notifications,
+Navigation/Dashboard/Sidebar, Settings motion and OSD. HakuMenu Full is
+`bottomFlare`; compact/default Dock calls use `dockFloating`. The top hover
+trigger is removed. Default/reset/legacy-without-Dock icon size is 36 px;
+explicit saved sizes remain unchanged. RoundedScreen releases its bottom rail
+reservation in Full mode, so maximized clients see exactly one bottom zone. Hikai Waybar toggles preserve Classic
+preferences, and Classic retains its original process toggle.
+
+Baseline: the initial WIP had a clean diff check and QML syntax. Settings,
+headless TopBar/pixel and Dock baselines passed; headless tests required local
+D-Bus/Wayland socket access. The initial precommit run stopped at sandbox socket
+restrictions. No WIP was reset, no installed settings were changed and no git
+commit was created.
+
+Current verification:
+
+| Check | Result |
+| --- | --- |
+| Diff check, QML syntax and complete precommit suite | PASS (temporary Git index; inherited compositor selectors cleared) |
+| Settings/defaults/migrations/shared pins and Classic/Hikai toggle isolation | PASS |
+| Top layout runtime and frame/tooltip/ear pixel matrix | PASS |
+| Two-output chrome topology, actual single-zone client height, crowded app centering, panels and reload | PASS |
+| Full/Dock HakuMenu pointer/keyboard/fullscreen/second-click behavior | PASS |
+| Real AppIndicator custom QML menu, upward attachment and item-removal cleanup | PASS |
+| Headless fractional scale 1.25 and 1.5, including real tray fixture | PASS |
+| Native notification replacement/timeout/remote close/DND/history/reload probe | PASS |
+| Nested Niri/MangoWM Dock/Full reservation and switching | PASS with the final single-zone frame geometry |
+| Nested Hyprland maximized-client assertion | NOT PASS: observed 848 px versus 391 px expected; this run does not establish physical acceptance |
+| Physical Hyprland/Niri/MangoWM, two real monitors/cable hotplug and hardware OSD | PENDING |
+
+Verification evidence and remaining physical checks are recorded in
+[QUICKSHELL_TESTING.md](QUICKSHELL_TESTING.md). Historical reports below describe
+the preceding Dock implementation and live-session checks, not new physical
+acceptance of unified bottom chrome.
+
+
 Date: 2026-10-19 (Asia/Ho_Chi_Minh). Baseline: `d5b053f9`.
 
 Status: **IMPLEMENTED core Dock; PARTIAL final physical acceptance**.
@@ -26,8 +159,8 @@ request adds hover lift before the remaining physical checks; those checks remai
 | App Menu | Existing `UiState.openHakuMenu(screenName, "drun")`; no second launcher. | PASS: pointer click routes to the correct output/mode; showing Dock preserves existing transient panel ownership. |
 | Mounted drives | Reuses `SysStats.acquireExtended()`; filters root/system mounts and opens storage paths with `gio open`. | PASS: injected mount/filter and pointer dispatch fixtures. Real removable-device insertion/ejection still needs hardware smoke. |
 | Trash | Fixed rightmost item opens `trash:///` through `gio open`. | PASS: pointer dispatch fixture. Empty/full icon status is DEFERRED (D6b); no mount/eject manager added. |
-| Visible exclusive space | Top-layer frame reservations precede the Bottom-layer Dock reservation. The zone exists only while shown and keeps a fixed height during animation. Frame visuals cancel each output's active zone, preserving physical edges in both styles. | PASS: maximize height restores on hide and reserves again on reveal; frame geometry stays fixed and independent across two Labwc outputs. |
-| Full-width style and accessories | Full bar reaches the physical bottom edge with centered icons and a black gradient from 0.5 opacity to transparent. RoundedScreen stays at its original bounds. Trash and mounted-device shortcuts toggle independently. | PASS: style/accessory persistence, hidden slots, gradient stops, physical-edge bounds, unchanged frame and crowded App Menu anchors. |
+| Visible exclusive space | Top-layer frame reservations precede the Bottom-layer Dock reservation. The zone exists only while shown and keeps a fixed height during animation. Full bars always reserve space while ON; compact Docks follow their saved preference. Frame visuals cancel each output's active zone, then move above visible Full bars. | PASS: compact autohide releases/restores space; full bars reserve across close requests and reload, release on manual OFF and restore on ON. |
+| Full-width style and accessories | Full bar reaches the physical bottom edge with centered icons and a solid `surface` background, without borders or rounded corners. It always stays visible and reserves space while ON; Settings locks both controls without overwriting compact Dock preferences. RoundedScreen sits above the bar. Trash and mounted-device shortcuts toggle independently. | PASS: style/accessory persistence, locked controls, restored Dock preferences, solid square background, physical-edge bounds, raised frames and crowded App Menu anchors. |
 | Multiple outputs/hotplug | One Dock per screen, shared models, output-local trigger and menu routing, balanced stats subscriptions. Null screen is handled during delegate teardown. | PASS: two headless outputs plus off/on of HEADLESS-2; returning output acquires exactly one subscription. Real cable hotplug/fractional scaling remains pending. |
 | Hover effects | Settings sliders control lift and upward enlargement with smooth neighboring influence and shared motion tokens. Defaults preserve 14 px lift and original icon size; zero disables each effect independently. Slots/dots stay fixed; clipping bounds, hit areas and menu anchors follow enlarged artwork. | PASS: Labwc/current Niri pointer checks for zero/maximum effects, peak/neighbor influence, stable slots/width, clipping bounds, raised hit area, enlarged anchors and Discard. |
 

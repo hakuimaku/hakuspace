@@ -53,7 +53,7 @@ path = Path(sys.argv[1])
 values = json.loads(path.read_text())
 values["version"] = int(sys.argv[2][1:])
 for key in ("style", "showTrash", "showDevices"):
-    values["dock"].pop(key)
+    values["dock"].pop(key, None)
 if values["version"] == 3:
     values["dock"].pop("hoverLift")
     values["dock"].pop("hoverScale")
@@ -82,13 +82,13 @@ from pathlib import Path
 import re
 
 values = json.loads(Path(sys.argv[1]).read_text())
-assert values["version"] == 5
+assert values["version"] == 6
 assert values["roundedScreen"] == {"radius": 20, "borderThickness": 4}
 assert values["appearance"] == {"baseRadius": 12, "surfaceTone": "dark"}
 assert all(values["topbar"].values())
-assert values["dock"] == {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 48,
-                          "hoverLift": 14, "hoverScale": 0, "style": "dock", "showTrash": True, "showDevices": True}
-assert set(re.findall(r'"size"\s*:\s*(\d+)', Path(sys.argv[2]).read_text())) == {"48"}
+assert values["dock"] == {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 36,
+                          "hoverLift": 14, "hoverScale": 0, "showTrash": True, "showDevices": True}
+assert set(re.findall(r'"size"\s*:\s*(\d+)', Path(sys.argv[2]).read_text())) == {"36"}
 PY
 
 if [[ ${1:-} == --headless ]]; then

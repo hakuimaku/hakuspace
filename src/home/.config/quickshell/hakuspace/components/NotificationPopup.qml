@@ -11,24 +11,14 @@ Item {
 
     readonly property int maxVisible: 3
     readonly property real popupWidth: 450
-    readonly property real edgeInset: 48
-    readonly property real groupPadding: 0
     readonly property real gap: Theme.gap * 2
-    readonly property real topOffset: ScreenGeometry.flareTopY
+    readonly property real topOffset: ChromeLayout.topBarMode ? Theme.topBarHeight : 0
     readonly property var frameBounds: ScreenGeometry.horizontalBounds(modelData.width)
-    readonly property real popupEnd: frameBounds.end - edgeInset
-    readonly property real popupStart: Math.max(frameBounds.start, popupEnd - popupWidth)
-    // The Top layer mirrors the tooltip topology: its shallow FlareSurface
-    // spans the popup body itself so both top ears are real Flare ears.  The
-    // Overlay remains a plain rounded rectangle inset from the screen edge.
-    readonly property real flareStart: popupStart
-    readonly property real flareEnd: popupEnd
-    // Top layer is only the frame-attached flare/bridge. The Overlay owns the
-    // full notification body, so never let the Top layer draw a second full
-    // height panel behind it.
-    readonly property real flareVisualHeight: Math.min(revealHeight, 20 + Theme.hugRadius)
+    readonly property real bodyWidth: Math.max(0, Math.min(popupWidth, frameBounds.end - frameBounds.start))
+    readonly property real popupStart: (modelData.width - bodyWidth) / 2
+    readonly property real popupEnd: popupStart + bodyWidth
     readonly property int fitCount: Math.max(0, Math.min(maxVisible,
-        Math.floor((modelData.height - topOffset - Theme.pad) / (Theme.fontSize * 12 + gap))))
+        Math.floor((modelData.height - topOffset - ScreenGeometry.taskbarReservation() - ScreenGeometry.bottomInset - Theme.pad) / (Theme.fontSize * 12 + gap))))
     readonly property var livePopups: NotificationStore.popupForScreen(modelData.name).slice(0, fitCount)
     readonly property bool hasLivePopups: NotificationStore._started && livePopups.length > 0
 
@@ -45,7 +35,7 @@ Item {
     function stackTargetHeight() {
         if (!root.hasLivePopups || root.displayPopups.length === 0)
             return 0
-        return Math.max(0, popupStack.implicitHeight + root.groupPadding * 2)
+        return Math.max(0, popupStack.implicitHeight)
     }
 
     function updateRevealTarget() {
@@ -126,10 +116,7 @@ Item {
         comparisonMode: ObjectComparison.Structure
     }
 
-    // TOP: visual-only Flare shell.  Match TooltipLayer/FlareSurface geometry:
-    // the shallow surface spans the popup itself, which gives the popup a real
-    // top-left and top-right ear.  The Overlay below stays a plain rounded body
-    // and remains inset from the screen edge.
+    // The stable Top surface paints the full downward Flare behind the Overlay cards.
     PanelWindow {
         id: flareLayer
         screen: root.modelData
@@ -151,36 +138,31 @@ Item {
         Flare.FlareSurface {
             visible: root.displayPopups.length > 0 || root.revealHeight > 0
             y: root.topOffset
-            start: root.flareStart
-            end: root.flareEnd
-            currentHeight: root.flareVisualHeight
+            attach: Flare.FlareHost.Top
+            start: root.popupStart
+            end: root.popupEnd
+            currentHeight: root.revealHeight
             bounds: root.frameBounds
             r: (Theme.largeRadius + 4)
             rf: Theme.hugRadius
-            bottomRadius: 0
+            bottomRadius: Theme.largeRadius + 4
             surfaceColor: Theme.surface
         }
     }
 
-    // OVERLAY: one rounded background wraps the complete notification group.
-    // The notification group is inset 48px from the right edge. The Top-layer
-    // Flare lives only in the Top layer; the Overlay itself remains a clean
-    // rounded body with no Flare geometry.
+    // The centered Overlay owns the rounded group, input and notification actions.
     PanelWindow {
         id: contentLayer
         screen: root.modelData
-        anchors { top: true; right: true }
-        margins.right: Math.max(0, root.modelData.width - root.frameBounds.end + root.edgeInset)
+        anchors { top: true; bottom: true }
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "hakuspace-notification-popup-content"
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
-        implicitWidth: Math.max(0, Math.min(root.popupWidth,
-            root.modelData.width - root.edgeInset - root.frameBounds.start))
+        implicitWidth: root.bodyWidth
         // Same rule as the visual Top layer: the Wayland surface stays at a
         // stable height; only the inner clipped background animates.
-        anchors.bottom: true
         color: "transparent"
         visible: root.displayPopups.length > 0 || root.revealHeight > 0
         mask: Region { item: groupBackground }
@@ -198,9 +180,7 @@ Item {
 
             Column {
                 id: popupStack
-                x: root.groupPadding
-                y: root.groupPadding
-                width: Math.max(0, parent.width - root.groupPadding * 2)
+                width: parent.width
                 spacing: root.gap
 
                 onImplicitHeightChanged: {

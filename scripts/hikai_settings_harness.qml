@@ -4,6 +4,8 @@ import Quickshell.Io
 import "services"
 import "components/settings" as Settings
 import "components/flare" as Flare
+import "components/sidebar" as Sidebar
+import "components/hakumenu" as HakuMenu
 
 Item {
     id: root
@@ -33,16 +35,30 @@ Item {
         throw new Error(message)
     }
     // Exercise the actual page and slider types while using an isolated backend.
+    Sidebar.SidebarQuickActions { id: quickActions; visible: false; width: 500; height: 300 }
+    HakuMenu.ThemeList { id: themeRows; visible: false; width: 500; height: 300 }
     Settings.ShellSettingsPage { id: page; width: 580; height: 580 }
     Settings.SettingsSlider { id: slider; from: 4; to: 24; visible: false; value: ShellSettingsStore.baseRadius }
-    // Locate the actual zero-based Dock controls rendered by the settings page.
-    function dockSlider(item, maximum) {
-        if (item.from === 0 && item.to === maximum) return item
+    // Locate actual controls without adding production test hooks.
+    function find(item, predicate) {
+        if (predicate(item)) return item
         for (var child of item.children || []) {
-            var control = dockSlider(child, maximum)
+            var control = find(child, predicate)
             if (control) return control
         }
         return null
+    }
+    // Dockbar preferences stay editable independently of Taskbar mode.
+    function checkDockControls() {
+        for (var key of ["visibilityMode", "exclusiveSpace"]) {
+            var control = root.find(page, function(item) {
+                return item.labels && item.parent.modelData && item.parent.modelData.key === key
+            })
+            var preference = ShellSettingsStore.values.dock[key]
+            root.check(control && control.available
+                && control.checked === (key === "visibilityMode" ? preference === "always" : preference),
+                key + " reflects the compact Dockbar preference")
+        }
     }
     Item { id: liveAnchor; x: 33; y: 8; width: 24; height: 20 }
     Flare.FlareMorph {
@@ -84,17 +100,44 @@ Item {
                     ShellSettingsStore.apply()
                     return
                 }
+                root.check(quickActions.actions.length === 11 && quickActions.rowCount === 3, "Quick Actions fits eleven actions")
+                quickActions.selectedIndex = 9
+                quickActions.moveSelection(0, 1)
+                root.check(quickActions.selectedIndex === 10, "Down clamps into the incomplete final row")
+                quickActions.moveSelection(1, 0)
+                quickActions.moveSelection(0, 1)
+                root.check(quickActions.selectedIndex === 10, "Right and Down stop at the last action")
+                quickActions.moveSelection(0, -1)
+                root.check(quickActions.selectedIndex === 5, "Up uses the grid column count")
+                themeRows.query = "~task"
+                root.check(themeRows.visibleItems.length === 1 && themeRows.visibleItems[0].chromeKey === "taskbar", "Theme search finds Taskbar Mode independently")
+                themeRows.query = "~dock"
+                root.check(themeRows.visibleItems.length === 1 && themeRows.visibleItems[0].chromeKey === "dockbar", "Theme search finds Dockbar independently")
+                var dockbarRow = themeRows.visibleItems[0]
+                AppState.taskbarManualState = true
+                AppState.dockbarManualState = true
+                root.check(!themeRows.available(dockbarRow) && themeRows.chromeEnabled(dockbarRow)
+                    && !quickActions.stateFor("dockbar").available, "native rows preserve a suppressed Dockbar request")
+                AppState.taskbarManualState = false
+                root.check(themeRows.available(dockbarRow), "Dockbar row returns with TopBar mode")
+                AppState.dockbarManualState = false
                 root.check(!ShellSettingsStore.dirty && ShellSettingsStore.valid, "initial defaults")
-                root.checkPinSize(40)
+                root.checkDockControls()
+                root.checkPinSize(36)
                 ShellSettingsStore.setValue("dock", "iconSize", 64)
-                ShellSettingsStore.setValue("dock", "style", "bar")
+                AppState.taskbarManualState = true
+                root.check(ShellSettingsStore.dockVisibilityMode === "autohide" && !ShellSettingsStore.dockExclusiveSpace,
+                    "Taskbar mode preserves compact Dockbar preferences")
+                AppState.taskbarManualState = false
+                root.checkDockControls()
                 ShellSettingsStore.setValue("dock", "showTrash", false)
                 ShellSettingsStore.setValue("dock", "showDevices", false)
-                root.checkPinSize(40)
+                root.checkPinSize(36)
                 ShellSettingsStore.discard()
-                root.check(ShellSettingsStore.dockStyle === "dock" && ShellSettingsStore.dockShowTrash && ShellSettingsStore.dockShowDevices,
-                    "Discard restores Dock style and accessories")
-                root.checkPinSize(40)
+                root.checkDockControls()
+                root.check(ShellSettingsStore.dockShowTrash && ShellSettingsStore.dockShowDevices,
+                    "Discard restores accessories")
+                root.checkPinSize(36)
                 root.check(anchorMorph.anchorSpan().start === 180 && anchorMorph.anchorSpan().end === 212, "captured anchor localization")
                 anchorMorph.anchorItem = liveAnchor
                 root.check(anchorMorph.anchorSpan().start === 33 && anchorMorph.anchorSpan().end === 57, "live anchor keeps priority")
@@ -129,7 +172,7 @@ Item {
                 ShellSettingsStore.discard()
                 root.check(Theme.radius === 12 && String(Theme.surface) === "#0b0b0b" && !ShellSettingsStore.dirty, "discard live preview")
                 for (var setting of [{key: "hoverLift", maximum: 48}, {key: "hoverScale", maximum: 100}]) {
-                    var control = root.dockSlider(page, setting.maximum)
+                    var control = root.find(page, function(item) { return item.from === 0 && item.to === setting.maximum })
                     root.check(control && control.enabled && control.stepSize === 1, "Dock hover slider exists and accepts input")
                     control.value = 0
                     control.moved()
@@ -142,7 +185,6 @@ Item {
                 }
                 ShellSettingsStore.setValue("appearance", "baseRadius", 20)
                 ShellSettingsStore.setValue("dock", "iconSize", 64)
-                ShellSettingsStore.setValue("dock", "style", "bar")
                 ShellSettingsStore.setValue("dock", "showTrash", false)
                 ShellSettingsStore.setValue("dock", "showDevices", false)
                 ShellSettingsStore.setValue("appearance", "surfaceTone", "soft")
@@ -161,8 +203,8 @@ Item {
                 ShellSettingsStore.apply()
             } else if (root.phase === 1) {
                 root.checkPinSize(64)
-                root.check(ShellSettingsStore.dockStyle === "bar" && !ShellSettingsStore.dockShowTrash && !ShellSettingsStore.dockShowDevices,
-                    "Apply persists style and accessory switches")
+                root.check(!ShellSettingsStore.dockShowTrash && !ShellSettingsStore.dockShowDevices,
+                    "Apply persists accessory switches")
                 root.check(!ShellSettingsStore.dirty && ShellSettingsStore.savedValues.appearance.baseRadius === 20, "apply snapshot")
                 root.check(ShellSettingsStore.savedValues.dock.hoverLift === 48 && ShellSettingsStore.savedValues.dock.hoverScale === 100,
                     "Apply saves both hover preferences")
@@ -172,8 +214,12 @@ Item {
                 boundsMorph.bounds = {start: 1, end: 319}
                 ShellSettingsStore.reload()
             } else if (root.phase === 2) {
-                root.check(ShellSettingsStore.dockStyle === "bar" && !ShellSettingsStore.dockShowTrash && !ShellSettingsStore.dockShowDevices,
-                    "Reload retains style and accessory switches")
+                root.check(!ShellSettingsStore.dockShowTrash && !ShellSettingsStore.dockShowDevices,
+                    "Reload retains accessory switches")
+                root.checkDockControls()
+                root.check(ShellSettingsStore.dockVisibilityMode === "autohide" && !ShellSettingsStore.dockExclusiveSpace,
+                    "compact Dock restores its saved visibility and exclusivity")
+                root.checkDockControls()
                 root.check(boundsMorph.mStart === 1, "one-pixel border change retargets an open Flare")
                 root.check(Theme.radius === 20 && !ShellSettingsStore.showTray, "persistence after reload")
                 root.check(ShellSettingsStore.dockHoverLift === 48 && ShellSettingsStore.dockHoverScale === 100, "hover persistence after reload")
@@ -191,7 +237,7 @@ Item {
                 ShellSettingsStore.reset()
                 ShellSettingsStore.apply()
             } else if (root.phase === 3) {
-                root.checkPinSize(48)
+                root.checkPinSize(36)
                 root.check(Theme.radius === 12 && ShellSettingsStore.showTray && !ShellSettingsStore.dirty, "reset then apply")
                 ShellSettingsStore.reload()
             } else {

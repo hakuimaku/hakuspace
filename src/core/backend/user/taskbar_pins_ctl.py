@@ -13,7 +13,7 @@ from pathlib import Path
 
 # Reuse the deployed settings controller's safe directory traversal.
 sys.dont_write_bytecode = True
-from hikai_settings_ctl import open_parent
+from hikai_settings_ctl import DEFAULTS, open_parent
 
 
 # Keep source offsets stable while masking comments and optional trailing commas.
@@ -166,10 +166,10 @@ def edit(raw, action, args):
     group_start = root_fields['group/pin'][1]
     _, modules_start, modules_end = members(cleaned, group_start)['modules']
     edits = []
-    # New pins inherit the shared group's current size instead of reverting to 40 px.
+    # New pins inherit an explicit group size or the canonical shell default.
     size = next((document[name]['size'] for name in modules if name.startswith('image#')
                  and isinstance(document.get(name), dict) and type(document[name].get('size')) is int
-                 and document[name]['size'] > 0), 40)
+                 and document[name]['size'] > 0), DEFAULTS['dock']['iconSize'])
     if action in ('add', 'remove') and len(args) == 1:
         identity = app_id(args[0])
         if identity == 'menu':

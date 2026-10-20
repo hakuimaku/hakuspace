@@ -34,6 +34,8 @@ while true; do
         echo "[$(date -Iseconds)] Quickshell already running, waiting..." >> "$LOG_FILE"
         while haku_qs_alive; do sleep 1; done
     fi
+    # Both login and backend switching pass here before AppState starts watching.
+    "$SCRIPT_DIR/hikai_chrome_state_ctl.py" migrate >> "$LOG_FILE" 2>&1 || exit 1
     echo "[$(date -Iseconds)] Starting quickshell..." >> "$LOG_FILE"
     qs -c hakuspace >> "$LOG_FILE" 2>&1
     

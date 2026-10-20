@@ -11,8 +11,10 @@ Item {
     readonly property real sideInset: ScreenGeometry.borderThickness
     readonly property real cornerRadius: ScreenGeometry.roundedRadius
     readonly property color frameColor: Theme.surface
+    // Place the lower corners above each output's visible full bar.
+    readonly property real taskbarInset: ScreenGeometry.taskbarReservation()
 
-    // Render masks and three explicit rails with no top border or input region.
+    // Render corner masks and rails opposite the status bar without intercepting input.
     PanelWindow {
         id: visualWindow
         screen: rootItem.modelData
@@ -21,12 +23,15 @@ Item {
         visible: rootItem.cornerRadius > 0 || rootItem.sideInset > 0
 
         WlrLayershell.layer: WlrLayer.Top
+        exclusionMode: ChromeLayout.taskbarMode ? ExclusionMode.Ignore : ExclusionMode.Normal
         exclusiveZone: 0
-        // Respect TopBar while keeping the physical frame outside the Dock's zone.
+        // Taskbar uses physical bounds so its bottom reservation is counted once.
         margins {
-            left: -ScreenGeometry.leftInset
-            right: -ScreenGeometry.rightInset
-            bottom: -ScreenGeometry.bottomInset - ScreenGeometry.dockReservation(rootItem.modelData ? rootItem.modelData.name : "")
+            left: ChromeLayout.taskbarMode ? 0 : -ScreenGeometry.leftInset
+            right: ChromeLayout.taskbarMode ? 0 : -ScreenGeometry.rightInset
+            bottom: ChromeLayout.taskbarMode ? rootItem.taskbarInset
+                : -ScreenGeometry.frameBottomReservation
+                    - ScreenGeometry.dockbarReservation(rootItem.modelData ? rootItem.modelData.name : "")
         }
         mask: Region {}
 
@@ -35,12 +40,16 @@ Item {
             anchors.fill: parent
 
             readonly property real t: rootItem.sideInset
+            readonly property real topInset: ScreenGeometry.topBorderThickness
+            readonly property real bottomInset: ScreenGeometry.bottomInset
             readonly property real r: ScreenGeometry.maskRadius(width, height)
             readonly property color c: rootItem.frameColor
 
             onWidthChanged: requestPaint()
             onHeightChanged: requestPaint()
             onTChanged: requestPaint()
+            onTopInsetChanged: requestPaint()
+            onBottomInsetChanged: requestPaint()
             onRChanged: requestPaint()
             onCChanged: requestPaint()
 
@@ -52,56 +61,56 @@ Item {
                 ctx.clearRect(0, 0, w, h)
                 ctx.fillStyle = c
 
-                // Corner masks follow the inner side/bottom bounds independently of rail width.
+                // Corner masks follow the active rail bounds independently of rail width.
                 if (r > 0) {
                     ctx.beginPath()
-                    ctx.moveTo(t, 0)
-                    ctx.lineTo(t + r, 0)
-                    ctx.arc(t + r, r, r, -Math.PI / 2, Math.PI, true)
+                    ctx.moveTo(t, topInset)
+                    ctx.lineTo(t + r, topInset)
+                    ctx.arc(t + r, topInset + r, r, -Math.PI / 2, Math.PI, true)
                     ctx.closePath()
                     ctx.fill()
 
                     ctx.beginPath()
-                    ctx.moveTo(w - t, 0)
-                    ctx.lineTo(w - t, r)
-                    ctx.arc(w - t - r, r, r, 0, -Math.PI / 2, true)
+                    ctx.moveTo(w - t, topInset)
+                    ctx.lineTo(w - t, topInset + r)
+                    ctx.arc(w - t - r, topInset + r, r, 0, -Math.PI / 2, true)
                     ctx.closePath()
                     ctx.fill()
 
                     ctx.beginPath()
-                    ctx.moveTo(w - t, h - t)
-                    ctx.lineTo(w - t - r, h - t)
-                    ctx.arc(w - t - r, h - t - r, r, Math.PI / 2, 0, true)
+                    ctx.moveTo(w - t, h - bottomInset)
+                    ctx.lineTo(w - t - r, h - bottomInset)
+                    ctx.arc(w - t - r, h - bottomInset - r, r, Math.PI / 2, 0, true)
                     ctx.closePath()
                     ctx.fill()
 
                     ctx.beginPath()
-                    ctx.moveTo(t, h - t)
-                    ctx.lineTo(t, h - t - r)
-                    ctx.arc(t + r, h - t - r, r, Math.PI, Math.PI / 2, true)
+                    ctx.moveTo(t, h - bottomInset)
+                    ctx.lineTo(t, h - bottomInset - r)
+                    ctx.arc(t + r, h - bottomInset - r, r, Math.PI, Math.PI / 2, true)
                     ctx.closePath()
                     ctx.fill()
                 }
                 if (t > 0) {
                     ctx.fillRect(0, 0, t, h)
                     ctx.fillRect(w - t, 0, t, h)
-                    ctx.fillRect(0, h - t, w, t)
+                    ctx.fillRect(0, 0, w, topInset)
+                    ctx.fillRect(0, h - bottomInset, w, bottomInset)
                 }
             }
         }
     }
 
-    // Reserve physical borders before the lower-layer Dock reserves its inner space.
-    // Top edge is reserved by TopBar; bottom, left, and right are reserved here.
+    // Reserve the horizontal rail opposite the active bar and both side rails.
     PanelWindow {
-        id: bottomReservation
+        id: horizontalReservation
         screen: rootItem.modelData
         color: "transparent"
         WlrLayershell.layer: WlrLayer.Top
         exclusionMode: ExclusionMode.Normal
-        anchors { bottom: true; left: true; right: true }
-        exclusiveZone: ScreenGeometry.bottomInset
-        implicitHeight: ScreenGeometry.bottomInset
+        anchors { top: ChromeLayout.taskbarMode; bottom: !ChromeLayout.taskbarMode; left: true; right: true }
+        exclusiveZone: rootItem.sideInset
+        implicitHeight: rootItem.sideInset
         mask: Region {}
         visible: rootItem.sideInset > 0
     }

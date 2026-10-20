@@ -1,11 +1,9 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import Quickshell.Services.SystemTray
 import "../services"
-import "top" as TopModules
+import "bar" as Bar
 import "base"
-import "flare" as Flare
 
 PanelWindow {
     id: root
@@ -14,142 +12,6 @@ PanelWindow {
 
     property real barH: Theme.topBarHeight
     property real tipAreaH: 180
-    property var trayMenuItem: null
-    property Item trayMenuAnchor: null
-    property string lastTrayFallbackReason: ""
-    readonly property int trayRowCount: trayOpener.children.values.length
-    readonly property bool navigationVisualActive: UiState.navigationVisualScreenName === root.modelData.name
-    // The Logo footprint stays fixed. Non-Logo left modules share one moving
-    // lane so current and future modules clear the Navigation surface together.
-    readonly property real navigationDiameter: Math.max(146, Theme.fontSize * 10.5)
-    readonly property real navigationShellWidth: navigationDiameter + 8
-    readonly property real navigationHoverOverflow: Math.ceil(navigationDiameter * 0.12)
-    readonly property real navigationClearEdge: navigationShellWidth
-                                                   + navigationHoverOverflow
-                                                   + Theme.gap
-    onNavigationVisualActiveChanged: {
-        if (navigationVisualActive && TooltipManager.activeBar === root) TooltipManager.dismiss()
-    }
-    onTrayRowCountChanged: {
-        if (trayMenuItem && trayRowCount > 0) menuSettled.restart()
-    }
-
-    // Cleans up active tray popup state and stops pending resolution timers.
-    function closeTrayMenu() {
-        menuTimeout.stop()
-        menuSettled.stop()
-        trayMenuItem = null
-        trayMenuAnchor = null
-    }
-
-    // Falls back to native platform context menu or secondary activation for tray item.
-    function platformMenu(item, anchor, reason) {
-        lastTrayFallbackReason = reason
-        if (!item || !anchor) return
-        if (item.hasMenu) {
-            var point = anchor.mapToItem(null, 0, anchor.height)
-            item.display(root, point.x, point.y)
-        } else {
-            item.secondaryActivate()
-        }
-    }
-
-    // Handles tray item click: opens native menu, dismisses existing, or prepares custom popup.
-    function requestTrayMenu(item, anchor) {
-        if (UiState.trayMenu && UiState.trayMenu.item === item) {
-            UiState.closeTrayMenu()
-            return
-        }
-        if (trayMenuItem === item) {
-            closeTrayMenu()
-            return
-        }
-        closeTrayMenu()
-        if (UiState.activePanel !== "") UiState.activePanel = ""
-        UiState.closeTrayMenu()
-        if (!item || !item.hasMenu || !item.menu) {
-            platformMenu(item, anchor, "no menu handle")
-            return
-        }
-        TooltipManager.dismiss()
-        trayMenuItem = item
-        trayMenuAnchor = anchor
-        menuTimeout.restart()
-        if (trayRowCount > 0) menuSettled.restart()
-    }
-
-    // Dispatches request to open custom flare tray menu panel anchored to tray item.
-    function openTrayPanel() {
-        if (!trayMenuItem || !trayMenuAnchor) return
-        var item = trayMenuItem
-        var anchor = trayMenuAnchor
-        var anchorRect = ScreenGeometry.itemRect(anchor)
-        closeTrayMenu()
-        UiState.openTrayMenu(item, item.menu, root.modelData.name, anchorRect)
-    }
-
-    // Evaluates loaded tray menu rows and opens tray menu once content has populated.
-    function resolveTrayMenu() {
-        if (!trayMenuItem) return
-        var rows = trayOpener.children.values
-        if (!rows || rows.length === 0) return
-        menuTimeout.stop()
-        openTrayPanel()
-    }
-
-    QsMenuOpener {
-        id: trayOpener
-        menu: root.trayMenuItem ? root.trayMenuItem.menu : null
-    }
-
-    Timer {
-        id: menuSettled
-        interval: 100
-        onTriggered: root.resolveTrayMenu()
-    }
-
-    Timer {
-        id: menuTimeout
-        interval: 1500
-        onTriggered: {
-            if (!root.trayMenuItem) return
-            root.resolveTrayMenu()
-            if (!root.trayMenuItem) return
-            var item = root.trayMenuItem
-            var anchor = root.trayMenuAnchor
-            root.closeTrayMenu()
-            root.platformMenu(item, anchor, "root menu empty after 1500 ms")
-        }
-    }
-
-    Connections {
-        target: SystemTray.items
-        function onObjectRemovedPre(object, index) {
-            if (object === root.trayMenuItem) root.closeTrayMenu()
-            UiState.closeTrayMenuIfItem(object)
-        }
-    }
-
-    Connections {
-        target: ShellSettingsStore
-        // Clear pending and open tray ownership before the hidden row can be reused.
-        function onShowTrayChanged() {
-            if (ShellSettingsStore.showTray) return
-            root.closeTrayMenu()
-            UiState.closeTrayMenuIfScreen(root.modelData.name)
-        }
-        function onValuesChanged() {
-            if (TooltipManager.activeBar === root) TooltipManager.dismiss()
-        }
-    }
-
-    Connections {
-        target: UiState
-        function onActivePanelChanged() {
-            if (UiState.activePanel !== "") root.closeTrayMenu()
-        }
-    }
-
     anchors { top: true; left: true; right: true }
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "hakuspace-bar"
@@ -157,7 +19,7 @@ PanelWindow {
     // Keep visuals and live tooltip anchors screen-local on every compositor.
     exclusionMode: ExclusionMode.Ignore
     // Include animated tooltip bodies and their full feet in the drawable window.
-    implicitHeight: Math.ceil(Math.max(barH, ScreenGeometry.flareTopY
+    implicitHeight: Math.ceil(Math.max(barH, Theme.topBarHeight
         + Math.max(tipAreaH, tooltipLayer.surfaceHeight, osdSurface.currentHeight) + Theme.hugRadius))
 
     // Reserve the upper chassis separately from the full-width visual window.
@@ -174,17 +36,7 @@ PanelWindow {
     }
 
     color: "transparent"
-    visible: AppState.waybarManualState
-    onVisibleChanged: {
-        if (!visible) {
-            if (TooltipManager.activeBar === root) TooltipManager.dismiss()
-            closeTrayMenu()
-            UiState.closeTrayMenuIfScreen(root.modelData.name)
-            UiState.closeNotificationsIfScreen(root.modelData.name)
-            UiState.closeHakuMenuIfScreen(root.modelData.name)
-            UiState.closeNavigationIfScreen(root.modelData.name)
-        }
-    }
+    visible: ChromeLayout.topStatusBarVisible
 
     mask: Region { item: barBg }
 
@@ -197,158 +49,15 @@ PanelWindow {
         border.width: Theme.borderWidth
         border.color: Theme.border
 
-        Item {
-            id: moduleLane
-            height: Theme.topBarContentHeight
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.leftMargin: Theme.pad
-            anchors.rightMargin: Theme.pad
-
-            Item {
-                id: leftModules
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.verticalCenterOffset: Theme.topBarTopPadding / 2
-                width: movingLeftModules.visibleChildren.length > 0
-                       ? movingLeftModules.x + movingLeftModules.width : logoModule.width
-                height: Math.max(logoModule.height, movingLeftModules.height)
-
-                // Logo never participates in the horizontal displacement.
-                TopModules.Logo {
-                    id: logoModule
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    screenName: root.modelData.name
-                }
-
-                Row {
-                    id: movingLeftModules
-                    readonly property real baseX: logoModule.width + Theme.gap
-                    readonly property bool navigationOpen: UiState.activePanel === "navigation"
-                                                              && UiState.navigationMode !== "closed"
-                                                              && (UiState.navigationScreenName === ""
-                                                                  || UiState.navigationScreenName === root.modelData.name)
-                    readonly property real navigationShift: navigationOpen
-                        ? Math.max(0, root.navigationClearEdge - Theme.pad - baseX)
-                        : 0
-                    x: baseX + navigationShift
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: Theme.gap
-                    opacity: 1.0
-                    enabled: true
-
-                    // Animates horizontal displacement of left modules to clear expanding navigation controller.
-                    Behavior on x {
-                        NumberAnimation {
-                            duration: movingLeftModules.navigationOpen ? HAnimation.navigationOpenDuration : 560
-                            easing.bezierCurve: [0.18, 1.0, 0.32, 1.0, 1, 1]
-                        }
-                    }
-
-                    // Workspaces, WindowTitle and any future non-Logo left
-                    // modules belong in this row so they all clear Navigation.
-                    TopModules.Workspaces { screenName: root.modelData.name }
-                    TopModules.WindowTitle { visible: ShellSettingsStore.showWindowTitle }
-                }
-            }
-
-            Row {
-                id: centerCluster
-                anchors.centerIn: parent
-                anchors.verticalCenterOffset: Theme.topBarTopPadding / 2
-                spacing: showCava ? Theme.gap : 0
-                // Animates center cluster spacing when the cava visualizer expands or collapses.
-                Behavior on spacing { NumberAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve } }
-                readonly property real safeSpan: Math.max(0, 2 * Math.min(parent.width / 2
-                                                                          - (leftModules.x + leftModules.width)
-                                                                          - Theme.gap,
-                                                                          parent.width / 2
-                                                                          - rightModules.width
-                                                                          - Theme.gap))
-                readonly property real cavaSlotWidth: cavaModule.hoverSafeWidth
-                readonly property bool hakuMenuActive: UiState.activePanel === "hakumenu"
-                                                           && UiState.hakuMenuScreenName === root.modelData.name
-                readonly property bool dashboardActive: (UiState.dashboardVisuallyActive || UiState.navigationMode === "handoff-dashboard")
-                                                           && (UiState.navigationScreenName === ""
-                                                               || UiState.navigationScreenName === root.modelData.name
-                                                               || UiState.navigationVisualScreenName === root.modelData.name)
-                readonly property bool showCava: ShellSettingsStore.showCava && !hakuMenuActive && !dashboardActive
-                                                  && CenterState.centerMode === "media" && Cava.available && Cava.audioVisible
-                                                  && safeSpan >= cavaSlotWidth + Theme.gap + Theme.fontSize * 3
-                opacity: (CenterState.osdVisible || CenterState.osdExpansion > 0 || dashboardActive) ? 0 : 1
-                enabled: !CenterState.osdVisible && CenterState.osdExpansion === 0 && !dashboardActive
-                // Animates center cluster opacity when OSD feedback or dashboard becomes active.
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: HAnimation.fast
-                        easing.bezierCurve: HAnimation.effectsCurve
-                    }
-                }
-
-                Item {
-                    id: cavaSlot
-                    width: centerCluster.showCava ? centerCluster.cavaSlotWidth : 0
-                    height: centerModule.implicitHeight
-                    visible: width > 0
-                    clip: true
-                    Behavior on width { NumberAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve } }
-
-                    TopModules.CavaGroup {
-                        id: cavaModule
-                        anchors.centerIn: parent
-                        width: parent.width
-                        visible: centerCluster.showCava
-                    }
-                }
-
-                TopModules.CenterModule {
-                    id: centerModule
-                    visible: ShellSettingsStore.showCenter && centerModule.active
-                    screenName: root.modelData.name
-                    maximumWidth: Math.max(0, centerCluster.safeSpan
-                                             - (cavaSlot.width > 0 ? cavaSlot.width + centerCluster.spacing : 0))
-                }
-            }
-
-            Row {
-                id: rightModules
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.verticalCenterOffset: Theme.topBarTopPadding / 2
-                spacing: Theme.gap
-                TopModules.TrayGroup {
-                    visible: ShellSettingsStore.showTray
-                    menuOpenItem: UiState.trayMenu ? UiState.trayMenu.item : root.trayMenuItem
-                    onMenuRequested: (item, anchor) => root.requestTrayMenu(item, anchor)
-                }
-                TopModules.SettingsGroup { visible: ShellSettingsStore.showQuickControls }
-                TopModules.RecorderGroup {}
-                TopModules.ClockGroup { visible: ShellSettingsStore.showClock }
-                TopModules.NotificationGroup {
-                    visible: ShellSettingsStore.showNotifications
-                    screenName: root.modelData.name
-                }
-            }
+        Bar.StatusModules {
+            ownerWindow: root
+            screenName: root.modelData.name
         }
     }
 
-    Flare.FlareSurface {
+    Bar.LevelOsdBridge {
         id: osdSurface
-        width: root.width
-        y: ScreenGeometry.flareTopY
-        start: (root.width - spanWidth) / 2
-        end: (root.width + spanWidth) / 2
-        currentHeight: Theme.levelOsdHeight * CenterState.osdExpansion
-        bounds: ScreenGeometry.horizontalBounds(root.width)
-        r: Theme.largeRadius + 8
-        rf: Theme.hugRadius
-        surfaceColor: Theme.surface
-        visible: CenterState.osdExpansion > 0 && spanWidth > 0
-
-        readonly property real spanWidth: Math.min(Theme.levelOsdWidth + Theme.levelOsdPadding * 2,
-                                                    Math.max(0, bounds.end - bounds.start - 2 * (Theme.largeRadius + 8)))
+        y: ScreenGeometry.chromeAttachmentY(root.modelData.height)
     }
 
     SafeZoneDebugOverlay {
@@ -363,7 +72,7 @@ PanelWindow {
 
     TooltipLayer {
         id: tooltipLayer
-        y: ScreenGeometry.flareTopY
+        y: Theme.topBarHeight
         tipAreaHeight: root.tipAreaH
     }
 }

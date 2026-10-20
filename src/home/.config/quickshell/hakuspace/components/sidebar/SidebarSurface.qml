@@ -6,6 +6,7 @@ Item {
 
     required property real controlDiameter
     required property real bodyWidth
+    property bool bottomAttached: false
     property real bodyHeight: 500
     property Item tooltipHost: null
     property real rf: ScreenGeometry.edgeHugRadius
@@ -22,8 +23,10 @@ Item {
 
     readonly property real itemDiameter: root.controlDiameter
     readonly property real itemSpacing: 10
-    readonly property real listTopPadding: 20
-    readonly property real listBottomPadding: 20
+    // Keep equal insets around the utility stack.
+    readonly property real listTopPadding: 30
+    readonly property real listBottomPadding: 30
+    readonly property real joinOverlap: 20
 
     readonly property var tools: [
         { key: "quickActions", icon: "󰀻", label: "Quick Actions" },
@@ -68,9 +71,9 @@ Item {
     // The Overlay owns only the rounded rail and its controls.
     Rectangle {
         x: 0
-        y: -20
+        y: root.bottomAttached ? root.bodyHeight - root.currentHeight : -root.joinOverlap
         width: root.bodyWidth
-        height: root.currentHeight + 20
+        height: root.currentHeight + root.joinOverlap
         color: root.surfaceColor
         topRightRadius: root.cornerRadius
         bottomRightRadius: root.cornerRadius
@@ -81,12 +84,13 @@ Item {
         id: controlsGroup
         z: 1
         x: 0
-        y: 20
+        // Center the stack across the painted rail, including its attachment overlap.
+        y: (root.bottomAttached ? 1 : -1) * root.joinOverlap / 2
         width: root.bodyWidth
         height: root.bodyHeight
         opacity: Math.max(0, Math.min(1, (root.morphProgress - 0.15) / 0.70))
         transform: Translate {
-            y: -24 * (1.0 - root.morphProgress)
+            y: (root.bottomAttached ? 24 : -24) * (1.0 - root.morphProgress)
         }
         visible: opacity > 0.001
 

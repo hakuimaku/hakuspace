@@ -15,7 +15,13 @@ Item {
     required property real circleRadius
     required property real circleDiameter
     property real sideInset: ScreenGeometry.leftInset
-    property real attachmentY: ScreenGeometry.flareTopY
+    property real attachmentY: Theme.topBarHeight
+    property bool bottomAttached: false
+    property real attachmentSeam: ScreenGeometry.chromeAttachmentY(screenHeight)
+    // Keep every Dashboard child in one upright plane inside the Flare body.
+    readonly property real contentOriginY: bottomAttached
+        ? attachmentSeam - currentEnvelopeHeight + bottomFlareReach : 0
+    function mapY(logicalY) { return contentOriginY + logicalY }
     property bool expanded: false
     property real morphProgress: 0.0
 
@@ -65,7 +71,11 @@ Item {
     readonly property real finalAvatarX: innerPadding + avatarColumnPadding
     readonly property real finalAvatarY: innerPadding
     readonly property real avatarX: controllerX + (finalAvatarX - controllerX) * morphProgress
-    readonly property real avatarY: controllerY + (finalAvatarY - controllerY) * morphProgress
+    // Seed the avatar at the corner controller before moving into the upright content plane.
+    readonly property real initialAvatarY: bottomAttached
+        ? startEnvelopeHeight - bottomFlareReach + ScreenGeometry.chromeBarHeight - controllerY - circleDiameter
+        : controllerY
+    readonly property real avatarY: initialAvatarY + (finalAvatarY - initialAvatarY) * morphProgress
     readonly property real avatarDiameter: circleDiameter
     readonly property real avatarOpacity: {
         var t = Math.min(1.0, morphProgress / 0.25)
@@ -178,6 +188,8 @@ Item {
     // 1. Dashboard Flare Surface (HakuSpace Flare visual language)
     DashboardFlareSurface {
         id: flareShell
+        y: root.bottomAttached ? root.attachmentSeam : 0
+        bottomAttached: root.bottomAttached
         bodyWidth: root.currentEnvelopeWidth
         bodyHeight: root.currentEnvelopeHeight
         sideInset: root.sideInset
@@ -195,7 +207,7 @@ Item {
     DashboardAvatar {
         id: dashboardAvatar
         x: root.avatarX
-        y: root.avatarY
+        y: root.mapY(root.avatarY)
         diameter: root.avatarDiameter
         interactive: root.isFullyOpen
         opacity: root.avatarOpacity
@@ -215,7 +227,7 @@ Item {
     DashboardProfileRail {
         id: profileRail
         x: root.avatarX
-        y: root.avatarY + root.avatarDiameter + 14
+        y: root.mapY(root.avatarY + root.avatarDiameter + 14)
         railWidth: root.avatarDiameter
         railHeight: Math.max(0, (root.finalBodyBottom - root.bottomPadding) - (root.avatarY + root.avatarDiameter + 14))
         opacity: root.contentRevealProgress
@@ -267,9 +279,9 @@ Item {
     Item {
         id: cardsClipper
         x: 0
-        y: 0
+        y: root.mapY(0)
         width: root.currentEnvelopeWidth
-        height: root.currentEnvelopeHeight
+        height: root.bottomAttached ? root.currentBodyHeight : root.currentEnvelopeHeight
         clip: true
         visible: root.morphProgress > 0.02
         z: 5

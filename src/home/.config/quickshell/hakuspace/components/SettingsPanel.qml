@@ -161,7 +161,7 @@ PanelWindow {
         transform: Rotation {
             origin.x: dropTail.tail + dropTail.diameter / 2
             origin.y: dropTail.diameter / 2
-            angle: Math.atan2(root.height / 2 - ScreenGeometry.flareTopY - root.circleSize / 2,
+            angle: Math.atan2(root.height / 2 - ScreenGeometry.attachedBodyY(root.height, root.circleSize) - root.circleSize / 2,
                               root.width / 2 - ScreenGeometry.leftInset - root.circleSize / 2) * 180 / Math.PI
         }
         ShapePath {
@@ -204,7 +204,8 @@ PanelWindow {
     Rectangle {
         id: settingsBody
         x: ScreenGeometry.leftInset + (root.width / 2 - width / 2 - ScreenGeometry.leftInset) * root.slideProgress
-        y: ScreenGeometry.flareTopY + (root.height / 2 - height / 2 - ScreenGeometry.flareTopY) * root.slideProgress
+        y: ScreenGeometry.attachedBodyY(root.height, root.circleSize)
+           + (root.height / 2 - height / 2 - ScreenGeometry.attachedBodyY(root.height, root.circleSize)) * root.slideProgress
         width: root.circleSize + (root.targetBodyWidth - root.circleSize) * root.expandProgress
         height: root.circleSize + (root.targetBodyHeight - root.circleSize) * root.expandProgress
         radius: root.circleSize / 2 + (Theme.largeRadius - root.circleSize / 2) * root.expandProgress

@@ -91,7 +91,7 @@ ShellRoot {
             } else if (root.phase === 9) {
                 root.capture("icon-green")
             } else if (root.phase === 10) {
-                root.check(AppState.taskbarManualState, "private Dock state is enabled")
+                root.check(AppState.dockbarManualState, "private Dock state is enabled")
                 console.info("Hikai resource refresh checks passed")
                 Qt.quit()
             }

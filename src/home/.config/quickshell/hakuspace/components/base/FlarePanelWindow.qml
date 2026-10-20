@@ -12,13 +12,14 @@ PanelWindow {
     required property var modelData
     property bool panelOpen: false
     property bool closing: false
+    property bool openedAtBottom: ScreenGeometry.bottomAttached
     property var anchorRect: null
     readonly property var hostRect: ({x: 0, y: 0, width: width, height: height})
     readonly property var localAnchorRect: flare.localizedAnchorRect || ({x: 0, y: 0, width: 0, height: 0})
     property Component panelComponent: null
     property var panelProps: ({})
     property var panelKey: null
-    property real maxPanelContentHeight: Math.max(0, height - ScreenGeometry.flareTopY
+    property real maxPanelContentHeight: Math.max(0, ScreenGeometry.availableAttachedHeight(height)
         - Theme.hugRadius - 16 - Theme.pad)
     signal dismissed()
     readonly property var liveSafeZones: {
@@ -28,16 +29,16 @@ PanelWindow {
             anchorEnd: anchorVisual.x + anchorVisual.width, contentW: flare.naturalContentWidth,
             padX: flare.horizontalPadding * 2, minW: 80, maxW: flare.maxWidth,
             bounds: flare.wBounds, snap: 2 * Theme.hugRadius })
-        var current = SafeZoneGeometry.rect(flare.start, ScreenGeometry.flareTopY,
+        var current = ScreenGeometry.attachedBodyRect(height, flare.start,
             Math.max(0, flare.end - flare.start),
             Math.max(flare.currentHeight, flare.naturalContentHeight + 16) + Theme.hugRadius)
-        var expected = SafeZoneGeometry.rect(target.start, ScreenGeometry.flareTopY,
+        var expected = ScreenGeometry.attachedBodyRect(height, target.start,
             flare.naturalContentWidth > 0 ? target.end - target.start : 0, current.height)
         var bodyVisual = SafeZoneGeometry.unionBounds(current, expected)
         var retained = flare.interactionEnvelope
         if (retained.end > retained.start)
-            bodyVisual = SafeZoneGeometry.unionBounds(bodyVisual, SafeZoneGeometry.rect(
-                retained.start, ScreenGeometry.flareTopY, retained.end - retained.start,
+            bodyVisual = SafeZoneGeometry.unionBounds(bodyVisual, ScreenGeometry.attachedBodyRect(height,
+                retained.start, retained.end - retained.start,
                 retained.height + Theme.hugRadius))
         return [SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(anchorVisual,
                     Interaction.safeZoneAnchorMargin), width, height),
@@ -45,6 +46,14 @@ PanelWindow {
                     anchorVisual, bodyVisual, Interaction.safeZoneCorridorWidth), width, height) : empty,
                 bodyVisual.width ? SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(bodyVisual,
                     Interaction.safeZoneMargin), width, height) : empty]
+    }
+    // A topology transfer invalidates every retained anchor and close envelope.
+    Connections {
+        target: ChromeLayout
+        function onTaskbarModeChanged() {
+            root.closing = false
+            root.frozenSafeZones = []
+        }
     }
     property var frozenSafeZones: []
     onLiveSafeZonesChanged: if (panelOpen && !closing) frozenSafeZones = liveSafeZones
@@ -66,7 +75,7 @@ PanelWindow {
     WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
-    visible: panelOpen || closing
+    visible: openedAtBottom === ScreenGeometry.bottomAttached && (panelOpen || closing)
     mask: Region {
         Region {
             x: root.safeZone(0).x; y: root.safeZone(0).y
@@ -87,6 +96,7 @@ PanelWindow {
 
     onPanelOpenChanged: {
         if (panelOpen) {
+            openedAtBottom = ScreenGeometry.bottomAttached
             closing = false
             Qt.callLater(function() { keyHandler.forceActiveFocus() })
         } else if (flare.currentHeight > 0) {
@@ -142,7 +152,7 @@ PanelWindow {
 
     MouseArea {
         x: flare.start
-        y: ScreenGeometry.flareTopY
+        y: ScreenGeometry.attachedBodyY(root.modelData.height, height)
         width: Math.max(0, flare.end - flare.start)
         height: Math.min(root.height, flare.currentHeight + Theme.hugRadius)
         onClicked: (mouse) => { mouse.accepted = true }
@@ -150,9 +160,10 @@ PanelWindow {
 
     FlareHost {
         id: flare
-        y: ScreenGeometry.flareTopY
+        attach: ScreenGeometry.bottomAttached ? FlareHost.Bottom : FlareHost.Top
+        y: ScreenGeometry.chromeAttachmentY(root.modelData.height)
         width: root.width
-        height: root.height - ScreenGeometry.flareTopY
+        height: ScreenGeometry.availableAttachedHeight(root.height)
         anchorRect: root.anchorRect
         hostRect: root.hostRect
         shown: root.panelOpen

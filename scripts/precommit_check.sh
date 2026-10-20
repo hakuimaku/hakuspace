@@ -53,6 +53,7 @@ if command -v quickshell >/dev/null 2>&1; then
     bash scripts/test_hikai_resource_refresh.sh
     if command -v labwc >/dev/null 2>&1; then
         bash scripts/test_hikai_dock.sh
+        HAKUSPACE_CHROME_TEST=1 bash scripts/test_hikai_dock.sh
         HAKUSPACE_DOCK_INPUT=1 bash scripts/test_hikai_dock.sh
         HAKUSPACE_DOCK_REORDER=1 bash scripts/test_hikai_dock.sh
         bash scripts/test_hikai_hakumenu.sh
@@ -63,6 +64,8 @@ python3 -m unittest discover -s tests/icon_accent -v
 python3 scripts/test_visual_ecosystem.py
 python3 scripts/test_setting_ctl.py
 python3 scripts/test_hikai_settings_ctl.py
+python3 scripts/test_hikai_chrome_state.py
+python3 scripts/test_hikai_chrome_ctl.py
 python3 scripts/test_hakucfg_hikai.py
 python3 scripts/test_taskbar_pins_ctl.py
 python3 scripts/test_dock_app_ctl.py

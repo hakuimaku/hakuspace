@@ -5,10 +5,11 @@ import "../../services"
 Item {
     id: root
 
+    property bool bottomAttached: false
     property real bodyWidth: 0
     property real bodyHeight: 0
     property real sideInset: ScreenGeometry.leftInset
-    property real attachmentY: ScreenGeometry.flareTopY
+    property real attachmentY: Theme.topBarHeight
     property real bottomFlareReach: Theme.hugRadius
     property real flareRadius: Theme.largeRadius + 8
     property real screenWidth: 1920
@@ -22,7 +23,7 @@ Item {
     // finishes exactly at bodyWidth (staying strictly inside envelope).
     readonly property real bodyEnd: Math.max(0, bodyWidth - flareRadius)
     readonly property real earRadius: flareSurface.earEndRadius
-    readonly property real flareBodyHeight: Math.max(0, bodyHeight - attachmentY - bottomFlareReach)
+    readonly property real flareBodyHeight: Math.max(0, bodyHeight - (bottomAttached ? 0 : attachmentY) - bottomFlareReach)
 
     width: bodyWidth
     height: bodyHeight
@@ -31,6 +32,7 @@ Item {
     // It spans the full envelope width so the right ear attaches smoothly at attachmentY.
     Rectangle {
         id: topBridge
+        visible: !root.bottomAttached
         x: 0
         y: 0
         width: root.bodyWidth
@@ -43,7 +45,7 @@ Item {
     Rectangle {
         id: leftBorderBridge
         x: 0
-        y: 0
+        y: root.bottomAttached ? -root.bodyHeight : 0
         width: root.sideInset
         height: root.bodyHeight
         color: root.surfaceColor
@@ -54,8 +56,9 @@ Item {
     // Anchored at the shared side inset on the left to seamlessly hug the RoundedScreen border.
     Flare.FlareSurface {
         id: flareSurface
+        attach: root.bottomAttached ? Flare.FlareHost.Bottom : Flare.FlareHost.Top
         x: 0
-        y: root.attachmentY
+        y: root.bottomAttached ? 0 : root.attachmentY
         width: root.bodyWidth
         height: Math.max(0, root.bodyHeight - root.attachmentY)
         start: root.sideInset

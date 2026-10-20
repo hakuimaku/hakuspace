@@ -5,6 +5,66 @@
 
 ---
 
+## Independent Taskbar / Dockbar verification (2026-10-20)
+
+```bash
+python3 scripts/test_hikai_settings_ctl.py
+python3 scripts/test_hikai_chrome_ctl.py
+python3 scripts/test_hikai_chrome_state.py
+node scripts/test_screen_geometry.js
+bash scripts/test_hikai_shell.sh
+bash scripts/test_hikai_shell.sh --headless
+HAKUSPACE_CHROME_TEST=1 bash scripts/test_hikai_dock.sh
+HAKUSPACE_CHROME_TEST=1 HAKUSPACE_TEST_SCALE=1.25 bash scripts/test_hikai_dock.sh
+HAKUSPACE_CHROME_TEST=1 HAKUSPACE_TEST_SCALE=1.5 bash scripts/test_hikai_dock.sh
+bash scripts/test_hikai_hakumenu.sh
+```
+
+Latest separation verification (2026-10-20): complete precommit, settings/state
+migration and routing tests, real-input Dockbar/HakuMenu suites, icon refresh,
+TopBar runtime/pixel matrix and the two-output 125% chrome matrix passed. The real
+Git index remained unchanged. Physical compositor/hardware acceptance below is
+still pending.
+
+The chrome harness runs two isolated Labwc outputs. It now also captures the
+Taskbar before/after calendar display and with Navigation open; the runner checks
+rendered pixels for a doubled frame rail and missing bottom fill. Runtime checks
+assert a single frame inset and stable Taskbar window/surface geometry during the
+tooltip animation. It checks all four
+Taskbar/Dockbar requested states, actual maximized-client height (detecting duplicate zones),
+36 px default geometry, physical app centering under crowded workspaces/apps,
+absence of Center/Cava in the bottom lane, calendar tooltip ownership and upward
+placement, HakuMenu presentation/default anchors, Notification Center input bounds,
+top-centered popup layers/DND/history, a real private AppIndicator custom menu/removal,
+native tray fallback coordinates, Navigation handoffs,
+Settings, top-centered OSD, 50% Taskbar HakuMenu height, active-panel topology transfers and shell reload. Set
+`HAKUSPACE_DOCK_ARTIFACT_DIR` to an existing directory to retain screenshots.
+The existing top-layout harness retains its tooltip/frame/ear pixel checks;
+HakuMenu source tests cover the restored top-edge presentation with Dockbar OFF and ON.
+
+`test_hikai_chrome_ctl.py` invokes the shared Waybar facade against stubbed
+process commands. It runs Hikai toggles twice for missing, OFF, ON and malformed
+Classic preferences, then checks Classic stop/start behavior. It never signals
+the user's Waybar process.
+
+The complete precommit run uses local D-Bus/Wayland socket access. In a session
+that exports multiple compositor selectors, isolate unit fixtures with:
+
+```bash
+env -u HYPRLAND_INSTANCE_SIGNATURE -u NIRI_SOCKET -u MANGO_INSTANCE_SIGNATURE scripts/precommit_check.sh
+```
+
+The existing PID-mapping test otherwise inherits the current selector and can
+choose Hyprland while its final fixture supplies Niri data. No PID backend change
+is part of the chrome restructure.
+
+Physical acceptance remains separate: on Hyprland, Niri and MangoWM, test one/two
+monitors, fractional scale, Taskbar OFF/ON, live Taskbar and Dockbar toggles, fullscreen,
+real tray custom menus/native fallback/removal, notifications, Navigation handoffs,
+OSD bursts and shell reload. In Hikai run `waybar_manager.sh --toggle` twice and
+confirm chrome remains; switch Classic and confirm the same shortcut toggles
+Waybar. Do not infer these physical results from headless tests.
+
 ## Native Dock verification (2026-10-19)
 
 ```bash
@@ -54,9 +114,11 @@ outside-drop and external-edit cancellation, autohide leases, crowded edge scrol
 and manual OFF during a gesture. It also checks feedback placement, expiry, backend
 errors and autohide release after removing a stopped pin. Fixture desktop entries
 prevent accidental app launches.
-The regular harness checks maximized client reservation, fixed frame dimensions
-in both Dock styles, full-width gradient geometry, accessory switches, per-output
-autohide zone release/reveal and manual OFF, including nested Niri. It also checks
+The regular harness checks maximized client reservation, physical frame dimensions
+for compact Docks and raised frames above Taskbar, solid square full-width
+surfaces, fixed Taskbar visibility/reservation, accessory switches, per-output compact
+Dock autohide zone release/reveal and manual OFF, including nested Niri. Settings tests
+check independent Dockbar preferences, eleven Quick Actions and separate Theme rows. The suite also checks
 draft/Discard/persistence, external pin edits and malformed JSONC recovery.
 Exact maximized-client heights are checked on Labwc; Niri's tiled fixtures use
 actual frame surface bounds to verify compositor zones.
@@ -225,7 +287,7 @@ pgrep -af 'cava_layer.py'                           # Expected when state=1: one
 cat ~/.local/state/hakuspace/state/desktop_icons_state    # Expected: flips 0/1
 pgrep -af 'desktop_icons.py'                        # Expected when state=1: one Desktop Icons app process
 ```
-Desktop Icons and Cava Underbar are explicitly allowed in Hikai as standalone apps. Taskbar remains a Hikai state-only toggle; it must not start legacy Waybar surfaces. In Hikai, Cava Underbar always operates with dynamic exclusive mode (`--dynamic`).
+Desktop Icons and Cava Underbar are explicitly allowed in Hikai as standalone apps. Taskbar Mode and compact Dockbar use independent native state toggles; neither starts a legacy Waybar surface. In Hikai, Cava Underbar always operates with dynamic exclusive mode (`--dynamic`).
 
 ### 1.3 Autostart and fresh startup
 Log out/in (or reboot) on the `hikai` backend for each WM: the bar appears and `--verify` passes. All four autostart entries must call `session_start.sh --early` (`grep -rn session_start src/home/.config/{hypr,niri,labwc,mango}`). A reboot must preserve the selected backend.
@@ -240,7 +302,7 @@ Log out/in (or reboot) on the `hikai` backend for each WM: the bar appears and `
 ## 2. Live theme and state (M1)
 
 1. **Live theme:** change the accent with `change_theme.sh` (or the Theme menu): hover/selection fills, text, icons, workspace indicators and the MPRIS icon circle change **immediately**, without restarting QS. Bar, tooltip, ordinary idle modules, Picker overlay/card and OSD backgrounds stay opaque `#000000`; Logo and Settings stay accent-filled. Also test changing the font and font size.
-2. **Live state:** `echo 0 > ~/.local/state/hakuspace/state/waybar_manual_state` → the bar hides immediately; `echo 1` → it appears again. With either value of `opaque_theme_state`, the bar and tooltip remain `#000000`.
+2. **Live state:** Hikai chrome stays visible when `waybar_manual_state` changes or `waybar_manager.sh --toggle` runs. Preserve this file for Classic. Hikai surface colors follow Shell appearance preferences independently of `opaque_theme_state`.
 3. **Rounded Screen chassis:** use Shell → Rounded Screen, not source-code constants.
    Test radius/border pairs 0/0, 0/6, 24/0, 24/6 and 20/4; only left/right/bottom
    rails reserve space. Radius 24 with border 0 still rounds corners. Base Radius
@@ -305,7 +367,7 @@ General checks:
 - **Super+R / Launcher:** Routes directly to HakuMenu Drun tab (`DesktopEntries` search & launch).
 - **Large surfaces:** Navigation, Dashboard, Sidebar, Settings stub, HakuMenu (General, Drun, live Theme tab), and Wallpaper carousel are implemented.
 - **Power & Clipboard:** Headless backends (`power_ctl.sh`, `clipboard_ctl.sh`) are complete; native Quickshell UI surfaces are deferred to P4 (P4.2 & P4.3).
-- **Theme-tab parity update:** Hikai now exposes Cava Underbar, Desktop Icons, Taskbar, Niri Animation, wallpaper controls, and the backend switch. Desktop Icons and Cava Underbar run as standalone apps; Taskbar is a state-only toggle until/if a native Hikai surface is implemented. Edge Trigger remains deferred.
+- **Theme-tab parity update:** Hikai now exposes Cava Underbar, Desktop Icons, Taskbar Mode, Dockbar, Niri Animation, wallpaper controls, and the backend switch. Desktop Icons and Cava Underbar run as standalone apps. Taskbar selects the full-width native topology; Dockbar requests the optional compact dock in TopBar mode. The top-edge HakuMenu trigger is restored; the separate generic Edge Trigger app remains deferred.
 - **MangoWM:** workspaces are implemented with `mmsg` events; click, scroll, active/focused semantics, and monitor targeting still need runtime verification.
 - **Labwc:** the workspace module is intentionally hidden because Quickshell 0.3.1 crashes when loading ext-workspace. Hikai itself must start and remain stable.
 
@@ -397,11 +459,11 @@ Record: idle CPU (bar not interacting), CPU while morphing, and whether any fram
 - **Lifecycle:** Opened from Navigation Settings sector; Escape or outside click closes.
 
 ### 9.5 HakuMenu
-- **Presentations:** `topFlare` keeps the existing top trigger and split Top-visual/Overlay-input windows. Dock App Menu toggles `dockFloating`, a bottom-center Overlay card with a narrow input mask, bottom controls and reversible Temp Note motion. Legacy IPC/launcher calls keep `topFlare`.
+- **Presentations:** TopBar edge/default callers use `topFlare`, independent of Dockbar availability. Taskbar source/default callers in Taskbar Mode use `bottomFlare` at 50% output height. Only explicit active Dockbar clicks use `dockFloating`. Real-input tests cover top hover with Dockbar OFF/ON, rejection under Taskbar, defaults, source replacement, captured anchors, fullscreen, Escape and repeated clicks.
 - **Tabs:** Segmented controller with moving `SelectionPill`:
   - **General:** Compact width (38% output width), actions populated from `hm_general.sh`.
   - **Drun:** Standard width (40% output width), `DesktopEntries` model, instant search filtering, keyboard/click launch. Super+R routes here.
-  - **Theme:** Wide layout with a right-hand state rail. Cava Underbar, Desktop Icons, Taskbar, and Auto Random Wallpaper render ON/OFF pills; toggle rows keep HakuMenu open. Niri Animation is available as an action. The backend switch is the final row, has no state pill, and is labeled `Go back to Surface` in Hikai / `Explore the Abyss` in Classic.
+  - **Theme:** Wide layout with a right-hand state rail. Cava Underbar, Desktop Icons, Taskbar Mode, Dockbar, and Auto Random Wallpaper render ON/OFF pills; Dockbar retains its request but is disabled under Taskbar Mode; toggle rows keep HakuMenu open. Niri Animation is available as an action. The backend switch is the final row, has no state pill, and is labeled `Go back to Surface` in Hikai / `Explore the Abyss` in Classic.
 - **Auto-close:** Each presentation uses its own safe-zone geometry and the shared grace controller. Floating zones include the real Dock anchor, handoff corridor and current/final card. Typing retains keyboard lease; pointer movement inside releases it. Outside remains click-through; Escape, App Menu toggle and leaving the zones close the menu.
 
 Run `node scripts/test_hakumenu_geometry.js` and `bash scripts/test_hikai_hakumenu.sh`
@@ -409,8 +471,8 @@ for two isolated outputs (1280×720 and 1024×768), real virtual-keyboard/pointe
 events, legacy trigger/prefix/launch/Escape behavior, floating morph reversal,
 first-frame readiness without disabled-item fading, tab clicks and typing during
 the remaining opening bounce,
-footer placement, stable widths, cross-style/output ownership, fullscreen,
-disabled-Dock fallback and crowded/scrolled icon anchors. `--current` moves input
+footer placement, stable widths, cross-source/output ownership, fullscreen,
+disabled-Dockbar source rejection and TopBar defaults and crowded/scrolled icon anchors. `--current` moves input
 on the current compositor while keeping HOME/state/settings/pins disposable.
 `HAKUSPACE_HAKUMENU_ARTIFACT_DIR` selects an existing directory for screenshots.
 
@@ -431,7 +493,7 @@ on the current compositor while keeping HOME/state/settings/pins disposable.
 - **Performance:** Bounded prefetch window, lazy thumbnail decoding, input coalescing (85 ms), rapid navigation throttle guard (55 ms).
 
 ### 9.7 Shell frame polish & shared geometry
-- **Frame attachment:** TooltipLayer, TrayMenuPanel, NotificationPopup, NotificationCenterPanel, and LevelOsdOverlay consume shared `ScreenGeometry` attachment/bounds and captured screen-local anchors.
+- **Frame attachment:** TooltipLayer, TrayMenuPanel and NotificationCenterPanel follow the active status edge. Level OSD and notification popups always occupy the top center, using separate Top Flare and Overlay windows; Taskbar mode uses physical Y=0 and TopBar mode uses the TopBar seam.
 - **Level OSD:** Compact capsule layout; optical center stays fixed across 0%, 9%, 10%, 99%, 100%.
 - **TopBar recording:** Recording state (`REC` chip + timer) is restricted to right `RecorderGroup`; `CenterState` handles media/OSD only (`8f21ac42`).
 - **Calendar marker:** Current day in Clock calendar and Dashboard calendar has solid `Theme.accent` fill with black `#000000` text and 3–4px breathing room clearance (`604638ea`).

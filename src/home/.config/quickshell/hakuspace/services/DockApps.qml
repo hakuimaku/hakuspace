@@ -49,7 +49,7 @@ QtObject {
     })
     onIconRequestChanged: if (iconWatcher.running) iconWatcher.write(iconRequest + "\n")
     property Process iconWatcher: Process {
-        running: AppState.taskbarManualState
+        running: ChromeLayout.taskbarActive || ChromeLayout.dockbarActive
         stdinEnabled: true
         command: ["sh", "-c",
             'for script in "$1" "$2" "$3"; do if [ -f "$script" ]; then exec python3 -u "$script"; fi; done; exit 127',

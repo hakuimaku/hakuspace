@@ -1,5 +1,6 @@
 pragma Singleton
 import QtQuick
+import Quickshell
 
 QtObject {
     id: root
@@ -18,7 +19,7 @@ QtObject {
     property var notificationPanel: null
     property string hakuMenuMode: "closed"
     property string hakuMenuScreenName: ""
-    // Legacy callers keep the top presentation; Dock callers supply a local anchor.
+    // Retain the source-selected presentation for the current menu lifetime.
     property string hakuMenuStyle: "topFlare"
     property var hakuMenuAnchorRect: null
     property string hakuMenuQuery: ""
@@ -43,6 +44,21 @@ QtObject {
                                                   ? hakuMenuTabLabel + " → " + hakuMenuSelectionLabel
                                                   : hakuMenuTabLabel
 
+
+    // Clear captured transient anchors before transferring status ownership.
+    property Connections chromeConnections: Connections {
+        target: ChromeLayout
+        function onDockbarActiveChanged() {
+            if (!ChromeLayout.dockbarActive && root.hakuMenuStyle === "dockFloating") root.closeHakuMenu()
+        }
+        function onTaskbarModeChanged() {
+            TooltipManager.dismiss()
+            root.closeTrayMenu()
+            root.closeNotifications()
+            root.closeHakuMenu()
+            root.closeNavigation()
+        }
+    }
 
     // Open the note on one output, finishing any previous ownership first.
     function openTempNote(screenName) {
@@ -77,7 +93,7 @@ QtObject {
             return
         navigationScreenName = screenName
         navigationVisualScreenName = screenName
-        navigationAnchorRect = anchorRect || ScreenGeometry.topBarAnchor(Theme.pad, Theme.fontSize * 1.8)
+        navigationAnchorRect = anchorRect || ScreenGeometry.fallbackModuleAnchor(screenName, Theme.pad, Theme.fontSize * 1.8)
         navigationMode = "open"
         activePanel = "navigation"
     }
@@ -131,13 +147,36 @@ QtObject {
             navigationVisualScreenName = ""
     }
 
-    // Opens HakuMenu panel in specified tab mode on the given screen.
-    function openHakuMenu(screenName, mode, style, anchorRect) {
-        hakuMenuStyle = style === "dockFloating" ? "dockFloating" : "topFlare"
-        hakuMenuAnchorRect = hakuMenuStyle === "dockFloating" && anchorRect
+    // Resolve source availability once; hosts never choose a presentation themselves.
+    function resolveHakuMenuPresentation(source) {
+        if (!source || source === "default") return ChromeLayout.defaultHakuMenuPresentation
+        if (source === "edge") return ChromeLayout.topEdgeHakuMenuEnabled ? "topFlare" : ""
+        if (source === "taskbar") return ChromeLayout.taskbarMode ? "bottomFlare" : ""
+        if (source === "dockbar") return ChromeLayout.dockbarActive ? "dockFloating" : ""
+        return ""
+    }
+
+    // Open an available source and capture its real anchor or topology-specific seed.
+    function openHakuMenu(screenName, mode, source, anchorRect) {
+        var presentation = resolveHakuMenuPresentation(source)
+        if (!presentation) return
+        var captured = anchorRect
             && [anchorRect.x, anchorRect.y, anchorRect.width, anchorRect.height].every(Number.isFinite)
             && anchorRect.width > 0 && anchorRect.height > 0
             ? {x: anchorRect.x, y: anchorRect.y, width: anchorRect.width, height: anchorRect.height} : null
+        if (source === "dockbar" && !captured) return
+        hakuMenuStyle = presentation
+        hakuMenuAnchorRect = captured
+        if (!hakuMenuAnchorRect) {
+            for (var output of Quickshell.screens) if (output.name === screenName) {
+                var size = ShellSettingsStore.dockIconSize
+                hakuMenuAnchorRect = presentation === "topFlare"
+                    ? {x: output.width * 0.4, y: 0, width: output.width * 0.2, height: 4}
+                    : {x: (output.width - size) / 2, y: output.height - ScreenGeometry.taskbarHeight + 4,
+                        width: size, height: size}
+                break
+            }
+        }
         hakuMenuScreenName = screenName
         hakuMenuMode = (mode === "drun" || mode === "theme" || mode === "general") ? mode : "general"
         hakuMenuQuery = ""
@@ -145,11 +184,12 @@ QtObject {
         activePanel = "hakumenu"
     }
 
-    // Toggle only matching ownership; other styles or outputs open a new presentation.
-    function toggleHakuMenu(screenName, mode, style, anchorRect) {
-        var nextStyle = style === "dockFloating" ? "dockFloating" : "topFlare"
+    // Toggle matching ownership; a different source presentation replaces the menu.
+    function toggleHakuMenu(screenName, mode, source, anchorRect) {
+        var nextStyle = resolveHakuMenuPresentation(source)
+        if (!nextStyle) return
         if (activePanel === "hakumenu" && hakuMenuScreenName === screenName && hakuMenuStyle === nextStyle) closeHakuMenu()
-        else openHakuMenu(screenName, mode, nextStyle, anchorRect)
+        else openHakuMenu(screenName, mode, source, anchorRect)
     }
 
     // Switches HakuMenu tab mode (general, drun, theme).

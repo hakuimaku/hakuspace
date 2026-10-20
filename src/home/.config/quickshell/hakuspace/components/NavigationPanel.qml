@@ -75,15 +75,13 @@ Item {
     property int selectedIndex: 0
     property int hoveredIndex: -1
 
-    // Morphing active pizza slice indicator angle:
-    // 0 = Dashboard (270°), 1 = Sidebar (150°), 2 = Settings (390° / 30°)
+    // Follow the active region angle for both selected and hovered wedges.
     readonly property int activeTargetIndex: hoveredIndex >= 0 ? hoveredIndex : selectedIndex
     property real morphAngle: 270.0
 
     function updateMorphTarget() {
-        var baseAngles = [270.0, 150.0, 390.0]
-        if (activeTargetIndex < 0 || activeTargetIndex >= baseAngles.length) return
-        var target = baseAngles[activeTargetIndex]
+        if (activeTargetIndex < 0 || activeTargetIndex >= regions.length) return
+        var target = regions[activeTargetIndex].labelAngle
         var diff = (target - morphAngle) % 360.0
         if (diff > 180.0) diff -= 360.0
         else if (diff < -180.0) diff += 360.0
@@ -122,7 +120,15 @@ Item {
     // Navigation lives in one Overlay so exclusive zones cannot move it, while
     // the backing contour aligns to the shared RoundedScreen frame geometry.
     readonly property real sideInset: ScreenGeometry.leftInset
-    readonly property real attachmentY: ScreenGeometry.flareTopY
+    readonly property real attachmentY: ScreenGeometry.chromeAttachmentY(modelData.height)
+    // Map corner-relative Navigation coordinates around the active chrome seam.
+    readonly property real logicalAttachmentY: ScreenGeometry.chromeBarHeight
+    function mapY(logicalY, objectHeight) {
+        return ScreenGeometry.attachedBodyY(modelData.height, objectHeight, logicalY - logicalAttachmentY)
+    }
+    function mappedRect(rect) {
+        return {x: rect.x, y: mapY(rect.y, rect.height), width: rect.width, height: rect.height}
+    }
     readonly property var horizontalBounds: ScreenGeometry.horizontalBounds(modelData.width)
     // Keep the steady-state backing tight around the radial controller.
     readonly property real shellPadding: 4
@@ -136,7 +142,7 @@ Item {
     readonly property real surfaceWidth: Math.max(0, surfaceEnd - surfaceStart)
     readonly property real surfaceHeight: circularShellDiameter + flareExtraBottom
     readonly property real surfaceEnd: Math.min(horizontalBounds.end, circularShellDiameter + flareExtraBottom)
-    readonly property real flareTargetHeight: Math.max(1, surfaceHeight - attachmentY)
+    readonly property real flareTargetHeight: Math.max(1, surfaceHeight - logicalAttachmentY)
     readonly property real flareReach: ScreenGeometry.edgeHugRadius
     readonly property real hoverOverflow: Math.ceil(circleDiameter * 0.12)
     readonly property real controllerX: shellX + shellPadding
@@ -152,7 +158,7 @@ Item {
     readonly property real sidebarBodyPadding: Math.max(10, Theme.pad)
     readonly property real sidebarBodyWidth: Math.max(70, sidebarControlDiameter + sidebarBodyPadding * 2)
     readonly property real sidebarBodyHeight: Math.max(1, Math.min(sidebarSurface.preferredBodyHeight,
-        520, modelData.height - sidebarBodyY - flareReach - 16))
+        520, ScreenGeometry.availableAttachedHeight(modelData.height) + logicalAttachmentY - sidebarBodyY - flareReach - 16))
     readonly property real railHoverOverflow: 6
     readonly property real sidebarBodyX: 0
     readonly property real sidebarBodyY: Math.round(circularShellDiameter * 0.94)
@@ -222,9 +228,12 @@ Item {
             SafeZoneGeometry.horizontalBridge(railVisual, toolVisual, Interaction.safeZoneCorridorWidth),
             modelData.width, modelData.height) : empty
         var dashboard = dashboardVisuallyActive ? SafeZoneGeometry.clampRect(
-            SafeZoneGeometry.inflate(SafeZoneGeometry.rect(0, 0, dashboardVisualWidth,
-                dashboardVisualHeight), margin), modelData.width, modelData.height) : empty
-        return [radial, anchor, bridge, rail, ear, toolBridge, tool, dashboard]
+            SafeZoneGeometry.inflate(SafeZoneGeometry.rect(0,
+                ScreenGeometry.bottomAttached ? dashboardSurface.contentOriginY : 0, dashboardVisualWidth,
+                ScreenGeometry.bottomAttached ? dashboardSurface.currentBodyHeight : dashboardVisualHeight), margin), modelData.width, modelData.height) : empty
+        return [radial, anchor, bridge, rail, ear, toolBridge, tool, dashboard].map(function(rect, index) {
+            return index === 1 || index === 7 ? rect : root.mappedRect(rect)
+        })
     }
     property var frozenSafeZones: []
     onLiveSafeZonesChanged: if (panelOpen && !closing) frozenSafeZones = liveSafeZones
@@ -330,7 +339,7 @@ Item {
 
     function insideSidebarSector(x, y) {
         var lx = x - controllerX
-        var ly = y - controllerY
+        var ly = y - mapY(controllerY, circleDiameter)
         var idx = indexAt(lx, ly, true)
         return idx >= 0 && regions[idx].key === "sidebar"
     }
@@ -356,7 +365,7 @@ Item {
         if (SafeZoneGeometry.contains(safeZone(0), x, y)) {
             // Check if pointer deliberately hovered another sector (Dashboard or Settings)
             var lx = x - root.controllerX
-            var ly = y - root.controllerY
+            var ly = y - root.mapY(root.controllerY, root.circleDiameter)
             var idx = root.indexAt(lx, ly, true)
             if (idx >= 0 && root.regions[idx].key !== "sidebar") {
                 root.selectedIndex = idx
@@ -372,7 +381,7 @@ Item {
 
     // Logo geometry is captured when Navigation opens. Keeping this copy local
     // lets the Flare close back toward the Logo after UiState has already reset.
-    property var capturedAnchorRect: ScreenGeometry.topBarAnchor(Theme.pad, Theme.fontSize * 1.8)
+    property var capturedAnchorRect: ScreenGeometry.barAnchor(modelData.height, Theme.pad, Theme.fontSize * 1.8)
 
     readonly property real anchorStart: Math.max(0,
                                                    Math.min(modelData.width - 1, capturedAnchorRect.x))
@@ -417,7 +426,7 @@ Item {
     readonly property real logoTargetX: controllerX + circleRadius - logoTargetSize / 2
     readonly property real logoTargetY: controllerY + circleRadius - logoTargetSize / 2
     readonly property real logoProxyX: anchorStart + (logoTargetX - anchorStart) * logoMorphProgress
-    readonly property real logoProxyY: anchorY + (logoTargetY - anchorY) * logoMorphProgress
+    readonly property real logoProxyY: anchorY + (mapY(logoTargetY, logoTargetSize) - anchorY) * logoMorphProgress
     readonly property real logoBaseWidth: (panelOpen && !closing) ? capturedAnchorRect.width : returnAnchorSize
     readonly property real logoBaseHeight: (panelOpen && !closing) ? capturedAnchorRect.height : returnAnchorSize
     readonly property real logoProxyWidth: logoBaseWidth
@@ -437,7 +446,7 @@ Item {
         )
     }
     // Sector angles use canvas coordinates: 0° right, 90° down.
-    // Three equal 120° sectors:
+    // Top layout uses three equal 120° sectors, reflected below for Full bar:
     // Sidebar: lower-left (90° -> 210°, center 150°);
     // Dashboard: top (210° -> 330°, center 270°);
     // Settings: lower-right (330° -> 450°, center 30°).
@@ -448,7 +457,13 @@ Item {
           labelAngle: 150, labelRadius: 0.50, offsetX: -4, offsetY: 0 },
         { key: "settings", icon: "", startDeg: 330, endDeg: 450,
           labelAngle: 30, labelRadius: 0.50, offsetX: 0, offsetY: 0 }
-    ]
+    ].map(function(region) {
+        // Reflect sectors, labels and hit targets together without flipping glyphs.
+        if (!ScreenGeometry.bottomAttached) return region
+        var start = normalizeAngle(-region.endDeg)
+        return Object.assign({}, region, {startDeg: start, endDeg: start + 120,
+            labelAngle: normalizeAngle(-region.labelAngle), offsetY: -region.offsetY})
+    })
 
     function normalizeAngle(deg) {
         var a = deg % 360
@@ -571,7 +586,7 @@ Item {
 
     function captureAnchor() {
         capturedAnchorRect = ScreenGeometry.localizeRect(UiState.navigationAnchorRect
-            || ScreenGeometry.topBarAnchor(Theme.pad, Theme.fontSize * 1.8),
+            || ScreenGeometry.barAnchor(modelData.height, Theme.pad, Theme.fontSize * 1.8),
             {x: 0, y: 0, width: modelData.width, height: modelData.height})
     }
 
@@ -579,6 +594,28 @@ Item {
         flareStart = anchorStart
         flareEnd = anchorEnd
         flareHeight = Math.min(anchorBodyHeight, flareTargetHeight)
+    }
+
+    Connections {
+        target: ChromeLayout
+        // Drop an in-flight envelope instead of replaying it at the opposite edge.
+        function onTaskbarModeChanged() {
+            Qt.callLater(function() {
+                if (root.panelOpen) return
+                openMorph.stop()
+                closeMorph.stop()
+                dashboardMorphAnim.stop()
+                root.closing = false
+                root.closingFromDashboard = false
+                root.dashboardMorphProgress = 0
+                root.flareHeight = 0
+                root.closeCollapseProgress = 0
+                root.closeReturnProgress = 0
+                root.closeFlareProgress = 0
+                root.capturedAnchorRect = ScreenGeometry.barAnchor(root.modelData.height, Theme.pad, Theme.fontSize * 1.8)
+                UiState.finishNavigationVisual(root.modelData.name)
+            })
+        }
     }
 
     Component.onDestruction: {
@@ -603,8 +640,7 @@ Item {
             selectedIndex = UiState.navigationMode === "handoff-sidebar" ? 1
                             : UiState.navigationMode === "handoff-settings" ? 2 : 0
             hoveredIndex = -1
-            var initialAngles = [270.0, 150.0, 390.0]
-            morphAngle = initialAngles[selectedIndex]
+            morphAngle = regions[selectedIndex].labelAngle
 
             if (flareHeight <= anchorBodyHeight + 0.5)
                 seedLogoGeometry()
@@ -749,6 +785,7 @@ Item {
 
         Flare.FlareSurface {
             id: navigationFlare
+            attach: ScreenGeometry.bottomAttached ? Flare.FlareHost.Bottom : Flare.FlareHost.Top
             x: 0
             // Align the top-right attachment to RoundedScreen content.
             y: root.attachmentY
@@ -772,7 +809,8 @@ Item {
         }
         Sidebar.SidebarFlareSurface {
             x: root.sidebarBodyX
-            y: root.sidebarBodyY
+            y: root.mapY(root.sidebarBodyY, 0)
+            transform: Scale { yScale: ScreenGeometry.bottomAttached ? -1 : 1 }
             visible: sidebarSurface.visible && (root.panelOpen || root.closing)
             bodyWidth: sidebarSurface.bodyWidth
             currentHeight: sidebarSurface.currentHeight
@@ -879,7 +917,7 @@ Item {
         MouseArea {
             id: bridgeHit
             x: root.bridgeX
-            y: root.bridgeY
+            y: root.mapY(root.bridgeY, root.bridgeHeight)
             width: root.bridgeWidth
             height: root.bridgeHeight
             enabled: root.panelOpen && root.sidebarExpanded && !root.dashboardVisuallyActive
@@ -901,8 +939,9 @@ Item {
         // morph opening/closing animation, and circular option controls.
         Sidebar.SidebarSurface {
             id: sidebarSurface
+            bottomAttached: ScreenGeometry.bottomAttached
             x: root.sidebarBodyX
-            y: root.sidebarBodyY
+            y: root.mapY(root.sidebarBodyY, root.sidebarBodyHeight)
             width: root.sidebarBodyWidth + root.sidebarEarWidth + 4
             height: root.sidebarBodyHeight + root.flareReach
             bodyWidth: root.sidebarBodyWidth
@@ -928,7 +967,7 @@ Item {
             onPointerMoved: (px, py) => {
                 root.hoveredIndex = 1
                 root.selectedIndex = 1
-                root.evaluatePointer(root.sidebarBodyX + px, root.sidebarBodyY + py)
+                root.evaluatePointer(sidebarSurface.x + px, sidebarSurface.y + py)
             }
         }
 
@@ -936,7 +975,7 @@ Item {
         Sidebar.SidebarToolLayer {
             id: sidebarToolLayer
             x: root.sidebarToolX
-            y: root.sidebarToolY
+            y: root.mapY(root.sidebarToolY, sidebarToolLayer.height)
             targetWidth: root.sidebarToolWidth
             targetHeight: root.sidebarToolHeight
             title: root.renderedSidebarTool === "quickActions" ? "Quick Actions"
@@ -961,7 +1000,7 @@ Item {
             onPointerMoved: (px, py) => {
                 root.hoveredIndex = 1
                 root.selectedIndex = 1
-                root.evaluatePointer(root.sidebarToolX + px, root.sidebarToolY + py)
+                root.evaluatePointer(sidebarToolLayer.x + px, sidebarToolLayer.y + py)
             }
         }
 
@@ -1010,7 +1049,9 @@ Item {
             circleRadius: root.circleRadius
             circleDiameter: root.circleDiameter
             sideInset: root.sideInset
-            attachmentY: root.attachmentY
+            attachmentY: root.logicalAttachmentY
+            bottomAttached: ScreenGeometry.bottomAttached
+            attachmentSeam: root.attachmentY
             expanded: root.panelOpen && root.dashboardExpanded && !root.closing
             morphProgress: root.dashboardMorphProgress
             // A full Dashboard -> closed transition reuses the Dashboard ->
@@ -1036,7 +1077,7 @@ Item {
         Rectangle {
             id: circularShell
             x: root.anchorStart + (root.shellX - root.anchorStart) * root.logoMorphProgress
-            y: root.anchorY + (root.shellY - root.anchorY) * root.logoMorphProgress
+            y: root.anchorY + (root.mapY(root.shellY, root.circularShellDiameter) - root.anchorY) * root.logoMorphProgress
             width: root.logoBaseWidth
                    + (root.circularShellDiameter - root.logoBaseWidth) * root.logoMorphProgress
             height: root.logoBaseHeight
@@ -1161,7 +1202,7 @@ Item {
         Item {
             id: controller
             x: root.controllerX
-            y: root.controllerY
+            y: root.mapY(root.controllerY, root.circleDiameter)
             width: root.circleDiameter
             height: root.circleDiameter
             readonly property real radialFadeProgress: Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.30)

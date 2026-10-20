@@ -10,11 +10,11 @@ from pathlib import Path
 
 # Keep runtime state outside this versioned preference schema.
 DEFAULTS = {
-    "version": 5,
+    "version": 6,
     "appearance": {"baseRadius": 12, "surfaceTone": "dark"},
     "roundedScreen": {"radius": 20, "borderThickness": 4},
-    "dock": {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 48,
-             "hoverLift": 14, "hoverScale": 0, "style": "dock", "showTrash": True, "showDevices": True},
+    "dock": {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 36,
+             "hoverLift": 14, "hoverScale": 0, "showTrash": True, "showDevices": True},
     "topbar": dict.fromkeys(("workspaces", "windowTitle", "center", "cava", "tray",
                              "quickControls", "recorder", "clock", "notifications"), True),
 }
@@ -26,7 +26,7 @@ def validate(values, partial=False):
         raise ValueError("expected a shell settings object with known fields")
     if not partial and set(values) != set(DEFAULTS):
         raise ValueError("missing shell settings fields")
-    if "version" in values and (type(values["version"]) is not int or values["version"] != 5):
+    if "version" in values and (type(values["version"]) is not int or values["version"] != 6):
         raise ValueError("unsupported schema version")
     for section in ("appearance", "roundedScreen", "topbar", "dock"):
         if section not in values:
@@ -41,8 +41,6 @@ def validate(values, partial=False):
             if section == "dock":
                 if key == "visibilityMode":
                     valid = type(value) is str and value in ("autohide", "always")
-                elif key == "style":
-                    valid = type(value) is str and value in ("dock", "bar")
                 elif key in ("exclusiveSpace", "showTrash", "showDevices"):
                     valid = type(value) is bool
                 elif key == "iconSize":
@@ -78,7 +76,7 @@ def migrate(values):
         if set(values) != {"version", "appearance", "roundedScreen", "topbar"}:
             raise ValueError("invalid version 2 shell settings")
         values = copy.deepcopy(values)
-        values.update(version=5, dock=copy.deepcopy(DEFAULTS["dock"]))
+        values.update(version=6, dock=copy.deepcopy(DEFAULTS["dock"]))
         return validate(values), True
     if type(original_version) is int and original_version == 3:
         if type(values.get("dock")) is not dict or set(values["dock"]) != {"visibilityMode", "exclusiveSpace", "iconSize"}:
@@ -89,8 +87,14 @@ def migrate(values):
         if type(values.get("dock")) is not dict or set(values["dock"]) != {"visibilityMode", "exclusiveSpace", "iconSize", "hoverLift", "hoverScale"}:
             raise ValueError("invalid legacy Dock settings")
         values = copy.deepcopy(values)
-        values["version"] = 5
-        values["dock"].update(style="dock", showTrash=True, showDevices=True)
+        values["version"] = 6
+        values["dock"].update(showTrash=True, showDevices=True)
+        return validate(values), True
+    if type(original_version) is int and original_version == 5:
+        values = copy.deepcopy(values)
+        if type(values.get("dock")) is not dict or values["dock"].pop("style", None) not in ("dock", "bar"):
+            raise ValueError("invalid version 5 Dock style")
+        values["version"] = 6
         return validate(values), True
     return validate(values), False
 

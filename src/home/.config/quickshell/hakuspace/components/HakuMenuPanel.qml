@@ -9,9 +9,10 @@ Item {
     property string outputName: ""
     Component.onCompleted: outputName = modelData.name
     Component.onDestruction: UiState.closeHakuMenuIfScreen(outputName)
-    // Keep the established top presentation available for triggers and legacy callers.
-    readonly property bool panelOpen: top.panelOpen || floating.panelOpen
-    readonly property real targetMenuWidth: top.targetMenuWidth
+    // Route each presentation through one edge-specific owner.
+    readonly property bool panelOpen: top.panelOpen || bottom.panelOpen || floating.panelOpen
+    readonly property real targetMenuWidth: ChromeLayout.taskbarMode ? bottom.targetMenuWidth : top.targetMenuWidth
     HakuMenu.HakuMenuTopFlare { id: top; modelData: root.modelData }
+    HakuMenu.HakuMenuBottomFlare { id: bottom; modelData: root.modelData }
     HakuMenu.HakuMenuDockFloating { id: floating; modelData: root.modelData }
 }

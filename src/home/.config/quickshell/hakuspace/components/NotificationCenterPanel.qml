@@ -22,6 +22,7 @@ Item {
         && UiState.activePanel === "notifications"
         && panelState !== null && panelState.screenName === modelData.name
     property bool closing: false
+    property bool openedAtBottom: ScreenGeometry.bottomAttached
     readonly property var liveSafeZones: {
         var empty = SafeZoneGeometry.rect(0, 0, 0, 0)
         var anchorVisual = localAnchorRect
@@ -29,16 +30,16 @@ Item {
             anchorEnd: anchorVisual.x + anchorVisual.width, contentW: flare.naturalContentWidth,
             padX: flare.horizontalPadding * 2, minW: 80, maxW: flare.maxWidth,
             bounds: flare.wBounds, snap: 2 * Theme.hugRadius })
-        var current = SafeZoneGeometry.rect(flare.start, ScreenGeometry.flareTopY,
+        var current = ScreenGeometry.attachedBodyRect(height, flare.start,
             Math.max(0, flare.end - flare.start),
             Math.max(flare.currentHeight, flare.naturalContentHeight + flare.verticalPadding * 2) + Theme.hugRadius)
-        var expected = SafeZoneGeometry.rect(target.start, ScreenGeometry.flareTopY,
+        var expected = ScreenGeometry.attachedBodyRect(height, target.start,
             flare.naturalContentWidth > 0 ? target.end - target.start : 0, current.height)
         var bodyVisual = SafeZoneGeometry.unionBounds(current, expected)
         var retained = flare.interactionEnvelope
         if (retained.end > retained.start)
-            bodyVisual = SafeZoneGeometry.unionBounds(bodyVisual, SafeZoneGeometry.rect(
-                retained.start, ScreenGeometry.flareTopY, retained.end - retained.start,
+            bodyVisual = SafeZoneGeometry.unionBounds(bodyVisual, ScreenGeometry.attachedBodyRect(height,
+                retained.start, retained.end - retained.start,
                 retained.height + Theme.hugRadius))
         return [SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(anchorVisual,
                     Interaction.safeZoneAnchorMargin), width, height),
@@ -46,6 +47,14 @@ Item {
                     anchorVisual, bodyVisual, Interaction.safeZoneCorridorWidth), width, height) : empty,
                 bodyVisual.width ? SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(bodyVisual,
                     Interaction.safeZoneMargin), width, height) : empty]
+    }
+    // A topology transfer invalidates every retained anchor and close envelope.
+    Connections {
+        target: ChromeLayout
+        function onTaskbarModeChanged() {
+            root.closing = false
+            root.frozenSafeZones = []
+        }
     }
     property var frozenSafeZones: []
     onLiveSafeZonesChanged: if (panelOpen && !closing) frozenSafeZones = liveSafeZones
@@ -62,6 +71,7 @@ Item {
 
     onPanelOpenChanged: {
         if (panelOpen) {
+            openedAtBottom = ScreenGeometry.bottomAttached
             closing = false
             NotificationStore.hidePopups()
             Qt.callLater(function() { if (root.panelOpen) keyHandler.forceActiveFocus() })
@@ -86,8 +96,9 @@ Item {
         mask: Region {}
 
         FlareSurface {
-            visible: root.panelOpen || root.closing
-            y: ScreenGeometry.flareTopY
+            attach: ScreenGeometry.bottomAttached ? FlareHost.Bottom : FlareHost.Top
+            visible: root.openedAtBottom === ScreenGeometry.bottomAttached && (root.panelOpen || root.closing)
+            y: ScreenGeometry.chromeAttachmentY(root.modelData.height)
             width: visualLayer.width
             height: visualLayer.height - y
             // Only physical screen edges may produce a hugging foot.
@@ -114,7 +125,7 @@ Item {
         exclusiveZone: 0
         color: "transparent"
         implicitWidth: root.width
-        visible: root.panelOpen || root.closing
+        visible: root.openedAtBottom === ScreenGeometry.bottomAttached && (root.panelOpen || root.closing)
         mask: Region {
             Region {
                 x: root.safeZone(0).x; y: root.safeZone(0).y
@@ -136,7 +147,7 @@ Item {
         // The Overlay keeps a rounded body and owns all interaction.
         Rectangle {
             x: flare.start
-            y: ScreenGeometry.flareTopY
+            y: ScreenGeometry.attachedBodyY(root.modelData.height, height)
             width: Math.max(0, flare.end - flare.start)
             height: flare.currentHeight
             topLeftRadius: Theme.hugRadius
@@ -195,15 +206,16 @@ Item {
 
         FlareHost {
             id: flare
-            y: ScreenGeometry.flareTopY
+            attach: ScreenGeometry.bottomAttached ? FlareHost.Bottom : FlareHost.Top
+            y: ScreenGeometry.chromeAttachmentY(root.modelData.height)
             width: root.width
-            height: root.height - ScreenGeometry.flareTopY
+            height: ScreenGeometry.availableAttachedHeight(root.height)
             surfaceColor: "transparent"
             anchorRect: root.panelState ? root.panelState.anchorRect : null
             hostRect: root.hostRect
             shown: root.panelOpen
             content: centerComponent
-            contentProps: ({ maxHeight: Math.max(0, root.modelData.height - ScreenGeometry.flareTopY
+            contentProps: ({ maxHeight: Math.max(0, ScreenGeometry.availableAttachedHeight(root.modelData.height)
                                                   - 48 - Theme.hugRadius),
                              maxWidth: Math.max(0, root.width - 48) })
             contentKey: "notifications"

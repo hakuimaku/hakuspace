@@ -3,18 +3,18 @@ import Quickshell
 import Quickshell.Wayland
 import "../services"
 import "osd" as Osd
+import "bar" as Bar
 
 PanelWindow {
     id: root
     required property var modelData
     screen: modelData
-    anchors { top: true; left: true; right: true }
+    anchors { top: true; bottom: true; left: true; right: true }
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "hakuspace-level-osd"
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
-    implicitHeight: ScreenGeometry.flareTopY + Theme.levelOsdHeight + Theme.largeRadius + 8
     color: "transparent"
     // The overlay is visual only and must not capture pointer input.
     mask: Region {}
@@ -24,10 +24,26 @@ PanelWindow {
     readonly property real spanWidth: Math.min(Theme.levelOsdWidth,
                                                 Math.max(0, screenBounds.end - screenBounds.start - 2 * (Theme.largeRadius + 8)))
     readonly property real spanStart: (width - spanWidth) / 2
+    readonly property real attachmentY: ChromeLayout.topBarMode ? Theme.topBarHeight : 0
+
+    // Taskbar mode keeps the OSD bridge at the physical top, independent of bottom chrome.
+    PanelWindow {
+        screen: root.modelData
+        anchors { top: true; bottom: true; left: true; right: true }
+        WlrLayershell.layer: WlrLayer.Top
+        WlrLayershell.namespace: "hakuspace-level-osd-flare"
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+        exclusionMode: ExclusionMode.Ignore
+        exclusiveZone: 0
+        color: "transparent"
+        visible: ChromeLayout.taskbarMode
+        mask: Region {}
+        Bar.LevelOsdBridge { y: root.attachmentY }
+    }
     Rectangle {
         id: osdBackground
         x: root.spanStart + Theme.gap
-        y: ScreenGeometry.flareTopY + Theme.gap
+        y: root.attachmentY + Theme.gap
         width: Math.max(0, root.spanWidth - Theme.gap * 2)
         height: Math.max(0, Theme.levelOsdHeight * CenterState.osdExpansion - Theme.gap * 2)
         radius: Math.min(Theme.largeRadius + 8, height / 2)

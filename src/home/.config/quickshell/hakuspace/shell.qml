@@ -54,25 +54,25 @@ ShellRoot {
         enabled: true
         function openDefault() {
             if (Quickshell.screens.length > 0)
-                UiState.openNavigation(Quickshell.screens[0].name, ScreenGeometry.topBarAnchor(Theme.pad, Theme.fontSize * 1.8))
+                UiState.openNavigation(Quickshell.screens[0].name, ScreenGeometry.fallbackModuleAnchor(Quickshell.screens[0].name, Theme.pad, Theme.fontSize * 1.8))
         }
         function open(screenName: string) {
             for (var screen of Quickshell.screens) {
                 if (screen.name === screenName) {
-                    UiState.openNavigation(screenName, ScreenGeometry.topBarAnchor(Theme.pad, Theme.fontSize * 1.8))
+                    UiState.openNavigation(screenName, ScreenGeometry.fallbackModuleAnchor(screenName, Theme.pad, Theme.fontSize * 1.8))
                     return
                 }
             }
         }
         function openDashboard() {
             if (Quickshell.screens.length > 0) {
-                UiState.openNavigation(Quickshell.screens[0].name, ScreenGeometry.topBarAnchor(Theme.pad, Theme.fontSize * 1.8))
+                UiState.openNavigation(Quickshell.screens[0].name, ScreenGeometry.fallbackModuleAnchor(Quickshell.screens[0].name, Theme.pad, Theme.fontSize * 1.8))
                 UiState.beginNavigationHandoff("dashboard")
             }
         }
         function toggleDefault() {
             if (Quickshell.screens.length > 0)
-                UiState.toggleNavigation(Quickshell.screens[0].name, ScreenGeometry.topBarAnchor(Theme.pad, Theme.fontSize * 1.8))
+                UiState.toggleNavigation(Quickshell.screens[0].name, ScreenGeometry.fallbackModuleAnchor(Quickshell.screens[0].name, Theme.pad, Theme.fontSize * 1.8))
         }
         function close() { UiState.closeNavigation() }
         function status(): string {
@@ -203,7 +203,7 @@ ShellRoot {
         function toggleCenter() {
             if (!NotificationStore._started || Quickshell.screens.length === 0) return
             var screen = Quickshell.screens[0]
-            UiState.toggleNotifications(screen.name, ScreenGeometry.topBarAnchor(screen.width - Theme.pad - Theme.fontSize * 2,
+            UiState.toggleNotifications(screen.name, ScreenGeometry.barAnchor(screen.height, screen.width - Theme.pad - Theme.fontSize * 2,
                                         Theme.fontSize * 2))
         }
         function closeCenter() {
@@ -234,7 +234,11 @@ ShellRoot {
         TopBar {}
     }
 
-    // Persistent taskbars share pins and running applications across outputs.
+    // Separate hosts reuse the same app content without sharing enable policy.
+    Variants {
+        model: Quickshell.screens
+        Taskbar {}
+    }
     Variants {
         model: Quickshell.screens
         DockBar {}

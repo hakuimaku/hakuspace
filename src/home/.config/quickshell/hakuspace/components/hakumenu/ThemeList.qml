@@ -27,7 +27,8 @@ Item {
         { label: "Change Theme", icon: "", action: "Change Theme", toggle: false, showState: false, stateFile: "", statePath: "", stateKind: "bool" },
         { label: "Cava Underbar", icon: "󰝚", action: "Cava Underbar", toggle: true, showState: true, stateFile: "cava_layer_state", statePath: "", stateKind: "bool" },
         { label: "Desktop Icons", icon: "", action: "Desktop Icons", toggle: true, showState: true, stateFile: "desktop_icons_state", statePath: "", stateKind: "bool" },
-        { label: "Taskbar", icon: "󰐃", action: "Taskbar", toggle: true, showState: true, stateFile: "taskbar_manual_state", statePath: "", stateKind: "bool" },
+        { label: "Taskbar Mode", icon: "󰐃", action: "Taskbar Mode", toggle: true, showState: true, chromeKey: "taskbar" },
+        { label: "Dockbar", icon: "󰧨", action: "Dockbar", toggle: true, showState: true, chromeKey: "dockbar" },
         { label: "Auto Random Wallpaper", icon: "", action: "Auto Random Wallpaper", toggle: true, showState: true, stateFile: "", statePath: "/tmp/random_wallpaper_status", stateKind: "bool" },
         { label: "Change Wallpaper", icon: "󰏜", action: "Change Wallpaper", toggle: false, showState: false, stateFile: "", statePath: "", stateKind: "bool" },
         { label: "Kill Lively Wallpaper", icon: "󱛹", action: "Kill Lively Wallpaper", toggle: false, showState: false, stateFile: "", statePath: "", stateKind: "bool" },
@@ -39,6 +40,12 @@ Item {
         if (item && item.backendSwitch)
             return hikaiBackend ? "Go back to Surface" : "Explore the Abyss"
         return item && item.label ? item.label : ""
+    }
+
+    // Native chrome rows distinguish stored requests from topology availability.
+    function available(item) { return item.chromeKey !== "dockbar" || ChromeLayout.topBarMode }
+    function chromeEnabled(item) {
+        return item.chromeKey === "taskbar" ? AppState.taskbarManualState : AppState.dockbarManualState
     }
 
     function actionFor(item) {
@@ -98,7 +105,7 @@ Item {
     function activateIndex(index) {
         if (index < 0 || index >= visibleItems.length) return
         var item = visibleItems[index]
-        if (!item) return
+        if (!item || !available(item)) return
 
         actionProcess.running = false
         actionProcess.command = [Env.binDir + "/hm_theme.sh", root.actionFor(item)]
@@ -192,24 +199,27 @@ Item {
             width: themeList.width
             height: root.rowHeight
 
-            readonly property bool hasState: modelData.showState === true && modelData.toggle && root.statePathFor(modelData).length > 0
-            readonly property bool stateOn: hasState ? root.parseState(stateView.text(), modelData.stateKind) : false
+            readonly property bool hasState: modelData.showState === true && modelData.toggle && (!!modelData.chromeKey || root.statePathFor(modelData).length > 0)
+            readonly property bool stateOn: modelData.chromeKey ? root.chromeEnabled(modelData)
+                : hasState ? root.parseState(stateView.text(), modelData.stateKind) : false
             readonly property int observedRefreshGeneration: root.refreshGeneration
 
             onObservedRefreshGenerationChanged: {
-                if (hasState) stateView.reload()
+                if (hasState && !modelData.chromeKey) stateView.reload()
             }
 
             FileView {
                 id: stateView
-                path: rowWrap.hasState ? root.statePathFor(rowWrap.modelData) : ""
-                watchChanges: rowWrap.hasState
+                path: rowWrap.hasState && !rowWrap.modelData.chromeKey ? root.statePathFor(rowWrap.modelData) : ""
+                watchChanges: rowWrap.hasState && !rowWrap.modelData.chromeKey
                 printErrors: false
                 onFileChanged: this.reload()
             }
 
             Motion.MorphButton {
                 id: rowButton
+                enabled: root.available(rowWrap.modelData)
+                opacity: enabled ? 1 : 0.45
                 z: 1
                 x: 0
                 width: root.leftColumnWidth
@@ -251,6 +261,7 @@ Item {
                     anchors.rightMargin: Theme.pad * 1.5
                     anchors.verticalCenter: parent.verticalCenter
                     text: rowWrap.modelData.icon + "  " + root.labelFor(rowWrap.modelData)
+                        + (root.available(rowWrap.modelData) ? "" : " · Requires TopBar mode")
                     color: rowButton.foreground
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize + 1
@@ -261,6 +272,8 @@ Item {
 
             Motion.MorphButton {
                 id: stateButton
+                enabled: root.available(rowWrap.modelData)
+                opacity: enabled ? 1 : 0.45
                 z: 1
                 x: root.leftColumnWidth + root.columnGap
                 width: Math.max(0, root.stateColumnWidth - vbar.reservedGutter)

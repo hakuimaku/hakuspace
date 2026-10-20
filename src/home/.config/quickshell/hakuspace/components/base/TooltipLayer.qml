@@ -7,6 +7,7 @@ Item {
     id: root
     readonly property var horizontalBounds: ScreenGeometry.horizontalBounds(width)
     width: parent.width
+    property bool bottomAttached: false
     property real tipAreaHeight: 180
     height: tipAreaHeight
     readonly property real maxTooltipWidth: Math.min(500, Math.max(0, horizontalBounds.end - horizontalBounds.start))
@@ -32,6 +33,7 @@ Item {
     
     FlareHost {
         id: flare
+        attach: root.bottomAttached ? FlareHost.Bottom : FlareHost.Top
         anchors.fill: parent
         anchorItem: root.menuShown ? root.menuAnchor : (TooltipManager.current ? TooltipManager.current.target : null)
         shown: root.menuShown || (TooltipManager.shown && root.visible)

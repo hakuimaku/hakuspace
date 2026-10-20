@@ -61,7 +61,7 @@ A quick VPN switch.
 ### Waybar management
 Waybar keeps the long-standing `waybar_manager.sh` public command, but its responsibilities are now split so Hikai can reuse the control logic without driving a Classic picker.
 
-- **`waybar_manager.sh` (compatibility facade):** preserves the existing startup/keybind CLI (`--cycle`, `--select`, `--reload`, `--toggle`) and the current Hikai policy where only the `top` variant is supported.
+- **`waybar_manager.sh` (compatibility facade):** preserves the existing startup/keybind CLI (`--cycle`, `--select`, `--reload`, `--toggle`) and the Hikai policy where only the `top` variant is supported. Hikai `--toggle` exits successfully without hiding chrome or changing Classic Waybar/Taskbar preferences; Classic still toggles Waybar normally.
 - **`waybar_ctl.sh` (headless backend):** owns mode discovery, current-mode state, symlink changes, Waybar lifecycle, explicit `list/current/set/cycle/toggle/reload/startup` operations, and contains no picker UI.
 - **`waybar_rofi.sh` (Classic frontend):** displays the Classic mode selector and passes the selected mode id to `waybar_ctl.sh set`.
 
@@ -88,3 +88,6 @@ This keeps the desktop-icons `Add Shortcut` integration compatible while exposin
 
 ---
 **Previous:** [System Management](sys.md) | **Next:** [Haku Menu](menu.md)
+
+- **`dockbar_manager.sh`:** controls the independent native compact Dockbar request with `--status`, `--toggle`, `--enable`, and `--disable`. It writes only `dockbar_manual_state` and starts no legacy process. Taskbar Mode suppresses its rendering while preserving this request.
+- **`hikai_chrome_state_ctl.py migrate`:** runs inside `qs_supervisor.sh` before Quickshell starts, for both login and backend switching. It journals the one-time shared-state split and persists shell settings schema v6 without changing Classic Taskbar behavior.

@@ -153,21 +153,19 @@ Item {
                         }
                     }
                 }
-                // Dock controls share the existing draft, Apply and Discard lifecycle.
+                // Shared artwork preferences use the same Apply and Discard lifecycle.
                 Text {
-                    text: "Dock"
+                    text: "App Bar"
                     color: Theme.fg
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize + 3
                     font.weight: Font.DemiBold
                 }
                 Repeater {
-                    model: [{key: "style", label: "Style", labels: ["Dock", "Full bar"], hint: "Use a compact Dock or a full-width gradient taskbar."},
-                        {key: "visibilityMode", label: "Visibility", labels: ["Auto Hide", "Always"], hint: "Reveal at the bottom center or keep the Dock visible."},
-                        {key: "exclusiveSpace", label: "Reserve space", labels: ["Off", "On"], hint: "Reserve space while shown; release it when hidden."},
-                        {key: "showTrash", label: "Trash", labels: ["Hide", "Show"], hint: "Show the Trash shortcut."},
+                    model: [{key: "showTrash", label: "Trash", labels: ["Hide", "Show"], hint: "Show the Trash shortcut."},
                         {key: "showDevices", label: "Mounted devices", labels: ["Hide", "Show"], hint: "Show mounted storage shortcuts."}]
                     delegate: Row {
+                        id: dockSetting
                         required property var modelData
                         width: form.width
                         spacing: Theme.pad
@@ -183,13 +181,9 @@ Item {
                             width: 186
                             labels: modelData.labels
                             available: root.editable
-                            checked: modelData.key === "style" ? ShellSettingsStore.dockStyle === "bar"
-                                : modelData.key === "visibilityMode" ? ShellSettingsStore.dockVisibilityMode === "always"
-                                : ShellSettingsStore.values.dock[modelData.key]
+                            checked: ShellSettingsStore.values.dock[modelData.key]
                             hint: modelData.hint
-                            onToggled: value => ShellSettingsStore.setValue("dock", modelData.key,
-                                modelData.key === "style" ? (value ? "bar" : "dock")
-                                    : modelData.key === "visibilityMode" ? (value ? "always" : "autohide") : value)
+                            onToggled: value => ShellSettingsStore.setValue("dock", modelData.key, value)
                         }
                     }
                 }
@@ -206,7 +200,7 @@ Item {
                     stepSize: 4
                     value: ShellSettingsStore.dockIconSize
                     enabled: root.editable
-                    Accessible.name: "Dock icon size"
+                    Accessible.name: "App bar icon size"
                     onMoved: ShellSettingsStore.setValue("dock", "iconSize", Math.round(value / 4) * 4)
                 }
                 Text {
@@ -221,7 +215,7 @@ Item {
                     to: 48
                     value: ShellSettingsStore.dockHoverLift
                     enabled: root.editable
-                    Accessible.name: "Dock hover lift"
+                    Accessible.name: "App bar hover lift"
                     onMoved: ShellSettingsStore.setValue("dock", "hoverLift", Math.round(value))
                 }
                 Text {
@@ -236,8 +230,49 @@ Item {
                     to: 100
                     value: ShellSettingsStore.dockHoverScale
                     enabled: root.editable
-                    Accessible.name: "Dock hover enlargement"
+                    Accessible.name: "App bar hover enlargement"
                     onMoved: ShellSettingsStore.setValue("dock", "hoverScale", Math.round(value))
+                }
+                Text {
+                    text: "Dockbar"
+                    color: Theme.fg
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize + 3
+                    font.weight: Font.DemiBold
+                }
+                Text {
+                    width: parent.width
+                    text: "Dockbar is available only while Taskbar Mode is off."
+                    wrapMode: Text.Wrap
+                    color: Theme.fgDim
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                }
+                Repeater {
+                    model: [{key: "visibilityMode", label: "Visibility", labels: ["Auto Hide", "Always"]},
+                        {key: "exclusiveSpace", label: "Reserve space", labels: ["Off", "On"]}]
+                    delegate: Row {
+                        required property var modelData
+                        width: form.width
+                        spacing: Theme.pad
+                        Text {
+                            width: Math.max(0, parent.width - 186 - Theme.pad)
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: modelData.label
+                            color: Theme.fg
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize
+                        }
+                        SettingsSegmentedToggle {
+                            width: 186
+                            labels: modelData.labels
+                            available: root.editable
+                            checked: modelData.key === "visibilityMode" ? ShellSettingsStore.dockVisibilityMode === "always"
+                                : ShellSettingsStore.dockExclusiveSpace
+                            onToggled: value => ShellSettingsStore.setValue("dock", modelData.key,
+                                modelData.key === "visibilityMode" ? (value ? "always" : "autohide") : value)
+                        }
+                    }
                 }
                 Text {
                     text: "Top Bar"

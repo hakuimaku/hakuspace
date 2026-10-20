@@ -42,3 +42,13 @@ for (const anchor of [null, {}, {x: -40, y: -10, width: 70, height: 40},
     assert(result.x + result.width <= 300 && result.y + result.height <= 700);
 }
 console.info('ScreenGeometry tests passed');
+
+// Top and bottom use the same positive logical distance without mirroring content.
+for (const height of [0, 1, 53, 240]) {
+    assert.equal(geometry.attachedY(40, height, 12, false), 52);
+    assert.equal(geometry.attachedY(667, height, 12, true) + height, 655);
+}
+// Asymmetric status lanes constrain a physically centered viewport.
+assert.equal(geometry.centerSpan(1280, 320, 900, 8), 504);
+assert.equal(geometry.centerSpan(1280, 700, 900, 8), 0);
+assert.equal(geometry.centerSpan(1280, 10, 600, 8), 0);

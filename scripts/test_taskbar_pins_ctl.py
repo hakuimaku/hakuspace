@@ -116,11 +116,18 @@ class TaskbarPinsTests(unittest.TestCase):
         self.assertEqual(data['group/pin']['modules'], ['image#menu', 'clock', 'image#y', 'image#x', 'image#x.desktop'])
         self.assertEqual(data['image#x'], {'size': 40})
 
+    def test_empty_group_uses_shell_icon_default(self):
+        """A new group receives 36 px without overriding explicit shared sizes."""
+        self.path.write_text('{"group/pin":{"modules":[]}}')
+        self.run_ctl('add', 'fresh-app')
+        document = json.loads(ctl.jsonc_text(self.path.read_text()))
+        self.assertEqual(document['image#fresh-app']['size'], 36)
+
     def test_size_preserves_jsonc_and_new_pins_inherit_it(self):
         """Resize edits touch only size values; future pins keep the same size."""
         original = self.path.read_text()
         self.run_ctl('size', '64')
-        self.assertEqual(self.path.read_text(), original.replace('"size": 40', '"size": 64'))
+        self.assertEqual(self.path.read_text(), original.replace('"size": 36', '"size": 64'))
         inode = self.path.stat().st_ino
         self.run_ctl('size', '64')
         self.assertEqual(self.path.stat().st_ino, inode)

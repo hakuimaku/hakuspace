@@ -10,7 +10,7 @@ Item {
     // Slot geometry remains fixed while the visual icon responds to interaction.
     property string label: ""
     property string icon: "application-x-executable"
-    property int iconSize: 48
+    property int iconSize: ShellSettingsStore.dockIconSize
     property int runningCount: 0
     property bool active: false
     property bool appActions: false

@@ -34,5 +34,13 @@ function localizeRect(anchor, host) {
         height: Math.max(0, Math.min(host.height, anchor.y + anchor.height - host.y) - y)};
 }
 
+// Map logical distances into upright top- or bottom-attached rectangles.
+function attachedY(seam, height, distance, bottom) { return bottom ? seam - distance - height : seam + distance; }
+
+// Keep the taskbar centered between asymmetric status lanes.
+function centerSpan(width, leftEdge, rightEdge, gap) {
+    return Math.max(0, 2 * Math.min(width / 2 - leftEdge - gap, rightEdge - gap - width / 2));
+}
+
 // Expose the pure functions to the repository's Node geometry tests.
-if (typeof module !== "undefined") module.exports = {rect, horizontalBounds, localizeRect, maskRadius};
+if (typeof module !== "undefined") module.exports = {rect, horizontalBounds, localizeRect, maskRadius, attachedY, centerSpan};
