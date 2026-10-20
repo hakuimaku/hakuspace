@@ -27,7 +27,7 @@ Item {
         if (UiState.hakuMenuMode === "theme") return root.screenWidth * 0.42
         return root.screenWidth * 0.40
     }
-    readonly property real menuHeight: root.screenHeight * (bottomAttached ? 0.50 : 0.40)
+    readonly property real menuHeight: root.screenHeight * 0.40
     readonly property real menuTop: bottomAttached ? screenHeight - ScreenGeometry.taskbarHeight : Theme.topBarHeight
     readonly property real bounceHeadroom: menuHeight * HAnimation.hakuMenuBounceHeadroom
     readonly property bool contentReady: isFinite(menu.width) && menu.width > 0
@@ -233,9 +233,7 @@ Item {
 
             HakuMenuContent {
                 id: menu
-                controlsAtBottom: root.bottomAttached
-                anchors.bottom: root.bottomAttached ? parent.bottom : undefined
-                anchors.top: root.bottomAttached ? undefined : parent.top
+                anchors.top: parent.top
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: root.targetMenuWidth
                 height: root.menuHeight

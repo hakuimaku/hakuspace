@@ -145,7 +145,6 @@ PanelWindow {
             sourceComponent: HakuMenuContent {
                 panelOpen: root.panelOpen
                 focusOnOpen: false
-                controlsAtBottom: true
                 mode: root.renderMode
                 query: root.renderQuery
                 onKeyboardActivity: lifetime.beginKeyboardLease()

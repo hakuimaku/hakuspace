@@ -37,7 +37,7 @@ absence of Center/Cava in the bottom lane, calendar tooltip ownership and upward
 placement, HakuMenu presentation/default anchors, Notification Center input bounds,
 top-centered popup layers/DND/history, a real private AppIndicator custom menu/removal,
 native tray fallback coordinates, Navigation handoffs,
-Settings, top-centered OSD, 50% Taskbar HakuMenu height, active-panel topology transfers and shell reload. Set
+Settings, top-centered OSD, 40% Taskbar HakuMenu height and top controls, active-panel topology transfers and shell reload. Set
 `HAKUSPACE_DOCK_ARTIFACT_DIR` to an existing directory to retain screenshots.
 The existing top-layout harness retains its tooltip/frame/ear pixel checks;
 HakuMenu source tests cover the restored top-edge presentation with Dockbar OFF and ON.
@@ -459,10 +459,10 @@ Record: idle CPU (bar not interacting), CPU while morphing, and whether any fram
 - **Lifecycle:** Opened from Navigation Settings sector; Escape or outside click closes.
 
 ### 9.5 HakuMenu
-- **Presentations:** TopBar edge/default callers use `topFlare`, independent of Dockbar availability. Taskbar source/default callers in Taskbar Mode use `bottomFlare` at 50% output height. Only explicit active Dockbar clicks use `dockFloating`. Real-input tests cover top hover with Dockbar OFF/ON, rejection under Taskbar, defaults, source replacement, captured anchors, fullscreen, Escape and repeated clicks.
+- **Presentations:** TopBar edge/default callers use `topFlare`, independent of Dockbar availability. Taskbar source/default callers in Taskbar Mode use `bottomFlare` at 40% output height, with tabs and settings at the top as in Dockbar. Only explicit active Dockbar clicks use `dockFloating`. Real-input tests cover top hover with Dockbar OFF/ON, rejection under Taskbar, defaults, source replacement, captured anchors, fullscreen, Escape and repeated clicks.
 - **Tabs:** Segmented controller with moving `SelectionPill`:
   - **General:** Compact width (38% output width), actions populated from `hm_general.sh`.
-  - **Drun:** Standard width (40% output width), `DesktopEntries` model, instant search filtering, keyboard/click launch. Super+R routes here.
+  - **Drun:** Standard width (40% output width), `DesktopEntries` model, instant search filtering, keyboard/click launch. Super+Space routes here.
   - **Theme:** Wide layout with a right-hand state rail. Cava Underbar, Desktop Icons, Taskbar Mode, Dockbar, and Auto Random Wallpaper render ON/OFF pills; Dockbar retains its request but is disabled under Taskbar Mode; toggle rows keep HakuMenu open. Niri Animation is available as an action. The backend switch is the final row, has no state pill, and is labeled `Go back to Surface` in Hikai / `Explore the Abyss` in Classic.
 - **Auto-close:** Each presentation uses its own safe-zone geometry and the shared grace controller. Floating zones include the real Dock anchor, handoff corridor and current/final card. Typing retains keyboard lease; pointer movement inside releases it. Outside remains click-through; Escape, App Menu toggle and leaving the zones close the menu.
 
@@ -493,7 +493,7 @@ on the current compositor while keeping HOME/state/settings/pins disposable.
 - **Performance:** Bounded prefetch window, lazy thumbnail decoding, input coalescing (85 ms), rapid navigation throttle guard (55 ms).
 
 ### 9.7 Shell frame polish & shared geometry
-- **Frame attachment:** TooltipLayer, TrayMenuPanel and NotificationCenterPanel follow the active status edge. Level OSD and notification popups always occupy the top center, using separate Top Flare and Overlay windows; Taskbar mode uses physical Y=0 and TopBar mode uses the TopBar seam.
+- **Frame attachment:** TooltipLayer, TrayMenuPanel and NotificationCenterPanel follow the active status edge. Level OSD and notification popups always occupy the top center, using separate Top Flare and Overlay windows; Taskbar mode uses the RoundedScreen inner top edge and TopBar mode uses the TopBar seam.
 - **Level OSD:** Compact capsule layout; optical center stays fixed across 0%, 9%, 10%, 99%, 100%.
 - **TopBar recording:** Recording state (`REC` chip + timer) is restricted to right `RecorderGroup`; `CenterState` handles media/OSD only (`8f21ac42`).
 - **Calendar marker:** Current day in Clock calendar and Dashboard calendar has solid `Theme.accent` fill with black `#000000` text and 3–4px breathing room clearance (`604638ea`).

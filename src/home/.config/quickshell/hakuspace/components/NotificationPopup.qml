@@ -12,7 +12,7 @@ Item {
     readonly property int maxVisible: 3
     readonly property real popupWidth: 450
     readonly property real gap: Theme.gap * 2
-    readonly property real topOffset: ChromeLayout.topBarMode ? Theme.topBarHeight : 0
+    readonly property real topOffset: ChromeLayout.topBarMode ? Theme.topBarHeight : ScreenGeometry.topBorderThickness
     readonly property var frameBounds: ScreenGeometry.horizontalBounds(modelData.width)
     readonly property real bodyWidth: Math.max(0, Math.min(popupWidth, frameBounds.end - frameBounds.start))
     readonly property real popupStart: (modelData.width - bodyWidth) / 2

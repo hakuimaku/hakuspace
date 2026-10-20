@@ -251,10 +251,10 @@ ShellRoot {
                 }
                 root.check(UiState.hakuMenuStyle === "bottomFlare" && UiState.hakuMenuMode === "drun" && root.search(),
                     "bottom App Menu opens Drun with search focus: " + root.output.modelData.name + " / " + UiState.hakuMenuScreenName + " / " + UiState.hakuMenuMode)
-                var content = root.find(root.output.menu, function(item) { return item.controlsAtBottom === true && item.panelOpen })
-                root.check(content.controlsAtBottom, "bottom Flare controls stay by the bar")
+                var content = root.find(root.output.menu, function(item) { return item.controlsAtBottom === false && item.panelOpen })
+                root.check(content && !content.controlsAtBottom, "Taskbar Flare controls stay at the top")
                 var attached = root.find(root.output.menu, function(item) { return item.bottomAttached === true && typeof item.menuHeight === "number" })
-                root.check(attached && attached.menuHeight === height / 2, "Taskbar attached menu occupies half the screen height")
+                root.check(attached && attached.menuHeight === height * 0.4, "Taskbar attached menu occupies forty percent of the screen height")
                 root.capture("bottomFlare")
                 root.toggleDock()
             } else if (root.phase === 2) {
@@ -338,7 +338,7 @@ ShellRoot {
                 root.check(root.reversed && root.floating().interactionReady, "mid-close reopen settles")
                 var content = root.find(root.floating(), function(item) { return typeof item.controlsAtBottom === "boolean" })
                 var list = root.find(content, function(item) { return item.objectName === "hakumenu-mainList" })
-                root.check(content.controlsAtBottom && list.y + list.height < content.controlsY, "floating controls sit below the content")
+                root.check(!content.controlsAtBottom && list.y > content.controlsY + content.topRowHeight, "floating controls sit above the content")
                 root.key(105)
             } else if (root.phase === 18) {
                 root.check(UiState.hakuMenuMode === "general" && root.floating().finalRect.width === root.floatingWidth, "General keeps the floating chassis stable")
@@ -353,7 +353,7 @@ ShellRoot {
                     + " width=" + root.floating().finalRect.width + " initial=" + root.floatingWidth + " output=" + width)
                 var content = root.find(root.floating(), function(item) { return typeof item.controlsAtBottom === "boolean" })
                 var state = root.find(content, function(item) { return item.objectName === "hakumenu-stateRegion" })
-                root.check(state.visible && state.y + state.height < content.controlsY, "Theme state column stops above footer")
+                root.check(state.visible && state.y > content.controlsY + content.topRowHeight, "Theme state column starts below the controls")
                 root.capture("dockFloating-theme")
                 root.key(105)
             } else if (root.phase === 21) root.type("dock launch fixture")

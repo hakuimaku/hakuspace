@@ -227,10 +227,10 @@ ShellRoot {
                 UiState.openHakuMenu(output.modelData.name, "drun")
             } else if (phase === 7) {
                 root.check(UiState.hakuMenuStyle === "bottomFlare" && output.menu.panelOpen && !output.dock.hakuMenuDockLease, "Full default HakuMenu is attached")
-                root.check(root.find(output.menu, value => value.controlsAtBottom === true), "bottom menu controls")
+                root.check(root.find(output.menu, value => value.controlsAtBottom === false), "Taskbar menu controls stay at the top")
                 var attachedMenu = root.find(output.menu, value => value.bottomAttached === true && typeof value.menuHeight === "number")
-                root.check(attachedMenu && attachedMenu.menuHeight === output.modelData.height * 0.5,
-                    "Taskbar HakuMenu uses half the output height")
+                root.check(attachedMenu && attachedMenu.menuHeight === output.modelData.height * 0.4,
+                    "Taskbar HakuMenu uses forty percent of the output height")
                 root.screenshot("unified-hakumenu")
                 AppState.dockbarManualState = true
                 AppState.taskbarManualState = false
@@ -310,8 +310,8 @@ ShellRoot {
                 var visual = output.osd.data.find(value => value.contentItem)
                 var bridge = root.module(visual, "LevelOsdBridge")
                 root.check(visual && visual.visible && bridge && bridge.attach === Flare.FlareHost.Top
-                    && bridge.y === 0 && bridge.currentHeight > 0 && output.osd.attachmentY === 0,
-                    "Taskbar OSD keeps its Top Flare and Overlay at the physical top")
+                    && bridge.y === ScreenGeometry.topBorderThickness && bridge.currentHeight > 0 && output.osd.attachmentY === ScreenGeometry.topBorderThickness,
+                    "Taskbar OSD attaches its Top Flare and Overlay to the rounded frame")
                 root.screenshot("taskbar-top-osd")
                 AppState.taskbarManualState = false
             } else if (phase === 16) {
@@ -337,7 +337,7 @@ ShellRoot {
                 AppState.taskbarManualState = true
             } else if (phase === 19) {
                 var body = root.find(output.popup, value => value.clip && value.radius === Theme.largeRadius + 4 && value.width > 400)
-                root.check(body && body.y === 0 && output.popup.topOffset === 0, "Taskbar popups reveal from the physical top")
+                root.check(body && body.y === ScreenGeometry.topBorderThickness && output.popup.topOffset === ScreenGeometry.topBorderThickness, "Taskbar popups reveal from the rounded frame")
                 var windows = output.popup.data.filter(value => value.contentItem)
                 var visual = windows.find(value => value.anchors.left && value.anchors.right)
                 var overlay = windows.find(value => !value.anchors.left && !value.anchors.right)

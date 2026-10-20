@@ -24,9 +24,9 @@ PanelWindow {
     readonly property real spanWidth: Math.min(Theme.levelOsdWidth,
                                                 Math.max(0, screenBounds.end - screenBounds.start - 2 * (Theme.largeRadius + 8)))
     readonly property real spanStart: (width - spanWidth) / 2
-    readonly property real attachmentY: ChromeLayout.topBarMode ? Theme.topBarHeight : 0
+    readonly property real attachmentY: ChromeLayout.topBarMode ? Theme.topBarHeight : ScreenGeometry.topBorderThickness
 
-    // Taskbar mode keeps the OSD bridge at the physical top, independent of bottom chrome.
+    // Attach the Taskbar OSD bridge to the rounded frame’s inner top edge.
     PanelWindow {
         screen: root.modelData
         anchors { top: true; bottom: true; left: true; right: true }

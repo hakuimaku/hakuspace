@@ -16,15 +16,17 @@ the TopBar pixel matrix retains its existing expectations.
 ## Top OSD and notification placement (2026-10-20)
 
 Level OSD and notification popups remain centered at the top in both chrome
-modes: physical output top in Taskbar mode, below TopBar in TopBar mode.
+modes: the RoundedScreen inner top edge in Taskbar mode, below TopBar in TopBar mode.
 Taskbar no longer owns an OSD bridge; the dedicated Top surface supplies it.
 Notifications reveal downward with a complete Top Flare and Overlay pair.
-The attached Taskbar HakuMenu uses 50% of output height; the top menu retains 40%.
+The attached Taskbar HakuMenu uses 40% of output height, matching the top menu.
+Taskbar and Dockbar menus keep their tabs and settings row above the content.
 
-Verification passed: complete precommit, TopBar runtime/pixel matrix and Taskbar
-geometry/render checks at 100% and 125%. Captured OSD, notification and HakuMenu
-surfaces were visually inspected. The live shell was reloaded. Physical
-multi-monitor behavior and hardware OSD keys were not exercised in this check.
+Verification passed: QML syntax, HakuMenu geometry and pointer/keyboard checks,
+and Taskbar geometry/render checks at 100% and 125%. Captured OSD, notification
+and HakuMenu surfaces were visually inspected. One 100% pixel capture caught
+Navigation edge antialiasing; the repeat passed. Physical multi-monitor behavior
+and hardware OSD keys were not exercised in this check.
 
 ## Taskbar layer correction (2026-10-20)
 

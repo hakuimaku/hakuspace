@@ -56,7 +56,7 @@ reservations. RoundedScreen terminates above Taskbar and returns to the physical
 bottom in TopBar mode, regardless of Dockbar presence. Tooltip, tray, Notification Center,
 Navigation, Dashboard, Sidebar and Settings motion follow Taskbar vs TopBar attachment.
 Level OSD and notification popups always use the top center, below TopBar when it
-exists and at the physical top in Taskbar Mode. They retain Top Flare visuals and
+exists and at the inner top edge of RoundedScreen in Taskbar Mode. They retain Top Flare visuals and
 Overlay content. Only background Flare geometry reflects; content stays upright.
 
 The supervisor runs `hikai_chrome_state_ctl.py migrate` before every Quickshell start,
@@ -390,9 +390,9 @@ Motion is carousel movement around one `selectedIndex`, not a dual-front mask re
 
 The new P3 mockups do not cancel these established style directions:
 
-- **Notification popup:** borderless, always horizontally centered at the top. A full-height Top Flare and a centered rounded Overlay share the revealed stack; no generic card stroke. TopBar mode attaches below TopBar; Taskbar mode attaches at physical Y=0.
+- **Notification popup:** borderless, always horizontally centered at the top. A full-height Top Flare and a centered rounded Overlay share the revealed stack; no generic card stroke. TopBar mode attaches below TopBar; Taskbar mode attaches at the inner top edge of RoundedScreen.
 - **Notification Center:** non-modal right-side shell surface, wider spacing, taller history viewport, `Clear` uses accent fill + black text; hover may grow label without changing allocated geometry.
-- **Level OSD:** compact, always at the top center, fixed percentage slot, same layout for volume/brightness. It attaches below TopBar when present and at physical Y=0 in Taskbar mode, with Top Flare and Overlay content. Treat icon + level track + percentage as one optically centered group; do not let asymmetric slots bias the content to one side.
+- **Level OSD:** compact, always at the top center, fixed percentage slot, same layout for volume/brightness. It attaches below TopBar when present and at the inner top edge of RoundedScreen in Taskbar mode, with Top Flare and Overlay content. Treat icon + level track + percentage as one optically centered group; do not let asymmetric slots bias the content to one side.
 ### 1.11 Shared Action Layer (ActionMenu)
 
 Shared modal action menu host replacing standalone Rofi dialogs in Hikai:
@@ -513,7 +513,7 @@ HakuMenu shell-open motion remains a separate profile: ordinary controls must no
 - **Dashboard:** avatar + four mockup-defined cards; reserved empty space stays empty.
 - **Sidebar:** left-attached rounded lobe with circular options; immediate hover handoff from Navigation.
 - **Settings:** large centered stub only; no settings framework in P3.
-- **HakuMenu:** three source-resolved presentations share `HakuMenuContent`. TopBar mode enables a centered 4 px × 20% top-edge hover trigger, with or without Dockbar. Edge/default callers use `topFlare`; Taskbar/default callers in Taskbar Mode use `bottomFlare`; explicit active Dockbar clicks use `dockFloating` with a real icon anchor and owner lease. Attached presentations share `HakuMenuAttachedFlare`, preserving split Top visual/Overlay input, focus, safe zones and tab motion. Taskbar menus remain physically centered despite off-center App Menu icons and use 50% of the output height; top-attached menus retain 40%. Only one logical menu owns focus at a time.
+- **HakuMenu:** three source-resolved presentations share `HakuMenuContent`. TopBar mode enables a centered 4 px × 20% top-edge hover trigger, with or without Dockbar. Edge/default callers use `topFlare`; Taskbar/default callers in Taskbar Mode use `bottomFlare`; explicit active Dockbar clicks use `dockFloating` with a real icon anchor and owner lease. Attached presentations share `HakuMenuAttachedFlare`, preserving split Top visual/Overlay input, focus, safe zones and tab motion. Taskbar menus remain physically centered despite off-center App Menu icons and use 40% of the output height, matching top-attached menus; Taskbar and Dockbar menus keep their tabs and settings row at the top. Only one logical menu owns focus at a time.
 - **Wallpaper:** centered selected item with stacked side carousel; no large background panel and no dual-front reveal.
 - **Notification popup:** native P2 model, always top-centered, with complete Top Flare and Overlay surfaces and a downward reveal in both shell modes.
 - **Notification Center:** native P2 behavior, P3 spacing/height/primary-Clear polish.
