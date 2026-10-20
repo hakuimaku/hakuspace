@@ -204,7 +204,7 @@ Item {
                         compact: true
                         width: popupStack.width
                         cardRadius: 0
-                        cardPadding: 12
+                        cardPadding: 20
                         showBorder: false
                         color: "transparent"
                     }
