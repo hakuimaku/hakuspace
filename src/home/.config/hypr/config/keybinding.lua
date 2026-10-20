@@ -20,6 +20,7 @@ hl.bind(mainMod .. " + E", hl.dsp.exec_cmd("xdg-open $HOME"))
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("$HOME/.local/bin/launcher.sh drun"))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("$HOME/.local/bin/open_browser.sh"))
 hl.bind(mainMod .. " + SLASH", hl.dsp.exec_cmd("$HOME/.local/bin/launcher.sh emoji"))
+hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("$HOME/.local/bin/temp_note.sh"))
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("$HOME/.local/bin/notif.sh toggle"))
 hl.bind(mainMod .. " + ESCAPE", hl.dsp.exec_cmd("$HOME/.local/bin/haku_backend.sh set classic"))
 

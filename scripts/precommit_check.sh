@@ -66,6 +66,7 @@ python3 scripts/test_setting_ctl.py
 python3 scripts/test_hikai_settings_ctl.py
 python3 scripts/test_hikai_chrome_state.py
 python3 scripts/test_hikai_chrome_ctl.py
+python3 -m unittest discover -s tests/tempnote -p test_temp_note_shortcut.py -v
 python3 scripts/test_hakucfg_hikai.py
 python3 scripts/test_taskbar_pins_ctl.py
 python3 scripts/test_dock_app_ctl.py

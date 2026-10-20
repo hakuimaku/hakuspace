@@ -189,6 +189,16 @@ ShellRoot {
         }
     }
 
+    // Toggle only the floating note, independently of Navigation and Sidebar.
+    IpcHandler {
+        target: "tempNote"
+        function toggle() {
+            if (UiState.tempNoteOpen) UiState.closeTempNote()
+            else if (Quickshell.screens.length > 0)
+                UiState.openTempNote(Quickshell.screens[0].name)
+        }
+    }
+
     IpcHandler {
         target: "launcher"
         enabled: true

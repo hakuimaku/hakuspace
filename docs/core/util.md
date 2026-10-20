@@ -91,3 +91,7 @@ This keeps the desktop-icons `Add Shortcut` integration compatible while exposin
 
 - **`dockbar_manager.sh`:** controls the independent native compact Dockbar request with `--status`, `--toggle`, `--enable`, and `--disable`. It writes only `dockbar_manual_state` and starts no legacy process. Taskbar Mode suppresses its rendering while preserving this request.
 - **`hikai_chrome_state_ctl.py migrate`:** runs inside `qs_supervisor.sh` before Quickshell starts, for both login and backend switching. It journals the one-time shared-state split and persists shell settings schema v6 without changing Classic Taskbar behavior.
+
+### Temp Note shortcut
+
+`SUPER + R` runs `temp_note.sh` to open or close only the floating Temp Note in Hikai, in both Topbar and Taskbar modes. It opens without taking editor focus, preserves the current Navigation/Sidebar state, and closes an already open note even when another output owns it. From the selected Temp Note button in Sidebar, Right transfers focus into the editor; Escape or pointer exit can still dismiss Sidebar. In Classic mode, it sends an unsupported notification through `notify-send`.
