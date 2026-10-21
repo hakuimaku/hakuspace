@@ -23,17 +23,17 @@ Classic:
 
 Hikai:
     facade/record.sh
-        -> Quickshell IPC actionMenu record  # native shared Action Layer
+        -> selected shell frontend         # collect recording choices
         -> backend/media/record_ctl.sh       # explicit headless operations
 ```
 
-The facade keeps the long-standing public basename used by keybinds, startup files, user configuration and other HakuSpace components. Frontends collect human input and translate it into explicit backend calls. Backends own state queries and mutations and must remain UI-free.
+The facade keeps the long-standing public basename used by keybinds, startup files, user configuration and other HakuSpace components. Frontends collect human input and translate it into explicit backend calls. Backends own state queries and mutations and must remain UI-free. See [Hikai](../../docs/hikai.md) for shell architecture.
 
 ## Directory taxonomy
 
 ### `backend/`
 
-Headless, machine-callable domain logic. These scripts must not open Rofi, call `haku_pick.sh`, launch a Quickshell picker, or interpret human-facing menu labels as commands.
+Headless, machine-callable domain logic. These scripts must not open Rofi, call `haku_pick.sh`, launch a picker, or interpret human-facing menu labels as commands.
 
 Current domains include:
 
@@ -76,20 +76,20 @@ gen_shortcut.sh
 
 A facade may route no-argument Classic behavior to `frontend/classic/` while exposing explicit headless subcommands through `backend/`.
 
-Two older public routing entrypoints, `util/launcher.sh` and `menu/hakumenu.sh`, remain at their historical source paths for this refactor, but they are facade-equivalent and UI-free. Their Classic Rofi presentation now lives in `frontend/classic/launcher_rofi.sh` and `frontend/classic/hakumenu_rofi.sh`. Their deployed public basenames remain unchanged.
+The public routing entrypoints `util/launcher.sh` and `menu/hakumenu.sh` are facade-equivalent and UI-free. Their Classic Rofi adapters live in `frontend/classic/launcher_rofi.sh` and `frontend/classic/hakumenu_rofi.sh`. Source locations do not change their deployed public basenames.
 
 ### Existing functional directories
 
 Not every existing script needs to be forced into the three-layer pattern. Families that are already cohesive remain in their established locations:
 
-- `lib/` — shared sourced helpers such as `haku_theme.sh`, `haku_backend_lib.sh` and `haku_pick.sh`.
-- `app/` — standalone application/runtime components such as desktop icons, edge trigger, rounded screen and Cava layer.
-- `menu/` — HakuMenu providers and routing scripts.
-- `sys/` — cohesive system/runtime helpers that are not migrated compatibility facades.
-- `theme/` — cohesive render/apply helpers such as style generation and wallpaper resume/set support.
-- `util/` — cohesive general utilities that do not need a frontend/backend split.
+- `lib/` - shared sourced helpers such as `haku_theme.sh`, `haku_backend_lib.sh` and `haku_pick.sh`.
+- `app/` - standalone application/runtime components such as desktop icons, edge trigger, rounded screen and Cava layer.
+- `menu/` - HakuMenu providers and routing scripts.
+- `sys/` - cohesive system/runtime helpers that are not migrated compatibility facades.
+- `theme/` - cohesive render/apply helpers such as style generation and wallpaper resume/set support.
+- `util/` - cohesive general utilities that do not need a frontend/backend split.
 
-`haku_pick.sh` remains a frontend service in `lib/`: it routes selection to Classic Rofi or Hikai picker IPC. It must not be called from `backend/`.
+`haku_pick.sh` remains a frontend service in `lib/`: it routes selection through the active shell frontend. It must not be called from `backend/`.
 
 ## Flattened deployment
 

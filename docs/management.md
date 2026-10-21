@@ -86,7 +86,7 @@ Stores generated style variables, themes, and runtime tokens.
 
 ## 5. Manual / Modular Workflow
 
-You never need to copy-paste commands out of `install.sh` to configure a customized setup. You can run individual modules independently (for the complete step-by-step installation and Quickshell-only flows, see the [Installation Guide in README.md](../README.md#method-2--manual--modular-installation)):
+You never need to copy-paste commands out of `install.sh` to configure a customized setup. You can run individual modules independently (for the complete step-by-step installation and Quickshell-only flows, see the [Installation Guide in README.md](../README.md#method-2---manual--modular-installation)):
 
 ### Install Packages
 ```bash

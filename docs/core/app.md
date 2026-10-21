@@ -13,7 +13,7 @@ Currently, the following mini-apps are available:
 
 ## The Taskbar (`src/core/app/taskbar`)
 
-The Taskbar is a Windows-style taskbar that sits at the bottom of your screen. Interestingly, it is not a standalone program! Under the hood, it is actually a highly customized, secondary instance of **Waybar** running a specific configuration (`~/.config/waybar/taskbar/config`). 
+The Classic Taskbar is a secondary instance of **Waybar** running a specific configuration (`~/.config/waybar/taskbar/config`).
 
 Because it runs independently from your main top status bar, it has its own dedicated management system.
 
@@ -24,7 +24,7 @@ The public command remains `taskbar_manager.sh`, so existing keybinds, startup f
 - **`taskbar_ctl.sh` (headless backend):** owns Taskbar state, Waybar lifecycle, app-name format mutation, and explicit icon-size get/set operations. It never opens Rofi or another picker.
 - **`taskbar_rofi.sh` (Classic frontend):** owns the Rofi icon-size prompt only, then passes the chosen numeric value to `taskbar_ctl.sh`.
 
-State still lives under `~/.local/state/hakuspace/`: `taskbar_manual_state` controls whether the Taskbar is enabled across sessions, while the generated `taskbar-theme` holds Waybar Taskbar presentation settings. In Classic, the controller manages the Waybar taskbar process as before. In Hikai, `--toggle` is intentionally **state-only**: it flips `taskbar_manual_state` without starting Waybar or requiring the Waybar runtime. This lets the native HakuMenu expose a safe ON/OFF control while the native Hikai taskbar surface remains a separate concern.
+State lives under `~/.local/state/hakuspace/`: `taskbar_manual_state` stores the persistent request, while the generated `taskbar-theme` holds Waybar Taskbar presentation settings. In Classic, the controller manages the Waybar taskbar process. In Hikai, `--toggle` updates the request without starting Waybar or requiring its runtime. See [Hikai](../hikai.md) for shell architecture.
 
 ### `taskbar_geticon.sh` (The Icon Fetcher)
 The Taskbar needs to display the correct icons for your pinned applications.
@@ -51,7 +51,7 @@ This is a surprisingly powerful Python application built on top of `GtkLayerShel
 ### `desktop_icons_manager.sh` (The Launcher)
 Just like the Taskbar, the Desktop Icons app has its own manager script that links to the Haku Menu.
 - **What it does:** It tracks the ON/OFF state of the desktop icons in `~/.local/state/hakuspace/state/desktop_icons_state`.
-- **Classic + Hikai:** Desktop Icons is a standalone Wayland app, not a Waybar-only feature, so it can run under both backends. Hikai no longer blocks the manager; enabling the Hikai Theme-tab toggle launches the existing `desktop_icons.py` app.
+- **Shell independence:** Desktop Icons is a standalone Wayland app. Its manager owns the process lifecycle regardless of the selected shell mode.
 - **Usage:** You can use `--toggle` to instantly show or hide all your icons, `--reload` to refresh the grid (useful if you just pasted a new file via the terminal), or `--startup` to automatically launch the python engine when you log in.
 
 ### Configuration
@@ -97,11 +97,7 @@ To improve the user experience, edge-triggered menus automatically close when th
 - Using `cairo` input shapes, the guard window has a "hole" cut out corresponding to the active menu's safe zone.
 - As long as the mouse stays inside the menu's area (the hole), clicks pass through normally. The moment the mouse moves out and touches the guard window, the script automatically sends a termination command (e.g., `pkill -x rofi` or `notif.sh close`) and destroys the guard window.
 
-**Current Safe Zones:**
-- **Top (`hakumenu.sh`):** Upper 60% of the screen.
-- **Bottom (`wallpaper_select.sh`):** Lower 60% of the screen.
-- **Left (`shutdown.sh`):** Leftmost 15% of the screen.
-- **Right (`notif.sh toggle`):** Notification Center for the active Hikai/Classic backend (rightmost 40% of the screen).
+Safe zones belong to this standalone app's guard logic; they do not define the geometry of the UI opened by its commands. Check its configuration and source for trigger bindings and guard bounds.
 
 ### `edge_trigger_manager.sh` (The Controller)
 Manages the lifecycle of the Edge Trigger overlay.
@@ -131,8 +127,8 @@ Because the Python script acts as a background daemon, it needs a manager to han
 
 **Developer Note on CLI conventions:** Be aware that unlike other manager scripts in HakuSpace which primarily use long flags (e.g., `--toggle`, `--reload`), `cava_manager.sh` utilizes positional sub-commands (`start`, `stop`, `toggle`, `reload`) mixed with flags (e.g., `-t`/`--top`, `-d`/`--toggle-dynamic`).
 
-- **Toggling:** You can use `cava_manager.sh toggle` (which is mapped in the Haku Menu's Theme tab). Both Classic and Hikai modes spawn or stop the standalone Cava layer process, and Hikai synchronizes the toggle state with `~/.local/state/hakuspace/state/cava_layer_state` so the HakuMenu Theme tab reflects the active state.
-- **Top Mode & Dynamic Mode:** You can use `cava_manager.sh --top` to toggle the top layer mode, or `--toggle-dynamic` to toggle Dynamic Mode (which adapts to other panels' exclusive zones). The manager saves these settings in `cava_top_state` and `cava_dynamic_state`. Note that under Hikai mode, Dynamic Exclusive mode (`--dynamic`) is **always enabled** by default to seamlessly respect Quickshell's TopBar exclusive zone without overlapping.
+- **Toggling:** `cava_manager.sh toggle` starts or stops the standalone Cava layer process and persists the request in `~/.local/state/hakuspace/state/cava_layer_state`.
+- **Top Mode & Dynamic Mode:** `cava_manager.sh --top` toggles the top layer mode, and `--toggle-dynamic` toggles Dynamic Mode, which adapts to other panels' exclusive zones. The manager saves these settings in `cava_top_state` and `cava_dynamic_state`. In Hikai, Dynamic Mode stays enabled and `--toggle-dynamic` returns success without changing the saved preference.
 - **Live Reloading:** When you change your system's accent color (via `theme_ctl.sh set-accent`), you don't want the audio visualizer to stutter, drop frames, or restart. Calling `cava_manager.sh reload` sends a specific UNIX signal (`SIGUSR1`) to the Python daemon. The script intercepts this signal, re-reads the Kitty configuration, and instantly updates the visualizer's colors on the fly without ever interrupting the live audio stream!
 
 

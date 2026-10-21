@@ -37,7 +37,7 @@ hakuspace (root)
 
 HakuSpace hiện có 2 chế độ giao diện (shell) để bạn đổi qua lại bất cứ lúc nào mà vẫn giữ nguyên màu sắc và thiết lập cá nhân:
 
-- **Hikai (Quickshell):** Giao diện mới toanh được viết bằng Quickshell (`src/home/.config/quickshell/hakuspace`). Một mình nó cân hết từ Top Bar, Dashboard, Sidebar, Notification Center, Haku Menu, chọn hình nền, OSD cho tới cả bảng Settings & trình sửa config trực tiếp.
+- **Hikai (Quickshell):** Chế độ shell của HakuSpace dựa trên Quickshell. Xem [Hikai](hikai.md) để hiểu kiến trúc và các nguyên tắc tổ chức.
 - **Classic (Waybar + Rofi + SwayNC):** Bộ giao diện truyền thống đời đầu của HakuSpace. Vẫn được giữ nguyên để bạn đổi gió hoặc quay về bất cứ khi nào cần (chỉ cần bấm phím khẩn cấp `SUPER + ESCAPE` hoặc chạy `haku_backend.sh --toggle`).
 
 Để hai giao diện này xài chung tính năng mà không phải viết lại code hai lần, đống script trong `src/core/` được chia làm 3 lớp gọn gàng (dù lúc cài ra máy thì tất cả đều nằm chung trong `~/.local/bin`):

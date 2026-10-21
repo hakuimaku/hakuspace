@@ -86,7 +86,7 @@ Chứa style động, theme và cache runtime.
 
 ## 5. Hướng dẫn sử dụng thủ công (Manual Workflow)
 
-Bạn không bao giờ cần phải mở `install.sh` để copy từng dòng lệnh. Bạn có thể sử dụng các module độc lập một cách tiện lợi (xem hướng dẫn cài đặt từng bước đầy đủ tại [Installation Guide trong README.md](../../README.md#method-2--manual--modular-installation)):
+Bạn không bao giờ cần phải mở `install.sh` để copy từng dòng lệnh. Bạn có thể sử dụng các module độc lập một cách tiện lợi (xem hướng dẫn cài đặt từng bước đầy đủ tại [Installation Guide trong README.md](../../README.md#method-2---manual--modular-installation)):
 
 ### Cài đặt Packages
 ```bash

@@ -1,6 +1,6 @@
 # The Core Libraries (src/core/lib)
 
-The `src/core/lib/` directory is the foundational layer of HakuSpace. Unlike the utilities or menu scripts that you trigger directly, the files in this folder are **libraries**—they are designed to be sourced (included) by other scripts to share common functions, variables, and state management.
+The `src/core/lib/` directory is the foundational layer of HakuSpace. Unlike the utilities or menu scripts that you trigger directly, the files in this folder are **libraries** - they are designed to be sourced (included) by other scripts to share common functions, variables, and state management.
 
 Think of them as the glue that holds the various pieces of the theming engine and window manager integrations together.
 
@@ -31,12 +31,12 @@ While `haku_theme.sh` tracks dynamic runtime state (like the current wallpaper's
 ### `haku_backend_lib.sh` (The Shell Switchboard)
 Because HakuSpace lets you switch between **Classic** (Waybar/Rofi/SwayNC) and **Hikai** (Quickshell), scripts need an easy way to know which shell is currently active.
 - **What it does:** Reads and manages the `~/.local/state/hakuspace/state/shell_backend` file, and provides simple helper functions like `haku_backend_get()`, `haku_qs_mode()`, and `haku_qs_alive()`.
-- **Talking to Quickshell:** It also provides `haku_qs_ipc`, a handy wrapper around `qs -c hakuspace ipc call` that lets bash scripts trigger Quickshell menus and panels directly while logging any errors to `${XDG_RUNTIME_DIR}/hakuspace/qs.log`.
+- **IPC helper:** `haku_qs_ipc` wraps requests to the selected Quickshell runtime and logs errors to `${XDG_RUNTIME_DIR}/hakuspace/qs.log`. Callers use the helper instead of duplicating invocation and error handling. See [Hikai](../hikai.md) for shell architecture.
 
 ### `haku_pick.sh` (The Universal Menu Prompt)
-Ever wondered how a single script can pop up a Rofi menu in Classic mode, but open a native Quickshell picker when you're in Hikai mode?
-- **What it does:** Acts as a universal `dmenu` replacement. You pipe a list of options into `haku_pick.sh`, and it prints whatever the user clicked back out to `stdout`.
-- **How it works:** In Classic mode, it simply launches `rofi -dmenu`. In Hikai mode, it packs the options into a temporary JSON file, opens a named pipe (`FIFO`), and asks Quickshell's native picker to display the list and send back your choice!
+This frontend helper provides a common selection interface for scripts.
+- **What it does:** Accepts options on standard input and writes the selected value to standard output.
+- **Routing:** Delegates selection to the active shell frontend. Callers use the result without depending on the frontend's UI or transport details. Headless backends must not invoke it.
 
 ## Window Manager Abstraction
 

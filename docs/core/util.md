@@ -35,7 +35,7 @@ A robust wrapper around your Wayland screen capture tools.
 ### Screen recording
 Screen recording keeps the long-standing `record.sh` keybind command, but selection and capture lifecycle are now separated.
 
-- **`record.sh` (compatibility facade):** with no arguments it preserves the old toggle behavior: stops an active recording if running, otherwise opens the picker UI based on the active backend — `record_rofi.sh` in Classic mode, or Quickshell's Action Layer Menu (`actionMenu openDefault record`) in Hikai mode. It also exposes explicit `--status`, `--list-modes`, `--list-sources`, `--start`, and `--stop` commands for headless callers.
+- **`record.sh` (compatibility facade):** with no arguments, stops an active recording or opens the selected shell's recording frontend. It also exposes explicit `--status`, `--list-modes`, `--list-sources`, `--start`, and `--stop` commands for headless callers.
 - **`record_ctl.sh` (headless backend):** owns `wl-screenrec`, PipeWire/Pulse setup, physical source discovery, virtual mic+system mixing, timer/state files, and stop/cleanup. Stable mode IDs are `system-audio`, `mic-system`, and `no-audio`.
 - **`record_rofi.sh` (Classic frontend):** owns only the mode and microphone/source menus, then delegates the selected stable IDs to `record_ctl.sh`.
 
@@ -47,7 +47,7 @@ Recordings still default to `~/Videos`, and invoking the public facade again whi
 Clipboard history is split into a headless controller and frontends while keeping the existing public command stable.
 - `clipboard_ctl.sh` owns `cliphist` history actions and the `wl-paste` watcher lifecycle. Its explicit commands are `ensure-watchers`, `list`, `copy`, and `wipe`; it does not own picker UI.
 - `clipboard_rofi.sh` is the Classic picker. It asks the controller to ensure watchers, displays the raw history rows, then sends the selected row back to `copy`.
-- `clipboard_menu.sh` remains the compatibility facade used by existing keybinds. With no arguments, it opens the history picker based on your backend: `clipboard_rofi.sh` in Classic mode, or Quickshell's Action Layer Menu (`actionMenu openDefault clipboard`) in Hikai mode. Passing `--wipe` clears the history via `clipboard_ctl.sh`, and headless callers can use `--ensure-watchers`, `--list`, and `--copy`.
+- `clipboard_menu.sh` remains the compatibility facade used by existing keybinds. With no arguments, it opens the selected shell's history frontend. Passing `--wipe` clears the history via `clipboard_ctl.sh`, and headless callers can use `--ensure-watchers`, `--list`, and `--copy`.
 
 ### `nightlight_toggle.sh`
 Saves your eyes during late-night coding sessions.
@@ -59,9 +59,9 @@ A quick VPN switch.
 - **What it does:** Uses the Cloudflare `warp-cli` to toggle your WARP connection on and off, routing your internet traffic through their private network for privacy and speed directly from a keybind or a Waybar module.
 
 ### Waybar management
-Waybar keeps the long-standing `waybar_manager.sh` public command, but its responsibilities are now split so Hikai can reuse the control logic without driving a Classic picker.
+Waybar management separates the public command, mode selection frontend and headless controller.
 
-- **`waybar_manager.sh` (compatibility facade):** preserves the existing startup/keybind CLI (`--cycle`, `--select`, `--reload`, `--toggle`) and the Hikai policy where only the `top` variant is supported. Hikai `--toggle` exits successfully without hiding chrome or changing Classic Waybar/Taskbar preferences; Classic still toggles Waybar normally.
+- **`waybar_manager.sh` (compatibility facade):** preserves the startup/keybind CLI (`--cycle`, `--select`, `--reload`, `--toggle`). In Hikai, `--toggle` returns success without changing Classic Waybar/Taskbar preferences or starting or stopping Waybar. In Classic, it toggles Waybar.
 - **`waybar_ctl.sh` (headless backend):** owns mode discovery, current-mode state, symlink changes, Waybar lifecycle, explicit `list/current/set/cycle/toggle/reload/startup` operations, and contains no picker UI.
 - **`waybar_rofi.sh` (Classic frontend):** displays the Classic mode selector and passes the selected mode id to `waybar_ctl.sh set`.
 
@@ -85,13 +85,13 @@ Desktop-shortcut discovery and mutation are separated from the Classic picker wh
 
 This keeps the desktop-icons `Add Shortcut` integration compatible while exposing shortcut operations independently of Classic UI.
 
+### Dockbar control
 
----
-**Previous:** [System Management](sys.md) | **Next:** [Haku Menu](menu.md)
-
-- **`dockbar_manager.sh`:** controls the independent native compact Dockbar request with `--status`, `--toggle`, `--enable`, and `--disable`. It writes only `dockbar_manual_state` and starts no legacy process. Taskbar Mode suppresses its rendering while preserving this request.
-- **`hikai_chrome_state_ctl.py migrate`:** runs inside `qs_supervisor.sh` before Quickshell starts, for both login and backend switching. It journals the one-time shared-state split and persists shell settings schema v6 without changing Classic Taskbar behavior.
+`dockbar_manager.sh` exposes `--status`, `--toggle`, `--enable`, and `--disable`. It updates the persistent `dockbar_manual_state` request without launching a separate UI process. See [Hikai](../hikai.md) for shell architecture.
 
 ### Temp Note shortcut
 
-`SUPER + R` runs `temp_note.sh` to open or close only the floating Temp Note in Hikai, in both Topbar and Taskbar modes. It opens without taking editor focus, preserves the current Navigation/Sidebar state, and closes an already open note even when another output owns it. From the selected Temp Note button in Sidebar, Right transfers focus into the editor; Escape or pointer exit can still dismiss Sidebar. In Classic mode, it sends an unsupported notification through `notify-send`.
+`temp_note.sh` is the public toggle command for the scratch note in Hikai. In Classic, it reports that the operation is unsupported.
+
+---
+**Previous:** [System Management](sys.md) | **Next:** [Haku Menu](menu.md)

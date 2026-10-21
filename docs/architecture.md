@@ -37,7 +37,7 @@ hakuspace (root)
 
 HakuSpace comes with two desktop shell modes that you can switch between anytime without losing your theme or settings:
 
-- **Hikai (Quickshell):** The modern, all-in-one desktop shell built natively with Quickshell (`src/home/.config/quickshell/hakuspace`). It handles your Top Bar, Dashboard, Sidebar, Notification Center, Haku Menu, Wallpaper Picker, OSDs, and even a built-in Settings & Config Editor—all in one place.
+- **Hikai (Quickshell):** HakuSpace's Quickshell-based shell mode. See [Hikai](hikai.md) for its architecture and design contracts.
 - **Classic (Waybar + Rofi + SwayNC):** The original script-powered setup. It stays right there as a rock-solid classic experience or fallback whenever you want it (just press `SUPER + ESCAPE` or run `haku_backend.sh --toggle`).
 
 To make both shells work together without duplicating logic, the scripts inside `src/core/` are split into three simple layers (even though they all get deployed flat into `~/.local/bin`):
