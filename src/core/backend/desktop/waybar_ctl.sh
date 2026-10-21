@@ -112,8 +112,23 @@ stop_waybar() {
     fi
 }
 
+# Wait for Waybar's configure event before callers reveal the Classic desktop.
 start_waybar() {
-    waybar &
+    local log_file="$(haku_runtime_dir)/waybar.log" pid deadline=$((SECONDS + 10))
+    # Clear old readiness before forking the new Waybar process.
+    : > "$log_file" || return 1
+    waybar >> "$log_file" 2>&1 &
+    pid=$!
+    while kill -0 "$pid" 2>/dev/null; do
+        if grep -q 'Bar configured (width: .* for output: ' "$log_file"; then
+            return 0
+        fi
+        (( SECONDS < deadline )) || break
+        sleep 0.05
+    done
+    printf 'waybar_ctl.sh: Waybar did not configure a bar; see %s\n' "$log_file" >&2
+    kill "$pid" 2>/dev/null || true
+    return 1
 }
 
 reload_waybar() {
@@ -146,7 +161,7 @@ toggle_waybar() {
         printf '0\n' > "$STATUS_FILE"
     else
         ensure_links || return 1
-        start_waybar
+        start_waybar || return 1
         printf '1\n' > "$STATUS_FILE"
     fi
 }

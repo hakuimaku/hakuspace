@@ -9,7 +9,7 @@ import "../../services"
 PanelWindow {
     id: root
     visible: false
-    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
     exclusionMode: ExclusionMode.Ignore
     

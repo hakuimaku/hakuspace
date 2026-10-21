@@ -118,7 +118,7 @@ Item {
         screen: root.modelData
         anchors { top: true; bottom: true; right: true }
         margins.right: 0
-        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
         WlrLayershell.namespace: "hakuspace-notification-center"
         WlrLayershell.keyboardFocus: root.panelOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore

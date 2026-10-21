@@ -833,7 +833,7 @@ Item {
         id: navigationLayer
         screen: root.modelData
         anchors { top: true; left: true; right: true; bottom: true }
-        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
         WlrLayershell.namespace: "hakuspace-navigation"
         WlrLayershell.keyboardFocus: !root.panelOpen ? WlrKeyboardFocus.None
             : root.sidebarKeyboardMode ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand

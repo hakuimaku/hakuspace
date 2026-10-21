@@ -70,7 +70,7 @@ PanelWindow {
 
     screen: modelData
     anchors { top: true; bottom: true; left: true; right: true }
-    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
     WlrLayershell.namespace: "hakuspace-flare-panel"
     WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore

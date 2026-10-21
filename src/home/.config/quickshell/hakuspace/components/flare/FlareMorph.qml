@@ -162,7 +162,7 @@ Item {
     // Explicit screen-bound changes must survive the normal two-pixel jitter filter.
     onBoundsChanged: {
         _lastAnimTime = 0
-        Qt.callLater(function() { root.updateTargetBounds(true) })
+        Qt.callLater(updateTargetBounds, true)
     }
     
     Connections {

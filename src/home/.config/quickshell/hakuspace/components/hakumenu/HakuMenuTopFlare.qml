@@ -14,7 +14,7 @@ HakuMenuAttachedFlare {
     PanelWindow {
         screen: root.modelData
         anchors { top: true; left: true; right: true }
-        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
         WlrLayershell.namespace: "hakuspace-hakumenu-trigger"
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore

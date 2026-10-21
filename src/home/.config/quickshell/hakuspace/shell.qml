@@ -11,6 +11,39 @@ import "modules/picker"
 ShellRoot {
     id: root
 
+    // Bootstrap keeps all ordinary surfaces absent until the cover barrier.
+    readonly property var hikaiScreenModel: ShellTransitionState.chromeEnabled ? Quickshell.screens : []
+
+    // Consume the bootstrap guard once, including across in-process reloads.
+    PersistentProperties {
+        id: transitionMemory
+        reloadableId: "hakuspace-shell-transition-bootstrap"
+        property bool bootstrapComplete: false
+        onLoaded: {
+            if (bootstrapComplete) ShellTransitionState.chromeEnabled = true
+        }
+    }
+
+    Connections {
+        target: ShellTransitionState
+        function onFinishedAndQuit() { Qt.quit() }
+        function onChromeEnabledChanged() {
+            if (ShellTransitionState.chromeEnabled) transitionMemory.bootstrapComplete = true
+        }
+    }
+
+    // Transition IPC changes presentation state only; bash owns the cutover.
+    IpcHandler {
+        target: "shellTransition"
+        function status(): string { return ShellTransitionState.status() }
+        function begin(mode: string): string { return ShellTransitionState.begin(mode) }
+        function showChrome(): string { return ShellTransitionState.setChrome(true) }
+        function hideChrome(): string { return ShellTransitionState.setChrome(false) }
+        function release(): string { return ShellTransitionState.release(false) }
+        function releaseAndQuit(): string { return ShellTransitionState.release(true) }
+        function cancel(): string { return ShellTransitionState.cancel() }
+    }
+
     PersistentProperties {
         id: notificationMemory
         reloadableId: "hakuspace-notification-records"
@@ -262,73 +295,79 @@ ShellRoot {
     }
 
     Variants {
-        model: Quickshell.screens
+        model: root.hikaiScreenModel
         TopBar {}
     }
 
     // Separate hosts reuse the same app content without sharing enable policy.
     Variants {
-        model: Quickshell.screens
+        model: root.hikaiScreenModel
         Taskbar {}
     }
     Variants {
-        model: Quickshell.screens
+        model: root.hikaiScreenModel
         DockBar {}
     }
 
 
     Variants {
-        model: Quickshell.screens
+        model: root.hikaiScreenModel
         NavigationPanel {}
     }
 
     Variants {
-        model: Quickshell.screens
+        model: root.hikaiScreenModel
         SettingsPanel {}
     }
 
     Variants {
-        model: Quickshell.screens
+        model: root.hikaiScreenModel
         TempNoteOverlay {}
     }
 
     Variants {
-        model: Quickshell.screens
+        model: root.hikaiScreenModel
         TrayMenuPanel {}
     }
 
     Variants {
-        model: Quickshell.screens
+        model: root.hikaiScreenModel
         NotificationCenterPanel {}
     }
 
     Variants {
-        model: Quickshell.screens
+        model: root.hikaiScreenModel
         HakuMenuPanel {}
     }
 
     Variants {
-        model: Quickshell.screens
+        model: root.hikaiScreenModel
         WallpaperPanel {}
     }
 
     Variants {
-        model: Quickshell.screens
+        model: root.hikaiScreenModel
         ActionMenuPanel {}
     }
 
     Variants {
-        model: Quickshell.screens
+        model: root.hikaiScreenModel
         NotificationPopup {}
     }
 
     Variants {
-        model: Quickshell.screens
+        model: root.hikaiScreenModel
         LevelOsdOverlay {}
     }
 
     Variants {
-        model: Quickshell.screens
+        model: root.hikaiScreenModel
         RoundedScreen {}
+    }
+
+    // Map last so an active wipe sits above existing Hikai overlay panels.
+    Variants {
+        model: Quickshell.screens
+        ShellTransitionOverlay {}
     }
 }

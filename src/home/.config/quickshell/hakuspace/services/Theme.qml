@@ -18,6 +18,12 @@ QtObject {
     readonly property string hoverMuted: ShellSettingsStore.surfaceTone === "ink" ? "#202020"
                                          : ShellSettingsStore.surfaceTone === "soft" ? "#333333" : "#2b2b2b"
     property string accent: "#ffffff"
+    // Shared timing and foreground for the shell-mode wipe.
+    readonly property color shellTransitionBlack: "#000000"
+    readonly property int shellTransitionAccentDuration: 560
+    readonly property int shellTransitionBlackDuration: 400
+    readonly property int shellTransitionBlackDelay: 60
+    readonly property int shellTransitionHoldDuration: 240
     property string workspaceDot: "#424242"
     
     // Preserve the generated baseline with one shell-owned radius family.

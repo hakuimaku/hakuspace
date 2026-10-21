@@ -14,7 +14,7 @@ PanelWindow {
 
     screen: modelData
     anchors { top: true; bottom: true; left: true; right: true }
-    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
     WlrLayershell.namespace: "hakuspace-actionmenu"
     WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore

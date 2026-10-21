@@ -23,13 +23,17 @@ class ChromeToggleTests(unittest.TestCase):
         self.bin = self.home / "bin"
         self.bin.mkdir()
         self.running = self.home / "waybar-running"
+        self.addCleanup(self.running.unlink, missing_ok=True)
         for name, body in {"pgrep": 'test -f "$WAYBAR_TEST_RUNNING"',
                            "pkill": 'rm -f "$WAYBAR_TEST_RUNNING"',
-                           "waybar": 'touch "$WAYBAR_TEST_RUNNING"'}.items():
+                           "waybar": 'touch "$WAYBAR_TEST_RUNNING"\n'
+                                     'echo "Bar configured (width: 1920, height: 28) for output: fixture"\n'
+                                     'while test -f "$WAYBAR_TEST_RUNNING"; do sleep 0.05; done'}.items():
             script = self.bin / name
             script.write_text("#!/bin/sh\n" + body + "\n")
             script.chmod(0o755)
         self.env = {**os.environ, "HOME": str(self.home), "PATH": str(self.bin) + ":" + os.environ["PATH"],
+                    "XDG_RUNTIME_DIR": str(self.home / "runtime"),
                     "WAYBAR_TEST_RUNNING": str(self.running)}
         self.preference = self.state / "waybar_manual_state"
         (self.state / "taskbar_manual_state").write_text("1\n")

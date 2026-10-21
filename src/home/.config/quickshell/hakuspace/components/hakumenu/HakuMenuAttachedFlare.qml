@@ -113,7 +113,7 @@ Item {
         visible: !!root.modelData && (root.panelOpen || root.safeExpanded)
         screen: root.modelData
         anchors { top: true; bottom: true; left: true; right: true }
-        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
         WlrLayershell.namespace: "hakuspace-hakumenu-content"
         WlrLayershell.keyboardFocus: root.panelOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore

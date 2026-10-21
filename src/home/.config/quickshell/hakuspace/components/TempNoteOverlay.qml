@@ -43,7 +43,7 @@ PanelWindow {
 
     screen: modelData
     anchors { top: true; bottom: true; left: true; right: true }
-    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
     WlrLayershell.namespace: "hakuspace-temp-note"
     WlrLayershell.keyboardFocus: !panelOpen || (!interactionReady && !keyboardRequested)
         ? WlrKeyboardFocus.None : keyboardRequested ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand

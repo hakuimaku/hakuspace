@@ -155,7 +155,7 @@ Item {
         id: contentLayer
         screen: root.modelData
         anchors { top: true; bottom: true }
-        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
         WlrLayershell.namespace: "hakuspace-notification-popup-content"
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore

@@ -10,7 +10,7 @@ PanelWindow {
     required property var modelData
     screen: modelData
     anchors { top: true; bottom: true; left: true; right: true }
-    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
     WlrLayershell.namespace: "hakuspace-level-osd"
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore

@@ -13,6 +13,8 @@ QtObject {
     property int tooltipDuration: slow
     property list<real> tooltipCurve: [0.4, 0.0, 0.2, 1.0, 1, 1]
     property list<real> shellCurve: [0.16, 1.0, 0.3, 1.0, 1, 1]
+    // Both wipe layers share easing while retaining independent durations.
+    property list<real> shellTransitionCurve: [0.65, 0.0, 0.35, 1.0, 1, 1]
 
     // Navigation Motion (slower, modern fluid expansion)
     property int navigationOpenDuration: 600

@@ -47,11 +47,13 @@ node scripts/test_dock_app_model.js
 node scripts/test_dock_geometry.js
 node scripts/test_hakumenu_geometry.js
 if command -v quickshell >/dev/null 2>&1; then
+    bash scripts/test_shell_transition.sh
     bash scripts/test_safe_zone_controller.sh
     bash scripts/test_labwc_exit.sh
     bash scripts/test_hikai_shell.sh
     bash scripts/test_hikai_resource_refresh.sh
     if command -v labwc >/dev/null 2>&1; then
+        bash scripts/test_shell_transition.sh --headless
         bash scripts/test_settings_ink.sh
         bash scripts/test_hikai_dock.sh
         HAKUSPACE_CHROME_TEST=1 bash scripts/test_hikai_dock.sh
@@ -76,6 +78,7 @@ python3 scripts/test_hakucfg_editor_ctl.py
 python3 scripts/test_hakuspace_info_ctl.py
 python3 scripts/test_shortcut_metadata.py
 python3 scripts/test_quick_actions_ctl.py
+python3 scripts/test_shell_backend_transition.py
 
 # 6. Shell syntax check for repository tooling
 while IFS= read -r -d '' script; do
