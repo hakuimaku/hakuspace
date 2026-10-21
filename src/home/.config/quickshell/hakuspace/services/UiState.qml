@@ -343,6 +343,15 @@ QtObject {
         activePanel = "settings"
     }
 
+    // Toggles centered settings panel visibility for the specified screen.
+    function toggleSettings(screenName) {
+        if (activePanel === "settings" && (!screenName || settingsScreenName === screenName)) {
+            closeSettings()
+            return
+        }
+        openSettings(screenName)
+    }
+
     // Closes centered settings panel.
     function closeSettings() {
         if (activePanel === "settings") activePanel = ""

@@ -276,6 +276,9 @@
         <keybind key="W-b">
         <action name="Execute" command="~/.local/bin/open_browser.sh" />
         </keybind>
+        <keybind key="W-i">
+        <action name="Execute" command="~/.local/bin/settings_manager.sh" />
+        </keybind>
         <keybind key="W-n">
         <action name="Execute" command="~/.local/bin/notif.sh toggle" />
         </keybind>

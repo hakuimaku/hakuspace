@@ -157,6 +157,28 @@ ShellRoot {
     }
 
     IpcHandler {
+        target: "settings"
+        enabled: true
+        function open(screenName: string) {
+            for (var screen of Quickshell.screens) {
+                if (screen.name === screenName) {
+                    UiState.openSettings(screenName)
+                    return
+                }
+            }
+        }
+        function openDefault() {
+            if (Quickshell.screens.length > 0)
+                UiState.openSettings(Quickshell.screens[0].name)
+        }
+        function toggleDefault() {
+            if (Quickshell.screens.length > 0)
+                UiState.toggleSettings(Quickshell.screens[0].name)
+        }
+        function close() { UiState.closeSettings() }
+    }
+
+    IpcHandler {
         target: "actionMenu"
         enabled: true
         function open(screenName: string, flow: string) {

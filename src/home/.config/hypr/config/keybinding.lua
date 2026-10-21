@@ -21,6 +21,7 @@ hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("$HOME/.local/bin/launcher.sh dru
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("$HOME/.local/bin/open_browser.sh"))
 hl.bind(mainMod .. " + SLASH", hl.dsp.exec_cmd("$HOME/.local/bin/launcher.sh emoji"))
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("$HOME/.local/bin/temp_note.sh"))
+hl.bind(mainMod .. " + I", hl.dsp.exec_cmd("$HOME/.local/bin/settings_manager.sh"))
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("$HOME/.local/bin/notif.sh toggle"))
 hl.bind(mainMod .. " + ESCAPE", hl.dsp.exec_cmd("$HOME/.local/bin/haku_backend.sh set classic"))
 

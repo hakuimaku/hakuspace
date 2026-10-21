@@ -18,6 +18,7 @@ binds {
     Mod+B            hotkey-overlay-title="Open Browser" { spawn "sh" "-c" "$HOME/.local/bin/open_browser.sh"; }
     Mod+Slash        hotkey-overlay-title="Open Emoji Menu" { spawn "sh" "-c" "$HOME/.local/bin/launcher.sh emoji"; }
     Mod+R            repeat=false hotkey-overlay-title="Toggle Temp Note" { spawn "sh" "-c" "$HOME/.local/bin/temp_note.sh"; }
+    Mod+I            hotkey-overlay-title="Settings" { spawn "sh" "-c" "$HOME/.local/bin/settings_manager.sh"; }
     Mod+N            hotkey-overlay-title="Open Notification Center" { spawn "sh" "-c" "$HOME/.local/bin/notif.sh toggle"; }
     Mod+Escape       hotkey-overlay-title="Emergency Classic Backend" { spawn "sh" "-c" "$HOME/.local/bin/haku_backend.sh set classic"; }
 
