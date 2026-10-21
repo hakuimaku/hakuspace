@@ -44,7 +44,7 @@ def validate(values, partial=False):
                 elif key in ("exclusiveSpace", "showTrash", "showDevices"):
                     valid = type(value) is bool
                 elif key == "iconSize":
-                    valid = type(value) is int and 32 <= value <= 72 and value % 4 == 0
+                    valid = type(value) is int and 24 <= value <= 72 and value % 4 == 0
                 else:
                     valid = type(value) is int and 0 <= value <= (48 if key == "hoverLift" else 100)
             elif section == "topbar":

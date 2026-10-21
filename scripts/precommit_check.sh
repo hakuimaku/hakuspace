@@ -52,6 +52,7 @@ if command -v quickshell >/dev/null 2>&1; then
     bash scripts/test_hikai_shell.sh
     bash scripts/test_hikai_resource_refresh.sh
     if command -v labwc >/dev/null 2>&1; then
+        bash scripts/test_settings_ink.sh
         bash scripts/test_hikai_dock.sh
         HAKUSPACE_CHROME_TEST=1 bash scripts/test_hikai_dock.sh
         HAKUSPACE_DOCK_INPUT=1 bash scripts/test_hikai_dock.sh

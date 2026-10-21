@@ -183,6 +183,8 @@ ShellRoot {
                 root.checkFrames()
                 dock.close()
                 root.check(dock.shown, "Always survives close request")
+                ShellSettingsStore.setValue("dock", "iconSize", 24)
+                root.check(dock.iconSize === 24 && dock.targetHeight === 41 && root.content(dock).iconSize === 24, "24 px icons use the shared app bar geometry")
                 ShellSettingsStore.setValue("dock", "iconSize", 72)
                 root.check(dock.iconSize === 72 && dock.targetHeight === 89, "live size preview")
                 ShellSettingsStore.discard()

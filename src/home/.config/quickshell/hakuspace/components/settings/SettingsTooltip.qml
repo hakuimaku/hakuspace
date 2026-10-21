@@ -11,9 +11,9 @@ ToolTip {
     parent: target
     x: target ? (target.width - width) / 2 : 0
     y: target ? target.height + 6 : 0
-    width: Math.min(380, Math.max(48, label.implicitWidth + 20))
-    height: label.implicitHeight + 16
-    padding: 8
+    width: Math.min(400, Math.max(48, label.implicitWidth + 24))
+    height: label.implicitHeight + 20
+    padding: 10
     closePolicy: Popup.NoAutoClose
     enter: Transition {
         NumberAnimation { property: "opacity"; from: 0; to: 1; duration: root.immediate ? 0 : HAnimation.slow; easing.bezierCurve: HAnimation.tooltipCurve }
@@ -39,14 +39,14 @@ ToolTip {
     contentItem: Text {
         id: label
         text: root.text
-        color: Theme.fg
+        color: Qt.hsla(0, 0, Qt.darker(Theme.fgDim, 1).hslLightness, 1)
         font.family: Theme.fontFamily
         font.pixelSize: Theme.fontSize
         wrapMode: Text.Wrap
         lineHeight: 1.15
     }
     background: Rectangle {
-        radius: Theme.radius / 2
+        radius: Theme.radius
         color: Theme.hoverMuted
         border.color: Theme.border
         border.width: 1

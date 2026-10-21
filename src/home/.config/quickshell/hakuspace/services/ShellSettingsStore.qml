@@ -61,7 +61,7 @@ QtObject {
                 if (section === "topbar" && typeof value !== "boolean") return false
                 if (key === "visibilityMode" && ["autohide", "always"].indexOf(value) < 0) return false
                 if (["exclusiveSpace", "showTrash", "showDevices"].indexOf(key) >= 0 && typeof value !== "boolean") return false
-                if (key === "iconSize" && (!Number.isInteger(value) || value < 32 || value > 72 || value % 4 !== 0)) return false
+                if (key === "iconSize" && (!Number.isInteger(value) || value < 24 || value > 72 || value % 4 !== 0)) return false
                 if (key === "hoverLift" && (!Number.isInteger(value) || value < 0 || value > 48)) return false
                 if (key === "hoverScale" && (!Number.isInteger(value) || value < 0 || value > 100)) return false
                 if (section === "roundedScreen" && (!Number.isInteger(value) || value < 0 || value > (key === "radius" ? 24 : 6))) return false

@@ -1,3 +1,12 @@
+// Turn safe file IDs into short labels without changing their selection identity.
+function title(fileId) {
+    const parts = fileId.split("/")
+    const name = parts.pop().replace(/(.+)\.[^.]+$/, "$1").replace(/-custom$/, "")
+    const aliases = { "cava-layer": "Cava Underbar", "cava-underbar": "Cava Underbar", "mango": "MangoWM", "taskbar-pin-apps": "Pinned Apps" }
+    const label = name === "config" && parts.length > 1 ? parts.pop() : name
+    return aliases[label] || label.split(/[-_]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")
+}
+
 // Build visible directory and file rows from the safe backend file IDs.
 function rows(files, group) {
     const root = { children: [] }

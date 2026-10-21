@@ -6,6 +6,7 @@ import "../motion" as Motion
 Item {
     id: root
     signal reloadRequested()
+    signal confirmationRequested(string action)
     // Freeze edits during IO so a completed save cannot replace a newer draft.
     readonly property bool editable: ShellSettingsStore.ready && !ShellSettingsStore.loading && !ShellSettingsStore.saving
     readonly property var modules: [
@@ -19,350 +20,156 @@ Item {
         {key: "clock", label: "Right · Clock", hint: "Show the TopBar clock. Dashboard and calendar keep working."},
         {key: "notifications", label: "Right · Notifications", hint: "Show the bell. Popups, history and DND keep working."}
     ]
+    // Section anchors and the footer expose presentation without owning draft state.
+    readonly property var sectionCards: [appearance, rounded, surface, appbar, dockbar, topbar]
+    readonly property var sidebarSections: sectionCards.map(card => card.title)
+    readonly property string activeSection: {
+        if (scroll.contentY > 0 && scroll.contentY >= scroll.contentHeight - scroll.height - 1)
+            return sidebarSections[sidebarSections.length - 1]
+        var current = sidebarSections[0]
+        for (var card of sectionCards) {
+            if (card.y <= scroll.contentY + 24) current = card.title
+        }
+        return current
+    }
+    readonly property var actionLabels: ["Reload", "Reset", "Discard", "Apply"]
+    readonly property var actionHints: ({
+        Reload: "Read saved Shell settings from disk. Unsaved edits require confirmation.",
+        Reset: "Preview default Shell settings. Apply saves them.",
+        Discard: "Undo unsaved Shell edits and restore the saved settings, including live previews.",
+        Apply: "Save Shell settings and keep Settings open."
+    })
+    readonly property string footerStatus: ShellSettingsStore.error || ShellSettingsStore.statusMessage
+        || (ShellSettingsStore.migrationPending ? "Legacy settings loaded · Apply to upgrade" : ShellSettingsStore.loading ? "Loading…"
+            : ShellSettingsStore.saving ? "Saving…" : ShellSettingsStore.dirty ? "Unsaved changes · Apply to save" : "All changes saved · Shell settings")
+    readonly property bool footerDirty: ShellSettingsStore.dirty || ShellSettingsStore.migrationPending
+    readonly property bool footerError: !!ShellSettingsStore.error
+
+    // Scroll section cards without changing live-bound preferences.
+    function scrollToSection(name) {
+        for (var card of sectionCards) {
+            if (card.title === name) scroll.contentY = Math.max(0, Math.min(card.y, scroll.contentHeight - scroll.height))
+        }
+    }
+    // Keep migration, validation and IO guards identical to the original footer.
+    function canActivate(label) {
+        return label === "Reload" ? !ShellSettingsStore.loading && !ShellSettingsStore.saving
+            : editable && (label === "Reset" || ShellSettingsStore.dirty || (label === "Apply" && ShellSettingsStore.migrationPending))
+              && (label !== "Apply" || ShellSettingsStore.valid)
+    }
+    // Apply and Discard continue to operate on the shared live preview.
+    function activateAction(label) {
+        if (label === "Reload") reloadRequested()
+        else if (label === "Reset" || label === "Discard") confirmationRequested(label.toLowerCase() + "-shell")
+        else ShellSettingsStore.apply()
+    }
+
 
     Column {
         anchors.fill: parent
-        spacing: Theme.pad
+        spacing: 6
+        Text { text: "Shell"; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 5; font.weight: Font.DemiBold }
+        Text { width: parent.width; text: "Tune your shell. Changes preview across every monitor."; color: Qt.hsla(0, 0, Qt.darker(Theme.fgDim, 1).hslLightness, 1); font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 1); wrapMode: Text.Wrap }
         Flickable {
             id: scroll
             width: parent.width
-            height: Math.max(0, parent.height - footer.implicitHeight - Theme.pad)
+            height: Math.max(0, parent.height - y)
             contentWidth: width
-            contentHeight: form.implicitHeight + Theme.pad * 2
+            contentHeight: form.implicitHeight + 20
             clip: true
             boundsBehavior: Flickable.StopAtBounds
             ScrollBar.vertical: Motion.HScrollBar {}
             Column {
                 id: form
-                y: Theme.pad
-                width: Math.max(0, scroll.width - 18)
-                spacing: Theme.pad
-                Repeater {
-                    model: [
-                        {section: "appearance", key: "baseRadius", heading: "Appearance", label: "Shell radius", min: 4, max: 24},
-                        {section: "roundedScreen", key: "radius", heading: "Rounded Screen", label: "Corner radius", min: 0, max: 24},
-                        {section: "roundedScreen", key: "borderThickness", heading: "", label: "Border thickness", min: 0, max: 6}
-                    ]
-                    delegate: Column {
-                        required property var modelData
-                        width: form.width
-                        spacing: Theme.pad
-                        Text {
-                            visible: modelData.heading !== ""
-                            text: modelData.heading
-                            color: Theme.fg
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSize + 3
-                            font.weight: Font.DemiBold
-                        }
-                        Text {
-                            text: modelData.label
-                            color: Theme.fgDim
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSize
-                        }
-                        Row {
-                            width: parent.width
-                            spacing: Theme.pad
-                            SettingsSlider {
-                                width: Math.max(0, Math.min(360, parent.width - 80 - Theme.pad))
-                                from: modelData.min
-                                to: modelData.max
-                                stepSize: 1
-                                Accessible.name: modelData.section === "roundedScreen" ? "Rounded Screen " + modelData.label : modelData.label
-                                value: ShellSettingsStore.values[modelData.section][modelData.key]
-                                enabled: root.editable
-                                onMoved: ShellSettingsStore.setValue(modelData.section, modelData.key, Math.round(value))
-                            }
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: ShellSettingsStore.values[modelData.section][modelData.key] + " px"
-                                color: Theme.fg
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontSize
-                            }
-                        }
-                    }
-                }
-                Text {
+                y: 12
+                width: Math.max(0, scroll.width - 14)
+                spacing: 22
+                SettingsSectionCard {
+                    id: appearance
                     width: parent.width
-                    text: "Border applies to left, right and bottom edges. The top edge is owned by TopBar."
-                    wrapMode: Text.Wrap
-                    color: Theme.fgDim
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(10, Theme.fontSize - 2)
+                    title: "Appearance"
+                    SettingsSliderRow { available: root.editable; modelData: ({section: "appearance", key: "baseRadius", label: "Shell radius", min: 4, max: 24}) }
                 }
-                Text {
-                    text: "Surface"
-                    color: Theme.fg
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize + 3
-                    font.weight: Font.DemiBold
+                SettingsSectionCard {
+                    id: rounded
+                    width: parent.width
+                    title: "Rounded Screen"
+                    SettingsSliderRow { available: root.editable; modelData: ({section: "roundedScreen", key: "radius", label: "Corner radius", accessible: "Rounded Screen Corner radius", min: 0, max: 24}) }
+                    Rectangle { width: parent.width; height: 1; color: Theme.hoverMuted }
+                    SettingsSliderRow { available: root.editable; modelData: ({section: "roundedScreen", key: "borderThickness", label: "Border thickness", accessible: "Rounded Screen Border thickness", min: 0, max: 6}) }
+                    Text { width: parent.width; text: "Border applies to left, right and bottom edges. The top edge is owned by TopBar."; wrapMode: Text.Wrap; color: Qt.hsla(0, 0, Qt.darker(Theme.fgDim, 1).hslLightness, 1); font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 2) }
                 }
-                Item {
-                    id: presets
-                    width: Math.min(420, parent.width)
-                    height: 38
-                    readonly property real slotWidth: (width - 8) / 3
-                    Motion.SelectionPill {
-                        shown: true
-                        targetIndex: ["ink", "dark", "soft"].indexOf(ShellSettingsStore.surfaceTone)
-                        slotCount: 3
-                        slotSpacing: 4
-                    }
-                    Repeater {
-                        model: [{key: "ink", label: "Ink", color: "#000000"},
-                            {key: "dark", label: "Dark", color: "#0b0b0b"},
-                            {key: "soft", label: "Soft", color: "#171717"}]
-                        delegate: SettingsActionButton {
-                            required property var modelData
-                            required property int index
-                            x: index * (presets.slotWidth + 4)
-                            width: presets.slotWidth
-                            height: presets.height
-                            radius: Theme.radius
-                            text: modelData.label
-                            selected: ShellSettingsStore.surfaceTone === modelData.key
-                            selectedOverridesHover: true
-                            idleColor: "transparent"
-                            hoverColor: Theme.hoverMuted
-                            selectedColor: "transparent"
-                            foregroundColor: Theme.fgDim
-                            hoverForegroundColor: Theme.fg
-                            selectedForegroundColor: Theme.onAccentColor
-                            enabled: root.editable
-                            activeFocusOnTab: enabled
-                            focused: activeFocus
-                            Accessible.name: modelData.label + " surface"
-                            Accessible.role: Accessible.RadioButton
-                            Accessible.checked: selected
-                            Accessible.onPressAction: clicked()
-                            onClicked: ShellSettingsStore.setValue("appearance", "surfaceTone", modelData.key)
-                            Keys.onReturnPressed: clicked()
-                            Keys.onSpacePressed: clicked()
-                            Rectangle {
-                                x: 8
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 12
-                                height: 12
-                                radius: 3
-                                color: modelData.color
+                SettingsSectionCard {
+                    id: surface
+                    width: parent.width
+                    title: "Surface"
+                    Row {
+                        width: parent.width
+                        spacing: 6
+                        Repeater {
+                            model: [{key: "ink", label: "Ink"}, {key: "dark", label: "Dark"}, {key: "soft", label: "Soft"}]
+                            delegate: SettingsActionButton {
+                                required property var modelData
+                                width: Math.min(104, (parent.width - 12) / 3)
+                                height: 32
+                                text: modelData.label
+                                selected: ShellSettingsStore.surfaceTone === modelData.key
+                                selectedOverridesHover: true
+                                idleColor: Theme.surface
+                                hoverColor: Theme.hoverMuted
+                                selectedColor: Theme.hoverMuted
+                                foregroundColor: Theme.fgDim
+                                hoverForegroundColor: Theme.fg
+                                selectedForegroundColor: Theme.accent
+                                border.color: selected || activeFocus ? Theme.accent : Theme.hoverMuted
                                 border.width: 1
-                                border.color: Theme.fgDim
+                                enabled: root.editable
+                                activeFocusOnTab: enabled
+                                focused: activeFocus
+                                Accessible.name: modelData.label + " surface"
+                                Accessible.role: Accessible.RadioButton
+                                Accessible.checked: selected
+                                Accessible.onPressAction: clicked()
+                                onClicked: ShellSettingsStore.setValue("appearance", "surfaceTone", modelData.key)
+                                Keys.onReturnPressed: clicked()
+                                Keys.onSpacePressed: clicked()
                             }
                         }
                     }
                 }
-                // Shared artwork preferences use the same Apply and Discard lifecycle.
-                Text {
-                    text: "App Bar"
-                    color: Theme.fg
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize + 3
-                    font.weight: Font.DemiBold
-                }
-                Repeater {
-                    model: [{key: "showTrash", label: "Trash", labels: ["Hide", "Show"], hint: "Show the Trash shortcut."},
-                        {key: "showDevices", label: "Mounted devices", labels: ["Hide", "Show"], hint: "Show mounted storage shortcuts."}]
-                    delegate: Row {
-                        id: dockSetting
-                        required property var modelData
-                        width: form.width
-                        spacing: Theme.pad
-                        Text {
-                            width: Math.max(0, parent.width - 186 - Theme.pad)
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: modelData.label
-                            color: Theme.fg
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSize
-                        }
-                        SettingsSegmentedToggle {
-                            width: 186
-                            labels: modelData.labels
-                            available: root.editable
-                            checked: ShellSettingsStore.values.dock[modelData.key]
-                            hint: modelData.hint
-                            onToggled: value => ShellSettingsStore.setValue("dock", modelData.key, value)
-                        }
-                    }
-                }
-                Text {
-                    text: "Icon size · " + ShellSettingsStore.dockIconSize + " px"
-                    color: Theme.fgDim
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
-                }
-                SettingsSlider {
-                    width: Math.min(360, parent.width)
-                    from: 32
-                    to: 72
-                    stepSize: 4
-                    value: ShellSettingsStore.dockIconSize
-                    enabled: root.editable
-                    Accessible.name: "App bar icon size"
-                    onMoved: ShellSettingsStore.setValue("dock", "iconSize", Math.round(value / 4) * 4)
-                }
-                Text {
-                    text: "Hover lift · " + ShellSettingsStore.dockHoverLift + " px"
-                    color: Theme.fgDim
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
-                }
-                SettingsSlider {
-                    width: Math.min(360, parent.width)
-                    from: 0
-                    to: 48
-                    value: ShellSettingsStore.dockHoverLift
-                    enabled: root.editable
-                    Accessible.name: "App bar hover lift"
-                    onMoved: ShellSettingsStore.setValue("dock", "hoverLift", Math.round(value))
-                }
-                Text {
-                    text: "Hover enlargement · " + ShellSettingsStore.dockHoverScale + "%"
-                    color: Theme.fgDim
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
-                }
-                SettingsSlider {
-                    width: Math.min(360, parent.width)
-                    from: 0
-                    to: 100
-                    value: ShellSettingsStore.dockHoverScale
-                    enabled: root.editable
-                    Accessible.name: "App bar hover enlargement"
-                    onMoved: ShellSettingsStore.setValue("dock", "hoverScale", Math.round(value))
-                }
-                Text {
-                    text: "Dockbar"
-                    color: Theme.fg
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize + 3
-                    font.weight: Font.DemiBold
-                }
-                Text {
+                SettingsSectionCard {
+                    id: appbar
                     width: parent.width
-                    text: "Dockbar is available only while Taskbar Mode is off."
-                    wrapMode: Text.Wrap
-                    color: Theme.fgDim
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
-                }
-                Repeater {
-                    model: [{key: "visibilityMode", label: "Visibility", labels: ["Auto Hide", "Always"]},
-                        {key: "exclusiveSpace", label: "Reserve space", labels: ["Off", "On"]}]
-                    delegate: Row {
-                        required property var modelData
-                        width: form.width
-                        spacing: Theme.pad
-                        Text {
-                            width: Math.max(0, parent.width - 186 - Theme.pad)
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: modelData.label
-                            color: Theme.fg
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSize
-                        }
-                        SettingsSegmentedToggle {
-                            width: 186
-                            labels: modelData.labels
-                            available: root.editable
-                            checked: modelData.key === "visibilityMode" ? ShellSettingsStore.dockVisibilityMode === "always"
-                                : ShellSettingsStore.dockExclusiveSpace
-                            onToggled: value => ShellSettingsStore.setValue("dock", modelData.key,
-                                modelData.key === "visibilityMode" ? (value ? "always" : "autohide") : value)
-                        }
+                    title: "App Bar"
+                    Repeater {
+                        model: [{key: "showTrash", label: "Trash", labels: ["Hide", "Show"], hint: "Show the Trash shortcut."},
+                            {key: "showDevices", label: "Mounted devices", labels: ["Hide", "Show"], hint: "Show mounted storage shortcuts."}]
+                        delegate: SettingsToggleRow { available: root.editable }
                     }
+                    Rectangle { width: parent.width; height: 1; color: Theme.hoverMuted }
+                    SettingsSliderRow { available: root.editable; modelData: ({section: "dock", key: "iconSize", label: "Icon size", accessible: "App bar icon size", min: 24, max: 72, step: 4}) }
+                    SettingsSliderRow { available: root.editable; modelData: ({section: "dock", key: "hoverLift", label: "Hover lift", accessible: "App bar hover lift", min: 0, max: 48}) }
+                    SettingsSliderRow { available: root.editable; modelData: ({section: "dock", key: "hoverScale", label: "Hover enlargement", accessible: "App bar hover enlargement", min: 0, max: 100, unit: "%"}) }
                 }
-                Text {
-                    text: "Top Bar"
-                    color: Theme.fg
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize + 3
-                    font.weight: Font.DemiBold
-                }
-                Text {
+                SettingsSectionCard {
+                    id: dockbar
                     width: parent.width
-                    text: "Applies to every monitor. Logo / Navigation stays enabled."
-                    wrapMode: Text.Wrap
-                    color: Theme.fgDim
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
-                }
-                Repeater {
-                    model: root.modules
-                    delegate: Row {
-                        required property var modelData
-                        width: form.width
-                        spacing: Theme.pad
-                        Text {
-                            width: Math.max(0, parent.width - 126 - Theme.pad)
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: modelData.label
-                            wrapMode: Text.Wrap
-                            color: Theme.fg
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSize
-                        }
-                        SettingsSegmentedToggle {
-                            enabled: root.editable
-                            Accessible.role: Accessible.CheckBox
-                            Accessible.name: modelData.label
-                            Accessible.checked: checked
-                            Accessible.onToggleAction: toggled(!checked)
-                            checked: ShellSettingsStore.values.topbar[modelData.key]
-                            available: root.editable
-                            hint: modelData.hint
-                            onToggled: value => ShellSettingsStore.setValue("topbar", modelData.key, value)
-                        }
+                    title: "Dockbar"
+                    Text { width: parent.width; text: "Dockbar is available only while Taskbar Mode is off."; wrapMode: Text.Wrap; color: Qt.hsla(0, 0, Qt.darker(Theme.fgDim, 1).hslLightness, 1); font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 2) }
+                    Repeater {
+                        model: [{key: "visibilityMode", label: "Visibility", labels: ["Auto Hide", "Always"]},
+                            {key: "exclusiveSpace", label: "Reserve space", labels: ["Off", "On"]}]
+                        delegate: SettingsToggleRow { available: root.editable }
                     }
                 }
-            }
-        }
-        Column {
-            id: footer
-            width: parent.width
-            spacing: 5
-            Text {
-                width: parent.width
-                text: ShellSettingsStore.error || ShellSettingsStore.statusMessage
-                      || (ShellSettingsStore.migrationPending ? "Legacy settings loaded · Apply to upgrade" : ShellSettingsStore.loading ? "Loading…" : ShellSettingsStore.dirty ? "Unsaved changes · Live preview" : "Live preview · Apply to save")
-                color: ShellSettingsStore.error ? Theme.accent : Theme.fgDim
-                font.family: Theme.fontFamily
-                font.pixelSize: Math.max(10, Theme.fontSize - 2)
-                wrapMode: Text.Wrap
-            }
-            Flow {
-                width: parent.width
-                spacing: 6
-                Repeater {
-                    model: ["Reload", "Reset", "Discard", "Apply"]
-                    delegate: SettingsActionButton {
-                        required property string modelData
-                        width: 82
-                        height: 32
-                        radius: Theme.radius
-                        text: modelData === "Apply" && ShellSettingsStore.saving ? "Saving…" : modelData
-                        idleColor: modelData === "Apply" ? Theme.accent : Theme.hoverMuted
-                        hoverColor: idleColor
-                        foregroundColor: modelData === "Apply" ? Theme.onAccentColor : Theme.fg
-                        hoverForegroundColor: foregroundColor
-                        enabled: modelData === "Reload" ? !ShellSettingsStore.loading && !ShellSettingsStore.saving
-                                 : root.editable && (modelData === "Reset" || ShellSettingsStore.dirty || (modelData === "Apply" && ShellSettingsStore.migrationPending))
-                                   && (modelData !== "Apply" || ShellSettingsStore.valid)
-                        activeFocusOnTab: enabled
-                        focused: activeFocus
-                        Accessible.role: Accessible.Button
-                        Accessible.name: modelData
-                        Accessible.onPressAction: clicked()
-                        onClicked: {
-                            if (modelData === "Reload") root.reloadRequested()
-                            else if (modelData === "Reset") ShellSettingsStore.reset()
-                            else if (modelData === "Discard") ShellSettingsStore.discard()
-                            else ShellSettingsStore.apply()
-                        }
-                        Keys.onReturnPressed: clicked()
-                        Keys.onSpacePressed: clicked()
+                SettingsSectionCard {
+                    id: topbar
+                    width: parent.width
+                    title: "Top Bar"
+                    Text { width: parent.width; text: "Applies to every monitor. Logo / Navigation stays enabled."; wrapMode: Text.Wrap; color: Qt.hsla(0, 0, Qt.darker(Theme.fgDim, 1).hslLightness, 1); font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 2) }
+                    Repeater {
+                        model: root.modules
+                        delegate: SettingsToggleRow { available: root.editable; section: "topbar" }
                     }
                 }
             }

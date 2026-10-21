@@ -8,8 +8,8 @@ Slider {
     snapMode: Slider.SnapAlways
     live: true
     implicitWidth: 260
-    implicitHeight: 32
-    padding: 8
+    implicitHeight: 36
+    padding: 10
     focusPolicy: Qt.StrongFocus
 
     // Keep platform slider keyboard/accessibility behavior with native Hikai visuals.
@@ -17,8 +17,8 @@ Slider {
         x: root.leftPadding
         y: root.topPadding + root.availableHeight / 2 - height / 2
         width: root.availableWidth
-        height: 6
-        radius: 3
+        height: 4
+        radius: Theme.radius
         color: Theme.hoverMuted
         Rectangle {
             width: root.visualPosition * parent.width
@@ -30,9 +30,9 @@ Slider {
     handle: Rectangle {
         x: root.leftPadding + root.visualPosition * (root.availableWidth - width)
         y: root.topPadding + root.availableHeight / 2 - height / 2
-        width: 16
+        width: 12
         height: 16
-        radius: width / 2
+        radius: Theme.radius
         color: root.pressed ? Theme.fg : Theme.accent
         border.width: root.activeFocus ? 2 : 0
         border.color: Theme.fg

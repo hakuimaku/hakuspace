@@ -225,8 +225,8 @@ def edit(raw, action, args):
             modules[index] = name
     elif action == 'size' and len(args) == 1:
         size = int(args[0])
-        if not 32 <= size <= 72 or size % 4:
-            raise ValueError('icon size must be 32–72 px in steps of 4')
+        if not 24 <= size <= 72 or size % 4:
+            raise ValueError('icon size must be 24–72 px in steps of 4')
         for module in dict.fromkeys(modules):
             if module.startswith('image#'):
                 edits.extend(size_edits(cleaned, root_fields, module, size))

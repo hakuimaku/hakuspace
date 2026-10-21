@@ -1,10 +1,11 @@
 import QtQuick
+import QtQuick.Controls
+import QtQuick.Window
 import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import "../services"
 import "flare" as Flare
-import "motion" as Motion
 import "settings" as SettingsPages
 
 PanelWindow {
@@ -12,17 +13,29 @@ PanelWindow {
     required property var modelData
     property string selectedGroup: "General"
     property string confirmation: ""
-    readonly property var settingsTabs: ["General", "Shell", "Config", "Info"]
+    // Keep the close dialog open until every submitted draft finishes saving.
+    property bool applyingClose: false
+    property string confirmationError: ""
+    readonly property bool settingsBusy: SettingsStore.loading || SettingsStore.saving
+        || ShellSettingsStore.loading || ShellSettingsStore.saving || ConfigEditorStore.busy
+    readonly property var dirtyDomains: [SettingsStore.dirty ? "General" : "",
+        ShellSettingsStore.dirty ? "Shell" : "", ConfigEditorStore.dirty ? "Config" : ""].filter(Boolean)
+    readonly property string closeSaveProblem: SettingsStore.dirty && (!SettingsStore.ready || !SettingsStore.valid)
+        ? "General has invalid values. Keep editing to correct them."
+        : ShellSettingsStore.dirty && (!ShellSettingsStore.ready || !ShellSettingsStore.valid)
+        ? "Shell settings are not ready to apply. Keep editing to review them."
+        : ConfigEditorStore.dirty && !ConfigEditorStore.canSave && !ConfigEditorStore.busy
+        ? "Config cannot be saved. Keep editing to resolve the file conflict or invalid text." : ""
+    readonly property bool canApplyAndClose: !settingsBusy && !applyingClose && !closeSaveProblem
+    onSettingsBusyChanged: Qt.callLater(root.finishApplyAndClose)
+    onConfirmationChanged: confirmationError = ""
     readonly property bool panelOpen: UiState.activePanel === "settings"
                                       && UiState.settingsScreenName === modelData.name
     // Preferred widths keep 32 px of space on each side when the screen is smaller.
-    readonly property real normalPreferredWidth: 1150 * 0.90
+    readonly property real normalPreferredWidth: 1180
     readonly property real normalWidth: Math.min(normalPreferredWidth, Math.max(0, modelData.width - 64))
-    readonly property real configWidth: Math.min(normalPreferredWidth * 1.10, Math.max(0, modelData.width - 64))
-    readonly property real infoWidth: Math.min(normalPreferredWidth * 0.95, Math.max(0, modelData.width - 64))
-    readonly property real targetBodyWidth: selectedGroup === "Config" ? configWidth
-                                             : selectedGroup === "Info" ? infoWidth : normalWidth
-    readonly property real targetBodyHeight: Math.min(690, Math.max(0, modelData.height - 64))
+    readonly property real targetBodyWidth: normalWidth
+    readonly property real targetBodyHeight: Math.min(750, Math.max(0, modelData.height - 64))
     readonly property real circleSize: Math.min(96, normalWidth, targetBodyHeight)
     property real slideProgress: 0
     property real expandProgress: 0
@@ -63,9 +76,16 @@ PanelWindow {
         }
     }
 
+    // Cancel the active confirmation before initiating the existing close flow.
+    function handleEscape() {
+        if (applyingClose) return
+        if (confirmation) confirmation = ""
+        else if (configPage.confirmation) configPage.cancelConfirmation()
+        else requestClose()
+    }
     function requestClose() {
-        if (ShellSettingsStore.saving || ShellSettingsStore.loading) return
-        if (SettingsStore.dirty || ShellSettingsStore.dirty || ConfigEditorStore.dirty) confirmation = "close"
+        if (settingsBusy) return
+        if (dirtyDomains.length) confirmation = "close"
         else UiState.closeSettings()
     }
     function requestReload() {
@@ -79,17 +99,45 @@ PanelWindow {
     }
     // Reload replaces its own domain; closing restores every editable draft.
     function confirmDiscard() {
+        if (settingsBusy || applyingClose) return
         var action = confirmation
         confirmation = ""
-        if (action === "reload-shell") ShellSettingsStore.reload()
+        if (action === "reset-shell") ShellSettingsStore.reset()
+        else if (action === "discard-shell") ShellSettingsStore.discard()
+        else if (action === "reload-shell") ShellSettingsStore.reload()
         else if (action === "reload") SettingsStore.reload()
-        else {
+        else if (action === "close") {
             SettingsStore.discard()
             ShellSettingsStore.discard()
             ConfigEditorStore.discard()
             configPage.confirmation = ""
             UiState.closeSettings()
         }
+    }
+    // Submit all modified pages together and retain failed drafts for review.
+    function applyAndClose() {
+        if (confirmation !== "close" || !canApplyAndClose) return
+        confirmationError = ""
+        applyingClose = true
+        if (SettingsStore.dirty) SettingsStore.apply()
+        if (ShellSettingsStore.dirty) ShellSettingsStore.apply()
+        if (ConfigEditorStore.dirty) ConfigEditorStore.save()
+        Qt.callLater(root.finishApplyAndClose)
+    }
+    // Store exit handlers finish updating errors and snapshots before this runs.
+    function finishApplyAndClose() {
+        if (!applyingClose || settingsBusy) return
+        applyingClose = false
+        if (dirtyDomains.length) {
+            confirmationError = (SettingsStore.dirty ? SettingsStore.error : "")
+                || (ShellSettingsStore.dirty ? ShellSettingsStore.error : "")
+                || (ConfigEditorStore.dirty ? ConfigEditorStore.error : "")
+                || "Some changes are still unsaved. Keep editing to review them."
+            return
+        }
+        confirmation = ""
+        configPage.cancelConfirmation()
+        UiState.closeSettings()
     }
     onSelectedGroupChanged: {
         if (!panelOpen) return
@@ -137,12 +185,7 @@ PanelWindow {
         id: keyHandler
         anchors.fill: parent
         focus: root.panelOpen
-        Keys.onEscapePressed: event => {
-            if (root.confirmation) root.confirmation = ""
-            else if (configPage.confirmation) configPage.cancelConfirmation()
-            else root.requestClose()
-            event.accepted = true
-        }
+        Keys.onEscapePressed: event => { root.handleEscape(); event.accepted = true }
     }
     Rectangle { anchors.fill: parent; color: Theme.surface; opacity: 0.22 * Math.min(1, root.expandProgress) * (1 - root.closeProgress) }
     MouseArea { anchors.fill: parent; enabled: root.panelOpen; onClicked: root.requestClose() }
@@ -212,8 +255,7 @@ PanelWindow {
         color: Theme.surface
         opacity: 1 - root.closeProgress
         scale: 1 - 0.2 * root.closeProgress
-        border.color: Theme.border
-        border.width: Theme.borderWidth
+        border.width: 0
         clip: root.expandProgress < 0.999
         Behavior on width {
             enabled: root.expandProgress >= 0.999 && !openAnimation.running && !closeAnimation.running
@@ -225,194 +267,212 @@ PanelWindow {
         }
         MouseArea { anchors.fill: parent; onClicked: mouse => mouse.accepted = true }
 
-        Column {
-            anchors.fill: parent
-            anchors.margins: Theme.pad * 2
-            anchors.rightMargin: 24
-            spacing: Theme.pad
-            opacity: Math.max(0, Math.min(1, (root.expandProgress - 0.55) / 0.4))
-            enabled: root.panelOpen && root.expandProgress >= 0.95
-            Row {
-                width: parent.width
-                height: 48
-                spacing: Theme.pad
+        Dialog {
+            id: confirmationDialog
+            parent: root.contentItem
+            anchors.centerIn: parent
+            width: Math.max(0, Math.min(560, root.normalWidth - 24))
+            padding: 24
+            spacing: 20
+            modal: true
+            dim: true
+            focus: true
+            visible: root.panelOpen && root.confirmation.length > 0
+            closePolicy: root.applyingClose ? Popup.NoAutoClose : Popup.CloseOnEscape
+            property Item previousFocus: null
+            readonly property var labels: root.confirmation === "close"
+                ? ["Keep Editing", "Discard & Close", "Apply & Close"]
+                : ["Keep Editing", root.confirmation === "reset-shell" ? "Reset to Defaults"
+                    : root.confirmation === "discard-shell" ? "Discard Changes" : "Discard & Reload"]
+            onAboutToShow: previousFocus = root.contentItem.Window.window.activeFocusItem
+            onOpened: confirmationActions.itemAt(0).forceActiveFocus()
+            onClosed: {
+                if (!root.applyingClose) root.confirmation = ""
+                if (root.panelOpen && previousFocus) previousFocus.forceActiveFocus()
+            }
+            Overlay.modal: Rectangle { color: Qt.alpha(Theme.surface, 0.72) }
+            background: Rectangle {
+                radius: Theme.largeRadius
+                color: Theme.surface
+                border.width: 1
+                border.color: Theme.hoverMuted
+            }
+            contentItem: Column {
+                spacing: 12
                 Text {
-                    text: "Settings"
+                    width: parent.width
+                    text: root.confirmation === "close" ? "Unsaved changes"
+                        : root.confirmation === "reset-shell" ? "Reset Shell settings?"
+                        : root.confirmation === "discard-shell" ? "Discard Shell changes?" : "Reload saved settings?"
                     color: Theme.fg
                     font.family: Theme.fontFamily
-                    font.pixelSize: Math.round(Theme.fontSize * 1.4)
+                    font.pixelSize: Theme.fontSize + 3
                     font.weight: Font.DemiBold
-                    width: Math.max(120, parent.width * 0.35)
-                    anchors.verticalCenter: parent.verticalCenter
+                    wrapMode: Text.Wrap
                 }
                 Text {
-                    text: root.selectedGroup === "Shell" ? "~/hakucfg/hikai/hikai-shell.json"
-                          : root.selectedGroup === "Config" ? "~/hakucfg/wm · ~/hakucfg/config"
-                          : root.selectedGroup === "Info" ? "HakuSpace · " + (InfoStore.loading ? "detecting…"
-                              : InfoStore.repo.detected ? InfoStore.repo.version : "version unavailable")
-                          : SettingsStore.settingVersion ? "setting.sh · " + SettingsStore.settingVersion : "~/hakucfg/setting.sh"
+                    width: parent.width
+                    text: root.applyingClose ? "Applying changes… Please wait."
+                        : root.confirmation === "close" ? "Unsaved changes in " + root.dirtyDomains.join(", ")
+                            + ". Apply saves all modified pages. Discard restores their saved values before closing."
+                        : root.confirmation === "reset-shell" ? "Preview default Shell settings. Your current draft will be replaced. Nothing is saved until you choose Apply."
+                        : root.confirmation === "discard-shell" ? "Undo unsaved Shell edits and restore the saved settings, including live previews."
+                        : "Discard unsaved " + (root.confirmation === "reload-shell" ? "Shell" : "General") + " edits and reload the saved settings from disk."
                     color: Theme.fgDim
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
-                    elide: Text.ElideLeft
-                    width: Math.max(0, parent.width - Math.max(120, parent.width * 0.35) - Theme.pad)
-                    anchors.verticalCenter: parent.verticalCenter
+                    wrapMode: Text.Wrap
+                }
+                Text {
+                    width: parent.width
+                    visible: text.length > 0
+                    text: root.confirmationError || (root.confirmation === "close" ? root.closeSaveProblem : "")
+                    color: Theme.fg
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                    wrapMode: Text.Wrap
                 }
             }
-            Rectangle { width: parent.width; height: 1; color: Theme.border }
-            Item {
-                width: parent.width
-                height: 38
-                Item {
-                    id: tabLane
-                    // The strip stays compact while the selected page uses the full body width.
+            footer: Item {
+                width: confirmationDialog.width
+                implicitHeight: dialogButtons.height + 24
+                Flow {
+                    id: dialogButtons
                     x: 24
-                    width: Math.min(380, Math.max(0, parent.width - 24))
-                    height: parent.height
-                    readonly property real slotSpacing: 4
-                    readonly property real slotWidth: Math.max(0, (width - slotSpacing * (root.settingsTabs.length - 1)) / root.settingsTabs.length)
-                    Motion.SelectionPill {
-                        z: 0
-                        shown: true
-                        targetIndex: root.settingsTabs.indexOf(root.selectedGroup)
-                        slotCount: root.settingsTabs.length
-                        slotSpacing: tabLane.slotSpacing
-                    }
+                    width: Math.max(0, parent.width - 48)
+                    height: childrenRect.height
+                    spacing: 8
                     Repeater {
-                        model: root.settingsTabs
-                        delegate: Motion.MorphButton {
-                            id: tabButton
+                        id: confirmationActions
+                        model: confirmationDialog.labels
+                        delegate: SettingsPages.SettingsActionButton {
+                            id: dialogAction
                             required property string modelData
-                            required property int index
-                            x: index * (tabLane.slotWidth + tabLane.slotSpacing)
-                            z: 1
-                            width: tabLane.slotWidth
-                            height: tabLane.height
-                            radius: Theme.radius
+                            readonly property bool primary: modelData === "Apply & Close"
+                            TextMetrics { id: dialogMetrics; font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 1); text: dialogAction.modelData }
+                            width: Math.min(dialogButtons.width, Math.max(100, dialogMetrics.width + 28))
+                            height: 40
                             text: modelData
-                            hoverScaleDelta: 0.004
-                            pressScaleDelta: 0.018
-                            selected: root.selectedGroup === modelData
-                            selectedOverridesHover: true
-                            idleColor: "transparent"
-                            hoverColor: Qt.lighter(Theme.hoverMuted, 1.18)
-                            pressedColor: Qt.lighter(Theme.hoverMuted, 1.18)
-                            selectedColor: "transparent"
-                            foregroundColor: Theme.fgDim
-                            hoverForegroundColor: Theme.fg
-                            pressedForegroundColor: Theme.fg
-                            selectedForegroundColor: Theme.onAccentColor
-                            activeFocusOnTab: true
+                            fontSize: Math.max(10, Theme.fontSize - 1)
+                            idleColor: primary ? Theme.accent : Theme.hoverMuted
+                            hoverColor: primary ? Theme.accent : Qt.lighter(Theme.hoverMuted, 1.18)
+                            foregroundColor: primary ? Theme.onAccentColor : Theme.fg
+                            hoverForegroundColor: foregroundColor
+                            disabledColor: Theme.hoverMuted
+                            disabledForegroundColor: Theme.fgMuted
+                            enabled: !root.applyingClose && (primary ? root.canApplyAndClose : !root.settingsBusy)
+                            activeFocusOnTab: enabled
                             focused: activeFocus
-                            border.width: activeFocus ? 1 : 0
-                            border.color: Theme.fg
-                            onClicked: root.selectedGroup = modelData
-                            Keys.onReturnPressed: root.selectedGroup = modelData
-                            Keys.onSpacePressed: root.selectedGroup = modelData
-                            SettingsPages.SettingsTooltip {
-                                target: tabButton
-                                active: tabButton.hovered || tabButton.activeFocus
-                                text: tabButton.modelData === "General" ? "Edit options in setting.sh."
-                                      : tabButton.modelData === "Shell" ? "Preview shell appearance and TopBar modules."
-                                      : tabButton.modelData === "Config" ? "Browse and edit configuration files."
-                                      : "View HakuSpace and system information."
+                            onClicked: {
+                                if (!enabled) return
+                                if (modelData === "Keep Editing") root.confirmation = ""
+                                else if (primary) root.applyAndClose()
+                                else root.confirmDiscard()
                             }
+                            Keys.onReturnPressed: clicked()
+                            Keys.onSpacePressed: clicked()
                         }
                     }
                 }
             }
-            Rectangle { width: parent.width; height: 1; color: Theme.border }
+        }
+        Item {
+            id: interior
+            anchors.fill: parent
+            anchors.margins: parent.width < 760 || parent.height < 560 ? 12 : 24
+            clip: true
+            // Keep page objects alive so navigation never resets a draft or confirmation.
+            readonly property var currentPage: root.selectedGroup === "General" ? generalPage
+                : root.selectedGroup === "Shell" ? shellPage : root.selectedGroup === "Config" ? configPage : infoPage
+            readonly property bool compact: width < 760
+            opacity: Math.max(0, Math.min(1, (root.expandProgress - 0.55) / 0.4))
+            enabled: root.panelOpen && root.expandProgress >= 0.95
+            Keys.onEscapePressed: event => { root.handleEscape(); event.accepted = true }
+
+            // A static, faint grid adds texture without input handlers or animation.
             Item {
-                width: parent.width
-                // Fill the space left by the header, tab strip, dividers, and Column gaps.
-                height: Math.max(0, parent.height - 48 - 38 - 2 - Theme.pad * 4)
-                SettingsPages.GeneralSettingsPage {
-                    anchors.fill: parent
-                    visible: root.selectedGroup === "General"
-                    confirmation: root.confirmation
-                    onReloadRequested: root.requestReload()
-                    onCancelRequested: root.confirmation = ""
-                    onDiscardRequested: root.confirmDiscard()
+                anchors.fill: parent
+                visible: width >= 760 && height >= 450
+                opacity: 0.025
+                Repeater {
+                    model: Math.floor(interior.height / 28)
+                    Rectangle { required property int index; y: (index + 1) * 28; width: interior.width; height: 1; color: Theme.fg }
                 }
-                SettingsPages.ConfigEditorPage {
-                    id: configPage
-                    anchors.fill: parent
-                    visible: root.selectedGroup === "Config"
-                    onCloseRequested: root.requestClose()
-                }
-                SettingsPages.ShellSettingsPage {
-                    anchors.fill: parent
-                    visible: root.selectedGroup === "Shell"
-                    onReloadRequested: root.requestReload()
-                }
-                SettingsPages.InfoPage {
-                    anchors.fill: parent
-                    visible: root.selectedGroup === "Info"
+                Repeater {
+                    model: Math.floor(interior.width / 28)
+                    Rectangle { required property int index; x: (index + 1) * 28; width: 1; height: interior.height; color: Theme.fg }
                 }
             }
-        }
-        Rectangle {
-            visible: root.selectedGroup !== "General" && root.confirmation !== ""
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            anchors.margins: Theme.pad * 2
-            height: 52
-            radius: Theme.radius
-            color: Theme.surface
-            border.color: Theme.accent
-            Row {
-                anchors.fill: parent
-                anchors.margins: Theme.pad
-                spacing: Theme.pad
-                Text {
-                    width: Math.max(80, parent.width - 180)
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: root.confirmation === "reload-shell" ? "Discard Shell changes and reload from disk?"
-                          : "Discard unsaved Settings changes and close?"
-                    color: Theme.fg
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
-                    elide: Text.ElideRight
-                }
-                SettingsPages.SettingsActionButton {
-                    id: keepButton
-                    width: 72; height: 30; radius: Theme.radius
-                    text: "Keep"
-                    idleColor: Theme.hoverMuted
-                    hoverColor: Qt.lighter(Theme.hoverMuted, 1.18)
-                    foregroundColor: Theme.fg
-                    hoverForegroundColor: Theme.fg
-                    activeFocusOnTab: true
-                    focused: activeFocus
-                    onClicked: root.confirmation = ""
-                    Keys.onReturnPressed: clicked()
-                    Keys.onSpacePressed: clicked()
-                    SettingsPages.SettingsTooltip {
-                        target: keepButton
-                        active: keepButton.hovered || keepButton.activeFocus
-                        text: "Keep unsaved edits and stay in Settings."
+            SettingsPages.SettingsTopBar {
+                id: topbar
+                width: parent.width
+                height: implicitHeight
+                selected: root.selectedGroup
+                source: root.selectedGroup === "Shell" ? "~/hakucfg/hikai/hikai-shell.json"
+                    : root.selectedGroup === "Config" ? "~/hakucfg/wm · ~/hakucfg/config"
+                    : root.selectedGroup === "Info" ? "HakuSpace · " + (InfoStore.loading ? "detecting…"
+                        : InfoStore.repo.detected ? InfoStore.repo.version : "version unavailable")
+                    : SettingsStore.settingVersion ? "setting.sh · " + SettingsStore.settingVersion : "~/hakucfg/setting.sh"
+                onSelectedRequested: domain => root.selectedGroup = domain
+            }
+            SettingsPages.SettingsSidebar {
+                id: sidebar
+                y: topbar.height
+                width: interior.compact ? parent.width : parent.width >= 1050 ? 220 : 180
+                height: interior.compact ? 44 : Math.max(0, footer.y - y)
+                page: interior.currentPage
+                compact: interior.compact
+                configBrowser: root.selectedGroup === "Config"
+                onFileSelected: fileId => configPage.requestSelect(fileId)
+            }
+            Item {
+                id: viewport
+                x: interior.compact ? 0 : sidebar.width
+                y: interior.compact ? sidebar.y + sidebar.height : topbar.height
+                width: Math.max(0, parent.width - x)
+                height: Math.max(0, footer.y - y)
+                clip: true
+                Item {
+                    anchors.fill: parent
+                    anchors.margins: interior.compact ? 16 : 24
+                    SettingsPages.GeneralSettingsPage {
+                        id: generalPage
+                        anchors.fill: parent
+                        visible: root.selectedGroup === "General"
+                        onReloadRequested: root.requestReload()
+                    }
+                    SettingsPages.ShellSettingsPage {
+                        id: shellPage
+                        anchors.fill: parent
+                        visible: root.selectedGroup === "Shell"
+                        onReloadRequested: root.requestReload()
+                        onConfirmationRequested: action => root.confirmation = action
+                    }
+                    SettingsPages.ConfigEditorPage {
+                        id: configPage
+                        anchors.fill: parent
+                        visible: root.selectedGroup === "Config"
+                        onCloseRequested: root.handleEscape()
+                    }
+                    SettingsPages.InfoPage {
+                        id: infoPage
+                        anchors.fill: parent
+                        visible: root.selectedGroup === "Info"
                     }
                 }
-                SettingsPages.SettingsActionButton {
-                    id: discardButton
-                    width: 82; height: 30; radius: Theme.radius
-                    text: "Discard"
-                    idleColor: Theme.accent
-                    hoverColor: Theme.accent
-                    foregroundColor: Theme.onAccentColor
-                    hoverForegroundColor: Theme.onAccentColor
-                    activeFocusOnTab: true
-                    focused: activeFocus
-                    onClicked: root.confirmDiscard()
-                    Keys.onReturnPressed: clicked()
-                    Keys.onSpacePressed: clicked()
-                    SettingsPages.SettingsTooltip {
-                        target: discardButton
-                        active: discardButton.hovered || discardButton.activeFocus
-                        text: "Discard unsaved edits and close Settings."
-                    }
+                // Page switches animate presentation only; controls keep stable geometry.
+                SequentialAnimation {
+                    id: pageTransition
+                    NumberAnimation { target: viewport; property: "opacity"; from: 0.65; to: 1; duration: 160; easing.type: Easing.OutCubic }
                 }
+                Connections { target: root; function onSelectedGroupChanged() { pageTransition.restart() } }
+            }
+            SettingsPages.SettingsFooter {
+                id: footer
+                width: parent.width
+                height: implicitHeight
+                anchors.bottom: parent.bottom
+                page: interior.currentPage
             }
         }
     }

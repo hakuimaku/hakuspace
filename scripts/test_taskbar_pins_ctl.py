@@ -133,8 +133,12 @@ class TaskbarPinsTests(unittest.TestCase):
         self.assertEqual(self.path.stat().st_ino, inode)
         self.run_ctl('add', 'new-app')
         self.assertEqual(json.loads(ctl.jsonc_text(self.path.read_text()))['image#new-app']['size'], 64)
+        for size in (24, 28):
+            self.run_ctl('size', str(size))
+            document = json.loads(ctl.jsonc_text(self.path.read_text()))
+            self.assertTrue(all(document[module]['size'] == size for module in document['group/pin']['modules']))
         original = self.path.read_bytes()
-        for size in ('31', '73', '33', '48.0', 'bad'):
+        for size in ('20', '23', '25', '31', '73', '33', '48.0', 'bad'):
             with self.subTest(size=size), self.assertRaises(ValueError):
                 self.run_ctl('size', size)
             self.assertEqual(self.path.read_bytes(), original)

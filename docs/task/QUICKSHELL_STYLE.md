@@ -19,11 +19,27 @@
 This addition supersedes the fixed surface/radius assumptions in the historical
 baseline below. It does not change the accent/font flow or the P3 motion contract.
 
+Settings decorations use neutral Theme surfaces: headings, separators, idle
+borders, value badges, status text and the logo do not inherit accent. Info card
+selection uses a gray surface and outline while preserving the last chosen card.
+Accent identifies active navigation/controls, input selection or focus, and enabled
+Apply/Save actions. Disabled actions and ordinary button hover/press stay neutral.
+Navigation buttons sharing a selection pill have no individual border. Keyboard
+focus uses an inset underline so hover and selection retain a single silhouette.
+
+Shell footer actions keep a fixed single row: Reload, Reset, then a separated
+Discard/Apply pair with Apply on the right. Reset previews defaults; Discard
+restores saved values. Both require a scoped confirmation. Escape with unsaved
+changes opens a modal with Keep Editing, Discard & Close and Apply & Close.
+Keep Editing receives initial keyboard focus, and Escape cancels the dialog.
+Apply & Close saves every modified page, waits for all responses and keeps failed
+drafts open for review. Pages already saved successfully remain saved.
+
 `~/hakucfg/hikai/hikai-shell.json` (schema version 6) stores appearance,
 RoundedScreen geometry, TopBar module preferences and shared app artwork/Dockbar
 preferences. The `dock` section contains `visibilityMode`, `exclusiveSpace`,
 `iconSize`, `hoverLift`, `hoverScale`, `showTrash` and `showDevices`. There is no style
-selector. Icons range from 32–72 px in 4 px steps (default 36); explicit legacy sizes
+selector. Icons range from 24–72 px in 4 px steps (default 36); explicit legacy sizes
 survive migration. Shared pins remain in `~/hakucfg/config/taskbar-pin-apps`.
 
 `taskbar_manual_state` enables Taskbar Mode; `dockbar_manual_state` independently

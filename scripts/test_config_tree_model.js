@@ -22,4 +22,11 @@ assert.deepEqual(rows.map(row => row.isLast), [false, false, true, true, false, 
 assert.deepEqual(rows[2].ancestorLast, [false, false])
 assert.deepEqual(rows[3].ancestorLast, [false])
 assert.deepEqual(JSON.parse(JSON.stringify(context.rows(files, 'config'))).map(row => row.fileId), ['config/kitty.conf'])
+for (const [id, title] of [
+    ['wm/hyprland-custom.lua', 'Hyprland'], ['wm/niri-custom.kdl', 'Niri'],
+    ['wm/mango-custom.conf', 'MangoWM'], ['config/cava-layer', 'Cava Underbar'],
+    ['config/hypridle.conf', 'Hypridle'], ['config/rofi/config.rasi', 'Rofi'],
+    ['config/taskbar-pin-apps', 'Pinned Apps'], ['config/custom_tool.conf', 'Custom Tool'],
+    ['config/.env', '.env']
+]) assert.equal(context.title(id), title)
 console.log('Config tree model fixtures passed')

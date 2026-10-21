@@ -91,7 +91,7 @@ class ShellSettingsTests(unittest.TestCase):
         patches += [{"topbar": {"tray": value}} for value in (0, 1, "false", None)]
         patches += [{"roundedScreen": {"radius": value}} for value in (-1, 25, True, 20.0, "20", None)]
         patches += [{"roundedScreen": {"borderThickness": value}} for value in (-1, 7, True, 4.0, "4", None)]
-        patches += [{"dock": {"iconSize": value}} for value in (31, 73, 33, True, 48.0, "48", None)]
+        patches += [{"dock": {"iconSize": value}} for value in (20, 23, 25, 31, 73, 33, True, 48.0, "48", None)]
         patches += [{"dock": {"hoverLift": value}} for value in (-1, 49, True, 14.0, "14", None)]
         patches += [{"dock": {"hoverScale": value}} for value in (-1, 101, True, 25.0, "25", None)]
         patches += [{"dock": {"exclusiveSpace": value}} for value in (0, "false", None)]
@@ -198,7 +198,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.assertTrue(result["needsMigration"])
         self.assertEqual(result["values"]["dock"], ctl.DEFAULTS["dock"])
         self.assertEqual(self.path.read_bytes(), original)
-        for size in range(32, 73, 4):
+        for size in range(24, 73, 4):
             values = self.write({"dock": {"iconSize": size, "visibilityMode": "always", "exclusiveSpace": True}})
             self.assertEqual(values["dock"]["iconSize"], size)
             self.assertEqual(values["roundedScreen"], legacy["roundedScreen"])
@@ -253,8 +253,10 @@ class ShellSettingsTests(unittest.TestCase):
         original = self.pins.read_text()
         self.write({"dock": {"hoverLift": 28}})
         self.assertEqual(self.pins.read_text(), original)
-        self.write({"dock": {"iconSize": 64}})
-        self.assertEqual(self.pins.read_text(), original.replace('"size": 36', '"size": 64'))
+        for size in (24, 28, 64):
+            self.write({"dock": {"iconSize": size}})
+            self.assertEqual(ctl.run("read")["values"]["dock"]["iconSize"], size)
+            self.assertEqual(self.pins.read_text(), original.replace('"size": 36', '"size": ' + str(size)))
         taskbar_pins_ctl.run("add", ["new-app"])
         data = json.loads(taskbar_pins_ctl.jsonc_text(self.pins.read_text()))
         self.assertEqual(data["image#new-app"]["size"], 64)

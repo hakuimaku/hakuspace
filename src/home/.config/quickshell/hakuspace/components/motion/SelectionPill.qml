@@ -92,6 +92,7 @@ Rectangle {
         function onYChanged() { root.syncTarget(false); }
         function onWidthChanged() { root.syncTarget(false); }
         function onHeightChanged() { root.syncTarget(false); }
+        function onRadiusChanged() { root.syncTarget(false); }
         function onDangerChanged() { root.syncTarget(false); }
     }
 
