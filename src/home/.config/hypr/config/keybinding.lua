@@ -44,6 +44,23 @@ hl.bind(mainMod .. " + SHIFT + Z", hl.dsp.exec_cmd("$HOME/.local/bin/waybar_mana
 hl.bind(mainMod .. " + Z", hl.dsp.exec_cmd("$HOME/.local/bin/taskbar_manager.sh --toggle"))
 hl.bind(mainMod .. " + CTRL + Z", hl.dsp.exec_cmd("$HOME/.local/bin/waybar_manager.sh --toggle"))
 
+-- Native Hikai navigation preserves compositor event order without shell processes.
+local function windowNavigator(action)
+    local state = io.open(os.getenv("HOME") .. "/.local/state/hakuspace/state/[shell].backend", "r")
+    local backend = state and state:read("*l")
+    if state then state:close() end
+    if backend == "hikai" then
+        hl.dispatch(hl.dsp.global("hakuspace:window-navigator-" .. action))
+    else
+        hl.dispatch(hl.dsp.exec_cmd("$HOME/.local/bin/window_navigator.sh " .. action))
+    end
+end
+hl.bind("ALT + TAB", function() windowNavigator("next") end)
+hl.bind("ALT + SHIFT + TAB", function() windowNavigator("previous") end)
+-- Alt release survives Tab shadowing and leaves ordinary Alt input available.
+hl.bind("ALT + ALT_L", function() windowNavigator("commit") end, { release = true, transparent = true, ignore_mods = true, non_consuming = true })
+hl.bind("ALT + ALT_R", function() windowNavigator("commit") end, { release = true, transparent = true, ignore_mods = true, non_consuming = true })
+
 -- Window management keybindings
 hl.bind(mainMod .. " + W", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))

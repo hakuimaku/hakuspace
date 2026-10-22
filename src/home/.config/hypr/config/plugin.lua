@@ -61,6 +61,5 @@ hl.config({
     },
 })
 
-hl.bind("SUPER + G", function()
-    hl.plugin.scrolloverview.overview("toggle all")
-end)
+-- Hikai owns overview presentation; Classic keeps the plugin through the facade.
+hl.bind("SUPER + G", hl.dsp.exec_cmd("$HOME/.local/bin/window_navigator.sh overview-toggle"))

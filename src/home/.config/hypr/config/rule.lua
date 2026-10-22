@@ -178,7 +178,14 @@ hl.layer_rule({
     animation = "slide bottom",
 })
 
--- Desktop icons disable animations
+-- Navigator geometry is animated by QML rather than the compositor.
+hl.layer_rule({
+    name = "haku-window-navigator",
+    match = { namespace = "hakuspace-window-navigator" },
+    no_anim = true,
+})
+
+-- Desktop icons disable animations.
 hl.layer_rule({
     name = "haku-desktop-icons",
     match = { namespace = "desktop-icons" },

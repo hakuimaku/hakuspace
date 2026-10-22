@@ -77,6 +77,19 @@ def main():
                     tap(KEYS[char.lower()], int(char.isupper() or char in '>~'))
             elif command == 'key':
                 tap(*map(int, value.split()))
+            elif command == 'alt-tab':
+                # Keep Alt physically held across Tab and release without a pause.
+                alt, shift, alt_first = map(int, value.split())
+                if alt not in (56, 100) or shift not in (0, 1) or alt_first not in (0, 1):
+                    raise ValueError('invalid Alt-Tab chord')
+                timestamp = int(time.monotonic() * 1000) & 0xffffffff
+                send(connection, 6, 2, struct.pack('=IIII', shift, 0, 0, 0))
+                send(connection, 6, 1, struct.pack('=III', timestamp, alt, 1))
+                send(connection, 6, 2, struct.pack('=IIII', 8 | shift, 0, 0, 0))
+                send(connection, 6, 1, struct.pack('=III', timestamp, 15, 1))
+                for code in ((alt, 15) if alt_first else (15, alt)):
+                    send(connection, 6, 1, struct.pack('=III', timestamp, code, 0))
+                send(connection, 6, 2, struct.pack('=IIII', 0, 0, 0, 0))
             else:
                 raise ValueError('unknown keyboard fixture command')
 

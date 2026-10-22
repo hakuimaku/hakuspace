@@ -28,6 +28,7 @@ singleton ConfigEditorStore 1.0 ConfigEditorStore.qml
 singleton InfoStore 1.0 InfoStore.qml
 singleton TaskbarPins 1.0 TaskbarPins.qml
 singleton DockApps 1.0 DockApps.qml
+singleton WindowNavigator 1.0 WindowNavigator.qml
 singleton ChromeLayout 1.0 ChromeLayout.qml
 singleton ShellTransitionState 1.0 ShellTransitionState.qml
 singleton LockState 1.0 LockState.qml

@@ -44,6 +44,19 @@ ShellRoot {
         function cancel(): string { return ShellTransitionState.cancel() }
     }
 
+    // Hyprland navigation keeps compositor focus separate from overlay selection.
+    IpcHandler {
+        target: "windowNavigator"
+        function next() { WindowNavigator.step(1) }
+        function previous() { WindowNavigator.step(-1) }
+        function commit() { WindowNavigator.commitSwitcher() }
+        function cancel() { WindowNavigator.cancel() }
+        function overviewToggle() { WindowNavigator.overviewToggle() }
+        function overviewOpen() { WindowNavigator.open("overview", 0) }
+        function overviewClose() { if (WindowNavigator.mode === "overview") WindowNavigator.cancel() }
+        function status(): string { return WindowNavigator.status() }
+    }
+
     PersistentProperties {
         id: notificationMemory
         reloadableId: "hakuspace-notification-records"
@@ -425,6 +438,11 @@ ShellRoot {
     Variants {
         model: root.hikaiScreenModel
         RoundedScreen {}
+    }
+
+    Variants {
+        model: root.hikaiScreenModel
+        WindowNavigatorOverlay {}
     }
 
     // Map last so an active wipe sits above existing Hikai overlay panels.
