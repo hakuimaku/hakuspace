@@ -304,7 +304,7 @@ Item {
                     readonly property bool isColorKind: rowWrap.modelData.stateKind === "cavaColor"
                     readonly property bool isPositionKind: rowWrap.modelData.stateKind === "cavaPosition"
                     anchors.centerIn: parent
-                    width: Math.min(parent.width - Theme.gap * 2, Math.max(94, Theme.fontSize * 6.8))
+                    width: Math.min(parent.width - Theme.gap * 2, Math.max(102, Theme.fontSize * 6.8 + 8))
                     height: Math.max(28, Theme.fontSize * 1.9)
                     radius: height / 2
                     color: rowWrap.stateOn ? Theme.accent : Qt.darker(Theme.hoverMuted, 1.5)
