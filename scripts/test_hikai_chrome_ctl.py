@@ -35,8 +35,8 @@ class ChromeToggleTests(unittest.TestCase):
         self.env = {**os.environ, "HOME": str(self.home), "PATH": str(self.bin) + ":" + os.environ["PATH"],
                     "XDG_RUNTIME_DIR": str(self.home / "runtime"),
                     "WAYBAR_TEST_RUNNING": str(self.running)}
-        self.preference = self.state / "waybar_manual_state"
-        (self.state / "taskbar_manual_state").write_text("1\n")
+        self.preference = self.state / "[desktop].waybar.requested"
+        (self.state / "[desktop].taskbar.requested").write_text("1\n")
 
     def toggle(self):
         """Invoke the same public command as compositor keybindings."""
@@ -45,7 +45,7 @@ class ChromeToggleTests(unittest.TestCase):
 
     def test_hikai_never_mutates_classic_or_taskbar_preferences(self):
         """Two Hikai toggles preserve even missing or malformed Classic state."""
-        (self.state / "shell_backend").write_text("hikai\n")
+        (self.state / "[shell].backend").write_text("hikai\n")
         for content in (None, "0\n", "1\n", "legacy preference\n"):
             if content is None:
                 self.preference.unlink(missing_ok=True)
@@ -54,13 +54,13 @@ class ChromeToggleTests(unittest.TestCase):
             self.toggle()
             self.toggle()
             self.assertEqual(self.preference.read_text() if self.preference.exists() else None, content)
-            self.assertFalse((self.state / "waybar_current_mode").exists())
-            self.assertEqual((self.state / "taskbar_manual_state").read_text(), "1\n")
+            self.assertFalse((self.state / "[desktop].waybar.mode").exists())
+            self.assertEqual((self.state / "[desktop].taskbar.requested").read_text(), "1\n")
             self.assertFalse(self.running.exists())
 
     def test_classic_shortcut_still_stops_and_starts_waybar(self):
         """Returning to Classic restores the existing process and preference toggle."""
-        (self.state / "shell_backend").write_text("classic\n")
+        (self.state / "[shell].backend").write_text("classic\n")
         config = self.home / ".config/waybar"
         config.mkdir(parents=True)
         (config / "config").touch()
@@ -73,7 +73,7 @@ class ChromeToggleTests(unittest.TestCase):
         self.toggle()
         self.assertTrue(self.running.exists())
         self.assertEqual(self.preference.read_text(), "1\n")
-        self.assertEqual((self.state / "taskbar_manual_state").read_text(), "1\n")
+        self.assertEqual((self.state / "[desktop].taskbar.requested").read_text(), "1\n")
 
 
 if __name__ == "__main__":

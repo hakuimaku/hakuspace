@@ -7,8 +7,8 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
 source "$SCRIPT_DIR/haku_backend_lib.sh"
 
-ROUNDED_SCREEN_STATE="$STATE_DIR/rounded_screen_state"
-ROUNDED_SCREEN_DYNAMIC_STATE="$STATE_DIR/rounded_screen_dynamic_state"
+ROUNDED_SCREEN_STATE="$(haku_state_path screen.rounded.enabled)"
+ROUNDED_SCREEN_DYNAMIC_STATE="$(haku_state_path screen.rounded.dynamic)"
 
 ROUNDED_SCREEN_BIN="$HOME/.local/bin/rounded_screen.py"
 CONF_FILE="$HOME/hakucfg/config/rounded-screen.conf"

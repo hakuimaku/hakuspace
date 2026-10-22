@@ -24,7 +24,7 @@ name = Path(sys.argv[0]).name
 args = sys.argv[1:]
 model_path = root / "model.json"
 model = json.loads(model_path.read_text())
-backend = (root / "home/.local/state/hakuspace/state/shell_backend").read_text().strip()
+backend = (root / "home/.local/state/hakuspace/state/[shell].backend").read_text().strip()
 
 def event(action):
     with (root / "events.jsonl").open("a") as stream:
@@ -194,7 +194,8 @@ class BackendTransitionTest(unittest.TestCase):
         self.state = self.root / "home/.local/state/hakuspace/state"
         self.bin.mkdir(parents=True)
         self.state.mkdir(parents=True)
-        for source in ("sys/haku_backend.sh", "lib/haku_backend_lib.sh", "lib/haku_theme.sh"):
+        for source in ("sys/haku_backend.sh", "lib/haku_backend_lib.sh", "lib/haku_theme.sh", "lib/haku_state.sh", "lib/haku_state.py",
+                       "state/haku_state_migrate.py", "backend/user/hikai_settings_ctl.py"):
             shutil.copy2(Path("src/core") / source, self.bin)
         fixture = self.bin / "stub"
         fixture.write_text(STUB)
@@ -209,8 +210,8 @@ class BackendTransitionTest(unittest.TestCase):
 
     def prepare(self, backend, fail=""):
         """Seed a healthy old desktop and enable only the required visual checks."""
-        (self.state / "shell_backend").write_text(backend + "\n")
-        (self.state / "waybar_manual_state").write_text("1\n")
+        (self.state / "[shell].backend").write_text(backend + "\n")
+        (self.state / "[desktop].waybar.requested").write_text("1\n")
         model = dict(phase="idle", polls=0, chrome=True, fail=fail,
                      owner="swaync" if backend == "classic" else "qs",
                      procs=["swaync", "waybar", "taskbar", "rounded_screen.py", "edge_trigger.py"]
@@ -236,7 +237,7 @@ class BackendTransitionTest(unittest.TestCase):
 
     def assert_backend(self, backend):
         """Verify final state and the matching notification server through the real CLI."""
-        self.assertEqual((self.state / "shell_backend").read_text().strip(), backend)
+        self.assertEqual((self.state / "[shell].backend").read_text().strip(), backend)
         self.run_cli("--verify")
 
     def test_classic_to_hikai(self):
@@ -338,7 +339,7 @@ class BackendTransitionTest(unittest.TestCase):
         """A user-disabled Waybar requires no startup acknowledgement."""
         self.prepare("hikai")
         self.install_waybar_controller()
-        (self.state / "waybar_manual_state").write_text("0\n")
+        (self.state / "[desktop].waybar.requested").write_text("0\n")
         self.run_cli("set", "classic")
         self.assert_backend("classic")
         self.assertNotIn("waybar:starting", [e["action"] for e in self.events()])
@@ -393,7 +394,7 @@ class BackendTransitionTest(unittest.TestCase):
         self.prepare("hikai")
         self.run_cli("--recover")
         self.assert_backend("classic")
-        (self.state / "waybar_manual_state").write_text("0\n")
+        (self.state / "[desktop].waybar.requested").write_text("0\n")
         model = json.loads((self.root / "model.json").read_text())
         model["procs"].remove("waybar")
         (self.root / "model.json").write_text(json.dumps(model))

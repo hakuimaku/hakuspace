@@ -24,17 +24,17 @@ Item {
     readonly property bool hikaiBackend: (backendStateView.text() || "").trim().toLowerCase() === "hikai"
 
     readonly property var items: [
-        { label: "Change Theme", icon: "", action: "Change Theme", toggle: false, showState: false, stateFile: "", statePath: "", stateKind: "bool" },
-        { label: "Change Wallpaper", icon: "󰏜", action: "Change Wallpaper", toggle: false, showState: false, stateFile: "", statePath: "", stateKind: "bool" },
+        { label: "Change Theme", icon: "", action: "Change Theme", toggle: false, showState: false, statePath: "", stateKind: "bool" },
+        { label: "Change Wallpaper", icon: "󰏜", action: "Change Wallpaper", toggle: false, showState: false, statePath: "", stateKind: "bool" },
         { label: "Taskbar Mode", icon: "󰐃", action: "Taskbar Mode", toggle: true, showState: true, chromeKey: "taskbar" },
-        { label: "Cava Underbar", icon: "󰝚", action: "Cava Underbar", toggle: true, showState: true, stateFile: "cava_layer_state", statePath: "", stateKind: "bool" },
-        { label: "Cava Dynamic Position", icon: "󰝚", action: "Cava Dynamic Position", toggle: true, showState: true, stateFile: "cava_dynamic_state", statePath: "", stateKind: "bool" },
-        { label: "Cava Color Mode", icon: "󰝚", action: "Cava Color Mode", toggle: true, showState: true, stateFile: "cava_color_state", statePath: "", stateKind: "cavaColor" },
-        { label: "Desktop Icons", icon: "", action: "Desktop Icons", toggle: true, showState: true, stateFile: "desktop_icons_state", statePath: "", stateKind: "bool" },
+        { label: "Cava Underbar", icon: "󰝚", action: "Cava Underbar", toggle: true, showState: true, statePath: Env.stateCavaEnabled, stateKind: "bool" },
+        { label: "Cava Dynamic Position", icon: "󰝚", action: "Cava Dynamic Position", toggle: true, showState: true, statePath: Env.stateCavaDynamicPosition, stateKind: "bool" },
+        { label: "Cava Color Mode", icon: "󰝚", action: "Cava Color Mode", toggle: true, showState: true, statePath: Env.stateCavaColorMode, stateKind: "cavaColor" },
+        { label: "Desktop Icons", icon: "", action: "Desktop Icons", toggle: true, showState: true, statePath: Env.stateDesktopIconsEnabled, stateKind: "bool" },
         { label: "Dockbar", icon: "󰧨", action: "Dockbar", toggle: true, showState: true, chromeKey: "dockbar" },
-        { label: "Auto Random Wallpaper", icon: "", action: "Auto Random Wallpaper", toggle: true, showState: true, stateFile: "", statePath: "/tmp/random_wallpaper_status", stateKind: "bool" },
-        { label: "Kill Lively Wallpaper", icon: "󱛹", action: "Kill Lively Wallpaper", toggle: false, showState: false, stateFile: "", statePath: "", stateKind: "bool" },
-        { label: "", icon: "󰆧", action: "", toggle: true, showState: false, stateFile: "shell_backend", statePath: "", stateKind: "backend", backendSwitch: true }
+        { label: "Auto Random Wallpaper", icon: "", action: "Auto Random Wallpaper", toggle: true, showState: true, statePath: "/tmp/random_wallpaper_status", stateKind: "bool" },
+        { label: "Kill Lively Wallpaper", icon: "󱛹", action: "Kill Lively Wallpaper", toggle: false, showState: false, statePath: "", stateKind: "bool" },
+        { label: "", icon: "󰆧", action: "", toggle: true, showState: false, statePath: Env.stateShellBackend, stateKind: "backend", backendSwitch: true }
     ]
 
     function labelFor(item) {
@@ -123,7 +123,6 @@ Item {
 
     function statePathFor(item) {
         if (item.statePath && item.statePath.length > 0) return item.statePath
-        if (item.stateFile && item.stateFile.length > 0) return Env.stateDir + "/" + item.stateFile
         return ""
     }
 
@@ -149,7 +148,7 @@ Item {
 
     FileView {
         id: backendStateView
-        path: Env.stateDir + "/shell_backend"
+        path: Env.stateShellBackend
         watchChanges: true
         printErrors: false
         onFileChanged: this.reload()

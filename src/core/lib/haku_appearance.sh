@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Appearance selection is configuration; state.env remains runtime theme state.
+# Appearance selection is configuration; [theme].appearance.env remains runtime theme state.
 if [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/hakuspace/appearance.env" ]]; then
     source "${XDG_CONFIG_HOME:-$HOME/.config}/hakuspace/appearance.env"
 fi

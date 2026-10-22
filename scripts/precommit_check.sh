@@ -26,6 +26,10 @@ if [ -n "$JUNK" ]; then
     exit 1
 fi
 
+# Validate the runtime state naming contract and safe upgrade behavior.
+python3 scripts/check_state_schema.py
+python3 scripts/test_state_naming.py
+
 # 4. QML syntax check (if script exists)
 if [ -f scripts/qml_syntax_check.py ]; then
     python3 scripts/qml_syntax_check.py $(find src/home/.config/quickshell -name '*.qml')

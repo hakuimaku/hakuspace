@@ -17,7 +17,7 @@ printf '#!/usr/bin/env bash\nexec bash %q "$@"\n' "$PWD/src/core/backend/theme/w
 chmod +x "$bin_root/wallpaper_ctl.sh"
 printf '%s\n' '{"group/pin":{"modules":["image#probe"]},"image#probe":{"on-click":"true"}}' > "$test_root/home/hakucfg/config/taskbar-pin-apps"
 printf '[Desktop Entry]\nType=Application\nName=Probe\nExec=true\nIcon=probe\n' > "$test_root/home/.local/share/applications/probe.desktop"
-printf '1\n' > "$test_root/src/home/.local/state/hakuspace/state/dockbar_manual_state"
+printf '1\n' > "$test_root/src/home/.local/state/hakuspace/state/[desktop].dockbar.requested"
 cat > "$test_root/mutate.py" <<'PY'
 import io
 from PIL import Image

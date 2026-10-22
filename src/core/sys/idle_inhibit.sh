@@ -15,7 +15,7 @@ fi
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
-STATE_FILE="$STATE_DIR/idle_inhibit"
+STATE_FILE="$(haku_state_path system.idle-inhibit.enabled)"
 
 # Ensure the directory exists
 mkdir -p "$STATE_DIR"

@@ -9,7 +9,7 @@ source "$SCRIPT_DIR/haku_theme.sh"
 OPAQUE_DIR="$THEME_RENDER_DIR/opaque"
 mkdir -p "$OPAQUE_DIR"
 
-OPAQUE_STATE_FILE="$STATE_DIR/opaque_theme_state"
+OPAQUE_STATE_FILE="$(haku_state_path theme.opaque.enabled)"
 
 APPLY_STYLE="$HOME/.local/bin/apply_style.sh"
 

@@ -160,7 +160,7 @@ class AppearanceTests(unittest.TestCase):
 
     def test_invalid_accent_does_not_mutate(self):
         self.run_script("theme_ctl.sh", "set-accent", "invalid", success=False)
-        self.assertFalse((self.home / ".local/state/hakuspace/state/state.env").exists())
+        self.assertFalse((self.home / ".local/state/hakuspace/state/[theme].appearance.env").exists())
         self.assertEqual(self.calls(), [])
 
     def test_icon_accent_is_synced_before_live_apply(self):
@@ -294,7 +294,7 @@ class AppearanceTests(unittest.TestCase):
 
     def test_renderer_does_not_persist(self):
         self.run_script("theme_ctl.sh", "set-font", "monospace")
-        state = self.home / ".local/state/hakuspace/state/state.env"
+        state = self.home / ".local/state/hakuspace/state/[theme].appearance.env"
         before = state.read_bytes()
         self.run_script("gen_style.sh", "#5294E2", success=False)
         self.run_script("gen_style.sh")
@@ -426,7 +426,7 @@ class InstalledAssetsTests(unittest.TestCase):
             for color in ("#AC7994", "#5294E2", "#AC7994"):
                 run(binary / "theme_ctl.sh", "set-accent", color)
                 accent_matches(color)
-            canonical = home / ".local/state/hakuspace/state/state.env"
+            canonical = home / ".local/state/hakuspace/state/[theme].appearance.env"
             before = canonical.read_bytes()
             backup_states = list((home / ".local/state/icon-accent").glob("*/state.json"))
             self.assertEqual(len(backup_states), 1)

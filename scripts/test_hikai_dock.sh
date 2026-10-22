@@ -36,9 +36,9 @@ else
     cp scripts/hikai_dock_harness.qml "$shell_root/shell.qml"
 fi
 cp src/home/hakucfg/config/taskbar-pin-apps "$test_root/home/hakucfg/config/"
-printf '0\n' > "$test_root/src/home/.local/state/hakuspace/state/taskbar_manual_state"
-printf '0\n' > "$test_root/src/home/.local/state/hakuspace/state/dockbar_manual_state"
-printf 'hikai\n' > "$test_root/src/home/.local/state/hakuspace/state/shell_backend"
+printf '0\n' > "$test_root/src/home/.local/state/hakuspace/state/[desktop].taskbar.requested"
+printf '0\n' > "$test_root/src/home/.local/state/hakuspace/state/[desktop].dockbar.requested"
+printf 'hikai\n' > "$test_root/src/home/.local/state/hakuspace/state/[shell].backend"
 printf '<labwc_config/>\n' > "$test_root/labwc/rc.xml"
 cat > "$test_root/bin/fixture-app" <<'APP'
 #!/usr/bin/env bash

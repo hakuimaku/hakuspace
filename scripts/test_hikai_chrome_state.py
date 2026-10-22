@@ -3,6 +3,7 @@
 import copy
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -38,19 +39,19 @@ class ChromeStateTests(unittest.TestCase):
         values["version"] = 5
         values["dock"].update(style=style, iconSize=64, visibilityMode="always", exclusiveSpace=True)
         self.path.write_text(json.dumps(values))
-        (self.state / "taskbar_manual_state").write_text(str(enabled))
+        (self.state / "[desktop].taskbar.requested").write_text(str(enabled))
         return values
 
     def assert_states(self, taskbar, dockbar):
         """Read both canonical files after migration or toggles."""
-        self.assertEqual((self.state / "taskbar_manual_state").read_text().strip(), str(taskbar))
-        self.assertEqual((self.state / "dockbar_manual_state").read_text().strip(), str(dockbar))
+        self.assertEqual((self.state / "[desktop].taskbar.requested").read_text().strip(), str(taskbar))
+        self.assertEqual((self.state / "[desktop].dockbar.requested").read_text().strip(), str(dockbar))
 
     def test_mapping_and_idempotence(self):
         """Legacy Full and compact choices survive, then independent edits stay intact."""
         for style, old, taskbar, dockbar in (("bar", 1, 1, 0), ("dock", 1, 0, 1), ("bar", 0, 0, 0), ("dock", 0, 0, 0)):
             with self.subTest(style=style, old=old):
-                (self.state / "chrome-state-v6.json").unlink(missing_ok=True)
+                (self.state / "[migration].hikai-chrome-v6.json").unlink(missing_ok=True)
                 original = self.document(style, old)
                 chrome.migrate()
                 self.assert_states(taskbar, dockbar)
@@ -59,8 +60,8 @@ class ChromeStateTests(unittest.TestCase):
                 result = json.loads(self.path.read_text())
                 self.assertEqual(result["version"], 6)
                 self.assertEqual(result["dock"], expected)
-                (self.state / "taskbar_manual_state").write_text("1\n")
-                (self.state / "dockbar_manual_state").write_text("1\n")
+                (self.state / "[desktop].taskbar.requested").write_text("1\n")
+                (self.state / "[desktop].dockbar.requested").write_text("1\n")
                 snapshot = self.path.read_bytes()
                 chrome.migrate()
                 self.assert_states(1, 1)
@@ -82,12 +83,12 @@ class ChromeStateTests(unittest.TestCase):
         self.path.write_text("{broken")
         with self.assertRaises(ValueError):
             chrome.migrate()
-        self.assertFalse((self.state / "chrome-state-v6.json").exists())
+        self.assertFalse((self.state / "[migration].hikai-chrome-v6.json").exists())
         self.document("bar", 1)
         outside = self.home / "outside"
         outside.write_text("1")
-        (self.state / "taskbar_manual_state").unlink()
-        (self.state / "taskbar_manual_state").symlink_to(outside)
+        (self.state / "[desktop].taskbar.requested").unlink()
+        (self.state / "[desktop].taskbar.requested").symlink_to(outside)
         with self.assertRaises(OSError):
             chrome.migrate()
         self.assertEqual(outside.read_text(), "1")
@@ -96,7 +97,7 @@ class ChromeStateTests(unittest.TestCase):
         """Taskbar and Dockbar toggles touch only their own requested feature."""
         self.document("bar", 1)
         chrome.migrate()
-        (self.state / "shell_backend").write_text("hikai\n")
+        (self.state / "[shell].backend").write_text("hikai\n")
         for name, args, expected in (("dockbar", ["--enable"], (1, 1)),
                                      ("taskbar", ["--toggle"], (0, 1)),
                                      ("dockbar", ["--toggle"], (0, 0)),
@@ -109,6 +110,9 @@ class ChromeStateTests(unittest.TestCase):
         """Login and backend switching share one migration gate before spawning QML."""
         bin_dir = self.home / "bin"
         bin_dir.mkdir()
+        for relative in ("lib/haku_state.sh", "lib/haku_state.py", "state/haku_state_migrate.py",
+                         "backend/user/hikai_settings_ctl.py"):
+            shutil.copy2(ROOT / "src/core" / relative, bin_dir)
         supervisor = bin_dir / "qs_supervisor.sh"
         supervisor.write_text((ROOT / "src/core/sys/qs_supervisor.sh").read_text())
         (bin_dir / "haku_backend_lib.sh").write_text(

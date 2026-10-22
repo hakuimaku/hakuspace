@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/haku_theme.sh"
 source "$SCRIPT_DIR/haku_backend_lib.sh"
 
-EDGE_TRIGGER_STATE="$STATE_DIR/edge_trigger_state"
+EDGE_TRIGGER_STATE="$(haku_state_path desktop.edge-trigger.enabled)"
 
 EDGE_TRIGGER_BIN="$HOME/.local/bin/edge_trigger.py"
 

@@ -21,27 +21,27 @@ if [[ $# -eq 0 ]]; then
     CAVA_TEXT="OFF"
     [[ "$CAVA_STATUS" == "1" ]] && CAVA_TEXT="ON"
 
-    CAVA_COLOR_STATUS=$(cat "$STATE_DIR/cava_color_state" 2>/dev/null || echo "1")
+    CAVA_COLOR_STATUS=$(cat "$(haku_state_path cava.color-mode)" 2>/dev/null || echo "1")
     IS_COLOR=""
     [[ "$CAVA_COLOR_STATUS" == "0" || "$CAVA_COLOR_STATUS" == "surface" || "$CAVA_COLOR_STATUS" == "black" ]] && IS_COLOR="Surface" || IS_COLOR="Accent"
 
     # Taskbar
-    TASKBAR_STATUS=$(cat "$STATE_DIR/taskbar_manual_state" 2>/dev/null || echo "0")
+    TASKBAR_STATUS=$(cat "$(haku_state_path desktop.taskbar.requested)" 2>/dev/null || echo "0")
     TASKBAR_TEXT="OFF"
     [[ "$TASKBAR_STATUS" == "1" ]] && TASKBAR_TEXT="ON"
 
     # Desktop Icons
-    DESKTOP_ICONS_STATUS=$(cat "$STATE_DIR/desktop_icons_state" 2>/dev/null || echo "0")
+    DESKTOP_ICONS_STATUS=$(cat "$(haku_state_path desktop.icons.enabled)" 2>/dev/null || echo "0")
     DESKTOP_ICONS_TEXT="OFF"
     [[ "$DESKTOP_ICONS_STATUS" == "1" ]] && DESKTOP_ICONS_TEXT="ON"
 
     # Backend switch label follows the active shell mode.
-    BACKEND_STATUS=$(cat "$STATE_DIR/shell_backend" 2>/dev/null || echo "classic")
+    BACKEND_STATUS=$(cat "$(haku_state_path shell.backend)" 2>/dev/null || echo "classic")
     BACKEND_LABEL="Explore the Abyss"
     [[ "$BACKEND_STATUS" == "hikai" ]] && BACKEND_LABEL="Go back to Surface"
 
     # Haku Space Mode
-    HAKU_LEGACY_STATUS=$(cat "$STATE_DIR/haku_space_state" 2>/dev/null || echo "0")
+    HAKU_LEGACY_STATUS=$(cat "$(haku_state_path shell.haku-space.enabled)" 2>/dev/null || echo "0")
     HAKU_LEGACY_TEXT="OFF"
     [[ "$HAKU_LEGACY_STATUS" == "1" ]] && HAKU_LEGACY_TEXT="ON"
 
@@ -71,7 +71,7 @@ case "$chosen" in
     *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh ;;
     *"Desktop Icons"*) spawn $HOME/.local/bin/desktop_icons_manager.sh --toggle ;;
     *"Dockbar"*)
-        if [[ "$(cat "$STATE_DIR/shell_backend" 2>/dev/null)" == hikai && "$(cat "$STATE_DIR/taskbar_manual_state" 2>/dev/null)" != 1 ]]; then
+        if [[ "$(cat "$(haku_state_path shell.backend)" 2>/dev/null)" == hikai && "$(cat "$(haku_state_path desktop.taskbar.requested)" 2>/dev/null)" != 1 ]]; then
             spawn "$HOME/.local/bin/dockbar_manager.sh" --toggle
         fi ;;
     *"Taskbar Mode"*|*"Taskbar"*) spawn $HOME/.local/bin/taskbar_manager.sh --toggle ;;

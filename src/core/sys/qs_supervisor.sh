@@ -3,6 +3,13 @@
 # Supervisor for Quickshell backend
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# Complete filename migration before any state consumer starts.
+if [[ -f "$SCRIPT_DIR/haku_state.sh" ]]; then
+    source "$SCRIPT_DIR/haku_state.sh"
+else
+    source "$SCRIPT_DIR/../lib/haku_state.sh"
+fi
+haku_state_migrate || exit 1
 source "$SCRIPT_DIR/haku_backend_lib.sh"
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then

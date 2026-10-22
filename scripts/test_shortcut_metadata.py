@@ -47,7 +47,7 @@ class ShortcutMetadataTest(unittest.TestCase):
                    "XDG_RUNTIME_DIR": str(Path(tmp) / "runtime")}
             subprocess.run([FACADE, "--menu"], env=env, check=True, capture_output=True, text=True)
             self.assertIn("rofi -dmenu", log.read_text())
-            state = home / ".local/state/hakuspace/state/shell_backend"
+            state = home / ".local/state/hakuspace/state/[shell].backend"
             state.write_text("hikai\n")
             log.write_text("")
             subprocess.run([FACADE, "--menu"], env=env, check=True, capture_output=True, text=True)

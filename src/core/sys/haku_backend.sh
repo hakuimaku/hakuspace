@@ -2,6 +2,13 @@
 
 # CLI for switching HakuSpace backends.
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# Complete filename migration before any state consumer starts.
+if [[ -f "$SCRIPT_DIR/haku_state.sh" ]]; then
+    source "$SCRIPT_DIR/haku_state.sh"
+else
+    source "$SCRIPT_DIR/../lib/haku_state.sh"
+fi
+haku_state_migrate || exit 1
 if [[ -f "$SCRIPT_DIR/haku_backend_lib.sh" ]]; then
     source "$SCRIPT_DIR/haku_backend_lib.sh"
 else
@@ -17,7 +24,7 @@ kill_classic_stack() {
     pkill -f edge_trigger.py
     pkill -f rounded_screen.py
     if [[ -f /tmp/cava-layer.pid ]] && kill -0 "$(cat /tmp/cava-layer.pid 2>/dev/null)" 2>/dev/null; then
-        echo "1" > "$STATE_DIR/cava_layer_state"
+        echo "1" > "$(haku_state_path cava.enabled)"
     fi
     pkill -f cava_layer.py
     pkill -f desktop_icons.py
@@ -226,7 +233,7 @@ switch_to_hikai() {
         rollback_classic yes
         return 1
     fi
-    # Cava reads shell_backend to select Hikai's existing dynamic-mode policy.
+    # Cava reads the backend preference to select Hikai's existing dynamic-mode policy.
     if ! ~/.local/bin/cava_manager.sh --startup 9>&- || ! start_qs_supervisor; then
         rollback_classic yes
         return 1
@@ -306,10 +313,10 @@ verify_backend() {
     else
         haku_qs_alive && return 1
         pgrep -x swaync >/dev/null && notification_owned_by swaync || return 1
-        for state in waybar_manual_state:waybar taskbar_manual_state:taskbar \
-            rounded_screen_state:rounded_screen.py edge_trigger_state:edge_trigger.py \
-            desktop_icons_state:desktop_icons.py; do
-            [[ $(cat "$STATE_DIR/${state%%:*}" 2>/dev/null) == 1 ]] || continue
+        for state in desktop.waybar.requested:waybar desktop.taskbar.requested:taskbar \
+            screen.rounded.enabled:rounded_screen.py desktop.edge-trigger.enabled:edge_trigger.py \
+            desktop.icons.enabled:desktop_icons.py; do
+            [[ $(cat "$(haku_state_path "${state%%:*}")" 2>/dev/null) == 1 ]] || continue
             proc=${state#*:}
             if [[ "$proc" == *.py ]]; then
                 pgrep -f "$proc" >/dev/null || return 1

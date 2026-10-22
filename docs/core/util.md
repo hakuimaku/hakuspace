@@ -87,7 +87,7 @@ This keeps the desktop-icons `Add Shortcut` integration compatible while exposin
 
 ### Dockbar control
 
-`dockbar_manager.sh` exposes `--status`, `--toggle`, `--enable`, and `--disable`. It updates the persistent `dockbar_manual_state` request without launching a separate UI process. See [Hikai](../hikai.md) for shell architecture.
+`dockbar_manager.sh` exposes `--status`, `--toggle`, `--enable`, and `--disable`. It updates the persistent `[desktop].dockbar.requested` request without launching a separate UI process. See [Hikai](../hikai.md) for shell architecture.
 
 ### Temp Note shortcut
 

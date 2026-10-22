@@ -24,7 +24,7 @@ The public command remains `taskbar_manager.sh`, so existing keybinds, startup f
 - **`taskbar_ctl.sh` (headless backend):** owns Taskbar state, Waybar lifecycle, app-name format mutation, and explicit icon-size get/set operations. It never opens Rofi or another picker.
 - **`taskbar_rofi.sh` (Classic frontend):** owns the Rofi icon-size prompt only, then passes the chosen numeric value to `taskbar_ctl.sh`.
 
-State lives under `~/.local/state/hakuspace/`: `taskbar_manual_state` stores the persistent request, while the generated `taskbar-theme` holds Waybar Taskbar presentation settings. In Classic, the controller manages the Waybar taskbar process. In Hikai, `--toggle` updates the request without starting Waybar or requiring its runtime. See [Hikai](../hikai.md) for shell architecture.
+State lives under `~/.local/state/hakuspace/state/`: `[desktop].taskbar.requested` stores the persistent request, while the generated `../taskbar-theme` holds Waybar Taskbar presentation settings. In Classic, the controller manages the Waybar taskbar process. In Hikai, `--toggle` updates the request without starting Waybar or requiring its runtime. See [Hikai](../hikai.md) for shell architecture.
 
 ### `taskbar_geticon.sh` (The Icon Fetcher)
 The Taskbar needs to display the correct icons for your pinned applications.
@@ -50,7 +50,7 @@ This is a surprisingly powerful Python application built on top of `GtkLayerShel
 
 ### `desktop_icons_manager.sh` (The Launcher)
 Just like the Taskbar, the Desktop Icons app has its own manager script that links to the Haku Menu.
-- **What it does:** It tracks the ON/OFF state of the desktop icons in `~/.local/state/hakuspace/state/desktop_icons_state`.
+- **What it does:** It tracks the ON/OFF state of the desktop icons in `~/.local/state/hakuspace/state/[desktop].icons.enabled`.
 - **Shell independence:** Desktop Icons is a standalone Wayland app. Its manager owns the process lifecycle regardless of the selected shell mode.
 - **Usage:** You can use `--toggle` to instantly show or hide all your icons, `--reload` to refresh the grid (useful if you just pasted a new file via the terminal), or `--startup` to automatically launch the python engine when you log in.
 
@@ -73,7 +73,7 @@ To bypass limitations in Wayland's layer-shell protocol (which doesn't let a sin
 ### `rounded_screen_manager.sh` (The Controller)
 Manages the lifecycle of the Rounded Screen overlay.
 - **Toggling & Startup:** Controlled via `--toggle`, `--startup`, and `--toggle-dynamic`. The main toggle hooks into the Haku Menu's Theme section, while Dynamic Mode is located in the Setting section.
-- **State Management:** Remembers if you had it turned on or off across reboots using `~/.local/state/hakuspace/rounded_screen_state` and `rounded_screen_dynamic_state`.
+- **State Management:** Remembers if you had it turned on or off across reboots using `~/.local/state/hakuspace/state/[screen].rounded.enabled` and `[screen].rounded.dynamic`.
 
 ### Configuration
 You can customize the appearance by editing `~/hakucfg/config/rounded-screen.conf`.
@@ -102,7 +102,7 @@ Safe zones belong to this standalone app's guard logic; they do not define the g
 ### `edge_trigger_manager.sh` (The Controller)
 Manages the lifecycle of the Edge Trigger overlay.
 - **Toggling & Startup:** Controlled via `--toggle` and `--startup`. Integrated directly into the Haku Menu's Theme section. It also supports `--reload` to restart the overlay and `-h`/`--help` for usage information.
-- **State Management:** Remembers if you had it turned on or off across reboots using `~/.local/state/hakuspace/edge_trigger_state`.
+- **State Management:** Remembers if you had it turned on or off across reboots using `~/.local/state/hakuspace/state/[desktop].edge-trigger.enabled`.
 
 ### Configuration
 - **`dwell_ms`**: Time in milliseconds the pointer must stay on the edge to trigger (default: 200).
@@ -127,8 +127,8 @@ Because the Python script acts as a background daemon, it needs a manager to han
 
 **Developer Note on CLI conventions:** Be aware that unlike other manager scripts in HakuSpace which primarily use long flags (e.g., `--toggle`, `--reload`), `cava_manager.sh` utilizes positional sub-commands (`start`, `stop`, `toggle`, `reload`) mixed with flags (e.g., `--position [top|bottom]`, `-H`/`--height`, `-d`/`--toggle-dynamic`).
 
-- **Toggling:** `cava_manager.sh toggle` starts or stops the standalone Cava layer process and persists the request in `~/.local/state/hakuspace/state/cava_layer_state`.
-- **Position & Dynamic Mode:** `cava_manager.sh --position [top|bottom]` toggles or sets screen position (default: top in Hikai mode), and `--toggle-dynamic` toggles Dynamic Mode, which adapts to other panels' exclusive zones. The manager saves these settings in `cava_top_state` and `cava_dynamic_state`. In Hikai, Dynamic Mode stays enabled and `--toggle-dynamic` returns success without changing the saved preference.
+- **Toggling:** `cava_manager.sh toggle` starts or stops the standalone Cava layer process and persists the request in `~/.local/state/hakuspace/state/[cava].enabled`.
+- **Position & Dynamic Mode:** `cava_manager.sh --position [top|bottom]` toggles or sets screen position (default: top in Hikai mode), and `--toggle-dynamic` toggles Dynamic Mode, which adapts to other panels' exclusive zones. The manager saves these settings in `[cava].position` and `[cava].dynamic-position`. In Hikai, Dynamic Mode stays enabled and `--toggle-dynamic` returns success without changing the saved preference.
 - **Live Reloading:** When you change your system's accent color (via `theme_ctl.sh set-accent`), you don't want the audio visualizer to stutter, drop frames, or restart. Calling `cava_manager.sh reload` sends a specific UNIX signal (`SIGUSR1`) to the Python daemon. The script intercepts this signal, re-reads the Kitty configuration, and instantly updates the visualizer's colors on the fly without ever interrupting the live audio stream!
 
 

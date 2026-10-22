@@ -4,8 +4,14 @@
 # Toggle them on/off, reload them, or restore the previous state at startup.
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# Load canonical paths without initializing state during status queries.
+if [[ -f "$SCRIPT_DIR/haku_state.sh" ]]; then
+    source "$SCRIPT_DIR/haku_state.sh"
+else
+    source "$SCRIPT_DIR/../../lib/haku_state.sh"
+fi
 if [[ "${1:-}" == "--status" ]]; then
-    if [[ "$(cat "$HOME/.local/state/hakuspace/state/desktop_icons_state" 2>/dev/null)" == "1" ]]; then
+    if [[ "$(cat "$(haku_state_path desktop.icons.enabled)" 2>/dev/null)" == "1" ]]; then
         printf 'enabled\n'
     else
         printf 'disabled\n'
@@ -15,7 +21,7 @@ fi
 
 source "$SCRIPT_DIR/haku_theme.sh"
 source "$SCRIPT_DIR/haku_backend_lib.sh"
-DESKTOP_ICONS_STATE="$STATE_DIR/desktop_icons_state"
+DESKTOP_ICONS_STATE="$(haku_state_path desktop.icons.enabled)"
 
 DESKTOP_MANAGER_BIN="$HOME/.local/bin/desktop_icons.py"
 

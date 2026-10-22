@@ -19,9 +19,9 @@ CONTROLLER = ROOT / "src/core/backend/system/quick_actions_ctl.py"
 class QuickActionsControllerTest(unittest.TestCase):
     def test_status_facades_do_not_create_state(self):
         scripts = {
-            "taskbar_manual_state": ROOT / "src/core/facade/taskbar_manager.sh",
-            "dockbar_manual_state": ROOT / "src/core/facade/dockbar_manager.sh",
-            "desktop_icons_state": ROOT / "src/core/app/desktop-icons/desktop_icons_manager.sh",
+            "[desktop].taskbar.requested": ROOT / "src/core/facade/taskbar_manager.sh",
+            "[desktop].dockbar.requested": ROOT / "src/core/facade/dockbar_manager.sh",
+            "[desktop].icons.enabled": ROOT / "src/core/app/desktop-icons/desktop_icons_manager.sh",
         }
         cava = ROOT / "src/core/app/cava-layer/cava_manager.sh"
         with tempfile.TemporaryDirectory() as tmp:
@@ -130,7 +130,8 @@ esac
             bin_dir.mkdir(parents=True)
             state = home / ".local/state/hakuspace/state"
             state.mkdir(parents=True)
-            for source in (ROOT / "src/core/menu/hm_theme.sh", ROOT / "src/core/lib/haku_theme.sh"):
+            for source in (ROOT / "src/core/menu/hm_theme.sh", ROOT / "src/core/lib/haku_theme.sh",
+                           ROOT / "src/core/lib/haku_state.sh"):
                 shutil.copy2(source, bin_dir / source.name)
             log = home / "calls"
             for feature in ("taskbar", "dockbar"):
@@ -142,8 +143,8 @@ esac
             def invoke(label):
                 subprocess.run(["bash", bin_dir / "hm_theme.sh", label], env=environment, check=True)
 
-            (state / "shell_backend").write_text("hikai\n")
-            (state / "taskbar_manual_state").write_text("0\n")
+            (state / "[shell].backend").write_text("hikai\n")
+            (state / "[desktop].taskbar.requested").write_text("0\n")
             invoke("Taskbar Mode")
             invoke("Dockbar")
             deadline = time.monotonic() + 2
@@ -151,9 +152,9 @@ esac
                 time.sleep(0.01)
             self.assertCountEqual(log.read_text().splitlines(), ["taskbar_manager.sh --toggle", "dockbar_manager.sh --toggle"])
             log.unlink()
-            (state / "taskbar_manual_state").write_text("1\n")
+            (state / "[desktop].taskbar.requested").write_text("1\n")
             invoke("Dockbar")
-            (state / "shell_backend").write_text("classic\n")
+            (state / "[shell].backend").write_text("classic\n")
             invoke("Dockbar")
             time.sleep(0.05)
             self.assertFalse(log.exists())

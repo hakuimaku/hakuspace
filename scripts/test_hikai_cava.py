@@ -145,18 +145,18 @@ class CavaManagerTest(unittest.TestCase):
             home = Path(tmp)
             state_dir = home / ".local/state/hakuspace/state"
             state_dir.mkdir(parents=True)
-            (state_dir / "shell_backend").write_text("hikai\n", encoding="utf-8")
-            (state_dir / "cava_layer_state").write_text("0\n", encoding="utf-8")
+            (state_dir / "[shell].backend").write_text("hikai\n", encoding="utf-8")
+            (state_dir / "[cava].enabled").write_text("0\n", encoding="utf-8")
             env = self._make_env(home)
 
             # Status should be disabled
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--status"], env=env, capture_output=True, text=True)
             self.assertEqual((res.returncode, res.stdout), (0, "disabled\n"))
 
-            # Start in Hikai mode: writes 1 to cava_layer_state
+            # Start in Hikai mode: writes 1 to [cava].enabled
             res = subprocess.run(["bash", str(CAVA_MANAGER), "start"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_layer_state").read_text().strip(), "1")
+            self.assertEqual((state_dir / "[cava].enabled").read_text().strip(), "1")
 
             # Status should be enabled
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--status"], env=env, capture_output=True, text=True)
@@ -165,17 +165,17 @@ class CavaManagerTest(unittest.TestCase):
             # Toggle in Hikai mode: toggles to 0
             res = subprocess.run(["bash", str(CAVA_MANAGER), "toggle"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_layer_state").read_text().strip(), "0")
+            self.assertEqual((state_dir / "[cava].enabled").read_text().strip(), "0")
 
             # Toggle again: toggles back to 1
             res = subprocess.run(["bash", str(CAVA_MANAGER), "toggle"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_layer_state").read_text().strip(), "1")
+            self.assertEqual((state_dir / "[cava].enabled").read_text().strip(), "1")
 
             # Stop in Hikai mode: sets 0
             res = subprocess.run(["bash", str(CAVA_MANAGER), "stop"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_layer_state").read_text().strip(), "0")
+            self.assertEqual((state_dir / "[cava].enabled").read_text().strip(), "0")
 
     def test_cava_manager_hikai_conf_generation(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -212,25 +212,25 @@ class CavaManagerTest(unittest.TestCase):
             # 1. Switch to surface mode
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--color-mode", "surface"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_color_state").read_text().strip(), "0")
+            self.assertEqual((state_dir / "[cava].color-mode").read_text().strip(), "0")
             self.assertIn("foreground = black", source_conf.read_text(encoding="utf-8"))
 
             # 2. Switch to accent mode
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--color-mode", "accent"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_color_state").read_text().strip(), "1")
+            self.assertEqual((state_dir / "[cava].color-mode").read_text().strip(), "1")
             self.assertIn("foreground = white", source_conf.read_text(encoding="utf-8"))
 
             # 3. Toggle color with --color-switch (from 1 -> 0)
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--color-switch"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_color_state").read_text().strip(), "0")
+            self.assertEqual((state_dir / "[cava].color-mode").read_text().strip(), "0")
             self.assertIn("foreground = black", source_conf.read_text(encoding="utf-8"))
 
             # 4. Toggle color again (from 0 -> 1)
             res = subprocess.run(["bash", str(CAVA_MANAGER), "-c"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_color_state").read_text().strip(), "1")
+            self.assertEqual((state_dir / "[cava].color-mode").read_text().strip(), "1")
             self.assertIn("foreground = white", source_conf.read_text(encoding="utf-8"))
 
     def test_cava_manager_position(self):
@@ -239,34 +239,34 @@ class CavaManagerTest(unittest.TestCase):
             state_dir = home / ".local/state/hakuspace/state"
             state_dir.mkdir(parents=True)
             env = self._make_env(home)
-            (state_dir / "shell_backend").write_text("hikai\n", encoding="utf-8")
+            (state_dir / "[shell].backend").write_text("hikai\n", encoding="utf-8")
 
             # 1. Default position is top, so initial toggle from unconfigured state switches to bottom (0)
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--position"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_top_state").read_text().strip(), "0")
+            self.assertEqual((state_dir / "[cava].position").read_text().strip(), "0")
 
             # 2. Toggle again (from 0 -> 1)
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--position"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_top_state").read_text().strip(), "1")
+            self.assertEqual((state_dir / "[cava].position").read_text().strip(), "1")
 
             # 3. Explicit set to bottom
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--position", "bottom"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_top_state").read_text().strip(), "0")
+            self.assertEqual((state_dir / "[cava].position").read_text().strip(), "0")
 
             # 4. Explicit set to top
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--position", "top"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_top_state").read_text().strip(), "1")
+            self.assertEqual((state_dir / "[cava].position").read_text().strip(), "1")
 
             # 5. In Classic mode, position switching is blocked
-            (state_dir / "shell_backend").write_text("classic\n", encoding="utf-8")
+            (state_dir / "[shell].backend").write_text("classic\n", encoding="utf-8")
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--position"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
             self.assertIn("Position switching is only available in Hikai mode", res.stdout)
-            self.assertEqual((state_dir / "cava_top_state").read_text().strip(), "1")
+            self.assertEqual((state_dir / "[cava].position").read_text().strip(), "1")
 
     def test_cava_manager_dynamic_position(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -274,35 +274,35 @@ class CavaManagerTest(unittest.TestCase):
             state_dir = home / ".local/state/hakuspace/state"
             state_dir.mkdir(parents=True)
             env = self._make_env(home)
-            (state_dir / "shell_backend").write_text("hikai\n", encoding="utf-8")
+            (state_dir / "[shell].backend").write_text("hikai\n", encoding="utf-8")
 
-            # 1. In topbar mode (taskbar_manual_state = 0), toggling dynamic position sets position to top (1)
-            (state_dir / "taskbar_manual_state").write_text("0\n", encoding="utf-8")
-            (state_dir / "cava_top_state").write_text("0\n", encoding="utf-8")
+            # 1. In topbar mode ([desktop].taskbar.requested = 0), toggling dynamic position sets position to top (1)
+            (state_dir / "[desktop].taskbar.requested").write_text("0\n", encoding="utf-8")
+            (state_dir / "[cava].position").write_text("0\n", encoding="utf-8")
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--toggle-dynamic"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_dynamic_state").read_text().strip(), "1")
-            self.assertEqual((state_dir / "cava_top_state").read_text().strip(), "1")
+            self.assertEqual((state_dir / "[cava].dynamic-position").read_text().strip(), "1")
+            self.assertEqual((state_dir / "[cava].position").read_text().strip(), "1")
 
-            # 2. In taskbar mode (taskbar_manual_state = 1), syncing dynamic sets position to bottom (0)
-            (state_dir / "taskbar_manual_state").write_text("1\n", encoding="utf-8")
+            # 2. In taskbar mode ([desktop].taskbar.requested = 1), syncing dynamic sets position to bottom (0)
+            (state_dir / "[desktop].taskbar.requested").write_text("1\n", encoding="utf-8")
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--sync-dynamic"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_top_state").read_text().strip(), "0")
+            self.assertEqual((state_dir / "[cava].position").read_text().strip(), "0")
 
             # 3. Manually setting position disables dynamic position
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--position", "top"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_dynamic_state").read_text().strip(), "0")
-            self.assertEqual((state_dir / "cava_top_state").read_text().strip(), "1")
+            self.assertEqual((state_dir / "[cava].dynamic-position").read_text().strip(), "0")
+            self.assertEqual((state_dir / "[cava].position").read_text().strip(), "1")
 
             # 4. Toggling dynamic position off
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--toggle-dynamic"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_dynamic_state").read_text().strip(), "1")
+            self.assertEqual((state_dir / "[cava].dynamic-position").read_text().strip(), "1")
             res = subprocess.run(["bash", str(CAVA_MANAGER), "-d"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_dynamic_state").read_text().strip(), "0")
+            self.assertEqual((state_dir / "[cava].dynamic-position").read_text().strip(), "0")
 
     def test_cava_manager_height(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -314,17 +314,17 @@ class CavaManagerTest(unittest.TestCase):
             # 1. Set height to 88
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--height", "88"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_height").read_text().strip(), "88")
+            self.assertEqual((state_dir / "[cava].height").read_text().strip(), "88")
 
             # 2. Set height with -H to 120
             res = subprocess.run(["bash", str(CAVA_MANAGER), "-H", "120"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_height").read_text().strip(), "120")
+            self.assertEqual((state_dir / "[cava].height").read_text().strip(), "120")
 
             # 3. Set height to 200 (max settings height)
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--height", "200"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_height").read_text().strip(), "200")
+            self.assertEqual((state_dir / "[cava].height").read_text().strip(), "200")
 
             # 4. Invalid height should fail
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--height", "invalid"], env=env, capture_output=True, text=True)
@@ -337,24 +337,24 @@ class CavaManagerTest(unittest.TestCase):
             state_dir.mkdir(parents=True)
             env = self._make_env(home)
 
-            # 1. Start in Hikai mode: writes 1 to cava_layer_state
-            (state_dir / "shell_backend").write_text("hikai\n", encoding="utf-8")
-            (state_dir / "cava_layer_state").write_text("0\n", encoding="utf-8")
+            # 1. Start in Hikai mode: writes 1 to [cava].enabled
+            (state_dir / "[shell].backend").write_text("hikai\n", encoding="utf-8")
+            (state_dir / "[cava].enabled").write_text("0\n", encoding="utf-8")
             res = subprocess.run(["bash", str(CAVA_MANAGER), "start"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_layer_state").read_text().strip(), "1")
+            self.assertEqual((state_dir / "[cava].enabled").read_text().strip(), "1")
 
             # 2. Transition to Classic: startup restores state if 1
-            (state_dir / "shell_backend").write_text("classic\n", encoding="utf-8")
+            (state_dir / "[shell].backend").write_text("classic\n", encoding="utf-8")
             # In a dry test environment, dependencies like GtkLayerShell or python3-gi might not start X11/Wayland window,
-            # but cava_layer_state remains 1
-            self.assertEqual((state_dir / "cava_layer_state").read_text().strip(), "1")
+            # but [cava].enabled remains 1
+            self.assertEqual((state_dir / "[cava].enabled").read_text().strip(), "1")
 
-            # 3. Transition back to Hikai: startup preserves cava_layer_state = 1
-            (state_dir / "shell_backend").write_text("hikai\n", encoding="utf-8")
+            # 3. Transition back to Hikai: startup preserves [cava].enabled = 1
+            (state_dir / "[shell].backend").write_text("hikai\n", encoding="utf-8")
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--startup"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
-            self.assertEqual((state_dir / "cava_layer_state").read_text().strip(), "1")
+            self.assertEqual((state_dir / "[cava].enabled").read_text().strip(), "1")
 
 
 if __name__ == "__main__":

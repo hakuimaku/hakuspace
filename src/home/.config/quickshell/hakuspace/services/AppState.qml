@@ -9,12 +9,12 @@ QtObject {
     
     // State files are watched so changes from external scripts update the shell.
     property bool waybarManualState: true
-    property FileView fv1: FileView { path: Env.stateDir + "/waybar_manual_state"; watchChanges: true; printErrors: false; onFileChanged: this.reload(); onTextChanged: { var txt = this.text().trim(); if (txt === "1") root.waybarManualState = true; else if (txt === "0") root.waybarManualState = false; else root.waybarManualState = true; } }
+    property FileView fv1: FileView { path: Env.stateDesktopWaybarRequested; watchChanges: true; printErrors: false; onFileChanged: this.reload(); onTextChanged: { var txt = this.text().trim(); if (txt === "1") root.waybarManualState = true; else if (txt === "0") root.waybarManualState = false; else root.waybarManualState = true; } }
 
     // Taskbar mode and compact Dockbar requests are watched independently.
     property bool taskbarManualState: false
     property FileView taskbarStateFile: FileView {
-        path: Env.stateDir + "/taskbar_manual_state"
+        path: Env.stateDesktopTaskbarRequested
         watchChanges: true
         printErrors: false
         onFileChanged: reload()
@@ -24,7 +24,7 @@ QtObject {
 
     property bool dockbarManualState: false
     property FileView dockbarStateFile: FileView {
-        path: Env.stateDir + "/dockbar_manual_state"
+        path: Env.stateDesktopDockbarRequested
         watchChanges: true
         printErrors: false
         onFileChanged: reload()
@@ -33,11 +33,11 @@ QtObject {
     }
 
     property bool opaqueThemeState: false
-    property FileView fv2: FileView { path: Env.stateDir + "/opaque_theme_state"; watchChanges: true; printErrors: false; onFileChanged: this.reload(); onTextChanged: { var txt = this.text().trim(); if (txt === "1") root.opaqueThemeState = true; else if (txt === "0") root.opaqueThemeState = false; else root.opaqueThemeState = false; } }
+    property FileView fv2: FileView { path: Env.stateThemeOpaqueEnabled; watchChanges: true; printErrors: false; onFileChanged: this.reload(); onTextChanged: { var txt = this.text().trim(); if (txt === "1") root.opaqueThemeState = true; else if (txt === "0") root.opaqueThemeState = false; else root.opaqueThemeState = false; } }
 
     property bool cavaLayerState: false
     property FileView cavaStateFile: FileView {
-        path: Env.stateDir + "/cava_layer_state"
+        path: Env.stateCavaEnabled
         watchChanges: true
         printErrors: false
         onFileChanged: reload()
@@ -47,7 +47,7 @@ QtObject {
 
     property bool cavaTopState: true
     property FileView cavaTopStateFile: FileView {
-        path: Env.stateDir + "/cava_top_state"
+        path: Env.stateCavaPosition
         watchChanges: true
         printErrors: false
         onFileChanged: reload()
@@ -60,7 +60,7 @@ QtObject {
 
     property bool cavaDynamicPosition: false
     property FileView cavaDynamicStateFile: FileView {
-        path: Env.stateDir + "/cava_dynamic_state"
+        path: Env.stateCavaDynamicPosition
         watchChanges: true
         printErrors: false
         onFileChanged: reload()
@@ -89,7 +89,7 @@ QtObject {
 
     property string cavaColorMode: "accent"
     property FileView cavaColorStateFile: FileView {
-        path: Env.stateDir + "/cava_color_state"
+        path: Env.stateCavaColorMode
         watchChanges: true
         printErrors: false
         onFileChanged: reload()
@@ -102,7 +102,7 @@ QtObject {
 
     property int cavaHeight: 72
     property FileView cavaHeightFile: FileView {
-        path: Env.stateDir + "/cava_height"
+        path: Env.stateCavaHeight
         watchChanges: true
         printErrors: false
         onFileChanged: reload()

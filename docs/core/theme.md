@@ -58,7 +58,7 @@ Even better: your folder and system icons in `Hikaide-Symbols` automatically cha
 
 ```text
 Theme UI / wallpaper / CLI → theme_ctl
-                                  → save canonical state (state.env)
+                                  → save canonical state ([theme].appearance.env)
                                   → gen_style
                                   → appearance_ctl sync-accent → haku_icon_accent.py
                                   → apply_style / reload consumers (desktop icons, WM, etc.)
@@ -67,7 +67,7 @@ Theme UI / wallpaper / CLI → theme_ctl
 ### 1. The Theme & Appearance Controllers (`theme_ctl.sh` & `appearance_ctl.sh`)
 Instead of having random scripts edit theme files directly, everything goes through two central controllers:
 - **`theme_ctl.sh`**: The main entry point whenever you change your accent color, font, or font size.
-  - Running `theme_ctl.sh set-accent '#AC7994'` saves the new color to `~/.local/state/hakuspace/state/state.env`, renders the new styles via `gen_style.sh`, asks `appearance_ctl.sh sync-accent` to recolor your icons first (via `haku_icon_accent.py`), and *then* reloads all desktop consumers via `apply_style.sh` so your apps immediately see the newly recolored icons.
+  - Running `theme_ctl.sh set-accent '#AC7994'` saves the new color to `~/.local/state/hakuspace/state/[theme].appearance.env`, renders the new styles via `gen_style.sh`, asks `appearance_ctl.sh sync-accent` to recolor your icons first (via `haku_icon_accent.py`), and *then* reloads all desktop consumers via `apply_style.sh` so your apps immediately see the newly recolored icons.
   - Running `theme_ctl.sh apply` reconciles everything in the same safe order: renders style, synchronizes icons, and reloads consumers.
   - Changing only your font (`set-font`) or size (`set-size`) skips icon recoloring so it stays fast.
 - **`appearance_ctl.sh`**: Manages your GTK theme, icon theme, and mouse cursor settings.

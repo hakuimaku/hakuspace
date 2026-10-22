@@ -13,20 +13,22 @@ source "$HAKU_DIR/scripts/functions.sh"
 source "$HAKU_DIR/scripts/filesystem.sh"
 source "$HAKU_DIR/scripts/registry.sh"
 
-STATE_DIR="$HOME/.local/state/hakuspace"
-SRC_STATE_DIR="$HOME_SRC_DIR/.local/state/hakuspace"
+source "$SOURCE_CORE/lib/haku_state.sh"
+HAKU_RUNTIME_STATE_DIR="$HAKU_STATE_DIR"
+HAKU_THEME_RENDER_DIR="$HAKU_STATE_ROOT/theme"
+SRC_STATE_ROOT="$HOME_SRC_DIR/.local/state/hakuspace"
 
 state_check() {
     local missing=0
-    if [[ ! -d "$STATE_DIR" ]]; then
-        log_warn "State directory does not exist: $(shorten_path "$STATE_DIR")"
+    if [[ ! -d "$HAKU_STATE_ROOT" ]]; then
+        log_warn "State directory does not exist: $(shorten_path "$HAKU_STATE_ROOT")"
         return 1
     fi
 
     while IFS= read -r file; do
         [[ -z "$file" ]] && continue
-        if [[ ! -f "$STATE_DIR/$file" ]]; then
-            log_warn "Missing state file: $(shorten_path "$STATE_DIR/$file")"
+        if [[ ! -f "$HAKU_STATE_ROOT/$file" ]]; then
+            log_warn "Missing state file: $(shorten_path "$HAKU_STATE_ROOT/$file")"
             missing=$((missing + 1))
         fi
     done < <(registry_get_state_files)
@@ -41,18 +43,19 @@ state_check() {
 
 state_init() {
     log_info "Initializing HakuSpace state directory..."
-    ensure_dir "$STATE_DIR"
+    haku_state_migrate
+    ensure_dir "$HAKU_STATE_ROOT"
 
     while IFS= read -r file; do
         [[ -z "$file" ]] && continue
-        if [[ ! -f "$STATE_DIR/$file" ]]; then
+        if [[ ! -f "$HAKU_STATE_ROOT/$file" ]]; then
             log_info "Creating default state file: $file"
-            copy_file "$SRC_STATE_DIR/$file" "$STATE_DIR/$file" 1
+            copy_file "$SRC_STATE_ROOT/$file" "$HAKU_STATE_ROOT/$file" 1
         fi
     done < <(registry_get_state_files)
 
     # Initialize style state if missing and theme_ctl.sh is available
-    local state_env="$STATE_DIR/state/state.env"
+    local state_env="$(haku_state_path theme.appearance.env)"
     if [[ ! -f "$state_env" ]]; then
         if [[ -x "$DEST_BIN/theme_ctl.sh" ]]; then
             "$DEST_BIN/theme_ctl.sh" set-font "JetBrainsMono Nerd Font" >/dev/null 2>&1 || true
@@ -61,9 +64,8 @@ state_init() {
     fi
 
     # Initialize opaque theme state if missing and opaque_theme.sh is available
-    local opaque_state="$STATE_DIR/opaque_theme_state"
-    local opaque_state_alt="$STATE_DIR/state/opaque_theme_state"
-    if [[ ! -f "$opaque_state" && ! -f "$opaque_state_alt" ]]; then
+    local opaque_state="$(haku_state_path theme.opaque.enabled)"
+    if [[ ! -f "$opaque_state" ]]; then
         if [[ -x "$DEST_BIN/opaque_theme.sh" ]]; then
             "$DEST_BIN/opaque_theme.sh" off >/dev/null 2>&1 || true
             log_ok "Executed opaque_theme.sh"

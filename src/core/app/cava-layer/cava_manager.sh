@@ -3,10 +3,16 @@
 # This script is a simple wrapper around cava-layer.py to manage its lifecycle (start/stop/toggle)
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# Load canonical paths without initializing state during status queries.
+if [[ -f "$SCRIPT_DIR/haku_state.sh" ]]; then
+    source "$SCRIPT_DIR/haku_state.sh"
+else
+    source "$SCRIPT_DIR/../../lib/haku_state.sh"
+fi
 if [[ "${1:-}" == "--status" || "${1:-}" == "status" ]]; then
-    _backend="$(cat "$HOME/.local/state/hakuspace/state/shell_backend" 2>/dev/null || echo "classic")"
+    _backend="$(cat "$(haku_state_path shell.backend)" 2>/dev/null || echo "classic")"
     if [[ "$_backend" == "hikai" ]]; then
-        if [[ "$(cat "$HOME/.local/state/hakuspace/state/cava_layer_state" 2>/dev/null || echo "0")" == "1" ]]; then
+        if [[ "$(cat "$(haku_state_path cava.enabled)" 2>/dev/null || echo "0")" == "1" ]]; then
             printf 'enabled\n'
         else
             printf 'disabled\n'
@@ -39,9 +45,9 @@ RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 PIDFILE="${CAVA_PIDFILE:-/tmp/cava-layer.pid}"
 LOGFILE="${CAVA_LOGFILE:-/tmp/cava-layer.log}"
 
-POSITION_STATE_FILE="$STATE_DIR/cava_top_state"
-DYNAMIC_STATE_FILE="$STATE_DIR/cava_dynamic_state"
-CAVA_LAYER_STATE="$STATE_DIR/cava_layer_state"
+POSITION_STATE_FILE="$(haku_state_path cava.position)"
+DYNAMIC_STATE_FILE="$(haku_state_path cava.dynamic-position)"
+CAVA_LAYER_STATE="$(haku_state_path cava.enabled)"
  
 log() { echo "[cava-layer-toggle] $*"; }
 err() { echo "[cava-layer-toggle] $*" >&2; }
@@ -160,7 +166,7 @@ start() {
     fi
 
     local height_flag=""
-    local custom_h=$(cat "$STATE_DIR/cava_height" 2>/dev/null || echo "")
+    local custom_h=$(cat "$(haku_state_path cava.height)" 2>/dev/null || echo "")
     if [[ -n "$custom_h" && "$custom_h" =~ ^[0-9]+$ ]]; then
         height_flag="-H $custom_h"
     fi
@@ -238,7 +244,7 @@ sync_dynamic_position() {
     mkdir -p "$STATE_DIR"
     local is_dynamic="$(cat "$DYNAMIC_STATE_FILE" 2>/dev/null || echo "0")"
     if [[ "$is_dynamic" == "1" ]]; then
-        local is_taskbar="$(cat "$STATE_DIR/taskbar_manual_state" 2>/dev/null || echo "0")"
+        local is_taskbar="$(cat "$(haku_state_path desktop.taskbar.requested)" 2>/dev/null || echo "0")"
         if [[ "$is_taskbar" == "1" ]]; then
             set_position "bottom" "--sync"
         else
@@ -322,7 +328,7 @@ set_dynamic_position() {
 set_color_mode() {
     local mode="${1:-}"
     mkdir -p "$STATE_DIR"
-    local COLOR_STATE_FILE="$STATE_DIR/cava_color_state"
+    local COLOR_STATE_FILE="$(haku_state_path cava.color-mode)"
     local CAVA_CONFIG="$HOME/hakucfg/config/cava-layer"
 
     if [[ "$mode" == "surface" || "$mode" == "0" || "$mode" == "black" ]]; then
@@ -363,7 +369,7 @@ set_color_mode() {
 set_height() {
     local h="${1:-}"
     mkdir -p "$STATE_DIR"
-    local HEIGHT_STATE_FILE="$STATE_DIR/cava_height"
+    local HEIGHT_STATE_FILE="$(haku_state_path cava.height)"
     if [[ "$h" =~ ^[0-9]+$ ]] && (( h >= 32 && h <= 300 )); then
         echo "$h" > "$HEIGHT_STATE_FILE"
         log "Layer height set to ${h}px."
@@ -379,7 +385,7 @@ set_height() {
 
 toggle_color() {
     mkdir -p "$STATE_DIR"
-    local COLOR_STATE_FILE="$STATE_DIR/cava_color_state"
+    local COLOR_STATE_FILE="$(haku_state_path cava.color-mode)"
     local current="$(cat "$COLOR_STATE_FILE" 2>/dev/null || echo "1")"
     if [[ "$current" == "0" || "$current" == "surface" || "$current" == "black" ]]; then
         set_color_mode "accent"

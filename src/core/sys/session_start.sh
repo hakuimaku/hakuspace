@@ -3,6 +3,13 @@
 # Early session startup for backends
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# Complete filename migration before any state consumer starts.
+if [[ -f "$SCRIPT_DIR/haku_state.sh" ]]; then
+    source "$SCRIPT_DIR/haku_state.sh"
+else
+    source "$SCRIPT_DIR/../lib/haku_state.sh"
+fi
+haku_state_migrate || exit 1
 source "$SCRIPT_DIR/haku_backend_lib.sh"
 
 if [[ "${1:-}" == "--early" ]]; then
@@ -12,13 +19,6 @@ if [[ "${1:-}" == "--early" ]]; then
     fi
     if [[ -x "$HOME/.local/bin/theme_ctl.sh" ]]; then
         "$HOME/.local/bin/theme_ctl.sh" apply || true
-    fi
-    if [[ ! -f "$STATE_DIR/haku_space_state" ]] && [[ -f "$STATE_DIR/haku_shell_state" ]]; then
-
-        cp "$STATE_DIR/haku_shell_state" "$STATE_DIR/haku_space_state"
-
-        rm -f "$STATE_DIR/haku_shell_state"
-
     fi
     if haku_backend_is "classic"; then
         pgrep -x swaync >/dev/null || swaync &

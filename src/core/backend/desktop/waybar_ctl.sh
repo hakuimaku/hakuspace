@@ -29,8 +29,8 @@ source_core_lib haku_backend_lib.sh || exit 1
 WAYBAR_DIR="$HOME/.config/waybar"
 USER_WAYBAR_DIR="$HOME/hakucfg/config/waybar"
 SETTING_FILE="$HOME/hakucfg/setting.sh"
-STATE_FILE="$STATE_DIR/waybar_current_mode"
-STATUS_FILE="$STATE_DIR/waybar_manual_state"
+STATE_FILE="$(haku_state_path desktop.waybar.mode)"
+STATUS_FILE="$(haku_state_path desktop.waybar.requested)"
 DEFAULT_MODES=("top" "left" "island" "neon" "coredge" "minimal" "legacy")
 WAYBAR_MODE_USER=()
 

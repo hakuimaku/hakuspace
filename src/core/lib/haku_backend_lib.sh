@@ -11,7 +11,7 @@ else
     source "$HOME/.local/bin/haku_theme.sh"
 fi
 
-BACKEND_STATE_FILE="$STATE_DIR/shell_backend"
+BACKEND_STATE_FILE="$(haku_state_path shell.backend)"
 QS_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hakuspace"
 
 QS_BACKEND_NAME="hikai"

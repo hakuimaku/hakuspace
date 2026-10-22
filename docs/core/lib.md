@@ -8,9 +8,12 @@ Here is a detailed breakdown of the libraries:
 
 ## Theming & State Management
 
+### `haku_state.sh` / `haku_state.py` (Runtime State Paths)
+These registries resolve explicit keys such as `shell.backend` and `cava.position` to owner-prefixed filenames under `~/.local/state/hakuspace/state/`. Path lookup is read-only. Installation/update, session startup, the Quickshell supervisor, and backend transitions run the safe filename migration before state is read or initialized. See [Runtime state](state.md) for the schema and upgrade behavior.
+
 ### `haku_theme.sh` (The State Manager)
 This is the single most important library for the HakuSpace theming engine. It defines the rules for how theme data is stored and retrieved.
-- **The Source of Truth:** Instead of letting every script guess what the current accent color or font size is, this library establishes a strict state model. The canonical state is stored securely in `~/.local/state/hakuspace/state/state.env`.
+- **The Source of Truth:** Instead of letting every script guess what the current accent color or font size is, this library establishes a strict state model. The canonical state is stored securely in `~/.local/state/hakuspace/state/[theme].appearance.env`.
 - **Loading & Saving:** It provides `theme_load_state()` to load the current `ACCENT_COLOR`, `FONT_FAMILY`, and `FONT_SIZE` into memory, and `theme_save_state()` to write changes back to the disk atomically (using a temporary file and `mv` to prevent data corruption if the system crashes mid-write).
 - **One-Way Rendering:** It strictly enforces that the generated `.css` and `.conf` files in the theme directory are *output only*. Scripts must never read those files to figure out the theme; they must always query the state manager.
 - **Defaults:** It acts as the fallback mechanism. If a variable is missing or corrupted, it automatically provides safe defaults (e.g., `#ffffff` for accent color, `monospace` for fonts).
@@ -24,13 +27,13 @@ A small but critical mathematical utility used during the wallpaper color extrac
 ### `haku_appearance.sh` (The Appearance Loader)
 While `haku_theme.sh` tracks dynamic runtime state (like the current wallpaper's hex color), `haku_appearance.sh` handles your personal choices for GTK, Icon, and Cursor themes.
 - **What it does:** It checks if you have a custom `~/.config/hakuspace/appearance.env` file and loads your settings. If you haven't configured anything, it provides the default HakuSpace look: `Hikaide` for GTK, `Hikaide-Symbols` for icons, and `Haku-Dark` (size 24) for your mouse cursor.
-- **Why it matters:** Keeping your theme choices separate from `state.env` means changing your wallpaper or accent color will never accidentally reset your favorite cursor or icon pack!
+- **Why it matters:** Keeping your theme choices separate from `[theme].appearance.env` means changing your wallpaper or accent color will never accidentally reset your favorite cursor or icon pack!
 
 ## Shell Backend & Picker Abstraction
 
 ### `haku_backend_lib.sh` (The Shell Switchboard)
 Because HakuSpace lets you switch between **Classic** (Waybar/Rofi/SwayNC) and **Hikai** (Quickshell), scripts need an easy way to know which shell is currently active.
-- **What it does:** Reads and manages the `~/.local/state/hakuspace/state/shell_backend` file, and provides simple helper functions like `haku_backend_get()`, `haku_qs_mode()`, and `haku_qs_alive()`.
+- **What it does:** Reads and manages the `~/.local/state/hakuspace/state/[shell].backend` file, and provides simple helper functions like `haku_backend_get()`, `haku_qs_mode()`, and `haku_qs_alive()`.
 - **IPC helper:** `haku_qs_ipc` wraps requests to the selected Quickshell runtime and logs errors to `${XDG_RUNTIME_DIR}/hakuspace/qs.log`. Callers use the helper instead of duplicating invocation and error handling. See [Hikai](../hikai.md) for shell architecture.
 
 ### `haku_pick.sh` (The Universal Menu Prompt)

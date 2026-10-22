@@ -14,15 +14,15 @@ if [[ $# -eq 0 ]]; then
     DOCK_ICON_SIZE_TEXT="$DOCK_ICON_SIZE"
     DOCK_ICON_SIZE_TEXT+="px"
 
-    CAVA_COLOR_STATUS=$(cat "$STATE_DIR/cava_color_state" 2>/dev/null || echo "1")
+    CAVA_COLOR_STATUS=$(cat "$(haku_state_path cava.color-mode)" 2>/dev/null || echo "1")
     IS_COLOR=""
     [[ "$CAVA_COLOR_STATUS" == "1" ]] && IS_COLOR="(Accent)" || IS_COLOR="(Surface)"
 
-    CAVA_DYNAMIC_STATUS=$(cat "$STATE_DIR/cava_dynamic_state" 2>/dev/null || echo "0")
+    CAVA_DYNAMIC_STATUS=$(cat "$(haku_state_path cava.dynamic-position)" 2>/dev/null || echo "0")
     IS_CAVA_DYNAMIC=""
     [[ "$CAVA_DYNAMIC_STATUS" == "1" ]] && IS_CAVA_DYNAMIC="(ON)" || IS_CAVA_DYNAMIC="(OFF)"
 
-    DYNAMIC_STATUS=$(cat "$STATE_DIR/rounded_screen_dynamic_state" 2>/dev/null || echo "1")
+    DYNAMIC_STATUS=$(cat "$(haku_state_path screen.rounded.dynamic)" 2>/dev/null || echo "1")
     IS_DYNAMIC=""
     [[ "$DYNAMIC_STATUS" == "1" ]] && IS_DYNAMIC="(ON)" || IS_DYNAMIC="(OFF)"
 

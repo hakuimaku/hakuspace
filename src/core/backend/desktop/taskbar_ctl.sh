@@ -7,9 +7,15 @@
 # taskbar_rofi.sh; taskbar_manager.sh remains the public compatibility facade.
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# Load canonical paths without initializing state during status queries.
+if [[ -f "$SCRIPT_DIR/haku_state.sh" ]]; then
+    source "$SCRIPT_DIR/haku_state.sh"
+else
+    source "$SCRIPT_DIR/../../lib/haku_state.sh"
+fi
 
 if [[ ${1:-} == --status ]]; then
-    if [[ "$(cat "$HOME/.local/state/hakuspace/state/taskbar_manual_state" 2>/dev/null)" == "1" ]]; then
+    if [[ "$(cat "$(haku_state_path desktop.taskbar.requested)" 2>/dev/null)" == "1" ]]; then
         printf 'enabled\n'
     else
         printf 'disabled\n'
@@ -37,7 +43,7 @@ source_core_lib() {
 source_core_lib haku_theme.sh || exit 1
 source_core_lib haku_backend_lib.sh || exit 1
 
-MANUAL_STATE="$STATE_DIR/taskbar_manual_state"
+MANUAL_STATE="$(haku_state_path desktop.taskbar.requested)"
 TASKBAR_REAL_DIR="$HOME/.config/waybar/taskbar"
 TASKBAR_LINK_DIR="$HOME/.config/waybar"
 TASKBAR_CONFIG="$TASKBAR_LINK_DIR/config-taskbar"
@@ -130,13 +136,13 @@ toggle_taskbar() {
     if haku_qs_mode; then
         if [[ "$(cat "$MANUAL_STATE" 2>/dev/null)" == "0" ]]; then
             echo "1" > "$MANUAL_STATE"
-            if [[ "$(cat "$STATE_DIR/cava_dynamic_state" 2>/dev/null || echo "0")" == "1" ]]; then
-                echo "0" > "$STATE_DIR/cava_top_state"
+            if [[ "$(cat "$(haku_state_path cava.dynamic-position)" 2>/dev/null || echo "0")" == "1" ]]; then
+                echo "0" > "$(haku_state_path cava.position)"
             fi
         else
             echo "0" > "$MANUAL_STATE"
-            if [[ "$(cat "$STATE_DIR/cava_dynamic_state" 2>/dev/null || echo "0")" == "1" ]]; then
-                echo "1" > "$STATE_DIR/cava_top_state"
+            if [[ "$(cat "$(haku_state_path cava.dynamic-position)" 2>/dev/null || echo "0")" == "1" ]]; then
+                echo "1" > "$(haku_state_path cava.position)"
             fi
         fi
         return 0

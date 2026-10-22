@@ -12,6 +12,11 @@ import mimetypes
 
 import gi
 import sys
+from pathlib import Path
+# Support repository modules and the flattened installed bin directory.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib"))
+from haku_state import state_path
+
 import cairo
 import subprocess
 import hashlib
@@ -1584,7 +1589,7 @@ class DesktopLayout(Gtk.Fixed):
 
         rs_on = False
         try:
-            with open(os.path.expanduser("~/.local/state/hakuspace/state/rounded_screen_state"), "r") as f:
+            with open(state_path("screen.rounded.enabled"), "r") as f:
                 rs_on = (f.read().strip() == "1")
         except:
             pass
@@ -1623,20 +1628,12 @@ class DesktopLayout(Gtk.Fixed):
         
         taskbar_state = False
         try:
-            with open(os.path.expanduser("~/.local/state/hakuspace/state/taskbar_manual_state"), "r") as f:
+            with open(state_path("desktop.taskbar.requested"), "r") as f:
                 taskbar_state = (f.read().strip() == "1")
         except:
             pass
             
-        taskbar_autohide = False
-        try:
-            with open(os.path.expanduser("~/.local/state/hakuspace/state/taskbar_autohide_state"), "r") as f:
-                taskbar_autohide = (f.read().strip() == "1")
-        except:
-            pass
-            
-        taskbar_label = "Taskbar [Autohide]" if taskbar_autohide else "Taskbar"
-        taskbar_item = Gtk.CheckMenuItem(label=taskbar_label)
+        taskbar_item = Gtk.CheckMenuItem(label="Taskbar")
         taskbar_item.set_active(taskbar_state)
         def on_taskbar(w):
             subprocess.Popen([os.path.expanduser("~/.local/bin/taskbar_manager.sh"), "--toggle"])

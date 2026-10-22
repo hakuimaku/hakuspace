@@ -119,7 +119,7 @@ EOF
 chmod +x "$test_root/mockbin/hyprlock"
 
 # 3a. Classic mode routes to hyprlock
-echo "classic" > "$test_root/home/.local/state/hakuspace/state/shell_backend"
+echo "classic" > "$test_root/home/.local/state/hakuspace/state/[shell].backend"
 PATH="$test_root/mockbin:$PATH" HOME="$test_root/home" \
     XDG_STATE_HOME="$test_root/home/.local/state" XDG_RUNTIME_DIR="$test_root/runtime" \
     "$test_root/home/.local/bin/lock.sh" > "$test_root/classic_lock.log" 2>&1
@@ -127,7 +127,7 @@ grep -q '^mock-hyprlock' "$test_root/hyprlock.calls"
 
 # 3b. Hikai mode when Quickshell is not running fails closed by falling back to hyprlock
 : > "$test_root/hyprlock.calls"
-echo "hikai" > "$test_root/home/.local/state/hakuspace/state/shell_backend"
+echo "hikai" > "$test_root/home/.local/state/hakuspace/state/[shell].backend"
 PATH="$test_root/mockbin:$PATH" HOME="$test_root/home" \
     XDG_STATE_HOME="$test_root/home/.local/state" XDG_RUNTIME_DIR="$test_root/runtime" \
     "$test_root/home/.local/bin/lock.sh" > "$test_root/fallback_lock.log" 2>&1

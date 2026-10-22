@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Haku Theme state and rendering model:
-# - ~/.local/state/hakuspace/state/state.env is the single source of truth for
+# - ~/.local/state/hakuspace/state/[theme].appearance.env is the single source of truth for
 #   ACCENT_COLOR, FONT_FAMILY, and FONT_SIZE. It is loaded when this library is
 #   sourced and updated atomically by theme_save_state().
 
@@ -20,10 +20,10 @@
 #   values and does not maintain its own copy of the configuration contract.
 
 # Shared theme state and rendering paths.
-THEME_ROOT="${HOME}/.local/state/hakuspace"
+source "$(dirname -- "${BASH_SOURCE[0]}")/haku_state.sh"
+THEME_ROOT="$HAKU_STATE_ROOT"
 THEME_RENDER_DIR="${THEME_ROOT}/theme"
-STATE_DIR="${THEME_ROOT}/state"
-THEME_STATE_FILE="${STATE_DIR}/state.env"
+THEME_STATE_FILE="$(haku_state_path theme.appearance.env)"
 
 THEME_BTOP_DIR="${HOME}/.config/btop/themes"
 # THEME_LABWC_RC="${HOME}/.local/state/hakuspace/labwc-include.xml"
