@@ -7,7 +7,8 @@ node scripts/test_lock_geometry.js
 # 2. Isolated PAM + LockState + LockSurface runtime harness
 test_root=$(mktemp -d)
 trap 'if [[ $? != 0 && -f "$test_root/result.log" ]]; then cat "$test_root/result.log"; fi; rm -rf "$test_root"' EXIT
-mkdir -p "$test_root/runtime" "$test_root/home" "$test_root/pam.d"
+mkdir -p "$test_root/runtime" "$test_root/home" "$test_root/pam.d" \
+    "$test_root/home/.config/quickshell/hakuspace" "$test_root/home/.local/bin"
 chmod 700 "$test_root/runtime"
 
 cat > "$test_root/pam.d/verify_pw.sh" <<'EOF'
@@ -38,8 +39,15 @@ auth required pam_permit.so
 account required pam_permit.so
 EOF
 
-cp -R src/home/.config/quickshell/hakuspace/{services,components} "$test_root/"
-cp scripts/hikai_lock_harness.qml "$test_root/shell.qml"
+# Mirror installed paths so Env.binDir resolves to a harmless suspend stub.
+cp -R src/home/.config/quickshell/hakuspace/{services,components} "$test_root/home/.config/quickshell/hakuspace/"
+cp scripts/hikai_lock_harness.qml "$test_root/home/.config/quickshell/hakuspace/shell.qml"
+cat > "$test_root/home/.local/bin/power_ctl.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$HOME/suspend.calls"
+sleep 0.15
+EOF
+chmod +x "$test_root/home/.local/bin/power_ctl.sh"
 
 # Exercise both authored motion and direct-state accessibility behavior.
 for reduced_motion in 0 1; do
@@ -47,7 +55,7 @@ for reduced_motion in 0 1; do
         -u GDK_BACKEND HOME="$test_root/home" XDG_RUNTIME_DIR="$test_root/runtime" \
         QT_QPA_PLATFORM=offscreen HAKUSPACE_TEST_PAM_DIR="$test_root/pam.d" \
         HAKUSPACE_REDUCED_MOTION="$reduced_motion" \
-        timeout 15s quickshell -p "$test_root/shell.qml" > "$test_root/result.log" 2>&1
+        timeout 15s quickshell -p "$test_root/home/.config/quickshell/hakuspace/shell.qml" > "$test_root/result.log" 2>&1
     cat "$test_root/result.log"
     grep -q 'Hikai lock checks passed' "$test_root/result.log"
     if grep -Eq 'wrong-pass|correct-pass|TypeError|ReferenceError|Binding loop|Failed to load configuration' "$test_root/result.log"; then
@@ -55,6 +63,7 @@ for reduced_motion in 0 1; do
         exit 1
     fi
 done
+[[ "$(cat "$test_root/home/suspend.calls")" == $'suspend\nsuspend' ]]
 
 # 3. Headless Wayland multi-output session lock + lock.sh routing & fallback verification
 mkdir -p "$test_root/labwc" "$test_root/home/.config/quickshell" \

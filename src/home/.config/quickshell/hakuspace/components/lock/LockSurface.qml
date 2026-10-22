@@ -1,5 +1,7 @@
 import QtQuick
+import Quickshell.Io
 import "../../services"
+import "../base" as Base
 import "LockMotion.js" as LM
 
 Item {
@@ -13,6 +15,12 @@ Item {
     readonly property alias motionController: motion
     readonly property alias inputReady: motion.inputReadyEmitted
     readonly property bool inputFocused: authPill.inputFocused
+
+    // Suspend only after the compositor confirms the session is securely covered.
+    readonly property bool canSuspend: root.interactive && root.animationsEnabled && root.inputReady
+        && root.previewPhase === "" && LockState.locked && LockState.secure
+        && LockState.authState !== "Authenticating" && LockState.authState !== "Success"
+        && !suspendProcess.running
 
     // All colors and typography tokens sourced directly from Hikai's reactive Theme singleton.
     readonly property color bgInkColor: Theme.surface
@@ -40,6 +48,24 @@ Item {
     // Clear the transient local password buffer.
     function clearInput() {
         authPill.clearInput()
+    }
+
+    // Use the same power action as the shell's power menu without releasing the lock.
+    function suspendSession() {
+        // Process starts before its running notification updates the button binding.
+        if (!root.canSuspend || suspendProcess.running) return false
+        root.clearInput()
+        suspendProcess.running = true
+        return true
+    }
+
+    Process {
+        id: suspendProcess
+        command: [Env.binDir + "/power_ctl.sh", "suspend"]
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0) console.warn("Lock screen suspend failed:", exitCode)
+            root.focusInput()
+        }
     }
 
     // Frame-0 opaque security cover: never animated, never translucent.
@@ -194,6 +220,28 @@ Item {
                 }
             }
         }
+    }
+
+    // Keep the sleep action inside the secure surface and the existing lock fade.
+    Base.HButton {
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.margins: Theme.pad * 2
+        width: Math.max(52, Theme.fontSize * 4)
+        height: Math.max(44, Theme.fontSize * 3)
+        radius: height * 0.5
+        text: "󰒲"
+        fontSize: Theme.fontSize + 2
+        enabled: root.canSuspend
+        activeFocusOnTab: enabled
+        focused: activeFocus
+        Accessible.role: Accessible.Button
+        Accessible.name: "Suspend"
+        Accessible.onPressAction: root.suspendSession()
+        Keys.onSpacePressed: event => { root.suspendSession(); event.accepted = true }
+        Keys.onReturnPressed: event => { root.suspendSession(); event.accepted = true }
+        Keys.onEnterPressed: event => { root.suspendSession(); event.accepted = true }
+        onClicked: root.suspendSession()
     }
 
     // Blend the composed ink uniformly so merged shapes retain one solid silhouette.

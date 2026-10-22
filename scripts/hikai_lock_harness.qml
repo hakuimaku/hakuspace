@@ -100,12 +100,15 @@ ShellRoot {
         check(surface.primaryTextColor.toString() === "#8cbbb3", "clock uses Theme.fg")
         check(!LockState.locked && LockState.authState === "Idle", "initial unlocked state")
         check(!LockState.submit("secret"), "submit while unlocked rejected")
+        check(!surface.canSuspend && !surface.suspendSession(), "unlocked surface cannot suspend")
+        check(!previewSurface.canSuspend && !previewSurface.suspendSession(), "preview cannot suspend")
 
         check(LockState.requestLock() === "ok", "requestLock succeeds")
         check(LockState.locked && LockState.authState === "WaitingInput", "immediate lock state")
         check(LockState.lockSessionId === 1, "lockSessionId incremented")
         check(root.clearEvents >= 1, "input cleared on lock start")
         check(!LockState.submit(""), "empty password rejected")
+        check(!surface.canSuspend && !surface.suspendSession(), "insecure surface cannot suspend")
 
         // Late-created controllers join capture, bloom, or Ready using elapsed time.
         for (var elapsed of [250, 1000, 3000]) {
@@ -161,7 +164,21 @@ ShellRoot {
                     root.check(motion.entryProgress < 1, "input ready before visual settle")
                     root.check(root.sawCapture && root.sawBloom, "capture and bloom observed")
                 }
+                // Simulate compositor confirmation and execute only the isolated power stub.
+                root.check(!surface.canSuspend && !surface.suspendSession(), "ready input still requires compositor security")
+                LockState.secure = true
+                previewSurface.interactive = true
+                root.check(!previewSurface.canSuspend && !previewSurface.suspendSession(), "interactive preview cannot suspend")
+                previewSurface.interactive = false
+                root.check(!secondSurface.canSuspend && !secondSurface.suspendSession(), "noninteractive surface cannot suspend")
+                root.check(surface.canSuspend && surface.suspendSession(), "secure lock accepts suspend")
+                root.check(!surface.suspendSession(), "parallel suspend rejected")
+                root.check(LockState.locked && LockState.authState === "WaitingInput", "suspend preserves lock state")
+                root.stage = 7
+            } else if (root.stage === 7 && surface.canSuspend) {
+                root.check(LockState.locked && LockState.secure, "suspend completion retains secure lock")
                 root.submitWrongPassword()
+                root.check(!surface.canSuspend && !surface.suspendSession(), "PAM authentication blocks suspend")
             } else if (root.stage === 1 && LockState.authState !== "Authenticating") {
                 root.check(LockState.authState === "Failed", "wrong password reaches Failed")
                 root.check(LockState.statusMessage === "TRY AGAIN", "failure status shown")
@@ -177,6 +194,7 @@ ShellRoot {
                     "ink reaches full opacity after opening fade")
                 root.check(root.readyEvents === 1, "settle does not emit input-ready twice")
                 surface.animationsEnabled = false
+                root.check(!surface.canSuspend && !surface.suspendSession(), "invalid surface cannot suspend")
                 surface.animationsEnabled = true
                 root.check(root.readyEvents === 1 && surface.inputReady, "surface revalidation does not repeat input-ready")
                 root.lateSurface = surfaceFactory.createObject(secondSurface)
@@ -189,6 +207,7 @@ ShellRoot {
                 root.pamSuccessAt = LockState.successSinceMs
                 root.check(root.pamSuccessAt > 0 && LockState.locked, "PAM success retains lock and records exit origin")
                 root.check(!LockState.submit("extra"), "submit blocked during success")
+                root.check(!surface.canSuspend && !surface.suspendSession(), "success transition blocks suspend")
                 root.stage = 4
             } else if (root.stage === 4) {
                 var successElapsed = Date.now() - root.pamSuccessAt
