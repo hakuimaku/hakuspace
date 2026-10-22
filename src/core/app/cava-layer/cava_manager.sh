@@ -233,14 +233,35 @@ startup() {
     fi
 }
 
+sync_dynamic_position() {
+    if ! haku_qs_mode; then return 0; fi
+    mkdir -p "$STATE_DIR"
+    local is_dynamic="$(cat "$DYNAMIC_STATE_FILE" 2>/dev/null || echo "0")"
+    if [[ "$is_dynamic" == "1" ]]; then
+        local is_taskbar="$(cat "$STATE_DIR/taskbar_manual_state" 2>/dev/null || echo "0")"
+        if [[ "$is_taskbar" == "1" ]]; then
+            set_position "bottom" "--sync"
+        else
+            set_position "top" "--sync"
+        fi
+    fi
+}
+
 set_position() {
+    if ! haku_qs_mode; then
+        log "Position switching is only available in Hikai mode."
+        return 0
+    fi
     local pos="${1:-}"
+    local from_sync="${2:-}"
     mkdir -p "$STATE_DIR"
     if [[ "$pos" == "top" || "$pos" == "1" ]]; then
         echo "1" > "$POSITION_STATE_FILE"
+        [[ "$from_sync" != "--sync" ]] && echo "0" > "$DYNAMIC_STATE_FILE"
         log "Position set to top."
     elif [[ "$pos" == "bottom" || "$pos" == "0" ]]; then
         echo "0" > "$POSITION_STATE_FILE"
+        [[ "$from_sync" != "--sync" ]] && echo "0" > "$DYNAMIC_STATE_FILE"
         log "Position set to bottom."
     else
         toggle_position
@@ -249,6 +270,10 @@ set_position() {
 }
 
 toggle_position() {
+    if ! haku_qs_mode; then
+        log "Position switching is only available in Hikai mode."
+        return 0
+    fi
     mkdir -p "$STATE_DIR"
     local current_state=$(cat "$POSITION_STATE_FILE" 2>/dev/null || echo "1")
     if [[ "$current_state" == "0" || "$current_state" == "bottom" ]]; then
@@ -259,22 +284,38 @@ toggle_position() {
 }
 
 toggle_dynamic() {
-    if haku_qs_mode; then
-        log "Dynamic mode is always enabled in Hikai mode."
+    if ! haku_qs_mode; then
+        log "Dynamic position is only available in Hikai mode."
         return 0
     fi
     mkdir -p "$STATE_DIR"
     local current_state=$(cat "$DYNAMIC_STATE_FILE" 2>/dev/null || echo "0")
     if [[ "$current_state" == "1" ]]; then
         echo "0" > "$DYNAMIC_STATE_FILE"
-        log "Dynamic mode disabled."
+        log "Dynamic position disabled."
     else
         echo "1" > "$DYNAMIC_STATE_FILE"
-        log "Dynamic mode enabled."
+        log "Dynamic position enabled."
+        sync_dynamic_position
     fi
-    if is_running; then
-        stop
-        start
+}
+
+set_dynamic_position() {
+    local mode="${1:-}"
+    if ! haku_qs_mode; then
+        log "Dynamic position is only available in Hikai mode."
+        return 0
+    fi
+    mkdir -p "$STATE_DIR"
+    if [[ "$mode" == "1" || "$mode" == "on" || "$mode" == "true" ]]; then
+        echo "1" > "$DYNAMIC_STATE_FILE"
+        log "Dynamic position enabled."
+        sync_dynamic_position
+    elif [[ "$mode" == "0" || "$mode" == "off" || "$mode" == "false" ]]; then
+        echo "0" > "$DYNAMIC_STATE_FILE"
+        log "Dynamic position disabled."
+    else
+        toggle_dynamic
     fi
 }
 
@@ -467,6 +508,13 @@ case "${1:-}" in
         ;;
     -d|--toggle-dynamic)
         toggle_dynamic
+        ;;
+    --sync-dynamic)
+        sync_dynamic_position
+        ;;
+    --dynamic-position)
+        shift
+        set_dynamic_position "${1:-}"
         ;;
     -c|--color-switch)
         toggle_color

@@ -337,6 +337,7 @@ ShellRoot {
                 sleeping: CavaService.sleeping,
                 style: CavaService.style,
                 height: CavaService.height,
+                ceilingHeadroom: CavaService.ceilingHeadroom,
                 amplitude: CavaService.amplitude,
                 barCount: CavaService.barCount,
                 overallEnergy: CavaService.overallEnergy,

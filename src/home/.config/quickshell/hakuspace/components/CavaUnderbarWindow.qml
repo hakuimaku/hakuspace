@@ -26,7 +26,7 @@ Item {
             bottom: rootItem.isTop ? 0 : (ChromeLayout.taskbarMode ? ScreenGeometry.taskbarReservation() : ScreenGeometry.bottomInset)
             top: rootItem.isTop ? (ChromeLayout.taskbarMode ? ScreenGeometry.topBorderThickness : Theme.topBarHeight) : 0
         }
-        implicitHeight: CavaService.height
+        implicitHeight: CavaService.height + CavaService.ceilingHeadroom
         color: "transparent"
         visible: rootItem.shouldBeVisible
 

@@ -24,6 +24,7 @@ QtObject {
     property real smoothing: 0.5
     property string style: "liquid" // "liquid" or "capsule"
     property real height: AppState.cavaHeight
+    readonly property real ceilingHeadroom: Math.max(20, Math.round(height * 0.35))
     property real amplitude: 1.0
     property real motionStrength: 1.0
 

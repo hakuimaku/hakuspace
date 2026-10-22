@@ -21,27 +21,33 @@ Item {
     readonly property real midEnergy: CavaService.midEnergy
     readonly property real trebleEnergy: CavaService.trebleEnergy
 
-    // Wake morph animation
-    property real wakeProgress: 1.0
-
-    onSleepingChanged: {
-        if (!sleeping) {
-            wakeAnimation.restart()
-        }
-        canvas.requestPaint()
+    // Continuous idle ripple animation with exact harmonic periodicity
+    property real idlePhase: 0.0
+    readonly property real targetIdleWeight: (root.sleeping || root.overallEnergy < 0.015) ? 1.0 : Math.max(0.0, 1.0 - root.overallEnergy * 15.0)
+    property real idleWeight: targetIdleWeight
+    Behavior on idleWeight {
+        NumberAnimation { duration: 350; easing.type: Easing.InOutQuad }
     }
 
-    NumberAnimation {
-        id: wakeAnimation
-        target: root
-        property: "wakeProgress"
+    NumberAnimation on idlePhase {
         from: 0.0
-        to: 1.0
-        duration: 180
-        easing.type: Easing.OutBack
-        easing.overshoot: 1.2
+        to: Math.PI * 2
+        duration: 4800
+        loops: Animation.Infinite
+        running: root.visible && CavaService.enabled && CavaService.available
     }
 
+    onIdlePhaseChanged: {
+        if (root.idleWeight > 0.005) {
+            canvas.requestPaint()
+        }
+    }
+
+    onIdleWeightChanged: {
+        if (idleWeight > 0.005) canvas.requestPaint()
+    }
+
+    onSleepingChanged: canvas.requestPaint()
     onBarsChanged: canvas.requestPaint()
     onIsSurfaceModeChanged: canvas.requestPaint()
     onInkColorChanged: canvas.requestPaint()
@@ -65,12 +71,20 @@ Item {
 
             if (count < 2 || w <= 0 || h <= 0) return
 
-            var wake = root.wakeProgress
             var motion = root.motionStrength
-            var amp = root.amplitude * motion * wake
+            var amp = root.amplitude * motion
             var bassMod = root.bassEnergy * 0.25 * motion
             var trebleMod = root.trebleEnergy * 0.15 * motion
             var isTopMode = root.isTop
+
+            // Headroom ceiling: nominal maximum wave height is CavaService.height,
+            // while canvas height h provides ceiling headroom to prevent clipped peaks.
+            var targetMaxH = Math.max(20.0, CavaService.height - 4.0)
+
+            // Smooth idle ripple calculation
+            var idleWeight = root.idleWeight
+            var idleAmp = Math.max(4.0, Math.min(14.0, targetMaxH * 0.12))
+            var phase = root.idlePhase
 
             // Construct array of points along the spectrum ridge
             var points = []
@@ -89,8 +103,19 @@ Item {
                 var edgeRipple = centerDist * trebleMod * ((i % 2 === 0) ? 0.5 : -0.5)
 
                 var val = Math.max(0.0, Math.min(1.0, rawVal + centerBassBoost + edgeRipple))
-                var peakH = val * (h - 4) * amp + minBaseline
-                var py = isTopMode ? peakH : (h - peakH)
+                var audioH = val * targetMaxH * amp
+
+                // Gentle traveling ripple when idle or during quiet moments
+                // All harmonic multipliers are exact integers to guarantee perfect continuity at 2*PI wrap
+                var normX = (count > 1) ? (i / (count - 1)) : 0.5
+                var w1 = Math.sin(normX * Math.PI * 4.0 + phase)
+                var w2 = Math.sin(normX * Math.PI * 6.0 - phase * 2.0)
+                var w3 = Math.cos(normX * Math.PI * 2.0 + phase)
+                var idleShape = ((w1 * 0.5 + w2 * 0.3 + w3 * 0.2) + 1.0) * 0.5
+                var idleH = idleShape * idleAmp
+
+                var peakH = Math.min(h - 4.0, minBaseline + audioH + idleH * idleWeight)
+                var py = isTopMode ? Math.min(h - 2.0, peakH) : Math.max(2.0, h - peakH)
 
                 points.push({ x: px, y: py })
             }

@@ -33,6 +33,7 @@ binds {
     Mod+Shift+Q      hotkey-overlay-title="Power Menu" { spawn "sh" "-c" "$HOME/.local/bin/shutdown.sh"; }
 
     Mod+T            hotkey-overlay-title="Cava Underbar" { spawn "sh" "-c" "$HOME/.local/bin/cava_manager.sh"; }
+    Mod+Shift+T      hotkey-overlay-title="Toggle Cava Position" { spawn "sh" "-c" "$HOME/.local/bin/cava_manager.sh --position"; }
     Mod+P           { screenshot; }
     Mod+Shift+P     { screenshot-screen; }
     Mod+Alt+P       { screenshot-window; }

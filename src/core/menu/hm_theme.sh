@@ -65,6 +65,7 @@ chosen="$*"
 case "$chosen" in
     *"Change Theme"*) spawn $HOME/.local/bin/change_theme.sh ;;
     *"Go back to Surface"*|*"Explore the Abyss"*) spawn $HOME/.local/bin/haku_backend.sh --toggle ;;
+    *"Cava Dynamic Position"*|*"Cava Dynamic"*) spawn $HOME/.local/bin/cava_manager.sh --toggle-dynamic ;;
     *"Cava Position"*) spawn $HOME/.local/bin/cava_manager.sh --position ;;
     *"Cava Color Mode"*|*"Cava Color Switch"*) spawn $HOME/.local/bin/cava_manager.sh --color-switch ;;
     *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh ;;

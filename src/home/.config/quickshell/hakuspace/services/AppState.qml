@@ -58,6 +58,35 @@ QtObject {
         onLoadFailed: root.cavaTopState = true
     }
 
+    property bool cavaDynamicPosition: false
+    property FileView cavaDynamicStateFile: FileView {
+        path: Env.stateDir + "/cava_dynamic_state"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onTextChanged: {
+            var val = text().trim()
+            root.cavaDynamicPosition = (val === "1" || val === "true" || val === "on")
+            if (root.cavaDynamicPosition) {
+                root.syncCavaDynamicPosition()
+            }
+        }
+        onLoadFailed: root.cavaDynamicPosition = false
+    }
+
+    onTaskbarManualStateChanged: {
+        if (cavaDynamicPosition) {
+            syncCavaDynamicPosition()
+        }
+    }
+
+    function syncCavaDynamicPosition() {
+        var wantTop = !taskbarManualState
+        if (cavaTopState !== wantTop) {
+            cavaTopState = wantTop
+        }
+    }
+
     property string cavaColorMode: "accent"
     property FileView cavaColorStateFile: FileView {
         path: Env.stateDir + "/cava_color_state"

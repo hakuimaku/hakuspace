@@ -128,10 +128,16 @@ startup_taskbar() {
 toggle_taskbar() {
     # In Hikai this flag selects Taskbar Mode without starting a Waybar process.
     if haku_qs_mode; then
-        if [[ "$(cat "$MANUAL_STATE")" == "0" ]]; then
+        if [[ "$(cat "$MANUAL_STATE" 2>/dev/null)" == "0" ]]; then
             echo "1" > "$MANUAL_STATE"
+            if [[ "$(cat "$STATE_DIR/cava_dynamic_state" 2>/dev/null || echo "0")" == "1" ]]; then
+                echo "0" > "$STATE_DIR/cava_top_state"
+            fi
         else
             echo "0" > "$MANUAL_STATE"
+            if [[ "$(cat "$STATE_DIR/cava_dynamic_state" 2>/dev/null || echo "0")" == "1" ]]; then
+                echo "1" > "$STATE_DIR/cava_top_state"
+            fi
         fi
         return 0
     fi

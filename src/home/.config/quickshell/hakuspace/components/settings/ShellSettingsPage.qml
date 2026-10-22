@@ -116,6 +116,17 @@ Item {
         }
     }
 
+    function toggleCavaDynamicPosition() {
+        if (!cavaProc.running) {
+            cavaProc.command = ["sh", "-c",
+                'if [ -x "$1" ]; then exec "$1" --toggle-dynamic; elif [ -x "$2" ]; then exec "$2" --toggle-dynamic; else exec "$3" --toggle-dynamic; fi',
+                "--", (Quickshell.env("HOME") || "") + "/.local/bin/cava_manager.sh",
+                Env.binDir + "/cava_manager.sh",
+                Quickshell.shellPath("../../../../core/app/cava-layer/cava_manager.sh")]
+            cavaProc.running = true
+        }
+    }
+
     function toggleCavaUnderbar() {
         if (!cavaProc.running) {
             cavaProc.command = ["sh", "-c",
@@ -418,9 +429,42 @@ Item {
                         }
                     }
                     Rectangle { width: parent.width; height: 1; color: Theme.hoverMuted }
+                    Row {
+                        width: parent.width
+                        spacing: 12
+                        Column {
+                            width: Math.max(0, parent.width - toggleDynamic.width - 16)
+                            spacing: 3
+                            Text {
+                                width: parent.width
+                                text: "Dynamic Position"
+                                color: Theme.fg
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.fontSize
+                                font.weight: Font.Medium
+                                wrapMode: Text.Wrap
+                            }
+                            Text {
+                                width: parent.width
+                                text: "Follow bar position: Anchors to top in TopBar mode, bottom in Taskbar mode"
+                                color: Theme.fgDescription
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Math.max(10, Theme.fontSize - 2)
+                                wrapMode: Text.Wrap
+                            }
+                        }
+                        SettingsSegmentedToggle {
+                            id: toggleDynamic
+                            checked: AppState.cavaDynamicPosition
+                            labels: ["Off", "On"]
+                            hint: "Toggle dynamic cava underbar position following the active bar"
+                            enabled: root.editable && !cavaProc.running
+                            onToggled: root.toggleCavaDynamicPosition()
+                        }
+                    }
                     Text {
                         width: parent.width
-                        text: "Position"
+                        text: "Fixed Position"
                         color: Theme.fg
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSize
@@ -518,7 +562,7 @@ Item {
                                 shortcutTarget: root.shortcutTarget
                                 width: Math.max(0, parent.width - cavaHeightBadge.width - 8)
                                 from: 36
-                                to: 160
+                                to: 200
                                 stepSize: 4
                                 value: AppState.cavaHeight
                                 enabled: root.editable && !cavaProc.running

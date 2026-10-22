@@ -36,6 +36,7 @@ hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exec_cmd("$HOME/.local/bin/exit.sh"))
 hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.exec_cmd("$HOME/.local/bin/shutdown.sh"))
 
 hl.bind(mainMod .. " + T",     hl.dsp.exec_cmd("$HOME/.local/bin/cava_manager.sh"))
+hl.bind(mainMod .. " + SHIFT + T", hl.dsp.exec_cmd("$HOME/.local/bin/cava_manager.sh --position"))
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh"))
 hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh --fullscreen"))
 

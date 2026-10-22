@@ -28,7 +28,7 @@ Item {
         { label: "Change Wallpaper", icon: "󰏜", action: "Change Wallpaper", toggle: false, showState: false, stateFile: "", statePath: "", stateKind: "bool" },
         { label: "Taskbar Mode", icon: "󰐃", action: "Taskbar Mode", toggle: true, showState: true, chromeKey: "taskbar" },
         { label: "Cava Underbar", icon: "󰝚", action: "Cava Underbar", toggle: true, showState: true, stateFile: "cava_layer_state", statePath: "", stateKind: "bool" },
-        { label: "Cava Position", icon: "󰝚", action: "Cava Position", toggle: true, showState: true, stateFile: "cava_top_state", statePath: "", stateKind: "cavaPosition" },
+        { label: "Cava Dynamic Position", icon: "󰝚", action: "Cava Dynamic Position", toggle: true, showState: true, stateFile: "cava_dynamic_state", statePath: "", stateKind: "bool" },
         { label: "Cava Color Mode", icon: "󰝚", action: "Cava Color Mode", toggle: true, showState: true, stateFile: "cava_color_state", statePath: "", stateKind: "cavaColor" },
         { label: "Desktop Icons", icon: "", action: "Desktop Icons", toggle: true, showState: true, stateFile: "desktop_icons_state", statePath: "", stateKind: "bool" },
         { label: "Dockbar", icon: "󰧨", action: "Dockbar", toggle: true, showState: true, chromeKey: "dockbar" },

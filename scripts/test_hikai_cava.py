@@ -239,6 +239,7 @@ class CavaManagerTest(unittest.TestCase):
             state_dir = home / ".local/state/hakuspace/state"
             state_dir.mkdir(parents=True)
             env = self._make_env(home)
+            (state_dir / "shell_backend").write_text("hikai\n", encoding="utf-8")
 
             # 1. Default position is top, so initial toggle from unconfigured state switches to bottom (0)
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--position"], env=env, capture_output=True, text=True)
@@ -260,6 +261,49 @@ class CavaManagerTest(unittest.TestCase):
             self.assertEqual(res.returncode, 0)
             self.assertEqual((state_dir / "cava_top_state").read_text().strip(), "1")
 
+            # 5. In Classic mode, position switching is blocked
+            (state_dir / "shell_backend").write_text("classic\n", encoding="utf-8")
+            res = subprocess.run(["bash", str(CAVA_MANAGER), "--position"], env=env, capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            self.assertIn("Position switching is only available in Hikai mode", res.stdout)
+            self.assertEqual((state_dir / "cava_top_state").read_text().strip(), "1")
+
+    def test_cava_manager_dynamic_position(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            state_dir = home / ".local/state/hakuspace/state"
+            state_dir.mkdir(parents=True)
+            env = self._make_env(home)
+            (state_dir / "shell_backend").write_text("hikai\n", encoding="utf-8")
+
+            # 1. In topbar mode (taskbar_manual_state = 0), toggling dynamic position sets position to top (1)
+            (state_dir / "taskbar_manual_state").write_text("0\n", encoding="utf-8")
+            (state_dir / "cava_top_state").write_text("0\n", encoding="utf-8")
+            res = subprocess.run(["bash", str(CAVA_MANAGER), "--toggle-dynamic"], env=env, capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual((state_dir / "cava_dynamic_state").read_text().strip(), "1")
+            self.assertEqual((state_dir / "cava_top_state").read_text().strip(), "1")
+
+            # 2. In taskbar mode (taskbar_manual_state = 1), syncing dynamic sets position to bottom (0)
+            (state_dir / "taskbar_manual_state").write_text("1\n", encoding="utf-8")
+            res = subprocess.run(["bash", str(CAVA_MANAGER), "--sync-dynamic"], env=env, capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual((state_dir / "cava_top_state").read_text().strip(), "0")
+
+            # 3. Manually setting position disables dynamic position
+            res = subprocess.run(["bash", str(CAVA_MANAGER), "--position", "top"], env=env, capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual((state_dir / "cava_dynamic_state").read_text().strip(), "0")
+            self.assertEqual((state_dir / "cava_top_state").read_text().strip(), "1")
+
+            # 4. Toggling dynamic position off
+            res = subprocess.run(["bash", str(CAVA_MANAGER), "--toggle-dynamic"], env=env, capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual((state_dir / "cava_dynamic_state").read_text().strip(), "1")
+            res = subprocess.run(["bash", str(CAVA_MANAGER), "-d"], env=env, capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual((state_dir / "cava_dynamic_state").read_text().strip(), "0")
+
     def test_cava_manager_height(self):
         with tempfile.TemporaryDirectory() as tmp:
             home = Path(tmp)
@@ -277,7 +321,12 @@ class CavaManagerTest(unittest.TestCase):
             self.assertEqual(res.returncode, 0)
             self.assertEqual((state_dir / "cava_height").read_text().strip(), "120")
 
-            # 3. Invalid height should fail
+            # 3. Set height to 200 (max settings height)
+            res = subprocess.run(["bash", str(CAVA_MANAGER), "--height", "200"], env=env, capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual((state_dir / "cava_height").read_text().strip(), "200")
+
+            # 4. Invalid height should fail
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--height", "invalid"], env=env, capture_output=True, text=True)
             self.assertNotEqual(res.returncode, 0)
 
