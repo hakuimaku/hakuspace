@@ -294,6 +294,33 @@ ShellRoot {
         }
     }
 
+    IpcHandler {
+        target: "cavaUnderbar"
+        enabled: true
+        function toggle() { CavaService.toggle() }
+        function start() { CavaService.start() }
+        function stop() { CavaService.stop() }
+        function restart() { CavaService.restart() }
+        function status(): string {
+            return JSON.stringify({
+                enabled: CavaService.enabled,
+                running: CavaService.running,
+                sleeping: CavaService.sleeping,
+                style: CavaService.style,
+                height: CavaService.height,
+                amplitude: CavaService.amplitude,
+                barCount: CavaService.barCount,
+                overallEnergy: CavaService.overallEnergy,
+                bassEnergy: CavaService.bassEnergy,
+                midEnergy: CavaService.midEnergy,
+                trebleEnergy: CavaService.trebleEnergy,
+                peakEnergy: CavaService.peakEnergy,
+                malformedFrames: CavaService.malformedFrames,
+                totalFrames: CavaService.totalFrames
+            })
+        }
+    }
+
     Variants {
         model: root.hikaiScreenModel
         TopBar {}
@@ -358,6 +385,11 @@ ShellRoot {
     Variants {
         model: root.hikaiScreenModel
         LevelOsdOverlay {}
+    }
+
+    Variants {
+        model: root.hikaiScreenModel
+        CavaUnderbarWindow {}
     }
 
     Variants {

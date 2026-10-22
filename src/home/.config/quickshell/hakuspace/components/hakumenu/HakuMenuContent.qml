@@ -20,7 +20,7 @@ Item {
 
     readonly property real innerPad: Theme.pad * 2
     readonly property real innerWidth: Math.max(0, width - innerPad * 2)
-    readonly property real stateWidth: Math.max(92, Theme.fontSize * 6.2)
+    readonly property real stateWidth: Math.max(116, Theme.fontSize * 8.2)
     readonly property bool showStateRegion: menu.mode === "theme"
     readonly property color controlBg: Qt.darker(Theme.hoverMuted, 1.75)
     readonly property color controlHoverBg: Qt.darker(Theme.hoverMuted, 1.35)

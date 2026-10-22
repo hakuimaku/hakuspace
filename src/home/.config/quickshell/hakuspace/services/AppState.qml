@@ -35,5 +35,56 @@ QtObject {
     property bool opaqueThemeState: false
     property FileView fv2: FileView { path: Env.stateDir + "/opaque_theme_state"; watchChanges: true; printErrors: false; onFileChanged: this.reload(); onTextChanged: { var txt = this.text().trim(); if (txt === "1") root.opaqueThemeState = true; else if (txt === "0") root.opaqueThemeState = false; else root.opaqueThemeState = false; } }
 
+    property bool cavaLayerState: false
+    property FileView cavaStateFile: FileView {
+        path: Env.stateDir + "/cava_layer_state"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onTextChanged: root.cavaLayerState = text().trim() === "1"
+        onLoadFailed: root.cavaLayerState = false
+    }
 
+    property bool cavaTopState: true
+    property FileView cavaTopStateFile: FileView {
+        path: Env.stateDir + "/cava_top_state"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onTextChanged: {
+            var val = text().trim().toLowerCase()
+            root.cavaTopState = (val === "0" || val === "bottom") ? false : true
+        }
+        onLoadFailed: root.cavaTopState = true
+    }
+
+    property string cavaColorMode: "accent"
+    property FileView cavaColorStateFile: FileView {
+        path: Env.stateDir + "/cava_color_state"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onTextChanged: {
+            var val = text().trim().toLowerCase()
+            root.cavaColorMode = (val === "0" || val === "surface" || val === "black") ? "surface" : "accent"
+        }
+        onLoadFailed: root.cavaColorMode = "accent"
+    }
+
+    property int cavaHeight: 72
+    property FileView cavaHeightFile: FileView {
+        path: Env.stateDir + "/cava_height"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onTextChanged: {
+            var val = parseInt(text().trim(), 10)
+            if (!isNaN(val) && val >= 32 && val <= 300) {
+                root.cavaHeight = val
+            } else {
+                root.cavaHeight = 72
+            }
+        }
+        onLoadFailed: root.cavaHeight = 72
+    }
 }

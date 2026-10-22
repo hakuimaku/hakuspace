@@ -4,22 +4,42 @@
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 if [[ "${1:-}" == "--status" || "${1:-}" == "status" ]]; then
-    if [[ -f /tmp/cava-layer.pid ]] && kill -0 "$(cat /tmp/cava-layer.pid)" 2>/dev/null; then
+    _backend="$(cat "$HOME/.local/state/hakuspace/state/shell_backend" 2>/dev/null || echo "classic")"
+    if [[ "$_backend" == "hikai" ]]; then
+        if [[ "$(cat "$HOME/.local/state/hakuspace/state/cava_layer_state" 2>/dev/null || echo "0")" == "1" ]]; then
+            printf 'enabled\n'
+        else
+            printf 'disabled\n'
+        fi
+    elif [[ -f "${CAVA_PIDFILE:-/tmp/cava-layer.pid}" ]] && kill -0 "$(cat "${CAVA_PIDFILE:-/tmp/cava-layer.pid}")" 2>/dev/null; then
         printf 'enabled\n'
     else
         printf 'disabled\n'
     fi
     exit 0
 fi
-source "$SCRIPT_DIR/haku_theme.sh"
-source "$SCRIPT_DIR/haku_backend_lib.sh"
+if [[ -f "$SCRIPT_DIR/haku_theme.sh" ]]; then
+    source "$SCRIPT_DIR/haku_theme.sh"
+elif [[ -f "$SCRIPT_DIR/../../lib/haku_theme.sh" ]]; then
+    source "$SCRIPT_DIR/../../lib/haku_theme.sh"
+elif [[ -f "$HOME/.local/bin/haku_theme.sh" ]]; then
+    source "$HOME/.local/bin/haku_theme.sh"
+fi
+
+if [[ -f "$SCRIPT_DIR/haku_backend_lib.sh" ]]; then
+    source "$SCRIPT_DIR/haku_backend_lib.sh"
+elif [[ -f "$SCRIPT_DIR/../../lib/haku_backend_lib.sh" ]]; then
+    source "$SCRIPT_DIR/../../lib/haku_backend_lib.sh"
+elif [[ -f "$HOME/.local/bin/haku_backend_lib.sh" ]]; then
+    source "$HOME/.local/bin/haku_backend_lib.sh"
+fi
 
 SCRIPT_PATH="${CAVA_LAYER_PATH:-$HOME/.local/bin/cava_layer.py}"
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
-PIDFILE="/tmp/cava-layer.pid"
-LOGFILE="/tmp/cava-layer.log"
+PIDFILE="${CAVA_PIDFILE:-/tmp/cava-layer.pid}"
+LOGFILE="${CAVA_LOGFILE:-/tmp/cava-layer.log}"
 
-TOP_STATE_FILE="$STATE_DIR/cava_top_state"
+POSITION_STATE_FILE="$STATE_DIR/cava_top_state"
 DYNAMIC_STATE_FILE="$STATE_DIR/cava_dynamic_state"
 CAVA_LAYER_STATE="$STATE_DIR/cava_layer_state"
  
@@ -37,7 +57,7 @@ Commands:
     toggle              Toggle the cava layer
     reload              Live-reload font/colors from the kitty config
                         (no restart, no interruption to cava itself)
-    -t, --top           Toggle the top mode (saves state and restarts)
+    --position [POS]    Toggle or set screen position (top or bottom, Hikai)
     -d, --toggle-dynamic Toggle dynamic position (affected by panels)
     -c, --color-switch  Toggle foreground color between black and white
     --startup           Restore previous state at boot (if enabled)
@@ -94,9 +114,38 @@ from gi.repository import Vte
 is_running() {
     [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE" 2>/dev/null)" 2>/dev/null
 }
- 
+
+kill_classic_process() {
+    if ! is_running; then
+        rm -f "$PIDFILE"
+        return 0
+    fi
+    local pid
+    pid="$(cat "$PIDFILE" 2>/dev/null)"
+    log "Stopping classic cava-layer (pid=$pid)..."
+    kill "$pid" 2>/dev/null
+    for _ in $(seq 1 20); do
+        kill -0 "$pid" 2>/dev/null || break
+        sleep 0.1
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+        err "Process didn't exit gracefully, force killing."
+        kill -9 "$pid" 2>/dev/null
+    fi
+    rm -f "$PIDFILE"
+}
+
 start() {
     mkdir -p "$STATE_DIR"
+    if haku_qs_mode; then
+        echo "1" > "$CAVA_LAYER_STATE"
+        if is_running; then
+            kill_classic_process
+        fi
+        log "Started (Hikai native)."
+        return 0
+    fi
+
     if is_running; then
         log "Already running."
         echo "1" > "$CAVA_LAYER_STATE"
@@ -105,18 +154,19 @@ start() {
 
     check_dependencies
  
-    local top_flag=""
-    if [[ "$(cat "$TOP_STATE_FILE" 2>/dev/null || echo "0")" == "1" ]]; then
-        top_flag="--top"
-    fi
-
     local dynamic_flag=""
     if haku_qs_mode || [[ "$(cat "$DYNAMIC_STATE_FILE" 2>/dev/null || echo "0")" == "1" ]]; then
         dynamic_flag="--dynamic"
     fi
 
-    log "Starting: python3 $SCRIPT_PATH $top_flag $dynamic_flag $*"
-    setsid python3 "$SCRIPT_PATH" $top_flag $dynamic_flag "$@" </dev/null >"$LOGFILE" 2>&1 &
+    local height_flag=""
+    local custom_h=$(cat "$STATE_DIR/cava_height" 2>/dev/null || echo "")
+    if [[ -n "$custom_h" && "$custom_h" =~ ^[0-9]+$ ]]; then
+        height_flag="-H $custom_h"
+    fi
+
+    log "Starting: python3 $SCRIPT_PATH $dynamic_flag $height_flag $*"
+    setsid python3 "$SCRIPT_PATH" $dynamic_flag $height_flag "$@" </dev/null >"$LOGFILE" 2>&1 &
     local pid=$!
     disown "$pid" 2>/dev/null || true
     echo "$pid" > "$PIDFILE"
@@ -138,33 +188,28 @@ stop() {
     mkdir -p "$STATE_DIR"
     echo "0" > "$CAVA_LAYER_STATE"
 
-    if ! is_running; then
-        log "Not running."
-        rm -f "$PIDFILE"
+    if haku_qs_mode; then
+        if is_running; then
+            kill_classic_process
+        fi
+        log "Stopped (Hikai native)."
         return 0
     fi
 
-    local pid
-    pid="$(cat "$PIDFILE" 2>/dev/null)"
-    log "Stopping (pid=$pid)..."
-    kill "$pid" 2>/dev/null
- 
-    for _ in $(seq 1 20); do
-        kill -0 "$pid" 2>/dev/null || break
-        sleep 0.1
-    done
- 
-    if kill -0 "$pid" 2>/dev/null; then
-        err "Process didn't exit gracefully, force killing."
-        kill -9 "$pid" 2>/dev/null
-    fi
- 
-    rm -f "$PIDFILE"
-    echo "0" > "$CAVA_LAYER_STATE"
+    kill_classic_process
     log "Stopped."
 }
  
 toggle() {
+    if haku_qs_mode; then
+        if [[ "$(cat "$CAVA_LAYER_STATE" 2>/dev/null || echo "0")" == "1" ]]; then
+            stop
+        else
+            start "$@"
+        fi
+        return 0
+    fi
+
     if is_running; then
         stop
     else
@@ -173,6 +218,14 @@ toggle() {
 }
 
 startup() {
+    if haku_qs_mode; then
+        if is_running; then
+            echo "1" > "$CAVA_LAYER_STATE"
+            kill_classic_process
+        fi
+        return 0
+    fi
+
     if [[ "$(cat "$CAVA_LAYER_STATE" 2>/dev/null || echo "0")" == "1" ]]; then
         if ! is_running; then
             start "$@"
@@ -180,19 +233,28 @@ startup() {
     fi
 }
 
-toggle_top() {
+set_position() {
+    local pos="${1:-}"
     mkdir -p "$STATE_DIR"
-    local current_state=$(cat "$TOP_STATE_FILE" 2>/dev/null || echo "0")
-    if [[ "$current_state" == "1" ]]; then
-        echo "0" > "$TOP_STATE_FILE"
-        log "Top mode disabled."
+    if [[ "$pos" == "top" || "$pos" == "1" ]]; then
+        echo "1" > "$POSITION_STATE_FILE"
+        log "Position set to top."
+    elif [[ "$pos" == "bottom" || "$pos" == "0" ]]; then
+        echo "0" > "$POSITION_STATE_FILE"
+        log "Position set to bottom."
     else
-        echo "1" > "$TOP_STATE_FILE"
-        log "Top mode enabled."
+        toggle_position
+        return $?
     fi
-    if is_running; then
-        stop
-        start
+}
+
+toggle_position() {
+    mkdir -p "$STATE_DIR"
+    local current_state=$(cat "$POSITION_STATE_FILE" 2>/dev/null || echo "1")
+    if [[ "$current_state" == "0" || "$current_state" == "bottom" ]]; then
+        set_position "top"
+    else
+        set_position "bottom"
     fi
 }
 
@@ -216,34 +278,72 @@ toggle_dynamic() {
     fi
 }
 
-toggle_color() {
+set_color_mode() {
+    local mode="${1:-}"
     mkdir -p "$STATE_DIR"
     local COLOR_STATE_FILE="$STATE_DIR/cava_color_state"
     local CAVA_CONFIG="$HOME/hakucfg/config/cava-layer"
 
-    if [[ ! -f "$CAVA_CONFIG" ]]; then
-        err "Cava config file not found at $CAVA_CONFIG"
-        return 1
-    fi
-
-    if grep -qE '^foreground\s*=\s*white' "$CAVA_CONFIG"; then
-        sed -i -E 's/^foreground\s*=\s*white/foreground = black/' "$CAVA_CONFIG"
+    if [[ "$mode" == "surface" || "$mode" == "0" || "$mode" == "black" ]]; then
+        if [[ -f "$CAVA_CONFIG" ]]; then
+            if grep -qE '^foreground\s*=' "$CAVA_CONFIG"; then
+                sed -i -E 's/^foreground\s*=.*/foreground = black/' "$CAVA_CONFIG"
+            elif grep -qE '^\[color\]' "$CAVA_CONFIG"; then
+                sed -i -E '/^\[color\]/a foreground = black' "$CAVA_CONFIG"
+            else
+                printf '\n[color]\nforeground = black\n' >> "$CAVA_CONFIG"
+            fi
+        fi
         echo "0" > "$COLOR_STATE_FILE"
-        log "Cava color changed to black."
-    elif grep -qE '^foreground\s*=\s*black' "$CAVA_CONFIG"; then
-        sed -i -E 's/^foreground\s*=\s*black/foreground = white/' "$CAVA_CONFIG"
+        log "Cava color mode set to surface (black)."
+    elif [[ "$mode" == "accent" || "$mode" == "1" || "$mode" == "white" ]]; then
+        if [[ -f "$CAVA_CONFIG" ]]; then
+            if grep -qE '^foreground\s*=' "$CAVA_CONFIG"; then
+                sed -i -E 's/^foreground\s*=.*/foreground = white/' "$CAVA_CONFIG"
+            elif grep -qE '^\[color\]' "$CAVA_CONFIG"; then
+                sed -i -E '/^\[color\]/a foreground = white' "$CAVA_CONFIG"
+            else
+                printf '\n[color]\nforeground = white\n' >> "$CAVA_CONFIG"
+            fi
+        fi
         echo "1" > "$COLOR_STATE_FILE"
-        log "Cava color changed to white."
+        log "Cava color mode set to accent (white)."
     else
-        # Fallback if neither is active (e.g., commented out)
-        sed -i -E 's/^#*\s*foreground\s*=\s*black/foreground = white/' "$CAVA_CONFIG"
-        echo "1" > "$COLOR_STATE_FILE"
-        log "Cava color forced to white."
+        toggle_color
+        return $?
     fi
 
     if is_running; then
         stop
         start
+    fi
+}
+
+set_height() {
+    local h="${1:-}"
+    mkdir -p "$STATE_DIR"
+    local HEIGHT_STATE_FILE="$STATE_DIR/cava_height"
+    if [[ "$h" =~ ^[0-9]+$ ]] && (( h >= 32 && h <= 300 )); then
+        echo "$h" > "$HEIGHT_STATE_FILE"
+        log "Layer height set to ${h}px."
+    else
+        err "Invalid height: $h (expected 32-300)"
+        return 1
+    fi
+    if ! haku_qs_mode && is_running; then
+        stop
+        start
+    fi
+}
+
+toggle_color() {
+    mkdir -p "$STATE_DIR"
+    local COLOR_STATE_FILE="$STATE_DIR/cava_color_state"
+    local current="$(cat "$COLOR_STATE_FILE" 2>/dev/null || echo "1")"
+    if [[ "$current" == "0" || "$current" == "surface" || "$current" == "black" ]]; then
+        set_color_mode "accent"
+    else
+        set_color_mode "surface"
     fi
 }
 
@@ -263,7 +363,86 @@ reload() {
     fi
 }
  
+generate_hikai_conf() {
+    local source_conf="${1:-$HOME/hakucfg/config/cava-layer}"
+    local target_conf="${2:-${XDG_RUNTIME_DIR:-/tmp}/hakuspace-cava-hikai.conf}"
+
+    mkdir -p "$(dirname "$target_conf")"
+    if [[ ! -f "$source_conf" ]]; then
+        mkdir -p "$(dirname "$source_conf")"
+        cat <<'EOF' > "$source_conf"
+[general]
+bar_width = 6
+bar_spacing = 1
+
+[output]
+method = ncurses
+orientation = top
+
+[color]
+foreground = white
+EOF
+    fi
+
+    python3 -c "
+import sys
+
+source_path = sys.argv[1]
+target_path = sys.argv[2]
+
+try:
+    with open(source_path, 'r', encoding='utf-8', errors='replace') as f:
+        lines = f.readlines()
+except OSError:
+    lines = []
+
+new_lines = []
+in_output = False
+output_seen = False
+
+for line in lines:
+    stripped = line.strip()
+    if stripped.startswith('[') and stripped.endswith(']'):
+        if stripped == '[output]':
+            in_output = True
+            output_seen = True
+            new_lines.append(line)
+            new_lines.append('method = raw\n')
+            new_lines.append('raw_target = /dev/stdout\n')
+            new_lines.append('data_format = ascii\n')
+            new_lines.append('ascii_max_range = 1000\n')
+            new_lines.append('bar_delimiter = 59\n')
+            new_lines.append('frame_delimiter = 10\n')
+            new_lines.append('channels = stereo\n')
+            continue
+        else:
+            in_output = False
+    if in_output:
+        if any(stripped.startswith(k) for k in ('method', 'raw_target', 'data_format', 'ascii_max_range', 'bar_delimiter', 'frame_delimiter', 'channels', 'orientation')):
+            continue
+    new_lines.append(line)
+
+if not output_seen:
+    new_lines.append('\n[output]\nmethod = raw\nraw_target = /dev/stdout\ndata_format = ascii\nascii_max_range = 1000\nbar_delimiter = 59\nframe_delimiter = 10\nchannels = stereo\n')
+
+with open(target_path, 'w', encoding='utf-8') as f:
+    f.writelines(new_lines)
+" "$source_conf" "$target_conf"
+}
+
+run_hikai() {
+    local target_conf="${XDG_RUNTIME_DIR:-/tmp}/hakuspace-cava-hikai.conf"
+    generate_hikai_conf "$HOME/hakucfg/config/cava-layer" "$target_conf"
+    exec cava -p "$target_conf"
+}
+
 case "${1:-}" in
+    --run-hikai)
+        run_hikai
+        ;;
+    --generate-hikai-conf)
+        generate_hikai_conf "${2:-$HOME/hakucfg/config/cava-layer}" "${3:-${XDG_RUNTIME_DIR:-/tmp}/hakuspace-cava-hikai.conf}"
+        ;;
     start)
         shift
         start "$@"
@@ -282,14 +461,23 @@ case "${1:-}" in
     reload)
         reload
         ;;
-    -t|--top)
-        toggle_top
+    --position)
+        shift
+        set_position "${1:-}"
         ;;
     -d|--toggle-dynamic)
         toggle_dynamic
         ;;
     -c|--color-switch)
         toggle_color
+        ;;
+    --color-mode)
+        shift
+        set_color_mode "${1:-}"
+        ;;
+    -H|--height)
+        shift
+        set_height "${1:-}"
         ;;
     *)
         # No explicit subcommand: treat everything (including -p/-H/-F flags,

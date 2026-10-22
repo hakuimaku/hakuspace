@@ -30,3 +30,4 @@ singleton TaskbarPins 1.0 TaskbarPins.qml
 singleton DockApps 1.0 DockApps.qml
 singleton ChromeLayout 1.0 ChromeLayout.qml
 singleton ShellTransitionState 1.0 ShellTransitionState.qml
+singleton CavaService 1.0 cava/CavaService.qml

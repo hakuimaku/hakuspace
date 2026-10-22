@@ -125,10 +125,10 @@ This Python script uses `GtkLayerShell` and `VTE` (Virtual Terminal Emulator).
 ### `cava_manager.sh` (The Process Controller)
 Because the Python script acts as a background daemon, it needs a manager to handle its lifecycle.
 
-**Developer Note on CLI conventions:** Be aware that unlike other manager scripts in HakuSpace which primarily use long flags (e.g., `--toggle`, `--reload`), `cava_manager.sh` utilizes positional sub-commands (`start`, `stop`, `toggle`, `reload`) mixed with flags (e.g., `-t`/`--top`, `-d`/`--toggle-dynamic`).
+**Developer Note on CLI conventions:** Be aware that unlike other manager scripts in HakuSpace which primarily use long flags (e.g., `--toggle`, `--reload`), `cava_manager.sh` utilizes positional sub-commands (`start`, `stop`, `toggle`, `reload`) mixed with flags (e.g., `--position [top|bottom]`, `-H`/`--height`, `-d`/`--toggle-dynamic`).
 
 - **Toggling:** `cava_manager.sh toggle` starts or stops the standalone Cava layer process and persists the request in `~/.local/state/hakuspace/state/cava_layer_state`.
-- **Top Mode & Dynamic Mode:** `cava_manager.sh --top` toggles the top layer mode, and `--toggle-dynamic` toggles Dynamic Mode, which adapts to other panels' exclusive zones. The manager saves these settings in `cava_top_state` and `cava_dynamic_state`. In Hikai, Dynamic Mode stays enabled and `--toggle-dynamic` returns success without changing the saved preference.
+- **Position & Dynamic Mode:** `cava_manager.sh --position [top|bottom]` toggles or sets screen position (default: top in Hikai mode), and `--toggle-dynamic` toggles Dynamic Mode, which adapts to other panels' exclusive zones. The manager saves these settings in `cava_top_state` and `cava_dynamic_state`. In Hikai, Dynamic Mode stays enabled and `--toggle-dynamic` returns success without changing the saved preference.
 - **Live Reloading:** When you change your system's accent color (via `theme_ctl.sh set-accent`), you don't want the audio visualizer to stutter, drop frames, or restart. Calling `cava_manager.sh reload` sends a specific UNIX signal (`SIGUSR1`) to the Python daemon. The script intercepts this signal, re-reads the Kitty configuration, and instantly updates the visualizer's colors on the fly without ever interrupting the live audio stream!
 
 

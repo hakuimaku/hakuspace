@@ -16,6 +16,9 @@ kill_classic_stack() {
     pkill -x rofi
     pkill -f edge_trigger.py
     pkill -f rounded_screen.py
+    if [[ -f /tmp/cava-layer.pid ]] && kill -0 "$(cat /tmp/cava-layer.pid 2>/dev/null)" 2>/dev/null; then
+        echo "1" > "$STATE_DIR/cava_layer_state"
+    fi
     pkill -f cava_layer.py
     pkill -f desktop_icons.py
     rm -f /tmp/cava-layer.pid
@@ -29,6 +32,7 @@ start_classic_visual_stack() {
     ~/.local/bin/taskbar_manager.sh --startup 9>&- || failed=1
     ~/.local/bin/waybar_manager.sh 9>&- || failed=1
     ~/.local/bin/desktop_icons_manager.sh --startup 9>&- || failed=1
+    ~/.local/bin/cava_manager.sh --startup 9>&- || failed=1
     return "$failed"
 }
 

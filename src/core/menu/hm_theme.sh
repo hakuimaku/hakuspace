@@ -2,7 +2,13 @@
 
 spawn() { ( "$@" & ) >/dev/null 2>&1; }
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/haku_theme.sh"
+if [[ -f "$SCRIPT_DIR/haku_theme.sh" ]]; then
+    source "$SCRIPT_DIR/haku_theme.sh"
+elif [[ -f "$SCRIPT_DIR/../lib/haku_theme.sh" ]]; then
+    source "$SCRIPT_DIR/../lib/haku_theme.sh"
+elif [[ -f "$HOME/.local/bin/haku_theme.sh" ]]; then
+    source "$HOME/.local/bin/haku_theme.sh"
+fi
 
 if [[ $# -eq 0 ]]; then
     # Random Wallpaper
@@ -15,9 +21,9 @@ if [[ $# -eq 0 ]]; then
     CAVA_TEXT="OFF"
     [[ "$CAVA_STATUS" == "1" ]] && CAVA_TEXT="ON"
 
-    CAVA_TOP_STATUS=$(cat "$STATE_DIR/cava_top_state" 2>/dev/null || echo "0")
-    IS_TOP=""
-    [[ "$CAVA_TOP_STATUS" == "1" ]] && IS_TOP="[Top]" || IS_TOP=""
+    CAVA_COLOR_STATUS=$(cat "$STATE_DIR/cava_color_state" 2>/dev/null || echo "1")
+    IS_COLOR=""
+    [[ "$CAVA_COLOR_STATUS" == "0" || "$CAVA_COLOR_STATUS" == "surface" || "$CAVA_COLOR_STATUS" == "black" ]] && IS_COLOR="Surface" || IS_COLOR="Accent"
 
     # Taskbar
     TASKBAR_STATUS=$(cat "$STATE_DIR/taskbar_manual_state" 2>/dev/null || echo "0")
@@ -41,7 +47,8 @@ if [[ $# -eq 0 ]]; then
 
     cat <<EOF
   Change Theme
-󰝚  Cava Underbar ($CAVA_TEXT) $IS_TOP
+󰝚  Cava Underbar ($CAVA_TEXT)
+󰝚  Cava Color Mode ($IS_COLOR)
   Desktop Icons ($DESKTOP_ICONS_TEXT)
 󰐃  Taskbar ($TASKBAR_TEXT)
 󰤕  Niri Animation
@@ -58,6 +65,8 @@ chosen="$*"
 case "$chosen" in
     *"Change Theme"*) spawn $HOME/.local/bin/change_theme.sh ;;
     *"Go back to Surface"*|*"Explore the Abyss"*) spawn $HOME/.local/bin/haku_backend.sh --toggle ;;
+    *"Cava Position"*) spawn $HOME/.local/bin/cava_manager.sh --position ;;
+    *"Cava Color Mode"*|*"Cava Color Switch"*) spawn $HOME/.local/bin/cava_manager.sh --color-switch ;;
     *"Cava Underbar"*) spawn $HOME/.local/bin/cava_manager.sh ;;
     *"Desktop Icons"*) spawn $HOME/.local/bin/desktop_icons_manager.sh --toggle ;;
     *"Dockbar"*)

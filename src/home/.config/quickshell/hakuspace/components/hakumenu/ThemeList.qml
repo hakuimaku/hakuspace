@@ -28,6 +28,8 @@ Item {
         { label: "Change Wallpaper", icon: "󰏜", action: "Change Wallpaper", toggle: false, showState: false, stateFile: "", statePath: "", stateKind: "bool" },
         { label: "Taskbar Mode", icon: "󰐃", action: "Taskbar Mode", toggle: true, showState: true, chromeKey: "taskbar" },
         { label: "Cava Underbar", icon: "󰝚", action: "Cava Underbar", toggle: true, showState: true, stateFile: "cava_layer_state", statePath: "", stateKind: "bool" },
+        { label: "Cava Position", icon: "󰝚", action: "Cava Position", toggle: true, showState: true, stateFile: "cava_top_state", statePath: "", stateKind: "cavaPosition" },
+        { label: "Cava Color Mode", icon: "󰝚", action: "Cava Color Mode", toggle: true, showState: true, stateFile: "cava_color_state", statePath: "", stateKind: "cavaColor" },
         { label: "Desktop Icons", icon: "", action: "Desktop Icons", toggle: true, showState: true, stateFile: "desktop_icons_state", statePath: "", stateKind: "bool" },
         { label: "Dockbar", icon: "󰧨", action: "Dockbar", toggle: true, showState: true, chromeKey: "dockbar" },
         { label: "Auto Random Wallpaper", icon: "", action: "Auto Random Wallpaper", toggle: true, showState: true, stateFile: "", statePath: "/tmp/random_wallpaper_status", stateKind: "bool" },
@@ -128,6 +130,8 @@ Item {
     function parseState(text, kind) {
         var value = (text || "").trim().toLowerCase()
         if (kind === "backend") return value === "hikai"
+        if (kind === "cavaColor") return value === "1" || value === "accent" || value === "white"
+        if (kind === "cavaPosition") return value !== "0" && value !== "bottom"
         return value === "1" || value === "true" || value === "on" || value === "enabled" || value === "yes"
     }
 
@@ -297,8 +301,10 @@ Item {
 
                 Rectangle {
                     id: togglePill
+                    readonly property bool isColorKind: rowWrap.modelData.stateKind === "cavaColor"
+                    readonly property bool isPositionKind: rowWrap.modelData.stateKind === "cavaPosition"
                     anchors.centerIn: parent
-                    width: Math.min(parent.width - Theme.gap * 2, Math.max(68, Theme.fontSize * 4.8))
+                    width: Math.min(parent.width - Theme.gap * 2, Math.max(94, Theme.fontSize * 6.8))
                     height: Math.max(28, Theme.fontSize * 1.9)
                     radius: height / 2
                     color: rowWrap.stateOn ? Theme.accent : Qt.darker(Theme.hoverMuted, 1.5)
@@ -307,8 +313,10 @@ Item {
 
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        x: rowWrap.stateOn ? Theme.gap : parent.width - width - Theme.gap
-                        text: rowWrap.stateOn ? "ON" : "OFF"
+                        x: rowWrap.stateOn ? Theme.gap + 6 : parent.width - width - Theme.gap - 6
+                        text: togglePill.isPositionKind ? (rowWrap.stateOn ? "TOP" : "BOTTOM")
+                            : togglePill.isColorKind ? (rowWrap.stateOn ? "ACCENT" : "SURFACE")
+                            : (rowWrap.stateOn ? "ON" : "OFF")
                         color: rowWrap.stateOn ? "#000000" : Theme.fgMuted
                         font.family: Theme.fontFamily
                         font.pixelSize: Math.max(9, Theme.fontSize - 2)

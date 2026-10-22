@@ -24,7 +24,7 @@ Item {
         {key: "notifications", label: "Right · Notifications", hint: "Show the bell. Popups, history and DND keep working."}
     ]
     // Section anchors and the footer expose presentation without owning draft state.
-    readonly property var sectionCards: [layout, appearance, rounded, surface, appbar, dockbar, topbar]
+    readonly property var sectionCards: [layout, appearance, rounded, surface, cavaUnderbar, appbar, dockbar, topbar]
     readonly property var sidebarSections: sectionCards.map(card => card.title)
     readonly property string activeSection: {
         if (scroll.contentY > 0 && scroll.contentY >= scroll.contentHeight - scroll.height - 1)
@@ -69,6 +69,62 @@ Item {
 
     Process {
         id: layoutProc
+    }
+
+    Process {
+        id: cavaProc
+    }
+
+    Timer {
+        id: cavaHeightDebounceTimer
+        interval: 200
+        repeat: false
+        onTriggered: root.setCavaHeight(AppState.cavaHeight)
+    }
+
+    function setCavaHeight(val) {
+        if (!cavaProc.running) {
+            cavaProc.command = ["sh", "-c",
+                'if [ -x "$1" ]; then exec "$1" --height "$4"; elif [ -x "$2" ]; then exec "$2" --height "$4"; else exec "$3" --height "$4"; fi',
+                "--", (Quickshell.env("HOME") || "") + "/.local/bin/cava_manager.sh",
+                Env.binDir + "/cava_manager.sh",
+                Quickshell.shellPath("../../../../core/app/cava-layer/cava_manager.sh"), val]
+            cavaProc.running = true
+        }
+    }
+
+    function setCavaColorMode(mode) {
+        if (AppState.cavaColorMode !== mode && !cavaProc.running) {
+            cavaProc.command = ["sh", "-c",
+                'if [ -x "$1" ]; then exec "$1" --color-mode "$4"; elif [ -x "$2" ]; then exec "$2" --color-mode "$4"; else exec "$3" --color-mode "$4"; fi',
+                "--", (Quickshell.env("HOME") || "") + "/.local/bin/cava_manager.sh",
+                Env.binDir + "/cava_manager.sh",
+                Quickshell.shellPath("../../../../core/app/cava-layer/cava_manager.sh"), mode]
+            cavaProc.running = true
+        }
+    }
+
+    function setCavaPosition(pos) {
+        var wantTop = (pos === "top")
+        if (AppState.cavaTopState !== wantTop && !cavaProc.running) {
+            cavaProc.command = ["sh", "-c",
+                'if [ -x "$1" ]; then exec "$1" --position "$4"; elif [ -x "$2" ]; then exec "$2" --position "$4"; else exec "$3" --position "$4"; fi',
+                "--", (Quickshell.env("HOME") || "") + "/.local/bin/cava_manager.sh",
+                Env.binDir + "/cava_manager.sh",
+                Quickshell.shellPath("../../../../core/app/cava-layer/cava_manager.sh"), pos]
+            cavaProc.running = true
+        }
+    }
+
+    function toggleCavaUnderbar() {
+        if (!cavaProc.running) {
+            cavaProc.command = ["sh", "-c",
+                'if [ -x "$1" ]; then exec "$1" toggle; elif [ -x "$2" ]; then exec "$2" toggle; else exec "$3" toggle; fi',
+                "--", (Quickshell.env("HOME") || "") + "/.local/bin/cava_manager.sh",
+                Env.binDir + "/cava_manager.sh",
+                Quickshell.shellPath("../../../../core/app/cava-layer/cava_manager.sh")]
+            cavaProc.running = true
+        }
     }
 
     function setShellLayout(target) {
@@ -268,6 +324,234 @@ Item {
                                 Keys.onSpacePressed: clicked()
                             }
                         }
+                    }
+                }
+                SettingsSectionCard {
+                    id: cavaUnderbar
+                    width: parent.width
+                    title: "Cava Underbar"
+                    Row {
+                        width: parent.width
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "Enable Underbar"
+                            color: Theme.fg
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize
+                            font.weight: Font.Medium
+                        }
+                        Item {
+                            width: Math.max(12, parent.width - 240)
+                            height: 1
+                        }
+                        SettingsSegmentedToggle {
+                            checked: AppState.cavaLayerState
+                            labels: ["Off", "On"]
+                            hint: "Toggle Cava Underbar audio visualizer"
+                            onToggled: root.toggleCavaUnderbar()
+                        }
+                    }
+                    Rectangle { width: parent.width; height: 1; color: Theme.hoverMuted }
+                    Text {
+                        width: parent.width
+                        text: "Color Mode"
+                        color: Theme.fg
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                        font.weight: Font.Medium
+                    }
+                    Row {
+                        id: cavaColorChoices
+                        width: parent.width
+                        spacing: 12
+                        Repeater {
+                            model: [
+                                { key: "surface", label: "Surface", desc: "Match rounded screen frame" },
+                                { key: "accent", label: "Accent", desc: "Use theme accent color" }
+                            ]
+                            delegate: SettingsActionButton {
+                                settingsNavGroup: cavaColorChoices
+                                required property var modelData
+                                width: Math.floor((parent.width - 12) / 2)
+                                height: 56
+                                selected: AppState.cavaColorMode === modelData.key
+                                selectedOverridesHover: true
+                                idleColor: Theme.surface
+                                hoverColor: Theme.hoverMuted
+                                selectedColor: Theme.hoverMuted
+                                foregroundColor: Theme.fgDim
+                                hoverForegroundColor: Theme.fg
+                                selectedForegroundColor: Theme.accent
+                                border.color: selected || activeFocus ? Theme.accent : Theme.hoverMuted
+                                border.width: selected ? 2 : 1
+                                enabled: root.editable && !cavaProc.running
+                                activeFocusOnTab: enabled
+                                focused: activeFocus
+                                Accessible.name: modelData.label + " cava color mode"
+                                Accessible.role: Accessible.RadioButton
+                                Accessible.checked: selected
+                                Accessible.onPressAction: clicked()
+                                onClicked: root.setCavaColorMode(modelData.key)
+                                Keys.onReturnPressed: clicked()
+                                Keys.onSpacePressed: clicked()
+
+                                Column {
+                                    anchors.centerIn: parent
+                                    spacing: 3
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: modelData.label
+                                        color: parent.parent.selected ? Theme.accent : (parent.parent.hovered ? Theme.fg : Theme.fgDim)
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Theme.fontSize + 1
+                                        font.weight: Font.DemiBold
+                                    }
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: modelData.desc
+                                        color: Theme.fgDescription
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Math.max(10, Theme.fontSize - 2)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Rectangle { width: parent.width; height: 1; color: Theme.hoverMuted }
+                    Text {
+                        width: parent.width
+                        text: "Position"
+                        color: Theme.fg
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                        font.weight: Font.Medium
+                    }
+                    Row {
+                        id: cavaPositionChoices
+                        width: parent.width
+                        spacing: 12
+                        Repeater {
+                            model: [
+                                { key: "top", label: "Top", desc: "Anchored to screen top edge" },
+                                { key: "bottom", label: "Bottom", desc: "Anchored to screen bottom edge" }
+                            ]
+                            delegate: SettingsActionButton {
+                                settingsNavGroup: cavaPositionChoices
+                                required property var modelData
+                                width: Math.floor((parent.width - 12) / 2)
+                                height: 56
+                                selected: (modelData.key === "top") ? AppState.cavaTopState : !AppState.cavaTopState
+                                selectedOverridesHover: true
+                                idleColor: Theme.surface
+                                hoverColor: Theme.hoverMuted
+                                selectedColor: Theme.hoverMuted
+                                foregroundColor: Theme.fgDim
+                                hoverForegroundColor: Theme.fg
+                                selectedForegroundColor: Theme.accent
+                                border.color: selected || activeFocus ? Theme.accent : Theme.hoverMuted
+                                border.width: selected ? 2 : 1
+                                enabled: root.editable && !cavaProc.running
+                                activeFocusOnTab: enabled
+                                focused: activeFocus
+                                Accessible.name: modelData.label + " cava position"
+                                Accessible.role: Accessible.RadioButton
+                                Accessible.checked: selected
+                                Accessible.onPressAction: clicked()
+                                onClicked: root.setCavaPosition(modelData.key)
+                                Keys.onReturnPressed: clicked()
+                                Keys.onSpacePressed: clicked()
+
+                                Column {
+                                    anchors.centerIn: parent
+                                    spacing: 3
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: modelData.label
+                                        color: parent.parent.selected ? Theme.accent : (parent.parent.hovered ? Theme.fg : Theme.fgDim)
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Theme.fontSize + 1
+                                        font.weight: Font.DemiBold
+                                    }
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: modelData.desc
+                                        color: Theme.fgDescription
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Math.max(10, Theme.fontSize - 2)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Rectangle { width: parent.width; height: 1; color: Theme.hoverMuted }
+                    Grid {
+                        id: cavaHeightRow
+                        width: parent.width
+                        columns: width < 540 ? 1 : 2
+                        columnSpacing: 16
+                        rowSpacing: 10
+                        Column {
+                            width: cavaHeightRow.columns === 1 ? cavaHeightRow.width : Math.round(cavaHeightRow.width * 0.42)
+                            spacing: 3
+                            Text {
+                                width: parent.width
+                                text: "Layer height"
+                                color: Theme.fg
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.fontSize
+                                font.weight: Font.Medium
+                                wrapMode: Text.Wrap
+                            }
+                            Text {
+                                width: parent.width
+                                text: "Physical height of the audio underbar"
+                                color: Theme.fgDescription
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Math.max(10, Theme.fontSize - 2)
+                                wrapMode: Text.Wrap
+                            }
+                        }
+                        Row {
+                            width: cavaHeightRow.columns === 1 ? cavaHeightRow.width : cavaHeightRow.width - Math.round(cavaHeightRow.width * 0.42) - 16
+                            spacing: 8
+                            SettingsSlider {
+                                shortcutTarget: root.shortcutTarget
+                                width: Math.max(0, parent.width - cavaHeightBadge.width - 8)
+                                from: 36
+                                to: 160
+                                stepSize: 4
+                                value: AppState.cavaHeight
+                                enabled: root.editable && !cavaProc.running
+                                Accessible.name: "Cava underbar layer height"
+                                onMoved: {
+                                    var nextVal = Math.round(value / stepSize) * stepSize
+                                    AppState.cavaHeight = nextVal
+                                    cavaHeightDebounceTimer.restart()
+                                }
+                            }
+                            Rectangle {
+                                id: cavaHeightBadge
+                                width: 64; height: 34
+                                radius: Theme.radius
+                                color: Theme.surface
+                                border.width: 1; border.color: Theme.hoverMuted
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: AppState.cavaHeight + " px"
+                                    color: Theme.fg
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Math.max(10, Theme.fontSize - 1)
+                                }
+                            }
+                        }
+                    }
+                    Text {
+                        width: parent.width
+                        text: "Surface mode seamlessly melts the underbar waves into the Rounded Screen border. Accent mode highlights audio peaks in your active theme color."
+                        wrapMode: Text.Wrap
+                        color: Theme.fgDescription
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Math.max(10, Theme.fontSize - 2)
                     }
                 }
                 SettingsSectionCard {

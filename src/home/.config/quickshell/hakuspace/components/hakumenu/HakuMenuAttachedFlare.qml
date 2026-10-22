@@ -24,7 +24,7 @@ Item {
     readonly property real maxMenuWidth: root.screenWidth * 0.42
     readonly property real targetMenuWidth: {
         if (UiState.hakuMenuMode === "general") return root.screenWidth * 0.38
-        if (UiState.hakuMenuMode === "theme") return root.screenWidth * 0.42
+        if (UiState.hakuMenuMode === "theme") return root.screenWidth * 0.36
         return root.screenWidth * 0.40
     }
     readonly property real menuHeight: root.screenHeight * 0.40
