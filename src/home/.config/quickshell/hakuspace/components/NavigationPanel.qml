@@ -325,6 +325,12 @@ Item {
 
     // Keep dispatch in the parent so closing the tool cannot cancel its command.
     function runQuickAction(key) {
+        if (key === "settings") {
+            if (sidebarToolOpen) closeSidebarTool()
+            if (sidebarExpanded) UiState.cancelNavigationHandoff()
+            UiState.openSettings(modelData.name)
+            return
+        }
         if (key !== "screenshot" && key !== "lock" && key !== "wallpaper") return
         var script = key === "screenshot" ? "screenshot.sh"
                    : key === "lock" ? "lock.sh" : "wallpaper_select.sh"

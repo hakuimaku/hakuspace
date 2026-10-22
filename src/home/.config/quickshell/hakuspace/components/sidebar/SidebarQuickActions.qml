@@ -17,16 +17,13 @@ FocusScope {
         { key: "bluetooth", icon: "󰂯", label: "Bluetooth", toggle: true },
         { key: "idleInhibit", icon: "󰈈", label: "Idle Inhibit", toggle: true },
         { key: "nightLight", icon: "󰖔", label: "Night Light", toggle: true },
-        { key: "taskbar", icon: "󰧨", label: "Taskbar Mode", toggle: true },
         { key: "dockbar", icon: "󰐃", label: "Dockbar", toggle: true },
         { key: "desktopIcons", icon: "󰀻", label: "Desktop Icons", toggle: true },
         { key: "cava", icon: "󰝚", label: "Cava Underbar", toggle: true },
-        { key: "screenshot", icon: "󰄄", label: "Screenshot", toggle: false },
-        { key: "lock", icon: "󰌾", label: "Lock", toggle: false },
-        { key: "wallpaper", icon: "󰸉", label: "Wallpaper", toggle: false }
+        { key: "settings", icon: "󰒓", label: "Settings", toggle: false }
     ]
 
-    readonly property int columnCount: 5
+    readonly property int columnCount: 4
     readonly property int rowCount: Math.ceil(actions.length / columnCount)
     readonly property real cellSpacing: 8
 
