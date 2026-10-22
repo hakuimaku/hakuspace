@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 import Quickshell
 import Quickshell.Io
 import "services"
@@ -18,7 +19,6 @@ ShellRoot {
     property var search: null
     property bool typingSent: false
     property var originalRepo: ({})
-    property var longValueTooltip: null
     property int infoHoverAttempts: 0
     property var hoveredInfoCard: null
     property real infoHoverScrollY: 0
@@ -28,6 +28,9 @@ ShellRoot {
     property var morphButton: null
     property var navigationButton: null
     property var navigationPill: null
+    // Sample both directions so a static centered popup cannot pass the guide checks.
+    property bool guideOpeningSeen: false
+    property bool guideClosingSeen: false
     readonly property var panel: panels[0] || null
     readonly property var footer: panel ? find(panel.contentItem, item => item.labels !== undefined && item.page !== undefined) : null
     readonly property var page: footer ? footer.page : null
@@ -51,10 +54,20 @@ ShellRoot {
             Component.onCompleted: root.panels = root.panels.concat([instance])
         }
     }
+    // Report semantic focus identity without depending on object child indexes.
+    function focusDescription() {
+        if (!panel) return "no Settings panel"
+        var target = panel.focusedItem
+        for (var item = target; item; item = item.parent) {
+            if (item.settingsNavItem === true) { target = item; break }
+        }
+        return "region=" + panel.focusZoneIndex() + ", target=" + (target ?
+            (target.settingsNavRole || "native") + ":" + (target.Accessible.name || target.text || String(target)) : "none")
+    }
     // Fail the process so assertions cannot be mistaken for optional warnings.
     function check(ok, message) {
         if (ok) return
-        console.error("Ink Settings failed at phase " + phase + ": " + message)
+        console.error("Ink Settings failed at phase " + phase + ": " + message + " (" + focusDescription() + ")")
         Qt.exit(1)
         throw new Error(message)
     }
@@ -123,13 +136,13 @@ ShellRoot {
         var interior = body.children.find(child => child.currentPage !== undefined)
         check(interior.width > 0 && interior.height > 0 && interior.visible && interior.opacity > 0.99, "visible panel interior")
         ++captures
-        var dialog = panel.confirmation ? find(panel.contentItem, item => item.modal === true, true) : null
+        var dialog = find(panel.contentItem, item => item.modal === true && item.visible, true)
         var surface = dialog ? dialog.contentItem : body
         surface.grabToImage(result => {
             check(result.saveToFile(Quickshell.env("INK_ARTIFACT_DIR") + "/" + Quickshell.env("INK_SIZE") + "-" + name + ".png"), "save screenshot")
             --root.captures
         })
-        if (dialog) {
+        if (dialog && dialog.footer && dialog.footer.visible && dialog.footer.width > 0 && dialog.footer.height > 0) {
             ++captures
             dialog.footer.grabToImage(result => {
                 check(result.saveToFile(Quickshell.env("INK_ARTIFACT_DIR") + "/" + Quickshell.env("INK_SIZE") + "-" + name + "-actions.png"), "save dialog actions screenshot")
@@ -237,6 +250,7 @@ ShellRoot {
                 root.check(iconSlider && iconSlider.stepSize === 4, "icon slider starts at 24 px in steps of four")
                 iconSlider.value = 24
                 iconSlider.moved()
+                iconSlider.value = Qt.binding(() => ShellSettingsStore.dockIconSize)
                 root.check(ShellSettingsStore.dockIconSize === 24 && ShellSettingsStore.valid, "icon slider previews 24 px")
                 ShellSettingsStore.setValue("dock", "iconSize", 20)
                 root.check(ShellSettingsStore.dockIconSize === 24, "icon preview rejects sizes below 24 px")
@@ -250,6 +264,7 @@ ShellRoot {
                 var slider = root.find(root.page, item => item.from === 4 && item.to === 24)
                 slider.value = 18
                 slider.moved()
+                slider.value = Qt.binding(() => ShellSettingsStore.baseRadius)
                 root.check(Theme.radius === 18 && ShellSettingsStore.dirty, "actual radius slider previews")
                 var themedButton = root.find(root.footer, item => item.text === "Reload" && typeof item.clicked === "function")
                 root.check(themedButton.radius === 18, "Settings button follows live Theme radius")
@@ -383,6 +398,7 @@ ShellRoot {
                 if (root.captureOnce("info")) return
                 var infoSidebar = root.find(root.panel.contentItem, item => item.sectionNames !== undefined && item.configBrowser !== undefined)
                 var infoScroll = root.find(root.page, item => item.contentY !== undefined && item.contentHeight !== undefined)
+                var previousBottom = 0
                 for (var title of root.page.sidebarSections) {
                     if (infoSidebar.compact) {
                         var sectionSelector = root.find(infoSidebar, item => item.visible && typeof item.activated === "function")
@@ -394,6 +410,9 @@ ShellRoot {
                     }
                     root.check(root.page.activeSection === title, "Info sidebar selects its destination: " + title)
                     var infoCard = root.find(root.page, item => item.title === title && item.content !== undefined)
+                    root.check(infoCard.x === 0 && Math.abs(infoCard.width - (infoScroll.width - 14)) < 1
+                        && infoCard.y >= previousBottom, "Info cards occupy one full-width column: " + title)
+                    previousBottom = infoCard.y + infoCard.height
                     root.check(infoCard.highlighted, "Info keeps the selected card highlighted: " + title)
                     var cardPoint = infoCard.mapToItem(infoScroll, 0, 0)
                     root.check(cardPoint.y < infoScroll.height && cardPoint.y + infoCard.height > 0, "selected Info card is visible: " + title)
@@ -410,30 +429,18 @@ ShellRoot {
                 var longValue = "/" + "long-repository-path/".repeat(30)
                 InfoStore.repo = Object.assign({}, InfoStore.repo, {path: longValue})
             } else if (root.phase === 18) {
-                var valueText = root.find(root.page, item => item.text === InfoStore.repo.path && item.elide === Text.ElideMiddle)
-                root.check(valueText && valueText.implicitWidth > valueText.width, "long Info value elides")
-                root.longValueTooltip = valueText.data.find(item => item.target === valueText && typeof item.open === "function")
-                root.check(root.longValueTooltip, "long value keeps its tooltip")
+                var valueText = root.find(root.page, item => item.text === InfoStore.repo.path && item.wrapMode === Text.Wrap)
+                root.check(valueText && !valueText.truncated && valueText.implicitHeight > valueText.font.pixelSize * 2,
+                    "long Info values wrap completely instead of hiding information")
                 var infoScroll = root.find(root.page, item => item.contentY !== undefined && item.contentHeight !== undefined)
-                var valuePosition = valueText.mapToItem(infoScroll, 0, valueText.height / 2)
-                infoScroll.contentY = Math.max(0, Math.min(infoScroll.contentHeight - infoScroll.height,
-                    infoScroll.contentY + valuePosition.y - infoScroll.height / 2))
-                var point = valueText.mapToItem(root.panel.contentItem, valueText.width / 2, valueText.height / 2)
+                infoScroll.contentY = 0
+                var infoCard = root.find(root.page, item => item.title === "HakuSpace" && item.content !== undefined)
+                var point = infoCard.mapToItem(root.panel.contentItem, infoCard.width / 2, 40)
                 pointer.write(Math.round(point.x) + " " + Math.round(point.y) + " " + root.panel.modelData.width + " " + root.panel.modelData.height + " 0\n")
                 root.capture("info-hover")
             } else if (root.phase === 19) {
-                var target = root.longValueTooltip.target
-                var targetPoint = target.mapToItem(root.panel.contentItem, target.width / 2, target.height / 2)
-                // Redeliver motion while the compositor settles the newly positioned value.
-                if (!root.longValueTooltip.active && ++root.infoHoverAttempts < 5) {
-                    pointer.write(Math.round(targetPoint.x) + (root.infoHoverAttempts % 2) + " " + Math.round(targetPoint.y) + " " + root.panel.modelData.width + " " + root.panel.modelData.height + " 0\n")
-                    return
-                }
-                root.check(root.longValueTooltip.active, "pointer reaches the elided Info value at " + targetPoint.x + "," + targetPoint.y + " on " + root.panel.modelData.name)
                 root.check(root.find(root.page, item => item.title === "HakuSpace" && item.highlighted === true), "pointer hover highlights its Info block")
-                if (!root.longValueTooltip.visible) return
                 if (root.captureOnce("info-block-hover")) return
-                root.check(root.longValueTooltip.text === InfoStore.repo.path, "hover reveals the full Info value")
                 InfoStore.repo = root.originalRepo
                 root.page.scrollToSection(root.page.sidebarSections[root.page.sidebarSections.length - 1])
                 root.action("Refresh")
@@ -482,10 +489,10 @@ ShellRoot {
             } else if (root.phase === 29) {
                 root.check(root.panel.selectedGroup === "Shell", "Enter activates focused Shell tab")
                 var hideButton = root.find(root.page, item => item.text === "Hide" && typeof item.clicked === "function")
-                hideButton.forceActiveFocus()
-                keyboard.write("key 57\n")
+                hideButton.parent.parent.forceActiveFocus()
+                keyboard.write("key 28\n")
             } else if (root.phase === 30) {
-                root.check(!ShellSettingsStore.dockShowTrash, "Space activates the live toggle")
+                root.check(!ShellSettingsStore.dockShowTrash, "Enter activates the live toggle")
                 root.action("Discard")
                 root.action("Discard Changes")
                 root.panel.selectedGroup = "General"
@@ -541,7 +548,7 @@ ShellRoot {
             } else if (root.phase === 40) {
                 if (root.page.parent.parent.opacity < 0.999) return
                 root.hoveredInfoCard = root.find(root.page, item => item.title === "User & Session" && item.content !== undefined)
-                if (root.hoveredInfoCard.x === 0) root.page.scrollToSection("User & Session")
+                root.page.scrollToSection("User & Session")
                 var infoScroll = root.find(root.page, item => item.contentY !== undefined && item.contentHeight !== undefined)
                 root.infoHoverScrollY = infoScroll.contentY
                 root.infoHoverAttempts = 0
@@ -553,7 +560,7 @@ ShellRoot {
                     pointer.write(Math.round(cardPoint.x) + (root.infoHoverAttempts % 2) + " " + Math.round(cardPoint.y) + " " + root.panel.modelData.width + " " + root.panel.modelData.height + " 0\n")
                     return
                 }
-                root.check(root.hoveredInfoCard.highlighted && root.page.activeSection === "User & Session", "hovering the right Info block selects its sidebar entry")
+                root.check(root.hoveredInfoCard.highlighted && root.page.activeSection === "User & Session", "hovering an Info block selects its sidebar entry")
                 var infoScroll = root.find(root.page, item => item.contentY !== undefined && item.contentHeight !== undefined)
                 root.check(infoScroll.contentY === root.infoHoverScrollY, "Info hover selection does not scroll the content")
                 if (!root.sidebarSettled()) return
@@ -635,6 +642,516 @@ ShellRoot {
                 root.check(SettingsStore.value("WELCOME_MSG") === root.closeDraft.general.WELCOME_MSG
                     && ShellSettingsStore.baseRadius === 16 && ConfigEditorStore.savedText === root.closeDraft.config,
                     "Apply and Close persists General, Shell and Config")
+                root.panel.selectedGroup = "General"
+                pointer.write("8 8 " + root.panel.modelData.width + " " + root.panel.modelData.height + " 0\n")
+                keyboard.write("key 15 4\n")
+            } else if (root.phase === 52) {
+                root.check(root.panel.selectedGroup === "Shell" && root.panel.focusZoneIndex() === 0, "Ctrl+Tab changes domains and focuses the selected tab")
+                keyboard.write("key 15 5\n")
+            } else if (root.phase === 53) {
+                root.check(root.panel.selectedGroup === "General", "Ctrl+Shift+Tab returns to the previous domain")
+                keyboard.write("key 5 8\n")
+            } else if (root.phase === 54) {
+                root.check(root.panel.selectedGroup === "Info", "Alt+4 opens Info")
+                keyboard.write("key 64\n")
+            } else if (root.phase === 55) {
+                root.check(root.panel.focusZoneIndex() === 1, "F6 enters the contextual sidebar")
+                var sidebar = root.find(root.panel.contentItem, item => item.sectionNames !== undefined && item.configBrowser !== undefined)
+                keyboard.write(sidebar.compact ? "key 108\n" : "key 107\n")
+            } else if (root.phase === 56) {
+                var sidebar = root.find(root.panel.contentItem, item => item.sectionNames !== undefined && item.configBrowser !== undefined)
+                if (!sidebar.compact) {
+                    root.check(root.panel.focusedItem.modelData === root.page.sidebarSections[root.page.sidebarSections.length - 1], "End focuses the last sidebar section")
+                    var scroll = root.find(sidebar, item => item.contentY !== undefined)
+                    var position = root.panel.focusedItem.mapToItem(scroll, 0, 0)
+                    root.check(position.y >= -1 && position.y + root.panel.focusedItem.height <= scroll.height + 1, "focused sidebar row is scrolled fully into view")
+                    keyboard.write("key 28\n")
+                }
+                keyboard.write("key 64\n")
+            } else if (root.phase === 57) {
+                root.check(root.panel.focusZoneIndex() === 2 && root.panel.focusedItem.contentY !== undefined, "F6 enters the Info reader")
+                root.snapshot = root.page.activeSection
+                keyboard.write("key 102\n")
+            } else if (root.phase === 58) {
+                root.check(root.panel.focusedItem.contentY === 0, "Home scrolls Info to its beginning")
+                keyboard.write("key 109\n")
+            } else if (root.phase === 59) {
+                root.check(root.panel.focusedItem.contentY > 0 && root.page.activeSection === root.snapshot, "Page Down scrolls Info without changing selection")
+                InfoStore.error = "keyboard-refresh-probe"
+                keyboard.write("key 63\nkey 107\n")
+            } else if (root.phase === 60) {
+                root.check(!InfoStore.error, "F5 refreshes the Info snapshot")
+                root.check(Math.abs(root.panel.focusedItem.contentY - Math.max(0, root.panel.focusedItem.contentHeight - root.panel.focusedItem.height)) < 1, "End reaches the bottom of Info")
+                keyboard.write("key 64 1\n")
+            } else if (root.phase === 61) {
+                root.check(root.panel.focusZoneIndex() === 1, "Shift+F6 returns to the previous region")
+                keyboard.write("key 33 4\n")
+            } else if (root.phase === 62) {
+                root.check(root.panel.selectedGroup === "General" && root.panel.focusedItem.cursorPosition !== undefined, "Ctrl+F opens General search")
+                keyboard.write("text wallpaper\n")
+            } else if (root.phase === 63) {
+                root.check(root.search.text === "wallpaper", "keyboard search uses the existing filter")
+                keyboard.write("key 33 4\ntext exit\n")
+            } else if (root.phase === 64) {
+                root.check(root.search.text === "exit", "Ctrl+F selects the existing query for replacement")
+                keyboard.write("key 33 4\nkey 14\nkey 3 8\n")
+            } else if (root.phase === 65) {
+                root.check(root.panel.selectedGroup === "Shell" && root.search.text === "", "Alt+2 changes domain without editing the cleared filter")
+                ShellSettingsStore.setValue("appearance", "baseRadius", 20)
+                keyboard.write("key 31 4\n")
+            } else if (root.phase === 66) {
+                root.check(!ShellSettingsStore.dirty && ShellSettingsStore.savedValues.appearance.baseRadius === 20, "Ctrl+S applies the current Shell page")
+                ShellSettingsStore.setValue("appearance", "baseRadius", 12)
+                keyboard.write("key 63\n")
+            } else if (root.phase === 67) {
+                root.check(root.panel.confirmation === "reload-shell" && ShellSettingsStore.dirty, "F5 protects unsaved Shell edits")
+                keyboard.write("key 15 4\nkey 31 4\nkey 64\nkey 5 8\n")
+            } else if (root.phase === 68) {
+                root.check(root.panel.selectedGroup === "Shell" && root.panel.confirmation === "reload-shell"
+                    && ShellSettingsStore.baseRadius === 12 && root.panel.focusedItem.text === "Keep Editing", "modal blocks background navigation and saving")
+                root.sendEscape()
+            } else if (root.phase === 69) {
+                root.check(!root.panel.confirmation && ShellSettingsStore.dirty, "Escape cancels keyboard Reload without losing the draft")
+                keyboard.write("key 63\n")
+            } else if (root.phase === 70) {
+                root.check(root.panel.focusedItem.text === "Keep Editing", "Reload confirmation retains its safe initial focus")
+                keyboard.write("key 15\nkey 28\n")
+            } else if (root.phase === 71) {
+                root.check(!root.panel.confirmation && !ShellSettingsStore.dirty && ShellSettingsStore.baseRadius === 20, "Tab and Enter explicitly confirm Reload")
+                keyboard.write("key 4 8\n")
+            } else if (root.phase === 72) {
+                root.check(root.panel.selectedGroup === "Config", "Alt+3 opens Config")
+                root.browser.buttonsView = false
+                ConfigEditorStore.setText(ConfigEditorStore.savedText + "keyboard draft\n")
+                root.snapshot = ConfigEditorStore.text
+                keyboard.write("key 64\n")
+            } else if (root.phase === 73) {
+                root.check(root.panel.focusZoneIndex() === 1, "F6 enters the Config browser")
+                if (!root.browser.compact) {
+                    var stops = root.panel.navItems(root.browser)
+                    var nextFile = stops.findIndex(item => item.parent.modelData && item.parent.modelData.type === "file" && !item.selected)
+                    root.check(nextFile >= 0, "another tree file is keyboard reachable")
+                    keyboard.write("key 102\n" + "key 108\n".repeat(nextFile))
+                } else keyboard.write("key 64\n")
+            } else if (root.phase === 74) {
+                root.check(!root.page.confirmation && ConfigEditorStore.text === root.snapshot, "moving Config focus preserves the draft")
+                if (!root.browser.compact) keyboard.write("key 28\n")
+            } else if (root.phase === 75) {
+                if (!root.browser.compact) {
+                    root.check(root.page.confirmation === "switch" && ConfigEditorStore.dirty, "Enter on another file requests protected switching")
+                    keyboard.write("key 31 4\nkey 64\n")
+                }
+            } else if (root.phase === 76) {
+                if (!root.browser.compact) {
+                    root.check(root.panel.selectedGroup === "Config" && root.page.confirmation === "switch" && ConfigEditorStore.dirty
+                        && root.panel.focusZoneIndex() === 3 && root.panel.focusedItem.text === "Cancel", "Config confirmation blocks implicit save; F6 reaches Cancel")
+                    keyboard.write("key 28\nkey 64 1\n")
+                }
+            } else if (root.phase === 77) {
+                root.check(root.panel.focusZoneIndex() === 2 && root.panel.focusedItem.cursorPosition !== undefined
+                    && !root.page.confirmation, "Shift+F6 enters the Config editor")
+                root.snapshot = ConfigEditorStore.text
+                keyboard.write("key 107 4\nkey 15\n")
+            } else if (root.phase === 78) {
+                root.check(root.panel.focusZoneIndex() === 2 && ConfigEditorStore.text.length === root.snapshot.length + 4, "Tab still indents Config instead of leaving the editor")
+                keyboard.write("key 31 4\n")
+            } else if (root.phase === 79) {
+                root.check(!ConfigEditorStore.dirty && !ConfigEditorStore.error, "Ctrl+S saves from inside the Config editor")
+                keyboard.write("key 64\n")
+            } else if (root.phase === 80) {
+                root.check(root.panel.focusZoneIndex() === 3, "F6 leaves Config indentation for footer actions")
+                keyboard.write("key 59\n")
+            } else if (root.phase === 81) {
+                var guide = root.find(root.panel.contentItem, item => item.modal === true && item.visible, true)
+                root.check(guide, "F1 starts the guide reveal")
+                if (!guide.opened) {
+                    if (guide.morphProgress > 0 && guide.morphProgress < 1) {
+                        root.guideOpeningSeen = true
+                        root.check(guide.width > guide.sourceRect.width && guide.width < guide.expandedWidth,
+                            "guide grows from the question button rather than fading in at full size")
+                        if (!root.capturedPages.includes("guide-morph-opening")) {
+                            root.capturedPages = root.capturedPages.concat(["guide-morph-opening"])
+                            root.capture("guide-morph-opening")
+                        }
+                    }
+                    return
+                }
+                root.check(root.guideOpeningSeen && Math.abs(guide.x - (root.panel.modelData.width - guide.width) / 2) < 1
+                    && Math.abs(guide.y - (root.panel.modelData.height - guide.height) / 2) < 1, "guide finishes centered after a visible morph")
+                root.check(guide.background.radius === Theme.largeRadius && guide.sourceItem.opacity === 0,
+                    "guide uses Theme radius and borrows the question button while open")
+                var grid = root.find(guide.contentItem, item => item.columns !== undefined)
+                root.check(grid && grid.columns === (guide.expandedWidth >= 800 ? 2 : 1), "guide groups adapt to one or two columns")
+                for (var title of ["Navigation", "Actions", "Config editor", "Reading & help"]) {
+                    var group = root.find(guide.contentItem, item => item.modelData && item.modelData.title === title && item.border !== undefined)
+                    root.check(group && group.width > 0 && group.height > 0, "guide keeps a separate shortcut card: " + title)
+                }
+                var navigation = root.find(guide.contentItem, item => item.modelData && item.modelData.title === "Navigation")
+                root.check(navigation.modelData.rows[0].keys[0] === "← / →"
+                    && !navigation.modelData.rows.some(row => row.keys.includes("Tab")), "guide presents arrows first and keeps Tab secondary")
+                var compatibility = root.find(guide.contentItem, item => item.modelData && item.modelData.title === "Reading & help")
+                root.check(compatibility.modelData.rows.some(row => row.detail.startsWith("Compatibility / accessibility")),
+                    "guide retains the accessibility Tab path")
+                var saveKey = root.find(guide.contentItem, item => item.text === "Ctrl+S" && item.color !== undefined)
+                root.check(saveKey && Qt.colorEqual(saveKey.color, Theme.accent), "guide keycaps use the Theme accent")
+                var saveDescription = root.find(guide.contentItem, item => item.text === "Apply or save the current page." && item.color !== undefined)
+                root.check(saveDescription && Math.abs(saveDescription.color.r - saveDescription.color.g) < 0.001
+                    && Math.abs(saveDescription.color.g - saveDescription.color.b) < 0.001,
+                    "guide descriptions stay neutral with tinted theme text")
+                root.check(guide && root.panel.focusedItem.text === "Close guide", "F1 opens an accessible shortcut guide")
+                if (root.captureOnce("keyboard-shortcuts")) return
+                keyboard.write("key 15 4\nkey 5 8\nkey 107\n")
+            } else if (root.phase === 82) {
+                root.check(root.panel.selectedGroup === "Config" && root.panel.focusedItem.text === "Close guide", "shortcut guide blocks background navigation")
+                var guide = root.find(root.panel.contentItem, item => item.modal === true && item.visible, true)
+                var guideScroll = root.find(guide.contentItem, item => item.contentY !== undefined)
+                root.check(guideScroll && Math.abs(guideScroll.contentY - Math.max(0, guideScroll.contentHeight - guideScroll.height)) < 1,
+                    "End reaches the last guide row without overscrolling")
+                root.sendEscape()
+            } else if (root.phase === 83) {
+                var guide = root.find(root.panel.contentItem, item => item.modal === true && item.visible, true)
+                if (guide) {
+                    if (guide.morphProgress > 0 && guide.morphProgress < 1) {
+                        root.guideClosingSeen = true
+                        if (!root.capturedPages.includes("guide-morph-closing")) {
+                            root.capturedPages = root.capturedPages.concat(["guide-morph-closing"])
+                            root.capture("guide-morph-closing")
+                        }
+                    }
+                    return
+                }
+                root.check(root.guideClosingSeen, "guide visibly morphs back before releasing its modal focus")
+                root.check(!root.find(root.panel.contentItem, item => item.modal === true && item.visible, true)
+                    && root.panel.focusZoneIndex() === 3, "Escape closes the guide and restores prior focus")
+                keyboard.write("key 2 8\nkey 106\n")
+            } else if (root.phase === 84) {
+                root.check(root.panel.selectedGroup === "Shell", "Right arrow selects the next top-level tab")
+                keyboard.write("key 102\n")
+            } else if (root.phase === 85) {
+                root.check(root.panel.selectedGroup === "General", "Home selects the first top-level tab")
+                SettingsStore.setValue("NIGHT_LIGHT_TEMPERATURE", "0")
+                keyboard.write("key 31 4\n")
+            } else if (root.phase === 86) {
+                root.check(SettingsStore.dirty && !SettingsStore.valid && !SettingsStore.saving, "Ctrl+S cannot bypass General validation")
+                SettingsStore.discard()
+                keyboard.write("key 4 8\n")
+            } else if (root.phase === 87) {
+                ConfigEditorStore.setText(ConfigEditorStore.savedText + "retained warning\n")
+                root.page.requestOpenVsCode()
+                root.check(root.page.confirmation === "vscode", "dirty Config warning is visible")
+                keyboard.write("key 33 4\n")
+            } else if (root.phase === 88) {
+                root.check(root.panel.selectedGroup === "General" && ConfigEditorStore.dirty, "Ctrl+F leaves Config without losing its pending draft")
+                keyboard.write("key 5 8\n")
+            } else if (root.phase === 89) {
+                root.check(root.panel.selectedGroup === "Info", "a hidden Config confirmation does not block other page shortcuts")
+                var configPage = root.find(root.panel.contentItem, item => typeof item.cancelConfirmation === "function")
+                configPage.cancelConfirmation()
+                ConfigEditorStore.discard()
+                keyboard.write("key 3 8\n")
+            } else if (root.phase === 90) {
+                ShellSettingsStore.setValue("appearance", "baseRadius", 12)
+                keyboard.write("key 64 1\nkey 106\n")
+            } else if (root.phase === 91) {
+                root.check(root.panel.focusZoneIndex() === 3 && root.panel.focusedItem.text === "Reset"
+                    && ShellSettingsStore.baseRadius === 12 && !root.panel.confirmation, "footer arrows move focus without accidentally resetting")
+                keyboard.write("key 107\n")
+            } else if (root.phase === 92) {
+                root.check(root.panel.focusedItem.text === "Apply", "End reaches the final enabled footer action")
+                var hideButton = root.find(root.page, item => item.text === "Hide" && typeof item.clicked === "function")
+                hideButton.parent.parent.forceActiveFocus()
+                keyboard.write("key 28\n")
+            } else if (root.phase === 93) {
+                root.check(!ShellSettingsStore.dockShowTrash, "Enter toggles the whole segmented control off")
+                keyboard.write("key 28\n")
+            } else if (root.phase === 94) {
+                root.check(ShellSettingsStore.dockShowTrash, "Enter toggles the whole segmented control on")
+                ShellSettingsStore.discard()
+                var question = root.find(root.panel.contentItem, item => item.text === "?" && typeof item.clicked === "function")
+                var questionPoint = question.mapToItem(root.panel.contentItem, question.width / 2, question.height / 2)
+                pointer.write(Math.round(questionPoint.x) + " " + Math.round(questionPoint.y) + " " + root.panel.modelData.width + " " + root.panel.modelData.height + " 272\n")
+            } else if (root.phase === 95) {
+                var guide = root.find(root.panel.contentItem, item => item.modal === true && item.visible, true)
+                root.check(guide && guide.morphProgress > 0 && guide.morphProgress < 1, "question-button click starts a slow morph")
+                var source = guide.sourceItem.mapToItem(root.panel.contentItem, 0, 0)
+                root.check(Math.abs(guide.sourceRect.x - source.x) < 2 && Math.abs(guide.sourceRect.y - source.y) < 2,
+                    "morph origin follows the real question-button position")
+                keyboard.write("key 59\n")
+            } else if (root.phase === 96) {
+                var guide = root.find(root.panel.contentItem, item => item.modal === true && item.visible, true)
+                root.check(guide && guide.morphProgress > 0 && guide.morphProgress < 1, "closing can interrupt the opening morph")
+                keyboard.write("key 59\n")
+            } else if (root.phase === 97) {
+                var guide = root.find(root.panel.contentItem, item => item.modal === true && item.visible, true)
+                root.check(guide, "reopening reverses the closing guide")
+                if (!guide.opened) return
+                root.check(guide.morphProgress === 1 && root.panel.focusedItem.text === "Close guide", "interrupted guide returns to a fully interactive state")
+                root.sendEscape()
+            } else if (root.phase === 98) {
+                if (root.find(root.panel.contentItem, item => item.modal === true && item.visible, true)) return
+                root.check(!SettingsStore.dirty && !ShellSettingsStore.dirty && !ConfigEditorStore.dirty, "guide animation never changes a settings draft")
+                keyboard.write("key 3 8\n")
+            } else if (root.phase === 99) {
+                root.check(root.panel.focusZoneIndex() === 0, "Alt+2 focuses Shell navigation")
+                root.page.scrollToSection("Appearance")
+                keyboard.write("key 108\n")
+            } else if (root.phase === 100) {
+                root.check(root.panel.focusZoneIndex() === 1, "Down enters the sidebar directly")
+                keyboard.write("key 102\nkey 103\n")
+            } else if (root.phase === 101) {
+                root.check(root.panel.focusZoneIndex() === 0, "Up from the first sidebar control returns to navigation")
+                keyboard.write("key 108\nkey 106\n")
+            } else if (root.phase === 102) {
+                root.check(root.panel.focusZoneIndex() === 2 && root.panel.focusedItem.keyboardEditing === false,
+                    "Right enters the selected appearance section at its slider")
+                root.snapshot = String(ShellSettingsStore.baseRadius)
+                keyboard.write("key 106\n")
+            } else if (root.phase === 103) {
+                root.check(String(ShellSettingsStore.baseRadius) === root.snapshot, "navigation arrows cannot adjust a slider")
+                keyboard.write("key 28\nkey 106\n")
+            } else if (root.phase === 104) {
+                root.check(root.panel.focusedItem.keyboardEditing && ShellSettingsStore.baseRadius === Number(root.snapshot) + 1,
+                    "Enter then Right adjusts the slider: editing=" + root.panel.focusedItem.keyboardEditing
+                    + ", value=" + ShellSettingsStore.baseRadius + ", before=" + root.snapshot)
+                keyboard.write("key 1\n")
+            } else if (root.phase === 105) {
+                root.check(root.panel.panelOpen && !root.panel.focusedItem.keyboardEditing && !root.panel.confirmation,
+                    "Escape exits slider editing without closing Settings")
+                keyboard.write("key 105\n")
+            } else if (root.phase === 106) {
+                root.check(root.panel.focusZoneIndex() === 1, "Left at the content edge returns to the sidebar")
+                keyboard.write("key 106 4\nkey 28\nkey 105 4\n")
+            } else if (root.phase === 107) {
+                root.check(root.panel.focusZoneIndex() === 1, "Ctrl+Left leaves an editing slider for the sidebar")
+                keyboard.write("key 103 4\n")
+            } else if (root.phase === 108) {
+                root.check(root.panel.focusZoneIndex() === 0, "Ctrl+Up focuses navigation")
+                keyboard.write("key 108 4\n")
+            } else if (root.phase === 109) {
+                root.check(root.panel.focusZoneIndex() === 2 && !root.panel.focusedItem.keyboardEditing,
+                    "Ctrl+Down restores content with slider editing finished")
+                var hideButton = root.find(root.page, item => item.text === "Hide" && typeof item.clicked === "function")
+                hideButton.parent.parent.forceActiveFocus()
+                root.snapshot = String(ShellSettingsStore.dockShowTrash)
+                keyboard.write("key 103\n")
+            } else if (root.phase === 110) {
+                root.check(String(ShellSettingsStore.dockShowTrash) === root.snapshot, "toggle arrows navigate without changing its value")
+                ShellSettingsStore.discard()
+                keyboard.write("key 33 4\n")
+            } else if (root.phase === 111) {
+                root.check(root.panel.focusedItem.text === "", "Ctrl+F enters the native search input")
+                root.panel.focusedItem.text = "wallpaper"
+                root.panel.focusedItem.cursorPosition = 2
+                keyboard.write("key 105\n")
+            } else if (root.phase === 112) {
+                root.check(root.panel.focusZoneIndex() === 2 && root.panel.focusedItem.cursorPosition === 1,
+                    "Left inside text preserves caret navigation")
+                root.panel.focusedItem.cursorPosition = 0
+                keyboard.write("key 105\n")
+            } else if (root.phase === 113) {
+                root.check(root.panel.focusZoneIndex() === 1, "Left at the text boundary focuses the sidebar")
+                root.search.text = ""
+                keyboard.write("key 3 8\n")
+            } else if (root.phase === 114) {
+                root.page.scrollToSection("Surface")
+                root.find(root.page, item => item.text === "Ink" && typeof item.clicked === "function").forceActiveFocus()
+                root.snapshot = ShellSettingsStore.surfaceTone
+                keyboard.write("key 106\n")
+            } else if (root.phase === 115) {
+                root.check(root.panel.focusedItem.text === "Dark" && ShellSettingsStore.surfaceTone === root.snapshot,
+                    "Right focuses the next control in the same row without activating it")
+                keyboard.write("key 105\n")
+            } else if (root.phase === 116) {
+                root.check(root.panel.focusedItem.text === "Ink", "Left returns to the previous control before leaving content")
+                keyboard.write("key 105 4\nkey 106 4\n")
+            } else if (root.phase === 117) {
+                root.check(root.panel.focusedItem.text === "Ink", "region navigation restores the last control in its section")
+                keyboard.write("key 4 8\nkey 108 4\n")
+            } else if (root.phase === 118) {
+                root.check(root.panel.focusZoneIndex() === 2 && root.panel.focusedItem.cursorPosition !== undefined,
+                    "Ctrl+Down enters the native Config editor")
+                root.snapshot = ConfigEditorStore.text
+                keyboard.write("key 105 4\n")
+            } else if (root.phase === 119) {
+                root.check(root.panel.focusZoneIndex() === 1 && ConfigEditorStore.text === root.snapshot,
+                    "Ctrl+Left leaves the editor without editing its text")
+                keyboard.write("key 106 4\n")
+            } else if (root.phase === 120) {
+                root.check(root.panel.focusZoneIndex() === 2 && root.panel.focusedItem.cursorPosition !== undefined
+                    && ConfigEditorStore.text === root.snapshot, "Ctrl+Right returns from the Config sidebar to its editor")
+                var editorTarget = root.panel.focusedItem
+                root.panel.focusZone(0)
+                editorTarget.activeFocusOnTab = false
+                root.check(!editorTarget.activeFocusOnTab && root.panel.navItems(root.page).includes(editorTarget),
+                    "arrow registry does not depend on activeFocusOnTab")
+                editorTarget.activeFocusOnTab = true
+                var question = root.find(root.panel.contentItem, item => item.text === "?" && typeof item.clicked === "function")
+                root.check(question.activeFocusOnTab && !root.panel.navItems(root.panel.focusZones[0]).includes(question),
+                    "compatibility-only help is absent from the domain arrow registry")
+                var style = root.find(root.browser, item => item.labels && item.labels[0] === "Tree")
+                style.available = false
+                root.check(!root.panel.navItems(root.browser).includes(style), "unavailable shared toggles leave the arrow registry")
+                style.available = true
+                keyboard.write("key 5 8\nkey 106\n")
+            } else if (root.phase === 121) {
+                root.check(root.panel.selectedGroup === "General" && root.panel.focusedItem.settingsNavRole === "domain",
+                    "Right wraps Info to General and skips help")
+                keyboard.write("key 105\n")
+            } else if (root.phase === 122) {
+                root.check(root.panel.selectedGroup === "Info", "Left wraps General to Info")
+                root.panel.focusZone(3)
+                keyboard.write("key 103\n")
+            } else if (root.phase === 123) {
+                root.check(root.panel.focusZoneIndex() === 2 && root.panel.focusedItem.settingsNavRole === "reader",
+                    "footer Up returns to content without invoking an action")
+                keyboard.write("key 3 8\n")
+            } else if (root.phase === 124) {
+                root.page.scrollToSection("Appearance")
+                root.panel.focusZone(1)
+                root.snapshot = JSON.stringify(ShellSettingsStore.values)
+                keyboard.write("key 106\nkey 103\n")
+            } else if (root.phase === 125) {
+                root.check(root.panel.focusZoneIndex() === 0, "Up from the first normal content row returns to the domain")
+                keyboard.write("key 108\nkey 106\nkey 108\n")
+            } else if (root.phase === 126) {
+                root.check(root.panel.focusZoneIndex() === 2 && root.panel.focusedItem.from === 0 && root.panel.focusedItem.to === 24,
+                    "Down enters the adjacent Rounded Screen row without changing a value")
+                var controls = root.panel.navItems(root.page)
+                controls[controls.length - 1].forceActiveFocus()
+                keyboard.write("key 108\n")
+            } else if (root.phase === 127) {
+                root.check(root.panel.focusZoneIndex() === 3 && JSON.stringify(ShellSettingsStore.values) === root.snapshot,
+                    "Down from the last normal content row enters footer without changing settings")
+                keyboard.write("key 103\n")
+            } else if (root.phase === 128) {
+                var controls = root.panel.navItems(root.page)
+                root.check(root.panel.focusedItem === controls[controls.length - 1], "footer Up restores the last form control")
+                root.page.scrollToSection("Appearance")
+                root.panel.focusZone(1)
+                keyboard.write("key 106\n")
+            } else if (root.phase === 129) {
+                root.check(root.panel.focusedItem.from === 4 && root.panel.focusedItem.to === 24,
+                    "entering a different section rejects stale focus from another section")
+                keyboard.write("key 2 8\n")
+            } else if (root.phase === 130) {
+                var control = root.panel.navItems(root.page).find(item => item.settingsNavRole === "control")
+                root.check(control, "General exposes semantic controls")
+                control.forceActiveFocus()
+                root.search.text = "no-such-setting-123"
+            } else if (root.phase === 131) {
+                root.check(root.panel.focusedItem.text === "no-such-setting-123" && root.panel.focusedItem.visible,
+                    "filter changes recover focus from controls hidden by the query")
+                root.panel.focusZone(0)
+                root.check(root.panel.navigateTopbar({key: Qt.Key_Down}) && root.panel.focusZoneIndex() === 2
+                    && root.panel.focusedItem.text === "no-such-setting-123", "empty contextual navigation is skipped back to search")
+                root.search.text = ""
+                keyboard.write("key 4 8\nkey 108 4\n")
+            } else if (root.phase === 132) {
+                root.panel.focusedItem.cursorPosition = 0
+                root.snapshot = ConfigEditorStore.text
+                keyboard.write("key 105\nkey 103\nkey 106\n")
+            } else if (root.phase === 133) {
+                root.check(root.panel.focusZoneIndex() === 2 && root.panel.focusedItem.cursorPosition === 1
+                    && ConfigEditorStore.text === root.snapshot, "bare editor arrows keep caret ownership even at the document boundary")
+                keyboard.write("key 2 8\nkey 105 4\n")
+            } else if (root.phase === 134) {
+                if (root.browser.compact) {
+                    root.check(root.panel.focusedItem.settingsNavRole === "selector", "compact sidebar enters its native selector")
+                    keyboard.write("key 57\n")
+                }
+            } else if (root.phase === 135) {
+                if (root.browser.compact) {
+                    var sidebar = root.panel.focusZones[1]
+                    root.check(sidebar.popupOpen && !root.panel.navigationEnabled, "open ComboBox blocks background navigation")
+                    root.snapshot = JSON.stringify(SettingsStore.values)
+                    keyboard.write("key 108\nkey 106 4\n")
+                }
+            } else if (root.phase === 136) {
+                if (root.browser.compact) {
+                    root.check(root.panel.focusZones[1].popupOpen && root.panel.selectedGroup === "General"
+                        && JSON.stringify(SettingsStore.values) === root.snapshot,
+                        "native popup arrows and shortcuts cannot enter background content or mutate settings")
+                    root.sendEscape()
+                }
+            } else if (root.phase === 137) {
+                if (root.browser.compact) {
+                    root.check(!root.panel.focusZones[1].popupOpen, "Escape closes only the native popup")
+                    keyboard.write("key 106\n")
+                }
+            } else if (root.phase === 138) {
+                if (root.browser.compact) root.check(root.panel.focusZoneIndex() === 2, "Right resumes content navigation after popup close")
+                root.panel.selectedGroup = "Shell"
+                root.panel.focusZone(0)
+                root.navigationButton = root.panel.focusedItem
+                ShellSettingsStore.setValue("appearance", "baseRadius", ShellSettingsStore.baseRadius === 12 ? 13 : 12)
+                root.snapshot = JSON.stringify(ShellSettingsStore.values)
+                root.panel.requestClose()
+            } else if (root.phase === 139) {
+                var dialog = root.find(root.panel.contentItem, item => item.modal === true && item.visible, true)
+                if (!dialog.opened) return
+                root.check(root.panel.focusedItem.text === "Keep Editing", "dirty close focuses its safe dialog action")
+                keyboard.write("key 106\n")
+            } else if (root.phase === 140) {
+                root.check(root.panel.focusedItem.text === "Discard & Close" && root.panel.selectedGroup === "Shell"
+                    && root.panel.confirmation === "close" && JSON.stringify(ShellSettingsStore.values) === root.snapshot
+                    && ShellSettingsStore.dirty, "dialog arrows move between actions without changing settings")
+                keyboard.write("key 15 4\nkey 31 4\nkey 2 8\n")
+            } else if (root.phase === 141) {
+                root.check(root.panel.selectedGroup === "Shell" && root.panel.confirmation === "close"
+                    && JSON.stringify(ShellSettingsStore.values) === root.snapshot && ShellSettingsStore.dirty
+                    && root.panel.focusZoneIndex() === -1, "modal blocks background shortcuts and retains keyboard focus")
+                keyboard.write("key 102\nkey 28\n")
+            } else if (root.phase === 142) {
+                if (root.find(root.panel.contentItem, item => item.modal === true && item.visible, true)) return
+                root.check(root.panel.panelOpen && !root.panel.confirmation && root.panel.focusedItem === root.navigationButton,
+                    "cancelled modal restores its previous valid focus")
+                ShellSettingsStore.discard()
+                keyboard.write("key 4 8\nkey 105 4\n")
+            } else if (root.phase === 143) {
+                root.snapshot = ConfigEditorStore.selectedFileId
+                keyboard.write("key 108\nkey 105\n")
+            } else if (root.phase === 144) {
+                root.check(ConfigEditorStore.selectedFileId === root.snapshot && !root.page.confirmation,
+                    "closed Config selector or file arrows move focus without switching the file")
+                if (root.panels.length > 1) UiState.openSettings(root.panels[1].modelData.name)
+            } else if (root.phase === 145) {
+                if (root.panels.length > 1) {
+                    var other = root.panels[1]
+                    if (root.panel.visible || other.expandProgress < 0.999 || !other.contentItem.Window.window.active) return
+                    other.focusZone(0)
+                    root.snapshot = root.panel.selectedGroup
+                    keyboard.write("key 106\n")
+                }
+            } else if (root.phase === 146) {
+                if (root.panels.length > 1) {
+                    root.check(root.panels[1].selectedGroup === "Shell" && root.panel.selectedGroup === root.snapshot,
+                        "domain arrows affect only the open Settings instance on the second monitor")
+                    UiState.closeSettings()
+                }
+            } else if (root.phase === 147) {
+                if (root.panels.length > 1 && root.panels[1].visible) return
+                if (!root.panel.panelOpen) { UiState.openSettings(root.panel.modelData.name); return }
+                if (root.panel.expandProgress < 0.999 || !root.panel.contentItem.Window.window.active) return
+                root.panel.focusZone(0)
+                root.check(root.panel.panelOpen, "keyboard ownership returns to the original monitor")
+                root.panel.selectedGroup = "General"
+                root.page.scrollToSection("Exit")
+                root.snapshot = JSON.stringify(SettingsStore.values)
+                root.check(root.panel.navigationEnabled, "reopened Settings accepts navigation: domain=" + root.panel.selectedGroup
+                    + ", modal=" + root.panel.confirmation + ", popup=" + root.panel.focusZones[1].popupOpen)
+                keyboard.write("key 33 4\n")
+            } else if (root.phase === 148) {
+                root.check(root.panel.focusedItem.text === "", "fixed search retains focus above a scrolled form: domain="
+                    + root.panel.selectedGroup + ", navigation=" + root.panel.navigationEnabled
+                    + ", other=" + (root.panels.length > 1 ? root.panels[1].selectedGroup : "none"))
+                keyboard.write("key 108\n")
+            } else if (root.phase === 149) {
+                var section = ""
+                for (var item = root.panel.focusedItem; item && item !== root.page; item = item.parent) {
+                    if (item.settingsNavSection !== undefined) { section = item.settingsNavSection; break }
+                }
+                root.check(section === root.page.sidebarSections[0] && JSON.stringify(SettingsStore.values) === root.snapshot,
+                    "Down from fixed search enters the first semantic form row regardless of scroll position")
                 UiState.closeSettings()
                 console.info("Ink Settings checks passed: " + Quickshell.env("INK_SIZE"))
                 Qt.quit()

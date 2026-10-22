@@ -9,6 +9,10 @@ Item {
     property string source: ""
     readonly property var domains: ["General", "Shell", "Config", "Info"]
     signal selectedRequested(string domain)
+    signal shortcutsRequested()
+    // The guide borrows the question button's geometry during its reveal.
+    property alias shortcutButton: helpButton
+    property bool guideOpen: false
     implicitHeight: width < 650 ? 100 : 64
     Rectangle {
         x: 20; y: 18; width: 28; height: 28
@@ -45,6 +49,7 @@ Item {
             model: root.domains
             delegate: SettingsActionButton {
                 id: tab
+                settingsNavRole: "domain"
                 required property string modelData
                 required property int index
                 x: index * (tabs.slotWidth + 6)
@@ -76,12 +81,32 @@ Item {
     Text {
         x: root.width < 650 ? 175 : tabs.x + tabs.width + 16
         y: 24
-        width: Math.max(0, parent.width - x - 16)
+        width: Math.max(0, parent.width - x - 64)
         text: root.source
         color: Theme.fgMuted
         font.family: Theme.fontFamily
         font.pixelSize: Math.max(10, Theme.fontSize - 3)
         elide: Text.ElideLeft
+    }
+    SettingsActionButton {
+        id: helpButton
+        settingsNavItem: false
+        anchors.right: parent.right
+        anchors.rightMargin: 12
+        y: 14
+        width: 34
+        height: 34
+        text: "?"
+        opacity: root.guideOpen ? 0 : enabled ? 1 : disabledOpacity
+        idleColor: Theme.hoverMuted
+        foregroundColor: Theme.fg
+        activeFocusOnTab: true
+        focused: activeFocus
+        Accessible.name: "Keyboard shortcuts"
+        onClicked: root.shortcutsRequested()
+        Keys.onReturnPressed: clicked()
+        Keys.onSpacePressed: clicked()
+        SettingsTooltip { target: parent; active: parent.hovered || parent.activeFocus; text: "Keyboard shortcuts · F1" }
     }
     Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Theme.hoverMuted }
 }

@@ -5,6 +5,7 @@ Column {
     id: root
     // Keep section content padded inside one shared bordered surface.
     property string title: ""
+    readonly property string settingsNavSection: title
     // Allow the owning page to highlight the active card.
     property bool highlighted: false
     default property alias content: body.data

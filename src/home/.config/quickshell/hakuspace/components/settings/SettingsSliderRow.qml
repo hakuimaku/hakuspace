@@ -6,6 +6,7 @@ Grid {
     // Row metadata and editability come from the owning Settings page.
     required property var modelData
     property bool available: false
+    property Item shortcutTarget: null
     width: parent.width
     columns: width < 540 ? 1 : 2
     columnSpacing: 16
@@ -19,6 +20,7 @@ Grid {
         width: row.columns === 1 ? row.width : row.width - Math.round(row.width * 0.42) - 16
         spacing: 8
         SettingsSlider {
+            shortcutTarget: row.shortcutTarget
             width: Math.max(0, parent.width - badge.width - 8)
             from: row.modelData.min
             to: row.modelData.max

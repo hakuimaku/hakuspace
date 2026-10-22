@@ -39,7 +39,7 @@ ToolTip {
     contentItem: Text {
         id: label
         text: root.text
-        color: Qt.hsla(0, 0, Qt.darker(Theme.fgDim, 1).hslLightness, 1)
+        color: Theme.fgDescription
         font.family: Theme.fontFamily
         font.pixelSize: Theme.fontSize
         wrapMode: Text.Wrap

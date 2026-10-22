@@ -17,6 +17,10 @@ Item {
     property bool leftBoundaryNavigationEnabled: false
     property string fileId: ""
     property string indentText: "    "
+    // Owners may handle layer shortcuts before native text-editing keys.
+    property Item shortcutTarget: null
+    // Settings opts into the native editor target without affecting other consumers.
+    property bool settingsNavigationEnabled: false
     property bool _syncingExternal: false
     property var _undoGroups: []
     property var _redoGroups: []
@@ -136,6 +140,11 @@ Item {
         // Display source and notes literally.
         TextArea {
             id: textArea
+            readonly property bool settingsNavItem: root.settingsNavigationEnabled
+            property string settingsNavRole: "editor"
+            readonly property bool settingsNavOwnsHorizontal: true
+            readonly property bool settingsNavOwnsVertical: true
+            Keys.forwardTo: root.shortcutTarget ? [root.shortcutTarget] : []
             readOnly: root.readOnly
             textFormat: TextEdit.PlainText
             wrapMode: root.wrapMode

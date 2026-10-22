@@ -4,6 +4,10 @@ import "../motion" as Motion
 
 Motion.MorphButton {
     id: root
+    // Arrow targets are independent from compatibility Tab traversal.
+    property bool settingsNavItem: true
+    property string settingsNavRole: "control"
+    property Item settingsNavGroup: null
     radius: Theme.radius
     // Reserve accent fills for explicit selection and primary actions.
     hoverColor: Qt.lighter(Theme.hoverMuted, 1.18)

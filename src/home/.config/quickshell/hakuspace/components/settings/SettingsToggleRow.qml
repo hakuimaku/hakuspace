@@ -19,7 +19,7 @@ Grid {
             width: parent.width
             visible: !!row.modelData.hint
             text: row.modelData.hint || ""
-            color: Qt.hsla(0, 0, Qt.darker(Theme.fgDim, 1).hslLightness, 1)
+            color: Theme.fgDescription
             font.family: Theme.fontFamily
             font.pixelSize: Math.max(10, Theme.fontSize - 2)
             wrapMode: Text.Wrap
@@ -34,10 +34,7 @@ Grid {
         hint: row.modelData.hint || ""
         checked: row.modelData.key === "visibilityMode" ? ShellSettingsStore.dockVisibilityMode === "always"
             : ShellSettingsStore.values[row.section][row.modelData.key]
-        Accessible.role: Accessible.CheckBox
         Accessible.name: row.modelData.label
-        Accessible.checked: checked
-        Accessible.onToggleAction: toggled(!checked)
         onToggled: value => ShellSettingsStore.setValue(row.section, row.modelData.key,
             row.modelData.key === "visibilityMode" ? (value ? "always" : "autohide") : value)
     }

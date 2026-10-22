@@ -5,6 +5,11 @@ Rectangle {
     id: root
     // Filtering stays local to the page and never changes stored values.
     property alias text: input.text
+    readonly property bool inputFocused: input.activeFocus
+    // Keep shortcuts out of the editable query.
+    property Item shortcutTarget: null
+    // Select the current filter when entering search from its shortcut.
+    function focusSearch() { input.forceActiveFocus(Qt.ShortcutFocusReason); input.selectAll() }
     implicitHeight: 38
     radius: Theme.radius
     color: Theme.surface
@@ -22,6 +27,9 @@ Rectangle {
     }
     TextInput {
         id: input
+        property bool settingsNavItem: true
+        property string settingsNavRole: "input"
+        Keys.forwardTo: root.shortcutTarget ? [root.shortcutTarget] : []
         anchors.fill: parent
         anchors.margins: 10
         verticalAlignment: TextInput.AlignVCenter

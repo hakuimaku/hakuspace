@@ -46,6 +46,7 @@ node scripts/test_screen_geometry.js
 node scripts/test_dock_app_model.js
 node scripts/test_dock_geometry.js
 node scripts/test_hakumenu_geometry.js
+node scripts/test_settings_navigation.js
 if command -v quickshell >/dev/null 2>&1; then
     bash scripts/test_shell_transition.sh
     bash scripts/test_safe_zone_controller.sh

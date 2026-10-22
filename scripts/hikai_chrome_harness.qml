@@ -298,8 +298,12 @@ ShellRoot {
                     root.check(nav.indexAt(nav.iconCenterX(index), nav.iconCenterY(index), false) === index,
                         "reflected Navigation glyph matches its hit target")
                 root.screenshot("unified-navigation")
-                UiState.beginNavigationHandoff("sidebar")
             } else if (phase === 12) {
+                // Let the screenshot process finish before changing the captured surface.
+                if (!output.navigation.sidebarExpanded) {
+                    UiState.beginNavigationHandoff("sidebar")
+                    return
+                }
                 root.check(output.navigation.sidebarExpanded, "Sidebar handoff")
                 var rail = root.module(output.navigation, "SidebarSurface")
                 if (Math.abs(rail.morphProgress - 1) > 0.0001) return

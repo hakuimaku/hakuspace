@@ -7,22 +7,33 @@ Rectangle {
     id: root
     // Context navigation follows the current page's visible section anchors.
     required property var page
+    // Native selectors share the layer's shortcut dispatcher.
+    property Item shortcutTarget: null
     property bool compact: false
     property bool configBrowser: false
     readonly property var sectionNames: page.sidebarSections || []
     signal fileSelected(string fileId)
     color: Qt.tint(Theme.surface, Qt.alpha(Theme.hoverMuted, 0.13))
     clip: true
+    readonly property bool popupOpen: sectionSelector.popup.visible || configTree.popupOpen
     SettingsConfigBrowser {
+        id: configTree
         anchors.fill: parent
+        shortcutTarget: root.shortcutTarget
         visible: root.configBrowser
         compact: root.compact
         onFileSelected: fileId => root.fileSelected(fileId)
     }
     ComboBox {
+        id: sectionSelector
+        readonly property bool settingsNavSelected: currentIndex >= 0
+        property bool settingsNavItem: true
+        property string settingsNavRole: "selector"
+        Keys.forwardTo: root.shortcutTarget ? [root.shortcutTarget] : []
         anchors.fill: parent
         anchors.margins: 4
         visible: root.compact && !root.configBrowser
+        enabled: count > 0
         model: root.sectionNames
         currentIndex: root.sectionNames.indexOf(root.page.activeSection || "")
         font.family: Theme.fontFamily
@@ -73,6 +84,7 @@ Rectangle {
                 model: root.sectionNames
                 delegate: SettingsActionButton {
                     id: section
+                    settingsNavRole: "sidebar"
                     required property string modelData
                     width: sections.width
                     height: 40

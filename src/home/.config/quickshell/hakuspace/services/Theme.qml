@@ -12,12 +12,22 @@ QtObject {
     readonly property color onAccentColor: root.surface
     property string fg: "#ffffff"
     property string fgDim: "#aaaaaa"
+    // Descriptions stay neutral when generated secondary text has a tint.
+    readonly property color fgDescription: Qt.hsla(0, 0, Qt.darker(root.fgDim, 1).hslLightness, 1)
     property string fgMuted: "#80ffffff"
     property string border: "transparent"
     property color surfaceHi: root.accent
     readonly property string hoverMuted: ShellSettingsStore.surfaceTone === "ink" ? "#202020"
                                          : ShellSettingsStore.surfaceTone === "soft" ? "#333333" : "#2b2b2b"
     property string accent: "#ffffff"
+    // Blue marks movement and focus shortcuts in the Settings guide.
+    readonly property color guideNavigation: "#8bb9e8"
+    // Sage marks guarded editing actions in the Settings guide.
+    readonly property color guideActions: "#a7c4a0"
+    // Lavender marks code-editor shortcuts in the Settings guide.
+    readonly property color guideEditing: "#c6aedb"
+    // Sand marks reading and help shortcuts in the Settings guide.
+    readonly property color guideReading: "#d9bd8c"
     // Shared timing and foreground for the shell-mode wipe.
     readonly property color shellTransitionBlack: "#000000"
     readonly property int shellTransitionAccentDuration: 560

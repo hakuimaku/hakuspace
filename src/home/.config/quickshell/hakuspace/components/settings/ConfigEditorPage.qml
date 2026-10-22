@@ -5,6 +5,13 @@ import "../editor" as Editor
 Item {
     id: root
     signal closeRequested()
+    // Forward layer shortcuts before the editor handles indentation and text input.
+    property Item shortcutTarget: null
+    // Publish pending input before applying the same guarded Save action.
+    function saveFromKeyboard() {
+        editor.finishComposition()
+        if (!confirmation && canActivate("Save")) activateAction("Save")
+    }
     property string confirmation: ""
     // The footer changes actions while a switch, reload, or VS Code warning is pending.
     readonly property var actionLabels: confirmation === "switch" ? ["Cancel", "Discard & Switch", "Save & Switch"]
@@ -91,7 +98,7 @@ Item {
         anchors.fill: parent
         spacing: 6
         Text { text: "Config"; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 5; font.weight: Font.DemiBold }
-        Text { visible: root.height >= 200; width: parent.width; text: "Your configuration files, with draft and revision protection."; color: Qt.hsla(0, 0, Qt.darker(Theme.fgDim, 1).hslLightness, 1); font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 1); wrapMode: Text.Wrap }
+        Text { visible: root.height >= 200; width: parent.width; text: "Your configuration files, with draft and revision protection."; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 1); wrapMode: Text.Wrap }
         Column {
             width: parent.width
             height: Math.max(0, parent.height - y)
@@ -150,6 +157,8 @@ Item {
                 border.color: Theme.hoverMuted
                 Editor.PlainTextEditor {
                     id: editor
+                    settingsNavigationEnabled: true
+                    shortcutTarget: root.shortcutTarget
                     anchors.fill: parent
                     anchors.margins: parent.height < 100 ? 4 : 10
                     text: ConfigEditorStore.text
@@ -160,7 +169,7 @@ Item {
                     fontFamily: "monospace"
                     wrapMode: TextEdit.NoWrap
                     onTextEdited: newText => ConfigEditorStore.setText(newText)
-                    onSaveRequested: ConfigEditorStore.save()
+                    onSaveRequested: root.saveFromKeyboard()
                     onEscapeRequested: {
                         if (root.confirmation) root.cancelConfirmation()
                         else root.closeRequested()

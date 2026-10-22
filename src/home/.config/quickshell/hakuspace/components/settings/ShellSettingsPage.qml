@@ -5,6 +5,7 @@ import "../motion" as Motion
 
 Item {
     id: root
+    property Item shortcutTarget: null
     signal reloadRequested()
     signal confirmationRequested(string action)
     // Freeze edits during IO so a completed save cannot replace a newer draft.
@@ -69,7 +70,7 @@ Item {
         anchors.fill: parent
         spacing: 6
         Text { text: "Shell"; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 5; font.weight: Font.DemiBold }
-        Text { width: parent.width; text: "Tune your shell. Changes preview across every monitor."; color: Qt.hsla(0, 0, Qt.darker(Theme.fgDim, 1).hslLightness, 1); font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 1); wrapMode: Text.Wrap }
+        Text { width: parent.width; text: "Tune your shell. Changes preview across every monitor."; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 1); wrapMode: Text.Wrap }
         Flickable {
             id: scroll
             width: parent.width
@@ -88,27 +89,29 @@ Item {
                     id: appearance
                     width: parent.width
                     title: "Appearance"
-                    SettingsSliderRow { available: root.editable; modelData: ({section: "appearance", key: "baseRadius", label: "Shell radius", min: 4, max: 24}) }
+                    SettingsSliderRow { shortcutTarget: root.shortcutTarget; available: root.editable; modelData: ({section: "appearance", key: "baseRadius", label: "Shell radius", min: 4, max: 24}) }
                 }
                 SettingsSectionCard {
                     id: rounded
                     width: parent.width
                     title: "Rounded Screen"
-                    SettingsSliderRow { available: root.editable; modelData: ({section: "roundedScreen", key: "radius", label: "Corner radius", accessible: "Rounded Screen Corner radius", min: 0, max: 24}) }
+                    SettingsSliderRow { shortcutTarget: root.shortcutTarget; available: root.editable; modelData: ({section: "roundedScreen", key: "radius", label: "Corner radius", accessible: "Rounded Screen Corner radius", min: 0, max: 24}) }
                     Rectangle { width: parent.width; height: 1; color: Theme.hoverMuted }
-                    SettingsSliderRow { available: root.editable; modelData: ({section: "roundedScreen", key: "borderThickness", label: "Border thickness", accessible: "Rounded Screen Border thickness", min: 0, max: 6}) }
-                    Text { width: parent.width; text: "Border applies to left, right and bottom edges. The top edge is owned by TopBar."; wrapMode: Text.Wrap; color: Qt.hsla(0, 0, Qt.darker(Theme.fgDim, 1).hslLightness, 1); font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 2) }
+                    SettingsSliderRow { shortcutTarget: root.shortcutTarget; available: root.editable; modelData: ({section: "roundedScreen", key: "borderThickness", label: "Border thickness", accessible: "Rounded Screen Border thickness", min: 0, max: 6}) }
+                    Text { width: parent.width; text: "Border applies to left, right and bottom edges. The top edge is owned by TopBar."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 2) }
                 }
                 SettingsSectionCard {
                     id: surface
                     width: parent.width
                     title: "Surface"
                     Row {
+                        id: surfaceChoices
                         width: parent.width
                         spacing: 6
                         Repeater {
                             model: [{key: "ink", label: "Ink"}, {key: "dark", label: "Dark"}, {key: "soft", label: "Soft"}]
                             delegate: SettingsActionButton {
+                                settingsNavGroup: surfaceChoices
                                 required property var modelData
                                 width: Math.min(104, (parent.width - 12) / 3)
                                 height: 32
@@ -147,15 +150,15 @@ Item {
                         delegate: SettingsToggleRow { available: root.editable }
                     }
                     Rectangle { width: parent.width; height: 1; color: Theme.hoverMuted }
-                    SettingsSliderRow { available: root.editable; modelData: ({section: "dock", key: "iconSize", label: "Icon size", accessible: "App bar icon size", min: 24, max: 72, step: 4}) }
-                    SettingsSliderRow { available: root.editable; modelData: ({section: "dock", key: "hoverLift", label: "Hover lift", accessible: "App bar hover lift", min: 0, max: 48}) }
-                    SettingsSliderRow { available: root.editable; modelData: ({section: "dock", key: "hoverScale", label: "Hover enlargement", accessible: "App bar hover enlargement", min: 0, max: 100, unit: "%"}) }
+                    SettingsSliderRow { shortcutTarget: root.shortcutTarget; available: root.editable; modelData: ({section: "dock", key: "iconSize", label: "Icon size", accessible: "App bar icon size", min: 24, max: 72, step: 4}) }
+                    SettingsSliderRow { shortcutTarget: root.shortcutTarget; available: root.editable; modelData: ({section: "dock", key: "hoverLift", label: "Hover lift", accessible: "App bar hover lift", min: 0, max: 48}) }
+                    SettingsSliderRow { shortcutTarget: root.shortcutTarget; available: root.editable; modelData: ({section: "dock", key: "hoverScale", label: "Hover enlargement", accessible: "App bar hover enlargement", min: 0, max: 100, unit: "%"}) }
                 }
                 SettingsSectionCard {
                     id: dockbar
                     width: parent.width
                     title: "Dockbar"
-                    Text { width: parent.width; text: "Dockbar is available only while Taskbar Mode is off."; wrapMode: Text.Wrap; color: Qt.hsla(0, 0, Qt.darker(Theme.fgDim, 1).hslLightness, 1); font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 2) }
+                    Text { width: parent.width; text: "Dockbar is available only while Taskbar Mode is off."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 2) }
                     Repeater {
                         model: [{key: "visibilityMode", label: "Visibility", labels: ["Auto Hide", "Always"]},
                             {key: "exclusiveSpace", label: "Reserve space", labels: ["Off", "On"]}]
@@ -166,7 +169,7 @@ Item {
                     id: topbar
                     width: parent.width
                     title: "Top Bar"
-                    Text { width: parent.width; text: "Applies to every monitor. Logo / Navigation stays enabled."; wrapMode: Text.Wrap; color: Qt.hsla(0, 0, Qt.darker(Theme.fgDim, 1).hslLightness, 1); font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 2) }
+                    Text { width: parent.width; text: "Applies to every monitor. Logo / Navigation stays enabled."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 2) }
                     Repeater {
                         model: root.modules
                         delegate: SettingsToggleRow { available: root.editable; section: "topbar" }

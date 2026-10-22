@@ -22,6 +22,8 @@ KEYS = dict(zip('abcdefghijklmnopqrstuvwxyz',
                 (30, 48, 46, 32, 18, 33, 34, 35, 23, 36, 37, 38, 50,
                  49, 24, 25, 16, 19, 31, 20, 22, 47, 17, 45, 21, 44)))
 KEYS.update({' ': 57, '>': 52, '~': 41})
+# Standard XKB bits for Shift, Control and Alt.
+MODIFIER_MASK = 1 | 4 | 8
 
 
 def main():
@@ -60,7 +62,7 @@ def main():
 
         # Every request releases modifiers after its key to avoid cross-test state.
         def tap(code, modifiers=0):
-            if not (0 <= code <= 255 and modifiers in (0, 1)):
+            if not (0 <= code <= 255 and modifiers >= 0 and (modifiers & ~MODIFIER_MASK) == 0):
                 raise ValueError('invalid keyboard fixture key or modifiers')
             timestamp = int(time.monotonic() * 1000) & 0xffffffff
             send(connection, 6, 2, struct.pack('=IIII', modifiers, 0, 0, 0))
@@ -74,7 +76,7 @@ def main():
                 for char in value:
                     tap(KEYS[char.lower()], int(char.isupper() or char in '>~'))
             elif command == 'key':
-                tap(int(value))
+                tap(*map(int, value.split()))
             else:
                 raise ValueError('unknown keyboard fixture command')
 

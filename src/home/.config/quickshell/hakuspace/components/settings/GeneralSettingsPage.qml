@@ -5,10 +5,17 @@ import "../motion" as Motion
 
 Item {
     id: root
+    // Text controls forward layer shortcuts before interpreting typed characters.
+    property Item shortcutTarget: null
+    // Keep keyboard search on the same filter used by pointer interaction.
+    function focusSearch() { search.focusSearch() }
     signal reloadRequested()
     // Filter catalog rows without replacing the catalog or its editable drafts.
     readonly property string query: search.text.trim().toLowerCase()
-    onQueryChanged: formScroll.contentY = 0
+    onQueryChanged: {
+        formScroll.contentY = 0
+        if (visible && !search.inputFocused) search.focusSearch()
+    }
     readonly property var sectionNames: [...new Set(SettingsStore.catalog.map(item => item.group))]
     readonly property var sidebarSections: sectionNames.filter(group => SettingsStore.catalog.some(item => item.group === group && matches(item)))
     readonly property string activeSection: {
@@ -71,12 +78,12 @@ Item {
                     font.pixelSize: Theme.fontSize + 5
                     font.weight: Font.DemiBold
                 }
-                SettingsSearchField { id: search; width: parent.width - x; height: 38 }
+                SettingsSearchField { id: search; width: parent.width - x; height: 38; shortcutTarget: root.shortcutTarget }
             }
             Text {
                 width: parent.width
                 text: "Preferences for your HakuSpace session."
-                color: Qt.hsla(0, 0, Qt.darker(Theme.fgDim, 1).hslLightness, 1)
+                color: Theme.fgDescription
                 font.family: Theme.fontFamily
                 font.pixelSize: Math.max(10, Theme.fontSize - 1)
                 wrapMode: Text.Wrap
@@ -162,7 +169,7 @@ Item {
                                         Text {
                                             width: parent.width
                                             text: settingRow.modelData.hint
-                                            color: Qt.hsla(0, 0, Qt.darker(Theme.fgDim, 1).hslLightness, 1)
+                                            color: Theme.fgDescription
                                             font.family: Theme.fontFamily
                                             font.pixelSize: Math.max(10, Theme.fontSize - 2)
                                             wrapMode: Text.Wrap
@@ -175,6 +182,7 @@ Item {
                                         width: settingRow.stacked ? settingRow.width : Math.max(0, settingRow.width - Math.round(settingRow.width * 0.46) - Theme.pad)
                                         spacing: 8
                                         SettingsSegmentedToggle {
+                                            Accessible.name: settingRow.modelData.label
                                             visible: settingRow.modelData.type === "bool"
                                             checked: settingRow.currentValue === true
                                             available: settingRow.editable
@@ -228,6 +236,9 @@ Item {
                                             }
                                             TextInput {
                                                 id: input
+                                                property bool settingsNavItem: true
+                                                property string settingsNavRole: "input"
+                                                Keys.forwardTo: root.shortcutTarget ? [root.shortcutTarget] : []
                                                 anchors.fill: parent
                                                 anchors.margins: 10
                                                 verticalAlignment: TextInput.AlignVCenter
@@ -247,6 +258,7 @@ Item {
                                             width: controlColumn.width
                                             spacing: 5
                                             Flow {
+                                                id: chips
                                                 width: parent.width
                                                 height: childrenRect.height
                                                 spacing: 5
@@ -254,6 +266,7 @@ Item {
                                                     model: Array.isArray(settingRow.currentValue) ? settingRow.currentValue : []
                                                     delegate: SettingsActionButton {
                                                         id: chip
+                                                        settingsNavGroup: chips
                                                         required property string modelData
                                                         required property int index
                                                         TextMetrics { id: metrics; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize; text: chip.modelData + " ×" }
@@ -287,6 +300,7 @@ Item {
                                                 }
                                             }
                                             Row {
+                                                id: addRow
                                                 width: parent.width
                                                 spacing: 6
                                                 Rectangle {
@@ -306,6 +320,10 @@ Item {
                                                     }
                                                     TextInput {
                                                         id: addInput
+                                                        property Item settingsNavGroup: addRow
+                                                        property bool settingsNavItem: true
+                                                        property string settingsNavRole: "input"
+                                                        Keys.forwardTo: root.shortcutTarget ? [root.shortcutTarget] : []
                                                         anchors.fill: parent
                                                         anchors.margins: 9
                                                         verticalAlignment: TextInput.AlignVCenter
@@ -314,8 +332,8 @@ Item {
                                                         font.pixelSize: Theme.fontSize
                                                         enabled: settingRow.editable
                                                         activeFocusOnTab: enabled && settingRow.modelData.type === "list"
-                                                    // Accept unique, nonempty entries on one line.
-                                                    function add() {
+                                                        // Accept unique, nonempty entries on one line.
+                                                        function add() {
                                                             var item = text.trim()
                                                             if (!item || /[\r\n\0]/.test(item) || settingRow.currentValue.indexOf(item) >= 0) return
                                                             SettingsStore.setValue(settingRow.modelData.key, settingRow.currentValue.concat([item]))
@@ -326,6 +344,7 @@ Item {
                                                 }
                                                 SettingsActionButton {
                                                     id: addButton
+                                                    settingsNavGroup: addRow
                                                     width: 64; height: 36
                                                     text: "Add"
                                                     idleColor: Theme.hoverMuted

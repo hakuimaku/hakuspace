@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import "../../services"
 import "../motion" as Motion
+import "SettingsScroll.js" as KeyboardScroll
 
 Item {
     id: root
@@ -99,7 +100,7 @@ Item {
         ]) }
     ].filter(section => section.rows.length > 0)
     readonly property var sidebarSections: infoSections.map(section => section.title)
-    // Keep the requested destination aligned when the responsive grid reflows.
+    // Keep the requested destination aligned when card sizes change.
     property string requestedSection: ""
     // Keep the last explicit or hovered selection independent of scrolling.
     property string activeSection: ""
@@ -112,7 +113,7 @@ Item {
     readonly property bool footerDirty: false
     readonly property bool footerError: !!InfoStore.error
 
-    // Move to a card in either the single-column or two-column grid.
+    // Move to a card in the single information column.
     function scrollToSection(name) {
         for (var i = 0; i < cards.count; ++i) {
             var card = cards.itemAt(i)
@@ -135,24 +136,29 @@ Item {
         anchors.fill: parent
         spacing: 6
         Text { text: "Info"; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 5; font.weight: Font.DemiBold }
-        Text { width: parent.width; text: "HakuSpace and the system behind your session."; color: Qt.hsla(0, 0, Qt.darker(Theme.fgDim, 1).hslLightness, 1); font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 1); wrapMode: Text.Wrap }
+        Text { width: parent.width; text: scroll.activeFocus ? "↑ / ↓ · Page Up / Down · Home / End to scroll · F6 for actions" : "HakuSpace and the system behind your session."; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 1); wrapMode: Text.Wrap }
         Flickable {
             id: scroll
+            property bool settingsNavItem: true
+            property string settingsNavRole: "reader"
+            readonly property bool settingsNavOwnsVertical: true
             width: parent.width
             height: Math.max(0, parent.height - y)
             contentWidth: width
             contentHeight: sections.implicitHeight + 20
             clip: true
             boundsBehavior: Flickable.StopAtBounds
+            activeFocusOnTab: true
+            Accessible.name: "System information"
+            // Read the snapshot without changing the last selected section.
+            Keys.onPressed: event => KeyboardScroll.handleKey(scroll, event)
             onContentYChanged: root.requestedSection = ""
             ScrollBar.vertical: Motion.HScrollBar {}
-            Grid {
+            Column {
                 id: sections
                 y: 12
                 width: Math.max(0, scroll.width - 14)
-                columns: width >= 740 ? 2 : 1
-                columnSpacing: 16
-                rowSpacing: 18
+                spacing: 18
                 onPositioningComplete: { if (root.requestedSection) root.scrollToSection(root.requestedSection) }
                 Repeater {
                     id: cards
@@ -172,7 +178,7 @@ Item {
                                 }
                             }
                         }
-                        width: (sections.width - sections.columnSpacing * (sections.columns - 1)) / sections.columns
+                        width: sections.width
                         Repeater {
                             model: section.modelData.rows
                             delegate: Row {
@@ -197,13 +203,7 @@ Item {
                                     font.family: Theme.fontFamily
                                     font.pixelSize: Theme.fontSize
                                     font.weight: field.modelData.label === "Version" ? Font.DemiBold : Font.Normal
-                                    elide: Text.ElideMiddle
-                                    HoverHandler { id: valueHover }
-                                    SettingsTooltip {
-                                        target: valueText
-                                        active: valueHover.hovered && valueText.implicitWidth > valueText.width
-                                        text: valueText.text
-                                    }
+                                    wrapMode: Text.Wrap
                                 }
                             }
                         }

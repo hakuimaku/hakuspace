@@ -45,6 +45,7 @@ Rectangle {
             model: root.labels
             delegate: SettingsActionButton {
                 id: action
+                settingsNavRole: "footer"
                 required property string modelData
                 required property int index
                 readonly property bool primary: ["Apply", "Save", "Save & Switch"].indexOf(modelData) >= 0

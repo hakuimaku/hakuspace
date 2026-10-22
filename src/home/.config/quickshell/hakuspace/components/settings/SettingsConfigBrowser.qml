@@ -9,9 +9,13 @@ Item {
     // Browser styles share the same files, active selection and draft protection.
     property bool compact: false
     property bool buttonsView: false
+    // Handle layer shortcuts before the compact selector performs type-ahead.
+    property Item shortcutTarget: null
+    readonly property bool popupOpen: compactFiles.popup.visible
     signal fileSelected(string fileId)
     SettingsSegmentedToggle {
         id: viewTabs
+        settingsNavRole: "sidebar"
         x: root.compact ? 4 : 14
         y: root.compact ? 4 : 14
         width: root.compact ? Math.min(190, root.width * 0.4) : Math.max(0, root.width - 28)
@@ -23,11 +27,16 @@ Item {
     }
     ComboBox {
         id: compactFiles
+        readonly property bool settingsNavSelected: currentIndex >= 0
+        property bool settingsNavItem: true
+        property string settingsNavRole: "selector"
+        Keys.forwardTo: root.shortcutTarget ? [root.shortcutTarget] : []
         x: viewTabs.x + viewTabs.width + 8
         y: 4
         width: Math.max(0, parent.width - x - 4)
         height: 36
         visible: root.compact
+        enabled: count > 0
         model: ConfigEditorStore.files
         textRole: "id"
         currentIndex: ConfigEditorStore.files.findIndex(file => file.id === ConfigEditorStore.selectedFileId)
@@ -137,9 +146,11 @@ Item {
                                 height: 36
                                 SettingsActionButton {
                                     id: fileRow
+                                    settingsNavRole: "sidebar"
                                     anchors.fill: parent
                                     visible: treeRow.modelData.type === "file"
                                     text: ""
+                                    Accessible.name: treeRow.modelData.fileId
                                     selected: ConfigEditorStore.selectedFileId === treeRow.modelData.fileId
                                     selectedOverridesHover: true
                                     idleColor: "transparent"
@@ -205,6 +216,7 @@ Item {
                     model: ConfigEditorStore.files
                     delegate: SettingsActionButton {
                         id: fileButton
+                        settingsNavRole: "sidebar"
                         required property var modelData
                         width: buttonColumn.width
                         height: 40
@@ -240,6 +252,7 @@ Item {
         }
         SettingsActionButton {
             id: refreshButton
+            settingsNavRole: "sidebar"
             x: 14
             width: Math.max(0, parent.width - 28)
             height: 36

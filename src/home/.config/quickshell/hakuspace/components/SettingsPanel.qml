@@ -7,6 +7,7 @@ import Quickshell.Wayland
 import "../services"
 import "flare" as Flare
 import "settings" as SettingsPages
+import "settings/SettingsNavigation.js" as Navigation
 
 PanelWindow {
     id: root
@@ -31,6 +32,177 @@ PanelWindow {
     onConfirmationChanged: confirmationError = ""
     readonly property bool panelOpen: UiState.activePanel === "settings"
                                       && UiState.settingsScreenName === modelData.name
+    // Window shortcuts belong only to the open, interactive Settings surface.
+    readonly property var focusedItem: root.contentItem.Window.window ? root.contentItem.Window.window.activeFocusItem : null
+    // Remember the content control when crossing back through the sidebar.
+    property Item lastContentFocus: null
+    property var contentFocus: ({})
+    onFocusedItemChanged: {
+        var target = Navigation.owner(focusedItem)
+        if (focusZoneIndex() === 2 && target) {
+            lastContentFocus = target
+            contentFocus[selectedGroup + "|" + Navigation.section(target, interior.currentPage)] = target
+        }
+        revealFocus()
+    }
+    readonly property bool navigationEnabled: panelOpen && interior.enabled && !confirmation && !confirmationDialog.visible && !shortcutHelp.visible && !sidebar.popupOpen
+        && !(focusedItem && focusedItem.inputMethodComposing === true)
+    // A hidden Config warning must not disable keyboard navigation on other pages.
+    readonly property bool pageConfirmation: selectedGroup === "Config" && configPage.confirmation.length > 0
+    readonly property bool pageShortcutsEnabled: navigationEnabled && !pageConfirmation
+    // Keep keyboard region order aligned across entry, cycling and arrow navigation.
+    readonly property var focusZones: [topbar, sidebar, interior.currentPage, footer]
+
+    // Expose explicit arrow targets without consulting Tab focus metadata.
+    function navItems(item, role) { return Navigation.collect(item, role) }
+    // Locate the current region even when native controls focus an internal child.
+    function focusZoneIndex() { return Navigation.region(focusedItem, focusZones) }
+    // Restore only live targets belonging to the selected page and contextual section.
+    function focusZone(index, restoreAny) {
+        var items = navItems(focusZones[index], index === 0 ? "domain" : "")
+        if (!items.length) return false
+        if (index === 2) {
+            if (restoreAny && items.includes(lastContentFocus)) return focusItem(lastContentFocus)
+            var section = interior.currentPage.activeSection || ""
+            var sectionItems = items.filter(item => Navigation.section(item, interior.currentPage) === section)
+            if (sectionItems.length) items = sectionItems
+            var remembered = contentFocus[selectedGroup + "|" + section]
+            if (items.includes(remembered)) return focusItem(remembered)
+            if (selectedGroup === "Config") return focusItem(items.find(item => item.settingsNavRole === "editor") || items[0])
+        }
+        var selected = index < 2 ? items.filter(item => item.selected === true || item.settingsNavSelected === true) : []
+        return focusItem(selected.length ? selected[selected.length - 1] : items[0])
+    }
+    // F6 leaves code-editor indentation intact and skips regions without enabled controls.
+    function cycleFocusZone(step) {
+        if (pageConfirmation) { focusZone(3); return }
+        var current = focusZoneIndex()
+        var count = focusZones.length
+        for (var i = 1; i <= count; ++i) {
+            if (focusZone((current + step * i + count * 2) % count)) return
+        }
+    }
+    // Tab changes preserve every page draft and focus the newly selected domain.
+    function selectDomain(index) {
+        selectedGroup = topbar.domains[(index + topbar.domains.length) % topbar.domains.length]
+        focusZone(0)
+    }
+    // Route save and reload shortcuts through each page's existing guards and confirmations.
+    function activatePageShortcut(save) {
+        if (!pageShortcutsEnabled) return
+        if (save && selectedGroup === "Config") { configPage.saveFromKeyboard(); return }
+        var label = save ? "Apply" : selectedGroup === "Info" ? "Refresh" : "Reload"
+        var page = interior.currentPage
+        if (page.actionLabels.includes(label) && page.canActivate(label)) page.activateAction(label)
+    }
+    // Keep shortcuts inside the layer's key events so reload and shutdown release them safely.
+    function handleShortcut(event) {
+        if (!panelOpen || !interior.enabled || confirmation || confirmationDialog.visible || shortcutHelp.visible || sidebar.popupOpen) return false
+        var modifiers = event.modifiers
+        if (modifiers === Qt.NoModifier && event.key === Qt.Key_F1) {
+            if (!event.isAutoRepeat) shortcutHelp.toggle()
+        } else {
+            if (!navigationEnabled) return false
+            if (modifiers === Qt.ControlModifier && [Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right].includes(event.key))
+                focusZone(event.key === Qt.Key_Up ? 0 : event.key === Qt.Key_Left ? 1 : 2)
+            else if (modifiers === Qt.NoModifier && handleArrowNavigation(event)) return true
+            else if (modifiers === Qt.ControlModifier && event.key === Qt.Key_Tab)
+                selectDomain(topbar.domains.indexOf(selectedGroup) + 1)
+            else if (modifiers === (Qt.ControlModifier | Qt.ShiftModifier)
+                    && (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab))
+                selectDomain(topbar.domains.indexOf(selectedGroup) - 1)
+            else if (modifiers === Qt.AltModifier && event.key >= Qt.Key_1 && event.key <= Qt.Key_4)
+                selectDomain(event.key - Qt.Key_1)
+            else if (event.key === Qt.Key_F6 && (modifiers === Qt.NoModifier || modifiers === Qt.ShiftModifier))
+                cycleFocusZone(modifiers === Qt.ShiftModifier ? -1 : 1)
+            else if (modifiers === Qt.ControlModifier && event.key === Qt.Key_F) {
+                selectedGroup = "General"
+                generalPage.focusSearch()
+            } else if (modifiers === Qt.ControlModifier && event.key === Qt.Key_S) {
+                if (!event.isAutoRepeat) activatePageShortcut(true)
+            } else if (modifiers === Qt.NoModifier && event.key === Qt.Key_F5) {
+                if (!event.isAutoRepeat) activatePageShortcut(false)
+            } else return false
+        }
+        event.accepted = true
+        return true
+    }
+    // Native editing and reading retain their keys before regional navigation runs.
+    function controlOwnsKey(event) {
+        var target = Navigation.owner(focusedItem)
+        if (!target) return false
+        var horizontal = event.key === Qt.Key_Left || event.key === Qt.Key_Right
+        if (target.settingsNavEditing === true || (horizontal ? target.settingsNavOwnsHorizontal : target.settingsNavOwnsVertical) === true)
+            return true
+        if (horizontal && target.settingsNavRole === "input")
+            return target.selectionStart !== target.selectionEnd
+                || (event.key === Qt.Key_Left ? target.cursorPosition > 0 : target.cursorPosition < target.text.length)
+        return false
+    }
+    // Content follows semantic rows; boundary transitions remain owned by the layer.
+    function navigateContent(event) {
+        var target = Navigation.next(interior.currentPage, navItems(interior.currentPage),
+            Navigation.owner(focusedItem), event.key)
+        if (target) return focusItem(target)
+        if (event.key === Qt.Key_Left) return focusZone(1)
+        if (event.key === Qt.Key_Up) return focusZone(0)
+        if (event.key === Qt.Key_Down) return focusZone(3)
+        return false
+    }
+    // Focus movement is separate from activation and never dispatches page actions.
+    function focusItem(item) {
+        if (!item || !item.visible || !item.enabled || item.width <= 0 || item.height <= 0) return false
+        item.forceActiveFocus(Qt.ShortcutFocusReason)
+        return true
+    }
+    // Domain arrows wrap while the help button stays outside the domain sequence.
+    function navigateTopbar(event) {
+        if (event.key === Qt.Key_Down) return focusZone(1) || focusZone(2)
+        if (![Qt.Key_Left, Qt.Key_Right, Qt.Key_Home, Qt.Key_End].includes(event.key)) return false
+        var domains = navItems(topbar, "domain")
+        var target = Navigation.listTarget(domains, Navigation.owner(focusedItem), event.key, false, true)
+        if (!target) return false
+        selectDomain(topbar.domains.indexOf(target.modelData))
+        return true
+    }
+    // Context rows focus without selecting a section or switching a dirty file.
+    function navigateSidebar(event) {
+        if (event.key === Qt.Key_Right) return focusZone(2)
+        if (event.key === Qt.Key_Left) return true
+        var current = Navigation.owner(focusedItem)
+        var items = navItems(sidebar)
+        if (event.key === Qt.Key_Up && items.indexOf(current) === 0) return focusZone(0)
+        return focusItem(Navigation.listTarget(items, current, event.key, true, false))
+    }
+    // Footer arrows only choose enabled actions; Up restores page content.
+    function navigateFooter(event) {
+        if (event.key === Qt.Key_Up) return focusZone(2, true)
+        return focusItem(Navigation.listTarget(navItems(footer, "footer"),
+            Navigation.owner(focusedItem), event.key, false, false))
+    }
+    // Each region owns its local contract and the layer owns boundary transitions.
+    function handleArrowNavigation(event) {
+        if (!navigationEnabled || event.modifiers !== Qt.NoModifier
+                || ![Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right, Qt.Key_Home, Qt.Key_End].includes(event.key)) return false
+        if (controlOwnsKey(event)) return false
+        var zone = focusZoneIndex()
+        var moved = zone === 0 ? navigateTopbar(event) : zone === 1 ? navigateSidebar(event)
+            : zone === 2 && [Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right].includes(event.key) ? navigateContent(event)
+            : zone === 3 ? navigateFooter(event) : false
+        if (moved) event.accepted = true
+        return moved
+    }
+    // Bring keyboard-focused rows into view without moving the pointer or selecting Info cards.
+    function revealFocus() {
+        if (!navigationEnabled || !focusedItem) return
+        for (var view = focusedItem.parent; view; view = view.parent) {
+            if (view.contentY === undefined || !view.contentItem || focusedItem.height > view.height) continue
+            var top = focusedItem.mapToItem(view.contentItem, 0, 0).y
+            var next = Math.min(view.contentY, top)
+            if (top + focusedItem.height > next + view.height) next = top + focusedItem.height - view.height
+            view.contentY = Math.max(0, Math.min(next, view.contentHeight - view.height))
+        }
+    }
     // Preferred widths keep 32 px of space on each side when the screen is smaller.
     readonly property real normalPreferredWidth: 1180
     readonly property real normalWidth: Math.min(normalPreferredWidth, Math.max(0, modelData.width - 64))
@@ -79,8 +251,9 @@ PanelWindow {
     // Cancel the active confirmation before initiating the existing close flow.
     function handleEscape() {
         if (applyingClose) return
-        if (confirmation) confirmation = ""
-        else if (configPage.confirmation) configPage.cancelConfirmation()
+        if (shortcutHelp.visible) shortcutHelp.close()
+        else if (confirmation) confirmation = ""
+        else if (pageConfirmation) configPage.cancelConfirmation()
         else requestClose()
     }
     function requestClose() {
@@ -168,6 +341,7 @@ PanelWindow {
             expandIn.duration = Math.round(350 * Math.max(0, 1 - expandProgress))
             openAnimation.start()
         } else {
+            shortcutHelp.close()
             closeAnimation.duration = Math.round(480 * Math.max(0, 1 - closeProgress))
             closeAnimation.start()
         }
@@ -182,9 +356,14 @@ PanelWindow {
         }
     }
     Item {
+        id: shortcutKeys
+        Keys.onPressed: event => root.handleShortcut(event)
+    }
+    Item {
         id: keyHandler
         anchors.fill: parent
         focus: root.panelOpen
+        Keys.forwardTo: [shortcutKeys]
         Keys.onEscapePressed: event => { root.handleEscape(); event.accepted = true }
     }
     Rectangle { anchors.fill: parent; color: Theme.surface; opacity: 0.22 * Math.min(1, root.expandProgress) * (1 - root.closeProgress) }
@@ -267,6 +446,11 @@ PanelWindow {
         }
         MouseArea { anchors.fill: parent; onClicked: mouse => mouse.accepted = true }
 
+        SettingsPages.SettingsShortcutGuide {
+            id: shortcutHelp
+            parent: root.contentItem
+            sourceItem: topbar.shortcutButton
+        }
         Dialog {
             id: confirmationDialog
             parent: root.contentItem
@@ -288,7 +472,9 @@ PanelWindow {
             onOpened: confirmationActions.itemAt(0).forceActiveFocus()
             onClosed: {
                 if (!root.applyingClose) root.confirmation = ""
-                if (root.panelOpen && previousFocus) previousFocus.forceActiveFocus()
+                if (root.panelOpen) {
+                    if (!root.focusItem(previousFocus)) root.focusZone(0)
+                }
             }
             Overlay.modal: Rectangle { color: Qt.alpha(Theme.surface, 0.72) }
             background: Rectangle {
@@ -334,7 +520,16 @@ PanelWindow {
                 }
             }
             footer: Item {
+                id: confirmationFooter
                 width: confirmationDialog.width
+                // Modal action navigation never reaches the background Settings regions.
+                Keys.onPressed: event => {
+                    if (event.modifiers === Qt.NoModifier) {
+                        var target = Navigation.listTarget(Navigation.collect(confirmationFooter),
+                            Navigation.owner(root.focusedItem), event.key, false, false)
+                        if (target) event.accepted = root.focusItem(target)
+                    }
+                }
                 implicitHeight: dialogButtons.height + 24
                 Flow {
                     id: dialogButtons
@@ -376,7 +571,8 @@ PanelWindow {
                 }
             }
         }
-        Item {
+        // Keep key routing alive when a changing footer replaces its focused button.
+        FocusScope {
             id: interior
             anchors.fill: parent
             anchors.margins: parent.width < 760 || parent.height < 560 ? 12 : 24
@@ -388,6 +584,7 @@ PanelWindow {
             opacity: Math.max(0, Math.min(1, (root.expandProgress - 0.55) / 0.4))
             enabled: root.panelOpen && root.expandProgress >= 0.95
             Keys.onEscapePressed: event => { root.handleEscape(); event.accepted = true }
+            Keys.onPressed: event => root.handleShortcut(event)
 
             // A static, faint grid adds texture without input handlers or animation.
             Item {
@@ -413,10 +610,13 @@ PanelWindow {
                     : root.selectedGroup === "Info" ? "HakuSpace · " + (InfoStore.loading ? "detecting…"
                         : InfoStore.repo.detected ? InfoStore.repo.version : "version unavailable")
                     : SettingsStore.settingVersion ? "setting.sh · " + SettingsStore.settingVersion : "~/hakucfg/setting.sh"
-                onSelectedRequested: domain => root.selectedGroup = domain
+                onSelectedRequested: domain => root.selectDomain(domains.indexOf(domain))
+                guideOpen: shortcutHelp.visible
+                onShortcutsRequested: shortcutHelp.open()
             }
             SettingsPages.SettingsSidebar {
                 id: sidebar
+                shortcutTarget: shortcutKeys
                 y: topbar.height
                 width: interior.compact ? parent.width : parent.width >= 1050 ? 220 : 180
                 height: interior.compact ? 44 : Math.max(0, footer.y - y)
@@ -437,12 +637,14 @@ PanelWindow {
                     anchors.margins: interior.compact ? 16 : 24
                     SettingsPages.GeneralSettingsPage {
                         id: generalPage
+                        shortcutTarget: shortcutKeys
                         anchors.fill: parent
                         visible: root.selectedGroup === "General"
                         onReloadRequested: root.requestReload()
                     }
                     SettingsPages.ShellSettingsPage {
                         id: shellPage
+                        shortcutTarget: shortcutKeys
                         anchors.fill: parent
                         visible: root.selectedGroup === "Shell"
                         onReloadRequested: root.requestReload()
@@ -450,6 +652,7 @@ PanelWindow {
                     }
                     SettingsPages.ConfigEditorPage {
                         id: configPage
+                        shortcutTarget: shortcutKeys
                         anchors.fill: parent
                         visible: root.selectedGroup === "Config"
                         onCloseRequested: root.handleEscape()
