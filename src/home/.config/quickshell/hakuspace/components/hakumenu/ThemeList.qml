@@ -25,14 +25,13 @@ Item {
 
     readonly property var items: [
         { label: "Change Theme", icon: "", action: "Change Theme", toggle: false, showState: false, stateFile: "", statePath: "", stateKind: "bool" },
+        { label: "Change Wallpaper", icon: "󰏜", action: "Change Wallpaper", toggle: false, showState: false, stateFile: "", statePath: "", stateKind: "bool" },
+        { label: "Taskbar Mode", icon: "󰐃", action: "Taskbar Mode", toggle: true, showState: true, chromeKey: "taskbar" },
         { label: "Cava Underbar", icon: "󰝚", action: "Cava Underbar", toggle: true, showState: true, stateFile: "cava_layer_state", statePath: "", stateKind: "bool" },
         { label: "Desktop Icons", icon: "", action: "Desktop Icons", toggle: true, showState: true, stateFile: "desktop_icons_state", statePath: "", stateKind: "bool" },
-        { label: "Taskbar Mode", icon: "󰐃", action: "Taskbar Mode", toggle: true, showState: true, chromeKey: "taskbar" },
         { label: "Dockbar", icon: "󰧨", action: "Dockbar", toggle: true, showState: true, chromeKey: "dockbar" },
         { label: "Auto Random Wallpaper", icon: "", action: "Auto Random Wallpaper", toggle: true, showState: true, stateFile: "", statePath: "/tmp/random_wallpaper_status", stateKind: "bool" },
-        { label: "Change Wallpaper", icon: "󰏜", action: "Change Wallpaper", toggle: false, showState: false, stateFile: "", statePath: "", stateKind: "bool" },
         { label: "Kill Lively Wallpaper", icon: "󱛹", action: "Kill Lively Wallpaper", toggle: false, showState: false, stateFile: "", statePath: "", stateKind: "bool" },
-        { label: "Niri Animation", icon: "󰤕", action: "Niri Animation", toggle: false, showState: false, stateFile: "", statePath: "", stateKind: "bool" },
         { label: "", icon: "󰆧", action: "", toggle: true, showState: false, stateFile: "shell_backend", statePath: "", stateKind: "backend", backendSwitch: true }
     ]
 
