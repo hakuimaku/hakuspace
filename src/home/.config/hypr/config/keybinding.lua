@@ -131,6 +131,9 @@ hl.bind(mainMod .. " + F1", function ()
             general = {
                 gaps_in = 0, gaps_out = 0,
             },
+            decoration = {
+                rounding = 0,
+            },
         })
         no_gap_mode = true
     end
