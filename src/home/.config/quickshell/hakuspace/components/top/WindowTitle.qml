@@ -20,11 +20,14 @@ Item {
     
     property bool hovered: false
     
-    implicitHeight: Theme.fontSize * 1.8
+    implicitHeight: Math.max(Theme.fontSize * 1.8, contentWrapper.implicitHeight + Math.round(Theme.fontSize * 0.4))
     implicitWidth: contentWrapper.implicitWidth + Theme.pad * 2
     
-    // Animates window title pill width when title text changes.
+    // Animates window title pill width and height when title text changes.
     Behavior on implicitWidth {
+        NumberAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve }
+    }
+    Behavior on implicitHeight {
         NumberAnimation { duration: HAnimation.normal; easing.bezierCurve: HAnimation.moduleCurve }
     }
     
@@ -85,6 +88,8 @@ Item {
         anchors.centerIn: parent
         implicitWidth: row.implicitWidth
         implicitHeight: row.implicitHeight
+        width: implicitWidth
+        height: implicitHeight
         
         Row {
             id: row
@@ -112,14 +117,13 @@ Item {
             
             Column {
                 anchors.verticalCenter: parent.verticalCenter
-                anchors.verticalCenterOffset: -2
                 spacing: 0
                 
                 Text {
                     id: classText
                     text: root.activeClass !== "" ? root.activeClass : "...hakushell..."
                     font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize * 0.75
+                    font.pixelSize: Math.round(Theme.fontSize * 0.75)
                     font.weight: Font.Bold
                     color: root.hovered ? Theme.accent : Theme.fgMuted
                     width: implicitWidth

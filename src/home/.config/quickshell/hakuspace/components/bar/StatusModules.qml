@@ -52,7 +52,7 @@ Item {
         clip: root.presentation === "fullBottom"
         interactive: contentWidth > width
         boundsBehavior: Flickable.StopAtBounds
-        height: Math.max(logoModule.height, movingLeftModules.height)
+        height: root.presentation === "fullBottom" ? parent.height : Math.max(logoModule.height, movingLeftModules.height)
 
         // Logo never participates in the horizontal displacement.
         TopModules.Logo {
@@ -80,10 +80,12 @@ Item {
             // modules belong in this row so they all clear Navigation.
             TopModules.Workspaces {
                 screenName: root.screenName
+                anchors.verticalCenter: parent.verticalCenter
             }
 
             TopModules.WindowTitle {
                 visible: ShellSettingsStore.showWindowTitle
+                anchors.verticalCenter: parent.verticalCenter
             }
 
             // Animates horizontal displacement of left modules to clear expanding navigation controller.
