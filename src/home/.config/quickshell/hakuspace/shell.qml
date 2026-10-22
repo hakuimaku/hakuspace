@@ -76,10 +76,39 @@ ShellRoot {
         enabled: true
         function ping(): string { return "pong"; }
         function reload() {
+            if (LockState.locked) return;
             Quickshell.reload(false);
         }
-        function quit() { Qt.quit(); }
+        function quit() {
+            if (LockState.locked) return;
+            Qt.quit();
+        }
     }
+
+    PersistentProperties {
+        id: lockMemory
+        reloadableId: "hakuspace-lock-state"
+        property bool locked: false
+        onLoaded: {
+            if (locked && !LockState.locked) LockState.requestLock()
+        }
+    }
+
+    Connections {
+        target: LockState
+        function onLockedChanged() {
+            lockMemory.locked = LockState.locked
+        }
+    }
+
+    IpcHandler {
+        target: "lock"
+        enabled: true
+        function lock(): string { return LockState.requestLock() }
+        function status(): string { return LockState.status() }
+    }
+
+    LockSession {}
 
 
     IpcHandler {

@@ -1,6 +1,47 @@
 #!/usr/bin/env bash
 
-# This script locks the screen using hyprlock, with different configurations based on the monitor resolution.
+# This script locks the screen using Hikai native session lock in Hikai mode,
+# and hyprlock (with resolution-aware configuration) in Classic mode or as a fail-closed fallback.
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$SCRIPT_DIR/haku_backend_lib.sh" ]]; then
+    source "$SCRIPT_DIR/haku_backend_lib.sh"
+elif [[ -f "$SCRIPT_DIR/../lib/haku_backend_lib.sh" ]]; then
+    source "$SCRIPT_DIR/../lib/haku_backend_lib.sh"
+elif [[ -f "$HOME/.local/bin/haku_backend_lib.sh" ]]; then
+    source "$HOME/.local/bin/haku_backend_lib.sh"
+fi
+
+request_hikai_native_lock() {
+    command -v qs >/dev/null 2>&1 || return 1
+    declare -F haku_qs_alive >/dev/null 2>&1 && haku_qs_alive || return 1
+
+    local runtime_dir resp status_json attempt
+    runtime_dir="$(haku_runtime_dir)"
+    resp="$(timeout 2s qs -c hakuspace ipc call lock lock 2>>"$runtime_dir/qs.log")" || return 1
+    [[ "$resp" == "ok" ]] || return 1
+
+    # Wait until the Wayland compositor confirms all outputs are securely locked.
+    for (( attempt = 0; attempt < 60; attempt++ )); do
+        status_json="$(timeout 1s qs -c hakuspace ipc call lock status 2>/dev/null)" || return 1
+        if [[ "$status_json" == *'"locked":true'* && "$status_json" == *'"secure":true'* ]]; then
+            return 0
+        fi
+        sleep 0.025
+    done
+    return 1
+}
+
+if declare -F haku_qs_mode >/dev/null 2>&1 && haku_qs_mode; then
+    if request_hikai_native_lock; then
+        exit 0
+    fi
+    echo "Warning: Hikai native lock unavailable; falling back to hyprlock." >&2
+fi
+
+if pidof hyprlock >/dev/null 2>&1; then
+    exit 0
+fi
 
 WIDTH=""
 HEIGHT=""
@@ -71,7 +112,7 @@ sleep 0.2
 
 echo "Executing hyprlock with appropriate configuration..."
 if [[ "$WIDTH" -ge 1920 && "$HEIGHT" -ge 1080 ]]; then
-    hyprlock
+    exec hyprlock
 else
-    hyprlock -c ~/.config/hypr/hyprlock_tiny.conf
+    exec hyprlock -c ~/.config/hypr/hyprlock_tiny.conf
 fi

@@ -37,8 +37,10 @@ There's nothing more annoying than your screen turning off while you're watching
 
 ### `lock.sh` (The Smart Screen Locker)
 Secures your computer when you step away.
-- **What it does:** Uses `hyprlock` to lock your session. 
-- **Dynamic Resolution:** It intelligently detects your monitor's current resolution (handling differences between Hyprland, Niri, Mango, and fallback sysfs paths). If your screen is `1920x1080` or larger, it loads the beautiful default lock screen. If you're on a smaller laptop screen, it automatically loads `hyprlock_tiny.conf` so the lock screen UI doesn't look squished!
+- **Mode-Aware Routing:** In **Hikai** mode, `lock.sh` requests the native Quickshell Wayland session lock (`qs -c hakuspace ipc call lock lock`) and waits until the compositor confirms every output is securely covered (`WlSessionLock.secure`). In **Classic** mode, it launches `hyprlock`.
+- **Fail-Closed Fallback:** If Hikai native locking is unavailable or does not reach the secure lock state, `lock.sh` automatically falls back to `hyprlock` rather than leaving the session unlocked.
+- **PAM & Troubleshooting:** Native Hikai locking authenticates through a single shared Quickshell `PamContext` using the system `login` PAM service (`/etc/pam.d/login`). You can inspect lock state without exposing credentials via `qs -c hakuspace ipc call lock status`.
+- **Dynamic Resolution (Classic / Fallback):** When launching `hyprlock`, it detects your monitor's current resolution (handling Hyprland, Niri, Mango, and fallback sysfs paths). Screens `1920x1080` or larger use `hyprlock.conf`, while smaller displays load `hyprlock_tiny.conf`.
 
 ## Boot & Authentication
 
