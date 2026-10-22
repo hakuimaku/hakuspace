@@ -261,7 +261,7 @@ Haku Space's bundled Hyprland, Niri, MangoWM, and Labwc configs already call thi
 ### After Installation
 
 1. **Change the GTK theme**
-   - Open `GTK Settings` from the Rofi App Menu (`SUPER + Space`).
+   - Open `GTK Settings` from the App Menu (`SUPER + Space`).
    - Change the theme, icons, and mouse cursor to your preference.
 
 2. **Install `waybar-cava` if you use the Classic Waybar cava module**
@@ -366,6 +366,8 @@ The figures below are **Classic-stack measurements** from a system with **16GB R
 
 **Total:** If you use all the built-in mini-apps simultaneously, it will consume at least **~1.5 GB RAM** upon startup.
 
+With **Hikai (Quickshell)** mode, RAM usage is **extremely high**, making it unsuitable for *low-end* machines. With **Fresh Arch Linux + Dotfiles (Base) + Hikai**, RAM usage is more than **~1.7GB**. However, it is more streamlined because `Cava Underbar`, `Rounded Screen`, `Edge Trigger`, and `Taskbar` are already integrated into Hikai, eliminating the need to run additional mini-apps.
+
 > [!note]
 > During your actual workflow, RAM consumption will naturally expand further depending on the applications you use and your specific needs.
 
@@ -377,30 +379,6 @@ The figures below are **Classic-stack measurements** from a system with **16GB R
 > NixOS integration is currently legacy and unsupported. The retained `scripts/nixos.sh` / `nix/` implementation is kept for reference, but the current Arch-focused automatic installer does not provide a working NixOS installation path.
 
 See [NixOS Integration](docs/nixos.md) for the retained legacy design.
-
----
-
-## Plugin Configuration (Hyprland Only)
-
-You can immediately use the plugins that I have pre-configured. Simply install and enable them using the commands below (or tweak them as you like in `plugin.lua`).
-
-* **[hyprexpo](https://github.com/sandwichfarm/hyprexpo)** - Overview layout for your workspaces.
-* **[hypr-dynamic-cursors](https://github.com/VirtCode/hypr-dynamic-cursors)** - Smooth, physics-based dynamic cursor effects.
-
-```bash
-hyprpm update
-
-hyprpm add https://github.com/virtcode/hypr-dynamic-cursors
-hyprpm enable dynamic-cursors
-
-hyprpm add https://github.com/sandwichfarm/hyprexpo
-hyprpm enable hyprexpo
-
-hyprpm reload
-```
-Read the Wiki for more info: https://wiki.hypr.land/Plugins/Using-Plugins/
-
-See more in `~/hakucfg/wm/hyprland-custom.lua` or [here](src/home/hakucfg/wm/hyprland-custom.lua#L33) for guide.
 
 ---
 
