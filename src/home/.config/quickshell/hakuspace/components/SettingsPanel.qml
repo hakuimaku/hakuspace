@@ -29,7 +29,10 @@ PanelWindow {
         ? "Config cannot be saved. Keep editing to resolve the file conflict or invalid text." : ""
     readonly property bool canApplyAndClose: !settingsBusy && !applyingClose && !closeSaveProblem
     onSettingsBusyChanged: Qt.callLater(root.finishApplyAndClose)
-    onConfirmationChanged: confirmationError = ""
+    onConfirmationChanged: {
+        confirmationError = ""
+        if (confirmation.length > 0) confirmationDialog.activeConfirmation = confirmation
+    }
     readonly property bool panelOpen: UiState.activePanel === "settings"
                                       && UiState.settingsScreenName === modelData.name
     // Window shortcuts belong only to the open, interactive Settings surface.
@@ -464,19 +467,48 @@ PanelWindow {
             visible: root.panelOpen && root.confirmation.length > 0
             closePolicy: root.applyingClose ? Popup.NoAutoClose : Popup.CloseOnEscape
             property Item previousFocus: null
-            readonly property var labels: root.confirmation === "close"
+            property string activeConfirmation: ""
+            readonly property string currentAction: activeConfirmation || root.confirmation
+            readonly property var labels: currentAction === "close"
                 ? ["Keep Editing", "Discard & Close", "Apply & Close"]
-                : ["Keep Editing", root.confirmation === "reset-shell" ? "Reset to Defaults"
-                    : root.confirmation === "discard-shell" ? "Discard Changes" : "Discard & Reload"]
-            onAboutToShow: previousFocus = root.contentItem.Window.window.activeFocusItem
+                : ["Keep Editing", currentAction === "reset-shell" ? "Reset to Defaults"
+                    : currentAction === "discard-shell" ? "Discard Changes" : "Discard & Reload"]
+            onAboutToShow: {
+                activeConfirmation = root.confirmation
+                previousFocus = root.contentItem.Window.window.activeFocusItem
+            }
             onOpened: confirmationActions.itemAt(0).forceActiveFocus()
             onClosed: {
+                activeConfirmation = ""
                 if (!root.applyingClose) root.confirmation = ""
                 if (root.panelOpen) {
                     if (!root.focusItem(previousFocus)) root.focusZone(0)
                 }
             }
-            Overlay.modal: Rectangle { color: Qt.alpha(Theme.surface, 0.72) }
+            enter: Transition {
+                NumberAnimation {
+                    property: "opacity"
+                    from: 0.0
+                    to: 1.0
+                    duration: HAnimation.slow
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: HAnimation.actionLayerOpenCurve
+                }
+            }
+            exit: Transition {
+                NumberAnimation {
+                    property: "opacity"
+                    from: 1.0
+                    to: 0.0
+                    duration: HAnimation.slow
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: HAnimation.actionLayerCloseCurve
+                }
+            }
+            Overlay.modal: Rectangle {
+                color: Qt.alpha(Theme.surface, 0.72)
+                opacity: confirmationDialog.opacity
+            }
             background: Rectangle {
                 radius: Theme.largeRadius
                 color: Theme.surface
@@ -487,9 +519,9 @@ PanelWindow {
                 spacing: 12
                 Text {
                     width: parent.width
-                    text: root.confirmation === "close" ? "Unsaved changes"
-                        : root.confirmation === "reset-shell" ? "Reset Shell settings?"
-                        : root.confirmation === "discard-shell" ? "Discard Shell changes?" : "Reload saved settings?"
+                    text: confirmationDialog.currentAction === "close" ? "Unsaved changes"
+                        : confirmationDialog.currentAction === "reset-shell" ? "Reset Shell settings?"
+                        : confirmationDialog.currentAction === "discard-shell" ? "Discard Shell changes?" : "Reload saved settings?"
                     color: Theme.fg
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize + 3
@@ -499,11 +531,11 @@ PanelWindow {
                 Text {
                     width: parent.width
                     text: root.applyingClose ? "Applying changes… Please wait."
-                        : root.confirmation === "close" ? "Unsaved changes in " + root.dirtyDomains.join(", ")
+                        : confirmationDialog.currentAction === "close" ? "Unsaved changes in " + root.dirtyDomains.join(", ")
                             + ". Apply saves all modified pages. Discard restores their saved values before closing."
-                        : root.confirmation === "reset-shell" ? "Preview default Shell settings. Your current draft will be replaced. Nothing is saved until you choose Apply."
-                        : root.confirmation === "discard-shell" ? "Undo unsaved Shell edits and restore the saved settings, including live previews."
-                        : "Discard unsaved " + (root.confirmation === "reload-shell" ? "Shell" : "General") + " edits and reload the saved settings from disk."
+                        : confirmationDialog.currentAction === "reset-shell" ? "Preview default Shell settings. Your current draft will be replaced. Nothing is saved until you choose Apply."
+                        : confirmationDialog.currentAction === "discard-shell" ? "Undo unsaved Shell edits and restore the saved settings, including live previews."
+                        : "Discard unsaved " + (confirmationDialog.currentAction === "reload-shell" ? "Shell" : "General") + " edits and reload the saved settings from disk."
                     color: Theme.fgDim
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
@@ -512,7 +544,7 @@ PanelWindow {
                 Text {
                     width: parent.width
                     visible: text.length > 0
-                    text: root.confirmationError || (root.confirmation === "close" ? root.closeSaveProblem : "")
+                    text: root.confirmationError || (confirmationDialog.currentAction === "close" ? root.closeSaveProblem : "")
                     color: Theme.fg
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize

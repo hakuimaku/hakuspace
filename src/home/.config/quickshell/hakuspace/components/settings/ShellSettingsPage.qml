@@ -1,5 +1,7 @@
 import QtQuick
 import QtQuick.Controls
+import Quickshell
+import Quickshell.Io
 import "../../services"
 import "../motion" as Motion
 
@@ -22,7 +24,7 @@ Item {
         {key: "notifications", label: "Right · Notifications", hint: "Show the bell. Popups, history and DND keep working."}
     ]
     // Section anchors and the footer expose presentation without owning draft state.
-    readonly property var sectionCards: [appearance, rounded, surface, appbar, dockbar, topbar]
+    readonly property var sectionCards: [layout, appearance, rounded, surface, appbar, dockbar, topbar]
     readonly property var sidebarSections: sectionCards.map(card => card.title)
     readonly property string activeSection: {
         if (scroll.contentY > 0 && scroll.contentY >= scroll.contentHeight - scroll.height - 1)
@@ -65,6 +67,22 @@ Item {
         else ShellSettingsStore.apply()
     }
 
+    Process {
+        id: layoutProc
+    }
+
+    function setShellLayout(target) {
+        var wantTaskbar = (target === "taskbar")
+        if (AppState.taskbarManualState !== wantTaskbar && !layoutProc.running) {
+            layoutProc.command = ["sh", "-c",
+                'if [ -x "$1" ]; then exec "$1" "$4"; elif [ -x "$2" ]; then exec "$2" "$4"; else exec "$3" "$4"; fi',
+                "--", (Quickshell.env("HOME") || "") + "/.local/bin/taskbar_manager.sh",
+                Env.binDir + "/taskbar_manager.sh",
+                Quickshell.shellPath("../../../../core/facade/taskbar_manager.sh"), "--toggle"]
+            layoutProc.running = true
+        }
+    }
+
 
     Column {
         anchors.fill: parent
@@ -85,6 +103,118 @@ Item {
                 y: 12
                 width: Math.max(0, scroll.width - 14)
                 spacing: 22
+                SettingsSectionCard {
+                    id: layout
+                    width: parent.width
+                    title: "Layout"
+                    Row {
+                        id: layoutChoices
+                        width: parent.width
+                        spacing: 12
+                        Repeater {
+                            model: [
+                                { key: "topbar", label: "Topbar", desc: "Top Bar with Dock" },
+                                { key: "taskbar", label: "Taskbar", desc: "Bottom Taskbar" }
+                            ]
+                            delegate: SettingsActionButton {
+                                id: delegateButton
+                                settingsNavGroup: layoutChoices
+                                required property var modelData
+                                width: Math.floor((parent.width - 12) / 2)
+                                height: 74
+                                selected: modelData.key === "taskbar" ? AppState.taskbarManualState : !AppState.taskbarManualState
+                                selectedOverridesHover: true
+                                idleColor: Theme.surface
+                                hoverColor: Theme.hoverMuted
+                                selectedColor: Theme.hoverMuted
+                                foregroundColor: Theme.fgDim
+                                hoverForegroundColor: Theme.fg
+                                selectedForegroundColor: Theme.accent
+                                border.color: selected || activeFocus ? Theme.accent : Theme.hoverMuted
+                                border.width: selected ? 2 : 1
+                                enabled: root.editable && !layoutProc.running
+                                activeFocusOnTab: enabled
+                                focused: activeFocus
+                                Accessible.name: modelData.label + " shell layout"
+                                Accessible.role: Accessible.RadioButton
+                                Accessible.checked: selected
+                                Accessible.onPressAction: clicked()
+                                onClicked: root.setShellLayout(modelData.key)
+                                Keys.onReturnPressed: clicked()
+                                Keys.onSpacePressed: clicked()
+
+                                Row {
+                                    anchors.fill: parent
+                                    anchors.margins: 14
+                                    spacing: 14
+
+                                    Rectangle {
+                                        id: wireframe
+                                        width: 48
+                                        height: 36
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        radius: 4
+                                        color: delegateButton.selected ? Qt.alpha(Theme.accent, 0.12) : Theme.hoverMuted
+                                        border.width: 1
+                                        border.color: delegateButton.selected ? Theme.accent : Theme.hoverMuted
+
+                                        // Topbar indicator
+                                        Rectangle {
+                                            visible: modelData.key === "topbar"
+                                            width: parent.width - 6
+                                            height: 4
+                                            radius: 2
+                                            anchors.top: parent.top
+                                            anchors.topMargin: 3
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            color: delegateButton.selected ? Theme.accent : (delegateButton.hovered ? Theme.fg : Theme.fgDim)
+                                        }
+                                        Rectangle {
+                                            visible: modelData.key === "topbar"
+                                            width: 18
+                                            height: 3
+                                            radius: 1.5
+                                            anchors.bottom: parent.bottom
+                                            anchors.bottomMargin: 3
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            color: delegateButton.selected ? Theme.accent : (delegateButton.hovered ? Theme.fg : Theme.fgDim)
+                                        }
+
+                                        // Taskbar indicator
+                                        Rectangle {
+                                            visible: modelData.key === "taskbar"
+                                            width: parent.width - 6
+                                            height: 6
+                                            radius: 2
+                                            anchors.bottom: parent.bottom
+                                            anchors.bottomMargin: 3
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            color: delegateButton.selected ? Theme.accent : (delegateButton.hovered ? Theme.fg : Theme.fgDim)
+                                        }
+                                    }
+
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: 3
+                                        Text {
+                                            text: modelData.label
+                                            color: delegateButton.selected ? Theme.accent : (delegateButton.hovered ? Theme.fg : Theme.fgDim)
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.fontSize + 1
+                                            font.weight: Font.DemiBold
+                                        }
+                                        Text {
+                                            text: modelData.desc
+                                            color: Theme.fgDescription
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Math.max(10, Theme.fontSize - 2)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 SettingsSectionCard {
                     id: appearance
                     width: parent.width
