@@ -48,6 +48,7 @@ class WallpaperTests(unittest.TestCase):
         """Apply merges a strict patch, while invalid fields never replace saved values."""
         self.assertEqual(settings.run("read")["values"], settings.DEFAULTS)
         self.assertEqual(settings.DEFAULTS["playback"]["profile"], "screen")
+        self.assertEqual(settings.DEFAULTS["browser"]["filter"], "static")
         with patch.dict(os.environ, HAKUSPACE_WALLPAPER_SETTINGS_JSON=json.dumps({"playback": {"profile": "original"}})):
             self.assertEqual(settings.run("write")["values"]["playback"]["profile"], "original")
         self.assertEqual(settings.run("read")["values"]["proxy"]["maxCacheMiB"], 4096)
@@ -57,6 +58,23 @@ class WallpaperTests(unittest.TestCase):
             with self.subTest(patch_value=patch_value), self.assertRaises(ValueError):
                 settings.validate(patch_value, partial=True)
         self.assertEqual(settings.run("read")["values"]["playback"]["profile"], "original")
+
+    def test_legacy_all_filter_opens_images(self):
+        """Read the retired filter as Images while retaining the remaining preferences."""
+        values = copy.deepcopy(settings.DEFAULTS)
+        values["browser"]["filter"] = "all"
+        values["playback"]["profile"] = "original"
+        path = Path(os.environ["HAKUSPACE_WALLPAPER_SETTINGS_FILE"])
+        path.parent.mkdir()
+        path.write_text(json.dumps(values))
+        loaded = settings.run("read")["values"]
+        self.assertEqual(loaded["browser"]["filter"], "static")
+        self.assertEqual(loaded["playback"]["profile"], "original")
+        self.assertEqual(json.loads(path.read_text()), values)
+        with patch.dict(os.environ, HAKUSPACE_WALLPAPER_SETTINGS_JSON=json.dumps({"browser": {"filter": "video"}})):
+            self.assertEqual(settings.run("write")["values"]["browser"]["filter"], "video")
+        with self.assertRaises(ValueError):
+            settings.validate({"browser": {"filter": "all"}}, partial=True)
 
     def test_settings_reject_symlink(self):
         """A symlink must never redirect a settings write."""

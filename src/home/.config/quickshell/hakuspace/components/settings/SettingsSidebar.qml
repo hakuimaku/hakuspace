@@ -59,6 +59,7 @@ Rectangle {
         // The shared accent follows the active section inside scroll content.
         Motion.SelectionPill {
             id: sectionSelection
+            objectName: "settings-section-indicator"
             parent: sectionScroll.contentItem
             coordinateSpace: sectionScroll.contentItem
             opacity: shown && targetItem && targetItem.selected ? 1 : 0

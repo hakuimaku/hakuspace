@@ -14,6 +14,10 @@ ShellRoot {
     property int motionTicks: 0
     property Item motionButton: null
     property int cachePhase: 0
+    property int expansionPhase: 0
+    property real previousSidebarY: 0
+    property real revealWindowWidth: 0
+    property real revealWindowHeight: 0
     property string imageToken: ""
     readonly property string fixture: Quickshell.env("HAKUSPACE_WALLPAPER_FIXTURE")
     // Rebuild the same browser twice to exercise Quickshell's live-reload type cache.
@@ -25,9 +29,23 @@ ShellRoot {
     }
     FloatingWindow {
         visible: true
-        implicitWidth: 520; implicitHeight: 1080
+        id: window
+        implicitWidth: settingsLayout.visible ? 1000 : 520; implicitHeight: 1080
         Wallpaper.WallpaperBrowser { id: browser; anchors.fill: parent }
-        Settings.WallpaperSettingsPage { id: settings; anchors.fill: parent; visible: false }
+        Item {
+            id: settingsLayout
+            anchors.fill: parent
+            visible: false
+            Settings.SettingsTopBar {
+                id: navigation
+                width: parent.width
+                height: implicitHeight
+                selected: "Wallpaper"
+                onSelectedRequested: domain => selected = domain
+            }
+            Settings.SettingsSidebar { id: sections; width: 200; y: navigation.height; height: parent.height - y; page: settings }
+            Settings.WallpaperSettingsPage { id: settings; x: sections.width; y: navigation.height; width: parent.width - x; height: parent.height - y }
+        }
     }
     // Images apply through awww; the separate surface harness decodes native video.
     function check(ok, message) {
@@ -62,12 +80,50 @@ ShellRoot {
                 } else if (phase === 102) {
                     root.check(reel.count === 0, "empty filter removes delegates")
                     browser.query = ""
-                    browser.filter = "all"
+                    browser.filter = "static"
                 } else {
-                    root.check(reel.count === 4 && Number.isFinite(reel.currentItem.scale) && Number.isFinite(reel.currentItem.z), "recreated delegates retain valid transforms")
+                    root.check(reel.count === 2 && Number.isFinite(reel.currentItem.scale) && Number.isFinite(reel.currentItem.z), "recreated delegates retain valid transforms")
                     if (reloadMemory.reloadCount < 2) { reloadMemory.reloadCount++; Quickshell.reload(false); return }
                     console.info("Wallpaper browser reload checks passed")
                     Qt.quit()
+                }
+                root.phase++
+                return
+            }
+            if (phase === 24) return
+            if (phase >= 20) {
+                if (++root.motionTicks < 7) return
+                root.motionTicks = 0
+                var pill = root.findItem(sections, "settings-section-indicator")
+                var scroll = root.findItem(settings, "wallpaper-settings-scroll")
+                if (phase === 20) {
+                    root.check(settings.activeSection === "Proxy cache" && pill.targetItem.modelData === "Proxy cache" && pill.y > root.previousSidebarY + 1, "wallpaper sidebar pill moves to Proxy cache")
+                    root.previousSidebarY = pill.y
+                    settings.scrollToSection("Browser")
+                } else if (phase === 21) {
+                    root.check(settings.activeSection === "Browser" && pill.targetItem.modelData === "Browser" && pill.y > root.previousSidebarY + 1, "final wallpaper section can align and move the sidebar pill")
+                    root.check(Math.abs(scroll.contentY - settings.sectionCards[2].y) < 1, "last section scrolls to the viewport top")
+                    navigation.selected = "Info"
+                } else if (phase === 22) {
+                    var strip = root.findItem(navigation, "settings-domain-strip")
+                    var indicator = root.findItem(navigation, "settings-domain-indicator")
+                    root.check(navigation.domains[navigation.domains.length - 1] === "Info" && indicator.targetIndex === 4, "Info stays last and uses the final nav pill")
+                    root.check(strip.width > 450 && indicator.width > 85.2 && strip.height === 40, "navigation pills are wider and taller")
+                    navigation.selected = "Wallpaper"
+                    settings.scrollToSection("Playback")
+                } else {
+                    root.check(settings.activeSection === "Playback" && pill.targetItem.modelData === "Playback", "sidebar returns to Playback")
+                    console.info("Wallpaper settings sidebar/nav checks passed")
+                    var artifact = Quickshell.env("HAKUSPACE_WALLPAPER_ARTIFACT_DIR")
+                    if (artifact) {
+                        root.phase = 24
+                        root.check(settingsLayout.grabToImage(result => {
+                            root.check(result.saveToFile(artifact + "/wallpaper-settings.png"), "save settled settings capture")
+                            reloadMemory.reloadCount = 1
+                            Quickshell.reload(false)
+                        }), "capture settled settings")
+                    } else { reloadMemory.reloadCount = 1; Quickshell.reload(false) }
+                    return
                 }
                 root.phase++
                 return
@@ -78,7 +134,12 @@ ShellRoot {
                 var button = root.motionButton
                 if (phase === 7) {
                     root.check(button.horizontalScale > 1 && Math.abs(button.radius - button.height / 2) < 0.1, "hover morph expands and rounds button")
+                    root.check(button.hoverColor.toString() === button.idleColor.toString(), "hover retains the idle background")
                     button.externalPressed = true
+                    if (settings.visible) {
+                        WallpaperSettingsStore.setValue("playback", "profile", "original")
+                        root.check(root.findItem(settings, "wallpaper-setting-indicator-profile").targetIndex === 2, "settings selection tracks the draft")
+                    }
                 } else if (phase === 8) {
                     root.check(button.horizontalScale < 1 && Math.abs(button.radius - 6) < 0.1, "press morph contracts button")
                     button.externalPressed = false
@@ -89,8 +150,20 @@ ShellRoot {
                     root.check(Math.abs(button.horizontalScale - 1) < 0.001 && Math.abs(button.radius - 10) < 0.1 && button.border.width === 0 && button.expandedVisual, "idle restores borderless shape")
                     button.interactive = true
                     console.info("Wallpaper button morph checks passed")
-                    reloadMemory.reloadCount = 1
-                    Quickshell.reload(false)
+                    if (root.motionButton.objectName === "wallpaper-kind-static") {
+                        browser.visible = false
+                        settingsLayout.visible = true
+                        root.motionButton = root.findItem(settings, "wallpaper-setting-profile-screen")
+                        root.check(!!root.motionButton, "settings uses the wallpaper morph control")
+                        root.motionButton.interactive = false
+                        root.motionButton.externalHovered = true
+                        root.phase = 7
+                        return
+                    }
+                    WallpaperSettingsStore.discard()
+                    root.previousSidebarY = root.findItem(sections, "settings-section-indicator").y
+                    settings.scrollToSection("Proxy cache")
+                    root.phase = 20
                     return
                 }
                 root.phase++
@@ -98,8 +171,34 @@ ShellRoot {
             }
             if (phase === 0) {
                 if (!WallpaperSettingsStore.ready || !browser.interactionReady || browser.items.length < 4) return
+                if (root.expansionPhase === 0) {
+                    root.revealWindowWidth = window.width
+                    root.revealWindowHeight = window.height
+                    browser.filter = "video"
+                    root.expansionPhase++
+                    return
+                }
+                if (root.expansionPhase === 1) {
+                    var reveal = root.findItem(browser, "wallpaper-quality-reveal")
+                    root.check(browser.qualityReveal > 0 && browser.qualityReveal < 1 && reveal.height > 0 && reveal.height < 98, "Videos expands quality frame over multiple frames")
+                    root.check(window.width === root.revealWindowWidth && window.height === root.revealWindowHeight, "quality reveal keeps drawing-window geometry stable")
+                    browser.filter = "static"
+                    root.expansionPhase++
+                    return
+                }
+                if (root.expansionPhase === 2) { browser.filter = "video"; root.expansionPhase++; return }
+                if (root.expansionPhase === 3) {
+                    if (Math.abs(browser.qualityReveal - 1) > 0.001) return
+                    root.check(root.findItem(browser, "wallpaper-quality").visible, "Videos settles with quality controls visible")
+                    browser.filter = "static"
+                    root.expansionPhase++
+                    return
+                }
+                if (browser.qualityReveal > 0.001) return
                 root.check(browser.items.length === 4, "discovery")
                 root.check(browser.profile === "screen", "Screen is the default browser quality")
+                root.check(browser.kinds.length === 2 && browser.filter === "static", "two tabs default to Images")
+                root.check(!root.findItem(browser, "wallpaper-quality").visible, "Images hides quality controls")
                 browser.filter = "video"
                 root.check(browser.filteredItems.length === 2, "video filter")
                 browser.filter = "static"
@@ -107,7 +206,7 @@ ShellRoot {
                 root.check(browser.filteredItems.length === 1, "search")
                 root.check(WallpaperService.fileUrl(browser.selected.path).includes("%23"), "filename fragment escaped")
                 browser.query = ""
-                browser.filter = "all"
+                browser.filter = "static"
                 browser.move(1)
                 root.check(!WallpaperService.busy, "navigation does not prepare wallpaper")
                 WallpaperSettingsStore.setValue("playback", "profile", "original")

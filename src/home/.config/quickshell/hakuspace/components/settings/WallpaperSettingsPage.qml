@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 import "../../services"
+import "../wallpaper" as Wallpaper
+import "../motion" as Motion
 
 Item {
     id: root
@@ -34,7 +36,7 @@ Item {
         else if (label === "Reset" || label === "Discard") confirmationRequested(label.toLowerCase() + "-wallpaper")
         else WallpaperSettingsStore.apply()
     }
-    // Choice rows reuse the same accessible action button as other Hikai settings.
+    // A shared selection surface stretches between choices and follows the active button shape.
     component Choice: Column {
         id: choice
         required property string label
@@ -44,33 +46,52 @@ Item {
         width: parent.width
         spacing: 8
         Text { text: choice.label; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize }
-        Flow {
-            width: parent.width
-            spacing: 6
+        Item {
+            id: lane
+            width: Math.min(choice.width, choice.options.length * 136 - 6)
+            height: 34
+            readonly property int selectedIndex: choice.options.findIndex(option => option.value === WallpaperSettingsStore.values[choice.section][choice.preference])
+            readonly property Item currentButton: buttons.itemAt(selectedIndex) || null
+            Motion.SelectionPill {
+                id: indicator
+                objectName: "wallpaper-setting-indicator-" + choice.preference
+                targetIndex: lane.selectedIndex
+                slotCount: choice.options.length; slotSpacing: 6
+                radius: lane.currentButton ? lane.currentButton.radius : 10
+                scale: lane.currentButton ? lane.currentButton.scale : 1
+                transform: Scale {
+                    origin.x: indicator.width / 2; origin.y: indicator.height / 2
+                    xScale: lane.currentButton ? lane.currentButton.horizontalScale : 1
+                }
+            }
             Repeater {
+                id: buttons
                 model: choice.options
-                delegate: SettingsActionButton {
+                delegate: Wallpaper.WallpaperActionButton {
                     required property var modelData
+                    required property int index
+                    objectName: "wallpaper-setting-" + choice.preference + "-" + modelData.value
                     text: modelData.label
-                    width: Math.max(72, Math.min(130, (choice.width - 12) / choice.options.length)); height: 34
-                    selected: WallpaperSettingsStore.values[choice.section][choice.preference] === modelData.value
+                    x: index * (width + 6)
+                    width: (lane.width - (choice.options.length - 1) * 6) / choice.options.length; height: 34
+                    idleColor: "transparent"
+                    selectedColor: "transparent"
+                    selected: lane.selectedIndex === index
                     enabled: root.editable
-                    focused: activeFocus
-                    activeFocusOnTab: true
                     Accessible.name: choice.label + ": " + modelData.label
                     Keys.forwardTo: root.shortcutTarget ? [root.shortcutTarget] : []
                     onClicked: WallpaperSettingsStore.setValue(choice.section, choice.preference, modelData.value)
-                    Keys.onReturnPressed: clicked()
-                    Keys.onSpacePressed: clicked()
                 }
             }
         }
     }
     Flickable {
         id: scroll
+        objectName: "wallpaper-settings-scroll"
         anchors.fill: parent
         contentWidth: width
-        contentHeight: body.implicitHeight
+        // Every sidebar section can align with the viewport, including the final card.
+        contentHeight: Math.max(body.implicitHeight, browser.y + height)
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         ScrollBar.vertical: ScrollBar {}
@@ -101,9 +122,9 @@ Item {
                 SettingsSlider { width: parent.width; from: 64; to: 65536; stepSize: 64; value: WallpaperSettingsStore.values.proxy.maxCacheMiB; enabled: root.editable; shortcutTarget: root.shortcutTarget; Accessible.name: "Maximum proxy cache size"; onMoved: WallpaperSettingsStore.setValue("proxy", "maxCacheMiB", Math.round(value)) }
                 Flow {
                     width: parent.width; spacing: 8
-                    SettingsActionButton { text: "Clear unused"; width: 112; height: 36; enabled: !WallpaperService.busy && !WallpaperService.cacheBusy; activeFocusOnTab: true; focused: activeFocus; onClicked: WallpaperService.clearUnused(); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
-                    SettingsActionButton { text: "Rebuild current"; width: 124; height: 36; enabled: WallpaperService.current.kind === "video" && !WallpaperService.busy; activeFocusOnTab: true; focused: activeFocus; onClicked: WallpaperService.rebuild(); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
-                    SettingsActionButton { text: "Open cache"; width: 104; height: 36; activeFocusOnTab: true; focused: activeFocus; onClicked: WallpaperService.openCache(); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
+                    Wallpaper.WallpaperActionButton { text: "Clear unused"; width: 112; height: 36; enabled: !WallpaperService.busy && !WallpaperService.cacheBusy; activeFocusOnTab: true; focused: activeFocus; onClicked: WallpaperService.clearUnused(); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
+                    Wallpaper.WallpaperActionButton { text: "Rebuild current"; width: 124; height: 36; enabled: WallpaperService.current.kind === "video" && !WallpaperService.busy; activeFocusOnTab: true; focused: activeFocus; onClicked: WallpaperService.rebuild(); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
+                    Wallpaper.WallpaperActionButton { text: "Open cache"; width: 104; height: 36; activeFocusOnTab: true; focused: activeFocus; onClicked: WallpaperService.openCache(); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
                 }
                 Text { width: parent.width; text: WallpaperService.error || "Active and prepared proxies are protected from eviction."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.pixelSize: 12 }
             }
@@ -111,7 +132,7 @@ Item {
                 id: browser
                 width: parent.width
                 title: "Browser"
-                Choice { label: "Default filter"; section: "browser"; preference: "filter"; options: [{label: "All", value: "all"}, {label: "Images", value: "static"}, {label: "Videos", value: "video"}] }
+                Choice { label: "Default filter"; section: "browser"; preference: "filter"; options: [{label: "Images", value: "static"}, {label: "Videos", value: "video"}] }
                 Choice { label: "Show source metadata"; section: "browser"; preference: "showMetadata"; options: [{label: "Off", value: false}, {label: "On", value: true}] }
             }
         }

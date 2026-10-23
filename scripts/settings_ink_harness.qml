@@ -650,9 +650,9 @@ ShellRoot {
                 keyboard.write("key 15 5\n")
             } else if (root.phase === 53) {
                 root.check(root.panel.selectedGroup === "General", "Ctrl+Shift+Tab returns to the previous domain")
-                keyboard.write("key 5 8\n")
+                keyboard.write("key 6 8\n")
             } else if (root.phase === 54) {
-                root.check(root.panel.selectedGroup === "Info", "Alt+4 opens Info")
+                root.check(root.panel.selectedGroup === "Info", "Alt+5 opens Info")
                 keyboard.write("key 64\n")
             } else if (root.phase === 55) {
                 root.check(root.panel.focusZoneIndex() === 1, "F6 enters the contextual sidebar")
@@ -705,7 +705,7 @@ ShellRoot {
                 keyboard.write("key 63\n")
             } else if (root.phase === 67) {
                 root.check(root.panel.confirmation === "reload-shell" && ShellSettingsStore.dirty, "F5 protects unsaved Shell edits")
-                keyboard.write("key 15 4\nkey 31 4\nkey 64\nkey 5 8\n")
+                keyboard.write("key 15 4\nkey 31 4\nkey 64\nkey 6 8\n")
             } else if (root.phase === 68) {
                 root.check(root.panel.selectedGroup === "Shell" && root.panel.confirmation === "reload-shell"
                     && ShellSettingsStore.baseRadius === 12 && root.panel.focusedItem.text === "Keep Editing", "modal blocks background navigation and saving")
@@ -800,7 +800,7 @@ ShellRoot {
                     "guide descriptions stay neutral with tinted theme text")
                 root.check(guide && root.panel.focusedItem.text === "Close guide", "F1 opens an accessible shortcut guide")
                 if (root.captureOnce("keyboard-shortcuts")) return
-                keyboard.write("key 15 4\nkey 5 8\nkey 107\n")
+                keyboard.write("key 15 4\nkey 6 8\nkey 107\n")
             } else if (root.phase === 82) {
                 root.check(root.panel.selectedGroup === "Config" && root.panel.focusedItem.text === "Close guide", "shortcut guide blocks background navigation")
                 var guide = root.find(root.panel.contentItem, item => item.modal === true && item.visible, true)
@@ -842,7 +842,7 @@ ShellRoot {
                 keyboard.write("key 33 4\n")
             } else if (root.phase === 88) {
                 root.check(root.panel.selectedGroup === "General" && ConfigEditorStore.dirty, "Ctrl+F leaves Config without losing its pending draft")
-                keyboard.write("key 5 8\n")
+                keyboard.write("key 6 8\n")
             } else if (root.phase === 89) {
                 root.check(root.panel.selectedGroup === "Info", "a hidden Config confirmation does not block other page shortcuts")
                 var configPage = root.find(root.panel.contentItem, item => typeof item.cancelConfirmation === "function")
@@ -992,7 +992,7 @@ ShellRoot {
                 style.available = false
                 root.check(!root.panel.navItems(root.browser).includes(style), "unavailable shared toggles leave the arrow registry")
                 style.available = true
-                keyboard.write("key 5 8\nkey 106\n")
+                keyboard.write("key 6 8\nkey 106\n")
             } else if (root.phase === 121) {
                 root.check(root.panel.selectedGroup === "General" && root.panel.focusedItem.settingsNavRole === "domain",
                     "Right wraps Info to General and skips help")

@@ -1,11 +1,11 @@
 import QtQuick
 import QtMultimedia
-import "../../services"
 
 Item {
     id: root
     // Destroying the loader releases the player, video sink and decoder surfaces.
     required property var record
+    required property var controller
     property bool paused: false
     property bool unloaded: false
     property bool announced: false
@@ -13,11 +13,12 @@ Item {
     signal failed(string message)
     Image {
         anchors.fill: parent
-        source: WallpaperService.fileUrl(root.record.thumbnail)
+        source: root.controller.fileUrl(root.record.thumbnail)
         sourceSize.width: root.width
         sourceSize.height: root.height
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
+        cache: false
     }
     Loader {
         anchors.fill: parent
@@ -26,9 +27,9 @@ Item {
             VideoOutput { id: output; anchors.fill: parent; fillMode: VideoOutput.PreserveAspectCrop }
             MediaPlayer {
                 id: player
-                source: WallpaperService.fileUrl(root.record.proxyPath)
+                source: root.controller.fileUrl(root.record.proxyPath)
                 videoOutput: output
-                loops: WallpaperService.preferences.playback.loop ? MediaPlayer.Infinite : 1
+                loops: root.controller.preferences.playback.loop ? MediaPlayer.Infinite : 1
                 playbackRate: 1
                 // No AudioOutput is created; wallpaper audio is always disabled.
                 Component.onCompleted: play()

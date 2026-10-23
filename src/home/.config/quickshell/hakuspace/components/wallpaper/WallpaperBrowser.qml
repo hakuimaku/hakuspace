@@ -15,12 +15,17 @@ FocusScope {
     property bool refreshPending: false
     property bool initialized: false
     property real reveal: 1
+    // Reveal the quality section inside the fixed drawing window.
+    property real qualityReveal: filter === "video" ? 1 : 0
+    Behavior on qualityReveal {
+        NumberAnimation { duration: HAnimation.spatial; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.spatialCurve }
+    }
     // Shared choices keep keyboard cycling and the visible selection strips aligned.
-    readonly property var kinds: [{id: "all", name: "All"}, {id: "static", name: "Images"}, {id: "video", name: "Videos"}]
+    readonly property var kinds: [{id: "static", name: "Images"}, {id: "video", name: "Videos"}]
     readonly property var profiles: [{id: "low-memory", name: "Low Memory"}, {id: "screen", name: "Screen"}, {id: "original", name: "Original"}]
     readonly property bool loading: listing.running
     readonly property bool interactionReady: visible && !loading
-    readonly property var filteredItems: items.filter(item => (filter === "all" || item.kind === filter)
+    readonly property var filteredItems: items.filter(item => item.kind === filter
         && item.label.toLowerCase().includes(query.trim().toLowerCase()))
     readonly property var selected: filteredItems[list.currentIndex] || null
     signal closeRequested()
@@ -69,7 +74,7 @@ FocusScope {
             if (!step) return false
             if (event.modifiers === Qt.ControlModifier)
                 filter = kinds[(kinds.findIndex(choice => choice.id === filter) + step + kinds.length) % kinds.length].id
-            else if (event.modifiers === Qt.AltModifier)
+            else if (event.modifiers === Qt.AltModifier && filter === "video")
                 profile = profiles[(profiles.findIndex(choice => choice.id === profile) + step + profiles.length) % profiles.length].id
             else return false
         }
@@ -106,7 +111,7 @@ FocusScope {
         id: header
         x: 24; y: 10
         width: parent.width - 48
-        height: 244
+        height: 146 + 98 * root.qualityReveal
         Text { objectName: "wallpaperTitle"; text: "Wallpaper"; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: 26; font.weight: Font.DemiBold }
         WallpaperActionButton { x: parent.width - 36; width: 36; height: 36; text: "×"; Accessible.name: "Close wallpaper browser"; onClicked: root.closeRequested() }
         TextField {
@@ -135,14 +140,14 @@ FocusScope {
         Item {
             id: typeLane
             y: 112; width: parent.width; height: 34
-            readonly property real slotWidth: (width - 16) / 3
+            readonly property real slotWidth: (width - 8) / 2
             // A moving underline distinguishes library tabs from quality cards.
             Item {
                 width: parent.width; height: 3; anchors.bottom: parent.bottom
                 Motion.SelectionPill {
                     objectName: "wallpaper-type-indicator"
                     targetIndex: root.kinds.findIndex(choice => choice.id === root.filter)
-                    slotCount: 3; slotSpacing: 8
+                    slotCount: root.kinds.length; slotSpacing: 8
                 }
             }
             Repeater {
@@ -163,48 +168,57 @@ FocusScope {
                 }
             }
         }
-        Text { y: 164; text: "VIDEO QUALITY"; color: Theme.fgMuted; font.family: Theme.fontFamily; font.pixelSize: 10; font.letterSpacing: 1.2 }
-        Rectangle {
-            id: qualityLane
-            y: 182; width: parent.width; height: 62
-            color: Theme.hoverMuted; radius: 12
-            readonly property int selectedIndex: root.profiles.findIndex(choice => choice.id === root.profile)
-            readonly property Item currentButton: qualityChoices.itemAt(selectedIndex) || null
-            // The shared HakuMenu pill stretches between quality choices and follows presses.
-            Motion.SelectionPill {
-                id: qualityIndicator
-                objectName: "wallpaper-quality-indicator"
-                targetIndex: qualityLane.selectedIndex
-                slotCount: 3; slotSpacing: 8
-                radius: qualityLane.currentButton ? qualityLane.currentButton.radius : 10
-                scale: qualityLane.currentButton ? qualityLane.currentButton.scale : 1
-                transform: Scale {
-                    origin.x: qualityIndicator.width / 2; origin.y: qualityIndicator.height / 2
-                    xScale: qualityLane.currentButton ? qualityLane.currentButton.horizontalScale : 1
+        Item {
+            objectName: "wallpaper-quality-reveal"
+            y: 146; width: parent.width; height: 98 * root.qualityReveal
+            visible: root.qualityReveal > 0
+            enabled: root.filter === "video"
+            opacity: root.qualityReveal
+            clip: true
+            Text { y: 18; text: "VIDEO QUALITY"; color: Theme.fgMuted; font.family: Theme.fontFamily; font.pixelSize: 10; font.letterSpacing: 1.2 }
+            Rectangle {
+                id: qualityLane
+                objectName: "wallpaper-quality"
+                y: 36; width: parent.width; height: 62
+                color: Theme.hoverMuted; radius: 12
+                readonly property int selectedIndex: root.profiles.findIndex(choice => choice.id === root.profile)
+                readonly property Item currentButton: qualityChoices.itemAt(selectedIndex) || null
+                // The shared HakuMenu pill stretches between quality choices and follows presses.
+                Motion.SelectionPill {
+                    id: qualityIndicator
+                    objectName: "wallpaper-quality-indicator"
+                    targetIndex: qualityLane.selectedIndex
+                    slotCount: 3; slotSpacing: 8
+                    radius: qualityLane.currentButton ? qualityLane.currentButton.radius : 10
+                    scale: qualityLane.currentButton ? qualityLane.currentButton.scale : 1
+                    transform: Scale {
+                        origin.x: qualityIndicator.width / 2; origin.y: qualityIndicator.height / 2
+                        xScale: qualityLane.currentButton ? qualityLane.currentButton.horizontalScale : 1
+                    }
                 }
-            }
-            Repeater {
-                id: qualityChoices
-                model: root.profiles
-                delegate: WallpaperActionButton {
-                    id: qualityButton
-                    required property var modelData
-                    required property int index
-                    objectName: "wallpaper-quality-" + modelData.id
-                    x: index * (width + 8)
-                    width: (qualityLane.width - 16) / 3; height: qualityLane.height
-                    idleColor: "transparent"
-                    selectedColor: "transparent"
-                    selected: root.profile === modelData.id
-                    Accessible.name: modelData.name + " video quality"
-                    onClicked: root.profile = modelData.id
-                    Column {
-                        x: 12; anchors.verticalCenter: parent.verticalCenter; spacing: 5
-                        Text { text: qualityButton.modelData.name; color: qualityButton.foreground; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 1; font.weight: Font.Medium }
-                        Text {
-                            text: qualityButton.index === 0 ? "720p · 24 fps" : qualityButton.index === 1 ? "Display · 60 fps" : "Source quality"
-                            color: qualityButton.foreground; opacity: 0.7
-                            font.family: Theme.fontFamily; font.pixelSize: 10
+                Repeater {
+                    id: qualityChoices
+                    model: root.profiles
+                    delegate: WallpaperActionButton {
+                        id: qualityButton
+                        required property var modelData
+                        required property int index
+                        objectName: "wallpaper-quality-" + modelData.id
+                        x: index * (width + 8)
+                        width: (qualityLane.width - 16) / 3; height: qualityLane.height
+                        idleColor: "transparent"
+                        selectedColor: "transparent"
+                        selected: root.profile === modelData.id
+                        Accessible.name: modelData.name + " video quality"
+                        onClicked: root.profile = modelData.id
+                        Column {
+                            x: 12; anchors.verticalCenter: parent.verticalCenter; spacing: 5
+                            Text { text: qualityButton.modelData.name; color: qualityButton.foreground; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 1; font.weight: Font.Medium }
+                            Text {
+                                text: qualityButton.index === 0 ? "720p · 24 fps" : qualityButton.index === 1 ? "Display · 60 fps" : "Source quality"
+                                color: qualityButton.foreground; opacity: 0.7
+                                font.family: Theme.fontFamily; font.pixelSize: 10
+                            }
                         }
                     }
                 }
@@ -326,7 +340,7 @@ FocusScope {
         spacing: 10
         Text {
             width: parent.width
-            text: WallpaperService.error || (WallpaperService.busy ? "Preparing wallpaper…" : WallpaperService.cacheMessage || (root.profile === "low-memory" ? "Low Memory · up to 720p / 24 fps" : root.profile === "screen" ? "Screen · up to 60 fps" : "Original resolution and frame rate"))
+            text: WallpaperService.error || (WallpaperService.busy ? "Preparing wallpaper…" : WallpaperService.cacheMessage || (root.filter === "static" ? "Image wallpaper" : root.profile === "low-memory" ? "Low Memory · up to 720p / 24 fps" : root.profile === "screen" ? "Screen · up to 60 fps" : "Original resolution and frame rate"))
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.Wrap
             maximumLineCount: 2

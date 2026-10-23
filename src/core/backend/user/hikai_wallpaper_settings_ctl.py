@@ -14,11 +14,11 @@ DEFAULTS = {
     "playback": {"profile": "screen", "hardwareDecode": "auto", "pauseWhenFullscreen": True,
                  "unloadWhenHidden": True, "unloadDelaySec": 20, "loop": True},
     "proxy": {"buildPolicy": "on-select", "maxCacheMiB": 4096},
-    "browser": {"filter": "all", "sort": "name", "showMetadata": True, "motionPreview": False},
+    "browser": {"filter": "static", "sort": "name", "showMetadata": True, "motionPreview": False},
 }
 # Exact enum and integer constraints are shared by reads and patches.
 CHOICES = {"profile": ("original", "screen", "low-memory"), "hardwareDecode": ("auto", "prefer", "software"),
-           "buildPolicy": ("on-select", "background", "manual"), "filter": ("all", "static", "video"), "sort": ("name",)}
+           "buildPolicy": ("on-select", "background", "manual"), "filter": ("static", "video"), "sort": ("name",)}
 BOUNDS = {"unloadDelaySec": (1, 600), "maxCacheMiB": (64, 65536)}
 
 
@@ -72,7 +72,11 @@ def run(action):
                     info = os.fstat(stream.fileno())
                     if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid():
                         raise ValueError("wallpaper settings must be a user-owned regular file")
-                    values = validate(json.load(stream))
+                    values = json.load(stream)
+                    # Retire the mixed library tab without resetting other saved preferences.
+                    if isinstance(values, dict) and isinstance(values.get("browser"), dict) and values["browser"].get("filter") == "all":
+                        values["browser"]["filter"] = "static"
+                    values = validate(values)
             except FileNotFoundError:
                 pass
             if action == "write":

@@ -9,9 +9,20 @@ ShellRoot {
     // Run only the wallpaper service and its per-output surface during measurement.
     property bool selected: false
     property bool sampling: false
-    Variants { model: Quickshell.screens; Wallpaper.WallpaperSurface {} }
+    Variants { id: surfaces; model: Quickshell.screens; Wallpaper.WallpaperSurface {} }
+    // The external sampler owns reload/crash probes so it survives shell reloads.
+    IpcHandler {
+        target: "wallpaperSoak"
+        function select(path: string): bool { return WallpaperService.select(path, Quickshell.env("HAKUSPACE_SOAK_PROFILE"), true) }
+        function reload(): void { Quickshell.reload(false) }
+        function state(): string {
+            return JSON.stringify({ready: WallpaperSettingsStore.ready, busy: WallpaperService.busy,
+                error: WallpaperService.error, kind: WallpaperService.current.kind, rendererPid: WallpaperService.rendererPid || 0,
+                slots: surfaces.instances.map(surface => ({front: !!surface.front, incoming: !!surface.incoming, visible: surface.visible}))})
+        }
+    }
     Timer {
-        interval: 100; repeat: true; running: !root.sampling
+        interval: 100; repeat: true; running: !root.sampling && Number(Quickshell.env("HAKUSPACE_SOAK_CYCLES")) === 0
         onTriggered: {
             if (WallpaperService.error) { console.error(WallpaperService.error); Qt.exit(1); return }
             if (!root.selected && WallpaperSettingsStore.ready && !WallpaperService.busy) {
@@ -23,6 +34,6 @@ ShellRoot {
             sampler.running = true
         }
     }
-    Timer { interval: 300000; running: !root.sampling; onTriggered: Qt.exit(1) }
+    Timer { interval: 300000; running: !root.sampling && Number(Quickshell.env("HAKUSPACE_SOAK_CYCLES")) === 0; onTriggered: Qt.exit(1) }
     Process { id: sampler; onExited: code => Qt.exit(code) }
 }

@@ -12,6 +12,8 @@ Settings.SettingsActionButton {
     expandedVisual: true
     border.width: 0
     idleColor: Theme.hoverMuted
+    hoverColor: idleColor
+    hoverForegroundColor: foregroundColor
     selectedOverridesHover: true
     hoverXScaleDelta: 0.08
     pressXScaleDelta: 0.13

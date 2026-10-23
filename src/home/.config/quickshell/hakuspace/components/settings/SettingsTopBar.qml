@@ -7,7 +7,7 @@ Item {
     // Primary domains share one tab strip across all pages.
     property string selected: "General"
     property string source: ""
-    readonly property var domains: ["General", "Shell", "Config", "Info", "Wallpaper"]
+    readonly property var domains: ["General", "Shell", "Config", "Wallpaper", "Info"]
     signal selectedRequested(string domain)
     signal shortcutsRequested()
     // The guide borrows the question button's geometry during its reveal.
@@ -30,12 +30,14 @@ Item {
     }
     Item {
         id: tabs
+        objectName: "settings-domain-strip"
         x: root.width < 650 ? 20 : 180
         y: root.width < 650 ? 56 : 12
-        width: Math.min(450, root.width - x - 20)
-        height: 38
+        width: Math.max(0, Math.min(560, root.width - x - (root.width < 650 ? 20 : 64)))
+        height: 40
         readonly property real slotWidth: Math.max(0, (width - 24) / root.domains.length)
         Motion.SelectionPill {
+            objectName: "settings-domain-indicator"
             shown: true
             targetIndex: root.domains.indexOf(root.selected)
             slotCount: root.domains.length
@@ -49,6 +51,7 @@ Item {
             model: root.domains
             delegate: SettingsActionButton {
                 id: tab
+                objectName: "settings-domain-" + modelData
                 settingsNavRole: "domain"
                 required property string modelData
                 required property int index

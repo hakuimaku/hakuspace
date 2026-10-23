@@ -132,18 +132,18 @@ ShellRoot {
             } else if (phase === 3) {
                 if (++holdTicks < 5) return
                 var browser = panels.instances.find(panel => panel.panelOpen).browserItem
-                if (keyPhase === 0) { pointer.environment = {HAKUSPACE_TEST_POINTER_OUTPUT: UiState.wallpaperScreenName}; pointer.running = true; browser.filter = "all"; browser.profile = "low-memory"; browser.forceActiveFocus(); keyboard.write("key 106 4\n") }
+                if (keyPhase === 0) { pointer.environment = {HAKUSPACE_TEST_POINTER_OUTPUT: UiState.wallpaperScreenName}; pointer.running = true; browser.filter = "video"; browser.profile = "low-memory"; browser.forceActiveFocus(); keyboard.write("key 106 4\n") }
                 else if (keyPhase === 1) { root.check(browser.filter === "static", "Ctrl Right changes type"); keyboard.write("key 108 4\n") }
                 else if (keyPhase === 2) { root.check(browser.filter === "video", "Ctrl Down changes type"); keyboard.write("key 105 4\n") }
                 else if (keyPhase === 3) { root.check(browser.filter === "static", "Ctrl Left changes type"); keyboard.write("key 103 4\n") }
-                else if (keyPhase === 4) { root.check(browser.filter === "all", "Ctrl Up changes type"); keyboard.write("key 106 8\n") }
+                else if (keyPhase === 4) { root.check(browser.filter === "video", "Ctrl Up wraps between two tabs"); keyboard.write("key 106 8\n") }
                 else if (keyPhase === 5) { root.check(browser.profile === "screen", "Alt Right changes quality"); keyboard.write("key 108 8\n") }
                 else if (keyPhase === 6) { root.check(browser.profile === "original", "Alt Down changes quality"); keyboard.write("key 105 8\n") }
                 else if (keyPhase === 7) { root.check(browser.profile === "screen", "Alt Left changes quality"); keyboard.write("key 103 8\n") }
                 else if (keyPhase === 8) { root.check(browser.profile === "low-memory", "Alt Up changes quality"); keyboard.write("key 33 4\n") }
                 else if (keyPhase === 9) { keyboard.write("key 106 4\n") }
                 else if (keyPhase === 10) { root.check(browser.filter === "static", "Ctrl arrow works in search"); keyboard.write("key 108 8\n") }
-                else if (keyPhase === 11) { root.check(browser.profile === "screen", "Alt arrow works in search"); keyboard.write("key 103 8\nkey 105 4\n") }
+                else if (keyPhase === 11) { root.check(browser.profile === "low-memory", "Alt arrow leaves quality unchanged in Images"); root.check(!root.findItem(browser, "wallpaper-quality").visible, "Images hides quality controls"); keyboard.write("key 105 4\n") }
                 else if (keyPhase === 12) { browser.forceActiveFocus(); root.browsedPath = browser.selected.path; keyboard.write("key 108\n") }
                 else if (keyPhase === 13) { root.check(browser.selected.path !== root.browsedPath, "Down scrolls the vertical carousel"); keyboard.write("key 103\n"); root.pointAt(root.findItem(browser, "wallpaper-kind-static"), 0) }
                 else if (keyPhase === 14) {
@@ -156,16 +156,20 @@ ShellRoot {
                 else if (keyPhase === 16) { root.check(browser.selected.path === root.browsedPath, "mouse wheel scrolls up"); root.pointAt(root.findItem(browser, "wallpaper-kind-static"), 0) }
                 else if (keyPhase === 17) { root.check(root.findItem(browser, "wallpaper-kind-static").hovered, "real pointer reaches the library tab"); root.pointAt(root.findItem(browser, "wallpaper-kind-static"), 272, 1) }
                 else if (keyPhase === 18) { root.check(root.findItem(browser, "wallpaper-kind-static").pressed && root.findItem(browser, "wallpaper-kind-static").horizontalScale < 1, "real press contracts the button background"); root.pointAt(root.findItem(browser, "wallpaper-kind-static"), 272, 0) }
-                else if (keyPhase === 19) { root.check(browser.filter === "static", "release selects the library tab"); root.pointAt(root.findItem(browser, "wallpaper-quality-original"), 272) }
+                else if (keyPhase === 19) {
+                    if (browser.filter === "static") { browser.filter = "video"; return }
+                    if (Math.abs(browser.qualityReveal - 1) > 0.001) return
+                    root.pointAt(root.findItem(browser, "wallpaper-quality-original"), 272)
+                }
                 else if (keyPhase === 20) {
                     var indicator = root.findItem(browser, "wallpaper-quality-indicator")
                     root.check(browser.profile === "original" && indicator.animatedStartIndex > 0 && indicator.width > root.findItem(browser, "wallpaper-quality-original").width + 1, "quality selection stretches between cards")
                     root.pointAt(root.findItem(browser, "wallpaper-quality-original"), 272, 1)
                 }
                 else if (keyPhase === 21) { root.check(root.findItem(browser, "wallpaper-quality-original").pressed && root.findItem(browser, "wallpaper-quality-original").horizontalScale < 1, "selected quality card also morphs on press"); root.pointAt(root.findItem(browser, "wallpaper-quality-original"), 272, 0) }
-                else if (keyPhase === 22) { browser.profile = "screen"; browser.filter = "all"; root.pointAt(root.findItem(browser, "wallpaperTitle"), 0) }
+                else if (keyPhase === 22) { browser.profile = "screen"; browser.filter = "video"; root.pointAt(root.findItem(browser, "wallpaperTitle"), 0) }
                 if (keyPhase++ < 28) return
-                root.check(browser.filter === "all" && browser.profile === "screen" && !WallpaperService.busy && WallpaperService.current.token === root.staticToken, "menu interactions never apply wallpaper")
+                root.check(browser.filter === "video" && browser.profile === "screen" && !WallpaperService.busy && WallpaperService.current.token === root.staticToken, "menu interactions never apply wallpaper")
                 root.check(UiState.wallpaperScreenName === Quickshell.screens[1].name, "browser targets requested output")
                 root.check(surfaces.instances.length === 2, "one renderer per output")
                 for (var panel of panels.instances) {
@@ -234,6 +238,8 @@ ShellRoot {
                 if (WallpaperService.busy) return
                 root.check(!WallpaperService.error && WallpaperService.current.kind === "static", "awww replaces native video")
                 root.check(surfaces.instances.every(surface => !surface.front && !surface.incoming && !surface.visible), "image handoff releases every native decoder and window")
+                if (WallpaperService.rendererPid) return
+                root.check(!Object.keys(WallpaperService.rendererStates).length, "image handoff clears native worker diagnostics")
                 WallpaperService.select(fixture + "/Videos/Wallpapers/clip.mp4", "screen", false)
                 holdTicks = 0
             } else if (phase === 11) {

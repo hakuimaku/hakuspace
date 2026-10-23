@@ -31,7 +31,7 @@ class MemoryChecks(unittest.TestCase):
         owners = {
             "services/WM/WM.qml": ("root",),
             "components/actionmenu/ActionMenuSurface.qml": ("pageStackHost", "morphChildHost"),
-            "components/wallpaper/WallpaperSurface.qml": ("root.contentItem",),
+            "components/wallpaper/NativeWallpaperWindow.qml": ("root.contentItem",),
         }
         shell = ROOT / "src/home/.config/quickshell/hakuspace"
         for path in shell.rglob("*.qml"):

@@ -21,14 +21,14 @@ QtObject {
     function defaults() {
         return {version: 1, playback: {profile: "screen", hardwareDecode: "auto", pauseWhenFullscreen: true,
             unloadWhenHidden: true, unloadDelaySec: 20, loop: true}, proxy: {buildPolicy: "on-select", maxCacheMiB: 4096},
-            browser: {filter: "all", sort: "name", showMetadata: true, motionPreview: false}}
+            browser: {filter: "static", sort: "name", showMetadata: true, motionPreview: false}}
     }
     // Reject invalid drafts before they reach the persistence boundary.
     function validate(draft) {
         var schema = defaults()
         if (!draft || draft.version !== 1 || Object.keys(draft).length !== 4) return false
         var enums = {profile: ["low-memory", "screen", "original"], hardwareDecode: ["auto", "prefer", "software"],
-            buildPolicy: ["on-select", "background", "manual"], filter: ["all", "static", "video"], sort: ["name"]}
+            buildPolicy: ["on-select", "background", "manual"], filter: ["static", "video"], sort: ["name"]}
         for (var section of ["playback", "proxy", "browser"]) {
             if (!draft[section] || Object.keys(draft[section]).length !== Object.keys(schema[section]).length) return false
             for (var key in schema[section]) {

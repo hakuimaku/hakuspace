@@ -18,6 +18,10 @@ QtObject {
     property string playbackState: "STOPPED"
     property string proxyState: "original"
     property var outputStates: ({})
+    // Qt/FFmpeg heaps disappear with the video-only child when an image commits.
+    readonly property var rendererStates: renderer.states
+    readonly property var rendererPid: renderer.processId
+    property WallpaperRendererHost renderer: WallpaperRendererHost { service: root }
     readonly property bool busy: resolver.running || committer.running || !!candidate.token
     // Process exit signals can run before their running property settles.
     onBusyChanged: if (!busy) { refreshPlaybackState(); statusDelay.restart() }
