@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Io
 import "services"
 import "components/dock" as Dock
-import "components/hakumenu" as HakuMenu
+import "components/wallpaper" as Wallpaper
 
 ShellRoot {
     id: root
@@ -19,7 +19,7 @@ ShellRoot {
         implicitHeight: 600
         color: "black"
         Dock.DockItem { id: icon; x: 10; y: 10; icon: "probe"; iconSize: 48 }
-        HakuMenu.WallpaperCarousel { id: carousel; x: 100; y: 80; width: 680; height: 480; visible: false }
+        Wallpaper.WallpaperBrowser { id: browser; x: 100; y: 80; width: 680; height: 480; visible: false }
     }
     Process { id: writer; onExited: code => root.check(code === 0, "fixture mutation") }
     // Keep mutations outside the shell implementation and user's real assets.
@@ -53,32 +53,32 @@ ShellRoot {
                 if (!DockApps.iconSources.probe) return
                 root.iconSource = DockApps.iconSources.probe
                 root.capture("icon-red")
-                carousel.visible = true
+                browser.visible = true
             } else if (root.phase === 1) {
-                if (!carousel.interactionReady) return
-                root.check(carousel.staticItems.length === 1 && carousel.livelyItems.length === 0, "initial wallpaper list")
-                root.previewVersion = carousel.staticItems[0].previewVersion
-                carousel.visible = false
+                if (!browser.interactionReady) return
+                root.check(browser.items.filter(item => item.kind === "static").length === 1 && browser.items.filter(item => item.kind === "video").length === 0, "initial wallpaper list")
+                root.previewVersion = browser.items.filter(item => item.kind === "static")[0].previewVersion
+                browser.visible = false
                 root.mutate("add")
             } else if (root.phase === 2) {
-                carousel.visible = true
+                browser.visible = true
             } else if (root.phase === 3) {
-                if (!carousel.interactionReady) return
-                root.check(carousel.staticItems.length === 2 && carousel.livelyItems.length === 1, "reopen discovers added static and lively files")
-                root.check(carousel.staticItems[0].previewVersion !== root.previewVersion, "overwritten preview gets a fresh image version")
-                carousel.visible = false
+                if (!browser.interactionReady) return
+                root.check(browser.items.filter(item => item.kind === "static").length === 2 && browser.items.filter(item => item.kind === "video").length === 1, "reopen discovers added static and lively files")
+                root.check(browser.items.filter(item => item.kind === "static")[0].previewVersion !== root.previewVersion, "overwritten preview gets a fresh image version")
+                browser.visible = false
                 root.mutate("remove")
             } else if (root.phase === 4) {
-                carousel.visible = true
-                carousel.visible = false
-                carousel.visible = true
+                browser.visible = true
+                browser.visible = false
+                browser.visible = true
             } else if (root.phase === 5) {
-                if (!carousel.interactionReady) return
-                root.check(carousel.staticItems.length === 1 && carousel.livelyItems.length === 0 && !carousel.refreshPending,
+                if (!browser.interactionReady) return
+                root.check(browser.items.filter(item => item.kind === "static").length === 1 && browser.items.filter(item => item.kind === "video").length === 0 && !browser.refreshPending,
                     "rapid reopen serializes refresh and removes deleted files")
-                root.check(carousel.staticItems[0].id === "fresh # image.png", "special filename survives discovery")
-                root.check(carousel.fileUrl(carousel.staticItems[0].path).indexOf("%23") >= 0, "preview URL escapes filename fragments")
-                carousel.visible = false
+                root.check(browser.items.filter(item => item.kind === "static")[0].id === "fresh # image.png", "special filename survives discovery")
+                root.check(WallpaperService.fileUrl(browser.items.filter(item => item.kind === "static")[0].path).indexOf("%23") >= 0, "preview URL escapes filename fragments")
+                browser.visible = false
                 root.mutate("icon-blue")
             } else if (root.phase === 6) {
                 if (DockApps.iconSources.probe === root.iconSource) return

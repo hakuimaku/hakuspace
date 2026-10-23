@@ -33,3 +33,5 @@ singleton ChromeLayout 1.0 ChromeLayout.qml
 singleton ShellTransitionState 1.0 ShellTransitionState.qml
 singleton LockState 1.0 LockState.qml
 singleton CavaService 1.0 cava/CavaService.qml
+singleton WallpaperSettingsStore 1.0 WallpaperSettingsStore.qml
+singleton WallpaperService 1.0 WallpaperService.qml

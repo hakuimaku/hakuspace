@@ -34,6 +34,7 @@ kill_classic_stack() {
 # Restore user-enabled Classic surfaces without competing for notifications.
 start_classic_visual_stack() {
     local failed=0
+    ~/.local/bin/wallpaper_resume.sh 9>&- || failed=1
     ~/.local/bin/rounded_screen_manager.sh --startup 9>&- || failed=1
     ~/.local/bin/edge_trigger_manager.sh --startup 9>&- || failed=1
     ~/.local/bin/taskbar_manager.sh --startup 9>&- || failed=1
@@ -127,7 +128,7 @@ quickshell_ready() {
 start_qs_transition_bootstrap() {
     ~/.local/bin/hikai_chrome_state_ctl.py migrate 9>&- || return 1
     setsid -f env HAKUSPACE_SHELL_TRANSITION_BOOTSTRAP=classic-to-hikai \
-        qs -c hakuspace </dev/null >>"$(haku_runtime_dir)/qs.log" 2>&1 9>&- || return 1
+        python3 "$HOME/.local/bin/wallpaper_ctl.py" launch -c hakuspace </dev/null >>"$(haku_runtime_dir)/qs.log" 2>&1 9>&- || return 1
     wait_until quickshell_ready bootstrap
 }
 

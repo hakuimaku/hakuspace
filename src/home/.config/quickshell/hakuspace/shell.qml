@@ -5,6 +5,7 @@ import Quickshell.Wayland
 import Quickshell.Io
 import "services"
 import "components"
+import "components/wallpaper" as Wallpaper
 
 import "modules/picker"
 
@@ -229,6 +230,10 @@ ShellRoot {
                 UiState.toggleWallpaper(Quickshell.screens[0].name)
         }
         function close() { UiState.closeWallpaper() }
+        function select(path: string): bool { return WallpaperService.select(path, "", false) }
+        function pause() { WallpaperService.manuallyPaused = true }
+        function resume() { WallpaperService.manuallyPaused = false }
+        function status(): string { return JSON.stringify({current: WallpaperService.current, playbackState: WallpaperService.playbackState, error: WallpaperService.error}) }
     }
 
     IpcHandler {
@@ -410,9 +415,15 @@ ShellRoot {
         HakuMenuPanel {}
     }
 
+    // Persistent wallpaper renderers are independent from browser visibility.
     Variants {
         model: root.hikaiScreenModel
-        WallpaperPanel {}
+        Wallpaper.WallpaperSurface {}
+    }
+
+    Variants {
+        model: root.hikaiScreenModel
+        WallpaperBrowserPanel {}
     }
 
     Variants {

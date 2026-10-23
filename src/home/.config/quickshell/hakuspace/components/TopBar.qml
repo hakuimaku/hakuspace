@@ -12,6 +12,9 @@ PanelWindow {
 
     property real barH: Theme.topBarHeight
     property real tipAreaH: 180
+    // The wallpaper sidebar clears only the right module lane on its output.
+    readonly property bool wallpaperOverlayOpen: ChromeLayout.topBarMode && UiState.activePanel === "wallpaper"
+        && UiState.wallpaperScreenName === modelData.name
     anchors { top: true; left: true; right: true }
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "hakuspace-bar"
@@ -50,6 +53,8 @@ PanelWindow {
         border.color: Theme.border
 
         Bar.StatusModules {
+            objectName: "topbarModules"
+            showRightCluster: !root.wallpaperOverlayOpen
             ownerWindow: root
             screenName: root.modelData.name
         }

@@ -19,6 +19,7 @@ Item {
     property int refreshGeneration: 0
 
     signal launched(bool closeMenu)
+    signal wallpaperRequested()
     signal highlightedLabelChanged(string label)
 
     readonly property bool hikaiBackend: (backendStateView.text() || "").trim().toLowerCase() === "hikai"
@@ -107,6 +108,7 @@ Item {
         if (index < 0 || index >= visibleItems.length) return
         var item = visibleItems[index]
         if (!item || !available(item)) return
+        if (item.action === "Change Wallpaper") { wallpaperRequested(); return }
 
         actionProcess.running = false
         actionProcess.command = [Env.binDir + "/hm_theme.sh", root.actionFor(item)]

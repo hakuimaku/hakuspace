@@ -171,7 +171,7 @@ Dialog {
                             {title: "Reading & help", color: Theme.guideReading, rows: [
                                 {keys: ["↑ / ↓", "PgUp / PgDn", "Home / End"], detail: "Scroll Info or this guide. Info Left returns to sidebar."},
                                 {keys: ["↑ / ↓", "Esc"], detail: "An open dropdown keeps native arrows. Escape closes only the dropdown."},
-                                {keys: ["Alt+1…4"], detail: "Optional direct domain switching."},
+                                {keys: ["Alt+1…5"], detail: "Optional direct domain switching."},
                                 {keys: ["Ctrl+Tab", "Ctrl+Shift+Tab"], detail: "Optional next or previous Settings domain."},
                                 {keys: ["Tab", "Shift+Tab"], detail: "Compatibility / accessibility focus traversal. Config keeps indentation."},
                                 {keys: ["F1"], detail: "Open or close this guide."},

@@ -18,13 +18,15 @@ PanelWindow {
     property bool applyingClose: false
     property string confirmationError: ""
     readonly property bool settingsBusy: SettingsStore.loading || SettingsStore.saving
-        || ShellSettingsStore.loading || ShellSettingsStore.saving || ConfigEditorStore.busy
+        || ShellSettingsStore.loading || ShellSettingsStore.saving || WallpaperSettingsStore.loading || WallpaperSettingsStore.saving || ConfigEditorStore.busy
     readonly property var dirtyDomains: [SettingsStore.dirty ? "General" : "",
-        ShellSettingsStore.dirty ? "Shell" : "", ConfigEditorStore.dirty ? "Config" : ""].filter(Boolean)
+        ShellSettingsStore.dirty ? "Shell" : "", WallpaperSettingsStore.dirty ? "Wallpaper" : "", ConfigEditorStore.dirty ? "Config" : ""].filter(Boolean)
     readonly property string closeSaveProblem: SettingsStore.dirty && (!SettingsStore.ready || !SettingsStore.valid)
         ? "General has invalid values. Keep editing to correct them."
         : ShellSettingsStore.dirty && (!ShellSettingsStore.ready || !ShellSettingsStore.valid)
         ? "Shell settings are not ready to apply. Keep editing to review them."
+        : WallpaperSettingsStore.dirty && (!WallpaperSettingsStore.ready || !WallpaperSettingsStore.valid)
+        ? "Wallpaper settings are not ready to apply."
         : ConfigEditorStore.dirty && !ConfigEditorStore.canSave && !ConfigEditorStore.busy
         ? "Config cannot be saved. Keep editing to resolve the file conflict or invalid text." : ""
     readonly property bool canApplyAndClose: !settingsBusy && !applyingClose && !closeSaveProblem
@@ -114,7 +116,7 @@ PanelWindow {
             else if (modifiers === (Qt.ControlModifier | Qt.ShiftModifier)
                     && (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab))
                 selectDomain(topbar.domains.indexOf(selectedGroup) - 1)
-            else if (modifiers === Qt.AltModifier && event.key >= Qt.Key_1 && event.key <= Qt.Key_4)
+            else if (modifiers === Qt.AltModifier && event.key >= Qt.Key_1 && event.key <= Qt.Key_5)
                 selectDomain(event.key - Qt.Key_1)
             else if (event.key === Qt.Key_F6 && (modifiers === Qt.NoModifier || modifiers === Qt.ShiftModifier))
                 cycleFocusZone(modifiers === Qt.ShiftModifier ? -1 : 1)
@@ -265,6 +267,11 @@ PanelWindow {
         else UiState.closeSettings()
     }
     function requestReload() {
+        if (selectedGroup === "Wallpaper") {
+            if (WallpaperSettingsStore.dirty) confirmation = "reload-wallpaper"
+            else WallpaperSettingsStore.reload()
+            return
+        }
         if (selectedGroup === "Shell") {
             if (ShellSettingsStore.dirty) confirmation = "reload-shell"
             else ShellSettingsStore.reload()
@@ -278,13 +285,17 @@ PanelWindow {
         if (settingsBusy || applyingClose) return
         var action = confirmation
         confirmation = ""
-        if (action === "reset-shell") ShellSettingsStore.reset()
+        if (action === "reset-wallpaper") WallpaperSettingsStore.reset()
+        else if (action === "discard-wallpaper") WallpaperSettingsStore.discard()
+        else if (action === "reload-wallpaper") WallpaperSettingsStore.reload()
+        else if (action === "reset-shell") ShellSettingsStore.reset()
         else if (action === "discard-shell") ShellSettingsStore.discard()
         else if (action === "reload-shell") ShellSettingsStore.reload()
         else if (action === "reload") SettingsStore.reload()
         else if (action === "close") {
             SettingsStore.discard()
             ShellSettingsStore.discard()
+            WallpaperSettingsStore.discard()
             ConfigEditorStore.discard()
             configPage.confirmation = ""
             UiState.closeSettings()
@@ -297,6 +308,7 @@ PanelWindow {
         applyingClose = true
         if (SettingsStore.dirty) SettingsStore.apply()
         if (ShellSettingsStore.dirty) ShellSettingsStore.apply()
+        if (WallpaperSettingsStore.dirty) WallpaperSettingsStore.apply()
         if (ConfigEditorStore.dirty) ConfigEditorStore.save()
         Qt.callLater(root.finishApplyAndClose)
     }
@@ -307,6 +319,7 @@ PanelWindow {
         if (dirtyDomains.length) {
             confirmationError = (SettingsStore.dirty ? SettingsStore.error : "")
                 || (ShellSettingsStore.dirty ? ShellSettingsStore.error : "")
+                || (WallpaperSettingsStore.dirty ? WallpaperSettingsStore.error : "")
                 || (ConfigEditorStore.dirty ? ConfigEditorStore.error : "")
                 || "Some changes are still unsaved. Keep editing to review them."
             return
@@ -349,10 +362,12 @@ PanelWindow {
             closeAnimation.start()
         }
         if (panelOpen) {
+            if (UiState.settingsGroup) { selectedGroup = UiState.settingsGroup; UiState.settingsGroup = "" }
             confirmation = ""
             if (!SettingsStore.ready) SettingsStore.load()
             else if (!SettingsStore.dirty) SettingsStore.reload()
             if (!ShellSettingsStore.dirty) ShellSettingsStore.reload()
+            if (!WallpaperSettingsStore.dirty) WallpaperSettingsStore.reload()
             if (selectedGroup === "Config" && !ConfigEditorStore.ready) ConfigEditorStore.loadFiles()
             if (selectedGroup === "Info") InfoStore.load()
             Qt.callLater(function() { if (root.panelOpen) keyHandler.forceActiveFocus() })
@@ -471,8 +486,8 @@ PanelWindow {
             readonly property string currentAction: activeConfirmation || root.confirmation
             readonly property var labels: currentAction === "close"
                 ? ["Keep Editing", "Discard & Close", "Apply & Close"]
-                : ["Keep Editing", currentAction === "reset-shell" ? "Reset to Defaults"
-                    : currentAction === "discard-shell" ? "Discard Changes" : "Discard & Reload"]
+                : ["Keep Editing", ["reset-shell", "reset-wallpaper"].includes(currentAction) ? "Reset to Defaults"
+                    : (currentAction === "discard-shell" || currentAction === "discard-wallpaper") ? "Discard Changes" : "Discard & Reload"]
             onAboutToShow: {
                 activeConfirmation = root.confirmation
                 previousFocus = root.contentItem.Window.window.activeFocusItem
@@ -520,8 +535,8 @@ PanelWindow {
                 Text {
                     width: parent.width
                     text: confirmationDialog.currentAction === "close" ? "Unsaved changes"
-                        : confirmationDialog.currentAction === "reset-shell" ? "Reset Shell settings?"
-                        : confirmationDialog.currentAction === "discard-shell" ? "Discard Shell changes?" : "Reload saved settings?"
+                        : ["reset-shell", "reset-wallpaper"].includes(confirmationDialog.currentAction) ? "Reset settings?"
+                        : (confirmationDialog.currentAction === "discard-shell" || confirmationDialog.currentAction === "discard-wallpaper") ? "Discard settings changes?" : "Reload saved settings?"
                     color: Theme.fg
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize + 3
@@ -533,9 +548,9 @@ PanelWindow {
                     text: root.applyingClose ? "Applying changes… Please wait."
                         : confirmationDialog.currentAction === "close" ? "Unsaved changes in " + root.dirtyDomains.join(", ")
                             + ". Apply saves all modified pages. Discard restores their saved values before closing."
-                        : confirmationDialog.currentAction === "reset-shell" ? "Preview default Shell settings. Your current draft will be replaced. Nothing is saved until you choose Apply."
-                        : confirmationDialog.currentAction === "discard-shell" ? "Undo unsaved Shell edits and restore the saved settings, including live previews."
-                        : "Discard unsaved " + (confirmationDialog.currentAction === "reload-shell" ? "Shell" : "General") + " edits and reload the saved settings from disk."
+                        : ["reset-shell", "reset-wallpaper"].includes(confirmationDialog.currentAction) ? "Preview default settings. Your current draft will be replaced. Nothing is saved until you choose Apply."
+                        : (confirmationDialog.currentAction === "discard-shell" || confirmationDialog.currentAction === "discard-wallpaper") ? "Undo unsaved settings edits and restore saved values."
+                        : "Discard unsaved " + (confirmationDialog.currentAction === "reload-shell" ? "Shell" : confirmationDialog.currentAction === "reload-wallpaper" ? "Wallpaper" : "General") + " edits and reload the saved settings from disk."
                     color: Theme.fgDim
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
@@ -611,7 +626,7 @@ PanelWindow {
             clip: true
             // Keep page objects alive so navigation never resets a draft or confirmation.
             readonly property var currentPage: root.selectedGroup === "General" ? generalPage
-                : root.selectedGroup === "Shell" ? shellPage : root.selectedGroup === "Config" ? configPage : infoPage
+                : root.selectedGroup === "Shell" ? shellPage : root.selectedGroup === "Wallpaper" ? wallpaperPage : root.selectedGroup === "Config" ? configPage : infoPage
             readonly property bool compact: width < 760
             opacity: Math.max(0, Math.min(1, (root.expandProgress - 0.55) / 0.4))
             enabled: root.panelOpen && root.expandProgress >= 0.95
@@ -637,7 +652,7 @@ PanelWindow {
                 width: parent.width
                 height: implicitHeight
                 selected: root.selectedGroup
-                source: root.selectedGroup === "Shell" ? "~/hakucfg/hikai/hikai-shell.json"
+                source: root.selectedGroup === "Wallpaper" ? "~/hakucfg/hikai/hikai-wallpaper.json" : root.selectedGroup === "Shell" ? "~/hakucfg/hikai/hikai-shell.json"
                     : root.selectedGroup === "Config" ? "~/hakucfg/wm · ~/hakucfg/config"
                     : root.selectedGroup === "Info" ? "HakuSpace · " + (InfoStore.loading ? "detecting…"
                         : InfoStore.repo.detected ? InfoStore.repo.version : "version unavailable")
@@ -679,6 +694,14 @@ PanelWindow {
                         shortcutTarget: shortcutKeys
                         anchors.fill: parent
                         visible: root.selectedGroup === "Shell"
+                        onReloadRequested: root.requestReload()
+                        onConfirmationRequested: action => root.confirmation = action
+                    }
+                    SettingsPages.WallpaperSettingsPage {
+                        id: wallpaperPage
+                        shortcutTarget: shortcutKeys
+                        anchors.fill: parent
+                        visible: root.selectedGroup === "Wallpaper"
                         onReloadRequested: root.requestReload()
                         onConfirmationRequested: action => root.confirmation = action
                     }

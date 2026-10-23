@@ -44,7 +44,7 @@ while true; do
     # Both login and backend switching pass here before AppState starts watching.
     "$SCRIPT_DIR/hikai_chrome_state_ctl.py" migrate >> "$LOG_FILE" 2>&1 || exit 1
     echo "[$(date -Iseconds)] Starting quickshell..." >> "$LOG_FILE"
-    qs -c hakuspace >> "$LOG_FILE" 2>&1
+    python3 "$SCRIPT_DIR/wallpaper_ctl.py" launch -c hakuspace >> "$LOG_FILE" 2>&1
     
     EXIT_CODE=$?
     echo "[$(date -Iseconds)] Quickshell exited with code $EXIT_CODE" >> "$LOG_FILE"

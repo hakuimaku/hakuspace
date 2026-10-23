@@ -16,6 +16,9 @@ ACCENT_COLOR_BASED_ON_WALLPAPER=${ACCENT_COLOR_BASED_ON_WALLPAPER:-true}
 ACCENT_COLOR_MODE=${ACCENT_COLOR_MODE:-vivid}
 PREVIEW_DIR="$WALL_MPV_DIR/.thumbnails"
 CURRENT_WALL_FILE=${HAKUSPACE_CURRENT_WALL_FILE:-$HOME/.cache/current_wallpaper}
+# Backend selection belongs at this compatibility boundary, never in UI delegates.
+NATIVE_HIKAI=false
+[[ $(cat "$HOME/.local/state/hakuspace/state/[shell].backend" 2>/dev/null) == hikai ]] && NATIVE_HIKAI=true
 
 resolve_script() {
     local name="$1" source_path="$2"
@@ -152,12 +155,17 @@ apply_static() {
     local wall
     wall="$(resolve_static "${1:-}")" || return $?
     "$SET_WALLPAPER_SCRIPT" "$wall" || return $?
+    [[ "$NATIVE_HIKAI" == true ]] && return 0
     apply_accent_color "$wall"
 }
 
 apply_lively() {
     local wall preview
     wall="$(resolve_lively "${1:-}")" || return $?
+    if [[ "$NATIVE_HIKAI" == true ]]; then
+        "$SET_WALLPAPER_SCRIPT" "$wall"
+        return $?
+    fi
     generate_thumbnails
     preview="$(preview_for_video "$wall")"
     "$SET_WALLPAPER_SCRIPT" "$wall" || return $?
@@ -170,6 +178,10 @@ apply_lively() {
 
 stop_lively() {
     local wall
+    if [[ "$NATIVE_HIKAI" == true ]]; then
+        qs -c hakuspace ipc call wallpaper pause
+        return $?
+    fi
     if ! pgrep -x mpvpaper >/dev/null 2>&1; then
         printf 'wallpaper_ctl.sh: lively wallpaper is not running.\n' >&2
         return 3
@@ -246,6 +258,14 @@ list_plain() {
 print_current() {
     local as_json="${1:-}"
     local path kind
+    if [[ "$NATIVE_HIKAI" == true ]]; then
+        if [[ "$as_json" == --json ]]; then
+            python3 "$(resolve_script wallpaper_ctl.py wallpaper_ctl.py)" current
+        else
+            python3 "$(resolve_script wallpaper_ctl.py wallpaper_ctl.py)" current | python3 -c 'import json,sys; print(json.load(sys.stdin).get("path", ""))'
+        fi
+        return $?
+    fi
     path="$(current_path)"
     kind="$(current_kind "$path")"
     if [[ "$as_json" == "--json" ]]; then
@@ -262,6 +282,10 @@ PY
 print_status() {
     local as_json="${1:-}"
     local path kind lively=false
+    if [[ "$NATIVE_HIKAI" == true ]]; then
+        python3 "$(resolve_script wallpaper_ctl.py wallpaper_ctl.py)" status
+        return $?
+    fi
     path="$(current_path)"
     kind="$(current_kind "$path")"
     if pgrep -x mpvpaper >/dev/null 2>&1; then
@@ -326,6 +350,9 @@ case "${1:-}" in
         ;;
     status)
         print_status "${2:-}"
+        ;;
+    sync-accent)
+        apply_accent_color "${2:-}"
         ;;
     ensure-thumbnails)
         generate_thumbnails

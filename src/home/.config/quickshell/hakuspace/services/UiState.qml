@@ -24,8 +24,11 @@ QtObject {
     property var hakuMenuAnchorRect: null
     property string hakuMenuQuery: ""
     property string hakuMenuSelectionLabel: ""
+    // Remember the requested Settings domain when opening from the wallpaper browser.
+    property string settingsGroup: ""
     property string wallpaperScreenName: ""
     property bool wallpaperCloseRequested: false
+    // Preserve the source menu's actual screen rectangle for a single geometry handoff.
     property string actionMenuScreenName: ""
     property string actionMenuFlow: ""
     property bool actionMenuCloseRequested: false
@@ -260,7 +263,7 @@ QtObject {
         openWallpaper(screenName)
     }
 
-    // Request an animated close. WallpaperPanel owns the visual sequence and
+    // Request an animated close. WallpaperBrowserPanel owns the visual sequence and
     // calls finishCloseWallpaper only after the close animation has faded out.
     function closeWallpaper() {
         if (activePanel === "wallpaper") wallpaperCloseRequested = true

@@ -18,11 +18,28 @@ fi
 AWWW_OPTS=${AWWW_OPTS:-"--transition-type random --transition-step 90 --transition-fps 60"}
 
 WALLPAPER="${1:-}"
+# Native commits reuse image application and cache generation without reentering IPC.
+NATIVE_COMMIT=${HAKUSPACE_WALLPAPER_NATIVE_COMMIT:-0}
 CACHE_DIR="$HOME/.cache"
 mkdir -p "$CACHE_DIR"
 
 GEN_WIDE_OPTS=${GEN_WIDE_OPTS:-"-resize 800x250^ -gravity Center -crop 800x250+0+0 +repage"}
 GEN_BOX_OPTS=${GEN_BOX_OPTS:-"-resize 1653x852^ -gravity Center -extent 1653x852 -gravity NorthWest -crop 1212x852+500+0 +repage"}
+
+# Start only missing image daemons and wait for their sockets before applying.
+ensure_awww() {
+    local attempt
+    local -a daemon_options=()
+    [[ -n "${1:-}" ]] && daemon_options=(-n "$1")
+    awww query "${daemon_options[@]}" >/dev/null 2>&1 && return 0
+    awww-daemon "${daemon_options[@]}" >/dev/null 2>&1 &
+    for ((attempt = 0; attempt < 40; attempt++)); do
+        awww query "${daemon_options[@]}" >/dev/null 2>&1 && return 0
+        sleep 0.05
+    done
+    echo "Error: awww daemon did not become ready." >&2
+    return 1
+}
 
 # Detect active monitor using wlr-randr
 get_active_monitor() {
@@ -48,7 +65,8 @@ make_cache_img() {
 
     # Make Niri backdrop
     if [[ "${XDG_CURRENT_DESKTOP:-}" == "niri" ]] || pgrep -x "niri" >/dev/null 2>&1; then
-        if magick "${WALLPAPER}[0]" -background black -alpha remove -set option:filter:blur 1.0 -blur 0x15 "$CACHE_DIR/backdrop.jpg" 2>/dev/null; then
+        if { [[ "$NATIVE_COMMIT" != 1 ]] || ensure_awww awww-daemon-backdrop; } && \
+            magick "${WALLPAPER}[0]" -background black -alpha remove -set option:filter:blur 1.0 -blur 0x15 "$CACHE_DIR/backdrop.jpg" 2>/dev/null; then
             awww img -n "awww-daemon-backdrop" --transition-type none "$CACHE_DIR/backdrop.jpg"
             echo "Niri backdrop image generated at $CACHE_DIR/backdrop.jpg"
         else
@@ -75,6 +93,7 @@ make_cache_img() {
         echo "Set Wallpaper" "Failed to generate cache images wallpaper via ImageMagick" >&2
         notify-send "Set Wallpaper" "Failed to generate cache images wallpaper via ImageMagick"
     fi
+    return 0
 }
 
 # Input Validation
@@ -96,11 +115,24 @@ if [[ ! -f "$WALLPAPER" ]]; then
     exit 1
 fi
 
+# Hikai coordinates image/video handoff before committing either renderer.
+if [[ "$NATIVE_COMMIT" != 1 && $(cat "$HOME/.local/state/hakuspace/state/[shell].backend" 2>/dev/null) == hikai ]]; then
+    native_result=$(qs -c hakuspace ipc call wallpaper select "$(realpath -- "$WALLPAPER")") || exit 1
+    if [[ "$native_result" != true ]]; then
+        echo "Wallpaper renderer is busy or unavailable; current wallpaper retained." >&2
+        exit 1
+    fi
+    exit 0
+fi
+
 # Determine file nature via MIME type
 MIME_TYPE=$(file -b --mime-type "$WALLPAPER")
 
 case "$MIME_TYPE" in
     image/*)
+        if [[ "$NATIVE_COMMIT" == 1 ]]; then
+            ensure_awww || exit 1
+        fi
         # Kill any active mpvpaper instance to avoid layer overlapping
         pkill mpvpaper 2>/dev/null || true
 
@@ -115,6 +147,11 @@ case "$MIME_TYPE" in
         ;;
 
     video/*)
+        # Quickshell already prepared a video frame; retain the usual derived images.
+        if [[ "$NATIVE_COMMIT" == 1 ]]; then
+            make_cache_img
+            exit 0
+        fi
         # Terminate previous mpvpaper instance before launching a new one
         pkill mpvpaper 2>/dev/null || true
         

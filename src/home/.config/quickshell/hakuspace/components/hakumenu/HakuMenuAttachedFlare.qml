@@ -239,6 +239,7 @@ Item {
                 height: root.menuHeight
                 panelOpen: root.panelOpen
                 onKeyboardActivity: lifetime.beginKeyboardLease()
+                onWallpaperRequested: UiState.openWallpaper(root.modelData.name)
                 Behavior on width {
                     NumberAnimation {
                         duration: HAnimation.hakuMenuResizeDuration

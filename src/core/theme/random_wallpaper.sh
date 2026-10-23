@@ -23,7 +23,16 @@ run_wallpaper() {
 
         [[ "$(cat "$STATE_FILE" 2>/dev/null)" == "0" ]] && exit 0
 
-        if pgrep "mpvpaper" > /dev/null; then
+        # Native Hikai selection comes from canonical state; Classic retains process detection.
+        if [[ $(cat "$HOME/.local/state/hakuspace/state/[shell].backend" 2>/dev/null) == hikai ]]; then
+            IS_LIVELY=$("$WALLPAPER_CTL" current --json | python3 -c 'import json,sys; print("true" if json.load(sys.stdin).get("kind") == "video" else "false")')
+        elif pgrep "mpvpaper" > /dev/null; then
+            IS_LIVELY=true
+        else
+            IS_LIVELY=false
+        fi
+
+        if [[ "$IS_LIVELY" == true ]]; then
             WALL=$(find "$WALL_MPV_DIR" -type f -iname "*.mp4" -print | shuf -n 1)
             IS_LIVELY=true
         else

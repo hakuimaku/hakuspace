@@ -12,6 +12,7 @@ Item {
     property string mode: UiState.hakuMenuMode
     property string query: UiState.hakuMenuQuery
     signal keyboardActivity()
+    signal wallpaperRequested()
     readonly property bool searchFocused: searchInput.activeFocus
 
     // Presentations request focus when their own geometry is ready.
@@ -261,6 +262,7 @@ Item {
         rowHoverColor: menu.controlHoverBg
         rowSelectedColor: Qt.darker(Theme.hoverMuted, 1.18)
         onHighlightedLabelChanged: label => UiState.setHakuMenuSelectionLabel(label)
+        onWallpaperRequested: menu.wallpaperRequested()
         onLaunched: closeMenu => {
             if (closeMenu) UiState.closeHakuMenu()
         }

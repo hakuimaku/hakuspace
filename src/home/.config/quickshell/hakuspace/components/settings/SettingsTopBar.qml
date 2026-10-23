@@ -7,7 +7,7 @@ Item {
     // Primary domains share one tab strip across all pages.
     property string selected: "General"
     property string source: ""
-    readonly property var domains: ["General", "Shell", "Config", "Info"]
+    readonly property var domains: ["General", "Shell", "Config", "Info", "Wallpaper"]
     signal selectedRequested(string domain)
     signal shortcutsRequested()
     // The guide borrows the question button's geometry during its reveal.
@@ -32,13 +32,13 @@ Item {
         id: tabs
         x: root.width < 650 ? 20 : 180
         y: root.width < 650 ? 56 : 12
-        width: Math.min(354, root.width - x - 20)
+        width: Math.min(450, root.width - x - 20)
         height: 38
-        readonly property real slotWidth: Math.max(0, (width - 18) / 4)
+        readonly property real slotWidth: Math.max(0, (width - 24) / root.domains.length)
         Motion.SelectionPill {
             shown: true
             targetIndex: root.domains.indexOf(root.selected)
-            slotCount: 4
+            slotCount: root.domains.length
             slotSpacing: 6
             color: Theme.accent
             radius: Theme.radius

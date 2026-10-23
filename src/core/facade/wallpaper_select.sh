@@ -35,7 +35,7 @@ Select and manage wallpapers.
 
 No arguments:
     Classic                     Open the Classic wallpaper menu
-    Hikai                       Toggle the native centered wallpaper layer
+    Hikai                       Toggle the native top-attached wallpaper browser
 
 Classic compatibility:
     --static [CHOICE]           Static wallpaper script mode
@@ -63,12 +63,24 @@ case "${1:-}" in
         haku_qs_ipc wallpaper toggleDefault
         ;;
     --static|--lively)
+        if haku_backend_is "hikai"; then
+            if [[ -n "${2:-}" ]]; then
+                if [[ "$1" == --static ]]; then exec "$WALLPAPER_CTL" apply-static "$2"; fi
+                exec "$WALLPAPER_CTL" apply-lively "$2"
+            fi
+            haku_qs_ipc wallpaper openDefault
+            exit $?
+        fi
         exec "$WALLPAPER_ROFI" "$@"
         ;;
     --extend|-e)
         exec "$WALLPAPER_ROFI" "$@"
         ;;
     --exit)
+        if haku_backend_is "hikai"; then
+            haku_qs_ipc wallpaper pause
+            exit $?
+        fi
         "$WALLPAPER_CTL" stop-lively
         rc=$?
         if [[ $rc -ne 0 ]]; then
@@ -94,6 +106,7 @@ case "${1:-}" in
         exec "$WALLPAPER_CTL" current "${2:-}"
         ;;
     --status)
+        if haku_backend_is "hikai"; then haku_qs_ipc wallpaper status; exit $?; fi
         exec "$WALLPAPER_CTL" status "${2:-}"
         ;;
     --ensure-thumbnails)

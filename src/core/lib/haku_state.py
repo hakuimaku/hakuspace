@@ -10,6 +10,8 @@ STATE_FILES = {
     'desktop.taskbar.requested': '[desktop].taskbar.requested',
     'desktop.dockbar.requested': '[desktop].dockbar.requested',
     'desktop.icons.enabled': '[desktop].icons.enabled',
+    'desktop.wallpaper.current.json': '[desktop].wallpaper.current.json',
+    'desktop.wallpaper.runtime.json': '[desktop].wallpaper.runtime.json',
     'desktop.edge-trigger.enabled': '[desktop].edge-trigger.enabled',
     'screen.rounded.enabled': '[screen].rounded.enabled',
     'screen.rounded.dynamic': '[screen].rounded.dynamic',

@@ -9,11 +9,13 @@ In this document, we'll take a deep dive into how the theming engine and the sma
 Whenever you change your wallpaper (whether you trigger it manually via `wallpaper_select.sh` or automatically through `random_wallpaper.sh`), the system kicks off a sequence of scripts to update your entire desktop's look. Here is the step-by-step breakdown:
 
 ### 1. Setting the Wallpaper (`wallpaper_set.sh`)
+
+Images use awww in both modes. Hikai coordinates selection through wallpaper IPC and replaces video playback with Quickshell; see [Native Hikai wallpaper](#native-hikai-wallpaper).
 Everything starts when you pick a new image. The system calls `wallpaper_set.sh`, which is responsible for physically displaying the wallpaper on your screen. 
 - If you select a static image (`.png`, `.jpg`, `.gif`), it uses `awww` to render it. 
-- If you pick a video wallpaper (`.mp4`), it seamlessly switches to using `mpvpaper`.
+- If you pick a video wallpaper (`.mp4`), Classic uses `mpvpaper` and Hikai uses native Quickshell playback.
 - This script creates blurred cache versions of the wallpaper, which are used later for elements like the Niri overview backdrop or Rofi backgrounds.
-- **State Caching:** The script also saves the current wallpaper path to `~/.cache/current_wallpaper`. This allows our autostart script, `wallpaper_resume.sh`, to know what was previously set. On startup, if `wallpaper_resume.sh` detects that the last wallpaper was a video, it will automatically relaunch `wallpaper_set.sh` to resume your lively wallpaper (since static images are natively restored by the `awww-daemon`).
+- **State Caching:** The script also saves the current wallpaper path to `~/.cache/current_wallpaper`. This allows our autostart script, `wallpaper_resume.sh`, to know what was previously set. On Classic startup or mode entry, `wallpaper_resume.sh` starts awww and reapplies the saved image or video through `wallpaper_set.sh`.
 
 ### 2. Extracting the Colors (`get_accent_color.py`)
 If you have the automatic color extraction enabled (which is controlled by the `ACCENT_COLOR_BASED_ON_WALLPAPER=true` flag inside your `~/hakucfg/setting.sh` file), the system calls our Python script: `get_accent_color.py`.
@@ -38,7 +40,7 @@ Generating the config files isn't enough; the applications need to know that the
 
 ### 6. Automated Wallpaper Transitions (`random_wallpaper.sh`)
 For those who want a dynamic desktop, `random_wallpaper.sh` automatically cycles through your wallpapers at a defined interval (`WALL_INTERVAL` in `setting.sh`).
-- **Context-Aware Selection:** The script is smart enough to detect your current wallpaper mode. If it detects that `mpvpaper` is actively running, it assumes you are in "lively mode" and will exclusively pick random video wallpapers (`.mp4`) from your `$WALL_MPV_DIR`. If `mpvpaper` is not running, it falls back to cycling through your static images in `$WALL_DIR`.
+- **Context-Aware Selection:** The script is smart enough to detect your current wallpaper mode. In Classic, if it detects that `mpvpaper` is actively running, it assumes you are in "lively mode" and will exclusively pick random video wallpapers (`.mp4`) from your `$WALL_MPV_DIR`. If `mpvpaper` is not running, Classic falls back to static images in `$WALL_DIR`. Hikai derives the video/image choice from native current state instead of process existence.
 - **Accent Color Synchronization:** Just like manual selection, it triggers the entire color extraction pipeline. When transitioning between video wallpapers, it cleverly extracts the new accent color from pre-generated thumbnail previews (located in the `.thumbnails/` directory) to ensure your desktop UI changes color synchronously with the video, without any stutter.
 
 ## Customizing the Theming Engine
@@ -144,6 +146,20 @@ wallpaper_ctl.sh current --json
 wallpaper_ctl.sh status --json
 wallpaper_ctl.sh ensure-thumbnails
 ```
+
+### Native Hikai Wallpaper
+
+Hikai coordinates awww image application and persistent per-output Qt Multimedia video surfaces through `WallpaperService.qml`. Images allocate no native wallpaper renderer. Both media kinds still run `wallpaper_set.sh` to generate the usual `walpaper_wide_gen.jpg`, `walpaper_box_gen.jpg` and Niri backdrop. Its right-edge wallpaper sidebar is independent of playback and uses cached still previews in a vertical carousel. Top-left and bottom-left flares join the Rounded Screen ceiling and floor. Only the TopBar’s right module lane hides on the requested output until closing finishes; left/center modules, OSD and tooltips retain their usual behavior. Theme → Change Wallpaper closes HakuMenu normally and opens the wallpaper sidebar independently from the right edge. The sidebar retains its opening/closing Bezier motion and the controls retain their own morph effects.
+
+Use Up/Down or the wheel to browse, Ctrl + arrow keys to cycle All / Images / Videos, Alt + arrows to cycle Low Memory / Screen / Original, and Enter to apply. Selection outlines are omitted from the preview and type/quality strips. Build all videos prepares the whole collection using the selected profile, including videos hidden by search or filters, without applying a wallpaper. Clear cache removes unused video proxies while protecting active/prepared selections.
+
+The compact heading sits above search. Library choices are tabs with a moving underline; video quality uses separate cards with frame-rate/resolution details and a moving HakuMenu selection surface. Button backgrounds expand and round on hover, contract on press, then recover on release. The footer omits the shortcut guide.
+
+Wallpaper preferences live in `~/hakucfg/hikai/hikai-wallpaper.json` under Settings → Wallpaper. Screen is the default for new/reset preferences and targets the largest output at up to 60 fps, preserving lower source frame rates; existing saved profile choices are retained. Low Memory builds bounded 720p/24 fps proxies; Original uses the source. Proxies and still thumbnails live under `~/.cache/hakuspace/wallpaper/`, leaving original media unchanged. Missing proxy tools do not prevent explicit Original playback through Qt.
+
+The Python controller prepares a candidate with `select`. Video commits after native surfaces report a valid frame; image commits after awww applies it successfully, then releases any native video. Failed preparation or application retains the preceding wallpaper. Fullscreen pause and decoder unload affect native video per output. Current and diagnostic records use `[desktop].wallpaper.current.json` and `[desktop].wallpaper.runtime.json`; random rotation uses managed current state in Hikai.
+
+Classic keeps its existing awww/mpvpaper flow. Native handoff stops the legacy video process once when Hikai takes background ownership; returning to Classic restores the compatibility selection.
 
 ### Niri Animation Switcher (`niri_animation_switcher.sh` / `niri_animation_ctl.sh`)
 - **`niri_animation_switcher.sh` (Facade):** Opens the animation picker for the selected shell mode.

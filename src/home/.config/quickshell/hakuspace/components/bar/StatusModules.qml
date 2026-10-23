@@ -12,6 +12,8 @@ Item {
     // Bounded bottom windows translate captured anchors into output coordinates once.
     readonly property real screenOffsetY: presentation === "fullBottom" && ownerWindow.screen ? ownerWindow.screen.height - ownerWindow.height : 0
     property bool showCenterCluster: presentation === "top"
+    // Hiding the right lane preserves the other lanes' existing geometry.
+    property bool showRightCluster: true
     // Expose actual lane limits for the physically centered taskbar viewport.
     readonly property real leftStatusEnd: x + leftModules.x + leftModules.width
     readonly property real rightStatusStart: x + rightLane.x
@@ -40,6 +42,7 @@ Item {
 
     Flickable {
         id: leftModules
+        objectName: "leftStatusModules"
 
         readonly property real naturalWidth: movingLeftModules.visibleChildren.length > 0 ? movingLeftModules.x + movingLeftModules.width : logoModule.width
 
@@ -102,6 +105,7 @@ Item {
     }
 
     Loader {
+        objectName: "centerStatusModules"
         anchors.centerIn: parent
         anchors.verticalCenterOffset: root.presentation === "top" ? Theme.topBarTopPadding / 2 : 0
         active: root.showCenterCluster
@@ -182,6 +186,9 @@ Item {
 
     Flickable {
         id: rightLane
+        objectName: "rightStatusModules"
+        visible: root.showRightCluster
+        enabled: visible
 
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter

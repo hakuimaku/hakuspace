@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deliver stdin pointer events to an isolated Wayland compositor for Dock tests."""
+"""Deliver stdin pointer and wheel events to an isolated Wayland compositor."""
 import os
 from pathlib import Path
 import socket
@@ -98,6 +98,12 @@ def main():
             pass
         # An optional sixth value sends one press/release for held-button gestures.
         for line in sys.stdin:
+            scrolling = line.startswith('scroll ')
+            if scrolling:
+                x, y, width, height, steps = map(int, line.split()[1:])
+                if steps not in (-1, 1):
+                    raise ValueError('invalid wheel step')
+                line = f'{x} {y} {width} {height} 0'
             values = list(map(int, line.split()))
             if len(values) not in (5, 6):
                 raise ValueError('invalid pointer fixture event')
@@ -109,6 +115,11 @@ def main():
             timestamp = int(time.monotonic() * 1000) & 0xffffffff
             send(connection, pointer_id, 1, struct.pack('=IIIII', timestamp, x, y, width, height))
             send(connection, pointer_id, 4)
+            if scrolling:
+                # Discrete wheel requests carry both fixed-point distance and step count.
+                send(connection, pointer_id, 5, struct.pack('=I', 0))
+                send(connection, pointer_id, 7, struct.pack('=IIii', timestamp, 0, steps * 15 * 256, steps))
+                send(connection, pointer_id, 4)
             if button:
                 for state in ((values[5],) if len(values) == 6 else (1, 0)):
                     send(connection, pointer_id, 2, struct.pack('=III', timestamp, button, state))

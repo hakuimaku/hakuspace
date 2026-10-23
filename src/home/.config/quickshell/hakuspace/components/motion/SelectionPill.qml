@@ -250,8 +250,12 @@ Rectangle {
         }
 
         if (Math.abs(animatedStartIndex - targetStart) < 0.0001 &&
-            Math.abs(animatedEndIndex - targetEnd) < 0.0001)
+            Math.abs(animatedEndIndex - targetEnd) < 0.0001) {
+            // A rapid return must cancel animations still targeting the previous slot.
+            startIndexAnim.stop();
+            endIndexAnim.stop();
             return;
+        }
 
         var goingLeft = targetStart < animatedStartIndex;
         var lead = root.duration;

@@ -148,6 +148,7 @@ PanelWindow {
                 mode: root.renderMode
                 query: root.renderQuery
                 onKeyboardActivity: lifetime.beginKeyboardLease()
+                onWallpaperRequested: UiState.openWallpaper(root.modelData.name)
             }
         }
         // Gate input without triggering disabled visuals in the content tree.

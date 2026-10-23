@@ -6,15 +6,15 @@ test_root=$(mktemp -d)
 trap 'rm -rf "$test_root"' EXIT
 shell_root="$test_root/src/home/.config/quickshell/hakuspace"
 bin_root="$test_root/src/home/.local/bin"
-mkdir -p "$shell_root" "$bin_root" "$test_root/src/core/backend/user" "$test_root/runtime" \
+mkdir -p "$shell_root" "$bin_root" "$test_root/src/core/backend/user" "$test_root/src/core/backend/theme" "$test_root/src/core/lib" "$test_root/runtime" \
     "$test_root/src/home/.local/state/hakuspace/state" "$test_root/home/.config/gtk-3.0" \
     "$test_root/home/hakucfg/config" "$test_root/home/.local/share/applications"
 chmod 700 "$test_root/runtime"
 cp -R src/home/.config/quickshell/hakuspace/{services,components} "$shell_root/"
 cp scripts/hikai_resource_refresh_harness.qml "$shell_root/shell.qml"
-cp src/core/backend/user/{dock_icon_watch.py,hikai_settings_ctl.py,taskbar_pins_ctl.py} "$test_root/src/core/backend/user/"
-printf '#!/usr/bin/env bash\nexec bash %q "$@"\n' "$PWD/src/core/backend/theme/wallpaper_ctl.sh" > "$bin_root/wallpaper_ctl.sh"
-chmod +x "$bin_root/wallpaper_ctl.sh"
+cp src/core/backend/user/{dock_icon_watch.py,hikai_settings_ctl.py,taskbar_pins_ctl.py,hikai_wallpaper_settings_ctl.py} "$test_root/src/core/backend/user/"
+cp src/core/backend/theme/wallpaper_ctl.py "$test_root/src/core/backend/theme/"
+cp src/core/lib/haku_state.py "$test_root/src/core/lib/"
 printf '%s\n' '{"group/pin":{"modules":["image#probe"]},"image#probe":{"on-click":"true"}}' > "$test_root/home/hakucfg/config/taskbar-pin-apps"
 printf '[Desktop Entry]\nType=Application\nName=Probe\nExec=true\nIcon=probe\n' > "$test_root/home/.local/share/applications/probe.desktop"
 printf '1\n' > "$test_root/src/home/.local/state/hakuspace/state/[desktop].dockbar.requested"
