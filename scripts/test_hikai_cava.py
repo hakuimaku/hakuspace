@@ -12,7 +12,6 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 CAVA_PARSER_JS = ROOT / "src/home/.config/quickshell/hakuspace/services/cava/CavaFrameParser.js"
 CAVA_MATH_JS = ROOT / "src/home/.config/quickshell/hakuspace/services/cava/CavaMath.js"
-CAVA_HIKAI_CONF = ROOT / "src/home/.config/cava/config_hikai"
 CAVA_MANAGER = ROOT / "src/core/app/cava-layer/cava_manager.sh"
 
 
@@ -102,22 +101,32 @@ class CavaJsTest(unittest.TestCase):
 
 
 class CavaConfigTest(unittest.TestCase):
-    """Test CAVA config file."""
+    """Test CAVA layer configuration and generation."""
 
-    def test_cava_hikai_conf_exists_and_runs(self):
-        self.assertTrue(CAVA_HIKAI_CONF.is_file(), "config_hikai must exist")
-        if not shutil.which("cava"):
-            self.skipTest("cava binary not found")
-        p = subprocess.Popen(["cava", "-p", str(CAVA_HIKAI_CONF)], stdout=subprocess.PIPE, text=True)
-        try:
-            line = p.stdout.readline()
-        finally:
-            if p.stdout:
-                p.stdout.close()
-            p.terminate()
-            p.wait()
-        vals = [x for x in line.strip().split(";") if x]
-        self.assertEqual(len(vals), 64, "config_hikai should emit 64 bars")
+    def test_cava_hikai_conf_generation_and_runs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            cfg_dir = home / "hakucfg/config"
+            cfg_dir.mkdir(parents=True)
+            source_conf = cfg_dir / "cava-layer"
+            source_conf.write_text("[general]\nbars = 64\n\n[output]\nmethod = ncurses\n", encoding="utf-8")
+            target_conf = home / "cava-hikai.conf"
+
+            res = subprocess.run(["bash", str(CAVA_MANAGER), "--generate-hikai-conf", str(source_conf), str(target_conf)],
+                                 capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            if not shutil.which("cava"):
+                self.skipTest("cava binary not found")
+            p = subprocess.Popen(["cava", "-p", str(target_conf)], stdout=subprocess.PIPE, text=True)
+            try:
+                line = p.stdout.readline()
+            finally:
+                if p.stdout:
+                    p.stdout.close()
+                p.terminate()
+                p.wait()
+            vals = [x for x in line.strip().split(";") if x]
+            self.assertEqual(len(vals), 64, "generated cava conf should emit 64 bars")
 
 
 class CavaManagerTest(unittest.TestCase):
