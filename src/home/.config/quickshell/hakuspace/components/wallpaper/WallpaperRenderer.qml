@@ -10,6 +10,7 @@ ShellRoot {
     property var preferences: ({playback: {pauseWhenFullscreen: true, unloadWhenHidden: true, unloadDelaySec: 20, loop: true}})
     property bool manuallyPaused: false
     property var screens: []
+    property string transitionStrategy: Quickshell.env("HAKUSPACE_WALLPAPER_TRANSITION_STRATEGY") || "stagedStill"
     // The shell retains ownership of registration, commits and persisted state.
     function fileUrl(path) { return path ? "file://" + path.split("/").map(encodeURIComponent).join("/") : "" }
     function send(message) { socket.write(JSON.stringify(message) + "\n"); socket.flush() }
@@ -43,6 +44,7 @@ ShellRoot {
                     root.current = state.current
                     root.candidate = state.candidate
                     root.screens = state.screens
+                    if (state.transitionStrategy) root.transitionStrategy = state.transitionStrategy
                 } catch (error) { root.fail("Invalid wallpaper state: " + error) }
             }
         }
