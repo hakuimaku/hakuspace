@@ -24,7 +24,7 @@ ShellRoot {
     property bool crowdedReady: false
     property bool openingProbeObserved: false
     property bool openingInputObserved: false
-    property var openingPanel: null
+    property var openingPanel: phase === 12 || phase === 13 ? floating() : null
     property int tooltipClicks: 0
     readonly property var output: outputs.find(function(surface) { return surface.modelData.name === "HEADLESS-1" }) || outputs[0] || null
     // Isolate tooltip gestures from unrelated fullscreen-client checks on a live desktop.
@@ -77,7 +77,12 @@ ShellRoot {
         return find(host, function(item) { return typeof item.activationSource === "string" && typeof item.menuAnchor === "function" })
     }
     function find(item, predicate) {
+        if (!item) return null
         if (predicate(item)) return item
+        if (item.active === true && item.item) {
+            var loaded = find(item.item, predicate)
+            if (loaded) return loaded
+        }
         var children = item.contentItem ? item.contentItem.data : item.children || []
         if (!item.contentItem && item.data && typeof item.data !== "function" && typeof item.data.length === "number") children = item.data
         for (var index = 0; index < children.length; ++index) {
@@ -306,7 +311,6 @@ ShellRoot {
                 }
                 root.check(UiState.activePanel === "" && root.output.dock.shown, "bottom edge opens only Dock")
                 root.clientHeight = client.height
-                root.openingPanel = root.floating()
                 root.clickAppMenu()
             } else if (root.phase === 13) {
                 var panel = root.floating()
@@ -385,14 +389,14 @@ ShellRoot {
             } else if (root.phase === 28) {
                 if (!root.floating(root.transferOutput).interactionReady) return
                 root.check(root.floating(root.transferOutput).interactionReady && root.transferOutput.dock.hakuMenuDockLease, "requested output owns the floating card and lease")
-                if (root.transferOutput !== root.output) root.check(!root.floating().visible && !root.output.dock.hakuMenuDockLease, "other output has no ghost or lease")
+                if (root.transferOutput !== root.output) root.check((!root.floating() || !root.floating().visible) && !root.output.dock.hakuMenuDockLease, "other output has no ghost or lease")
                 root.check(UiState.hakuMenuAnchorRect.x >= 0 && UiState.hakuMenuAnchorRect.x < root.transferOutput.modelData.width, "second output anchor excludes its desktop-global origin")
                 root.expectedAnchor = root.content(root.output.dock).menuAnchor(root.appMenu())
                 UiState.openHakuMenu(root.output.modelData.name, "drun", "dockbar", root.expectedAnchor)
             } else if (root.phase === 29) {
                 if (!root.floating().interactionReady) return
                 root.check(root.floating().interactionReady && root.output.dock.hakuMenuDockLease, "ownership transfers back")
-                if (root.transferOutput !== root.output) root.check(!root.floating(root.transferOutput).visible, "old output resets immediately")
+                if (root.transferOutput !== root.output) root.check((!root.floating(root.transferOutput) || !root.floating(root.transferOutput).visible), "old output resets immediately")
                 fullscreenClient.visible = true
             } else if (root.phase === 30) {
                 root.check(root.search(), "floating menu stays focused over fullscreen")
@@ -413,7 +417,7 @@ ShellRoot {
                 ShellSettingsStore.discard()
                 UiState.openHakuMenu(root.output.modelData.name, "drun", "dockbar", {x: NaN, y: 0, width: 10, height: 10})
             } else if (root.phase === 35) {
-                root.check(!UiState.activePanel && !root.floating().visible, "invalid Dockbar anchor rejects floating activation")
+                root.check(!UiState.activePanel && (!root.floating() || !root.floating().visible), "invalid Dockbar anchor rejects floating activation")
             } else if (root.phase === 36) {
                 root.check(UiState.activePanel === "" && !root.output.dock.hakuMenuDockLease, "floating Escape releases lease")
                 ShellSettingsStore.setValue("dock", "visibilityMode", "always")

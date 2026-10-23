@@ -51,7 +51,18 @@ ShellRoot {
                                    dnd: NotificationStore.dnd,
                                    popupCount: NotificationStore.popupForScreen(Quickshell.screens[0].name).length,
                                    count: NotificationStore.count,
+                                   handles: Object.keys(NotificationStore._handles).length,
+                                   deadlines: Object.keys(NotificationStore._deadlines).length,
                                    records: NotificationStore.records})
+        }
+        function burstState(): string {
+            return JSON.stringify({keys: NotificationStore.records.map(record => record.key),
+                live: NotificationStore.records.filter(record => record.live).length,
+                handles: Object.keys(NotificationStore._handles).length,
+                deadlines: Object.keys(NotificationStore._deadlines).length})
+        }
+        function expireAll() {
+            for (var key of Object.keys(NotificationStore._handles)) NotificationStore.expire(Number(key))
         }
         function dismiss(key: int) { NotificationStore.dismiss(key) }
         function expire(key: int) { NotificationStore.expire(key) }
@@ -236,6 +247,21 @@ def run_inner():
                      "clear all")
             ipc("clearAll")
             print("PASS clear all is idempotent")
+
+            # A burst may exceed the history cap while every protocol object is live.
+            for index in range(500):
+                command("notify-send", "-p", "-t", "0", f"Memory burst {index}")
+            # Keep IPC responses small while checking the full native burst in the server.
+            burst = json.loads(ipc("burstState"))
+            assert len(burst["keys"]) == 500 and burst["handles"] == 500 and burst["live"] == 500
+            newest_keys = set(burst["keys"][-100:])
+            ipc("expireAll")
+            settled = json.loads(ipc("burstState"))
+            assert len(settled["keys"]) == 100 and settled["deadlines"] == 0 and settled["handles"] == 0
+            assert set(settled["keys"]) == newest_keys and settled["live"] == 0
+            ipc("clearAll")
+            assert state()["records"] == [] and state()["handles"] == 0
+            print("PASS 500 live notifications preserved; closed history capped at 100; handles/deadlines cleared")
         except Exception:
             log.seek(0)
             print(log.read()[-4000:], file=sys.stderr)

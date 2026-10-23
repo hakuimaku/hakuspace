@@ -7,6 +7,8 @@ import "windownav"
 
 PanelWindow {
     id: root
+    // Release only after the surface has finished its visual close.
+    readonly property bool releaseReady: !ownsSession && reveal === 0 && !WindowNavigator.pendingAddress
     required property var modelData
     // One logical session owns one visible surface and one keyboard grab.
     readonly property bool ownsSession: WindowNavigator.active && WindowNavigator.screenName === modelData.name
@@ -48,6 +50,7 @@ PanelWindow {
         }
     }
     onVisibleChanged: if (!visible) Qt.callLater(function() {
+        if (!root) return
         if (root.visible) return
         WindowNavigator.activatePending()
         WindowNavigator.finishClose(root.modelData.name)

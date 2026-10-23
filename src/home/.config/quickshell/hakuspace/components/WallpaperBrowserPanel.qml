@@ -7,6 +7,8 @@ import "wallpaper" as Wallpaper
 
 PanelWindow {
     id: root
+    // Release only after the surface has finished its visual close.
+    readonly property bool releaseReady: !panelOpen
     required property var modelData
     // The solid sidebar grows from the right edge and retains input until its flares close.
     readonly property bool panelOpen: UiState.activePanel === "wallpaper" && UiState.wallpaperScreenName === modelData.name

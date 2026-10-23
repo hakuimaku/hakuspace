@@ -4,8 +4,21 @@ import Quickshell.Io
 
 QtObject {
     id: root
+    // Poll only while visible controls subscribe; actions still refresh immediately.
+    property int subscribers: 0
     property string profile: ""
     property bool refreshPending: false
+
+    // Register visible controls and fetch their initial state.
+    function acquire() {
+        ++subscribers
+        if (subscribers === 1) refresh()
+    }
+
+    // Stop recurring reads when the final visible control disappears.
+    function release() {
+        subscribers = Math.max(0, subscribers - 1)
+    }
 
     // Triggers an immediate query of the active system power profile.
     function refresh() {
@@ -29,12 +42,12 @@ QtObject {
     property Timer pollTimer: Timer {
         interval: 2000
         repeat: true
-        running: true
+        running: root.subscribers > 0
         onTriggered: root.refresh()
     }
 
     property Process poll: Process {
-        running: true
+        running: false
         command: ["powerprofilesctl", "get"]
         onExited: {
             if (root.refreshPending) {

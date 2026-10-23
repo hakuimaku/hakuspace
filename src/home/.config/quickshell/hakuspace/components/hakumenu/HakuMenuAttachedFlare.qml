@@ -8,6 +8,9 @@ import "../flare" as Flare
 
 Item {
     id: root
+    // Retain the presentation until its closing morph settles.
+    readonly property bool releaseReady: !panelOpen && visuallyClosed
+    property bool visuallyClosed: true
     required property var modelData
 
     property bool bottomAttached: false
@@ -64,8 +67,10 @@ Item {
 
     onPanelOpenChanged: {
         if (panelOpen) {
+            visuallyClosed = false
             capturedAnchor = UiState.hakuMenuAnchorRect
             Qt.callLater(function() {
+                if (!root) return
                 if (root.panelOpen) menu.forceSearchFocus()
             })
         } else {
@@ -187,6 +192,7 @@ Item {
 
         Flare.FlareMorph {
             id: morph
+            onSettled: isShown => { if (!isShown && !root.panelOpen) root.visuallyClosed = true }
             // Center the menu physically; the captured App Menu rect owns interaction only.
             anchorRect: ({x: root.screenWidth / 2, y: root.menuTop, width: 0, height: 0})
             hostRect: ({x: 0, y: 0, width: root.screenWidth, height: root.screenHeight})

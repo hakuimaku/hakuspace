@@ -40,6 +40,7 @@ ClippingRectangle {
         color: root.selected ? Theme.fg : Theme.hoverMuted
         clip: true
         Image {
+        sourceSize: Qt.size(Math.max(1, Math.ceil(width * 2)), Math.max(1, Math.ceil(height * 2)))
             x: 8; anchors.verticalCenter: parent.verticalCenter
             width: 22; height: 22
             source: Quickshell.iconPath(root.windowEntry.icon, "application-x-executable")

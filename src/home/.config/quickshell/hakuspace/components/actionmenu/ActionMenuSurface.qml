@@ -624,6 +624,9 @@ Item {
         }
     }
 
+    // A demand-loaded surface can start visible without a visibility change.
+    Component.onCompleted: if (visible && phase === "closed") beginOpenAnimation()
+
     onFlowChanged: {
         if (visible && phase === "ready") {
             beginOpenAnimation();

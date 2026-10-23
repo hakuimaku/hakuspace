@@ -37,6 +37,8 @@ QtObject {
     readonly property int totalSubscribers: _basicSubscribers + _extendedSubscribers
 
     // Internal calculation state
+    // Coalesce refresh requests while a finite snapshot is still running.
+    property bool refreshPending: false
     property real _prevTotal: 0
     property real _prevIdle: 0
     property real _currentTotal: 0
@@ -83,6 +85,7 @@ QtObject {
             }
         } else {
             statTimer.stop();
+            refreshPending = false;
             root._prevTotal = 0;
             root._prevIdle = 0;
             root._currentTotal = 0;
@@ -97,10 +100,14 @@ QtObject {
 
     // Triggers execution of the system metrics snapshot script.
     function _triggerPoll() {
+        if (totalSubscribers === 0) return;
+        if (statProc.running) {
+            refreshPending = true;
+            return;
+        }
         statProc.command = _extendedSubscribers > 0
             ? [snapshotScript, "--extended"]
             : [snapshotScript];
-        statProc.running = false;
         statProc.running = true;
     }
 
@@ -111,6 +118,12 @@ QtObject {
     }
 
     property var statProc: Process {
+        onExited: {
+            if (root.refreshPending) {
+                root.refreshPending = false;
+                Qt.callLater(root._triggerPoll);
+            }
+        }
         command: [root.snapshotScript]
 
         stdout: SplitParser {

@@ -2,11 +2,12 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import "../services"
-import "flare" as Flare
 import "notification"
 
 Item {
     id: root
+    // Release only after the surface has finished its visual close.
+    readonly property bool releaseReady: !hasLivePopups && displayPopups.length === 0 && !revealAnim.running
     required property var modelData
 
     readonly property int maxVisible: 3
@@ -42,6 +43,7 @@ Item {
         if (root.revealUpdateScheduled) return
         root.revealUpdateScheduled = true
         Qt.callLater(function() {
+            if (!root) return
             root.revealUpdateScheduled = false
             var nextTarget = root.stackTargetHeight()
             if (Math.abs(nextTarget - root.revealTarget) < 0.5 && revealAnim.running)
@@ -72,7 +74,7 @@ Item {
     function scheduleSync() {
         // Let the store-derived binding settle before copying the concrete
         // array. This also keeps the very first notification deterministic.
-        Qt.callLater(function() { root.syncLivePopups() })
+        Qt.callLater(function() { if (root) root.syncLivePopups() })
     }
 
     onLivePopupsChanged: scheduleSync()
@@ -114,40 +116,6 @@ Item {
         values: root.displayPopups
         objectProp: "key"
         comparisonMode: ObjectComparison.Structure
-    }
-
-    // The stable Top surface paints the full downward Flare behind the Overlay cards.
-    PanelWindow {
-        id: flareLayer
-        screen: root.modelData
-        anchors { top: true; left: true; right: true }
-        WlrLayershell.layer: WlrLayer.Top
-        WlrLayershell.namespace: "hakuspace-notification-popup-flare"
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-        exclusionMode: ExclusionMode.Ignore
-        exclusiveZone: 0
-        // Keep the layer-shell surface size stable while the popup animates.
-        // Resizing a PanelWindow every animation frame forces repeated Wayland
-        // configure cycles and makes the reveal visibly stutter.
-        anchors.bottom: true
-        color: "transparent"
-        // Keep Top mapped so opening the popup does not raise it over fullscreen.
-        visible: true
-        mask: Region {}
-
-        Flare.FlareSurface {
-            visible: root.displayPopups.length > 0 || root.revealHeight > 0
-            y: root.topOffset
-            attach: Flare.FlareHost.Top
-            start: root.popupStart
-            end: root.popupEnd
-            currentHeight: root.revealHeight
-            bounds: root.frameBounds
-            r: (Theme.largeRadius + 4)
-            rf: Theme.hugRadius
-            bottomRadius: Theme.largeRadius + 4
-            surfaceColor: Theme.surface
-        }
     }
 
     // The centered Overlay owns the rounded group, input and notification actions.

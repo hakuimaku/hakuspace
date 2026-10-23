@@ -267,3 +267,39 @@ At completion, report:
 3. pass/fail evidence;
 4. checks intentionally skipped as out of scope;
 5. remaining manual checks.
+
+# Quickshell Performance Guidelines
+
+Apply these rules only to the Quickshell component affected by the current task. Do not turn a focused fix into a shell-wide optimization pass.
+
+## Measure before changing behavior
+
+- Capture before/after measurements with the same renderer, outputs, display scale, workload, warm-up and settle periods.
+- Use RSS, PSS, optional DRM resident memory, CPU time, FD/thread/child counts and first-open latency. Check idle plateau and repeated operation batches; RSS alone does not prove a leak.
+- Use `scripts/hikai_memory_soak.py` for live-PID sampling or a private headless session. Keep JSON/log artifacts under `/tmp` or an external artifact directory.
+- Label software-renderer results explicitly. Do not treat them as hardware GPU/FPS evidence or enable software rendering or allocator tuning by default.
+
+## Keep resource lifetime tied to demand
+
+- Reuse `components/base/LifecycleLoader.qml` and existing stores. Load heavy panels on demand; release them through their visual completion contract, not directly when the open flag becomes false.
+- Preserve close/reopen reversal, focus handoff, output ownership and pending saves. Guard delayed callbacks against owner destruction; do not guess animation completion with a fixed timer.
+- Keep lock ownership, notification server, IPC and persistent wallpaper renderers resident. Retain necessary draft/view state as lightweight data outside disposable UI.
+- Instantiate only current/incoming/outgoing widget content. Give dynamic objects an explicit parent and cleanup path for normal close, interruption, errors and reload.
+- Stop decorative animation, effect layers and capture/decoder resources when their owner no longer needs them.
+
+## Avoid geometry, image and process churn
+
+- Keep Wayland drawing-window geometry stable during tooltip, Flare and OSD animation. Animate inner content; keep the visible bar height, input mask and exclusive reservation independent of animated tooltip height.
+- Reuse an established stable-window pattern, and measure its buffer-memory cost. Preserve fullscreen stacking and pointer pass-through.
+- Bound raster `Image.sourceSize` to rendered size and display scale. Check existing wrapper behavior first: `IconImage` may already bound its backing image.
+- Use asynchronous decoding for large user images where interaction permits. Disable cache selectively for large/changing images; keep shared caching for common icons.
+- Poll only while consumers subscribe or an action requires refresh. Coalesce overlapping reads instead of killing/restarting a running process.
+- Keep finite, bounded command output collectors. Use streaming parsing for long-lived/unbounded output; reset temporary buffers between runs.
+- Bound histories and models according to domain rules. Never evict live notification handles to satisfy a history cap. Keep large lists virtualized; do not replace small bounded Repeaters without evidence.
+
+## Validate and report within scope
+
+- Run changed-file checks and the smallest affected component tests. Use `scripts/test_hikai_memory_lifecycle.py` or `scripts/test_qml_image_budget.py` when the changed lifecycle/image contract is covered by them.
+- Test direct consumers only when shared code changes. Exercise multi-output transfer, interrupted close and reload when the changed ownership path can affect them.
+- Keep long soaks and hardware profiling separate from fast regression checks. Follow the scoped-validation policy above; do not automatically run the repository-wide precommit.
+- Report measured deltas, renderer/workload, targeted commands and results, remaining manual checks, and any memory-versus-latency/FPS trade-off. Distinguish implemented changes from acceptance criteria that remain unverified.

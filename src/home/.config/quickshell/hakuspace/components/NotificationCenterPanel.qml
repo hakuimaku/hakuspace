@@ -10,6 +10,8 @@ import "notification"
 
 Item {
     id: root
+    // Release only after the surface has finished its visual close.
+    readonly property bool releaseReady: !panelOpen && !closing
     readonly property var horizontalBounds: ScreenGeometry.horizontalBounds(modelData.width, hostRect)
     required property var modelData
     width: Math.max(0, Math.min(520, modelData.width - Theme.pad * 2))
@@ -74,7 +76,7 @@ Item {
             openedAtBottom = ScreenGeometry.bottomAttached
             closing = false
             NotificationStore.hidePopups()
-            Qt.callLater(function() { if (root.panelOpen) keyHandler.forceActiveFocus() })
+            Qt.callLater(function() { if (root && root.panelOpen) keyHandler.forceActiveFocus() })
         } else if (flare.currentHeight > 0) {
             closing = true
         }

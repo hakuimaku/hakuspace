@@ -79,6 +79,7 @@ Rectangle {
             visible: false
             layer.enabled: true
             asynchronous: true
+            cache: false
         }
 
         Item {

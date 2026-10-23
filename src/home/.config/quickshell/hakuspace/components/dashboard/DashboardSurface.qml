@@ -22,6 +22,8 @@ Item {
     readonly property real contentOriginY: bottomAttached
         ? attachmentSeam - currentEnvelopeHeight + bottomFlareReach : 0
     function mapY(logicalY) { return contentOriginY + logicalY }
+    // Store only primitive widget state outside the disposable Dashboard tree.
+    property QtObject viewState: null
     property bool expanded: false
     property real morphProgress: 0.0
 
@@ -237,6 +239,9 @@ Item {
 
     Image {
         id: decodeProbe
+        // Validate user images with a bounded, uncached decode.
+        sourceSize: Qt.size(256, 256)
+        cache: false
         visible: false
         asynchronous: false
         property string pendingLocalPath: ""
@@ -319,6 +324,10 @@ Item {
             // Row 2: Dynamic Widget Host | Monitor
             DashboardWidgetHost {
                 id: widgetHost
+                currentIndex: root.viewState ? root.viewState.widgetIndex : 0
+                calendarMonthOffset: root.viewState ? root.viewState.calendarMonthOffset : 0
+                onCurrentIndexChanged: if (root.viewState) root.viewState.widgetIndex = currentIndex
+                onCalendarMonthOffsetChanged: if (root.viewState) root.viewState.calendarMonthOffset = calendarMonthOffset
                 x: root.widgetHostX
                 y: root.widgetHostY
                 width: root.col1Width

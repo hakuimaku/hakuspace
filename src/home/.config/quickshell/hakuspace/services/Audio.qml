@@ -4,8 +4,11 @@ import Quickshell.Io
 
 QtObject {
     id: root
+    // Poll only while visible controls subscribe; actions still refresh immediately.
+    property int subscribers: 0
     property int volume: -1
     property bool muted: false
+    property bool refreshPending: false
     property bool pendingFeedback: false
     property var queuedCommands: []
     property bool actionBusy: false
@@ -13,10 +16,21 @@ QtObject {
     signal userInteracted()
     signal userChanged()
 
+    // Register visible controls and fetch their initial state.
+    function acquire() {
+        ++subscribers
+        if (subscribers === 1) refresh()
+    }
+
+    // Stop recurring reads when the final visible control disappears.
+    function release() {
+        subscribers = Math.max(0, subscribers - 1)
+    }
+
     // Triggers an immediate poll of the default audio sink volume and mute state.
     function refresh() {
-        poll.running = false
-        poll.running = true
+        if (poll.running) refreshPending = true
+        else poll.running = true
     }
 
     // Enqueues an audio adjustment command and schedules execution.
@@ -37,11 +51,17 @@ QtObject {
     property Timer pollTimer: Timer {
         interval: 2000
         repeat: true
-        running: true
+        running: root.subscribers > 0
         onTriggered: root.refresh()
     }
     property Process poll: Process {
-        running: true
+        running: false
+        onExited: {
+            if (root.refreshPending) {
+                root.refreshPending = false
+                Qt.callLater(root.refresh)
+            }
+        }
         command: ["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"]
         stdout: SplitParser {
             onRead: data => {
@@ -51,7 +71,7 @@ QtObject {
                 if (!isNaN(value)) root.volume = Math.round(value * 100)
                 root.muted = line.indexOf("[MUTED]") !== -1
                 // Notify the OSD only after polling the resulting sink state.
-                if (root.pendingFeedback) {
+                if (root.pendingFeedback && !root.refreshPending) {
                     root.pendingFeedback = false
                     root.userChanged()
                 }

@@ -6,6 +6,8 @@ import "cava"
 
 Item {
     id: rootItem
+    // Disabled Cava owns no window or animation resources.
+    readonly property bool releaseReady: !shouldBeVisible
     required property var modelData
 
     readonly property bool isTop: AppState.cavaTopState

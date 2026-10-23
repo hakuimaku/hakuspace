@@ -6,6 +6,8 @@ import "actionmenu" as ActionMenu
 
 PanelWindow {
     id: root
+    // Release only after the surface has finished its visual close.
+    readonly property bool releaseReady: !panelOpen
     required property var modelData
 
     readonly property bool panelOpen: UiState.activePanel === "actionMenu"

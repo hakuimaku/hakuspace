@@ -8,6 +8,8 @@ import "HakuMenuGeometry.js" as Geometry
 
 PanelWindow {
     id: root
+    // Retain the presentation until its closing morph settles.
+    readonly property bool releaseReady: !panelOpen && !morphAnim.running && morphProgress === 0
     required property var modelData
     readonly property bool panelOpen: !!modelData && ChromeLayout.dockbarActive && UiState.activePanel === "hakumenu"
         && UiState.hakuMenuStyle === "dockFloating" && UiState.hakuMenuScreenName === modelData.name

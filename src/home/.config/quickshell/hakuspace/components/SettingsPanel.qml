@@ -11,6 +11,8 @@ import "settings/SettingsNavigation.js" as Navigation
 
 PanelWindow {
     id: root
+    // Release only after the surface has finished its visual close.
+    readonly property bool releaseReady: !panelOpen && !openAnimation.running && !closeAnimation.running && slideProgress === 0 && expandProgress === 0
     required property var modelData
     property string selectedGroup: "General"
     property string confirmation: ""
@@ -370,7 +372,7 @@ PanelWindow {
             if (!WallpaperSettingsStore.dirty) WallpaperSettingsStore.reload()
             if (selectedGroup === "Config" && !ConfigEditorStore.ready) ConfigEditorStore.loadFiles()
             if (selectedGroup === "Info") InfoStore.load()
-            Qt.callLater(function() { if (root.panelOpen) keyHandler.forceActiveFocus() })
+            Qt.callLater(function() { if (root && root.panelOpen) keyHandler.forceActiveFocus() })
         }
     }
     Item {

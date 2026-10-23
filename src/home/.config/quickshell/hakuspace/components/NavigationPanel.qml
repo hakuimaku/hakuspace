@@ -10,7 +10,14 @@ import "dashboard" as Dashboard
 
 Item {
     id: root
+    // Release only after the surface has finished its visual close.
+    readonly property bool releaseReady: !panelOpen && !closing && !openMorph.running && !closeMorph.running && !dashboardMorphAnim.running
     required property var modelData
+    // The screen host can preserve widget selection without retaining Dashboard UI.
+    property QtObject dashboardState: QtObject {
+        property int widgetIndex: 0
+        property int calendarMonthOffset: 0
+    }
 
     readonly property bool panelOpen: UiState.activePanel === "navigation"
                                       && UiState.navigationMode !== "closed"
@@ -37,6 +44,7 @@ Item {
                 selectedIndex = 0
                 hoveredIndex = -1
                 Qt.callLater(function() {
+                    if (!root) return
                     if (root.panelOpen)
                         keyHandler.forceActiveFocus()
                 })
@@ -52,6 +60,7 @@ Item {
             if (root.closingFromDashboard) {
                 UiState.finishNavigationVisual(root.modelData.name)
                 Qt.callLater(function() {
+                    if (!root) return
                     root.closing = false
                     root.closingFromDashboard = false
                     root.closeCollapseProgress = 0.0
@@ -229,8 +238,8 @@ Item {
             modelData.width, modelData.height) : empty
         var dashboard = dashboardVisuallyActive ? SafeZoneGeometry.clampRect(
             SafeZoneGeometry.inflate(SafeZoneGeometry.rect(0,
-                ScreenGeometry.bottomAttached ? dashboardSurface.contentOriginY : 0, dashboardVisualWidth,
-                ScreenGeometry.bottomAttached ? dashboardSurface.currentBodyHeight : dashboardVisualHeight), margin), modelData.width, modelData.height) : empty
+                ScreenGeometry.bottomAttached && dashboardLoader.item ? dashboardLoader.item.contentOriginY : 0, dashboardVisualWidth,
+                ScreenGeometry.bottomAttached && dashboardLoader.item ? dashboardLoader.item.currentBodyHeight : dashboardVisualHeight), margin), modelData.width, modelData.height) : empty
         return [radial, anchor, bridge, rail, ear, toolBridge, tool, dashboard].map(function(rect, index) {
             return index === 1 || index === 7 ? rect : root.mappedRect(rect)
         })
@@ -262,6 +271,7 @@ Item {
         keyboardLease = !!fromKeyboard
         if (panelOpen) keyHandler.forceActiveFocus()
         Qt.callLater(function() {
+            if (!root) return
             if (root.panelOpen && root.sidebarKeyboardMode === !!fromKeyboard
                     && (!root.sidebarToolOpen || fromKeyboard))
                 keyHandler.forceActiveFocus()
@@ -273,6 +283,7 @@ Item {
         if (!panelOpen || !sidebarToolOpen || sidebarKeyboardMode) return
         sidebarToolLayer.forceFocus()
         Qt.callLater(function() {
+            if (!root) return
             if (root.panelOpen && root.sidebarToolOpen && !root.sidebarKeyboardMode)
                 sidebarToolLayer.forceFocus()
         })
@@ -611,6 +622,7 @@ Item {
         // Drop an in-flight envelope instead of replaying it at the opposite edge.
         function onTaskbarModeChanged() {
             Qt.callLater(function() {
+                if (!root) return
                 if (root.panelOpen) return
                 openMorph.stop()
                 closeMorph.stop()
@@ -656,6 +668,7 @@ Item {
                 seedLogoGeometry()
             openMorph.start()
             Qt.callLater(function() {
+                if (!root) return
                 if (root.panelOpen) keyHandler.forceActiveFocus()
             })
             return
@@ -766,6 +779,7 @@ Item {
         onFinished: {
             UiState.finishNavigationVisual(root.modelData.name)
             Qt.callLater(function() {
+                if (!root) return
                 root.closing = false
                 root.closeCollapseProgress = 0.0
                 root.closeReturnProgress = 0.0
@@ -1049,37 +1063,43 @@ Item {
         }
         // Dashboard visual surface: fluid silhouette with avatar, profile rail,
         // and card layout inside the navigation overlay.
-        Dashboard.DashboardSurface {
-            id: dashboardSurface
-            screenWidth: navigationLayer.width
-            screenHeight: navigationLayer.height
-            targetWidth: root.dashboardVisualWidth
-            targetHeight: root.dashboardVisualHeight
-            controllerX: root.controllerX
-            controllerY: root.controllerY
-            circleRadius: root.circleRadius
-            circleDiameter: root.circleDiameter
-            sideInset: root.sideInset
-            attachmentY: root.logicalAttachmentY
-            bottomAttached: ScreenGeometry.bottomAttached
-            attachmentSeam: root.attachmentY
-            expanded: root.panelOpen && root.dashboardExpanded && !root.closing
-            morphProgress: root.dashboardMorphProgress
-            // A full Dashboard -> closed transition reuses the Dashboard ->
-            // Navigation morph path, whose zero-progress geometry is the
-            // Navigation start envelope rather than 0x0. Fade only the tail
-            // of the full-close path so that envelope never appears as a
-            // detached black afterimage. Dashboard -> Navigation is unchanged.
-            opacity: root.closingFromDashboard
-                     ? Math.max(0.0, Math.min(1.0, root.dashboardMorphProgress / 0.20))
-                     : 1.0
+        Loader {
+            id: dashboardLoader
+            active: root.dashboardExpanded || root.dashboardMorphProgress > 0 || dashboardMorphAnim.running
             z: 25
-            onRequestReturnToNavigation: {
-                UiState.cancelNavigationHandoff()
-            }
-            onFocusRequested: {
-                if (root.panelOpen) {
-                    keyHandler.forceActiveFocus()
+            sourceComponent: Dashboard.DashboardSurface {
+                id: dashboardSurface
+                viewState: root.dashboardState
+                screenWidth: navigationLayer.width
+                screenHeight: navigationLayer.height
+                targetWidth: root.dashboardVisualWidth
+                targetHeight: root.dashboardVisualHeight
+                controllerX: root.controllerX
+                controllerY: root.controllerY
+                circleRadius: root.circleRadius
+                circleDiameter: root.circleDiameter
+                sideInset: root.sideInset
+                attachmentY: root.logicalAttachmentY
+                bottomAttached: ScreenGeometry.bottomAttached
+                attachmentSeam: root.attachmentY
+                expanded: root.panelOpen && root.dashboardExpanded && !root.closing
+                morphProgress: root.dashboardMorphProgress
+                // A full Dashboard -> closed transition reuses the Dashboard ->
+                // Navigation morph path, whose zero-progress geometry is the
+                // Navigation start envelope rather than 0x0. Fade only the tail
+                // of the full-close path so that envelope never appears as a
+                // detached black afterimage. Dashboard -> Navigation is unchanged.
+                opacity: root.closingFromDashboard
+                         ? Math.max(0.0, Math.min(1.0, root.dashboardMorphProgress / 0.20))
+                         : 1.0
+                z: 25
+                onRequestReturnToNavigation: {
+                    UiState.cancelNavigationHandoff()
+                }
+                onFocusRequested: {
+                    if (root.panelOpen) {
+                        keyHandler.forceActiveFocus()
+                    }
                 }
             }
         }

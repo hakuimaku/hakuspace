@@ -34,6 +34,7 @@ python3 scripts/test_state_naming.py
 if [ -f scripts/qml_syntax_check.py ]; then
     python3 scripts/qml_syntax_check.py $(find src/home/.config/quickshell -name '*.qml')
 fi
+python3 scripts/test_qml_image_budget.py
 
 # 5. FlareGeometry JS tests
 if [ -f scripts/test_flare_geometry.js ]; then
@@ -52,6 +53,7 @@ node scripts/test_dock_geometry.js
 node scripts/test_hakumenu_geometry.js
 node scripts/test_settings_navigation.js
 if command -v quickshell >/dev/null 2>&1; then
+    python3 scripts/test_hikai_memory_lifecycle.py
     bash scripts/test_shell_transition.sh
     bash scripts/test_safe_zone_controller.sh
     bash scripts/test_labwc_exit.sh

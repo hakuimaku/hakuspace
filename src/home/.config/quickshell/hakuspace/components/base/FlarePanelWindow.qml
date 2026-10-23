@@ -8,6 +8,8 @@ import "SafeZoneGeometry.js" as SafeZoneGeometry
 
 PanelWindow {
     id: root
+    // The Flare settled callback releases the retained close envelope.
+    readonly property bool releaseReady: !panelOpen && !closing
     readonly property var horizontalBounds: ScreenGeometry.horizontalBounds(width)
     required property var modelData
     property bool panelOpen: false
@@ -98,7 +100,7 @@ PanelWindow {
         if (panelOpen) {
             openedAtBottom = ScreenGeometry.bottomAttached
             closing = false
-            Qt.callLater(function() { keyHandler.forceActiveFocus() })
+            Qt.callLater(function() { if (root && root.panelOpen) keyHandler.forceActiveFocus() })
         } else if (flare.currentHeight > 0) {
             closing = true
         }

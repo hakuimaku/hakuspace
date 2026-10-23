@@ -83,6 +83,17 @@ ShellRoot {
             Component.onCompleted: root.outputs.push(output)
         }
     }
+    // Tooltip animation must never resize the Wayland host or the visible bar chassis.
+    FrameAnimation {
+        running: root.phase >= 56 && root.phase < 65
+        onTriggered: {
+            for (var output of root.outputs) {
+                root.check(output.bar.height === output.modelData.height, "tooltip keeps a stable output-height host")
+                var modules = root.module(output.bar.contentItem, "StatusModules")
+                root.check(modules && modules.parent.height === output.bar.barH, "tooltip cannot change visible TopBar height")
+            }
+        }
+    }
     Timer {
         interval: 550
         repeat: true

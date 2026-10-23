@@ -9,6 +9,30 @@ import "../../services"
 Row {
     id: root
     spacing: Theme.gap
+    // Balance service demand across visibility changes and output removal.
+    property bool subscribed: false
+    function syncSubscriptions() {
+        if (visible === subscribed) return
+        subscribed = visible
+        if (subscribed) {
+            Audio.acquire()
+            Brightness.acquire()
+            PpdProfile.acquire()
+        } else {
+            Audio.release()
+            Brightness.release()
+            PpdProfile.release()
+        }
+    }
+    onVisibleChanged: syncSubscriptions()
+    Component.onCompleted: syncSubscriptions()
+    Component.onDestruction: {
+        if (subscribed) {
+            Audio.release()
+            Brightness.release()
+            PpdProfile.release()
+        }
+    }
 
     property int backlight: Brightness.level
     property int volume: Audio.volume

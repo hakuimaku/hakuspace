@@ -385,34 +385,11 @@ ShellRoot {
     }
 
 
+    // Enumerate screens cheaply and create heavy surfaces only while needed.
     Variants {
+        id: ephemeralHosts
         model: root.hikaiScreenModel
-        NavigationPanel {}
-    }
-
-    Variants {
-        model: root.hikaiScreenModel
-        SettingsPanel {}
-    }
-
-    Variants {
-        model: root.hikaiScreenModel
-        TempNoteOverlay {}
-    }
-
-    Variants {
-        model: root.hikaiScreenModel
-        TrayMenuPanel {}
-    }
-
-    Variants {
-        model: root.hikaiScreenModel
-        NotificationCenterPanel {}
-    }
-
-    Variants {
-        model: root.hikaiScreenModel
-        HakuMenuPanel {}
+        EphemeralSurfaces {}
     }
 
     // Persistent wallpaper renderers are independent from browser visibility.
@@ -423,37 +400,7 @@ ShellRoot {
 
     Variants {
         model: root.hikaiScreenModel
-        WallpaperBrowserPanel {}
-    }
-
-    Variants {
-        model: root.hikaiScreenModel
-        ActionMenuPanel {}
-    }
-
-    Variants {
-        model: root.hikaiScreenModel
-        NotificationPopup {}
-    }
-
-    Variants {
-        model: root.hikaiScreenModel
-        LevelOsdOverlay {}
-    }
-
-    Variants {
-        model: root.hikaiScreenModel
-        CavaUnderbarWindow {}
-    }
-
-    Variants {
-        model: root.hikaiScreenModel
         RoundedScreen {}
-    }
-
-    Variants {
-        model: root.hikaiScreenModel
-        WindowNavigatorOverlay {}
     }
 
     // Map last so an active wipe sits above existing Hikai overlay panels.

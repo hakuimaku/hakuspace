@@ -23,6 +23,8 @@ Rectangle {
         }
     ]
     property int currentIndex: 0
+    // Calendar navigation survives unloading its visual widget.
+    property int calendarMonthOffset: 0
 
     readonly property int widgetCount: widgets ? widgets.length : 0
     readonly property var currentWidget: (widgets && widgetCount > 0 && currentIndex >= 0 && currentIndex < widgetCount)
@@ -31,7 +33,7 @@ Rectangle {
     readonly property string currentTitle: currentWidget ? currentWidget.title : ""
 
     // Staged transition state
-    property int committedIndex: 0
+    property int committedIndex: currentIndex
     property int pendingIndex: -1
     property int transitionDirection: 0 // -1: prev, +1: next
     property bool transitioning: false
@@ -258,7 +260,7 @@ Rectangle {
                 Loader {
                     anchors.fill: parent
                     sourceComponent: modelData.component
-                    active: true
+                    active: slotItem.isCurrent || slotItem.isOutgoing || slotItem.isIncoming
                 }
             }
         }
@@ -268,6 +270,8 @@ Rectangle {
         id: calendarWidgetComponent
 
         DashboardCalendarWidget {
+            monthOffset: root.calendarMonthOffset
+            onMonthOffsetChanged: root.calendarMonthOffset = monthOffset
             anchors.fill: parent
         }
     }

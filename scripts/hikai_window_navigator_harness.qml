@@ -16,11 +16,15 @@ ShellRoot {
     // Repeat rapid taps to cover release before the switcher obtains focus.
     property int rapidTaps: 0
     property string rapidTarget: ""
-    property var overlay: hosts.instances.find(function(host) { return host.ownsSession }) || null
+    property var overlay: {
+        for (var host of hosts.instances) for (var loader of host.loaders)
+            if (loader.active && loader.item && loader.item.ownsSession) return loader.item
+        return null
+    }
     FloatingWindow { id: clientA; title: "Navigator A"; visible: true; color: "#202020"; implicitWidth: 320; implicitHeight: 240 }
     FloatingWindow { id: clientB; title: "Navigator B"; visible: true; color: "#505050"; implicitWidth: 320; implicitHeight: 240 }
     FloatingWindow { id: clientC; title: "Navigator C"; visible: true; color: "#808080"; implicitWidth: 320; implicitHeight: 240 }
-    Variants { id: hosts; model: Quickshell.screens; WindowNavigatorOverlay {} }
+    Variants { id: hosts; model: Quickshell.screens; EphemeralSurfaces {} }
     Process {
         id: keyboard
         command: ["python3", Quickshell.env("HAKUSPACE_TEST_KEYBOARD")]
@@ -99,7 +103,7 @@ ShellRoot {
             case 4:
                 if (!nav.active) return
                 root.check(nav.selectedAddress === root.b && !!root.overlay, "first MRU target and output ownership")
-                root.check(hosts.instances.filter(function(host) { return host.ownsSession }).length === 1, "duplicate output owner")
+                root.check(hosts.instances.reduce(function(count, host) { return count + host.loaders.filter(function(loader) { return loader.active && loader.item && loader.item.ownsSession }).length }, 0) === 1, "duplicate output owner")
                 root.key(15, 8); break
             case 5: root.check(nav.selectedAddress === root.a, "stable cycle"); root.key(1); break
             case 6: root.check(!nav.active, "Escape cancels"); break
@@ -162,7 +166,7 @@ ShellRoot {
             case 32: nav.cancel(); break
             case 33:
                 if (nav.sessionWindows.length) return
-                root.check(hosts.instances.every(function(host) { return !host.visible }), "close releases surfaces and previews")
+                root.check(hosts.instances.every(function(host) { return host.loadedCount === 0 }), "close releases surfaces and previews")
                 Hyprland.dispatch('hl.dsp.focus({monitor = "NAV-2"})'); break
             case 34:
                 if (!Hyprland.focusedMonitor || Hyprland.focusedMonitor.name !== "NAV-2") return

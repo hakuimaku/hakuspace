@@ -8,6 +8,8 @@ QtObject {
 
     // Records contain presentation data only. Protocol objects live in _handles
     // while active and are removed synchronously when closed() is delivered.
+    // Keep at most 100 records unless live protocol notifications require more.
+    readonly property int historyLimit: 100
     property var records: []
     readonly property int count: records.filter(function(record) {
         return !record.transient && !record.dismissed
@@ -56,14 +58,26 @@ QtObject {
         if (_memory) _memory.recordsJson = JSON.stringify(records)
     }
 
+    // Evict oldest closed records while preserving every live protocol handle.
+    function boundedRecords(items) {
+        var excess = Math.max(0, items.length - historyLimit)
+        return items.filter(function(record) {
+            if (excess > 0 && !record.live) {
+                --excess
+                return false
+            }
+            return true
+        })
+    }
+
     // Initializes notification store with persisted records from memory.
     function start(memory) {
         // The reloadable holder belongs to ShellRoot, where Quickshell can
         // match it to the preceding configuration generation.
         _memory = memory
-        records = JSON.parse(memory.recordsJson || "[]").map(function(record) {
+        records = boundedRecords(JSON.parse(memory.recordsJson || "[]").map(function(record) {
             return Object.assign({}, record, { popupEligible: false })
-        })
+        }))
         _nextKey = memory.nextKey || 1
         _started = true
         return server
@@ -128,7 +142,7 @@ QtObject {
         if (index < 0) return
         var updated = records.slice()
         updated[index] = snapshot(notification, updated[index], key)
-        records = updated
+        records = boundedRecords(updated)
     }
 
     // Computes and registers the timeout deadline for notification expiry.
@@ -163,7 +177,7 @@ QtObject {
                 closeReason: NotificationCloseReason.toString(reason)
             })
         }
-        records = updated
+        records = boundedRecords(updated)
     }
 
     // Ingests incoming notification, tracks handle, and sets up signal listeners.
@@ -177,7 +191,7 @@ QtObject {
             if (_memory) _memory.nextKey = _nextKey
             var updated = records.slice()
             updated.push(snapshot(notification, null, key))
-            records = updated
+            records = boundedRecords(updated)
         } else if (_handles[key] !== notification) {
             // Replacement may supply another protocol object with the same id.
             _handles[key] = notification
@@ -216,7 +230,7 @@ QtObject {
         if (index < 0) return
         var updated = records.slice()
         updated[index] = Object.assign({}, updated[index], { dismissed: true, popupEligible: false })
-        records = updated
+        records = boundedRecords(updated)
         var notification = _handles[key]
         if (notification) notification.dismiss()
     }

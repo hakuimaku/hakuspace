@@ -18,6 +18,7 @@ Item {
     }
     onGenerationChanged: if (preview.hasContent) preview.captureFrame()
     Image {
+        sourceSize: Qt.size(Math.max(1, Math.ceil(width * 2)), Math.max(1, Math.ceil(height * 2)))
         anchors.centerIn: parent
         width: Math.min(64, parent.width * 0.4); height: width
         source: Quickshell.iconPath(root.windowEntry.icon, "application-x-executable")

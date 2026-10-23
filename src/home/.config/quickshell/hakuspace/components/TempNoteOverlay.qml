@@ -8,6 +8,8 @@ import "flare" as Flare
 
 PanelWindow {
     id: root
+    // Release only after the surface has finished its visual close.
+    readonly property bool releaseReady: !panelOpen && !morphAnim.running && morphProgress === 0
     // Bind each surface to its Quickshell output.
     required property var modelData
     // Display the shared scratch editor only on its owning output.

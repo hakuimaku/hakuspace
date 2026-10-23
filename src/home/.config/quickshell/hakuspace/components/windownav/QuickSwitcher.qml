@@ -56,6 +56,7 @@ Item {
                         }
                         Behavior on radius { NumberAnimation { duration: HAnimation.fast } }
                         Image {
+        sourceSize: Qt.size(Math.max(1, Math.ceil(width * 2)), Math.max(1, Math.ceil(height * 2)))
                             x: 16; anchors.verticalCenter: parent.verticalCenter
                             width: 32; height: 32
                             source: Quickshell.iconPath(tile.modelData.icon, "application-x-executable")

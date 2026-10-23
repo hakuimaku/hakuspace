@@ -15,16 +15,13 @@ PanelWindow {
     // The wallpaper sidebar clears only the right module lane on its output.
     readonly property bool wallpaperOverlayOpen: ChromeLayout.topBarMode && UiState.activePanel === "wallpaper"
         && UiState.wallpaperScreenName === modelData.name
-    anchors { top: true; left: true; right: true }
+    // Keep a stable drawing plane while tooltip and OSD geometry animates inside it.
+    anchors { top: true; bottom: true; left: true; right: true }
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "hakuspace-bar"
 
     // Keep visuals and live tooltip anchors screen-local on every compositor.
     exclusionMode: ExclusionMode.Ignore
-    // Include animated tooltip bodies and their full feet in the drawable window.
-    implicitHeight: Math.ceil(Math.max(barH, Theme.topBarHeight
-        + Math.max(tipAreaH, tooltipLayer.surfaceHeight, osdSurface.currentHeight) + Theme.hugRadius))
-
     // Reserve the upper chassis separately from the full-width visual window.
     PanelWindow {
         screen: root.modelData
