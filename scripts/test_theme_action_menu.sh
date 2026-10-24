@@ -33,6 +33,30 @@ case "$1" in
 esac
 READ_ONLY
 done
+# Supply nested navigation data without invoking the Niri backend.
+cat > "$test_root/home/.local/bin/niri_animation_ctl.sh" <<'ANIMATIONS'
+#!/bin/sh
+case "$1" in
+    list) printf '[{"mode":"WindowOpen","option":"Fade","active":true},{"mode":"WindowOpen","option":"Slide","active":false},{"mode":"WindowClose","option":"Fade","active":true}]\n' ;;
+    *) printf 'Unexpected fixture action: %s\n' "$1" >&2; exit 64 ;;
+esac
+ANIMATIONS
+# Populate scrollable lists without changing the live clipboard, recording or session.
+cat > "$test_root/home/.local/bin/record_ctl.sh" <<'RECORD'
+#!/bin/sh
+case "$1" in
+    list-sources) printf '[{"id":"fixture.microphone","description":"Fixture Microphone"}]\n' ;;
+    *) printf 'Unexpected fixture action: %s\n' "$1" >&2; exit 64 ;;
+esac
+RECORD
+cat > "$test_root/home/.local/bin/clipboard_ctl.sh" <<'CLIPBOARD'
+#!/bin/sh
+case "$1" in
+    ensure-watchers) exit 0 ;;
+    list) for index in $(seq 1 30); do printf '%s\tFixture clipboard entry %s\n' "$index" "$index"; done ;;
+    *) printf 'Unexpected fixture action: %s\n' "$1" >&2; exit 64 ;;
+esac
+CLIPBOARD
 printf '#!/bin/sh\nexit 0\n' > "$test_root/home/.local/bin/appearance_ctl.sh"
 chmod +x "$test_root/render.sh" "$test_root/home/.local/bin/"*.sh
 HOME="$test_root/home" bash -c 'source "$HOME/.local/bin/haku_theme.sh"; ACCENT_COLOR="#88c0d0"; theme_save_state'
@@ -53,7 +77,7 @@ env -u DISPLAY -u WAYLAND_DISPLAY -u QT_QPA_PLATFORMTHEME -u QT_QPA_PLATFORMTHEM
     -u HYPRLAND_INSTANCE_SIGNATURE -u NIRI_SOCKET -u MANGO_INSTANCE_SIGNATURE -u GDK_BACKEND \
     HOME="$test_root/home" XDG_CONFIG_HOME="$test_root/home/.config" XDG_RUNTIME_DIR="$test_root/runtime" \
     XDG_CURRENT_DESKTOP=labwc QT_QPA_PLATFORM=wayland WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=1 WLR_RENDERER=pixman \
-    timeout 40s dbus-run-session -- labwc -C "$test_root/labwc" -S "bash $test_root/start.sh" > "$test_root/runtime.log" 2>&1 || status=$?
+    timeout 120s dbus-run-session -- labwc -C "$test_root/labwc" -S "bash $test_root/start.sh" > "$test_root/runtime.log" 2>&1 || status=$?
 cat "$test_root/runtime.log"
 [[ ${status:-0} == 0 ]]
 rg -q 'Theme Action Menu checks passed' "$test_root/runtime.log"

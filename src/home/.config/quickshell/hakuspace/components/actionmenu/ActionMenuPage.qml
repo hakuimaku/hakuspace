@@ -12,6 +12,11 @@ Item {
     property string geometryProfile: "option"
     property bool showHeader: true
     property bool canGoBack: false
+    // Keep selection geometry intact while its visual fades during layer transitions.
+    property bool selectionPillShown: false
+    // Share the rendered fade with button text and keep overlays outside layouts.
+    property real selectionPillOpacity: 0
+    readonly property Item contentItem: contentContainer
 
     default property alias contentData: contentContainer.data
 
@@ -19,6 +24,18 @@ Item {
     signal requestClose()
     signal scrollPrevious()
     signal scrollNext()
+    signal pointerSelectionMoved()
+
+    // Blend selection colors with the same progress as the painted pill.
+    function selectionColor(normalColor, selectedColor) {
+        var normal = Qt.color(normalColor)
+        var selected = Qt.color(selectedColor)
+        var progress = selectionPillOpacity
+        return Qt.rgba(normal.r + (selected.r - normal.r) * progress,
+            normal.g + (selected.g - normal.g) * progress,
+            normal.b + (selected.b - normal.b) * progress,
+            normal.a + (selected.a - normal.a) * progress)
+    }
 
     property real _wheelAccumulator: 0
     property real _touchAccumulator: 0

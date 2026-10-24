@@ -5,7 +5,6 @@ import Quickshell
 import Quickshell.Io
 import "../../../services"
 import ".." as ActionMenu
-import "../../motion" as Motion
 
 ActionMenu.ActionMenuPage {
     id: root
@@ -312,14 +311,15 @@ ActionMenu.ActionMenuPage {
 
             ActionMenu.ActionMenuSelectionPill {
                 id: selectionPill
-                z: 0
+                z: -1
                 targetItem: root.selectedActionIndex === 1 ? exitBtn : cancelBtn
-                coordinateSpace: bottomRow
+                parent: root.contentItem
+                coordinateSpace: root.contentItem
             }
 
             Item { Layout.fillWidth: true }
 
-            Motion.MorphButton {
+            ActionMenu.ActionMenuButton {
                 id: cancelBtn
                 z: 1
                 Layout.preferredWidth: 130
@@ -339,8 +339,8 @@ ActionMenu.ActionMenuPage {
                 hoverForegroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
                 selectedForegroundColor: Theme.onAccentColor
 
-                text: "Cancel"
-                onHoveredChanged: {
+                label: "Cancel"
+                onPointerSelected: {
                     if (hovered) {
                         root.selectedActionIndex = 0;
                     }
@@ -351,10 +351,10 @@ ActionMenu.ActionMenuPage {
                 }
             }
 
-            Motion.MorphButton {
+            ActionMenu.ActionMenuButton {
                 id: exitBtn
                 z: 1
-                property bool danger: true
+                danger: true
                 Layout.preferredWidth: 150
                 Layout.preferredHeight: Math.max(38, Theme.fontSize * 2.4)
                 radius: Theme.radius
@@ -372,8 +372,8 @@ ActionMenu.ActionMenuPage {
                 hoverForegroundColor: "#ffffff"
                 selectedForegroundColor: "#ffffff"
 
-                text: "Exit Anyway"
-                onHoveredChanged: {
+                label: "Exit Anyway"
+                onPointerSelected: {
                     if (hovered) {
                         root.selectedActionIndex = 1;
                     }

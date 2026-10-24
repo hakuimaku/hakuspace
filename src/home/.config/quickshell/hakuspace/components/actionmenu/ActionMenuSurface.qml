@@ -73,9 +73,6 @@ Item {
     property real morphSeedWidth: 200
     property real morphSeedHeight: 40
     property real morphSeedRadius: Theme.radius
-    property color morphSeedColor: Theme.accent
-    property string morphSeedIcon: ""
-    property string morphSeedLabel: ""
 
     property real maskScreenX: 0
     property real maskScreenY: 0
@@ -92,26 +89,34 @@ Item {
     readonly property real parentLocalX: (phase === "morphing-forward" ? morphStartScreenX : morphTargetScreenX) - surfaceScreenX
     readonly property real parentLocalY: (phase === "morphing-forward" ? morphStartScreenY : morphTargetScreenY) - surfaceScreenY
 
-    property color morphCarrierColor: Theme.surface
-    property real morphGhostOpacity: 0.0
-    property int morphBorderWidth: 0
     property real morphParentOpacity: 1.0
+
+    // Track pointer motion across the whole window so reappearing rows cannot steal selection.
+    property point lastPointerPosition: Qt.point(0, 0)
+    property bool pointerPositionValid: false
+    HoverHandler {
+        parent: root.parent
+        onPointChanged: {
+            var position = point.scenePosition
+            var moved = root.pointerPositionValid && Math.hypot(position.x - root.lastPointerPosition.x,
+                position.y - root.lastPointerPosition.y) >= Interaction.pointerModeThreshold
+            if (!root.pointerPositionValid || moved || root.phase !== "ready") {
+                root.lastPointerPosition = position
+                root.pointerPositionValid = true
+            }
+            if (moved && root.phase === "ready") Qt.callLater(root.selectHoveredItem)
+        }
+    }
+
+    // Wait for all hover states to settle before selecting the row under a moving pointer.
+    function selectHoveredItem() {
+        if (root && root.phase === "ready" && root.navStack.length)
+            root.navStack[root.navStack.length - 1].pageItem.pointerSelectionMoved()
+    }
 
     // Temporary references during morph
     property var activeMorphChild: null
     property var activeMorphParent: null
-
-    // Linearly interpolates RGBA color channels by progress t [0.0..1.0].
-    function interpolateColor(c1, c2, t) {
-        var col1 = Qt.color(c1);
-        var col2 = Qt.color(c2);
-        var clampedT = Math.max(0.0, Math.min(1.0, t));
-        var r = col1.r + (col2.r - col1.r) * clampedT;
-        var g = col1.g + (col2.g - col1.g) * clampedT;
-        var b = col1.b + (col2.b - col1.b) * clampedT;
-        var a = col1.a + (col2.a - col1.a) * clampedT;
-        return Qt.rgba(r, g, b, a);
-    }
 
     // Resolves width and height boundaries for a geometry profile name.
     function getProfileSize(profile) {
@@ -186,6 +191,7 @@ Item {
     // Connects back, close, and pushSubmenu signals on dynamic page instances.
     function connectPageSignals(item) {
         if (!item) return;
+        item.selectionPillShown = Qt.binding(function() { return root.phase === "ready"; });
         if (item.requestBack !== undefined) {
             item.requestBack.connect(root.popPage);
         }
@@ -227,6 +233,10 @@ Item {
     // Initializes initial flow page and starts circular reveal opening animation.
     function beginOpenAnimation() {
         if (closeAnim.running) closeAnim.stop();
+        openAnim.stop();
+        morphForwardAnim.stop();
+        morphBackAnim.stop();
+        root.phase = "opening";
 
         clearStack();
 
@@ -278,8 +288,8 @@ Item {
     function beginCloseAnimation() {
         if (root.phase === "closed" || root.phase === "closing") return;
         if (openAnim.running) openAnim.stop();
-        if (morphForwardAnim.running) morphForwardAnim.stop();
-        if (morphBackAnim.running) morphBackAnim.stop();
+        if (morphForwardAnim.running) { morphForwardAnim.stop(); finishForwardMorph(); }
+        if (morphBackAnim.running) { morphBackAnim.stop(); finishBackMorph(); }
 
         morphCarrier.active = false;
         childRevealEffect.visible = false;
@@ -294,6 +304,10 @@ Item {
         root.closeProgress = 0.0;
         root.closeOpacity = 1.0;
         root.closeScale = 1.0;
+        root.openProgress = 1.0;
+        root.openOpacity = 1.0;
+        root.openScale = 1.0;
+        root.contentEntranceOpacity = 1.0;
         root.phase = "ready";
     }
 
@@ -303,7 +317,6 @@ Item {
 
         var currentTop = root.navStack[root.navStack.length - 1];
         var parentItem = currentTop.pageItem;
-        currentTop.seedGeom = seedGeom;
 
         var nextProf = profile || "option";
         var parentSize = getProfileSize(currentTop.profile);
@@ -324,6 +337,7 @@ Item {
             return;
         }
         connectPageSignals(childItem);
+        root.phase = "morphing-forward";
 
         var newEntry = {
             pageUrl: pageUrl,
@@ -364,9 +378,6 @@ Item {
         root.morphSeedWidth = seed.width || 200;
         root.morphSeedHeight = seed.height || 40;
         root.morphSeedRadius = seed.radius || Theme.radius;
-        root.morphSeedColor = seed.color || Theme.accent;
-        root.morphSeedIcon = seed.icon || "";
-        root.morphSeedLabel = seed.label || "";
 
         // Position child inside morphChildHost at native target geometry
         childItem.anchors.fill = undefined;
@@ -392,7 +403,6 @@ Item {
         morphCarrier.active = true;
         childRevealEffect.visible = true;
 
-        root.phase = "morphing-forward";
         root.morphProgress = 0.0;
         root.updateForwardMorphFrame(0.0);
         morphForwardAnim.restart();
@@ -413,15 +423,6 @@ Item {
         root.maskHeight = Math.max(1, root.morphSeedHeight + (root.morphTargetH - root.morphSeedHeight) * progress);
         root.maskRadius = Math.max(0, root.morphSeedRadius + (Theme.largeRadius - root.morphSeedRadius) * progress);
 
-        // Visual effects
-        if (progress <= 0.7) {
-            root.morphCarrierColor = interpolateColor(root.morphSeedColor, Theme.surface, progress / 0.7);
-        } else {
-            root.morphCarrierColor = Theme.surface;
-        }
-
-        root.morphGhostOpacity = Math.max(0.0, 1.0 - progress * 2.8);
-        root.morphBorderWidth = Math.max(0, Math.round((1.0 - progress) * Theme.borderWidth));
         root.morphParentOpacity = Math.max(0.0, 1.0 - progress * 2.2);
     }
 
@@ -471,10 +472,12 @@ Item {
 
     // Pops top page from navigation stack and initiates reverse morph back to originating button.
     function popPage() {
-        if (root.phase !== "ready" || root.navStack.length <= 1) {
+        if (root.phase !== "ready") return;
+        if (root.navStack.length <= 1) {
             root.requestClose();
             return;
         }
+        root.phase = "morphing-back";
 
         var childEntry = root.navStack[root.navStack.length - 1];
         var parentEntry = root.navStack[root.navStack.length - 2];
@@ -514,9 +517,6 @@ Item {
         root.morphSeedWidth = seed.width || 200;
         root.morphSeedHeight = seed.height || 40;
         root.morphSeedRadius = seed.radius || Theme.radius;
-        root.morphSeedColor = seed.color || Theme.accent;
-        root.morphSeedIcon = seed.icon || "";
-        root.morphSeedLabel = seed.label || "";
 
         // Move child to morphChildHost at its native geometry
         childItem.anchors.fill = undefined;
@@ -542,7 +542,6 @@ Item {
         morphCarrier.active = true;
         childRevealEffect.visible = true;
 
-        root.phase = "morphing-back";
         root.morphBackProgress = 0.0;
         root.updateBackMorphFrame(0.0);
         morphBackAnim.restart();
@@ -563,15 +562,6 @@ Item {
         root.maskHeight = Math.max(1, root.morphStartH + (root.morphSeedHeight - root.morphStartH) * progress);
         root.maskRadius = Math.max(0, Theme.largeRadius + (root.morphSeedRadius - Theme.largeRadius) * progress);
 
-        // Visual effects
-        if (progress <= 0.3) {
-            root.morphCarrierColor = Theme.surface;
-        } else {
-            root.morphCarrierColor = interpolateColor(Theme.surface, root.morphSeedColor, (progress - 0.3) / 0.7);
-        }
-
-        root.morphGhostOpacity = (progress >= 0.65) ? Math.min(1.0, (progress - 0.65) / 0.35) : 0.0;
-        root.morphBorderWidth = Math.max(0, Math.round(progress * Theme.borderWidth));
         root.morphParentOpacity = Math.min(1.0, progress * 2.0);
     }
 
@@ -628,7 +618,7 @@ Item {
     Component.onCompleted: if (visible && phase === "closed") beginOpenAnimation()
 
     onFlowChanged: {
-        if (visible && phase === "ready") {
+        if (visible && phase !== "closed" && phase !== "closing") {
             beginOpenAnimation();
         }
     }
@@ -694,11 +684,8 @@ Item {
             morphWidth: root.maskWidth
             morphHeight: root.maskHeight
             morphRadius: root.maskRadius
-            morphColor: root.morphCarrierColor
-            morphBorderWidth: root.morphBorderWidth
-            seedIcon: root.morphSeedIcon
-            seedLabel: root.morphSeedLabel
-            ghostOpacity: root.morphGhostOpacity
+            opacity: root.phase === "morphing-forward" ? Math.min(1, root.morphProgress * 3)
+                : Math.min(1, (1 - root.morphBackProgress) * 3)
         }
 
         // Offscreen host for child page during morph
@@ -726,6 +713,8 @@ Item {
             source: childCaptureSource
             visible: false
             z: 3
+            opacity: root.phase === "morphing-forward" ? Math.max(0, (root.morphProgress - 0.2) / 0.8)
+                : 1 - root.morphBackProgress
             maskEnabled: true
             maskSource: childRevealMaskItem
             maskThresholdMin: 0.5

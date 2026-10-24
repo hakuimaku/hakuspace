@@ -14,6 +14,22 @@ Motion.MorphButton {
     property bool danger: false
     property bool hasSubmenu: false
 
+    // Resolve the page once for pointer selection and the rendered selection fade.
+    readonly property Item page: {
+        var item = parent
+        while (item && item.selectionPillOpacity === undefined) item = item.parent
+        return item
+    }
+    readonly property real selectionOpacity: page ? page.selectionPillOpacity : 1
+    readonly property color contentForeground: (selected || focused) && page
+        ? page.selectionColor(danger ? "#ff6b6b" : Theme.fg, foreground) : foreground
+    signal pointerSelected()
+
+    Connections {
+        target: root.page
+        function onPointerSelectionMoved() { if (root.hovered) root.pointerSelected() }
+    }
+
     // Clear MorphButton's internal center text
     text: ""
 
@@ -46,7 +62,8 @@ Motion.MorphButton {
         : root.hovered ? Theme.fg
         : Theme.fgMuted
     property color animatedTrailingForeground: targetTrailingForeground
-    readonly property color trailingForeground: animatedTrailingForeground
+    readonly property color trailingForeground: (selected || focused) && page
+        ? page.selectionColor(Theme.fgMuted, animatedTrailingForeground) : animatedTrailingForeground
 
     Behavior on animatedTrailingForeground {
         ColorAnimation {
@@ -58,7 +75,8 @@ Motion.MorphButton {
 
     // Returns button screen coordinates and styling metrics for seed morphing animations.
     function getSurfaceGeometry(surfaceItem) {
-        var screenPt = mapToItem(null, 0, 0);
+        // Match the selection pill's layout bounds while the button is pressed or hovered.
+        var screenPt = parent.mapToItem(null, root.x, root.y);
         return {
             screenX: screenPt.x,
             screenY: screenPt.y,
@@ -86,7 +104,7 @@ Motion.MorphButton {
             text: root.icon
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSize + 2
-            color: root.foreground
+            color: root.contentForeground
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             Layout.preferredWidth: visible ? Theme.fontSize * 1.8 : 0
@@ -97,7 +115,7 @@ Motion.MorphButton {
             text: root.label
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSize
-            color: root.foreground
+            color: root.contentForeground
             elide: Text.ElideRight
             Layout.fillWidth: true
             verticalAlignment: Text.AlignVCenter
@@ -121,12 +139,14 @@ Motion.MorphButton {
             implicitWidth: badgeText.implicitWidth + 8
             implicitHeight: Math.max(16, Theme.fontSize * 1.2)
             radius: 4
-            color: (root.selected || root.focused)
-                ? (root.danger ? Qt.rgba(1, 1, 1, 0.25) : Qt.rgba(0, 0, 0, 0.22))
-                : Qt.rgba(root.badgeColor.r, root.badgeColor.g, root.badgeColor.b, 0.2)
+            readonly property color normalBackground: Qt.rgba(root.badgeColor.r, root.badgeColor.g, root.badgeColor.b, 0.2)
+            color: (root.selected || root.focused) && root.page
+                ? root.page.selectionColor(normalBackground, root.danger ? Qt.rgba(1, 1, 1, 0.25) : Qt.rgba(0, 0, 0, 0.22))
+                : normalBackground
             Layout.alignment: Qt.AlignVCenter
 
             Behavior on color {
+                enabled: root.selectionOpacity >= 0.999
                 ColorAnimation {
                     duration: root.transitionDuration
                     easing.type: Easing.BezierSpline
@@ -141,11 +161,12 @@ Motion.MorphButton {
                 font.family: Theme.fontFamily
                 font.pixelSize: Math.max(8, Theme.fontSize - 4)
                 font.weight: Font.Medium
-                color: (root.selected || root.focused)
-                    ? (root.danger ? "#ffffff" : Theme.onAccentColor)
+                color: (root.selected || root.focused) && root.page
+                    ? root.page.selectionColor(root.badgeColor, root.danger ? "#ffffff" : Theme.onAccentColor)
                     : root.badgeColor
 
                 Behavior on color {
+                    enabled: root.selectionOpacity >= 0.999
                     ColorAnimation {
                         duration: root.transitionDuration
                         easing.type: Easing.BezierSpline

@@ -44,7 +44,7 @@ ActionMenu.ActionMenuPage {
     function activateIndex(idx) {
         if (idx < 0 || idx >= modes.length) return;
         var mode = modes[idx];
-        var btn = listCol.children[idx];
+        var btn = modesRepeater.itemAt(idx);
 
         if (mode.isSubmenu) {
             var geom = btn && btn.getSurfaceGeometry ? btn.getSurfaceGeometry() : null;
@@ -141,7 +141,7 @@ ActionMenu.ActionMenuPage {
                     }
                 }
 
-                onHoveredChanged: {
+                onPointerSelected: {
                     if (hovered) {
                         root.selectedIndex = index;
                     }

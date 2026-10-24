@@ -365,7 +365,7 @@ ActionMenu.ActionMenuPage {
                 onSelectedChanged: {
                     if (selected) selectionPill.targetItem = this;
                 }
-                onHoveredChanged: {
+                onPointerSelected: {
                     if (hovered) {
                         root.selectedIndex = index;
                     }

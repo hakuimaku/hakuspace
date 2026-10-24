@@ -37,7 +37,7 @@ ActionMenu.ActionMenuPage {
     function activateAction(idx) {
         if (idx < 0 || idx >= actions.length) return;
         var act = actions[idx];
-        var btn = buttonsRow.children[idx];
+        var btn = buttonsRepeater.itemAt(idx);
 
         if (act.id === "logout") {
             // Power -> Logout morphs into ExitPage in the same layer!
@@ -117,6 +117,9 @@ ActionMenu.ActionMenuPage {
             delegate: Motion.MorphButton {
                 id: pBtn
                 property bool danger: modelData.danger
+                // Keep icon and label contrast in sync with the real pill fade.
+                readonly property color contentForeground: selected || focused
+                    ? root.selectionColor(danger ? "#ff6b6b" : Theme.fg, foreground) : foreground
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 radius: Theme.radius > 0 ? Theme.radius : 12
@@ -154,15 +157,15 @@ ActionMenu.ActionMenuPage {
                     }
                 }
 
-                onHoveredChanged: {
-                    if (hovered) {
-                        root.selectedIndex = index;
-                    }
+                Connections {
+                    target: root
+                    function onPointerSelectionMoved() { if (pBtn.hovered) root.selectedIndex = index }
                 }
 
                 // Returns button screen coordinates and styling metrics for seed morphing animations.
                 function getSurfaceGeometry(surfaceItem) {
-                    var screenPt = mapToItem(null, 0, 0);
+                    // Match the selection pill's layout bounds during button feedback.
+                    var screenPt = parent.mapToItem(null, pBtn.x, pBtn.y);
                     return {
                         screenX: screenPt.x,
                         screenY: screenPt.y,
@@ -190,7 +193,7 @@ ActionMenu.ActionMenuPage {
                         text: modelData.icon
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSize * 2.2
-                        color: pBtn.foreground
+                        color: pBtn.contentForeground
                         Layout.alignment: Qt.AlignHCenter
                     }
 
@@ -199,7 +202,7 @@ ActionMenu.ActionMenuPage {
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSize + 1
                         font.weight: pBtn.selected ? Font.DemiBold : Font.Normal
-                        color: pBtn.foreground
+                        color: pBtn.contentForeground
                         Layout.alignment: Qt.AlignHCenter
                     }
                 }

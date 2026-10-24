@@ -249,7 +249,7 @@ ActionMenu.ActionMenuPage {
                     }
                 }
 
-                onHoveredChanged: {
+                onPointerSelected: {
                     if (hovered) {
                         root.selectedIndex = index;
                     }
