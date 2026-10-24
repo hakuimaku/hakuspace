@@ -12,7 +12,7 @@ Item {
 
     readonly property int maxVisible: 3
     readonly property real popupWidth: 450
-    readonly property real gap: Theme.gap * 2
+    readonly property real gap: Theme.spaceSm
     readonly property real topOffset: ChromeLayout.topBarMode ? Theme.topBarHeight : ScreenGeometry.topBorderThickness
     readonly property var frameBounds: ScreenGeometry.horizontalBounds(modelData.width)
     readonly property real bodyWidth: Math.max(0, Math.min(popupWidth, frameBounds.end - frameBounds.start))
@@ -172,7 +172,7 @@ Item {
                         compact: true
                         width: popupStack.width
                         cardRadius: 0
-                        cardPadding: 20
+                        cardPadding: Theme.cardPadding + Theme.spaceXs
                         showBorder: false
                         color: "transparent"
                     }

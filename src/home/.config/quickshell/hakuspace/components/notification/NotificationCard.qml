@@ -13,13 +13,13 @@ Rectangle {
     // Presentation knobs let popup cards diverge from Notification Center cards
     // without duplicating the notification body component.
     property real cardRadius: Theme.radius
-    property real cardPadding: 12
-    property bool showBorder: true
+    property real cardPadding: Theme.cardPadding
+    property bool showBorder: record.urgency === NotificationUrgency.Critical
     property bool accentedBorder: false
     implicitWidth: 450
     implicitHeight: content.implicitHeight + cardPadding * 2
     radius: cardRadius
-    color: Theme.surface
+    color: "transparent"
     border.width: showBorder ? (record.urgency === NotificationUrgency.Critical ? 2 : 1)
                                + (accentedBorder ? 1 : 0) : 0
     border.color: accentedBorder ? Theme.accent
@@ -37,12 +37,12 @@ Rectangle {
         x: root.cardPadding
         y: root.cardPadding
         width: root.width - root.cardPadding * 2
-        spacing: Theme.gap
+        spacing: Theme.spaceSm
 
         Row {
             width: parent.width
             height: Math.max(Theme.fontSize * 2, dismissButton.height)
-            spacing: Theme.gap
+            spacing: Theme.spaceSm
 
             IconImage {
                 id: appIcon
@@ -72,7 +72,8 @@ Rectangle {
             }
             HButton {
                 id: dismissButton
-                width: Theme.fontSize * 2
+                width: Theme.controlHeight
+                height: Theme.controlHeight
                 text: "×"
                 activeFocusOnTab: true
                 Accessible.role: Accessible.Button

@@ -13,13 +13,13 @@ Item {
     }).reverse()
     implicitWidth: Math.min(450, maxWidth)
     implicitHeight: Math.min(maxHeight, Math.max(180,
-        header.height + Theme.gap + Math.min(entries.length, 3) * Theme.fontSize * 10))
+        header.height + Theme.spaceMd + Math.min(entries.length, 3) * Theme.fontSize * 10))
 
     Row {
         id: header
         width: root.width
         height: Math.max(Theme.fontSize * 2.2, dndButton.height)
-        spacing: Theme.gap * 2
+        spacing: Theme.spaceSm
 
         Text {
             width: Math.max(0, parent.width - dndButton.width - clearButton.width
@@ -35,6 +35,7 @@ Item {
         }
         HButton {
             id: dndButton
+            height: Theme.comfortableControlHeight
             width: Theme.fontSize * 5.3
             hoverScaleDelta: 0
             expandedVisual: true
@@ -52,6 +53,7 @@ Item {
         }
         HButton {
             id: clearButton
+            height: Theme.comfortableControlHeight
             width: Theme.fontSize * 4
             hoverScaleDelta: 0
             expandedVisual: true
@@ -75,7 +77,8 @@ Item {
         }
         HButton {
             id: closeButton
-            width: Theme.fontSize * 2
+            height: Theme.comfortableControlHeight
+            width: Theme.controlHeight
             hoverScaleDelta: 0
             expandedVisual: true
             hoverXScaleDelta: 0.30
@@ -100,17 +103,17 @@ Item {
 
     ListView {
         id: list
-        y: header.height + Theme.gap
+        y: header.height + Theme.spaceMd
         width: root.width
         height: Math.max(0, root.height - y)
         clip: true
-        spacing: Theme.gap
+        spacing: Theme.spaceSm
         model: historyModel
         delegate: NotificationCard {
             required property var modelData
             record: modelData
             width: list.width
-            accentedBorder: true
+            accentedBorder: false
             onKeyboardInteraction: root.keyboardInteraction()
         }
 

@@ -223,8 +223,8 @@ Item {
             contentKey: "notifications"
             maxWidth: Math.min(500, Math.max(0, root.horizontalBounds.end - root.horizontalBounds.start))
             wBounds: root.horizontalBounds
-            horizontalPadding: 24
-            verticalPadding: 24
+            horizontalPadding: Theme.panelPadding
+            verticalPadding: Theme.panelPadding
             onSettled: (isShown) => {
                 if (!isShown && !root.panelOpen) root.closing = false
             }
