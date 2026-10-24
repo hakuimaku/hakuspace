@@ -81,6 +81,12 @@ cmd_set() {
             ;;
     esac
 
+    # The manifest is backend-owned state, never a redirect to another file.
+    if [[ -L "$MANIFEST_FILE" ]]; then
+        printf 'avatar_ctl.sh set: rejected symlinked avatar manifest\n' >&2
+        return 1
+    fi
+
     local previous_basename=""
     if [[ -f "$MANIFEST_FILE" ]]; then
         local raw_prev
@@ -113,27 +119,45 @@ cmd_set() {
         printf 'avatar_ctl.sh set: failed to copy source image: %s\n' "$src" >&2
         return 1
     fi
-    chmod 600 "$temp_file"
-
-    # Atomically replace active avatar image
-    if ! mv -f "$temp_file" "$target_path"; then
+    if ! chmod 600 "$temp_file"; then
         rm -f "$temp_file"
+        umask "$saved_umask"
+        printf 'avatar_ctl.sh set: failed to protect temporary image\n' >&2
+        return 1
+    fi
+
+    # Preserve the manifest's private permissions before committing a same-format image.
+    if [[ "$previous_basename" == "$target_basename" ]] && ! chmod 600 "$MANIFEST_FILE"; then
+        rm -f "$temp_file"
+        umask "$saved_umask"
+        printf 'avatar_ctl.sh set: failed to protect avatar manifest\n' >&2
+        return 1
+    fi
+
+    # Prepare the manifest before replacing any image the user currently sees.
+    if [[ "$previous_basename" != "$target_basename" ]]; then
+        if ! printf '%s\n' "$target_basename" > "$manifest_temp" || ! chmod 600 "$manifest_temp"; then
+            rm -f "$temp_file" "$manifest_temp"
+            umask "$saved_umask"
+            printf 'avatar_ctl.sh set: failed to prepare manifest\n' >&2
+            return 1
+        fi
+    fi
+
+    # Same-format updates retain the existing manifest, so no later write can fail.
+    if ! mv -f "$temp_file" "$target_path"; then
+        rm -f "$temp_file" "$manifest_temp"
         umask "$saved_umask"
         printf 'avatar_ctl.sh set: failed to install avatar image: %s\n' "$target_path" >&2
         return 1
     fi
-    chmod 600 "$target_path"
 
-    # Atomically update avatar.path manifest with 0600 permissions
-    printf '%s\n' "$target_basename" > "$manifest_temp"
-    chmod 600 "$manifest_temp" 2>/dev/null || true
-    if ! mv -f "$manifest_temp" "$MANIFEST_FILE"; then
-        rm -f "$manifest_temp" 2>/dev/null || true
+    if [[ "$previous_basename" != "$target_basename" ]] && ! mv -f "$manifest_temp" "$MANIFEST_FILE"; then
+        rm -f "$manifest_temp" "$target_path"
         umask "$saved_umask"
         printf 'avatar_ctl.sh set: failed to update manifest: %s\n' "$MANIFEST_FILE" >&2
         return 1
     fi
-    chmod 600 "$MANIFEST_FILE" 2>/dev/null || true
 
     # Safely remove previous avatar if different extension
     if [[ -n "$previous_basename" && "$previous_basename" != "$target_basename" ]]; then

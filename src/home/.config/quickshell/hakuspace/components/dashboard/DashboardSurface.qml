@@ -221,6 +221,7 @@ Item {
         }
 
         onRequestChangeAvatar: {
+            avatarChooser.lease = UiState.beginNativeDialog("navigation")
             avatarChooser.open()
         }
     }
@@ -237,45 +238,28 @@ Item {
         z: 9
     }
 
-    Image {
-        id: decodeProbe
-        // Validate user images with a bounded, uncached decode.
-        sourceSize: Qt.size(256, 256)
-        cache: false
-        visible: false
-        asynchronous: false
-        property string pendingLocalPath: ""
-
-        onStatusChanged: {
-            if (pendingLocalPath.length === 0) return
-            if (status === Image.Ready) {
-                var validPath = pendingLocalPath
-                pendingLocalPath = ""
-                source = ""
-                Avatar.setAvatar(validPath)
-                root.focusRequested()
-            } else if (status === Image.Error) {
-                pendingLocalPath = ""
-                source = ""
-                Avatar.reportDecodeError("Selected image cannot be decoded by Qt runtime")
-                root.focusRequested()
-            }
-        }
+    AvatarCropper {
+        id: cropper
+        parent: root
+        onFinished: root.focusRequested()
     }
 
     FileDialog {
         id: avatarChooser
         title: "Select Avatar"
+        property int lease: 0
+        Component.onDestruction: UiState.endNativeDialog(lease)
         nameFilters: ["Image files (*.png *.jpg *.jpeg *.webp)", "All files (*)"]
 
         onAccepted: {
-            var localPath = new URL(selectedFile).pathname
-            decodeProbe.pendingLocalPath = localPath
-            decodeProbe.source = ""
-            decodeProbe.source = selectedFile
+            UiState.endNativeDialog(lease)
+            Avatar.lastError = ""
+            cropper.source = selectedFile
+            cropper.open()
         }
 
         onRejected: {
+            UiState.endNativeDialog(lease)
             root.focusRequested()
         }
     }
