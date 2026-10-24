@@ -150,6 +150,8 @@ Rectangle {
 
     // Calculates directional lead/trail timing and restarts asymmetric morph animations for absolute mode.
     function retargetAbsolute() {
+        // Deferred geometry updates may outlive a discarded Settings page.
+        if (!root || typeof root.snap !== "function") return;
         if (indexedMode) return;
         if (!absoluteTargetValid) return;
 

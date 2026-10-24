@@ -44,6 +44,17 @@ QtObject {
     property int borderWidth: 0
     property int gap: 4
     property int pad: 10
+    // Comfortable metrics for floating panels, text cards and their controls.
+    readonly property int spaceXs: 4
+    readonly property int spaceSm: 8
+    readonly property int spaceMd: 12
+    readonly property int spaceLg: 16
+    readonly property int spaceXl: 24
+    readonly property int panelPadding: 24
+    readonly property int cardPadding: 16
+    readonly property int controlHeight: 36
+    readonly property int comfortableControlHeight: 40
+    readonly property int sectionGap: 24
     
     property string font: "sans-serif"
     property string fontFamily: font
