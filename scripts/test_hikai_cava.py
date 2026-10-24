@@ -3,8 +3,10 @@
 
 import json
 import os
+import re
 from pathlib import Path
 import shutil
+import shlex
 import subprocess
 import tempfile
 import unittest
@@ -13,6 +15,85 @@ ROOT = Path(__file__).resolve().parents[1]
 CAVA_PARSER_JS = ROOT / "src/home/.config/quickshell/hakuspace/services/cava/CavaFrameParser.js"
 CAVA_MATH_JS = ROOT / "src/home/.config/quickshell/hakuspace/services/cava/CavaMath.js"
 CAVA_MANAGER = ROOT / "src/core/app/cava-layer/cava_manager.sh"
+
+
+@unittest.skipUnless(shutil.which("niri") and os.environ.get("WAYLAND_DISPLAY"),
+                     "nested Niri requires a Wayland display")
+class CavaWindowTest(unittest.TestCase):
+    """Exercise the underbar geometry in a private nested Niri session."""
+
+    def test_niri_surface_attachment(self):
+        self._run_harness("hikai_cava_harness.qml", "Hikai Cava attachment checks passed")
+
+    def test_isolated_renderer_lifecycle(self):
+        self._run_harness("hikai_cava_renderer_harness.qml", "Hikai Cava renderer checks passed")
+
+    def _run_harness(self, harness, marker):
+        """Keep the worker, audio fixture and every socket inside one disposable session."""
+        with tempfile.TemporaryDirectory(prefix="hikai-cava-test-") as temporary:
+            work = Path(temporary)
+            shell = work / "home/.config/quickshell/hakuspace"
+            shutil.copytree(ROOT / "src/home/.config/quickshell/hakuspace", shell)
+            self.assertTrue((shell / "components/cava/CavaRenderer.qml").is_file())
+            self.assertFalse((shell / "CavaRenderer.qml").exists())
+            self.assertTrue((shell / "cava.qml").is_file())
+            shutil.copy(ROOT / "scripts" / harness, shell / "shell.qml")
+            (shell / "cava-fixture.py").write_text(
+                'import os, time\nprint("audioPid=" + str(os.getpid()), flush=True)\n'
+                'for _ in range(3600):\n print(";".join(["500"] * 64), flush=True)\n time.sleep(1/60)\n',
+                encoding="utf-8")
+            # Exercise the production manager after reload without using installed state or config.
+            binary = work / "home/.local/bin"
+            binary.mkdir(parents=True)
+            (binary / "cava_manager.sh").symlink_to(CAVA_MANAGER)
+            for name in ("haku_state.sh", "haku_theme.sh", "haku_backend_lib.sh"):
+                (binary / name).symlink_to(ROOT / "src/core/lib" / name)
+            config_dir = work / "home/hakucfg/config"
+            config_dir.mkdir(parents=True)
+            audio_fifo = work / "audio.fifo"
+            os.mkfifo(audio_fifo)
+            (config_dir / "cava-layer").write_text(
+                f"[general]\nbars = 64\n\n[input]\nmethod = fifo\nsource = {audio_fifo}\n\n[output]\nmethod = ncurses\n",
+                encoding="utf-8")
+            runtime = work / "runtime"
+            runtime.mkdir(mode=0o700)
+            # The nested compositor inherits only the parent display, never its IPC socket.
+            display = os.environ.get("WAYLAND_DISPLAY", "wayland-0")
+            if not os.path.isabs(display):
+                display = str(Path(os.environ["XDG_RUNTIME_DIR"]) / display)
+            config = work / "niri.kdl"
+            config.write_text('hotkey-overlay { skip-at-startup; }\n', encoding="utf-8")
+            launcher = work / "start.sh"
+            shell_log = work / "shell.log"
+            launcher.write_text(
+                f'quickshell -p {shlex.quote(str(shell))} > {shlex.quote(str(shell_log))} 2>&1\n'
+                'niri msg action quit --skip-confirmation\n', encoding="utf-8")
+            environment = {**os.environ, "HOME": str(work / "home"),
+                           "XDG_CONFIG_HOME": str(work / "home/.config"),
+                           "XDG_STATE_HOME": str(work / "home/.local/state"),
+                           "XDG_CACHE_HOME": str(work / "cache"), "XDG_RUNTIME_DIR": str(runtime),
+                           "WAYLAND_DISPLAY": display, "XDG_CURRENT_DESKTOP": "niri",
+                           "QT_QPA_PLATFORM": "wayland", "QT_QUICK_BACKEND": "software"}
+            for key in ("DISPLAY", "NIRI_SOCKET", "HYPRLAND_INSTANCE_SIGNATURE",
+                        "MANGO_INSTANCE_SIGNATURE", "QT_QPA_PLATFORMTHEME", "QT_QPA_PLATFORMTHEME_QT6"):
+                environment.pop(key, None)
+            result = subprocess.run(["dbus-run-session", "--", "niri", "-c", str(config),
+                                     "--", "bash", str(launcher)],
+                                    env=environment, capture_output=True, text=True, timeout=45)
+            log = result.stdout + result.stderr
+            if shell_log.exists():
+                log += shell_log.read_text()
+            if os.environ.get("HAKUSPACE_CAVA_ARTIFACT_DIR"):
+                artifacts = Path(os.environ["HAKUSPACE_CAVA_ARTIFACT_DIR"])
+                artifacts.mkdir(parents=True, exist_ok=True)
+                (artifacts / (harness + ".log")).write_text(log, encoding="utf-8")
+            self.assertEqual(result.returncode, 0, log)
+            self.assertIn(marker, log)
+            for error in ("TypeError", "ReferenceError", "Binding loop", "Failed to load configuration"):
+                self.assertNotIn(error, log)
+            for pid in re.findall(r"(?:renderer|audio)Pid=(\d+)", log):
+                self.assertFalse(Path("/proc", pid).exists(), "Cava child survived its parent: " + pid)
+            self.assertFalse(list(runtime.glob("hakuspace-cava-*.sock")), "renderer socket remains after shutdown")
 
 
 class CavaJsTest(unittest.TestCase):

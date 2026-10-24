@@ -12,7 +12,7 @@ Item {
         property int calendarMonthOffset: 0
     }
     // Expose resource counts without retaining destroyed surface objects.
-    readonly property var loaders: [navigation, settings, note, tray, center, wallpaper, action, popup, osd, cava, navigator]
+    readonly property var loaders: [navigation, settings, note, tray, center, wallpaper, action, popup, osd, navigator]
     readonly property int loadedCount: loaders.filter(function(loader) { return loader.active }).length + menu.loadedCount
     readonly property var navigationItem: navigation.active ? navigation.item : null
 
@@ -68,11 +68,6 @@ Item {
         id: osd
         requested: CenterState.osdVisible || CenterState.osdExpansion > 0
         LevelOsdOverlay { modelData: root.modelData }
-    }
-    Base.LifecycleLoader {
-        id: cava
-        requested: CavaService.enabled && CavaService.available
-        CavaUnderbarWindow { modelData: root.modelData }
     }
     Base.LifecycleLoader {
         id: navigator

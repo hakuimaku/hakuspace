@@ -352,6 +352,7 @@ ShellRoot {
             return JSON.stringify({
                 enabled: CavaService.enabled,
                 running: CavaService.running,
+                rendererPid: CavaService.rendererPid,
                 sleeping: CavaService.sleeping,
                 style: CavaService.style,
                 height: CavaService.height,
@@ -384,6 +385,9 @@ ShellRoot {
         DockBar {}
     }
 
+
+    // Cava owns its audio processing and animated surfaces in a separate process.
+    CavaRendererHost { service: CavaService; screens: root.hikaiScreenModel }
 
     // Enumerate screens cheaply and create heavy surfaces only while needed.
     Variants {

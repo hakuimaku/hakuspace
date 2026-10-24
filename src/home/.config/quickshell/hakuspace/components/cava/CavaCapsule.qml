@@ -7,12 +7,12 @@ Item {
     property var bars: CavaService.bars
     property real amplitude: CavaService.amplitude
     readonly property bool isSurfaceMode: CavaService.colorMode === "surface"
-    property color barColor: isSurfaceMode ? Theme.surface : Theme.accent
+    property color barColor: CavaService.underbarColor
     property real barOpacity: isSurfaceMode ? 1.0 : 0.85
 
     readonly property int count: bars ? bars.length : 0
     readonly property real spacing: 2
-    readonly property bool isTop: AppState.cavaTopState
+    readonly property bool isTop: CavaService.top
     readonly property real barWidth: count > 0 ? Math.max(2, (width - (count - 1) * spacing) / count) : 4
 
     // Continuous idle ripple animation with exact harmonic periodicity

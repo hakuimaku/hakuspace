@@ -8,13 +8,13 @@ Item {
     property real amplitude: CavaService.amplitude
     property real motionStrength: CavaService.motionStrength
     readonly property bool isSurfaceMode: CavaService.colorMode === "surface"
-    property color inkColor: isSurfaceMode ? Theme.surface : Theme.accent
+    property color inkColor: CavaService.underbarColor
     property real inkOpacity: isSurfaceMode ? 1.0 : 0.80
     property bool showCrestLine: true
-    property color crestColor: isSurfaceMode ? Qt.lighter(Theme.surface, 1.8) : Theme.accent
+    property color crestColor: isSurfaceMode ? Qt.lighter(CavaService.surfaceColor, 1.8) : CavaService.accentColor
     property real crestOpacity: isSurfaceMode ? 0.75 : 0.95
 
-    readonly property bool isTop: AppState.cavaTopState
+    readonly property bool isTop: CavaService.top
     readonly property bool sleeping: CavaService.sleeping
     readonly property real overallEnergy: CavaService.overallEnergy
     readonly property real bassEnergy: CavaService.bassEnergy

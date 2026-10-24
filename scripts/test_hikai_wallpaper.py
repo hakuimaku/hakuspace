@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -371,6 +372,58 @@ class WallpaperTests(unittest.TestCase):
                      WALL_DIR=str(self.static), WALL_MPV_DIR=str(self.video)))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual((self.home / "rotated.txt").read_text().strip(), "apply-lively " + str(video))
+
+
+class WallpaperPanelTests(unittest.TestCase):
+    """Render sidebar motion in a private Niri session with fixture thumbnails."""
+
+    @unittest.skipUnless(shutil.which("niri") and os.environ.get("WAYLAND_DISPLAY"),
+                         "nested Niri requires a Wayland display")
+    def test_slide_lifecycle(self):
+        with tempfile.TemporaryDirectory(prefix="hikai-wallpaper-panel-") as temporary:
+            work = Path(temporary)
+            shell = work / "src/home/.config/quickshell/hakuspace"
+            shutil.copytree(ROOT / "src/home/.config/quickshell/hakuspace", shell)
+            shutil.copy(ROOT / "scripts/hikai_wallpaper_panel_harness.qml", shell / "shell.qml")
+            for name in ("backend", "lib", "theme", "state"):
+                shutil.copytree(ROOT / "src/core" / name, work / "src/core" / name)
+            home = work / "home"
+            images = home / "Pictures/Wallpapers"
+            images.mkdir(parents=True)
+            subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=c=steelblue:s=320x180",
+                            "-frames:v", "1", "-threads", "1", str(images / "fixture.png")], check=True, timeout=10)
+            shutil.copy(images / "fixture.png", images / "second.png")
+            runtime = work / "runtime"
+            runtime.mkdir(mode=0o700)
+            artifacts = Path(os.environ.get("HAKUSPACE_WALLPAPER_PANEL_ARTIFACT_DIR", str(work / "artifacts")))
+            artifacts.mkdir(parents=True, exist_ok=True)
+            # Resolve only the parent display; all test IPC belongs to the nested compositor.
+            display = os.environ["WAYLAND_DISPLAY"]
+            if not os.path.isabs(display):
+                display = str(Path(os.environ["XDG_RUNTIME_DIR"]) / display)
+            (work / "niri.kdl").write_text('hotkey-overlay { skip-at-startup; }\n', encoding="utf-8")
+            launcher = work / "start.sh"
+            shell_log = artifacts / "shell.log"
+            launcher.write_text(
+                f'quickshell -p {shlex.quote(str(shell))} > {shlex.quote(str(shell_log))} 2>&1\n'
+                'niri msg action quit --skip-confirmation\n', encoding="utf-8")
+            environment = {key: value for key, value in os.environ.items() if not key.startswith("HAKUSPACE_")}
+            environment.update(HOME=str(home), XDG_CONFIG_HOME=str(home / ".config"),
+                               XDG_CACHE_HOME=str(home / ".cache"), XDG_RUNTIME_DIR=str(runtime),
+                               WAYLAND_DISPLAY=display, XDG_CURRENT_DESKTOP="niri", QT_QPA_PLATFORM="wayland",
+                               QSG_INFO="1", HAKUSPACE_WALLPAPER_TEST_NO_HANDOFF="1",
+                               HAKUSPACE_WALLPAPER_PANEL_ARTIFACT_DIR=str(artifacts))
+            for key in ("DISPLAY", "NIRI_SOCKET", "HYPRLAND_INSTANCE_SIGNATURE", "MANGO_INSTANCE_SIGNATURE",
+                        "QT_QPA_PLATFORMTHEME", "QT_QPA_PLATFORMTHEME_QT6"):
+                environment.pop(key, None)
+            result = subprocess.run(["dbus-run-session", "--", "niri", "-c", str(work / "niri.kdl"),
+                                     "--", "bash", str(launcher)],
+                                    env=environment, capture_output=True, text=True, timeout=30)
+            log = result.stdout + result.stderr + (shell_log.read_text() if shell_log.exists() else "")
+            self.assertEqual(result.returncode, 0, log)
+            self.assertIn("Wallpaper panel slide checks passed", log)
+            for error in ("TypeError", "ReferenceError", "Binding loop", "Failed to load configuration", "Error decoding"):
+                self.assertNotIn(error, log)
 
 
 if __name__ == "__main__":

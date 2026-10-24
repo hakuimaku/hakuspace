@@ -8,9 +8,9 @@ import "wallpaper" as Wallpaper
 PanelWindow {
     id: root
     // Release only after the surface has finished its visual close.
-    readonly property bool releaseReady: !panelOpen
+    readonly property bool releaseReady: !panelOpen && expansion === 0 && !expansionAnimation.running
     required property var modelData
-    // The solid sidebar grows from the right edge and retains input until its flares close.
+    // The sidebar and flares slide together while their owner retains the close sequence.
     readonly property bool panelOpen: UiState.activePanel === "wallpaper" && UiState.wallpaperScreenName === modelData.name
     readonly property bool closing: panelOpen && UiState.wallpaperCloseRequested
     readonly property real browserWidth: Math.min(520, modelData.width - ScreenGeometry.leftInset - ScreenGeometry.rightInset)
@@ -20,9 +20,11 @@ PanelWindow {
     readonly property real browserHeight: Math.max(0, attachmentBottom - attachmentY)
     property real expansion: 0
     readonly property real contentReveal: Math.max(0, Math.min(1, expansion))
-    // Every entry point opens the sidebar independently from the right screen edge.
-    readonly property var currentRect: ({x: width - ScreenGeometry.rightInset - browserWidth * expansion,
-        y: attachmentY, width: browserWidth * expansion, height: browserHeight})
+    // Clear the outer flare ear completely before releasing the window.
+    readonly property real slideDistance: browserWidth + ScreenGeometry.rightInset + Theme.largeRadius + 8
+    // Translate a fixed-size body instead of resizing the browser's clipping rectangle.
+    readonly property var currentRect: ({x: width - ScreenGeometry.rightInset - browserWidth + slideDistance * (1 - contentReveal),
+        y: attachmentY, width: browserWidth, height: browserHeight})
     readonly property Item browserItem: browserLoader.item
     screen: modelData
     anchors { top: true; bottom: true; left: true; right: true }
@@ -40,19 +42,27 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     color: "transparent"
-    visible: panelOpen
+    visible: panelOpen || expansion > 0
     mask: Region { width: root.panelOpen ? root.width : 0; height: root.panelOpen ? root.height : 0 }
     // Keep the sidebar's opening and closing motion independent of its launcher.
     function animate() {
+        if (!root) return
         expansionAnimation.stop()
-        expansionAnimation.duration = closing ? HAnimation.hakuMenuCloseDuration : HAnimation.hakuMenuOpenDuration
-        expansionAnimation.easing.bezierCurve = closing ? HAnimation.hakuMenuCloseCurve : HAnimation.hakuMenuOpenCurve
-        expansionAnimation.to = panelOpen && !closing ? 1 : 0
+        var opening = panelOpen && !closing
+        if (expansion === (opening ? 1 : 0)) return
+        expansionAnimation.duration = opening ? HAnimation.normal : HAnimation.fast
+        expansionAnimation.easing.bezierCurve = opening ? HAnimation.moduleCurve : HAnimation.tooltipCurve
+        expansionAnimation.to = opening ? 1 : 0
         expansionAnimation.start()
     }
-    onPanelOpenChanged: if (panelOpen) { expansion = 0; animate() }
-    onClosingChanged: animate()
-    Component.onDestruction: UiState.forceCloseWallpaperIfScreen(modelData.name)
+    onPanelOpenChanged: Qt.callLater(animate)
+    onClosingChanged: Qt.callLater(animate)
+    Component.onCompleted: Qt.callLater(animate)
+    // A retired surface must not close its replacement on the same output.
+    Component.onDestruction: {
+        if (!ShellTransitionState.chromeEnabled || !Quickshell.screens.includes(modelData))
+            UiState.forceCloseWallpaperIfScreen(modelData.name)
+    }
     NumberAnimation {
         id: expansionAnimation
         target: root; property: "expansion"
@@ -61,57 +71,49 @@ PanelWindow {
     }
     Rectangle { anchors.fill: parent; color: "black"; opacity: root.contentReveal * 0.08 }
     MouseArea { anchors.fill: parent; onClicked: UiState.closeWallpaper() }
-    // Mirrored flares join the left edge to the Rounded Screen ceiling and floor.
-    PanelWindow {
-        screen: root.modelData
-        anchors { top: true; bottom: true; left: true; right: true }
-        WlrLayershell.layer: WlrLayer.Top
-        WlrLayershell.namespace: "hakuspace-wallpaper-flare"
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-        exclusionMode: ExclusionMode.Ignore
-        exclusiveZone: 0
-        color: "transparent"
-        visible: root.panelOpen
-        mask: Region { width: 0; height: 0 }
-        Repeater {
-            model: [Flare.FlareHost.Top, Flare.FlareHost.Bottom]
-            delegate: Flare.FlareSurface {
-                required property int modelData
-                objectName: modelData === Flare.FlareHost.Top ? "wallpaperTopFlare" : "wallpaperBottomFlare"
-                width: root.width
-                y: root.currentRect.y + (bottomAttached ? root.currentRect.height : 0)
-                attach: modelData
-                start: root.currentRect.x
-                end: start + root.currentRect.width
-                currentHeight: root.currentRect.height / 2 + 1
-                bounds: ScreenGeometry.horizontalBounds(root.width)
-                r: (Theme.largeRadius + 8) * root.contentReveal
-                bottomRadius: 0
-                rf: Theme.hugRadius
-                surfaceColor: Theme.surface
-            }
-        }
-    }
-    Rectangle {
-        x: root.currentRect.x
-        y: root.currentRect.y
-        width: root.currentRect.width
-        height: root.currentRect.height
-        color: Theme.surface
+    // One clipped drawing plane keeps the chassis, flares and thumbnails on the same frame.
+    Item {
+        anchors.fill: parent
         clip: true
-        MouseArea { anchors.fill: parent; onClicked: {} }
-        Loader {
-            id: browserLoader
-            width: root.browserWidth; height: root.browserHeight
-            anchors.right: parent.right
-            active: root.panelOpen
-            opacity: Math.max(0, (root.contentReveal - 0.2) / 0.8)
-            enabled: root.expansion > 0.95 && !root.closing
-            onLoaded: item.forceActiveFocus()
-            sourceComponent: Wallpaper.WallpaperBrowser {
-                reveal: root.contentReveal
-                onCloseRequested: UiState.closeWallpaper()
-                onSettingsRequested: { UiState.settingsGroup = "Wallpaper"; UiState.openSettings(root.modelData.name) }
+        Rectangle {
+            id: sidebar
+            x: root.currentRect.x
+            y: root.currentRect.y
+            width: root.currentRect.width
+            height: root.currentRect.height
+            color: Theme.surface
+            // Keep the resting silhouette fixed while the whole sidebar translates.
+            Repeater {
+                model: [Flare.FlareHost.Top, Flare.FlareHost.Bottom]
+                delegate: Flare.FlareSurface {
+                    required property int modelData
+                    objectName: modelData === Flare.FlareHost.Top ? "wallpaperTopFlare" : "wallpaperBottomFlare"
+                    width: sidebar.width
+                    y: bottomAttached ? sidebar.height : 0
+                    attach: modelData
+                    start: 0
+                    end: sidebar.width
+                    currentHeight: sidebar.height / 2 + 1
+                    bounds: ({start: ScreenGeometry.leftInset - (root.width - ScreenGeometry.rightInset - root.browserWidth),
+                        end: root.browserWidth})
+                    r: Theme.giantRadius + 8
+                    bottomRadius: 0
+                    rf: Theme.hugRadius
+                    surfaceColor: Theme.surface
+                }
+            }
+            MouseArea { anchors.fill: parent; onClicked: {} }
+            Loader {
+                id: browserLoader
+                anchors.fill: parent
+                clip: true
+                active: root.panelOpen || root.expansion > 0
+                enabled: root.panelOpen && root.expansion > 0.95 && !root.closing
+                onLoaded: if (root.panelOpen && !root.closing) item.forceActiveFocus()
+                sourceComponent: Wallpaper.WallpaperBrowser {
+                    onCloseRequested: UiState.closeWallpaper()
+                    onSettingsRequested: { UiState.settingsGroup = "Wallpaper"; UiState.openSettings(root.modelData.name) }
+                }
             }
         }
     }
