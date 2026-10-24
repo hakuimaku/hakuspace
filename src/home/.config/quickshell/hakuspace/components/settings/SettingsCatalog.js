@@ -11,16 +11,16 @@ var general = [
     {key: "WALL_INTERVAL", category: "Wallpaper", label: "Change wallpaper every", summary: "Delay for script-driven wallpaper rotation; Hikai does not start rotation automatically.", control: "number", min: 1, max: 86400, step: 1, unit: "s"},
     {key: "ACCENT_COLOR_BASED_ON_WALLPAPER", category: "Appearance", label: "Accent from wallpaper", summary: "Use a color from your wallpaper for highlights.", control: "switch"},
     {key: "ACCENT_COLOR_MODE", category: "Appearance", label: "Wallpaper accent color", summary: "Choose which color becomes your highlight.", control: "choice", options: [{value: "vivid", label: "Vivid"}, {value: "dominant", label: "Dominant"}, {value: "brightest", label: "Brightest"}, {value: "saturated", label: "Saturated"}]},
-    {key: "AWWW_OPTS", category: "Wallpaper", label: "Wallpaper transition options", summary: "Customize Classic wallpaper transitions.", control: "text"},
+    {key: "AWWW_OPTS", category: "Wallpaper", label: "Wallpaper transition options", summary: "Customize awww arguments for image wallpapers.", control: "text"},
     {key: "SCREENREC_SAVE_DIR", category: "Recording", label: "Recording folder", summary: "Save screen recordings in this folder.", control: "path"},
-    {key: "REC_COMMAND", category: "Recording", label: "Recorder command", summary: "Choose the program used to record your screen.", control: "text"},
-    {key: "REC_OPTS", category: "Recording", label: "Recording options", summary: "Pass additional options to your recorder.", control: "text"},
-    {key: "HAKU_CLOCK_FONT_SIZE", category: "Appearance", label: "Widget clock size", summary: "Clock font size for the Classic Haku widget.", control: "number", min: 1, max: 256, step: 1},
-    {key: "HAKU_GENERAL_FONT_SIZE", category: "Appearance", label: "Widget text size", summary: "Text font size for the Classic Haku widget.", control: "number", min: 1, max: 256, step: 1},
-    {key: "HAKU_TERMINAL_FONT_SIZE", category: "Appearance", label: "Widget terminal size", summary: "Terminal font size for the Classic Haku widget.", control: "number", min: 1, max: 256, step: 1},
+    {key: "REC_COMMAND", category: "Recording", label: "Recorder command", summary: "Customize wl-screenrec command path.", control: "text"},
+    {key: "REC_OPTS", category: "Recording", label: "Recording options", summary: "Customize additional wl-screenrec options.", control: "text"},
+    {key: "HAKU_CLOCK_FONT_SIZE", category: "Appearance", label: "Widget clock size", summary: "Clock font size for the Haku widget.", control: "number", min: 1, max: 256, step: 1},
+    {key: "HAKU_GENERAL_FONT_SIZE", category: "Appearance", label: "Widget text size", summary: "Text font size for the Haku widget.", control: "number", min: 1, max: 256, step: 1},
+    {key: "HAKU_TERMINAL_FONT_SIZE", category: "Appearance", label: "Widget terminal size", summary: "Terminal font size for the Haku widget.", control: "number", min: 1, max: 256, step: 1},
     {key: "WAYBAR_MODE_USER", category: "Appearance", label: "Custom Waybar themes", summary: "Classic only. Add theme folder names from ~/hakucfg/config/waybar; each needs config and style.css.", control: "list", entryLabel: "Theme folder name"},
     {key: "RAM_THRESHOLD_MB", category: "Session", label: "Memory warning threshold", summary: "Warn before exiting when applications use more memory than this.", control: "number", min: 1, max: 131072, step: 1, unit: "MB"},
-    {key: "EXIT_APP_LIST_USER", category: "Session", label: "Apps to close on exit", summary: "Ask these applications to close before ending your desktop session.", control: "list", entryLabel: "Application name"}
+    {key: "EXIT_APP_LIST_USER", category: "Session", label: "Apps to close on exit", summary: "Ask these applications to close before ending your desktop session (avoid zombie processes).", control: "list", entryLabel: "Application name"}
 ].map(function(item) {
     return Object.assign({id: item.key, store: "general", restartPolicy: "next-action", summary: "", synonyms: ""}, item)
 })
