@@ -193,7 +193,7 @@ def ensure_proxy(path, profile, width, height, build, rebuild=False):
     with locked(target.with_suffix(".lock")):
         if not target.exists():
             if not build:
-                raise ValueError("Proxy is missing. Use Build & apply or select Original.")
+                raise ValueError("This video is not prepared. Open Wallpaper settings and choose Prepare all videos, or use Original quality.")
             # A single encoder worker bounds CPU and peak memory across distinct requests.
             with locked(CACHE / "encoder.lock"):
                 temporary = run_ffmpeg(["-filter_threads", "1", "-i", str(path), "-map", "0:v:0", "-vf",
