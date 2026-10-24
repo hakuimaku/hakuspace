@@ -65,7 +65,7 @@ QtObject {
 
     // Pass font values as arguments to the existing theme controller.
     function themeCommand(action) {
-        return ["sh", "-c", 'if [ -x "$1" ]; then ctl=$1; elif [ -x "$2" ]; then ctl=$2; else ctl=$3; fi; if [ "$4" = read ]; then exec "$ctl" status; fi; if [ "$5" = 1 ]; then "$ctl" set-font "$6" || exit $?; fi; if [ "$7" = 1 ]; then "$ctl" set-size "$8" || exit $?; fi; exec "$ctl" status',
+        return ["sh", "-c", 'if [ -x "$1" ]; then ctl=$1; elif [ -x "$2" ]; then ctl=$2; else ctl=$3; fi; if [ "$4" = read ]; then exec "$ctl" status; elif [ "$4" = list-fonts ]; then exec "$ctl" list-fonts; fi; if [ "$5" = 1 ]; then "$ctl" set-font "$6" || exit $?; fi; if [ "$7" = 1 ]; then "$ctl" set-size "$8" || exit $?; fi; exec "$ctl" status',
             "--", (Quickshell.env("HOME") || "") + "/.local/bin/theme_ctl.sh", Env.binDir + "/theme_ctl.sh",
             Quickshell.shellPath("../../../../core/backend/theme/theme_ctl.sh"), action,
             writingFonts.family !== savedFontValues.family ? "1" : "0", writingFonts.family || "",

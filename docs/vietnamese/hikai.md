@@ -136,7 +136,7 @@ Tra tên option, schema và giá trị mặc định hiện tại trong [backend
 
 Settings dùng một rail danh mục. Search mở đúng danh mục và đánh dấu thiết lập tìm được, đồng thời giữ ngữ cảnh của trang. Mọi tùy chọn luôn hiện trong đúng danh mục, kể cả mục Classic và WM không hoạt động; không còn công tắc Advanced. Search tìm được cả tên biến nhưng các dòng thiết lập chỉ hiện nhãn dễ đọc, ẩn tên biến và metadata phiên bản. Store giữ draft và định dạng lưu cũ.
 
-General có font family và font size. Apply lưu font qua theme controller hiện có và cập nhật shell; Reload và Discard khôi phục giá trị đã lưu. Screenshot folder chỉ hiện ghi chú với Niri vì phím chụp màn hình tích hợp dùng cấu hình riêng của Niri.
+General có font family và font size. Danh sách font có tìm kiếm, chỉ liệt kê font monospace đã cài từ cùng nguồn với Change Theme và đọc lại mỗi khi mở. Apply lưu font qua theme controller hiện có và cập nhật shell; Reload và Discard khôi phục giá trị đã lưu. Screenshot folder chỉ hiện ghi chú với Niri vì phím chụp màn hình tích hợp dùng cấu hình riêng của Niri.
 
 Layer Change Theme native có font family, font size và màu accent; tùy chọn animation chỉ hiện khi dùng Niri. Các picker Rofi và Waybar nằm ở frontend Classic. Các trang theme dùng chung nền ink, khoảng cách, cỡ chữ và pill chọn có chuyển động của shell; đổi font native gọi trực tiếp theme controller.
 

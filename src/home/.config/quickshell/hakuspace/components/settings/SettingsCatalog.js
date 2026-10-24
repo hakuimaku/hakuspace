@@ -1,7 +1,7 @@
 // Presentation metadata leaves persistence and validation with the existing stores.
 var categories = ["General", "Appearance", "Desktop", "Wallpaper", "Recording", "Session", "Configuration", "About"]
 var general = [
-    {key: "family", id: "font-family", store: "theme", category: "General", label: "Font family", summary: "Choose the font used by HakuSpace.", control: "choice", restartPolicy: "live", synonyms: "typeface typography"},
+    {key: "family", id: "font-family", store: "theme", category: "General", label: "Font family", summary: "Choose a monospace font for HakuSpace.", control: "choice", restartPolicy: "live", synonyms: "typeface typography"},
     {key: "size", id: "font-size", store: "theme", category: "General", label: "Font size", summary: "Adjust the text size used by HakuSpace.", control: "number", min: 8, max: 32, step: 1, unit: "px", restartPolicy: "live", synonyms: "text typography"},
     {key: "WELCOME_MSG", category: "General", label: "Welcome message", summary: "Show a welcome message when your desktop starts.", control: "switch", restartPolicy: "next-session"},
     {key: "NIGHT_LIGHT_TEMPERATURE", category: "General", label: "Night light warmth", summary: "Lower temperatures give the screen a warmer tint when Night Light is on.", control: "number", min: 1000, max: 6500, step: 100, unit: "K", synonyms: "display temperature blue light"},

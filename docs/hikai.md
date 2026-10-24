@@ -136,7 +136,7 @@ Find current option names, schemas and defaults in the [settings backends](../sr
 
 Settings uses one category rail. Search opens the matching category and highlights its setting; it leaves the surrounding page available. All preferences are visible in their categories, including Classic-only and inactive WM preferences; there is no Advanced disclosure. Search includes storage keys, while rows show readable labels without variable names or version metadata. Stores retain drafts and persistence formats.
 
-General includes font family and font size. Apply saves typography through the existing theme controller and updates the shell; Reload and Discard restore saved values. Screenshot folder help appears only for Niri, whose built-in screenshot keys use its own configuration.
+General includes font family and font size. The searchable font list contains installed monospace families, using the same source as Change Theme, and refreshes every time it opens. Apply saves typography through the existing theme controller and updates the shell; Reload and Discard restore saved values. Screenshot folder help appears only for Niri, whose built-in screenshot keys use its own configuration.
 
 The native Change Theme layer offers font family, font size and accent color, plus animation options when running Niri. Rofi and Waybar pickers remain in the Classic frontend. Theme pages share the shell's ink surface, spacing, typography and moving selection pill; native font changes call the theme controller directly.
 

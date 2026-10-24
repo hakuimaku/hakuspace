@@ -4,6 +4,8 @@ import "../../services"
 Rectangle {
     id: root
     property alias text: input.text
+    property string placeholderText: "Search settings…"
+    property string accessibleName: "Search settings"
     signal accepted()
     signal nextRequested()
     signal escapeRequested()
@@ -39,7 +41,7 @@ Rectangle {
         clip: true
         selectByMouse: true
         activeFocusOnTab: true
-        Accessible.name: "Search settings"
+        Accessible.name: root.accessibleName
         onAccepted: root.accepted()
         Keys.onDownPressed: root.nextRequested()
         Keys.onEscapePressed: event => {
@@ -49,7 +51,7 @@ Rectangle {
         Text {
             anchors.fill: parent
             verticalAlignment: Text.AlignVCenter
-            text: "Search settings…"
+            text: root.placeholderText
             visible: !input.text.length
             color: Theme.fgMuted
             font: input.font

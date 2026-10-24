@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Dialogs
 import Quickshell
+import Quickshell.Io
 import "../../services"
 import "SettingsCatalog.js" as Catalog
 
@@ -12,9 +13,30 @@ Column {
     property Item shortcutTarget: null
     property string highlightedId: ""
     readonly property var descriptors: Catalog.general.filter(item => item.category === category)
-    readonly property var fontOptions: category === "General" ? [SettingsStore.fontValues.family, "monospace", "sans-serif", "serif"].concat(Qt.fontFamilies())
-        .filter((family, index, families) => family && families.indexOf(family) === index).sort().map(family => ({label: family, value: family})) : []
+    property var fontOptions: []
+    property string fontListError: ""
     spacing: Theme.spaceLg
+
+    // Refresh from Fontconfig through the same filtered source as Change Theme.
+    function refreshFonts() {
+        if (fontList.running) return
+        fontListError = ""
+        fontOptions = []
+        fontList.command = SettingsStore.themeCommand("list-fonts")
+        fontList.running = true
+    }
+    Component.onCompleted: if (category === "General") refreshFonts()
+    Process {
+        id: fontList
+        stdout: StdioCollector { id: fontListOut }
+        stderr: StdioCollector { id: fontListErr }
+        onExited: code => {
+            if (code !== 0) { root.fontListError = fontListErr.text.trim() || "Could not load fonts. Reopen the list to try again."; return }
+            root.fontOptions = fontListOut.text.split("\n").map(family => family.trim())
+                .filter((family, index, families) => family && families.indexOf(family) === index)
+                .map(family => ({label: family, value: family}))
+        }
+    }
 
     // Reveal a search target without hiding its surrounding category.
     function reveal(id) {
@@ -71,7 +93,22 @@ Column {
                     onToggled: value => row.setValue(value)
                 }
             }
-            Component { id: choiceControl; SettingsChoiceRow { options: row.typography ? root.fontOptions : row.descriptor.options; value: row.value; enabled: row.editable; shortcutTarget: root.shortcutTarget; Accessible.name: row.descriptor.label; onChosen: value => row.setValue(value) } }
+            Component {
+                id: choiceControl
+                SettingsChoiceRow {
+                    options: row.typography ? root.fontOptions : row.descriptor.options
+                    value: row.value
+                    enabled: row.editable
+                    shortcutTarget: root.shortcutTarget
+                    searchable: row.typography
+                    loading: row.typography && fontList.running
+                    statusMessage: row.typography ? root.fontListError : ""
+                    searchPlaceholder: "Search fonts…"
+                    Accessible.name: row.descriptor.label
+                    onRefreshRequested: if (row.typography) root.refreshFonts()
+                    onChosen: value => row.setValue(value)
+                }
+            }
             Component { id: numberControl; SettingsNumberRow { descriptor: row.descriptor; value: row.value; enabled: row.editable; shortcutTarget: root.shortcutTarget; onEdited: value => row.setValue(value) } }
             Component {
                 id: pathControl

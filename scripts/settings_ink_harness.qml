@@ -20,6 +20,7 @@ ShellRoot {
     property int pointerPhase: 0
     property int togglePhase: 0
     property int fontPhase: 0
+    property int fontListPhase: 0
     property bool originalWelcome: false
     property int sidebarHoverPhase: 0
     property bool dropdownOpeningObserved: false
@@ -171,12 +172,81 @@ ShellRoot {
                         root.check(!root.find(form, item => item.text === "WELCOME_MSG" || item.text === "SCREENSHOT_DIR" || (typeof item.text === "string" && item.text.startsWith("SETTING_VERSION"))), "raw variable names and metadata are hidden")
                         WM.backendName = "hyprland"
                     } else if (root.fontPhase === 1) {
-                        root.check(!niriNote, "other desktops have no screenshot description")
-                        WM.backendName = "niri"
+                        if (WM.backendName !== "niri") {
+                            root.check(!niriNote, "other desktops have no screenshot description")
+                            WM.backendName = "niri"
+                        }
                         var family = root.find(fontRow, item => typeof item.choose === "function")
                         var size = root.find(sizeRow, item => typeof item.edited === "function")
-                        root.check(family.options.length > 3, "installed font families are listed")
-                        family.choose(family.options.findIndex(option => option.value === "sans-serif"))
+                        if (family.loading) return
+                        if (root.fontListPhase < 15) {
+                            var fontSearch = root.find(family, item => item.objectName === "settings-choice-search")
+                            var fontPopup = family.data.find(object => object.objectName === "settings-choice-popup")
+                            if (root.fontListPhase === 0) {
+                                root.check(family.options.length === 2 && family.options.every(option => option.value.startsWith("Fixture Mono")), "General uses the same monospace Fontconfig source as Change Theme")
+                                root.check(family.currentLabel === "monospace", "current family remains readable without adding a synthetic option")
+                                family.clicked()
+                            } else if (root.fontListPhase === 1) {
+                                if (!fontPopup.opened) return
+                                root.check(fontSearch.inputFocused, "opening font choices focuses search")
+                                keyboard.write("text fixture mono b\n")
+                            } else if (root.fontListPhase === 2) {
+                                if (fontSearch.text !== "fixture mono b") return
+                                root.check(family.visibleOptions.length === 1 && family.visibleOptions[0].value === "Fixture Mono B", "font search is case-insensitive")
+                                keyboard.write("key 108\n")
+                            } else if (root.fontListPhase === 3) {
+                                keyboard.write("key 28\n")
+                            } else if (root.fontListPhase === 4) {
+                                if (family.popupOpen) return
+                                root.check(SettingsStore.fontValues.family === "Fixture Mono B", "filtered keyboard selection commits the matching family")
+                                SettingsStore.discard()
+                                fontFailure.command = ["cp", Quickshell.env("INK_TEST_ROOT") + "/new-font-families.txt", Quickshell.env("INK_TEST_ROOT") + "/font-families.txt"]
+                                fontFailure.running = true
+                            } else if (root.fontListPhase === 5) {
+                                family.clicked()
+                            } else if (root.fontListPhase === 6) {
+                                if (!fontPopup.opened) return
+                                root.check(family.options.some(option => option.value === "Fixture Mono C") && !family.options.some(option => option.value === "Fixture Mono A"), "reopening discovers added fonts and drops removed fonts without restarting QML")
+                                fontSearch.text = "missing font"
+                                root.check(!family.visibleOptions.length, "font search has an empty state")
+                                keyboard.write("key 1\n")
+                            } else if (root.fontListPhase === 7) {
+                                if (fontSearch.text) return
+                                root.check(family.popupOpen && family.visibleOptions.length === 2, "Escape clears a query before closing")
+                                keyboard.write("key 1\n")
+                            } else if (root.fontListPhase === 8) {
+                                if (family.popupOpen) return
+                                fontFailure.command = ["touch", Quickshell.env("INK_TEST_ROOT") + "/font-list-failure"]
+                                fontFailure.running = true
+                            } else if (root.fontListPhase === 9) {
+                                family.clicked()
+                            } else if (root.fontListPhase === 10) {
+                                if (!fontPopup.opened) return
+                                root.check(family.statusMessage.includes("font list fixture failure") && !family.options.length, "failed refresh reports its error without stale choices")
+                                root.check(SettingsStore.fontValues.family === "monospace" && !SettingsStore.dirty, "font listing never changes the preference draft")
+                                fontFailure.command = ["rm", Quickshell.env("INK_TEST_ROOT") + "/font-list-failure"]
+                                fontFailure.running = true
+                                family.clicked()
+                            } else if (root.fontListPhase === 11) {
+                                if (family.popupOpen) return
+                                family.clicked()
+                            } else if (root.fontListPhase === 12) {
+                                if (!fontPopup.opened) return
+                                root.check(!family.statusMessage && family.options.length === 2, "reopening retries a failed font refresh")
+                                dropdownCapture.filename = "settings-font-search"
+                                fontSearch.text = "fixture mono c"
+                                dropdownCapture.running = true
+                            } else if (root.fontListPhase === 13) {
+                                if (dropdownCapture.running) return
+                                fontSearch.text = ""
+                                family.clicked()
+                            } else if (root.fontListPhase === 14) {
+                                if (family.popupOpen) return
+                            }
+                            ++root.fontListPhase
+                            return
+                        }
+                        family.choose(family.options.findIndex(option => option.value === "Fixture Mono B"))
                         size.edited(16)
                         root.check(SettingsStore.fontsDirty && Theme.fontSize === 14, "font controls edit a draft until Apply")
                         fontFailure.command = ["touch", Quickshell.env("INK_TEST_ROOT") + "/font-save-failure"]
@@ -189,15 +259,15 @@ ShellRoot {
                         fontFailure.command = ["rm", Quickshell.env("INK_TEST_ROOT") + "/font-save-failure"]
                         fontFailure.running = true
                     } else if (root.fontPhase === 5) {
-                        root.check(!SettingsStore.error && !SettingsStore.fontsDirty && SettingsStore.savedFontValues.family === "sans-serif" && SettingsStore.savedFontValues.size === 16, "retry saves both font values")
-                        if (Theme.fontSize !== 16 || Theme.fontFamily !== "sans-serif") return
+                        root.check(!SettingsStore.error && !SettingsStore.fontsDirty && SettingsStore.savedFontValues.family === "Fixture Mono B" && SettingsStore.savedFontValues.size === 16, "retry saves both font values")
+                        if (Theme.fontSize !== 16 || Theme.fontFamily !== "Fixture Mono B") return
                         SettingsStore.setFontValue("size", 18)
                         SettingsStore.discard()
                         root.check(SettingsStore.fontValues.size === 16 && !SettingsStore.dirty, "Discard restores saved typography")
                         SettingsStore.setFontValue("family", "serif")
                         SettingsStore.reload()
                     } else if (root.fontPhase === 6) {
-                        root.check(SettingsStore.fontValues.family === "sans-serif" && SettingsStore.fontValues.size === 16 && !SettingsStore.dirty, "Reload reads canonical typography")
+                        root.check(SettingsStore.fontValues.family === "Fixture Mono B" && SettingsStore.fontValues.size === 16 && !SettingsStore.dirty, "Reload reads canonical typography")
                         SettingsStore.setFontValue("family", "monospace")
                     }
                     ++root.fontPhase

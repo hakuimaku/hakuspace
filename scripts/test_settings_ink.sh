@@ -34,12 +34,25 @@ jq -n --arg font "$FONT_FAMILY" --argjson fontSize "$FONT_SIZE" \
 FONT_RENDER
 cat > "$test_root/home/.local/bin/theme_ctl.sh" <<'FONT_CTL'
 #!/usr/bin/env bash
-if [[ $1 != status && -e $INK_TEST_ROOT/font-save-failure ]]; then
+if [[ $1 == list-fonts && -e $INK_TEST_ROOT/font-list-failure ]]; then
+    printf 'font list fixture failure\n' >&2
+    exit 1
+fi
+if [[ $1 == set-* && -e $INK_TEST_ROOT/font-save-failure ]]; then
     printf 'font fixture save failure\n' >&2
     exit 1
 fi
-exec "$HOME/.local/bin/theme_ctl_impl.sh" "$@"
+PATH="$HOME/.local/bin:$PATH" exec "$HOME/.local/bin/theme_ctl_impl.sh" "$@"
 FONT_CTL
+# Fontconfig fixtures change while the same QML process remains running.
+printf 'Fixture Mono A\nFixture Mono B\n' > "$test_root/font-families.txt"
+printf 'Fixture Mono B\nFixture Mono C\n' > "$test_root/new-font-families.txt"
+cat > "$test_root/home/.local/bin/fc-list" <<'FONT_LIST'
+#!/usr/bin/env bash
+[[ $1 == :spacing=100 ]] || exit 64
+cat "$INK_TEST_ROOT/font-families.txt"
+FONT_LIST
+chmod +x "$test_root/home/.local/bin/fc-list"
 chmod +x "$test_root/font-render.sh" "$test_root/home/.local/bin/"theme_ctl*.sh
 HOME="$test_root/home" bash "$test_root/font-render.sh"
 mkdir -p "$test_root/src/home/.local"
