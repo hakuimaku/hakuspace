@@ -211,8 +211,8 @@ Add documentation only when the feature introduces a lasting architectural conce
 Test at the boundary being changed. Use pure tests for geometry and model rules, backend tests for validation and persistence, and runtime tests for real QML lifecycles and input.
 Syntax checks do not prove behavior. Cold startup does not prove live reload, and direct state assignment does not prove keyboard or pointer routing.
 
-Find the current runners and fixtures in [scripts](../scripts/) and [tests](../tests/).
-The [repository check script](../scripts/precommit_check.sh) defines the combined checks; inspect runner requirements and side effects before running compositor tests.
+Find component runners and fixtures in [tests](../tests/); developer checks, probes and profiling live in [tools](../tools/).
+The [repository check script](../tools/checks/repo_check.sh) defines the combined checks; inspect runner requirements and side effects before running compositor tests.
 Use disposable data, isolated sessions and harmless action fixtures so verification does not edit real preferences or act on user applications.
 
 Exercise cancellation, rapid reversal, stale responses, failed writes, disappearing sources and ownership transfer.

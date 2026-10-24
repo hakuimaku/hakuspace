@@ -211,8 +211,8 @@ Chỉ thêm tài liệu khi tính năng đưa vào một khái niệm kiến tr�
 Kiểm thử ở ranh giới đang thay đổi. Dùng test thuần cho geometry và quy tắc model, test backend cho validation và lưu trữ, test runtime cho vòng đời QML và input thực tế.
 Kiểm tra cú pháp không chứng minh hành vi. Khởi động mới không chứng minh live reload, và gán thẳng state không chứng minh đường đi của bàn phím hay pointer.
 
-Tìm runner và fixture hiện tại trong [scripts](../../scripts/) và [tests](../../tests/).
-[Script kiểm tra repo](../../scripts/precommit_check.sh) định nghĩa các bước kiểm tra tổng hợp; đọc yêu cầu và tác động của runner trước khi chạy test compositor.
+Tìm runner theo component và fixture trong [tests](../../tests/); công cụ check, probe và profiling nằm trong [tools](../../tools/).
+[Script kiểm tra repo](../../tools/checks/repo_check.sh) định nghĩa các bước kiểm tra tổng hợp; đọc yêu cầu và tác động của runner trước khi chạy test compositor.
 Dùng dữ liệu tạm, phiên cô lập và fixture action vô hại để kiểm thử không sửa preference thật hoặc tác động lên ứng dụng người dùng.
 
 Kiểm tra hủy, đảo chiều nhanh, phản hồi cũ, ghi thất bại, nguồn biến mất và chuyển ownership.

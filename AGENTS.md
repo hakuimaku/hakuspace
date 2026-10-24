@@ -10,12 +10,12 @@ Do NOT run the repository-wide test suite by default.
 In particular, do NOT run:
 
 ```bash
-scripts/precommit_check.sh
+tools/checks/repo_check.sh
 ```
 
 after every implementation batch or small feature.
 
-`precommit_check.sh` is a repository-wide validation suite and must be treated as a final/integration check, not as the default development test command.
+`repo_check.sh` is a repository-wide validation suite and must be treated as a final/integration check, not as the default development test command.
 
 ## 1. Test only the current change scope
 
@@ -63,7 +63,7 @@ Examples:
 QML:
 
 ```bash
-python3 scripts/qml_syntax_check.py <changed-qml-files>
+python3 tools/checks/qml_syntax.py <changed-qml-files>
 ```
 
 Shell:
@@ -136,7 +136,7 @@ Only test known direct consumers of the changed primitive.
 Run:
 
 ```bash
-scripts/precommit_check.sh
+tools/checks/repo_check.sh
 ```
 
 ONLY when at least one of these conditions is true:
@@ -144,7 +144,7 @@ ONLY when at least one of these conditions is true:
 1. The user explicitly requests a full test/precommit run.
 2. The task is at final milestone / release / merge readiness.
 3. A repository-wide/shared infrastructure change genuinely affects many subsystems.
-4. `scripts/precommit_check.sh` itself or global test infrastructure was modified.
+4. `tools/checks/repo_check.sh` itself or global test infrastructure was modified.
 5. Targeted testing reveals evidence of a cross-component regression that requires broader validation.
 
 Otherwise, do not run the full suite.
@@ -254,7 +254,7 @@ Validation must be scoped to the files/components changed by this task.
 - Run changed-file syntax/static checks.
 - Run the smallest relevant component tests.
 - Test direct consumers only if shared code was changed.
-- Do NOT run `scripts/precommit_check.sh` unless explicitly requested.
+- Do NOT run `tools/checks/repo_check.sh` unless explicitly requested.
 - Do NOT run unrelated Dock, Settings, Shell transition, HakuMenu, visual, icon, compositor, or backend tests.
 - Do NOT fix unrelated failures.
 - Do NOT refactor unrelated code discovered during implementation.
@@ -276,7 +276,7 @@ Apply these rules only to the Quickshell component affected by the current task.
 
 - Capture before/after measurements with the same renderer, outputs, display scale, workload, warm-up and settle periods.
 - Use RSS, PSS, optional DRM resident memory, CPU time, FD/thread/child counts and first-open latency. Check idle plateau and repeated operation batches; RSS alone does not prove a leak.
-- Use `scripts/hikai_memory_soak.py` for live-PID sampling or a private headless session. Keep JSON/log artifacts under `/tmp` or an external artifact directory.
+- Use `tools/profiling/hikai_memory_soak.py` for live-PID sampling or a private headless session. Keep JSON/log artifacts under `/tmp` or an external artifact directory.
 - Label software-renderer results explicitly. Do not treat them as hardware GPU/FPS evidence or enable software rendering or allocator tuning by default.
 
 ## Keep resource lifetime tied to demand
@@ -299,7 +299,7 @@ Apply these rules only to the Quickshell component affected by the current task.
 
 ## Validate and report within scope
 
-- Run changed-file checks and the smallest affected component tests. Use `scripts/test_hikai_memory_lifecycle.py` or `scripts/test_qml_image_budget.py` when the changed lifecycle/image contract is covered by them.
+- Run changed-file checks and the smallest affected component tests. Use `tests/hikai/memory/test_lifecycle.py` or `tests/hikai/memory/test_image_budget.py` when the changed lifecycle/image contract is covered by them.
 - Test direct consumers only when shared code changes. Exercise multi-output transfer, interrupted close and reload when the changed ownership path can affect them.
 - Keep long soaks and hardware profiling separate from fast regression checks. Follow the scoped-validation policy above; do not automatically run the repository-wide precommit.
 - Report measured deltas, renderer/workload, targeted commands and results, remaining manual checks, and any memory-versus-latency/FPS trade-off. Distinguish implemented changes from acceptance criteria that remain unverified.

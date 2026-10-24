@@ -121,7 +121,7 @@ The same public commands and keybinds continue to work after source-tree reorgan
 
 Because deployment is flat, every deployed filename under `src/core/` must have a globally unique basename. Two source files in different directories may **not** share the same filename.
 
-`scripts/precommit_check.sh` enforces this. A basename collision is a deployment error, not just a source-tree style issue.
+`tools/checks/repo_check.sh` enforces this. A basename collision is a deployment error, not just a source-tree style issue.
 
 ## Source-tree and deployed execution
 

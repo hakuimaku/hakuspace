@@ -126,7 +126,7 @@ Examples:
 ### QML
 
 ```bash
-python3 scripts/qml_syntax_check.py <changed-qml-files>
+python3 tools/checks/qml_syntax.py <changed-qml-files>
 ```
 
 Do not automatically pass every QML file in the repository.
@@ -234,12 +234,12 @@ Only in this situation is cross-WM validation justified.
 Do NOT automatically run:
 
 ```bash
-scripts/precommit_check.sh
+tools/checks/repo_check.sh
 ```
 
 during normal feature implementation.
 
-Treat `scripts/precommit_check.sh` as an integration/final-validation suite.
+Treat `tools/checks/repo_check.sh` as an integration/final-validation suite.
 
 Run it only when one of the following conditions applies:
 
@@ -596,7 +596,7 @@ Apply these rules only to the Quickshell component affected by the current task.
 
 - Capture before/after measurements with the same renderer, outputs, display scale, workload, warm-up and settle periods.
 - Use RSS, PSS, optional DRM resident memory, CPU time, FD/thread/child counts and first-open latency. Check idle plateau and repeated operation batches; RSS alone does not prove a leak.
-- Use `scripts/hikai_memory_soak.py` for live-PID sampling or a private headless session. Keep JSON/log artifacts under `/tmp` or an external artifact directory.
+- Use `tools/profiling/hikai_memory_soak.py` for live-PID sampling or a private headless session. Keep JSON/log artifacts under `/tmp` or an external artifact directory.
 - Label software-renderer results explicitly. Do not treat them as hardware GPU/FPS evidence or enable software rendering or allocator tuning by default.
 
 ## Keep resource lifetime tied to demand
@@ -619,7 +619,7 @@ Apply these rules only to the Quickshell component affected by the current task.
 
 ## Validate and report within scope
 
-- Run changed-file checks and the smallest affected component tests. Use `scripts/test_hikai_memory_lifecycle.py` or `scripts/test_qml_image_budget.py` when the changed lifecycle/image contract is covered by them.
+- Run changed-file checks and the smallest affected component tests. Use `tests/hikai/memory/test_lifecycle.py` or `tests/hikai/memory/test_image_budget.py` when the changed lifecycle/image contract is covered by them.
 - Test direct consumers only when shared code changes. Exercise multi-output transfer, interrupted close and reload when the changed ownership path can affect them.
 - Keep long soaks and hardware profiling separate from fast regression checks. Follow the scoped-validation policy above; do not automatically run the repository-wide precommit.
 - Report measured deltas, renderer/workload, targeted commands and results, remaining manual checks, and any memory-versus-latency/FPS trade-off. Distinguish implemented changes from acceptance criteria that remain unverified.
