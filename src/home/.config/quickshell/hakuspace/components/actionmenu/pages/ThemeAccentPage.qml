@@ -152,7 +152,7 @@ ActionMenu.ActionMenuPage {
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: Theme.pad
+        spacing: Theme.spaceMd
 
         // Error message banner
         Text {
@@ -167,17 +167,17 @@ ActionMenu.ActionMenuPage {
         // Custom Hex input row
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.max(34, Theme.fontSize * 2.2)
+            Layout.preferredHeight: Theme.comfortableControlHeight
             radius: Theme.radius
-            color: Qt.rgba(1, 1, 1, 0.06)
-            border.color: hexInput.activeFocus ? Theme.accent : "transparent"
+            color: Theme.surface
+            border.color: hexInput.activeFocus ? Theme.accent : Theme.hoverMuted
             border.width: 1
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: Theme.pad
-                anchors.rightMargin: Theme.pad
-                spacing: Theme.pad
+                anchors.leftMargin: Theme.spaceLg
+                anchors.rightMargin: Theme.spaceLg
+                spacing: Theme.spaceMd
 
                 Rectangle {
                     width: 16
@@ -190,8 +190,13 @@ ActionMenu.ActionMenuPage {
                     id: hexInput
                     Layout.fillWidth: true
                     font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.pixelSize: Theme.fontSize - 1
                     color: Theme.fg
+                    clip: true
+                    selectByMouse: true
+                    selectionColor: Theme.accent
+                    selectedTextColor: Theme.onAccentColor
+                    Accessible.name: "Custom accent color"
 
                     Text {
                         anchors.fill: parent
@@ -199,7 +204,7 @@ ActionMenu.ActionMenuPage {
                         font.family: parent.font.family
                         font.pixelSize: parent.font.pixelSize
                         color: Theme.fgMuted
-                        visible: !parent.text && !parent.activeFocus
+                        visible: !parent.text
                     }
                     onAccepted: {
                         if (text.match(/^#[0-9a-fA-F]{6}$/)) {
@@ -242,7 +247,7 @@ ActionMenu.ActionMenuPage {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            spacing: 2
+            spacing: Theme.spaceXs
             model: root.allItems
 
             ActionMenu.ActionMenuSelectionPill {

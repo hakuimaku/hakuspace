@@ -84,8 +84,8 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: Theme.pad * 1.5
-        spacing: Theme.pad
+        anchors.margins: Theme.panelPadding
+        spacing: Theme.spaceLg
 
         // Optional standard header
         RowLayout {
@@ -93,7 +93,7 @@ Item {
             visible: root.showHeader
             Layout.fillWidth: true
             Layout.preferredHeight: Math.max(36, Theme.fontSize * 2.2)
-            spacing: Theme.pad
+            spacing: Theme.spaceMd
 
             // Back button if canGoBack
             Motion.MorphButton {
@@ -104,8 +104,8 @@ Item {
                 radius: Theme.radius
                 text: ""
                 idleColor: "transparent"
-                hoverColor: Qt.darker(Theme.hoverMuted, 1.18)
-                pressedColor: Qt.darker(Theme.hoverMuted, 1.35)
+                hoverColor: "transparent"
+                pressedColor: Theme.hoverMuted
                 selectedColor: Theme.accent
                 onClicked: root.requestBack()
 
@@ -134,6 +134,7 @@ Item {
                 spacing: 2
 
                 Text {
+                    Layout.fillWidth: true
                     text: root.title
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize + 2
@@ -143,11 +144,12 @@ Item {
                 }
 
                 Text {
+                    Layout.fillWidth: true
                     visible: root.subtitle.length > 0
                     text: root.subtitle
                     font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(9, Math.round((Theme.fontSize + 1) * 0.82))
-                    color: Theme.fgMuted
+                    font.pixelSize: Math.max(9, Theme.fontSize - 1)
+                    color: Theme.fgDescription
                     elide: Text.ElideRight
                 }
             }
@@ -155,10 +157,10 @@ Item {
             // Escape shortcut badge / hint
             Rectangle {
                 Layout.alignment: Qt.AlignVCenter
-                implicitWidth: escText.implicitWidth + 12
-                implicitHeight: Math.max(20, Theme.fontSize * 1.3)
-                radius: 6
-                color: Qt.rgba(1, 1, 1, 0.08)
+                implicitWidth: escText.implicitWidth + Theme.spaceLg
+                implicitHeight: Math.max(24, Theme.fontSize * 1.6)
+                radius: Theme.radius
+                color: Theme.hoverMuted
 
                 Text {
                     id: escText

@@ -53,7 +53,7 @@ PanelWindow {
         id: scrim
         anchors.fill: parent
         color: Theme.surface
-        opacity: 0.35 * surface.openOpacity * surface.closeOpacity
+        opacity: 0.22 * surface.openOpacity * surface.closeOpacity
     }
 
     property real _outsideWheelAccumulator: 0

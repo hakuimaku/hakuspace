@@ -33,7 +33,7 @@ ActionMenu.ActionMenuPage {
 
     Process {
         id: listFontsProc
-        command: [Env.binDir + "/change_theme.sh", "--list-fonts"]
+        command: [Env.binDir + "/theme_ctl.sh", "list-fonts"]
         running: true
         stdout: SplitParser {
             onRead: data => {
@@ -93,7 +93,7 @@ ActionMenu.ActionMenuPage {
     function applyFont(fontName) {
         if (!fontName) return;
         root.errorMessage = "";
-        setFontProc.command = [Env.binDir + "/change_theme.sh", "--font", fontName];
+        setFontProc.command = [Env.binDir + "/theme_ctl.sh", "set-font", fontName];
         setFontProc.running = true;
     }
 
@@ -172,7 +172,7 @@ ActionMenu.ActionMenuPage {
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: Theme.pad
+        spacing: Theme.spaceMd
 
         // Error message banner
         Text {
@@ -187,22 +187,22 @@ ActionMenu.ActionMenuPage {
         // Search input
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.max(34, Theme.fontSize * 2.2)
+            Layout.preferredHeight: Theme.comfortableControlHeight
             radius: Theme.radius
-            color: Qt.rgba(1, 1, 1, 0.06)
-            border.color: searchInput.activeFocus ? Theme.accent : "transparent"
+            color: Theme.surface
+            border.color: searchInput.activeFocus ? Theme.accent : Theme.hoverMuted
             border.width: 1
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: Theme.pad
-                anchors.rightMargin: Theme.pad
-                spacing: Theme.pad / 2
+                anchors.leftMargin: Theme.spaceLg
+                anchors.rightMargin: Theme.spaceLg
+                spacing: Theme.spaceSm
 
                 Text {
                     text: ""
                     font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.pixelSize: Theme.fontSize - 1
                     color: Theme.fgMuted
                 }
 
@@ -210,9 +210,13 @@ ActionMenu.ActionMenuPage {
                     id: searchInput
                     Layout.fillWidth: true
                     font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.pixelSize: Theme.fontSize - 1
                     color: Theme.fg
                     clip: true
+                    selectByMouse: true
+                    selectionColor: Theme.accent
+                    selectedTextColor: Theme.onAccentColor
+                    Accessible.name: "Search fonts"
 
                     Text {
                         anchors.fill: parent
@@ -220,7 +224,7 @@ ActionMenu.ActionMenuPage {
                         font.family: parent.font.family
                         font.pixelSize: parent.font.pixelSize
                         color: Theme.fgMuted
-                        visible: !parent.text && !parent.activeFocus
+                        visible: !parent.text
                     }
 
                     onTextChanged: {
@@ -306,7 +310,7 @@ ActionMenu.ActionMenuPage {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            spacing: 2
+            spacing: Theme.spaceXs
             model: root.filteredFonts
 
             ActionMenu.ActionMenuSelectionPill {

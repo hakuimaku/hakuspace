@@ -17,18 +17,18 @@ Motion.MorphButton {
     // Clear MorphButton's internal center text
     text: ""
 
-    radius: Theme.radius > 0 ? Theme.radius : 10
-    implicitHeight: Math.max(44, Theme.fontSize * 2.8)
+    radius: Theme.radius
+    implicitHeight: Math.max(Theme.comfortableControlHeight, Theme.fontSize * 2.5)
 
     selectedOverridesHover: true
 
     idleColor: danger ? Qt.rgba(1.0, 0.3, 0.3, 0.12) : "transparent"
     hoverColor: (selected || focused) ? "transparent"
                                       : (danger ? Qt.rgba(1.0, 0.3, 0.3, 0.28)
-                                                : Qt.darker(Theme.hoverMuted, 1.18))
+                                                : "transparent")
     pressedColor: (selected || focused) ? "transparent"
                                         : (danger ? Qt.rgba(1.0, 0.3, 0.3, 0.42)
-                                                  : Qt.darker(Theme.hoverMuted, 1.35))
+                                                  : Theme.hoverMuted)
     selectedColor: "transparent"
     focusColor: "transparent"
 
@@ -37,6 +37,9 @@ Motion.MorphButton {
                                                 : (danger ? "#ffffff" : Theme.fg)
     pressedForegroundColor: selectedForegroundColor
     selectedForegroundColor: danger ? "#ffffff" : Theme.onAccentColor
+    Accessible.role: Accessible.Button
+    Accessible.name: label + (secondaryText ? ", " + secondaryText : "")
+    Accessible.onPressAction: clicked()
 
     readonly property color targetTrailingForeground:
         (root.selected || root.focused) ? (root.danger ? "#ffffff" : Theme.onAccentColor)
@@ -73,9 +76,9 @@ Motion.MorphButton {
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: Theme.pad * 1.2
-        anchors.rightMargin: Theme.pad * 1.2
-        spacing: Theme.pad
+        anchors.leftMargin: Theme.spaceLg
+        anchors.rightMargin: Theme.spaceLg
+        spacing: Theme.spaceMd
 
         Text {
             id: iconText
@@ -93,8 +96,7 @@ Motion.MorphButton {
             id: labelText
             text: root.label
             font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize + 1
-            font.weight: root.selected ? Font.DemiBold : Font.Normal
+            font.pixelSize: Theme.fontSize
             color: root.foreground
             elide: Text.ElideRight
             Layout.fillWidth: true
@@ -106,7 +108,7 @@ Motion.MorphButton {
             visible: root.secondaryText.length > 0
             text: root.secondaryText
             font.family: Theme.fontFamily
-            font.pixelSize: Math.max(9, Math.round((Theme.fontSize + 1) * 0.82))
+            font.pixelSize: Math.max(9, Theme.fontSize - 1)
             color: root.trailingForeground
             elide: Text.ElideLeft
             Layout.maximumWidth: parent.width * 0.4

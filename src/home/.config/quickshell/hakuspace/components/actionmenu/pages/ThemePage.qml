@@ -7,7 +7,7 @@ ActionMenu.ActionMenuPage {
     id: root
 
     title: "Change Theme"
-    subtitle: "Customise appearance & styling"
+    subtitle: "Font and accent color"
     icon: ""
     geometryProfile: "option"
 
@@ -17,37 +17,23 @@ ActionMenu.ActionMenuPage {
 
     readonly property var items: [
         {
-            id: "waybar",
-            icon: "",
-            label: "Change Waybar Theme",
-            secondary: "Waybar Panel",
-            page: "pages/ThemeWaybarPage.qml"
-        },
-        {
-            id: "rofi",
-            icon: "",
-            label: "Change Rofi Theme",
-            secondary: "Rofi Launcher",
-            page: "pages/ThemeRofiPage.qml"
-        },
-        {
             id: "font",
             icon: "",
-            label: "Change Font",
+            label: "Font family",
             secondary: Theme.fontFamily,
             page: "pages/ThemeFontPage.qml"
         },
         {
             id: "size",
             icon: "",
-            label: "Change Font Size",
-            secondary: Theme.fontSize + "px",
+            label: "Font size",
+            secondary: Theme.fontSize + " px",
             page: "pages/ThemeFontSizePage.qml"
         },
         {
             id: "accent",
             icon: "",
-            label: "Change Accent Color",
+            label: "Accent color",
             secondary: Theme.accent,
             page: "pages/ThemeAccentPage.qml"
         },
@@ -58,13 +44,15 @@ ActionMenu.ActionMenuPage {
             secondary: "Window transitions",
             page: "pages/NiriAnimationPage.qml"
         }
-    ]
+    ].filter(item => item.id !== "niriAnimation" || WM.backendName === "niri")
+
+    onItemsChanged: selectedIndex = Math.max(0, Math.min(selectedIndex, items.length - 1))
 
     // Pushes corresponding theme configuration submenu onto stack with seed geometry.
     function activateIndex(idx) {
         if (idx < 0 || idx >= items.length) return;
         var item = items[idx];
-        var btn = itemsCol.children[idx];
+        var btn = itemsRepeater.itemAt(idx);
         var geom = btn && btn.getSurfaceGeometry ? btn.getSurfaceGeometry() : null;
         root.pushSubmenu(item.page, {}, geom, "option");
     }
@@ -128,7 +116,7 @@ ActionMenu.ActionMenuPage {
         id: itemsCol
         z: 1
         anchors.fill: parent
-        spacing: Theme.pad
+        spacing: Theme.spaceSm
 
         Repeater {
             id: itemsRepeater
@@ -163,8 +151,7 @@ ActionMenu.ActionMenuPage {
 
                 onClicked: {
                     root.selectedIndex = index;
-                    var geom = getSurfaceGeometry();
-                    root.pushSubmenu(modelData.page, {}, geom, "option");
+                    root.activateCurrent();
                 }
             }
         }

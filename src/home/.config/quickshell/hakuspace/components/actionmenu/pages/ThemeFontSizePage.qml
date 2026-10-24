@@ -8,7 +8,7 @@ ActionMenu.ActionMenuPage {
     id: root
 
     title: "Change Font Size"
-    subtitle: "Current: " + Theme.fontSize + "px"
+    subtitle: "Current: " + Theme.fontSize + " px"
     icon: ""
     geometryProfile: "option"
     canGoBack: true
@@ -106,7 +106,7 @@ ActionMenu.ActionMenuPage {
         id: col
         z: 1
         anchors.fill: parent
-        spacing: Theme.pad
+        spacing: Theme.spaceSm
 
         // Error message banner
         Text {
@@ -125,7 +125,7 @@ ActionMenu.ActionMenuPage {
                 id: sizeBtn
                 Layout.fillWidth: true
                 icon: ""
-                label: modelData + "px"
+                label: modelData + " px"
                 secondaryText: modelData === Theme.fontSize ? "Active" : ""
                 selected: root.selectedIndex === index
                 focused: selected

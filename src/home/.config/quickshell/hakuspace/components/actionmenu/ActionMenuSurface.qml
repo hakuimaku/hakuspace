@@ -659,9 +659,22 @@ Item {
         visible: true
         radius: Theme.largeRadius
         color: Theme.surface
-        border.color: Theme.border !== "transparent" ? Theme.border : Qt.rgba(1, 1, 1, 0.12)
-        border.width: Theme.borderWidth
+        border.width: 0
         clip: true
+
+        // Match the static ink texture used by Settings.
+        Item {
+            anchors.fill: parent
+            opacity: 0.025
+            Repeater {
+                model: Math.floor(surfaceRect.height / 28)
+                Rectangle { required property int index; y: (index + 1) * 28; width: surfaceRect.width; height: 1; color: Theme.fg }
+            }
+            Repeater {
+                model: Math.floor(surfaceRect.width / 28)
+                Rectangle { required property int index; x: (index + 1) * 28; width: 1; height: surfaceRect.height; color: Theme.fg }
+            }
+        }
 
         // Permanent Page Stack Host (Layer 1, parent lives here underneath)
         Item {
