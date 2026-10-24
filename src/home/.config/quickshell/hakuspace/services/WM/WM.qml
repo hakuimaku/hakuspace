@@ -13,6 +13,19 @@ Item {
     property bool labwcSession: false
     property var caps: ({ occupied: false, windowCount: false, urgent: false, perOutput: false, special: false, secondary: false })
     
+    // Settings consume session capabilities instead of repeating compositor rules.
+    readonly property var uiCaps: ({
+        screenshotDirectory: backendName !== "niri",
+        nativeScreenshot: backendName === "niri",
+        workspaceSettings: supported,
+        compositorAnimationSettings: backendName === "niri",
+        currentWmConfig: backendName,
+        windowNavigator: ["hyprland", "niri", "mango"].includes(backendName),
+        dockbar: !ChromeLayout.taskbarMode,
+        wallpaperRotation: AppState.wallpaperRotationActive
+    })
+    readonly property string displayName: ({hyprland: "Hyprland", niri: "Niri", mango: "Mango", none: "Wayland", ext: "Wayland"})[backendName] || "Wayland"
+
     property string activeWindowClass: ""
     property string activeWindowTitle: ""
     

@@ -7,6 +7,17 @@ import "."
 QtObject {
     id: root
     
+    // Rotation is controlled by the existing wallpaper facade and state file.
+    property bool wallpaperRotationActive: false
+    property FileView wallpaperRotationFile: FileView {
+        path: "/tmp/random_wallpaper_status"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onTextChanged: root.wallpaperRotationActive = text().trim() === "1"
+        onLoadFailed: root.wallpaperRotationActive = false
+    }
+
     // State files are watched so changes from external scripts update the shell.
     property bool waybarManualState: true
     property FileView fv1: FileView { path: Env.stateDesktopWaybarRequested; watchChanges: true; printErrors: false; onFileChanged: this.reload(); onTextChanged: { var txt = this.text().trim(); if (txt === "1") root.waybarManualState = true; else if (txt === "0") root.waybarManualState = false; else root.waybarManualState = true; } }

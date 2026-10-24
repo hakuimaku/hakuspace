@@ -1,4 +1,5 @@
 import QtQuick
+import "../"
 
 Item {
     id: backend
