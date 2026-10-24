@@ -132,6 +132,20 @@ Giữ lựa chọn rõ ràng của người dùng, bảo đảm chạy lại an 
 Chạy migration bắt buộc trước khi các phần runtime phụ thuộc bắt đầu đọc; một lần đọc thông thường không nên âm thầm ghi lại file người dùng.
 Tra tên option, schema và giá trị mặc định hiện tại trong [backend thiết lập](../../src/core/backend/user/) và các store chung tương ứng.
 
+### Settings và cá nhân hóa
+
+Settings dùng một rail danh mục. Search mở đúng danh mục và đánh dấu thiết lập tìm được, đồng thời giữ ngữ cảnh của trang. Mọi tùy chọn luôn hiện trong đúng danh mục, kể cả mục Classic và WM không hoạt động; không còn công tắc Advanced. Search tìm được cả tên biến nhưng các dòng thiết lập chỉ hiện nhãn dễ đọc, ẩn tên biến và metadata phiên bản. Store giữ draft và định dạng lưu cũ.
+
+General có font family và font size. Apply lưu font qua theme controller hiện có và cập nhật shell; Reload và Discard khôi phục giá trị đã lưu. Screenshot folder chỉ hiện ghi chú với Niri vì phím chụp màn hình tích hợp dùng cấu hình riêng của Niri.
+
+Layer Change Theme native có font family, font size và màu accent; tùy chọn animation chỉ hiện khi dùng Niri. Các picker Rofi và Waybar nằm ở frontend Classic. Các trang theme dùng chung nền ink, khoảng cách, cỡ chữ và pill chọn có chuyển động của shell; đổi font native gọi trực tiếp theme controller.
+
+Appearance và Desktop dùng chung preference của shell. Thư mục, chu kỳ đổi và transition Classic của wallpaper dùng preference chung; chất lượng video, phát và chuẩn bị video dùng preference wallpaper. Apply lưu store tương ứng; Apply & Close lưu tất cả store đã sửa. Configuration luôn liệt kê mọi file cấu hình WM và ưu tiên WM đang chạy. Tùy chọn recorder nằm trong Recording, font widget Classic và theme Waybar riêng trong Appearance, tùy chọn thoát phiên trong Session. Không còn tab Advanced hay Shortcuts riêng.
+
+Picker wallpaper dùng chất lượng video đã lưu: chọn hình hoặc video rồi Apply. Việc chuẩn bị video theo chính sách đã chọn. Công cụ quản lý video cache và tùy chọn browser luôn hiện trong Wallpaper settings. Chọn avatar sẽ mở khung crop vuông có kéo và zoom trước khi lưu PNG 512×512; Cancel hoặc lỗi capture giữ avatar cũ.
+
+Hộp thoại chọn thư mục và ảnh native tạm nhả quyền bàn phím và hạ layer gọi xuống dưới cửa sổ ứng dụng. Khi đóng hộp thoại, chỉ khôi phục owner nếu surface đó còn đang mở. Temp Note được ghim có thể vẫn hiện nhưng chia sẻ một owner bàn phím với Settings và Navigation; bấm phần note còn nhìn thấy sẽ chuyển input một cách rõ ràng.
+
 ## Phong cách và chuyển động
 
 Dùng ngôn ngữ hình ảnh chung, giá trị từ theme và primitive tái sử dụng.
