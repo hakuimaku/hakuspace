@@ -16,6 +16,7 @@ KINDS = {
     "SCREENREC_SAVE_DIR": "path", "REC_COMMAND": "required", "REC_OPTS": "text",
     "HAKU_CLOCK_FONT_SIZE": "int", "HAKU_GENERAL_FONT_SIZE": "int",
     "HAKU_TERMINAL_FONT_SIZE": "int", "RAM_THRESHOLD_MB": "int", "EXIT_APP_LIST_USER": "list",
+    "WAYBAR_MODE_USER": "list",
 }
 ASSIGNMENT = re.compile(r"^([ \t]*)([A-Za-z_][A-Za-z_0-9]*)=([^\r\n]*)(\r?\n?)$")
 HOME = re.compile(r"\$(?:HOME\b|\{HOME\})")

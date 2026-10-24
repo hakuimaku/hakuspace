@@ -7,7 +7,9 @@ import "."
 QtObject {
     id: root
     property bool ready: false
-    property bool loading: false
+    property bool readingSettings: false
+    property bool readingFonts: false
+    readonly property bool loading: readingSettings || readingFonts
     property bool saving: false
     property string error: ""
     property string statusMessage: ""
@@ -19,9 +21,15 @@ QtObject {
     property var unsupportedKeys: []
     property var missingKeys: []
     property var duplicateKeys: []
-    readonly property bool dirty: JSON.stringify(values) !== JSON.stringify(savedValues)
+    // Typography uses canonical theme state rather than adding setting.sh assignments.
+    property var fontValues: ({family: "", size: 14})
+    property var savedFontValues: ({family: "", size: 14})
+    property var writingFonts: ({})
+    property bool fontsReady: false
+    readonly property bool fontsDirty: JSON.stringify(fontValues) !== JSON.stringify(savedFontValues)
+    readonly property bool dirty: fontsDirty || JSON.stringify(values) !== JSON.stringify(savedValues)
     readonly property var validityByKey: validateAll(values)
-    readonly property bool valid: Object.keys(validityByKey).length === 0 && duplicateKeys.length === 0
+    readonly property bool valid: Object.keys(validityByKey).length === 0 && duplicateKeys.length === 0 && (!fontsDirty || validateFonts(fontValues))
     // Keep the submitted draft so later edits survive an in-flight save.
     property var writingSnapshot: ({})
 
@@ -41,6 +49,7 @@ QtObject {
         { key: "HAKU_CLOCK_FONT_SIZE", group: "Haku Widget", label: "Clock font size", type: "int", hint: "Clock text size in Haku Widget." },
         { key: "HAKU_GENERAL_FONT_SIZE", group: "Haku Widget", label: "General font size", type: "int", hint: "General text size in Haku Widget." },
         { key: "HAKU_TERMINAL_FONT_SIZE", group: "Haku Widget", label: "Terminal font size", type: "int", hint: "Terminal text size in Haku Widget." },
+        { key: "WAYBAR_MODE_USER", group: "Waybar", label: "Custom Waybar themes", type: "list", hint: "Classic theme folder names under ~/hakucfg/config/waybar." },
         { key: "RAM_THRESHOLD_MB", group: "Exit", label: "RAM warning threshold (MB)", type: "int", hint: "RAM warning threshold in megabytes when exiting the window manager." },
         { key: "EXIT_APP_LIST_USER", group: "Exit", label: "Apps to close", type: "list", hint: "Apps targeted for graceful shutdown, then forced termination, when exiting the window manager. Example: discord, firefox, code." }
     ]
@@ -52,6 +61,46 @@ QtObject {
     function command(action) {
         return ["sh", "-c", 'if [ -x "$1" ]; then exec "$1" "$4"; elif [ -x "$2" ]; then exec "$2" "$4"; elif [ -x "$3" ]; then exec "$3" "$4"; else exec setting_ctl.py "$4"; fi',
                 "--", deployedScript, envScript, repoScript, action]
+    }
+
+    // Pass font values as arguments to the existing theme controller.
+    function themeCommand(action) {
+        return ["sh", "-c", 'if [ -x "$1" ]; then ctl=$1; elif [ -x "$2" ]; then ctl=$2; else ctl=$3; fi; if [ "$4" = read ]; then exec "$ctl" status; fi; if [ "$5" = 1 ]; then "$ctl" set-font "$6" || exit $?; fi; if [ "$7" = 1 ]; then "$ctl" set-size "$8" || exit $?; fi; exec "$ctl" status',
+            "--", (Quickshell.env("HOME") || "") + "/.local/bin/theme_ctl.sh", Env.binDir + "/theme_ctl.sh",
+            Quickshell.shellPath("../../../../core/backend/theme/theme_ctl.sh"), action,
+            writingFonts.family !== savedFontValues.family ? "1" : "0", writingFonts.family || "",
+            writingFonts.size !== savedFontValues.size ? "1" : "0", String(writingFonts.size || 14)]
+    }
+    function validateFonts(draft) {
+        return typeof draft.family === "string" && draft.family.trim().length > 0 && !/[\r\n\0]/.test(draft.family)
+            && Number.isInteger(draft.size) && draft.size > 0
+    }
+    function setFontValue(key, value) {
+        if (!fontsReady || loading || saving || !["family", "size"].includes(key)) return
+        var draft = Object.assign({}, fontValues)
+        draft[key] = value
+        if (!validateFonts(draft)) return
+        fontValues = draft
+        error = ""
+        statusMessage = ""
+    }
+    // Read controller status without recovering state from generated theme files.
+    function acceptFonts(text, preserveDraft) {
+        var data = {}
+        for (var line of text.trim().split("\n")) {
+            if (line.startsWith("font=")) data.family = line.substring(5)
+            if (line.startsWith("size=")) data.size = Number(line.substring(5))
+        }
+        if (!validateFonts(data)) throw new Error("Invalid font settings")
+        savedFontValues = data
+        if (!preserveDraft || JSON.stringify(fontValues) === JSON.stringify(writingFonts)) fontValues = Object.assign({}, data)
+        fontsReady = true
+    }
+    // Keep one Apply operation active until both preference stores finish.
+    function saveFontsOrFinish() {
+        if (fontsDirty) { fontWrite.command = themeCommand("write"); fontWrite.running = true; return }
+        saving = false
+        statusMessage = "Preferences saved."
     }
 
     // Mirror backend validation before Apply becomes available.
@@ -75,9 +124,9 @@ QtObject {
         return ready && missingKeys.indexOf(key) < 0 && unsupportedKeys.indexOf(key) < 0 && duplicateKeys.length === 0
     }
     function validationMessage(key) {
-        if (missingKeys.indexOf(key) >= 0) return "Missing from installed setting.sh"
-        if (unsupportedKeys.indexOf(key) >= 0) return "Customized syntax is unsupported"
-        if (duplicateKeys.length) return "Duplicate assignment in setting.sh"
+        if (missingKeys.indexOf(key) >= 0) return "This preference is unavailable in your installed configuration."
+        if (unsupportedKeys.indexOf(key) >= 0) return "Edit this customized assignment directly in setting.sh."
+        if (duplicateKeys.length) return "Remove duplicate assignments in setting.sh before saving."
         return validityByKey[key] || ""
     }
     function setValue(key, value) {
@@ -87,12 +136,15 @@ QtObject {
         values = draft
         statusMessage = ""
     }
-    function discard() { values = Object.assign({}, savedValues); error = ""; statusMessage = "" }
+    function discard() { values = Object.assign({}, savedValues); fontValues = Object.assign({}, savedFontValues); error = ""; statusMessage = "" }
     function load() { reload() }
     function reload() {
         if (loading || saving) return
-        loading = true
+        readingSettings = true
+        readingFonts = true
         error = ""
+        fontRead.command = themeCommand("read")
+        fontRead.running = true
         readProc.command = command("read")
         readProc.running = true
     }
@@ -107,8 +159,10 @@ QtObject {
             }
         }
         writingSnapshot = Object.assign({}, values)
+        writingFonts = Object.assign({}, fontValues)
         saving = true
         error = ""
+        if (!Object.keys(changes).length) { saveFontsOrFinish(); return }
         writeProc.command = command("write")
         writeProc.environment = { "HAKUSPACE_SETTINGS_JSON": JSON.stringify(changes) }
         writeProc.running = true
@@ -129,7 +183,7 @@ QtObject {
         stdout: StdioCollector { id: readOut }
         stderr: StdioCollector { id: readErr }
         onExited: (code, status) => {
-            root.loading = false
+            root.readingSettings = false
             if (code !== 0) { root.ready = false; root.error = readErr.text.trim() || "Could not read setting.sh"; return }
             try { root.accept(JSON.parse(readOut.text), false); root.statusMessage = "" }
             catch (e) { root.ready = false; root.error = "Invalid settings response" }
@@ -140,14 +194,34 @@ QtObject {
         stdout: StdioCollector { id: writeOut }
         stderr: StdioCollector { id: writeErr }
         onExited: (code, status) => {
-            root.saving = false
-            if (code !== 0) { root.error = writeErr.text.trim() || "Could not save setting.sh"; return }
+            if (code !== 0) { root.saving = false; root.error = writeErr.text.trim() || "Could not save setting.sh"; return }
             try {
                 var current = root.values
                 root.accept(JSON.parse(writeOut.text), true)
                 if (JSON.stringify(current) === JSON.stringify(root.writingSnapshot)) root.values = Object.assign({}, root.savedValues)
-                root.statusMessage = "Saved to ~/hakucfg/setting.sh. Some settings take effect on the next related action."
-            } catch (e) { root.error = "Invalid save response" }
+                root.saveFontsOrFinish()
+            } catch (e) { root.saving = false; root.error = "Invalid save response" }
         }
     }
+    property Process fontRead: Process {
+        stdout: StdioCollector { id: fontReadOut }
+        stderr: StdioCollector { id: fontReadErr }
+        onExited: code => {
+            root.readingFonts = false
+            if (code !== 0) { root.fontsReady = false; root.error = fontReadErr.text.trim() || "Could not read font settings"; return }
+            try { root.acceptFonts(fontReadOut.text, false) }
+            catch (error) { root.fontsReady = false; root.error = "Invalid font settings response" }
+        }
+    }
+    property Process fontWrite: Process {
+        stdout: StdioCollector { id: fontWriteOut }
+        stderr: StdioCollector { id: fontWriteErr }
+        onExited: code => {
+            root.saving = false
+            if (code !== 0) { root.error = fontWriteErr.text.trim() || "Could not save font settings"; return }
+            try { root.acceptFonts(fontWriteOut.text, true); root.statusMessage = "Preferences saved." }
+            catch (error) { root.error = "Could not confirm saved font settings" }
+        }
+    }
+
 }

@@ -33,9 +33,11 @@ class SettingCtlTests(unittest.TestCase):
 
     def test_read_canonical(self):
         data = self.call("read")
-        self.assertEqual(len(data["values"]), 17)
+        self.assertEqual(len(data["values"]), 18)
         self.assertEqual(data["settingVersion"], "26.09-2")
-        self.assertNotIn("WAYBAR_MODE_USER", data["values"])
+        self.assertEqual(data["values"]["WAYBAR_MODE_USER"], [])
+        assignments = set(re.findall(r"^([A-Z_]+)=", TEMPLATE.read_text(), re.M))
+        self.assertEqual(set(data["values"]), assignments - {"SETTING_VERSION"})
         self.assertEqual(data["values"]["EXIT_APP_LIST_USER"], [])
         self.assertEqual(data["values"]["SCREENSHOT_DIR"], "$HOME/Pictures/Screenshots")
         self.call("check")
@@ -54,6 +56,7 @@ class SettingCtlTests(unittest.TestCase):
             "SCREENSHOT_DIR": '$HOME/Pictures/a b # c',
             "AWWW_OPTS": 'spaces # "quotes" $USER `date` \\ fine',
             "REC_OPTS": "", "EXIT_APP_LIST_USER": ["one", "two words", 'a"$`\\b'],
+            "WAYBAR_MODE_USER": ["custom", "theme with spaces", 'a"$`\\b'],
         }
         data = self.call("write", payload)
         self.assertEqual({key: data["values"][key] for key in payload}, payload)
@@ -72,8 +75,8 @@ class SettingCtlTests(unittest.TestCase):
         self.call("write", {"WALL_INTERVAL": 420})
         self.assertEqual(self.path.read_text(), before.replace("WALL_INTERVAL=300 #", "WALL_INTERVAL=420 #"))
 
-    def test_waybar_is_unmanaged(self):
-        self.path.write_text(self.path.read_text().replace("WAYBAR_MODE_USER=()", "WAYBAR_MODE_USER=$(printf custom)\nWAYBAR_MODE_USER=()"))
+    def test_unsupported_waybar_is_preserved(self):
+        self.path.write_text(self.path.read_text().replace("WAYBAR_MODE_USER=()", "WAYBAR_MODE_USER=$(printf custom)"))
         before = self.path.read_text()
         self.call("write", {"WELCOME_MSG": False})
         self.assertEqual(self.path.read_text(), before.replace("WELCOME_MSG=true", "WELCOME_MSG=false"))
@@ -82,7 +85,7 @@ class SettingCtlTests(unittest.TestCase):
         before = self.path.read_bytes()
         for payload in ({"ACCENT_COLOR_MODE": "wrong"}, {"NIGHT_LIGHT_TEMPERATURE": 0},
                         {"WELCOME_MSG": "false"}, {"SETTING_VERSION": "x"}, {"UNKNOWN": 1},
-                        {"WAYBAR_MODE_USER": ["custom"]},
+                        {"WAYBAR_MODE_USER": "custom"},
                         {"REC_COMMAND": "foo\nbar"}, {"REC_COMMAND": ""}, {"REC_OPTS": "bad\0value"}):
             self.call("write", payload, False)
             self.assertEqual(self.path.read_bytes(), before)
