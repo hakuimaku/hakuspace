@@ -3,6 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "."
+import "../components/settings/SettingsCatalog.js" as Catalog
 
 QtObject {
     id: root
@@ -133,7 +134,8 @@ QtObject {
                 root.files = data.files || []
                 root.skippedCount = data.skippedCount || 0
                 root.ready = true
-                if (!root.selectedFileId && root.files.length) root.selectFile(root.files[0].id)
+                var visibleFiles = Catalog.configFiles(root.files, WM.backendName, false)
+                if (!root.selectedFileId && visibleFiles.length) root.selectFile(visibleFiles[0].id)
             } catch (e) { root.error = "Invalid file list response" }
         }
     }

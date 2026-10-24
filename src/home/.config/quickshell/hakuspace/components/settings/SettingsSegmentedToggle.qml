@@ -29,23 +29,21 @@ Item {
     Accessible.checked: checked
     Accessible.onToggleAction: toggled(!checked)
 
-    Rectangle { anchors.fill: parent; radius: Theme.radius; color: Theme.hoverMuted; border.width: 1; border.color: Theme.hoverMuted }
+    Rectangle { anchors.fill: parent; radius: height / 2; color: Theme.hoverMuted; border.width: 1; border.color: Theme.hoverMuted }
     Item {
         id: lane
         anchors.fill: parent
         anchors.margins: 2
         readonly property real gap: 2
         readonly property real slotWidth: (width - gap) / 2
+        // Indexed edges keep the morph continuous during toggles and resizing.
         Motion.SelectionPill {
+            objectName: "settings-toggle-selection"
             z: 0
-            shown: true
-            duration: HAnimation.slow
-            trailFactor: 1.15
-            targetX: root.checked ? lane.slotWidth + lane.gap : 0
-            targetY: 0
-            targetWidth: lane.slotWidth
-            targetHeight: lane.height
-            targetRadius: Theme.radius
+            targetIndex: root.checked ? 1 : 0
+            slotCount: 2
+            slotSpacing: lane.gap
+            radius: lane.height / 2
         }
         Repeater {
             model: root.labels
@@ -58,6 +56,7 @@ Item {
                 z: 1
                 width: lane.slotWidth
                 height: lane.height
+                radius: height / 2
                 text: modelData
                 enabled: root.available
                 activeFocusOnTab: false
@@ -65,15 +64,15 @@ Item {
                 selected: root.checked === (index === 1)
                 selectedOverridesHover: true
                 idleColor: "transparent"
-                hoverColor: Theme.hoverMuted
-                pressedColor: selected ? "transparent" : Theme.hoverMuted
+                hoverColor: "transparent"
+                pressedColor: "transparent"
                 selectedColor: "transparent"
                 focusColor: "transparent"
                 foregroundColor: Theme.fgDim
-                hoverForegroundColor: Theme.fg
-                pressedForegroundColor: selected ? "#000000" : Theme.fg
-                selectedForegroundColor: "#000000"
-                focusForegroundColor: selected ? "#000000" : Theme.fg
+                hoverForegroundColor: selected ? Theme.onAccentColor : Theme.fg
+                pressedForegroundColor: selected ? Theme.onAccentColor : Theme.fg
+                selectedForegroundColor: Theme.onAccentColor
+                focusForegroundColor: selected ? Theme.onAccentColor : Theme.fg
                 onClicked: root.toggled(index === 1)
                 // Mark keyboard focus inside the selected half without another outline.
                 Rectangle {
@@ -82,7 +81,7 @@ Item {
                     anchors.bottomMargin: Theme.gap
                     width: Math.max(0, Math.min(parent.width - Theme.pad * 2, Theme.fontSize * 2))
                     height: 1
-                    color: "#000000"
+                    color: Theme.onAccentColor
                     visible: root.activeFocus && segment.selected
                 }
                 SettingsTooltip {

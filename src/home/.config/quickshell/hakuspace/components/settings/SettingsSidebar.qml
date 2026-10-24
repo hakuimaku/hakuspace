@@ -2,130 +2,72 @@ import QtQuick
 import QtQuick.Controls
 import "../../services"
 import "../motion" as Motion
+import "SettingsCatalog.js" as Catalog
 
 Rectangle {
     id: root
-    // Context navigation follows the current page's visible section anchors.
-    required property var page
-    // Native selectors share the layer's shortcut dispatcher.
-    property Item shortcutTarget: null
-    property bool compact: false
-    property bool configBrowser: false
-    readonly property var sectionNames: page.sidebarSections || []
-    signal fileSelected(string fileId)
+    // One rail owns all primary Settings navigation.
+    property string selected: "General"
+    readonly property var categories: Catalog.categories
+    readonly property bool popupOpen: false
+    signal selectedRequested(string category)
     color: Qt.tint(Theme.surface, Qt.alpha(Theme.hoverMuted, 0.13))
     clip: true
-    readonly property bool popupOpen: sectionSelector.popup.visible || configTree.popupOpen
-    SettingsConfigBrowser {
-        id: configTree
-        anchors.fill: parent
-        shortcutTarget: root.shortcutTarget
-        visible: root.configBrowser
-        compact: root.compact
-        onFileSelected: fileId => root.fileSelected(fileId)
-    }
-    ComboBox {
-        id: sectionSelector
-        readonly property bool settingsNavSelected: currentIndex >= 0
-        property bool settingsNavItem: true
-        property string settingsNavRole: "selector"
-        Keys.forwardTo: root.shortcutTarget ? [root.shortcutTarget] : []
-        anchors.fill: parent
-        anchors.margins: 4
-        visible: root.compact && !root.configBrowser
-        enabled: count > 0
-        model: root.sectionNames
-        currentIndex: root.sectionNames.indexOf(root.page.activeSection || "")
-        font.family: Theme.fontFamily
-        palette.button: Theme.surface
-        palette.buttonText: Theme.fg
-        palette.base: Theme.surface
-        palette.text: Theme.fg
-        palette.highlight: Theme.accent
-        palette.highlightedText: "#000000"
-        Accessible.name: "Settings sections"
-        onActivated: index => root.page.scrollToSection(model[index])
-    }
     Flickable {
-        id: sectionScroll
+        id: scroll
         anchors.fill: parent
-        anchors.margins: 14
-        visible: !root.compact && !root.configBrowser
+        anchors.margins: Theme.spaceSm
         contentWidth: width
-        contentHeight: sections.implicitHeight
-        clip: true
+        contentHeight: body.implicitHeight
         boundsBehavior: Flickable.StopAtBounds
+        clip: true
         ScrollBar.vertical: Motion.HScrollBar {}
-        // The shared accent follows the active section inside scroll content.
+        // One moving surface morphs between the selected category rows.
         Motion.SelectionPill {
-            id: sectionSelection
-            objectName: "settings-section-indicator"
-            parent: sectionScroll.contentItem
-            coordinateSpace: sectionScroll.contentItem
-            opacity: shown && targetItem && targetItem.selected ? 1 : 0
+            id: selectionPill
+            objectName: "settings-sidebar-selection"
+            parent: scroll.contentItem
+            coordinateSpace: scroll.contentItem
             z: 0
-            duration: HAnimation.slow
-            trailFactor: 1.15
         }
         Column {
-            id: sections
+            id: body
             z: 1
-            width: parent.width
-            spacing: 8
-            onPositioningComplete: sectionSelection.syncTarget(false)
-            Text {
-                width: parent.width
-                height: 30
-                text: "// SECTIONS"
-                color: Theme.fgMuted
-                font.family: Theme.fontFamily
-                font.pixelSize: Math.max(10, Theme.fontSize - 3)
-            }
+            onPositioningComplete: selectionPill.syncTarget(true)
+            width: scroll.width
+            spacing: Theme.spaceSm
             Repeater {
-                model: root.sectionNames
+                model: Catalog.categories
                 delegate: SettingsActionButton {
-                    id: section
-                    settingsNavRole: "sidebar"
                     required property string modelData
-                    width: sections.width
-                    height: 40
-                    text: ""
-                    selected: root.page.activeSection === modelData
-                    selectedOverridesHover: true
+                    objectName: "settings-category-" + modelData
+                    settingsNavRole: "sidebar"
+                    width: body.width; height: Theme.comfortableControlHeight
+                    text: modelData
+                    selected: root.selected === modelData
+                    radius: height / 2
+                    border.width: 0
                     idleColor: "transparent"
-                    hoverColor: Theme.hoverMuted
                     selectedColor: "transparent"
-                    pressedColor: selected ? "transparent" : Theme.hoverMuted
+                    hoverColor: "transparent"
+                    pressedColor: "transparent"
+                    focusColor: "transparent"
                     foregroundColor: Theme.fgDim
-                    selectedForegroundColor: "#000000"
-                    hoverForegroundColor: Theme.fg
-                    pressedForegroundColor: selected ? "#000000" : Theme.fg
-                    onSelectedChanged: { if (selected) sectionSelection.targetItem = section }
-                    Component.onCompleted: {
-                        if (selected) sectionSelection.targetItem = section
-                    }
-                    activeFocusOnTab: true
-                    focused: activeFocus
+                    selectedForegroundColor: Theme.onAccentColor
+                    hoverForegroundColor: selected ? Theme.onAccentColor : Theme.fg
+                    pressedForegroundColor: hoverForegroundColor
+                    focusForegroundColor: hoverForegroundColor
+                    Component.onCompleted: if (selected) selectionPill.targetItem = this
+                    onSelectedChanged: if (selected) selectionPill.targetItem = this
+                    activeFocusOnTab: true; focused: activeFocus
+                    Accessible.role: Accessible.PageTab
                     Accessible.name: modelData
-                    Accessible.role: Accessible.Button
-                    Accessible.onPressAction: clicked()
-                    onClicked: root.page.scrollToSection(modelData)
+                    Accessible.selected: selected
+                    onClicked: root.selectedRequested(modelData)
                     Keys.onReturnPressed: clicked()
                     Keys.onSpacePressed: clicked()
-                    Text {
-                        anchors.fill: parent
-                        anchors.leftMargin: 12
-                        anchors.rightMargin: 8
-                        verticalAlignment: Text.AlignVCenter
-                        text: section.modelData
-                        color: section.foreground
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Math.max(10, Theme.fontSize - 1)
-                        elide: Text.ElideRight
-                    }
                 }
             }
         }
     }
-    Rectangle { anchors.right: parent.right; width: root.compact ? parent.width : 1; height: root.compact ? 1 : parent.height; anchors.bottom: parent.bottom; color: Theme.hoverMuted }
 }

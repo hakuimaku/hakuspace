@@ -15,6 +15,37 @@ PanelWindow {
     readonly property bool releaseReady: !panelOpen && !openAnimation.running && !closeAnimation.running && slideProgress === 0 && expandProgress === 0
     required property var modelData
     property string selectedGroup: "General"
+    property string selectedCategory: "General"
+    property string highlightedId: ""
+    // Lazy page objects leave all editable drafts in their persistent stores.
+    readonly property var generalPage: generalLoader.item
+    readonly property var shellPage: shellLoader.item
+    readonly property var wallpaperPage: wallpaperLoader.item
+    readonly property var configPage: configLoader.item
+    readonly property var infoPage: infoLoader.item
+    property bool configVisited: false
+
+    // Category selection keeps the existing store-specific Apply and confirmation paths.
+    function selectCategory(category) {
+        selectedCategory = category
+        selectedGroup = ["Appearance", "Desktop"].includes(category) ? "Shell"
+            : category === "Configuration" ? "Config" : category === "About" ? "Info"
+            : category === "Wallpaper" ? "Wallpaper" : "General"
+        if (selectedGroup === "Config") configVisited = true
+        lastContentFocus = null
+        contentFocus = ({})
+    }
+
+    // Search changes the category, then reveals the matching row after lazy creation.
+    function revealResult(result) {
+        highlightedId = result.id
+        selectCategory(result.category)
+        Qt.callLater(function() {
+            if (!root || !root.panelOpen) return
+            var page = interior.currentPage
+            if (page && typeof page.reveal === "function") page.reveal(result.id, result.section || "")
+        })
+    }
     property string confirmation: ""
     // Keep the close dialog open until every submitted draft finishes saving.
     property bool applyingClose: false
@@ -55,7 +86,7 @@ PanelWindow {
     readonly property bool navigationEnabled: panelOpen && interior.enabled && !confirmation && !confirmationDialog.visible && !shortcutHelp.visible && !sidebar.popupOpen
         && !(focusedItem && focusedItem.inputMethodComposing === true)
     // A hidden Config warning must not disable keyboard navigation on other pages.
-    readonly property bool pageConfirmation: selectedGroup === "Config" && configPage.confirmation.length > 0
+    readonly property bool pageConfirmation: selectedGroup === "Config" && configPage && configPage.confirmation.length > 0
     readonly property bool pageShortcutsEnabled: navigationEnabled && !pageConfirmation
     // Keep keyboard region order aligned across entry, cycling and arrow navigation.
     readonly property var focusZones: [topbar, sidebar, interior.currentPage, footer]
@@ -66,7 +97,7 @@ PanelWindow {
     function focusZoneIndex() { return Navigation.region(focusedItem, focusZones) }
     // Restore only live targets belonging to the selected page and contextual section.
     function focusZone(index, restoreAny) {
-        var items = navItems(focusZones[index], index === 0 ? "domain" : "")
+        var items = navItems(focusZones[index])
         if (!items.length) return false
         if (index === 2) {
             if (restoreAny && items.includes(lastContentFocus)) return focusItem(lastContentFocus)
@@ -91,8 +122,8 @@ PanelWindow {
     }
     // Tab changes preserve every page draft and focus the newly selected domain.
     function selectDomain(index) {
-        selectedGroup = topbar.domains[(index + topbar.domains.length) % topbar.domains.length]
-        focusZone(0)
+        selectCategory(sidebar.categories[(index + sidebar.categories.length) % sidebar.categories.length])
+        focusZone(1)
     }
     // Route save and reload shortcuts through each page's existing guards and confirmations.
     function activatePageShortcut(save) {
@@ -114,17 +145,16 @@ PanelWindow {
                 focusZone(event.key === Qt.Key_Up ? 0 : event.key === Qt.Key_Left ? 1 : 2)
             else if (modifiers === Qt.NoModifier && handleArrowNavigation(event)) return true
             else if (modifiers === Qt.ControlModifier && event.key === Qt.Key_Tab)
-                selectDomain(topbar.domains.indexOf(selectedGroup) + 1)
+                selectDomain(sidebar.categories.indexOf(selectedCategory) + 1)
             else if (modifiers === (Qt.ControlModifier | Qt.ShiftModifier)
                     && (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab))
-                selectDomain(topbar.domains.indexOf(selectedGroup) - 1)
-            else if (modifiers === Qt.AltModifier && event.key >= Qt.Key_1 && event.key <= Qt.Key_5)
+                selectDomain(sidebar.categories.indexOf(selectedCategory) - 1)
+            else if (modifiers === Qt.AltModifier && event.key >= Qt.Key_1 && event.key <= Qt.Key_9 && event.key - Qt.Key_1 < sidebar.categories.length)
                 selectDomain(event.key - Qt.Key_1)
             else if (event.key === Qt.Key_F6 && (modifiers === Qt.NoModifier || modifiers === Qt.ShiftModifier))
                 cycleFocusZone(modifiers === Qt.ShiftModifier ? -1 : 1)
             else if (modifiers === Qt.ControlModifier && event.key === Qt.Key_F) {
-                selectedGroup = "General"
-                generalPage.focusSearch()
+                topbar.focusSearch()
             } else if (modifiers === Qt.ControlModifier && event.key === Qt.Key_S) {
                 if (!event.isAutoRepeat) activatePageShortcut(true)
             } else if (modifiers === Qt.NoModifier && event.key === Qt.Key_F5) {
@@ -139,6 +169,7 @@ PanelWindow {
         var target = Navigation.owner(focusedItem)
         if (!target) return false
         var horizontal = event.key === Qt.Key_Left || event.key === Qt.Key_Right
+        if (target.settingsNavRole === "input" && [Qt.Key_Home, Qt.Key_End].includes(event.key)) return true
         if (target.settingsNavEditing === true || (horizontal ? target.settingsNavOwnsHorizontal : target.settingsNavOwnsVertical) === true)
             return true
         if (horizontal && target.settingsNavRole === "input")
@@ -166,11 +197,7 @@ PanelWindow {
     function navigateTopbar(event) {
         if (event.key === Qt.Key_Down) return focusZone(1) || focusZone(2)
         if (![Qt.Key_Left, Qt.Key_Right, Qt.Key_Home, Qt.Key_End].includes(event.key)) return false
-        var domains = navItems(topbar, "domain")
-        var target = Navigation.listTarget(domains, Navigation.owner(focusedItem), event.key, false, true)
-        if (!target) return false
-        selectDomain(topbar.domains.indexOf(target.modelData))
-        return true
+        return focusItem(Navigation.listTarget(navItems(topbar), Navigation.owner(focusedItem), event.key, false, false))
     }
     // Context rows focus without selecting a section or switching a dirty file.
     function navigateSidebar(event) {
@@ -193,6 +220,7 @@ PanelWindow {
                 || ![Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right, Qt.Key_Home, Qt.Key_End].includes(event.key)) return false
         if (controlOwnsKey(event)) return false
         var zone = focusZoneIndex()
+        if (zone === 0 && topbar.searching && event.key === Qt.Key_Down) return false
         var moved = zone === 0 ? navigateTopbar(event) : zone === 1 ? navigateSidebar(event)
             : zone === 2 && [Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right].includes(event.key) ? navigateContent(event)
             : zone === 3 ? navigateFooter(event) : false
@@ -288,10 +316,10 @@ PanelWindow {
         var action = confirmation
         confirmation = ""
         if (action === "reset-wallpaper") WallpaperSettingsStore.reset()
-        else if (action === "discard-wallpaper") WallpaperSettingsStore.discard()
+        else if (action === "discard-wallpaper") { WallpaperSettingsStore.discard(); SettingsStore.discard() }
         else if (action === "reload-wallpaper") WallpaperSettingsStore.reload()
         else if (action === "reset-shell") ShellSettingsStore.reset()
-        else if (action === "discard-shell") ShellSettingsStore.discard()
+        else if (action === "discard-shell") { ShellSettingsStore.discard(); SettingsStore.discard() }
         else if (action === "reload-shell") ShellSettingsStore.reload()
         else if (action === "reload") SettingsStore.reload()
         else if (action === "close") {
@@ -299,7 +327,7 @@ PanelWindow {
             ShellSettingsStore.discard()
             WallpaperSettingsStore.discard()
             ConfigEditorStore.discard()
-            configPage.confirmation = ""
+            if (configPage) configPage.confirmation = ""
             UiState.closeSettings()
         }
     }
@@ -327,7 +355,7 @@ PanelWindow {
             return
         }
         confirmation = ""
-        configPage.cancelConfirmation()
+        if (configPage) configPage.cancelConfirmation()
         UiState.closeSettings()
     }
     onSelectedGroupChanged: {
@@ -380,7 +408,7 @@ PanelWindow {
             closeAnimation.start()
         }
         if (panelOpen) {
-            if (UiState.settingsGroup) { selectedGroup = UiState.settingsGroup; UiState.settingsGroup = "" }
+            if (UiState.settingsGroup) { selectCategory(UiState.settingsGroup); UiState.settingsGroup = "" }
             confirmation = ""
             if (!SettingsStore.ready) SettingsStore.load()
             else if (!SettingsStore.dirty) SettingsStore.reload()
@@ -641,10 +669,12 @@ PanelWindow {
             id: interior
             anchors.fill: parent
             anchors.margins: parent.width < 760 || parent.height < 560 ? 12 : 24
+            anchors.bottomMargin: 0
             clip: true
             // Keep page objects alive so navigation never resets a draft or confirmation.
-            readonly property var currentPage: root.selectedGroup === "General" ? generalPage
-                : root.selectedGroup === "Shell" ? shellPage : root.selectedGroup === "Wallpaper" ? wallpaperPage : root.selectedGroup === "Config" ? configPage : infoPage
+            readonly property var currentPage: (root.selectedGroup === "General" ? generalPage
+                : root.selectedGroup === "Shell" ? shellPage : root.selectedGroup === "Wallpaper" ? wallpaperPage
+                : root.selectedGroup === "Config" ? configPage : infoPage) || emptyPage
             readonly property bool compact: width < 760
             opacity: Math.max(0, Math.min(1, (root.expandProgress - 0.55) / 0.4))
             enabled: root.panelOpen && root.expandProgress >= 0.95
@@ -669,71 +699,88 @@ PanelWindow {
                 id: topbar
                 width: parent.width
                 height: implicitHeight
-                selected: root.selectedGroup
-                source: root.selectedGroup === "Wallpaper" ? "~/hakucfg/hikai/hikai-wallpaper.json" : root.selectedGroup === "Shell" ? "~/hakucfg/hikai/hikai-shell.json"
-                    : root.selectedGroup === "Config" ? "~/hakucfg/wm · ~/hakucfg/config"
-                    : root.selectedGroup === "Info" ? "HakuSpace · " + (InfoStore.loading ? "detecting…"
-                        : InfoStore.repo.detected ? InfoStore.repo.version : "version unavailable")
-                    : SettingsStore.settingVersion ? "setting.sh · " + SettingsStore.settingVersion : "~/hakucfg/setting.sh"
-                onSelectedRequested: domain => root.selectDomain(domains.indexOf(domain))
+                shortcutTarget: shortcutKeys
+                onResultRequested: result => root.revealResult(result)
+                onCloseRequested: root.requestClose()
                 guideOpen: shortcutHelp.visible
                 onShortcutsRequested: shortcutHelp.open()
             }
             SettingsPages.SettingsSidebar {
                 id: sidebar
-                shortcutTarget: shortcutKeys
                 y: topbar.height
-                width: interior.compact ? parent.width : parent.width >= 1050 ? 220 : 180
-                height: interior.compact ? 44 : Math.max(0, footer.y - y)
-                page: interior.currentPage
-                compact: interior.compact
-                configBrowser: root.selectedGroup === "Config"
-                onFileSelected: fileId => configPage.requestSelect(fileId)
+                width: interior.compact ? 138 : parent.width >= 1050 ? 220 : 180
+                height: Math.max(0, footer.y - y)
+                selected: root.selectedCategory
+                onSelectedRequested: category => root.selectCategory(category)
             }
             Item {
                 id: viewport
-                x: interior.compact ? 0 : sidebar.width
-                y: interior.compact ? sidebar.y + sidebar.height : topbar.height
+                x: sidebar.width
+                y: topbar.height
                 width: Math.max(0, parent.width - x)
                 height: Math.max(0, footer.y - y)
                 clip: true
                 Item {
                     anchors.fill: parent
                     anchors.margins: interior.compact ? 16 : 24
-                    SettingsPages.GeneralSettingsPage {
-                        id: generalPage
-                        shortcutTarget: shortcutKeys
-                        anchors.fill: parent
-                        visible: root.selectedGroup === "General"
-                        onReloadRequested: root.requestReload()
+                    Item {
+                        id: emptyPage
+                        readonly property var actionLabels: []
+                        readonly property string footerStatus: ""
+                        readonly property bool footerDirty: false
+                        readonly property bool footerError: false
+                        function canActivate(label) { return false }
                     }
-                    SettingsPages.ShellSettingsPage {
-                        id: shellPage
-                        shortcutTarget: shortcutKeys
+                    Loader {
+                        id: generalLoader
                         anchors.fill: parent
-                        visible: root.selectedGroup === "Shell"
-                        onReloadRequested: root.requestReload()
-                        onConfirmationRequested: action => root.confirmation = action
+                        active: root.selectedGroup === "General"
+                        sourceComponent: SettingsPages.GeneralSettingsPage {
+                            category: root.selectedCategory
+                            highlightedId: root.highlightedId
+                            shortcutTarget: shortcutKeys
+                            onReloadRequested: root.requestReload()
+                        }
                     }
-                    SettingsPages.WallpaperSettingsPage {
-                        id: wallpaperPage
-                        shortcutTarget: shortcutKeys
+                    Loader {
+                        id: shellLoader
                         anchors.fill: parent
-                        visible: root.selectedGroup === "Wallpaper"
-                        onReloadRequested: root.requestReload()
-                        onConfirmationRequested: action => root.confirmation = action
+                        active: root.selectedGroup === "Shell"
+                        sourceComponent: SettingsPages.ShellSettingsPage {
+                            category: root.selectedCategory
+                            highlightedId: root.highlightedId
+                            shortcutTarget: shortcutKeys
+                            onReloadRequested: root.requestReload()
+                            onConfirmationRequested: action => root.confirmation = action
+                        }
                     }
-                    SettingsPages.ConfigEditorPage {
-                        id: configPage
-                        shortcutTarget: shortcutKeys
+                    Loader {
+                        id: wallpaperLoader
                         anchors.fill: parent
+                        active: root.selectedGroup === "Wallpaper"
+                        sourceComponent: SettingsPages.WallpaperSettingsPage {
+                            highlightedId: root.highlightedId
+                            shortcutTarget: shortcutKeys
+                            onReloadRequested: root.requestReload()
+                            onConfirmationRequested: action => root.confirmation = action
+                        }
+                    }
+                    // Keep an in-progress file-switch confirmation until the panel closes.
+                    Loader {
+                        id: configLoader
+                        anchors.fill: parent
+                        active: root.configVisited
                         visible: root.selectedGroup === "Config"
-                        onCloseRequested: root.handleEscape()
+                        sourceComponent: SettingsPages.ConfigEditorPage {
+                            shortcutTarget: shortcutKeys
+                            onCloseRequested: root.handleEscape()
+                        }
                     }
-                    SettingsPages.InfoPage {
-                        id: infoPage
+                    Loader {
+                        id: infoLoader
                         anchors.fill: parent
-                        visible: root.selectedGroup === "Info"
+                        active: root.selectedGroup === "Info"
+                        sourceComponent: SettingsPages.InfoPage { }
                     }
                 }
                 // Page switches animate presentation only; controls keep stable geometry.

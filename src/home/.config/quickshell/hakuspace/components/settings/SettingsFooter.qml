@@ -6,27 +6,28 @@ Rectangle {
     // Pages retain action guards and dispatch; actions never wrap onto a second row.
     required property var page
     readonly property var labels: page.actionLabels
-    readonly property bool compact: width < 650
+    readonly property bool compact: width < 650 && !!root.page.footerStatus
     readonly property real groupGap: labels.length === 4 ? 20 : 0
     readonly property real buttonWidth: Math.max(0, Math.min(
         labels.reduce((widest, label) => Math.max(widest, actionFont.advanceWidth(label) + 28), 80),
         (width - 40 - Math.max(0, labels.length - 1) * 8 - groupGap) / Math.max(1, labels.length)))
     readonly property real actionWidth: buttonWidth * labels.length + Math.max(0, labels.length - 1) * 8 + groupGap
-    implicitHeight: compact ? 82 : 60
+    implicitHeight: (compact ? status.implicitHeight + Theme.spaceSm : 0) + 36 + Theme.spaceLg * 2
     color: Theme.surface
     FontMetrics { id: actionFont; font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 1) }
     Rectangle { width: parent.width; height: 1; color: Theme.hoverMuted }
     Rectangle {
-        x: 20
-        y: root.compact ? 17 : parent.height / 2 - 3
+        x: Theme.spaceLg
+        y: status.y + (status.height - height) / 2
+        visible: !!root.page.footerStatus || root.page.footerDirty
         width: 6; height: 6; radius: Theme.radius
         color: root.page.footerDirty ? Theme.fg : Theme.fgMuted
     }
     Text {
         id: status
-        x: 34
-        y: root.compact ? 9 : (parent.height - height) / 2
-        width: Math.max(0, parent.width - x - (root.compact ? 16 : actions.width + 40))
+        x: Theme.spaceLg + 14
+        y: root.compact ? Theme.spaceLg : (parent.height - height) / 2
+        width: Math.max(0, parent.width - x - (root.compact ? Theme.spaceLg : actions.width + Theme.spaceLg * 2))
         text: root.page.footerStatus
         color: root.page.footerError ? Theme.fg : Theme.fgDim
         font.family: Theme.fontFamily
@@ -37,8 +38,8 @@ Rectangle {
     }
     Item {
         id: actions
-        x: root.width - width - 20
-        y: root.compact ? 34 : (root.height - height) / 2
+        x: root.width - width - Theme.spaceLg
+        y: root.compact ? status.y + status.height + Theme.spaceSm : (root.height - height) / 2
         width: root.actionWidth
         height: 36
         Repeater {

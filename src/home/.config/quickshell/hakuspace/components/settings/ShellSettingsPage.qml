@@ -8,6 +8,16 @@ import "../motion" as Motion
 Item {
     id: root
     property Item shortcutTarget: null
+    property string category: "Appearance"
+    // Start each category at its heading instead of inheriting another category’s scroll.
+    onCategoryChanged: scroll.contentY = 0
+    property string highlightedId: ""
+    // Search reveals an existing section without filtering its controls.
+    function reveal(id, section) {
+        var row = accentForm.reveal(id)
+        if (row) scroll.contentY = Math.max(0, Math.min(row.mapToItem(form, 0, 0).y, scroll.contentHeight - scroll.height))
+        else scrollToSection(section)
+    }
     signal reloadRequested()
     signal confirmationRequested(string action)
     // Freeze edits during IO so a completed save cannot replace a newer draft.
@@ -24,12 +34,12 @@ Item {
         {key: "notifications", label: "Right · Notifications", hint: "Show the bell. Popups, history and DND keep working."}
     ]
     // Section anchors and the footer expose presentation without owning draft state.
-    readonly property var sectionCards: [layout, appearance, rounded, surface, cavaUnderbar, appbar, dockbar, topbar]
+    readonly property var sectionCards: [layout, appearance, rounded, surface, cavaUnderbar, appbar, dockbar, topbar].filter(card => card.visible)
     readonly property var sidebarSections: sectionCards.map(card => card.title)
     readonly property string activeSection: {
         if (scroll.contentY > 0 && scroll.contentY >= scroll.contentHeight - scroll.height - 1)
-            return sidebarSections[sidebarSections.length - 1]
-        var current = sidebarSections[0]
+            return sidebarSections[sidebarSections.length - 1] || ""
+        var current = sidebarSections[0] || ""
         for (var card of sectionCards) {
             if (card.y <= scroll.contentY + 24) current = card.title
         }
@@ -42,10 +52,10 @@ Item {
         Discard: "Undo unsaved Shell edits and restore the saved settings, including live previews.",
         Apply: "Save Shell settings and keep Settings open."
     })
-    readonly property string footerStatus: ShellSettingsStore.error || ShellSettingsStore.statusMessage
+    readonly property string footerStatus: ShellSettingsStore.error || SettingsStore.error || (SettingsStore.dirty ? "Unsaved preferences · Apply to save" : "") || ShellSettingsStore.statusMessage
         || (ShellSettingsStore.migrationPending ? "Legacy settings loaded · Apply to upgrade" : ShellSettingsStore.loading ? "Loading…"
             : ShellSettingsStore.saving ? "Saving…" : ShellSettingsStore.dirty ? "Unsaved changes · Apply to save" : "All changes saved · Shell settings")
-    readonly property bool footerDirty: ShellSettingsStore.dirty || ShellSettingsStore.migrationPending
+    readonly property bool footerDirty: ShellSettingsStore.dirty || ShellSettingsStore.migrationPending || SettingsStore.dirty
     readonly property bool footerError: !!ShellSettingsStore.error
 
     // Scroll section cards without changing live-bound preferences.
@@ -57,14 +67,14 @@ Item {
     // Keep migration, validation and IO guards identical to the original footer.
     function canActivate(label) {
         return label === "Reload" ? !ShellSettingsStore.loading && !ShellSettingsStore.saving
-            : editable && (label === "Reset" || ShellSettingsStore.dirty || (label === "Apply" && ShellSettingsStore.migrationPending))
-              && (label !== "Apply" || ShellSettingsStore.valid)
+            : editable && (label === "Reset" || ShellSettingsStore.dirty || SettingsStore.dirty || (label === "Apply" && ShellSettingsStore.migrationPending))
+              && (label !== "Apply" || (ShellSettingsStore.valid && SettingsStore.valid))
     }
     // Apply and Discard continue to operate on the shared live preview.
     function activateAction(label) {
         if (label === "Reload") reloadRequested()
         else if (label === "Reset" || label === "Discard") confirmationRequested(label.toLowerCase() + "-shell")
-        else ShellSettingsStore.apply()
+        else { ShellSettingsStore.apply(); if (SettingsStore.dirty) SettingsStore.apply() }
     }
 
     Process {
@@ -154,7 +164,7 @@ Item {
     Column {
         anchors.fill: parent
         spacing: 6
-        Text { text: "Shell"; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 5; font.weight: Font.DemiBold }
+        Text { text: root.category; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 5; font.weight: Font.DemiBold }
         Text { width: parent.width; text: "Tune your shell. Changes preview across every monitor."; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 1); wrapMode: Text.Wrap }
         Flickable {
             id: scroll
@@ -172,6 +182,8 @@ Item {
                 spacing: 22
                 SettingsSectionCard {
                     id: layout
+                    highlighted: root.highlightedId === "layout"
+                    visible: root.category === "Appearance"
                     width: parent.width
                     title: "Layout"
                     Row {
@@ -284,12 +296,17 @@ Item {
                 }
                 SettingsSectionCard {
                     id: appearance
+                    highlighted: root.highlightedId === "radius"
+                    visible: root.category === "Appearance"
                     width: parent.width
                     title: "Appearance"
+                    GeneralSettingsForm { id: accentForm; width: parent.width; category: "Appearance"; shortcutTarget: root.shortcutTarget; highlightedId: root.highlightedId }
                     SettingsSliderRow { shortcutTarget: root.shortcutTarget; available: root.editable; modelData: ({section: "appearance", key: "baseRadius", label: "Shell radius", min: 4, max: 24}) }
                 }
                 SettingsSectionCard {
                     id: rounded
+                    highlighted: root.highlightedId === "rounded"
+                    visible: root.category === "Appearance"
                     width: parent.width
                     title: "Rounded Screen"
                     SettingsSliderRow { shortcutTarget: root.shortcutTarget; available: root.editable; modelData: ({section: "roundedScreen", key: "radius", label: "Corner radius", accessible: "Rounded Screen Corner radius", min: 0, max: 24}) }
@@ -299,6 +316,8 @@ Item {
                 }
                 SettingsSectionCard {
                     id: surface
+                    highlighted: root.highlightedId === "surface"
+                    visible: root.category === "Appearance"
                     width: parent.width
                     title: "Surface"
                     Row {
@@ -339,6 +358,8 @@ Item {
                 }
                 SettingsSectionCard {
                     id: cavaUnderbar
+                    highlighted: root.highlightedId === "cava"
+                    visible: root.category === "Desktop"
                     width: parent.width
                     title: "Cava Underbar"
                     Row {
@@ -600,6 +621,8 @@ Item {
                 }
                 SettingsSectionCard {
                     id: appbar
+                    highlighted: root.highlightedId === "appbar"
+                    visible: root.category === "Desktop"
                     width: parent.width
                     title: "App Bar"
                     Repeater {
@@ -614,6 +637,8 @@ Item {
                 }
                 SettingsSectionCard {
                     id: dockbar
+                    highlighted: root.highlightedId === "dockbar"
+                    visible: root.category === "Desktop"
                     width: parent.width
                     title: "Dockbar"
                     Text { width: parent.width; text: "Dockbar is available only while Taskbar Mode is off."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 2) }
@@ -625,6 +650,8 @@ Item {
                 }
                 SettingsSectionCard {
                     id: topbar
+                    highlighted: root.highlightedId === "topbar"
+                    visible: root.category === "Desktop"
                     width: parent.width
                     title: "Top Bar"
                     Text { width: parent.width; text: "Applies to every monitor. Logo / Navigation stays enabled."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 2) }

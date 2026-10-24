@@ -1,5 +1,7 @@
 import QtQuick
+import QtQuick.Controls
 import "../../services"
+import "SettingsCatalog.js" as Catalog
 import "../editor" as Editor
 
 Item {
@@ -7,16 +9,18 @@ Item {
     signal closeRequested()
     // Forward layer shortcuts before the editor handles indentation and text input.
     property Item shortcutTarget: null
+    readonly property var visibleFiles: Catalog.configFiles(ConfigEditorStore.files, WM.backendName)
+    // Explicit file selection preserves the editor's existing revision and draft guards.
+    function reveal(id) { }
     // Publish pending input before applying the same guarded Save action.
     function saveFromKeyboard() {
         editor.finishComposition()
         if (!confirmation && canActivate("Save")) activateAction("Save")
     }
     property string confirmation: ""
-    // The footer changes actions while a switch, reload, or VS Code warning is pending.
+    // Keep file-switch and reload confirmations in the shared footer.
     readonly property var actionLabels: confirmation === "switch" ? ["Cancel", "Discard & Switch", "Save & Switch"]
                                        : confirmation === "reload" ? ["Keep Editing", "Discard & Reload"]
-                                       : confirmation === "vscode" ? ["Cancel", "Open Anyway"]
                                        : ["Reload", "Save"]
     readonly property var actionHints: ({
         "Cancel": "Keep the current draft and cancel this action.",
@@ -24,7 +28,6 @@ Item {
         "Save & Switch": "Save this draft, then open the selected file.",
         "Keep Editing": "Keep the current unsaved draft.",
         "Discard & Reload": "Discard this draft and reload the file from disk.",
-        "Open Anyway": "Open the saved disk version in VS Code.",
         "Reload": "Reload the selected file from disk.",
         "Save": "Save the selected file if its disk revision is unchanged."
     })
@@ -39,12 +42,6 @@ Item {
     function requestReload() {
         if (ConfigEditorStore.dirty) confirmation = "reload"
         else ConfigEditorStore.reload()
-    }
-    // Warn that the external editor opens the saved version.
-    function requestOpenVsCode() {
-        if (!ConfigEditorStore.hasFile) return
-        if (ConfigEditorStore.dirty) confirmation = "vscode"
-        else ConfigEditorStore.openInVsCode()
     }
     // Keep the current draft and clear any pending file selection.
     function cancelConfirmation() {
@@ -64,9 +61,6 @@ Item {
             confirmation = ""
             ConfigEditorStore.discard()
             ConfigEditorStore.reload()
-        } else if (label === "Open Anyway") {
-            confirmation = ""
-            ConfigEditorStore.openInVsCode()
         } else if (label === "Reload") requestReload()
         else if (label === "Save") ConfigEditorStore.save()
     }
@@ -85,7 +79,6 @@ Item {
     // Status and actions stay driven by the existing confirmation state machine.
     readonly property string footerStatus: root.confirmation === "switch" ? "Unsaved changes to " + ConfigEditorStore.selectedFileId
                     : root.confirmation === "reload" ? "Discard edits and reload?"
-                    : root.confirmation === "vscode" ? "VS Code opens the saved disk version."
                     : ConfigEditorStore.error || ConfigEditorStore.statusMessage
                       || (ConfigEditorStore.saving ? "Saving…" : ConfigEditorStore.loading ? "Loading…"
                           : ConfigEditorStore.listing ? "Refreshing…"
@@ -96,84 +89,40 @@ Item {
 
     Column {
         anchors.fill: parent
-        spacing: 6
-        Text { text: "Config"; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 5; font.weight: Font.DemiBold }
-        Text { visible: root.height >= 200; width: parent.width; text: "Your configuration files, with draft and revision protection."; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 1); wrapMode: Text.Wrap }
-        Column {
+        spacing: Theme.spaceMd
+        SettingsChoiceRow {
             width: parent.width
-            height: Math.max(0, parent.height - y)
-            spacing: 6
-            Row {
-                width: parent.width
-                height: 40
-                spacing: 6
-                Text {
-                    id: selectedPathText
-                    width: Math.max(30, parent.width - 145)
-                    height: parent.height
-                    verticalAlignment: Text.AlignVCenter
-                    text: ConfigEditorStore.selectedFileId || "Select a file"
-                    color: Theme.fg
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
-                    elide: Text.ElideMiddle
-                    HoverHandler { id: selectedPathHover }
-                    SettingsTooltip {
-                        target: selectedPathText
-                        active: selectedPathHover.hovered && ConfigEditorStore.hasFile
-                        text: ConfigEditorStore.selectedFileId
-                    }
-                }
-                SettingsActionButton {
-                    id: openButton
-                    width: 139
-                    height: 36
-                    text: "Open in VS Code"
-                    fontSize: Math.max(10, Theme.fontSize - 1)
-                    idleColor: Theme.hoverMuted
-                    hoverColor: Qt.lighter(Theme.hoverMuted, 1.18)
-                    foregroundColor: Theme.fg
-                    hoverForegroundColor: Theme.fg
-                    enabled: ConfigEditorStore.hasFile
-                    activeFocusOnTab: enabled
-                    focused: activeFocus
-                    onClicked: root.requestOpenVsCode()
-                    Keys.onReturnPressed: clicked()
-                    Keys.onSpacePressed: clicked()
-                    SettingsTooltip {
-                        target: openButton
-                        active: openButton.hovered || openButton.activeFocus
-                        text: "Open the saved disk version of this file in VS Code."
-                    }
-                }
-            }
-            Rectangle { width: parent.width; height: 1; color: Theme.hoverMuted }
-            Rectangle {
-                width: parent.width
-                height: Math.max(0, parent.height - y)
-                radius: Theme.radius
-                color: Qt.tint(Theme.surface, Qt.alpha(Theme.hoverMuted, 0.18))
-                border.width: 1
-                border.color: Theme.hoverMuted
-                Editor.PlainTextEditor {
-                    id: editor
-                    settingsNavigationEnabled: true
-                    shortcutTarget: root.shortcutTarget
-                    anchors.fill: parent
-                    anchors.margins: parent.height < 100 ? 4 : 10
-                    text: ConfigEditorStore.text
-                    codeEditingEnabled: true
-                    fileId: ConfigEditorStore.selectedFileId
-                    readOnly: !ConfigEditorStore.hasFile || ConfigEditorStore.loading
-                    placeholderText: ConfigEditorStore.loading ? "Loading…" : "Select a config file"
-                    fontFamily: "monospace"
-                    wrapMode: TextEdit.NoWrap
-                    onTextEdited: newText => ConfigEditorStore.setText(newText)
-                    onSaveRequested: root.saveFromKeyboard()
-                    onEscapeRequested: {
-                        if (root.confirmation) root.cancelConfirmation()
-                        else root.closeRequested()
-                    }
+            options: root.visibleFiles.map(file => ({label: file.id, value: file.id}))
+            value: ConfigEditorStore.selectedFileId
+            shortcutTarget: root.shortcutTarget
+            Accessible.name: "Configuration file"
+            onChosen: fileId => root.requestSelect(fileId)
+        }
+        Rectangle {
+            width: parent.width
+            height: Math.max(0, root.height - y)
+            radius: Theme.radius
+            color: Qt.tint(Theme.surface, Qt.alpha(Theme.hoverMuted, 0.18))
+            border.width: 1
+            border.color: Theme.hoverMuted
+            Editor.PlainTextEditor {
+                id: editor
+                settingsNavigationEnabled: true
+                shortcutTarget: root.shortcutTarget
+                anchors.fill: parent
+                anchors.margins: Theme.spaceMd
+                text: ConfigEditorStore.text
+                codeEditingEnabled: true
+                fileId: ConfigEditorStore.selectedFileId
+                readOnly: !ConfigEditorStore.hasFile || ConfigEditorStore.loading
+                placeholderText: ConfigEditorStore.loading ? "Loading…" : "Select a config file"
+                fontFamily: "monospace"
+                wrapMode: TextEdit.NoWrap
+                onTextEdited: newText => ConfigEditorStore.setText(newText)
+                onSaveRequested: root.saveFromKeyboard()
+                onEscapeRequested: {
+                    if (root.confirmation) root.cancelConfirmation()
+                    else root.closeRequested()
                 }
             }
         }

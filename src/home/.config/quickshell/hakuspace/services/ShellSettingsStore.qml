@@ -155,7 +155,7 @@ QtObject {
         onExited: (code, status) => {
             root.saving = false
             if (code !== 0) { root.error = writeErr.text.trim() || "Could not save shell settings"; return }
-            try { root.accept(writeOut.text); root.statusMessage = "Saved to ~/hakucfg/hikai/hikai-shell.json" }
+            try { root.accept(writeOut.text); root.statusMessage = "Appearance and desktop preferences saved." }
             catch (e) { root.error = "Invalid shell save response" }
         }
     }

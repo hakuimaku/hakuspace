@@ -6,7 +6,7 @@ Item {
     id: root
     required property var modelData
     // Keep lightweight view state after the owning visual trees are destroyed.
-    property string settingsGroup: "General"
+    property string settingsCategory: "General"
     property QtObject dashboardState: QtObject {
         property int widgetIndex: 0
         property int calendarMonthOffset: 0
@@ -29,8 +29,8 @@ Item {
         requested: UiState.activePanel === "settings" && UiState.settingsScreenName === root.modelData.name
         SettingsPanel {
             modelData: root.modelData
-            selectedGroup: root.settingsGroup
-            onSelectedGroupChanged: root.settingsGroup = selectedGroup
+            Component.onCompleted: selectCategory(root.settingsCategory)
+            onSelectedCategoryChanged: root.settingsCategory = selectedCategory
         }
     }
     Base.LifecycleLoader {

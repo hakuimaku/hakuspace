@@ -16,12 +16,13 @@ Column {
         spacing: 10
         Text {
             id: heading
-            text: root.title.toUpperCase()
-            color: Theme.fgMuted
+            text: root.title
+            width: Math.min(implicitWidth, parent.width)
+            wrapMode: Text.Wrap
+            color: Theme.fg
             font.family: Theme.fontFamily
-            font.pixelSize: Math.max(10, Theme.fontSize - 2)
+            font.pixelSize: Theme.fontSize + 3
             font.weight: Font.DemiBold
-            font.letterSpacing: 1
         }
         Rectangle {
             width: Math.max(0, parent.width - heading.width - parent.spacing)

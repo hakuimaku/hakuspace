@@ -145,17 +145,17 @@ Dialog {
                     Repeater {
                         model: [
                             {title: "Navigation", color: Theme.guideNavigation, rows: [
-                                {keys: ["← / →"], detail: "Move within a row. Topbar domains wrap; sidebar Right enters content."},
-                                {keys: ["↑ / ↓"], detail: "Move between rows. Tabs Down enters sidebar; first/last row exits to tabs/actions."},
+                                {keys: ["← / →"], detail: "Move within a row. The category rail opens pages; Right enters their controls."},
+                                {keys: ["↑ / ↓"], detail: "Move between rows. Header Down enters the rail; first/last row exits to header/actions."},
                                 {keys: ["←"], detail: "At a row's left edge, return to sidebar. Text keeps caret movement until its start."},
-                                {keys: ["↑"], detail: "First sidebar item returns to tabs; footer returns to the last content control."},
+                                {keys: ["↑"], detail: "First sidebar item returns to the header; footer returns to the last content control."},
                                 {keys: ["Home / End"], detail: "First or last domain, sidebar item or footer action."},
                                 {keys: ["Enter", "Space"], detail: "Activate a button or toggle; open a focused dropdown."},
                                 {keys: ["F6", "Shift+F6"], detail: "Cycle focus regions; leave the editor or Info reader."},
-                                {keys: ["Ctrl+↑", "Ctrl+←", "Ctrl+→ / ↓"], detail: "Jump directly to tabs, sidebar or content."}
+                                {keys: ["Ctrl+↑", "Ctrl+←", "Ctrl+→ / ↓"], detail: "Jump directly to header, category rail or content."}
                             ]},
                             {title: "Actions", color: Theme.guideActions, rows: [
-                                {keys: ["Ctrl+F"], detail: "Search General settings."},
+                                {keys: ["Ctrl+F"], detail: "Search settings and jump to a matching row."},
                                 {keys: ["Ctrl+S"], detail: "Apply or save the current page."},
                                 {keys: ["Enter"], detail: "Enter slider editing. Otherwise arrows move focus without changing its value."},
                                 {keys: ["↑ / ↓ / ← / →", "Home / End"], detail: "Adjust values only while editing a slider."},
@@ -171,7 +171,7 @@ Dialog {
                             {title: "Reading & help", color: Theme.guideReading, rows: [
                                 {keys: ["↑ / ↓", "PgUp / PgDn", "Home / End"], detail: "Scroll Info or this guide. Info Left returns to sidebar."},
                                 {keys: ["↑ / ↓", "Esc"], detail: "An open dropdown keeps native arrows. Escape closes only the dropdown."},
-                                {keys: ["Alt+1…5"], detail: "Optional direct domain switching."},
+                                {keys: ["Alt+1…9"], detail: "Switch directly to a visible category."},
                                 {keys: ["Ctrl+Tab", "Ctrl+Shift+Tab"], detail: "Optional next or previous Settings domain."},
                                 {keys: ["Tab", "Shift+Tab"], detail: "Compatibility / accessibility focus traversal. Config keeps indentation."},
                                 {keys: ["F1"], detail: "Open or close this guide."},
