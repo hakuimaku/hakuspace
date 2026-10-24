@@ -34,7 +34,6 @@ Item {
         { label: "Desktop Icons", icon: "", action: "Desktop Icons", toggle: true, showState: true, statePath: Env.stateDesktopIconsEnabled, stateKind: "bool" },
         { label: "Dockbar", icon: "󰧨", action: "Dockbar", toggle: true, showState: true, chromeKey: "dockbar" },
         { label: "Auto Random Wallpaper", icon: "", action: "Auto Random Wallpaper", toggle: true, showState: true, statePath: "/tmp/random_wallpaper_status", stateKind: "bool" },
-        { label: "Kill Lively Wallpaper", icon: "󱛹", action: "Kill Lively Wallpaper", toggle: false, showState: false, statePath: "", stateKind: "bool" },
         { label: "", icon: "󰆧", action: "", toggle: true, showState: false, statePath: Env.stateShellBackend, stateKind: "backend", backendSwitch: true }
     ]
 
