@@ -338,9 +338,17 @@ PanelWindow {
 
     screen: modelData
     anchors { top: true; bottom: true; left: true; right: true }
-    WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
+    WlrLayershell.layer: UiState.nativeDialogOwner === "settings" ? WlrLayer.Bottom : ShellTransitionState.chromeOverlayLayer
     WlrLayershell.namespace: "hakuspace-settings"
-    WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: panelOpen && UiState.ownsInteraction("settings", modelData.name) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    // Observe presses before delegates handle them, then pass the event through.
+    MouseArea {
+        anchors.fill: parent
+        z: 10000
+        enabled: root.panelOpen && !UiState.nativeDialogOpen
+        acceptedButtons: Qt.AllButtons
+        onPressed: mouse => { UiState.claimInteraction("settings", root.modelData.name); mouse.accepted = false }
+    }
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     color: "transparent"
@@ -348,6 +356,14 @@ PanelWindow {
     mask: Region {
         width: root.visible ? root.modelData.width : 0
         height: root.visible ? root.modelData.height : 0
+        Region {
+            intersection: Intersection.Subtract
+            x: UiState.tempNoteRect.x; y: UiState.tempNoteRect.y
+            width: UiState.tempNoteScreenName === root.modelData.name ? UiState.tempNoteRect.width : 0
+            height: UiState.tempNoteScreenName === root.modelData.name ? UiState.tempNoteRect.height : 0
+        }
+        // Settings controls keep precedence where the note is visually covered.
+        Region { x: settingsBody.x; y: settingsBody.y; width: settingsBody.width; height: settingsBody.height }
     }
     Component.onDestruction: UiState.closeSettingsIfScreen(modelData.name)
     onPanelOpenChanged: {

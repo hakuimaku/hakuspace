@@ -5,6 +5,7 @@ import "../editor"
 FocusScope {
     id: root
     signal closeRequested()
+    signal interactionRequested()
 
     // Keep editing focus inside the note.
     function forceFocus() { editor.forceEditorFocus() }
@@ -22,6 +23,7 @@ FocusScope {
         anchors.fill: parent
         text: TextStore.scratchDraft
         placeholderText: "write something temporary here :v"
+        onInteractionRequested: root.interactionRequested()
         onTextEdited: newText => TextStore.setScratchDraft(newText)
         onEscapeRequested: root.closeRequested()
         onSaveRequested: TextStore.flushScratch()

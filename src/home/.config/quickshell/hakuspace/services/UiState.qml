@@ -6,6 +6,61 @@ QtObject {
     id: root
 
     property string activePanel: ""
+    // Keep keyboard ownership separate from persistent surface visibility.
+    property string interactionOwner: ""
+    property string interactionScreenName: ""
+    signal interactionReleasing(string owner, string screenName)
+
+    // Release the previous lease synchronously before announcing the new owner.
+    function claimInteraction(owner, screenName) {
+        if (interactionOwner === owner && interactionScreenName === screenName) return
+        interactionReleasing(interactionOwner, interactionScreenName)
+        interactionOwner = ""
+        interactionScreenName = screenName || ""
+        interactionOwner = owner
+    }
+
+    // Native file dialogs need a normal application window above the requesting layer.
+    property string nativeDialogOwner: ""
+    property string nativeDialogScreenName: ""
+    property int nativeDialogSerial: 0
+    signal nativeDialogFinished(string owner, string screenName)
+    readonly property bool nativeDialogOpen: nativeDialogOwner.length > 0
+
+    // Suspend the layer's keyboard lease without closing its draft-owning surface.
+    function beginNativeDialog(owner) {
+        if (nativeDialogOpen || activePanel !== owner) return 0
+        nativeDialogOwner = owner
+        nativeDialogScreenName = interactionScreenName
+        ++nativeDialogSerial
+        claimInteraction("nativeDialog", nativeDialogScreenName)
+        return nativeDialogSerial
+    }
+
+    // A stale dialog callback cannot restore focus on a replaced surface or output.
+    function endNativeDialog(serial) {
+        if (!nativeDialogOpen || serial !== nativeDialogSerial) return
+        var owner = nativeDialogOwner
+        var screenName = nativeDialogScreenName
+        nativeDialogOwner = ""
+        nativeDialogScreenName = ""
+        if (interactionOwner === "nativeDialog") {
+            if (activePanel === owner) claimInteraction(owner, screenName)
+            else releaseInteraction("nativeDialog", screenName)
+        }
+        nativeDialogFinished(owner, screenName)
+    }
+
+    // Match both surface and output so a stale monitor cannot keep focus.
+    function ownsInteraction(owner, screenName) {
+        return interactionOwner === owner && interactionScreenName === screenName
+    }
+
+    // Only the current owner can release its lease.
+    function releaseInteraction(owner, screenName) {
+        if (ownsInteraction(owner, screenName)) claimInteraction("", "")
+    }
+
     property string navigationMode: "closed"
     property string navigationScreenName: ""
     // Visual ownership intentionally outlives logical navigation state while
@@ -37,6 +92,8 @@ QtObject {
     property bool tempNoteOpen: false
     // Assign the shared scratch editor to exactly one output.
     property string tempNoteScreenName: ""
+    // Full-screen modal masks leave visible pinned-note pixels available for pointer handoff.
+    property rect tempNoteRect: Qt.rect(0, 0, 0, 0)
     // Let the owning overlay flush and reset before hiding or transferring it.
     signal tempNoteClosing(string screenName)
     // Transfer keyboard input only after an explicit note focus request.
@@ -67,10 +124,12 @@ QtObject {
 
     // Open the note on one output, finishing any previous ownership first.
     function openTempNote(screenName) {
-        if (tempNoteOpen && tempNoteScreenName === screenName) return
+        if (tempNoteOpen && tempNoteScreenName === screenName) { tempNoteFocusRequested(screenName); return }
+        if (activePanel === "navigation") closeNavigation()
         if (tempNoteOpen) closeTempNote()
         tempNoteScreenName = screenName
         tempNoteOpen = true
+        tempNoteFocusRequested(screenName)
     }
 
     // Flush the owning overlay before clearing its visibility and ownership.
@@ -78,6 +137,8 @@ QtObject {
         if (!tempNoteOpen) return
         tempNoteClosing(tempNoteScreenName)
         tempNoteOpen = false
+        tempNoteRect = Qt.rect(0, 0, 0, 0)
+        releaseInteraction("tempNote", tempNoteScreenName)
         tempNoteScreenName = ""
     }
 
@@ -100,6 +161,7 @@ QtObject {
         navigationVisualScreenName = screenName
         navigationAnchorRect = anchorRect || ScreenGeometry.fallbackModuleAnchor(screenName, Theme.pad, Theme.fontSize * 1.8)
         navigationMode = "open"
+        claimInteraction("navigation", screenName)
         activePanel = "navigation"
     }
 
@@ -183,6 +245,7 @@ QtObject {
             }
         }
         hakuMenuScreenName = screenName
+        claimInteraction("hakumenu", screenName)
         hakuMenuMode = (mode === "drun" || mode === "theme" || mode === "general") ? mode : "general"
         hakuMenuQuery = ""
         hakuMenuSelectionLabel = ""
@@ -245,6 +308,7 @@ QtObject {
     function openWallpaper(screenName) {
         wallpaperCloseRequested = false
         wallpaperScreenName = screenName
+        claimInteraction("wallpaper", screenName)
         activePanel = "wallpaper"
     }
 
@@ -343,6 +407,7 @@ QtObject {
     // Opens centered settings panel on the specified screen.
     function openSettings(screenName) {
         settingsScreenName = screenName
+        claimInteraction("settings", screenName)
         activePanel = "settings"
     }
 
@@ -371,6 +436,7 @@ QtObject {
         actionMenuCloseRequested = false
         actionMenuScreenName = screenName
         actionMenuFlow = flow || ""
+        claimInteraction("actionMenu", screenName)
         activePanel = "actionMenu"
     }
 
@@ -419,6 +485,14 @@ QtObject {
     signal actionMenuActivateRequested()
 
     onActivePanelChanged: {
+        var output = activePanel === "navigation" ? navigationScreenName
+            : activePanel === "settings" ? settingsScreenName
+            : activePanel === "wallpaper" ? wallpaperScreenName
+            : activePanel === "actionMenu" ? actionMenuScreenName
+            : activePanel === "hakumenu" ? hakuMenuScreenName
+            : activePanel === "notifications" && notificationPanel ? notificationPanel.screenName
+            : activePanel === "tray" && trayMenu ? trayMenu.screenName : ""
+        claimInteraction(activePanel, output)
         if (activePanel !== "navigation") {
             navigationMode = "closed"
             navigationScreenName = ""

@@ -267,6 +267,8 @@ Item {
 
     // Return focus to the rail after a tool or radial handoff.
     function focusSidebarRail(fromKeyboard) {
+        if (!panelOpen) return
+        UiState.claimInteraction("navigation", modelData.name)
         sidebarKeyboardMode = !!fromKeyboard
         keyboardLease = !!fromKeyboard
         if (panelOpen) keyHandler.forceActiveFocus()
@@ -280,7 +282,7 @@ Item {
 
     // Give newly loaded content keyboard ownership.
     function focusActiveSidebarTool() {
-        if (!panelOpen || !sidebarToolOpen || sidebarKeyboardMode) return
+        if (!panelOpen || !sidebarToolOpen || sidebarKeyboardMode || !UiState.ownsInteraction("navigation", modelData.name)) return
         sidebarToolLayer.forceFocus()
         Qt.callLater(function() {
             if (!root) return
@@ -295,6 +297,7 @@ Item {
         if (index < 0) return
         sidebarSelectedIndex = index
         if (!sidebarExpanded) UiState.beginNavigationHandoff("sidebar")
+        UiState.claimInteraction("navigation", modelData.name)
         renderedSidebarTool = key
         activeSidebarTool = key
         sidebarKeyboardMode = false
@@ -313,11 +316,10 @@ Item {
     // A second activation closes the current tool.
     function toggleSidebarTool(key, fromKeyboard) {
         if (key === "tempNote") {
-            if (sidebarToolOpen) closeSidebarTool(fromKeyboard)
-            sidebarSelectedIndex = sidebarSurface.tools.findIndex(tool => tool.key === key)
-            UiState.toggleTempNote(modelData.name)
-            focusSidebarRail(true)
-            keyboardLease = !!fromKeyboard
+            activeSidebarTool = ""
+            sidebarKeyboardMode = false
+            lifetime.reset()
+            UiState.openTempNote(modelData.name)
             return
         }
         if (activeSidebarTool === key) closeSidebarTool(fromKeyboard)
@@ -618,6 +620,20 @@ Item {
     }
 
     Connections {
+        target: UiState
+        function onInteractionReleasing(owner, screenName) {
+            if (owner !== "navigation" || screenName !== root.modelData.name) return
+            root.sidebarKeyboardMode = false
+            lifetime.reset()
+            if (UiState.nativeDialogOwner === "navigation") lifetime.acquireExternalLease("nativeDialog")
+        }
+        function onNativeDialogFinished(owner, screenName) {
+            if (owner !== "navigation" || screenName !== root.modelData.name) return
+            lifetime.releaseExternalLease("nativeDialog", root.panelOpen && UiState.ownsInteraction(owner, screenName))
+        }
+    }
+
+    Connections {
         target: ChromeLayout
         // Drop an in-flight envelope instead of replaying it at the opposite edge.
         function onTaskbarModeChanged() {
@@ -853,10 +869,10 @@ Item {
         id: navigationLayer
         screen: root.modelData
         anchors { top: true; left: true; right: true; bottom: true }
-        WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
+        WlrLayershell.layer: UiState.nativeDialogOwner === "navigation" ? WlrLayer.Bottom : ShellTransitionState.chromeOverlayLayer
         WlrLayershell.namespace: "hakuspace-navigation"
-        WlrLayershell.keyboardFocus: !root.panelOpen ? WlrKeyboardFocus.None
-            : root.sidebarKeyboardMode ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
+        WlrLayershell.keyboardFocus: !root.panelOpen || !UiState.ownsInteraction("navigation", root.modelData.name) ? WlrKeyboardFocus.None
+            : root.keyboardLease ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
         color: "transparent"
@@ -1010,7 +1026,7 @@ Item {
                 : root.renderedSidebarTool === "clipboard" ? "󰅌" : ""
             toolContent: root.renderedSidebarTool === "quickActions" ? quickActionsContent
                 : root.renderedSidebarTool === "clipboard" ? clipboardContent : null
-            focusContent: !root.sidebarKeyboardMode
+            focusContent: !root.sidebarKeyboardMode && UiState.ownsInteraction("navigation", root.modelData.name)
             open: root.panelOpen && root.sidebarExpanded && root.sidebarToolOpen && !root.closing && !root.dashboardVisuallyActive
             z: 28
             onCloseRequested: {
@@ -1039,26 +1055,20 @@ Item {
             id: quickActionsContent
             Sidebar.SidebarQuickActions {
                 keyboardCursor: root.keyboardLease
-                onRailFocusRequested: root.focusSidebarRail(true)
-                onCloseRequested: keyboard => {
-                    if (keyboard) UiState.closeNavigation()
-                    else root.closeSidebarTool()
-                }
+                onRailFocusRequested: root.closeSidebarTool(true)
+                onCloseRequested: keyboard => root.closeSidebarTool(keyboard)
                 onActionRequested: key => root.runQuickAction(key)
             }
         }
         Component {
             id: clipboardContent
             Sidebar.SidebarClipboard {
-                onRailFocusRequested: root.focusSidebarRail(true)
+                onRailFocusRequested: root.closeSidebarTool(true)
                 onOpenFullRequested: {
                     UiState.closeNavigation()
                     UiState.openActionMenu(root.modelData.name, "clipboard")
                 }
-                onCloseRequested: keyboard => {
-                    if (keyboard) UiState.closeNavigation()
-                    else root.closeSidebarTool()
-                }
+                onCloseRequested: keyboard => root.closeSidebarTool(keyboard)
             }
         }
         // Dashboard visual surface: fluid silhouette with avatar, profile rail,
@@ -1168,7 +1178,8 @@ Item {
                 if (root.dashboardVisuallyActive || (root.sidebarToolOpen && !root.sidebarKeyboardMode)) return
                 root.keyboardLease = true
                 if (root.sidebarKeyboardMode) {
-                    if (!root.sidebarToolOpen) root.moveSidebarSelection(-1)
+                    if (root.sidebarToolOpen) root.closeSidebarTool(true)
+                    else root.requestClose()
                 }
                 else root.moveSelection(-1)
                 event.accepted = true
@@ -1183,15 +1194,7 @@ Item {
             Keys.onRightPressed: event => {
                 if (root.dashboardVisuallyActive || (root.sidebarToolOpen && !root.sidebarKeyboardMode)) return
                 root.keyboardLease = true
-                if (root.sidebarKeyboardMode && sidebarSurface.tools[root.sidebarSelectedIndex].key === "tempNote"
-                        && UiState.tempNoteOpen && UiState.tempNoteScreenName === root.modelData.name) {
-                    root.sidebarKeyboardMode = false
-                    UiState.tempNoteFocusRequested(root.modelData.name)
-                    root.keyboardLease = false
-                } else if (root.sidebarKeyboardMode && root.sidebarToolOpen) {
-                    root.sidebarKeyboardMode = false
-                    root.focusActiveSidebarTool()
-                } else if (root.sidebarKeyboardMode) root.moveSidebarSelection(1)
+                if (root.sidebarKeyboardMode) root.activateSidebarSelection()
                 else root.moveSelection(1)
                 event.accepted = true
             }
@@ -1231,7 +1234,8 @@ Item {
                 }
             }
             Keys.onEscapePressed: event => {
-                UiState.closeNavigation()
+                if (root.sidebarToolOpen) root.closeSidebarTool(true)
+                else root.requestClose()
                 event.accepted = true
             }
         }

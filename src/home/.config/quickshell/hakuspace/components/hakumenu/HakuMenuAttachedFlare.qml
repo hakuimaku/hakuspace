@@ -120,7 +120,7 @@ Item {
         anchors { top: true; bottom: true; left: true; right: true }
         WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
         WlrLayershell.namespace: "hakuspace-hakumenu-content"
-        WlrLayershell.keyboardFocus: root.panelOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+        WlrLayershell.keyboardFocus: root.panelOpen && UiState.ownsInteraction("hakumenu", root.modelData.name) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
         color: "transparent"

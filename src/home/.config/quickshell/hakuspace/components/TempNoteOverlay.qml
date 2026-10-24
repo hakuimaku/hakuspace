@@ -47,8 +47,9 @@ PanelWindow {
     anchors { top: true; bottom: true; left: true; right: true }
     WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
     WlrLayershell.namespace: "hakuspace-temp-note"
-    WlrLayershell.keyboardFocus: !panelOpen || (!interactionReady && !keyboardRequested)
-        ? WlrKeyboardFocus.None : keyboardRequested ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
+    WlrLayershell.keyboardFocus: !panelOpen ? WlrKeyboardFocus.None
+        : UiState.ownsInteraction("tempNote", modelData.name) ? WlrKeyboardFocus.Exclusive
+        : interactionReady ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     color: "transparent"
@@ -66,6 +67,11 @@ PanelWindow {
         UiState.closeTempNoteIfScreen(modelData.name)
     }
 
+    // Publish geometry as data so passive notes do not retain other surface objects.
+    function publishRect() {
+        if (panelOpen && interactionReady) UiState.tempNoteRect = Qt.rect(noteCard.x, noteCard.y, noteCard.width, noteCard.height)
+    }
+    onInteractionReadyChanged: publishRect()
     onPanelOpenChanged: {
         morphAnim.stop()
         focusPending = false
@@ -81,19 +87,20 @@ PanelWindow {
 
     Connections {
         target: UiState
-        // Keep opening passive; Right from the Sidebar requests editor focus.
+        // Reserve Escape during opening; focus the editor when its geometry settles.
         function onTempNoteFocusRequested(screenName) {
             if (!root.panelOpen || screenName !== root.modelData.name) return
-            root.keyboardRequested = true
-            if (root.interactionReady) noteContent.forceFocus()
-            else {
-                root.focusPending = true
-                noteCard.forceActiveFocus()
-            }
+            root.focusPending = true
+            UiState.claimInteraction("tempNote", root.modelData.name)
+            noteCard.forceActiveFocus()
+            if (root.interactionReady) root.takeFocus()
         }
-        // A dismissed Sidebar ends its keyboard handoff without closing the note.
-        function onNavigationModeChanged() {
-            if (UiState.navigationMode === "closed") root.keyboardRequested = false
+        // Flush composition before another visible surface takes keyboard input.
+        function onInteractionReleasing(owner, screenName) {
+            if (owner !== "tempNote" || screenName !== root.modelData.name) return
+            noteContent.finishEditing()
+            root.keyboardRequested = false
+            root.focusPending = false
         }
         // Finish editing before state hides this surface or transfers ownership.
         function onTempNoteClosing(screenName) {
@@ -109,12 +116,22 @@ PanelWindow {
         }
     }
 
-    // Release the keyboard claim when another surface takes focus.
+    // A passive note may receive pointer focus, then atomically takes the shared lease.
     Connections {
         target: root.contentItem.Window.window
         function onActiveChanged() {
-            if (!root.contentItem.Window.active) root.keyboardRequested = false
+            if (root.contentItem.Window.active && root.interactionReady
+                    && !UiState.ownsInteraction("tempNote", root.modelData.name)) root.takeFocus()
         }
+    }
+
+    // Claim input only when the opening animation has completed.
+    function takeFocus() {
+        if (!interactionReady) return
+        focusPending = false
+        keyboardRequested = true
+        UiState.claimInteraction("tempNote", modelData.name)
+        noteContent.forceFocus()
     }
 
     NumberAnimation {
@@ -123,8 +140,7 @@ PanelWindow {
         property: "morphProgress"
         onFinished: {
             if (root.panelOpen && root.focusPending) {
-                root.focusPending = false
-                noteContent.forceFocus()
+                root.takeFocus()
             } else if (!root.panelOpen) root.resetPosition()
         }
     }
@@ -164,6 +180,8 @@ PanelWindow {
 
     Rectangle {
         id: noteCard
+        onXChanged: root.publishRect()
+        onYChanged: root.publishRect()
         x: root.seedX + (Math.max(0, Math.min(root.maxCardX, root.defaultX + root.dragOffset.x)) - root.seedX) * root.revealProgress
         y: Math.max(0, Math.min(root.maxCardY, root.defaultY + root.dragOffset.y)) + (root.cardHeight - height) / 2
         width: root.seedSize + (root.cardWidth - root.seedSize) * root.revealProgress
@@ -171,6 +189,7 @@ PanelWindow {
         radius: Math.min(width / 2, height / 2, root.seedSize / 2 + (Theme.largeRadius - root.seedSize / 2) * root.revealProgress)
         opacity: Math.min(1, root.revealProgress / 0.12)
         enabled: root.panelOpen
+        TapHandler { onPressedChanged: if (pressed) root.takeFocus() }
         color: Theme.surface
         border.width: 3 * (1 - root.neckProgress)
         border.color: Theme.accent
@@ -186,7 +205,7 @@ PanelWindow {
 
             MouseArea {
                 anchors.fill: parent
-                onClicked: noteContent.forceFocus()
+                onClicked: root.takeFocus()
             }
 
             // Only the small top-center handle can move the card.
@@ -195,7 +214,7 @@ PanelWindow {
                 anchors.top: parent.top
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: 64
-                height: 32
+                height: Theme.controlHeight
                 Accessible.role: Accessible.Grip
                 Accessible.name: "Move Temp Note"
                 HoverHandler { cursorShape: cardDrag.active ? Qt.ClosedHandCursor : Qt.OpenHandCursor }
@@ -222,9 +241,9 @@ PanelWindow {
 
             Sidebar.SidebarMorphButton {
                 anchors { top: parent.top; right: parent.right; margins: 16 }
-                width: 28
-                height: 28
-                radius: 14
+                width: Theme.controlHeight
+                height: Theme.controlHeight
+                radius: Theme.controlHeight / 2
                 text: "×"
                 fontSize: 16
                 activeFocusOnTab: true
@@ -242,6 +261,7 @@ PanelWindow {
                 anchors { top: dragHandle.bottom; left: parent.left; right: parent.right; bottom: parent.bottom }
                 anchors.margins: 16
                 anchors.topMargin: 16
+                onInteractionRequested: root.takeFocus()
                 onCloseRequested: root.requestClose()
             }
         }

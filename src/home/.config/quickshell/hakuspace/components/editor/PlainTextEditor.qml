@@ -31,6 +31,8 @@ Item {
     // Keep the latest owner value in root.text until composition finishes.
     property bool _hasPendingExternalText: false
 
+    // Surface owners transfer the keyboard lease before native editor focus changes.
+    signal interactionRequested()
     signal textEdited(string newText)
     signal escapeRequested()
     signal saveRequested()
@@ -160,6 +162,8 @@ Item {
             font.pixelSize: root.fontPixelSize
             padding: 4
             background: null
+
+            onPressed: root.interactionRequested()
 
             // Qt may emit text changes before its composition-end signal.
             onInputMethodComposingChanged: {

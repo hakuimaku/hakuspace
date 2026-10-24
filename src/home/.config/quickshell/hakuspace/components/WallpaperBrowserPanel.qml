@@ -28,7 +28,15 @@ PanelWindow {
     anchors { top: true; bottom: true; left: true; right: true }
     WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
     WlrLayershell.namespace: "hakuspace-wallpaper-browser"
-    WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: panelOpen && UiState.ownsInteraction("wallpaper", modelData.name) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    // Observe presses before delegates handle them, then pass the event through.
+    MouseArea {
+        anchors.fill: parent
+        z: 10000
+        enabled: root.panelOpen && !UiState.nativeDialogOpen
+        acceptedButtons: Qt.AllButtons
+        onPressed: mouse => { UiState.claimInteraction("wallpaper", root.modelData.name); mouse.accepted = false }
+    }
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     color: "transparent"
