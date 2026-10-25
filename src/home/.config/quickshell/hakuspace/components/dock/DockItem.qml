@@ -2,7 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Widgets
 import "../../services"
-import "../settings"
+import "../appbar" as AppBar
 import "DockGeometry.js" as Geometry
 
 Item {
@@ -175,7 +175,7 @@ Item {
         // Treat rapid repeated clicks as separate activation requests.
         onDoubleClicked: mouse => { mouse.accepted = false }
     }
-    SettingsTooltip {
+    AppBar.AppBarTooltip {
         target: root
         immediate: true
         active: root.visible && root.enabled && root.tooltipEnabled && !root.tooltipDismissed
