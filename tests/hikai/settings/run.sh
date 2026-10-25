@@ -14,6 +14,7 @@ case "${1:-}" in
 esac
 python3 "$TEST_DIR/test_ctl.py"
 python3 "$TEST_DIR/test_avatar.py"
+node "$TEST_DIR/test_reveal_geometry.js"
 node "$TEST_DIR/test_navigation.js"
 node "$TEST_DIR/test_ux.js"
 if [[ ${1:-} == --runtime ]]; then

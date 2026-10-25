@@ -5,14 +5,14 @@ import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import "../services"
-import "flare" as Flare
+import "motion/PanelRevealGeometry.js" as Reveal
 import "settings" as SettingsPages
 import "settings/SettingsNavigation.js" as Navigation
 
 PanelWindow {
     id: root
     // Release only after the surface has finished its visual close.
-    readonly property bool releaseReady: !panelOpen && !openAnimation.running && !closeAnimation.running && slideProgress === 0 && expandProgress === 0
+    readonly property bool releaseReady: !panelOpen && !morphAnim.running && morphProgress === 0
     required property var modelData
     property string selectedGroup: "General"
     property string selectedCategory: "General"
@@ -243,44 +243,31 @@ PanelWindow {
     readonly property real normalWidth: Math.min(normalPreferredWidth, Math.max(0, modelData.width - 64))
     readonly property real targetBodyWidth: normalWidth
     readonly property real targetBodyHeight: Math.min(750, Math.max(0, modelData.height - 64))
-    readonly property real circleSize: Math.min(96, normalWidth, targetBodyHeight)
-    property real slideProgress: 0
-    property real expandProgress: 0
-    property real closeProgress: 0
-    readonly property bool phaseOrderValid: expandProgress <= 0.001 || slideProgress >= 0.999
-    onPhaseOrderValidChanged: console.assert(phaseOrderValid, "Settings must reach center before expanding")
+    // One reversible value widens the diagonal neck and its centered chassis.
+    property real morphProgress: 0
+    // Bound the Sidebar easing overshoot before computing the silhouette.
+    readonly property real revealProgress: Math.max(0, Math.min(1, morphProgress))
+    // Reveal content only after the chassis can contain it.
+    readonly property real contentProgress: Math.max(0, (revealProgress - 0.55) / 0.45)
+    // Wait for settled geometry before accepting Settings control input.
+    readonly property bool interactionReady: panelOpen && !morphAnim.running && revealProgress === 1
+    // Use the Navigation corner, numbered clockwise from the top-left corner.
+    property int revealPosition: ScreenGeometry.bottomAttached ? 7 : 1
+    // Keep attachment geometry inside the active status bar and screen rails.
+    readonly property rect revealBounds: Qt.rect(ScreenGeometry.leftInset,
+        ScreenGeometry.bottomAttached ? ScreenGeometry.topBorderThickness : ScreenGeometry.chromeAttachmentY(height),
+        Math.max(0, width - ScreenGeometry.leftInset - ScreenGeometry.rightInset),
+        Math.max(0, ScreenGeometry.bottomAttached ? ScreenGeometry.chromeAttachmentY(height) - ScreenGeometry.topBorderThickness
+            : height - ScreenGeometry.bottomInset - ScreenGeometry.chromeAttachmentY(height)))
+    // Share the fixed-endpoint neck geometry with any other anchored panel.
+    readonly property var revealGeometry: Reveal.neck(revealPosition, revealBounds,
+        Qt.rect(settingsBody.x, settingsBody.y, settingsBody.width, settingsBody.height), revealProgress, Theme.fontSize * 12)
 
-    SequentialAnimation {
-        id: openAnimation
-        ParallelAnimation {
-            NumberAnimation {
-                id: slideIn
-                target: root; property: "slideProgress"; to: 1
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: HAnimation.dashboardOpenCurve
-            }
-            NumberAnimation {
-                id: recoverClose
-                target: root; property: "closeProgress"; to: 0
-            }
-        }
-        NumberAnimation {
-            id: expandIn
-            target: root; property: "expandProgress"; to: 1
-            easing.type: Easing.BezierSpline
-            easing.bezierCurve: [0.32, 0.05, 0.55, 1.18, 1, 1]
-        }
-    }
     NumberAnimation {
-        id: closeAnimation
-        target: root; property: "closeProgress"; to: 1
-        duration: 480
-        easing.type: Easing.OutCubic
-        onFinished: {
-            root.expandProgress = 0
-            root.slideProgress = 0
-            root.closeProgress = 0
-        }
+        id: morphAnim
+        target: root
+        property: "morphProgress"
+        easing.type: Easing.BezierSpline
     }
 
     // Cancel the active confirmation before initiating the existing close flow.
@@ -380,7 +367,7 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     color: "transparent"
-    visible: panelOpen || slideProgress > 0.001 || expandProgress > 0.001
+    visible: panelOpen || morphAnim.running || morphProgress > 0
     mask: Region {
         width: root.visible ? root.modelData.width : 0
         height: root.visible ? root.modelData.height : 0
@@ -395,18 +382,13 @@ PanelWindow {
     }
     Component.onDestruction: UiState.closeSettingsIfScreen(modelData.name)
     onPanelOpenChanged: {
-        openAnimation.stop()
-        closeAnimation.stop()
-        if (panelOpen) {
-            slideIn.duration = Math.round(280 * Math.max(0, 1 - slideProgress))
-            recoverClose.duration = Math.round(220 * closeProgress)
-            expandIn.duration = Math.round(350 * Math.max(0, 1 - expandProgress))
-            openAnimation.start()
-        } else {
-            shortcutHelp.close()
-            closeAnimation.duration = Math.round(480 * Math.max(0, 1 - closeProgress))
-            closeAnimation.start()
-        }
+        morphAnim.stop()
+        morphAnim.to = panelOpen ? 1 : 0
+        morphAnim.duration = Math.round((panelOpen ? HAnimation.sidebarToolOpenDuration
+            : HAnimation.sidebarToolCloseDuration) * Math.abs(morphAnim.to - morphProgress))
+        morphAnim.easing.bezierCurve = panelOpen ? HAnimation.sidebarToolOpenCurve : HAnimation.sidebarToolCloseCurve
+        morphAnim.start()
+        if (!panelOpen) shortcutHelp.close()
         if (panelOpen) {
             if (UiState.settingsGroup) {
                 var group = UiState.settingsGroup
@@ -435,78 +417,35 @@ PanelWindow {
         Keys.forwardTo: [shortcutKeys]
         Keys.onEscapePressed: event => { root.handleEscape(); event.accepted = true }
     }
-    Rectangle { anchors.fill: parent; color: Theme.surface; opacity: 0.22 * Math.min(1, root.expandProgress) * (1 - root.closeProgress) }
+    Rectangle { anchors.fill: parent; color: Theme.surface; opacity: 0.22 * root.revealProgress }
     MouseArea { anchors.fill: parent; enabled: root.panelOpen; onClicked: root.requestClose() }
 
+    // Widen the full diagonal from the chosen attachment point to the stationary panel.
     Shape {
-        id: dropTail
-        readonly property real diameter: root.circleSize
-        readonly property real tail: Math.min(60, diameter * 0.65)
-                                     * Math.pow(Math.sin(Math.PI * Math.max(0, Math.min(1, root.slideProgress))), 2)
-        x: settingsBody.x - tail
-        y: settingsBody.y
-        width: tail + diameter
-        height: diameter
-        visible: root.panelOpen && tail > 0.01 && root.expandProgress <= 0.001
+        anchors.fill: parent
+        visible: root.revealGeometry.path.length > 0
+        opacity: settingsBody.opacity
         preferredRendererType: Shape.CurveRenderer
-        transform: Rotation {
-            origin.x: dropTail.tail + dropTail.diameter / 2
-            origin.y: dropTail.diameter / 2
-            angle: Math.atan2(root.height / 2 - ScreenGeometry.attachedBodyY(root.height, root.circleSize) - root.circleSize / 2,
-                              root.width / 2 - ScreenGeometry.leftInset - root.circleSize / 2) * 180 / Math.PI
-        }
         ShapePath {
             fillColor: Theme.surface
             strokeColor: "transparent"
-            startX: 0
-            startY: dropTail.diameter / 2
-            PathCubic {
-                control1X: dropTail.tail * 0.3; control1Y: dropTail.diameter * 0.43
-                control2X: dropTail.tail * 0.68; control2Y: dropTail.diameter * 0.08
-                x: dropTail.tail + dropTail.diameter * 0.42; y: dropTail.diameter * 0.08
-            }
-            PathCubic {
-                control1X: dropTail.tail + dropTail.diameter * 0.78; control1Y: dropTail.diameter * 0.22
-                control2X: dropTail.tail + dropTail.diameter * 0.78; control2Y: dropTail.diameter * 0.78
-                x: dropTail.tail + dropTail.diameter * 0.42; y: dropTail.diameter * 0.92
-            }
-            PathCubic {
-                control1X: dropTail.tail * 0.68; control1Y: dropTail.diameter * 0.92
-                control2X: dropTail.tail * 0.3; control2Y: dropTail.diameter * 0.57
-                x: 0; y: dropTail.diameter / 2
-            }
+            PathSvg { path: root.revealGeometry.path }
         }
-    }
-
-    Flare.FlareSurface {
-        x: settingsBody.x
-        y: settingsBody.y
-        width: settingsBody.width
-        height: settingsBody.height
-        start: 0
-        end: width
-        currentHeight: height
-        bounds: ({start: 0, end: root.modelData.width})
-        r: Theme.giantRadius * Math.max(0, 1 - root.expandProgress)
-        rf: Theme.hugRadius * Math.max(0, 1 - root.expandProgress)
-        opacity: Math.min(1, root.expandProgress * 4) * Math.max(0, 1 - root.expandProgress) * (1 - root.closeProgress)
     }
 
     Rectangle {
         id: settingsBody
-        x: ScreenGeometry.leftInset + (root.width / 2 - width / 2 - ScreenGeometry.leftInset) * root.slideProgress
-        y: ScreenGeometry.attachedBodyY(root.height, root.circleSize)
-           + (root.height / 2 - height / 2 - ScreenGeometry.attachedBodyY(root.height, root.circleSize)) * root.slideProgress
-        width: root.circleSize + (root.targetBodyWidth - root.circleSize) * root.expandProgress
-        height: root.circleSize + (root.targetBodyHeight - root.circleSize) * root.expandProgress
-        radius: root.circleSize / 2 + (Theme.largeRadius - root.circleSize / 2) * root.expandProgress
+        x: (root.width - width) / 2
+        y: (root.height - height) / 2
+        width: root.targetBodyWidth * root.revealProgress
+        height: root.targetBodyHeight * root.revealProgress
+        radius: Math.min(width / 2, height / 2, Theme.largeRadius)
         color: Theme.surface
-        opacity: 1 - root.closeProgress
-        scale: 1 - 0.2 * root.closeProgress
+        opacity: Math.min(1, root.revealProgress / 0.12)
         border.width: 0
-        clip: root.expandProgress < 0.999
+        clip: root.revealProgress < 0.999
         Behavior on width {
-            enabled: root.expandProgress >= 0.999 && !openAnimation.running && !closeAnimation.running
+            enabled: root.interactionReady
             NumberAnimation {
                 duration: HAnimation.settingsResizeDuration
                 easing.type: Easing.BezierSpline
@@ -672,17 +611,19 @@ PanelWindow {
         // Keep key routing alive when a changing footer replaces its focused button.
         FocusScope {
             id: interior
-            anchors.fill: parent
-            anchors.margins: parent.width < 760 || parent.height < 560 ? 12 : 24
-            anchors.bottomMargin: 0
+            // Keep page layout fixed while the surrounding chassis morphs.
+            x: root.targetBodyWidth < 760 || root.targetBodyHeight < 560 ? 12 : 24
+            y: x
+            width: Math.max(0, root.targetBodyWidth - 2 * x)
+            height: Math.max(0, root.targetBodyHeight - y)
             clip: true
             // Keep page objects alive so navigation never resets a draft or confirmation.
             readonly property var currentPage: (root.selectedGroup === "General" ? generalPage
                 : root.selectedGroup === "Shell" ? shellPage : root.selectedGroup === "Wallpaper" ? wallpaperPage
                 : root.selectedGroup === "Config" ? configPage : infoPage) || emptyPage
             readonly property bool compact: width < 760
-            opacity: Math.max(0, Math.min(1, (root.expandProgress - 0.55) / 0.4))
-            enabled: root.panelOpen && root.expandProgress >= 0.95
+            opacity: root.contentProgress
+            enabled: root.interactionReady
             Keys.onEscapePressed: event => { root.handleEscape(); event.accepted = true }
             Keys.onPressed: event => root.handleShortcut(event)
 

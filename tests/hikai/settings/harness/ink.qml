@@ -13,6 +13,12 @@ ShellRoot {
     // Drive only disposable surfaces, preferences and input devices from the runner.
     property var hosts: []
     property int phase: 0
+    // Exercise interrupted morphs and output transfer before editing any drafts.
+    property int animationPhase: 0
+    // Compare reversal frames against the last sampled progress value.
+    property real animationProgress: 0
+    // Wait for Wayland's initial configure before measuring window geometry.
+    property bool animationMapped: false
     property int ticks: 0
     property int rounds: 0
     property int captures: 0
@@ -113,10 +119,87 @@ ShellRoot {
             })
         }
     }
+    // Check live geometry and loader ownership throughout opening and closing.
+    Timer {
+        interval: 16; repeat: true
+        running: root.phase === 1 && root.animationPhase < 6
+        onTriggered: {
+            // Inspect the first output without retaining a released surface.
+            var panel = root.panel
+            if (!panel) root.animationMapped = false
+            if (panel && !root.animationMapped) {
+                if (panel.width !== root.host.modelData.width || panel.height !== root.host.modelData.height) return
+                root.animationMapped = true
+            }
+            if (panel) {
+                // Locate the chassis independently of its private child index.
+                var body = root.find(panel.contentItem, item => item.radius !== undefined && item.children.some(child => child.currentPage !== undefined))
+                root.check(body, "animated Settings body exists")
+                // Inspect the stable page layout inside the moving chassis.
+                var interior = body.children.find(child => child.currentPage !== undefined)
+                root.check(Math.abs(interior.width + 2 * interior.x - panel.targetBodyWidth) < 0.5
+                    && Math.abs(interior.height + interior.y - panel.targetBodyHeight) < 0.5, "content keeps its final layout size during morph")
+                root.check(interior.enabled === panel.interactionReady, "controls wait for settled geometry")
+                if (panel.revealProgress > 0.01 && panel.revealProgress < 0.99) {
+                    root.check(panel.width === root.host.modelData.width && panel.height === root.host.modelData.height,
+                        "Wayland geometry stays fixed: " + panel.width + "x" + panel.height)
+                    root.check(!panel.releaseReady && !panel.interactionReady && panel.visible, "intermediate frame stays loaded and noninteractive")
+                    root.check(Math.abs(body.x + body.width / 2 - panel.width / 2) < 0.001
+                        && Math.abs(body.y + body.height / 2 - panel.height / 2) < 0.001,
+                        "chassis expands in place without sliding from the corner")
+                    root.check(panel.revealGeometry.path.length > 0,
+                        "full-length diagonal remains connected throughout the morph")
+                    root.check(Math.abs(panel.revealGeometry.center.x - panel.width / 2) < 0.001
+                        && Math.abs(panel.revealGeometry.center.y - panel.height / 2) < 0.001,
+                        "diagonal ends at the fixed screen center")
+                }
+            }
+            if (root.animationPhase === 0) {
+                if (!panel || panel.revealProgress < 0.2) return
+                root.animationProgress = panel.morphProgress
+                UiState.closeSettings()
+                root.check(Math.abs(panel.morphProgress - root.animationProgress) < 0.001, "close preserves the current opening frame")
+                ++root.animationPhase
+            } else if (root.animationPhase === 1) {
+                root.check(panel && !panel.panelOpen, "close keeps the original surface alive")
+                if (panel.morphProgress > root.animationProgress * 0.7) return
+                root.animationProgress = panel.morphProgress
+                UiState.openSettings(root.output)
+                root.check(root.panel === panel && Math.abs(panel.morphProgress - root.animationProgress) < 0.001, "reopen reverses without recreating or snapping")
+                ++root.animationPhase
+            } else if (root.animationPhase === 2) {
+                if (!panel || !panel.interactionReady) return
+                root.check(body.width === panel.targetBodyWidth && body.height === panel.targetBodyHeight, "open chassis reaches its final size")
+                root.check(Math.abs(body.x + body.width / 2 - panel.width / 2) < 0.5
+                    && Math.abs(body.y + body.height / 2 - panel.height / 2) < 0.5, "open chassis is centered")
+                root.check(root.hosts.length > 1, "animation probe has two outputs")
+                UiState.openSettings(root.hosts[1].modelData.name)
+                ++root.animationPhase
+            } else if (root.animationPhase === 3) {
+                // Wait for the destination output's own Settings surface.
+                var loader = root.hosts[1].loaders[1]
+                if (panel || !loader.active || !loader.item.interactionReady) return
+                root.check(UiState.ownsInteraction("settings", root.hosts[1].modelData.name), "output transfer preserves keyboard ownership")
+                UiState.closeSettings()
+                ++root.animationPhase
+            } else if (root.animationPhase === 4) {
+                if (root.hosts.some(host => host.loaders[1].active)) return
+                AppState.taskbarManualState = true
+                UiState.openSettings(root.output)
+                ++root.animationPhase
+            } else if (panel && panel.interactionReady) {
+                root.check(panel.revealPosition === 7 && panel.revealGeometry.anchor.y > panel.height / 2,
+                    "bottom layout uses the bottom-left attachment")
+                AppState.taskbarManualState = false
+                console.info("Settings animation checks passed")
+                ++root.animationPhase
+            }
+        }
+    }
     // Observe actual dropdown transition frames during physical clicks.
     Timer {
         interval: 16; repeat: true
-        running: !!root.panel && root.panel.expandProgress >= 0.999
+        running: !!root.panel && root.panel.interactionReady
         onTriggered: {
             if (!root.panel) return
             if (root.phase === 5 && root.panel.configPage) {
@@ -144,7 +227,7 @@ ShellRoot {
     Timer {
         interval: 90; repeat: true; running: true
         onTriggered: {
-            root.check(++root.ticks < 450, "runtime timeout")
+            root.check(++root.ticks < 450, "runtime timeout (animation phase " + root.animationPhase + ")")
             if (!root.host || root.captures || fontFailure.running || Avatar.busy || SettingsStore.loading || SettingsStore.saving || ShellSettingsStore.loading || ShellSettingsStore.saving || ConfigEditorStore.busy || WallpaperSettingsStore.loading || WallpaperSettingsStore.saving) return
             root.ownership()
             if (phase === 0) {
@@ -152,7 +235,7 @@ ShellRoot {
                 Theme.apply(JSON.stringify({accent: "#88c0d0", font: "monospace", fgDim: "#b39ab8"}))
                 UiState.openSettings(root.output)
             } else if (phase === 1) {
-                if (!root.panel || root.panel.expandProgress < 0.999 || !SettingsStore.ready) return
+                if (root.animationPhase < 6 || !root.panel || !root.panel.interactionReady || !SettingsStore.ready) return
                 root.check(!ShellSettingsStore.error, "fixture shell settings loaded")
                 root.check(root.panel.selectedCategory === "General", "starts at General")
                 root.check(!root.find(root.panel.contentItem, item => item.objectName === "settings-domain-strip"), "single primary hierarchy")
@@ -643,7 +726,7 @@ ShellRoot {
                 if (!TextStore.scratchDraft.includes("ownership test")) return
                 UiState.openSettings(root.output)
             } else if (phase === 15) {
-                if (!root.panel || root.panel.expandProgress < 0.999) return
+                if (!root.panel || !root.panel.interactionReady) return
                 if (root.pointerPhase === 0) root.check(root.note.panelOpen && !root.note.keyboardRequested, "pinned note releases its exclusive lease")
                 var x = UiState.tempNoteRect.x + 60, y = UiState.tempNoteRect.y + 90
                 if (root.pointerPhase === 0) { pointer.running = true; ++root.pointerPhase; return }
@@ -735,7 +818,7 @@ ShellRoot {
                 cropWindow.visible = false
                 UiState.openSettings(root.hosts[1].modelData.name)
             } else if (phase === 26) {
-                if (!root.hosts[1].loaders[1].active || root.hosts[1].loaders[1].item.expandProgress < 0.999) return
+                if (!root.hosts[1].loaders[1].active || !root.hosts[1].loaders[1].item.interactionReady) return
                 var second = root.hosts[1].loaders[1].item
                 root.check(second.panelOpen && (!root.panel || !root.panel.panelOpen), "Settings transfers to second output")
                 root.captureSecond(second)
