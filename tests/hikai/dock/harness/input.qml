@@ -208,14 +208,10 @@ ShellRoot {
                 root.move(width / 2, height - 1)
             } else if (root.phase === 8) root.pointAt(root.appIcon(), 273)
             else if (root.phase === 9) {
-                root.check(root.app().pinned, "right click directly pins the app")
-                var feedback = root.find(root.dock, function(item) { return item.objectName === "dock-pin-feedback" })
-                root.check(root.content(root.dock).pinMessage.indexOf("Pinned “") === 0 && feedback && feedback.visible,
-                    "successful pin shows feedback above its Dock")
-                root.check(root.outputs.slice(1).every(function(output) { return !root.content(output.dock).pinMessage }),
-                    "pin feedback stays on the originating output")
-                root.check(!root.appTooltip().visible, "pin feedback replaces the hover tooltip")
-                root.check(!root.find(root.dock, function(item) { return item.objectName === "dock-context-menu" }), "pin popup is removed")
+                root.check(UiState.activePanel === "appMenu" && !!UiState.appMenu, "right click opens app context menu")
+                root.check(UiState.appMenu.app.key === root.app().key, "menu belongs to clicked app")
+                UiState.closeAppMenu()
+                root.check(UiState.activePanel === "", "closing menu resets active panel")
                 tooltipCheck.start()
                 root.pointAt(root.appIcon(), 274)
             } else if (root.phase === 10) {
@@ -242,8 +238,8 @@ ShellRoot {
                 root.check(root.app().windows.find(function(window) { return window.title === second.title }).activated, "next cycle activates B")
                 root.pointAt(root.appIcon(), 273)
             } else if (root.phase === 15) {
-                root.check(!root.app().pinned, "right click directly unpins the app")
-                root.check(root.content(root.dock).pinMessage.indexOf("Unpinned “") === 0, "successful unpin shows feedback")
+                root.check(UiState.activePanel === "appMenu" && !!UiState.appMenu, "right click opens app context menu")
+                UiState.closeAppMenu()
                 root.pointAt(root.appIcon(), 274)
             } else if (root.phase === 16) {
                 root.check(!root.app().pinned && root.app().runningCount === 2, "unpin retains running application")
@@ -340,7 +336,8 @@ ShellRoot {
                 root.check(root.dock.shown && root.appIcon().hovered, "raised artwork remains inside hit area and safe zone")
                 root.pointAt(root.appIcon(), 273)
             } else if (root.phase === 31) {
-                root.check(root.app().pinned, "direct pin works on a raised icon")
+                root.check(UiState.activePanel === "appMenu" && !!UiState.appMenu, "right click on raised icon opens context menu")
+                UiState.closeAppMenu()
                 root.pointAt(root.appIcon(), 274)
             } else if (root.phase === 32) {
                 root.check(root.content(root.dock).terminationRoots.length === 1 && root.appIcon().actionMessage.length > 0,
@@ -351,8 +348,8 @@ ShellRoot {
                     "Escape closes confirmation and its tooltip while still hovering")
                 root.pointAt(root.appIcon(), 273)
             } else if (root.phase === 34) {
-                root.check(!root.app().pinned && root.content(root.dock).terminationKey === "", "right click unpins and cancels confirmation")
-                root.check(root.content(root.dock).pinMessage.indexOf("Unpinned “") === 0, "raised icon unpin shows feedback")
+                root.check(UiState.activePanel === "appMenu" && !!UiState.appMenu, "right click opens context menu")
+                UiState.closeAppMenu()
                 root.pointAt(root.appIcon())
             } else if (root.phase === 35) {
                 ShellSettingsStore.setValue("dock", "hoverLift", 0)

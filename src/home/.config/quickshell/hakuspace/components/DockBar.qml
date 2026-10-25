@@ -28,7 +28,9 @@ Item {
     // Only the Dock presentation keeps its owning output's autohide surface alive.
     readonly property bool hakuMenuDockLease: !!modelData && UiState.activePanel === "hakumenu"
         && UiState.hakuMenuStyle === "dockFloating" && UiState.hakuMenuScreenName === modelData.name
-    readonly property bool shown: enabledDock && (always || revealed || hakuMenuDockLease)
+    readonly property bool appMenuDockLease: !!modelData && UiState.activePanel === "appMenu"
+        && UiState.appMenu && UiState.appMenu.screenName === modelData.name
+    readonly property bool shown: enabledDock && (always || revealed || hakuMenuDockLease || appMenuDockLease)
     property bool revealed: false
     property string registeredOutput: ""
     readonly property var triggerRect: Geometry.trigger(dockWindow.width, dockWindow.height)
@@ -38,7 +40,7 @@ Item {
     readonly property var safeZones: shown ? [triggerRect, safeRect] : []
     // Release compact input immediately while its closing frames finish.
     onEnabledDockChanged: {
-        if (!enabledDock) { revealed = false; appContent.cancelTermination(); appContent.cancelReorder(); appContent.clearPinFeedback() }
+        if (!enabledDock) { revealed = false; appContent.cancelTermination(); appContent.cancelReorder(); appContent.clearPinFeedback(); UiState.closeAppMenuIfScreen(modelData ? modelData.name : "") }
     }
     Component.onCompleted: syncGeometry()
     Component.onDestruction: {
@@ -46,7 +48,7 @@ Item {
     }
     onShownChanged: {
         syncGeometry()
-        if (!shown) { appContent.cancelTermination(); appContent.cancelReorder(); appContent.clearPinFeedback() }
+        if (!shown) { appContent.cancelTermination(); appContent.cancelReorder(); appContent.clearPinFeedback(); UiState.closeAppMenuIfScreen(modelData ? modelData.name : "") }
         else Qt.callLater(function() {
             lifetime.forcePointerMode()
             if (hover.hovered) lifetime.pointerEntered(hover.point.position.x, hover.point.position.y)
@@ -165,7 +167,7 @@ Item {
             activationSource: "dockbar"
             active: root.enabledDock
             shown: root.shown
-            suppressTooltips: root.hakuMenuDockLease
+            suppressTooltips: root.hakuMenuDockLease || root.appMenuDockLease
             bottomInset: root.bottomInset
             sideInset: root.sideInset
             targetHeight: root.targetHeight

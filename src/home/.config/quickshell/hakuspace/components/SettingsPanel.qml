@@ -408,7 +408,12 @@ PanelWindow {
             closeAnimation.start()
         }
         if (panelOpen) {
-            if (UiState.settingsGroup) { selectCategory(UiState.settingsGroup); UiState.settingsGroup = "" }
+            if (UiState.settingsGroup) {
+                var group = UiState.settingsGroup
+                UiState.settingsGroup = ""
+                if (group === "appbar") revealResult({id: "appbar", category: "Desktop", section: "App Bar"})
+                else selectCategory(group)
+            }
             confirmation = ""
             if (!SettingsStore.ready) SettingsStore.load()
             else if (!SettingsStore.dirty) SettingsStore.reload()

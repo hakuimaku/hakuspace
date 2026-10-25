@@ -54,6 +54,7 @@ Item {
         }
     }
     signal activated()
+    signal contextMenuRequested()
     signal pinRequested()
     signal terminateRequested()
     signal dismissRequested()
@@ -72,7 +73,7 @@ Item {
     Keys.onPressed: event => { inputModeRequested(true); event.accepted = false }
     Keys.onReturnPressed: if (!reordering) { inputModeRequested(true); activated() }
     Keys.onSpacePressed: if (!reordering) { inputModeRequested(true); activated() }
-    Keys.onMenuPressed: if (appActions && !reordering) { inputModeRequested(true); pinRequested() }
+    Keys.onMenuPressed: if (appActions && !reordering) { inputModeRequested(true); contextMenuRequested() }
     Keys.onDeletePressed: {
         if (appActions && runningCount && !reordering) {
             inputModeRequested(true)
@@ -167,7 +168,7 @@ Item {
             if (held || root.reordering) return
             root.tooltipDismissed = false
             root.forceActiveFocus(Qt.MouseFocusReason)
-            if (mouse.button === Qt.RightButton && root.appActions) root.pinRequested()
+            if (mouse.button === Qt.RightButton && root.appActions) root.contextMenuRequested()
             else if (mouse.button === Qt.MiddleButton && root.appActions && root.runningCount) root.terminateRequested()
             else if (mouse.button === Qt.LeftButton) root.activated()
         }

@@ -52,6 +52,7 @@ Item {
         return mount.target && mount.target !== "/" && !/^\/(boot|home|usr|var|etc|nix)(\/|$)/.test(mount.target)
     }) : []
     readonly property bool tooltipsEnabled: shown && !suppressTooltips && !reorderKey && !pinMessage
+        && !(UiState.activePanel === "appMenu" && !!UiState.appMenu && UiState.appMenu.screenName === root.modelData.name)
 
     // Balance subscriptions and cancel pending gestures when a host loses ownership.
     onActiveChanged: {
@@ -312,6 +313,11 @@ Item {
                             root.cancelTermination()
                             if (appSlot.app.type === "system") UiState.toggleHakuMenu(root.modelData.name, "drun", root.activationSource, root.menuAnchor(appIcon))
                             else DockApps.activate(appSlot.app)
+                        }
+                        onContextMenuRequested: {
+                            if (!appSlot.app || !root.active) return
+                            root.cancelTermination()
+                            UiState.openAppMenu(appSlot.app, root.modelData.name, root.menuAnchor(appIcon))
                         }
                         onPinRequested: root.togglePin(appSlot.app)
                         onTerminateRequested: root.terminate(appSlot.app)

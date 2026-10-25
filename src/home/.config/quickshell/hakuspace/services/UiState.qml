@@ -71,6 +71,7 @@ QtObject {
     // Captured module anchors use target-screen coordinates.
     property var navigationAnchorRect: null
     property var trayMenu: null
+    property var appMenu: null
     property var notificationPanel: null
     property string hakuMenuMode: "closed"
     property string hakuMenuScreenName: ""
@@ -404,6 +405,27 @@ QtObject {
         if (trayMenu && trayMenu.screenName === screenName) closeTrayMenu()
     }
 
+    // Opens app bar popup menu anchored to an app icon.
+    function openAppMenu(app, screenName, anchorRect) {
+        appMenu = {
+            app: app,
+            screenName: screenName,
+            anchorRect: anchorRect
+        }
+        activePanel = "appMenu"
+    }
+
+    // Closes app bar popup menu.
+    function closeAppMenu() {
+        if (activePanel === "appMenu") activePanel = ""
+        appMenu = null
+    }
+
+    // Closes app bar popup if active on the specified screen.
+    function closeAppMenuIfScreen(screenName) {
+        if (appMenu && appMenu.screenName === screenName) closeAppMenu()
+    }
+
     // Opens centered settings panel on the specified screen.
     function openSettings(screenName) {
         settingsScreenName = screenName
@@ -491,7 +513,8 @@ QtObject {
             : activePanel === "actionMenu" ? actionMenuScreenName
             : activePanel === "hakumenu" ? hakuMenuScreenName
             : activePanel === "notifications" && notificationPanel ? notificationPanel.screenName
-            : activePanel === "tray" && trayMenu ? trayMenu.screenName : ""
+            : activePanel === "tray" && trayMenu ? trayMenu.screenName
+            : activePanel === "appMenu" && appMenu ? appMenu.screenName : ""
         claimInteraction(activePanel, output)
         if (activePanel !== "navigation") {
             navigationMode = "closed"
@@ -499,6 +522,7 @@ QtObject {
             navigationAnchorRect = null
         }
         if (activePanel !== "tray") trayMenu = null
+        if (activePanel !== "appMenu") appMenu = null
         if (activePanel !== "notifications") notificationPanel = null
         if (activePanel !== "wallpaper") {
             wallpaperScreenName = ""

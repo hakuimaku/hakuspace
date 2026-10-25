@@ -12,7 +12,7 @@ Item {
         property int calendarMonthOffset: 0
     }
     // Expose resource counts without retaining destroyed surface objects.
-    readonly property var loaders: [navigation, settings, note, tray, center, wallpaper, action, popup, osd, navigator]
+    readonly property var loaders: [navigation, settings, note, tray, appMenu, center, wallpaper, action, popup, osd, navigator]
     readonly property int loadedCount: loaders.filter(function(loader) { return loader.active }).length + menu.loadedCount
     readonly property var navigationItem: navigation.active ? navigation.item : null
 
@@ -42,6 +42,11 @@ Item {
         id: tray
         requested: UiState.activePanel === "tray" && !!UiState.trayMenu && UiState.trayMenu.screenName === root.modelData.name
         TrayMenuPanel { modelData: root.modelData }
+    }
+    Base.LifecycleLoader {
+        id: appMenu
+        requested: UiState.activePanel === "appMenu" && !!UiState.appMenu && UiState.appMenu.screenName === root.modelData.name
+        AppBarMenuPanel { modelData: root.modelData }
     }
     Base.LifecycleLoader {
         id: center

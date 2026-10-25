@@ -14,7 +14,17 @@ PanelWindow {
     required property var modelData
     property bool panelOpen: false
     property bool closing: false
-    property bool openedAtBottom: ScreenGeometry.bottomAttached
+    property bool forceBottomAttached: false
+    property bool openedAtBottom: forceBottomAttached || ScreenGeometry.bottomAttached
+    readonly property real attachmentY: openedAtBottom
+        ? (ChromeLayout.taskbarMode ? height - ScreenGeometry.taskbarHeight : height - ScreenGeometry.dockbarHeight - ScreenGeometry.bottomInset)
+        : ScreenGeometry.chromeAttachmentY(height)
+    function attachedBodyY(screenHeight, contentHeight, distance) {
+        return openedAtBottom ? attachmentY - (distance || 0) - contentHeight : attachmentY + (distance || 0)
+    }
+    function attachedBodyRect(screenHeight, x, width, contentHeight, distance) {
+        return {x: x, y: attachedBodyY(screenHeight, contentHeight, distance), width: width, height: contentHeight}
+    }
     property var anchorRect: null
     readonly property var hostRect: ({x: 0, y: 0, width: width, height: height})
     readonly property var localAnchorRect: flare.localizedAnchorRect || ({x: 0, y: 0, width: 0, height: 0})
@@ -31,15 +41,15 @@ PanelWindow {
             anchorEnd: anchorVisual.x + anchorVisual.width, contentW: flare.naturalContentWidth,
             padX: flare.horizontalPadding * 2, minW: 80, maxW: flare.maxWidth,
             bounds: flare.wBounds, snap: 2 * Theme.hugRadius })
-        var current = ScreenGeometry.attachedBodyRect(height, flare.start,
+        var current = root.attachedBodyRect(height, flare.start,
             Math.max(0, flare.end - flare.start),
             Math.max(flare.currentHeight, flare.naturalContentHeight + 16) + Theme.hugRadius)
-        var expected = ScreenGeometry.attachedBodyRect(height, target.start,
+        var expected = root.attachedBodyRect(height, target.start,
             flare.naturalContentWidth > 0 ? target.end - target.start : 0, current.height)
         var bodyVisual = SafeZoneGeometry.unionBounds(current, expected)
         var retained = flare.interactionEnvelope
         if (retained.end > retained.start)
-            bodyVisual = SafeZoneGeometry.unionBounds(bodyVisual, ScreenGeometry.attachedBodyRect(height,
+            bodyVisual = SafeZoneGeometry.unionBounds(bodyVisual, root.attachedBodyRect(height,
                 retained.start, retained.end - retained.start,
                 retained.height + Theme.hugRadius))
         return [SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(anchorVisual,
@@ -77,7 +87,7 @@ PanelWindow {
     WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
-    visible: openedAtBottom === ScreenGeometry.bottomAttached && (panelOpen || closing)
+    visible: (root.forceBottomAttached || root.openedAtBottom === ScreenGeometry.bottomAttached) && (panelOpen || closing)
     mask: Region {
         Region {
             x: root.safeZone(0).x; y: root.safeZone(0).y
@@ -98,7 +108,7 @@ PanelWindow {
 
     onPanelOpenChanged: {
         if (panelOpen) {
-            openedAtBottom = ScreenGeometry.bottomAttached
+            openedAtBottom = forceBottomAttached || ScreenGeometry.bottomAttached
             closing = false
             Qt.callLater(function() { if (root && root.panelOpen) keyHandler.forceActiveFocus() })
         } else if (flare.currentHeight > 0) {
@@ -154,7 +164,7 @@ PanelWindow {
 
     MouseArea {
         x: flare.start
-        y: ScreenGeometry.attachedBodyY(root.modelData.height, height)
+        y: root.attachedBodyY(root.modelData.height, height)
         width: Math.max(0, flare.end - flare.start)
         height: Math.min(root.height, flare.currentHeight + Theme.hugRadius)
         onClicked: (mouse) => { mouse.accepted = true }
@@ -162,8 +172,8 @@ PanelWindow {
 
     FlareHost {
         id: flare
-        attach: ScreenGeometry.bottomAttached ? FlareHost.Bottom : FlareHost.Top
-        y: ScreenGeometry.chromeAttachmentY(root.modelData.height)
+        attach: root.openedAtBottom ? FlareHost.Bottom : FlareHost.Top
+        y: root.attachmentY
         width: root.width
         height: ScreenGeometry.availableAttachedHeight(root.height)
         anchorRect: root.anchorRect
