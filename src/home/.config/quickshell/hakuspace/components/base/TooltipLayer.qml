@@ -10,7 +10,8 @@ Item {
     property bool bottomAttached: false
     property real tipAreaHeight: 180
     height: tipAreaHeight
-    readonly property real maxTooltipWidth: Math.min(500, Math.max(0, horizontalBounds.end - horizontalBounds.start))
+    property real minimumTooltipWidth: 0
+    readonly property real maxTooltipWidth: Math.min(Math.max(500, minimumTooltipWidth), Math.max(0, horizontalBounds.end - horizontalBounds.start))
     readonly property real horizontalPadding: 22
     readonly property real maxTextWidth: Math.max(0, maxTooltipWidth - horizontalPadding * 2)
     property bool menuShown: false

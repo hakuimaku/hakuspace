@@ -221,14 +221,19 @@ ShellRoot {
                 }
             }
         }
-        function openDefault() {
-            if (Quickshell.screens.length > 0)
-                UiState.openWallpaper(Quickshell.screens[0].name)
+        // Prefer the current wallpaper owner, then the active window's output.
+        function defaultScreenName(): string {
+            if (UiState.activePanel === "wallpaper") return UiState.wallpaperScreenName
+            var top = ToplevelManager.activeToplevel
+            if (top && top.screens.length) return top.screens[0].name
+            var focused = WM.workspaces.find(workspace => workspace.focused)
+            return focused && focused.output ? focused.output : Quickshell.screens.length ? Quickshell.screens[0].name : ""
         }
-        function toggleDefault() {
-            if (Quickshell.screens.length > 0)
-                UiState.toggleWallpaper(Quickshell.screens[0].name)
-        }
+        function openDefault() { UiState.openWallpaperQuick(defaultScreenName()) }
+        function toggleDefault() { UiState.toggleWallpaperQuick(defaultScreenName()) }
+        function quick() { openDefault() }
+        function workspace() { UiState.openWallpaperWorkspace(defaultScreenName()) }
+        function toggleWorkspaceDefault() { UiState.toggleWallpaperWorkspace(defaultScreenName()) }
         function close() { UiState.closeWallpaper() }
         function select(path: string): bool { return WallpaperService.select(path, "", false) }
         function pause() { WallpaperService.manuallyPaused = true }

@@ -218,7 +218,12 @@ Item {
                 visible: ShellSettingsStore.showQuickControls
             }
 
+            TopModules.WallpaperGroup {
+                screenName: root.screenName
+            }
+
             TopModules.RecorderGroup {
+                objectName: "screen-recorder-module"
             }
 
             TopModules.ClockGroup {

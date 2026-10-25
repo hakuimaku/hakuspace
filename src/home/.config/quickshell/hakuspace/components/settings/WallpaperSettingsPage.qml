@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import Quickshell.Io
 import "../../services"
 import "../wallpaper" as Wallpaper
@@ -9,6 +10,20 @@ Item {
     id: root
     property Item shortcutTarget: null
     property string highlightedId: ""
+    // Workspace popovers reuse a single section without folder or browser controls.
+    property string sectionFilter: ""
+    onSectionFilterChanged: {
+        if (scroll) scroll.contentY = 0
+        if (visible && (!sectionFilter || sectionFilter === "cache")) WallpaperService.refreshCache()
+    }
+    onVisibleChanged: if (visible && (!sectionFilter || sectionFilter === "cache")) WallpaperService.refreshCache()
+    Component.onCompleted: if (visible && (!sectionFilter || sectionFilter === "cache")) WallpaperService.refreshCache()
+    // Keep byte values readable for both small copies and large video libraries.
+    function cacheSize(bytes) {
+        if (!bytes) return "0 B"
+        var unit = Math.min(3, Math.floor(Math.log(bytes) / Math.log(1024)))
+        return Number((bytes / Math.pow(1024, unit)).toFixed(unit ? 2 : 0)) + " " + ["B", "KiB", "MiB", "GiB"][unit]
+    }
     // Match search to an existing row or section in the full Wallpaper category.
     function reveal(id, section) {
         var row = folders.reveal(id)
@@ -141,12 +156,14 @@ Item {
             SettingsSectionCard {
                 width: parent.width
                 title: "Wallpaper preferences"
+                visible: root.sectionFilter === ""
                 GeneralSettingsForm { id: folders; width: parent.width; category: "Wallpaper"; shortcutTarget: root.shortcutTarget; highlightedId: root.highlightedId }
             }
             SettingsSectionCard {
                 id: playback
                 width: parent.width
                 title: "Video playback"
+                visible: !root.sectionFilter || root.sectionFilter === "playback"
                 highlighted: ["videoQuality", "videoDecoder", "hiddenVideo"].includes(root.highlightedId)
                 Choice { label: "Video quality"; section: "playback"; preference: "profile"; options: [{label: "Save memory", value: "low-memory"}, {label: "Match screen", value: "screen"}, {label: "Original quality", value: "original"}] }
                 Text { width: parent.width; text: "Save memory uses a smaller 720p / 24 fps copy when needed. Match screen fits your display (recommended). Original quality plays the source without resizing. Sound stays off."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2 }
@@ -162,6 +179,7 @@ Item {
                 id: preparation
                 width: parent.width
                 title: "Video preparation"
+                visible: !root.sectionFilter || root.sectionFilter === "playback"
                 highlighted: root.highlightedId === "prepare"
                 Choice { label: "Prepare videos"; section: "proxy"; preference: "buildPolicy"; options: [{label: "When selected", value: "on-select"}, {label: "In background", value: "background"}, {label: "Only when I ask", value: "manual"}] }
                 Text { width: parent.width; text: "When selected is recommended. Prepared copies play at your chosen quality and leave the originals untouched."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2 }
@@ -170,22 +188,91 @@ Item {
                 id: cache
                 width: parent.width
                 title: "Video cache"
+                visible: !root.sectionFilter || root.sectionFilter === "cache"
                 highlighted: root.highlightedId === "cache"
-                Text { text: "Cache limit · " + WallpaperSettingsStore.values.proxy.maxCacheMiB + " MiB"; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize }
-                SettingsSlider { width: parent.width; from: 64; to: 65536; stepSize: 64; value: WallpaperSettingsStore.values.proxy.maxCacheMiB; enabled: root.editable; shortcutTarget: root.shortcutTarget; Accessible.name: "Maximum video cache size"; onMoved: WallpaperSettingsStore.setValue("proxy", "maxCacheMiB", Math.round(value)) }
+                Text {
+                    objectName: "wallpaper-cache-usage"
+                    width: parent.width
+                    text: "Used: " + root.cacheSize(WallpaperService.cacheBytes) + " / " + WallpaperSettingsStore.values.proxy.maxCacheMiB + " MiB · " + WallpaperService.cacheEntries.length + " prepared copies"
+                    wrapMode: Text.Wrap; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize
+                }
+                Text {
+                    width: parent.width
+                    text: "Total on disk: " + root.cacheSize(WallpaperService.cacheTotalBytes) + " · Previews: " + root.cacheSize(WallpaperService.cachePreviewBytes)
+                    wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2
+                }
                 Flow {
                     width: parent.width; spacing: 8
-                    Wallpaper.WallpaperActionButton { objectName: "wallpaper-prepare-library"; text: WallpaperService.buildingVideos ? "Preparing videos…" : "Prepare all videos"; width: 160; height: 40; enabled: !prepareLibrary.running && !WallpaperService.busy && !WallpaperService.cacheBusy; activeFocusOnTab: true; focused: activeFocus; onClicked: prepareLibrary.running = true; Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
-                    Wallpaper.WallpaperActionButton { objectName: "wallpaper-clear-unused"; text: "Clear unused"; width: 112; height: 40; enabled: !WallpaperService.busy && !WallpaperService.cacheBusy; activeFocusOnTab: true; focused: activeFocus; onClicked: WallpaperService.clearUnused(); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
-                    Wallpaper.WallpaperActionButton { text: "Prepare current"; width: 140; height: 40; enabled: WallpaperService.current.kind === "video" && !WallpaperService.busy; activeFocusOnTab: true; focused: activeFocus; onClicked: WallpaperService.rebuild(); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
-                    Wallpaper.WallpaperActionButton { text: "Open cache"; width: 104; height: 36; activeFocusOnTab: true; focused: activeFocus; onClicked: WallpaperService.openCache(); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
+                    Wallpaper.WallpaperToolbarButton { useSettingsTooltip: true; objectName: "wallpaper-prepare-library"; caption: WallpaperService.buildingVideos ? "Preparing videos…" : "Prepare all videos"; width: implicitWidth; height: 40; idleColor: Theme.hoverMuted; enabled: !prepareLibrary.running && !WallpaperService.busy && !WallpaperService.cacheBusy; activeFocusOnTab: true; focused: activeFocus; onClicked: prepareLibrary.running = true; Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
+                    Wallpaper.WallpaperToolbarButton { useSettingsTooltip: true; objectName: "wallpaper-clear-unused"; caption: "Clear cache"; description: "Delete unused prepared videos. Keep the current wallpaper cache."; width: implicitWidth; height: 40; idleColor: Theme.hoverMuted; enabled: !WallpaperService.busy && !WallpaperService.cacheBusy; activeFocusOnTab: true; focused: activeFocus; onClicked: WallpaperService.clearUnused(); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
+                    Wallpaper.WallpaperToolbarButton { useSettingsTooltip: true; caption: "Prepare current"; width: implicitWidth; height: 40; idleColor: Theme.hoverMuted; enabled: WallpaperService.current.kind === "video" && !WallpaperService.busy; activeFocusOnTab: true; focused: activeFocus; onClicked: WallpaperService.rebuild(); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
+                    Wallpaper.WallpaperToolbarButton { useSettingsTooltip: true; caption: "Open cache"; width: implicitWidth; height: 40; idleColor: Theme.hoverMuted; activeFocusOnTab: true; focused: activeFocus; onClicked: WallpaperService.openCache(); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
                 }
-                Text { width: parent.width; text: WallpaperService.error || "Videos currently in use remain protected when clearing unused copies."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2 }
+                Text { width: parent.width; text: WallpaperService.error || WallpaperService.cacheMessage || "Clear cache removes unused prepared videos. The current wallpaper stays available."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2 }
+                Text {
+                    visible: !WallpaperService.cacheEntries.length
+                    text: WallpaperService.cacheMaintenanceActive ? "Reading cache…" : "No prepared video copies in cache."
+                    width: parent.width; wrapMode: Text.Wrap; color: Theme.fgMuted; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2
+                }
+                // Keep long cache inventories virtualized inside the shared settings viewport.
+                ListView {
+                    id: cacheList
+                    objectName: "wallpaper-cache-list"
+                    width: parent.width
+                    readonly property real rowHeight: Math.max(68, Theme.fontSize * 2 + 32)
+                    height: Math.min(count, 4) * rowHeight + Math.max(0, Math.min(count, 4) - 1) * spacing
+                    model: cache.visible ? WallpaperService.cacheEntries : []
+                    spacing: 8; clip: true; boundsBehavior: Flickable.StopAtBounds
+                    ScrollBar.vertical: ScrollBar {}
+                    delegate: Rectangle {
+                        id: cacheRow
+                        required property var modelData
+                        width: cacheList.width; height: cacheList.rowHeight
+                        radius: Theme.radius; color: Theme.hoverMuted
+                        Column {
+                            anchors { fill: parent; margins: 12 }
+                            spacing: 4
+                            RowLayout {
+                                width: parent.width
+                                Text {
+                                    objectName: "wallpaper-cache-entry-title"
+                                    Layout.fillWidth: true
+                                    text: cacheRow.modelData.label
+                                    elide: Text.ElideRight; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 1
+                                }
+                                Text {
+                                    objectName: "wallpaper-cache-entry-state"
+                                    text: cacheRow.modelData.active ? "In use" : cacheRow.modelData.pending ? "Applying" : cacheRow.modelData.sourceChanged ? "Source changed" : cacheRow.modelData.path ? "Built" : "Unidentified"
+                                    color: cacheRow.modelData.active ? Theme.accent : Theme.fgMuted
+                                    font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2
+                                }
+                            }
+                            Text {
+                                objectName: "wallpaper-cache-entry-details"
+                                width: parent.width
+                                text: (cacheRow.modelData.profile === "low-memory" ? "720p" : cacheRow.modelData.profile === "screen" ? "Screen" : "Unknown quality")
+                                    + (cacheRow.modelData.render.width ? " · " + cacheRow.modelData.render.width + " × " + cacheRow.modelData.render.height : "")
+                                    + (cacheRow.modelData.render.fps > 0 ? " · " + Number(Number(cacheRow.modelData.render.fps).toFixed(2)) + " FPS" : "")
+                                    + " · " + root.cacheSize(cacheRow.modelData.bytes)
+                                elide: Text.ElideRight; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2
+                            }
+                        }
+                        HoverHandler { id: cacheHover }
+                        SettingsTooltip {
+                            target: cacheRow
+                            text: cacheRow.modelData.path || cacheRow.modelData.proxyPath
+                            active: cacheHover.hovered
+                        }
+                    }
+                }
+                Text { text: "Cache limit · " + WallpaperSettingsStore.values.proxy.maxCacheMiB + " MiB"; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize }
+                SettingsSlider { width: parent.width; from: 64; to: 65536; stepSize: 64; value: WallpaperSettingsStore.values.proxy.maxCacheMiB; enabled: root.editable; shortcutTarget: root.shortcutTarget; Accessible.name: "Maximum video cache size"; onMoved: WallpaperSettingsStore.setValue("proxy", "maxCacheMiB", Math.round(value)) }
             }
             SettingsSectionCard {
                 id: browser
                 width: parent.width
                 title: "Browser"
+                visible: root.sectionFilter === ""
                 Choice { label: "Default filter"; section: "browser"; preference: "filter"; options: [{label: "Images", value: "static"}, {label: "Videos", value: "video"}] }
                 Choice { label: "Show source metadata"; section: "browser"; preference: "showMetadata"; options: [{label: "Off", value: false}, {label: "On", value: true}] }
             }

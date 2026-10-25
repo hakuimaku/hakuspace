@@ -80,8 +80,6 @@ Item {
         }
         Bar.StatusModules {
             id: statusModules
-            // Clear only this output's right lane until its wallpaper sidebar finishes closing.
-            showRightCluster: UiState.activePanel !== "wallpaper" || UiState.wallpaperScreenName !== screenName
             y: taskbarWindow.height - root.targetHeight
             ownerWindow: taskbarWindow
             screenName: root.modelData ? root.modelData.name : ""

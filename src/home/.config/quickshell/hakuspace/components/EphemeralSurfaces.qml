@@ -12,7 +12,7 @@ Item {
         property int calendarMonthOffset: 0
     }
     // Expose resource counts without retaining destroyed surface objects.
-    readonly property var loaders: [navigation, settings, note, tray, appMenu, center, wallpaper, action, popup, osd, navigator]
+    readonly property var loaders: [navigation, settings, note, tray, appMenu, center, wallpaper, wallpaperWorkspace, action, popup, osd, navigator]
     readonly property int loadedCount: loaders.filter(function(loader) { return loader.active }).length + menu.loadedCount
     readonly property var navigationItem: navigation.active ? navigation.item : null
 
@@ -56,8 +56,13 @@ Item {
     }
     Base.LifecycleLoader {
         id: wallpaper
-        requested: UiState.activePanel === "wallpaper" && UiState.wallpaperScreenName === root.modelData.name
-        WallpaperBrowserPanel { modelData: root.modelData }
+        requested: UiState.wallpaperQuickActive && UiState.wallpaperScreenName === root.modelData.name
+        WallpaperQuickOverlay { modelData: root.modelData }
+    }
+    Base.LifecycleLoader {
+        id: wallpaperWorkspace
+        requested: UiState.wallpaperWorkspaceActiveFor(root.modelData.name)
+        WallpaperWorkspace { modelData: root.modelData }
     }
     Base.LifecycleLoader {
         id: action

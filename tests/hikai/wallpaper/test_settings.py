@@ -6,7 +6,6 @@ import json
 import os
 from pathlib import Path
 import shutil
-import shlex
 import subprocess
 import sys
 import tempfile
@@ -136,7 +135,28 @@ class WallpaperTests(unittest.TestCase):
             self.assertEqual({item["kind"] for item in items}, {"static", "video"})
             self.assertEqual(len(wallpaper.discover("video")), 1)
             self.assertIn("metadata", next(item for item in items if item["kind"] == "video"))
+            self.assertEqual(next(item for item in items if item["kind"] == "static")["fileSize"], 5)
         self.assertFalse((self.video / ".thumbnails").exists())
+
+    def test_image_metadata_cache(self):
+        """Still metadata uses source dimensions and size, with no invented frame rate."""
+        source = self.static / "portrait.png"
+        source.write_bytes(b"original image")
+        probe = {"streams": [{"width": 1, "height": 200, "codec_name": "png", "avg_frame_rate": "0/0"}]}
+        with patch.object(wallpaper.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, json.dumps(probe))) as run:
+            metadata = wallpaper.inspect(source)
+            self.assertEqual(metadata, {"width": 1, "height": 200, "fps": 0, "durationMs": 0, "codec": "png", "fileSize": 14})
+            self.assertEqual(wallpaper.inspect(source), metadata)
+            self.assertEqual(run.call_count, 1)
+            source.write_bytes(b"changed image")
+            wallpaper.inspect(source)
+            self.assertEqual(run.call_count, 2)
+        video = self.video / "broken.mp4"
+        video.touch()
+        probe["streams"][0].update(width=1920, height=1080, avg_frame_rate="0/1")
+        with patch.object(wallpaper.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, json.dumps(probe))):
+            with self.assertRaises(ValueError):
+                wallpaper.inspect(video)
 
     def test_prepare_commit_and_failure_keep_current(self):
         """Current state changes only after an explicit matching readiness token."""
@@ -155,6 +175,79 @@ class WallpaperTests(unittest.TestCase):
         self.assertEqual(wallpaper.CURRENT.read_bytes(), before)
         self.assertEqual((self.home / ".cache/current_wallpaper").read_text().strip(), str(source))
 
+    def test_probe_reports_missing_proxy_without_encoding_or_staging(self):
+        """A missing proxy is queued separately and never changes pending selection."""
+        source = self.video / "unprepared.mp4"
+        source.touch()
+        with patch.object(wallpaper, "inspect", return_value=self.metadata), patch.object(wallpaper, "run_ffmpeg") as encode:
+            record = wallpaper.prepare(str(source), "low-memory", 1920, 1080, probe=True)
+            self.assertTrue(record["needsBuild"])
+            self.assertTrue(record["buildAllowed"])
+            self.assertFalse(wallpaper.PENDING.exists())
+            self.assertFalse(wallpaper.CURRENT.exists())
+            encode.assert_not_called()
+            values = copy.deepcopy(settings.DEFAULTS)
+            values["proxy"]["buildPolicy"] = "manual"
+            with patch.object(wallpaper, "settings_run", return_value={"values": values}):
+                self.assertFalse(wallpaper.prepare(str(source), "low-memory", 1920, 1080, probe=True)["buildAllowed"])
+                self.assertTrue(wallpaper.prepare(str(source), "low-memory", 1920, 1080, build=True, probe=True)["buildAllowed"])
+
+    def test_batch_build_notifies_once_with_missing_video_count(self):
+        """Batch notification counts missing unique proxies and suppresses per-file notices."""
+        sources = [self.video / "one.mp4", self.video / "two.mp4"]
+        for source in sources:
+            source.touch()
+        with patch.object(sys, "argv", ["wallpaper_ctl.py", "warm", "--profile", "low-memory"]), \
+                patch.dict(os.environ, HAKUSPACE_WALLPAPER_SOURCES_JSON=json.dumps([str(path) for path in sources] * 2)), \
+                patch.object(wallpaper, "inspect", return_value=self.metadata), \
+                patch.object(wallpaper, "ensure_proxy") as encode, patch.object(wallpaper, "notify_build") as notify:
+            result = wallpaper.main()
+            notify.assert_called_once_with(2)
+            self.assertEqual(len(encode.call_args_list), 2)
+            self.assertTrue(all(call.kwargs["notify"] is False for call in encode.call_args_list))
+            self.assertEqual(result["readySources"], [str(path) for path in sources])
+            self.assertFalse(wallpaper.PENDING.exists())
+        with patch.object(wallpaper.subprocess, "run") as run:
+            wallpaper.notify_build(0)
+            run.assert_not_called()
+
+    def test_clear_image_layer_runs_before_native_video_handoff(self):
+        """Clear a running awww daemon while permitting video without an image daemon."""
+        with patch.object(sys, "argv", ["wallpaper_ctl.py", "clear-image"]), \
+                patch.object(wallpaper.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as run:
+            self.assertTrue(wallpaper.main()["ok"])
+            self.assertEqual([call.args[0] for call in run.call_args_list], [["awww", "query"], ["awww", "clear"]])
+        with patch.object(sys, "argv", ["wallpaper_ctl.py", "clear-image"]), \
+                patch.object(wallpaper.subprocess, "run", return_value=subprocess.CompletedProcess([], 1)) as run:
+            self.assertTrue(wallpaper.main()["ok"])
+            self.assertEqual(run.call_count, 1)
+
+    def test_rebuild_cannot_replace_a_newer_pending_selection(self):
+        """A slow rebuild only publishes if current and pending tokens still match."""
+        source = self.video / "rebuild.mp4"
+        source.touch()
+        wallpaper.atomic_json(wallpaper.CURRENT, {"token": "old-video"})
+        def finish_build(*args, **kwargs):
+            wallpaper.atomic_json(wallpaper.PENDING, {"token": "new-image"})
+            return str(source), self.metadata, {"needed": False}
+        with patch.object(wallpaper, "ensure_proxy", side_effect=finish_build), patch.object(wallpaper, "thumbnail", return_value=""):
+            result = wallpaper.prepare(str(source), "low-memory", 1920, 1080, True, rebuild=True,
+                                       expected_state=("old-video", None))
+        self.assertTrue(result["superseded"])
+        self.assertEqual(wallpaper.read_json(wallpaper.PENDING)["token"], "new-image")
+        self.assertEqual(wallpaper.read_json(wallpaper.CURRENT)["token"], "old-video")
+
+    def test_restore_image_preserves_the_committed_selection(self):
+        """A failed video handoff can restore awww without publishing a new token."""
+        record = {"kind": "static", "path": str(self.static / "current.png"), "token": "current-image"}
+        wallpaper.atomic_json(wallpaper.CURRENT, record)
+        with patch.object(sys, "argv", ["wallpaper_ctl.py", "restore-image"]), \
+                patch.object(wallpaper.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as run:
+            self.assertTrue(wallpaper.main()["ok"])
+            self.assertEqual(run.call_args.args[0][-1], record["path"])
+            self.assertEqual(run.call_args.kwargs["env"]["HAKUSPACE_WALLPAPER_NATIVE_COMMIT"], "1")
+        self.assertEqual(wallpaper.read_json(wallpaper.CURRENT), record)
+
     def test_lru_protects_current_pending_and_building(self):
         """Eviction skips live selections and files with active build locks."""
         proxies = self.cache / "proxies"
@@ -162,12 +255,52 @@ class WallpaperTests(unittest.TestCase):
         files = [proxies / (name + ".mp4") for name in ("old", "active", "pending", "building")]
         for file in files:
             file.write_bytes(b"proxy")
+            wallpaper.atomic_json(file.with_suffix(".json"), {"source": {"path": "fixture"}})
+        partial = proxies / "working.part.mp4"
+        partial.write_bytes(b"encoding")
         wallpaper.atomic_json(wallpaper.CURRENT, {"proxyPath": str(files[1])})
         wallpaper.atomic_json(wallpaper.PENDING, {"proxyPath": str(files[2])})
         with wallpaper.locked(files[3].with_suffix(".lock")):
             wallpaper.evict(0, clear=True)
             self.assertTrue(all(file.exists() for file in files[1:]))
         self.assertFalse(files[0].exists())
+        self.assertFalse(files[0].with_suffix(".json").exists())
+        self.assertTrue(files[1].with_suffix(".json").exists())
+        self.assertTrue(partial.exists())
+
+    def test_cache_inventory_reports_usage_sources_and_legacy_copies(self):
+        """Map builds to source names without probing media or reporting partial files."""
+        source = self.video / "built # video.mp4"
+        source.write_bytes(b"original")
+        legacy_source = self.video / "legacy.mp4"
+        legacy_source.write_bytes(b"legacy")
+        proxies = self.cache / "proxies"
+        proxies.mkdir(parents=True)
+        built = proxies / "built.mp4"
+        built.write_bytes(b"x" * 10)
+        wallpaper.atomic_json(built.with_suffix(".json"), {"source": wallpaper.fingerprint(source), "profile": "low-memory",
+                              "render": {"width": 1280, "height": 720, "fps": 24}})
+        wallpaper.atomic_json(self.cache / "metadata" / (wallpaper.digest(wallpaper.fingerprint(legacy_source)) + ".json"), self.metadata)
+        legacy = proxies / (wallpaper.proxy_identity(legacy_source, "screen", 1920, 1080, self.metadata) + ".mp4")
+        legacy.write_bytes(b"x" * 20)
+        (proxies / "unknown.mp4").write_bytes(b"x" * 30)
+        (proxies / "working.part.mp4").write_bytes(b"partial")
+        previews = self.cache / "thumbnails"
+        previews.mkdir()
+        (previews / "preview.jpg").write_bytes(b"image")
+        wallpaper.atomic_json(wallpaper.CURRENT, {"kind": "video", "path": str(source), "proxyPath": str(built), "profile": "low-memory"})
+        with patch.object(wallpaper, "inspect", side_effect=AssertionError("cache status must not launch ffprobe")):
+            status = wallpaper.cache_summary()
+        self.assertEqual(status["cacheBytes"], 60)
+        self.assertEqual(status["cachePreviewBytes"], 5)
+        self.assertEqual(status["cacheTotalBytes"], sum(path.stat().st_size for folder in (proxies, previews, self.cache / "metadata") for path in folder.iterdir()))
+        self.assertEqual(len(status["cacheEntries"]), 3)
+        self.assertEqual(status["cacheEntries"][0]["label"], source.name)
+        self.assertTrue(status["cacheEntries"][0]["active"])
+        self.assertEqual(next(entry for entry in status["cacheEntries"] if entry["path"] == str(legacy_source))["profile"], "screen")
+        self.assertTrue(any(entry["label"] == "Unidentified cached copy" for entry in status["cacheEntries"]))
+        source.write_bytes(b"modified original")
+        self.assertTrue(wallpaper.cache_summary()["cacheEntries"][0]["sourceChanged"])
 
     def test_failed_encoder_cleans_temporary(self):
         """A failing real FFmpeg job cannot publish or retain partial media."""
@@ -187,6 +320,9 @@ class WallpaperTests(unittest.TestCase):
         subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=c=navy:s=1920x1080:r=60", "-f", "lavfi", "-i", "sine=frequency=440", "-t", "0.4", "-c:v", "libx264", "-preset", "ultrafast", "-threads", "2", "-pix_fmt", "yuv420p", "-c:a", "aac", str(path)], check=True)
         before = wallpaper.fingerprint(path)
         output, metadata, render = wallpaper.ensure_proxy(path, "low-memory", 1920, 1080, True)
+        manifest = wallpaper.read_json(Path(output).with_suffix(".json"))
+        self.assertEqual(manifest["source"], before)
+        self.assertEqual(manifest["profile"], "low-memory")
         self.assertEqual((render["width"], render["height"], render["fps"]), (1280, 720, 24))
         inspected = wallpaper.inspect(Path(output))
         self.assertEqual((inspected["width"], inspected["height"], inspected["fps"]), (1280, 720, 24))
@@ -203,7 +339,7 @@ class WallpaperTests(unittest.TestCase):
         self.assertFalse(list(self.cache.rglob("*.part.mp4")))
         preview = wallpaper.thumbnail(path)
         self.assertTrue(Path(preview).is_file())
-        self.assertEqual(wallpaper.inspect(Path(preview))["width"], 480)
+        self.assertEqual((wallpaper.inspect(Path(preview))["width"], wallpaper.inspect(Path(preview))["height"]), (1920, 1080))
         # A changed cap remains a cache miss under manual build policy.
         with self.assertRaises(ValueError):
             wallpaper.ensure_proxy(path, "screen", 640, 360, False)
@@ -211,6 +347,26 @@ class WallpaperTests(unittest.TestCase):
         self.assertNotEqual(rebuilt, output)
         self.assertTrue(Path(output).exists())
         self.assertEqual(Path(output).stat().st_ino, inode)
+
+    def test_sharp_thumbnails_refresh_old_cache_and_keep_small_sources_native(self):
+        """Sharp previews replace the 480px cache, stay bounded and reuse completed files."""
+        if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
+            self.skipTest("FFmpeg unavailable")
+        source = self.static / "large.png"
+        subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc=size=3840x2160", "-frames:v", "1", "-threads", "1", str(source)], check=True)
+        legacy = self.cache / "thumbnails" / (wallpaper.digest(wallpaper.fingerprint(source)) + ".jpg")
+        legacy.parent.mkdir(parents=True)
+        legacy.write_bytes(b"old low-resolution thumbnail")
+        preview = Path(wallpaper.thumbnail(source))
+        self.assertNotEqual(preview, legacy)
+        self.assertEqual((wallpaper.inspect(preview)["width"], wallpaper.inspect(preview)["height"]), (2560, 1440))
+        self.assertTrue(legacy.exists())
+        with patch.object(wallpaper, "run_ffmpeg", side_effect=AssertionError("existing sharp thumbnails must be reused")):
+            self.assertEqual(wallpaper.thumbnail(source), str(preview))
+        small = self.static / "small.png"
+        subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=c=teal:s=64x36", "-frames:v", "1", "-threads", "1", str(small)], check=True)
+        metadata = wallpaper.inspect(Path(wallpaper.thumbnail(small)))
+        self.assertEqual((metadata["width"], metadata["height"]), (64, 36))
 
     def test_lru_removes_oldest_unused_proxy_first(self):
         """Budget eviction keeps newer entries when the oldest file frees enough space."""
@@ -283,6 +439,46 @@ class WallpaperTests(unittest.TestCase):
         self.assertEqual(refused.returncode, 1)
         resumed = subprocess.run(["bash", str(ROOT / "src/core/theme/wallpaper_resume.sh")], env=environment, capture_output=True)
         self.assertEqual(resumed.returncode, 0, resumed.stderr)
+
+    def test_picker_presentations_route_through_ipc(self):
+        """Both shortcuts retain the public facade and select the requested Hikai UI."""
+        state = self.home / ".local/state/hakuspace/state"
+        state.mkdir(parents=True)
+        (state / "[shell].backend").write_text("hikai\n")
+        binary = self.home / "bin"
+        binary.mkdir()
+        qs = binary / "qs"
+        qs.write_text('#!/bin/bash\nprintf "%s\\n" "$*" > "$HOME/picker-ipc.log"\n')
+        qs.chmod(0o755)
+        script = ROOT / "src/core/facade/wallpaper_select.sh"
+        environment = dict(os.environ, PATH=str(binary) + ":" + os.environ["PATH"], XDG_RUNTIME_DIR=str(self.home / "runtime"))
+        for option, method in (("--simple", "toggleDefault"), ("--shell", "toggleWorkspaceDefault")):
+            with self.subTest(option=option):
+                result = subprocess.run(["bash", str(script), option], env=environment, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual((self.home / "picker-ipc.log").read_text().strip(), "-c hakuspace ipc call wallpaper " + method)
+
+    def test_wallpaper_shortcuts_in_all_four_wms(self):
+        """Every shipped WM maps Super Y to simple and Super Shift Y to workspace."""
+        configs = ROOT / "src/home/.config"
+        bindings = {
+            "hypr/config/keybinding.lua": ('mainMod .. " + Y"', 'mainMod .. " + SHIFT + Y"'),
+            "niri/keybinds.kdl": ("Mod+Y ", "Mod+Shift+Y "),
+            "mango/bind.conf": ("bind=SUPER,Y,", "bind=SUPER+SHIFT,Y,"),
+        }
+        for name, keys in bindings.items():
+            lines = (configs / name).read_text().splitlines()
+            for key, option in zip(keys, ("--simple", "--shell")):
+                with self.subTest(wm=name, key=key):
+                    matches = [line for line in lines if key in line]
+                    self.assertEqual(len(matches), 1)
+                    self.assertIn("wallpaper_select.sh " + option, matches[0])
+        from xml.etree import ElementTree
+        document = ElementTree.parse(configs / "labwc/rc.xml")
+        for key, option in (("W-y", "--simple"), ("W-S-y", "--shell")):
+            actions = document.findall('.//keybind[@key="' + key + '"]/action')
+            self.assertEqual(len(actions), 1)
+            self.assertEqual(actions[0].get("command"), "~/.local/bin/wallpaper_select.sh " + option)
 
     def test_hikai_commit_keeps_awww_images_and_generated_caches(self):
         """Apply images with awww, generate both media caches, and retain state on failure."""
@@ -375,55 +571,16 @@ class WallpaperTests(unittest.TestCase):
 
 
 class WallpaperPanelTests(unittest.TestCase):
-    """Render sidebar motion in a private Niri session with fixture thumbnails."""
+    """Render quick/workspace ownership in a private two-output compositor."""
 
-    @unittest.skipUnless(shutil.which("niri") and os.environ.get("WAYLAND_DISPLAY"),
-                         "nested Niri requires a Wayland display")
-    def test_slide_lifecycle(self):
-        with tempfile.TemporaryDirectory(prefix="hikai-wallpaper-panel-") as temporary:
-            work = Path(temporary)
-            shell = work / "src/home/.config/quickshell/hakuspace"
-            shutil.copytree(ROOT / "src/home/.config/quickshell/hakuspace", shell)
-            shutil.copy(ROOT / "tests/hikai/wallpaper/harness/panel.qml", shell / "shell.qml")
-            for name in ("backend", "lib", "theme", "state"):
-                shutil.copytree(ROOT / "src/core" / name, work / "src/core" / name)
-            home = work / "home"
-            images = home / "Pictures/Wallpapers"
-            images.mkdir(parents=True)
-            subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=c=steelblue:s=320x180",
-                            "-frames:v", "1", "-threads", "1", str(images / "fixture.png")], check=True, timeout=10)
-            shutil.copy(images / "fixture.png", images / "second.png")
-            runtime = work / "runtime"
-            runtime.mkdir(mode=0o700)
-            artifacts = Path(os.environ.get("HAKUSPACE_WALLPAPER_PANEL_ARTIFACT_DIR", str(work / "artifacts")))
-            artifacts.mkdir(parents=True, exist_ok=True)
-            # Resolve only the parent display; all test IPC belongs to the nested compositor.
-            display = os.environ["WAYLAND_DISPLAY"]
-            if not os.path.isabs(display):
-                display = str(Path(os.environ["XDG_RUNTIME_DIR"]) / display)
-            (work / "niri.kdl").write_text('hotkey-overlay { skip-at-startup; }\n', encoding="utf-8")
-            launcher = work / "start.sh"
-            shell_log = artifacts / "shell.log"
-            launcher.write_text(
-                f'quickshell -p {shlex.quote(str(shell))} > {shlex.quote(str(shell_log))} 2>&1\n'
-                'niri msg action quit --skip-confirmation\n', encoding="utf-8")
-            environment = {key: value for key, value in os.environ.items() if not key.startswith("HAKUSPACE_")}
-            environment.update(HOME=str(home), XDG_CONFIG_HOME=str(home / ".config"),
-                               XDG_CACHE_HOME=str(home / ".cache"), XDG_RUNTIME_DIR=str(runtime),
-                               WAYLAND_DISPLAY=display, XDG_CURRENT_DESKTOP="niri", QT_QPA_PLATFORM="wayland",
-                               QSG_INFO="1", HAKUSPACE_WALLPAPER_TEST_NO_HANDOFF="1",
-                               HAKUSPACE_WALLPAPER_PANEL_ARTIFACT_DIR=str(artifacts))
-            for key in ("DISPLAY", "NIRI_SOCKET", "HYPRLAND_INSTANCE_SIGNATURE", "MANGO_INSTANCE_SIGNATURE",
-                        "QT_QPA_PLATFORMTHEME", "QT_QPA_PLATFORMTHEME_QT6"):
-                environment.pop(key, None)
-            result = subprocess.run(["dbus-run-session", "--", "niri", "-c", str(work / "niri.kdl"),
-                                     "--", "bash", str(launcher)],
-                                    env=environment, capture_output=True, text=True, timeout=30)
-            log = result.stdout + result.stderr + (shell_log.read_text() if shell_log.exists() else "")
-            self.assertEqual(result.returncode, 0, log)
-            self.assertIn("Wallpaper panel slide checks passed", log)
-            for error in ("TypeError", "ReferenceError", "Binding loop", "Failed to load configuration", "Error decoding"):
-                self.assertNotIn(error, log)
+    @unittest.skipUnless(os.environ.get("HAKUSPACE_WALLPAPER_RUNTIME") == "1"
+                         and shutil.which("labwc") and shutil.which("quickshell"),
+                         "set HAKUSPACE_WALLPAPER_RUNTIME=1 for presentation runtime")
+    def test_presentation_lifecycle(self):
+        result = subprocess.run(["bash", str(ROOT / "tests/hikai/wallpaper/test_runtime.sh"), "--presentation"],
+                                capture_output=True, text=True, timeout=55)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Wallpaper presentation checks passed", result.stdout)
 
 
 if __name__ == "__main__":

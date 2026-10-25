@@ -35,7 +35,11 @@ Select and manage wallpapers.
 
 No arguments:
     Classic                     Open the Classic wallpaper menu
-    Hikai                       Toggle the native top-attached wallpaper browser
+    Hikai                       Toggle the quick wallpaper overlay
+
+Hikai presentation:
+    --simple                    Toggle the quick wallpaper overlay
+    --shell                     Toggle the wallpaper workspace
 
 Classic compatibility:
     --static [CHOICE]           Static wallpaper script mode
@@ -61,6 +65,12 @@ case "${1:-}" in
             exec "$WALLPAPER_ROFI"
         fi
         haku_qs_ipc wallpaper toggleDefault
+        ;;
+    --simple|--shell)
+        if haku_backend_is "classic"; then exec "$WALLPAPER_ROFI"; fi
+        if [[ "$1" == --shell ]]; then haku_qs_ipc wallpaper toggleWorkspaceDefault
+        else haku_qs_ipc wallpaper toggleDefault
+        fi
         ;;
     --static|--lively)
         if haku_backend_is "hikai"; then

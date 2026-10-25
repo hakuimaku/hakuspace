@@ -15,7 +15,7 @@ ShellRoot {
     function fileUrl(path) { return path ? "file://" + path.split("/").map(encodeURIComponent).join("/") : "" }
     function send(message) { socket.write(JSON.stringify(message) + "\n"); socket.flush() }
     function surfaceReady(name, token) { send({type: "ready", name: name, token: token}) }
-    function fail(message) { send({type: "error", message: message}) }
+    function fail(message, token) { send({type: "error", message: message, token: token || candidate.token || current.token}) }
     function report(name, state) { send({type: "report", name: name, state: state}) }
     function takeOwnership() { send({type: "ownership"}) }
     // Publish lightweight diagnostics without exposing renderer objects to the shell.

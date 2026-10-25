@@ -24,7 +24,19 @@ cp "$test_root/home/Videos/Wallpapers/clip.mp4" "$test_root/home/Videos/Wallpape
 ffmpeg -v error -f lavfi -i color=c=green:s=64x36 -frames:v 1 -threads 1 "$test_root/home/Pictures/Wallpapers/forest # one.png"
 cp "$test_root/home/Pictures/Wallpapers/forest # one.png" "$test_root/home/Pictures/Wallpapers/other.png"
 printf 'broken image fixture\n' > "$test_root/home/broken.png"
-if [[ ${1:-} == --surface ]]; then
+if [[ ${1:-} == --presentation ]]; then
+    # Five items of each kind exercise every carousel depth on the same path.
+    for index in 1 2 3; do
+        cp "$test_root/home/Pictures/Wallpapers/other.png" "$test_root/home/Pictures/Wallpapers/extra-$index.png"
+        cp "$test_root/home/Videos/Wallpapers/second.mp4" "$test_root/home/Videos/Wallpapers/extra-$index.mp4"
+    done
+    cp tests/hikai/wallpaper/harness/panel.qml "$shell_root/shell.qml"
+    expected='Wallpaper presentation checks passed'
+elif [[ ${1:-} == --flow ]]; then
+    printf 'broken video fixture\n' > "$test_root/home/broken.mp4"
+    cp tests/hikai/wallpaper/harness/flow.qml "$shell_root/shell.qml"
+    expected='Wallpaper flow checks passed'
+elif [[ ${1:-} == --surface ]]; then
     cp tests/hikai/wallpaper/harness/surface.qml "$shell_root/shell.qml"
     expected='Wallpaper surface checks passed'
 else

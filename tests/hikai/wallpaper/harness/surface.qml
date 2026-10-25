@@ -18,7 +18,7 @@ ShellRoot {
     property string staticToken: ""
     readonly property string fixture: Quickshell.env("HAKUSPACE_WALLPAPER_FIXTURE")
     Variants { id: surfaces; model: Quickshell.screens; Wallpaper.WallpaperSurface {} }
-    Variants { id: panels; model: Quickshell.screens; WallpaperBrowserPanel {} }
+    Variants { id: panels; model: Quickshell.screens; WallpaperQuickOverlay {} }
     Variants { id: settingsPanels; model: Quickshell.screens; SettingsPanel {} }
     Variants { id: bars; model: Quickshell.screens; TopBar {} }
     Variants { id: menus; model: Quickshell.screens; HakuMenuPanel {} }
@@ -125,8 +125,7 @@ ShellRoot {
                 }
                 if (UiState.activePanel !== "wallpaper") return
                 var wallpaper = panels.instances.find(panel => panel.panelOpen)
-                root.check(wallpaper.currentRect.y === wallpaper.attachmentY && wallpaper.currentRect.height === wallpaper.browserHeight, "sidebar opens at its own full-height attachment")
-                root.check(Math.abs(wallpaper.currentRect.x + wallpaper.currentRect.width - wallpaper.modelData.width + ScreenGeometry.rightInset) < 1, "Theme action opens from the right edge without menu geometry")
+                root.check(wallpaper.presentation === "quick" && wallpaper.color.a === 0, "Theme action opens transparent simple overlay")
                 root.check(menus.instances.every(menu => !menu.panelOpen), "source menu releases input")
                 holdTicks = 0
             } else if (phase === 3) {
@@ -139,33 +138,30 @@ ShellRoot {
                 else if (keyPhase === 4) { root.check(browser.filter === "video", "Ctrl Up wraps between two tabs"); keyboard.write("key 33 4\n") }
                 else if (keyPhase === 5) { keyboard.write("key 106 4\n") }
                 else if (keyPhase === 6) { root.check(browser.filter === "static", "Ctrl arrow works in search"); browser.forceActiveFocus(); root.browsedPath = browser.selected.path; keyboard.write("key 108\n") }
-                else if (keyPhase === 7) { root.check(browser.selected.path !== root.browsedPath, "Down scrolls the vertical carousel"); keyboard.write("key 103\n"); root.pointAt(root.findItem(browser, "wallpaper-kind-static"), 0) }
+                else if (keyPhase === 7) { root.check(browser.selected.path !== root.browsedPath, "Down advances the horizontal carousel"); keyboard.write("key 103\n"); root.pointAt(root.findItem(browser, "wallpaper-kind-static"), 0) }
                 else if (keyPhase === 8) {
-                    root.check(browser.selected.path === root.browsedPath, "Up returns to the previous vertical card")
+                    root.check(browser.selected.path === root.browsedPath, "Up returns to the previous horizontal card")
                     root.check(root.findItem(browser, "wallpaper-kind-static").hovered, "real pointer reaches the library tab")
                     root.wheelAt(root.findItem(browser, "wallpaperReel"), 1)
                 }
                 else if (keyPhase === 9) { root.check(browser.selected.path !== root.browsedPath, "mouse wheel scrolls down"); root.wheelAt(root.findItem(browser, "wallpaperReel"), -1) }
                 else if (keyPhase === 10) { root.check(browser.selected.path === root.browsedPath, "mouse wheel scrolls up"); root.pointAt(root.findItem(browser, "wallpaper-kind-static"), 272, 1) }
                 else if (keyPhase === 11) { root.check(root.findItem(browser, "wallpaper-kind-static").pressed && root.findItem(browser, "wallpaper-kind-static").horizontalScale < 1, "real press morphs the filter button"); root.pointAt(root.findItem(browser, "wallpaper-kind-static"), 272, 0) }
-                else if (keyPhase === 12) { browser.filter = "video"; root.pointAt(root.findItem(browser, "wallpaperTitle"), 0) }
+                else if (keyPhase === 12) { browser.filter = "video"; root.pointAt(root.findItem(browser, "wallpaperSearch"), 0) }
                 if (keyPhase++ < 14) return
                 root.check(!root.findItem(browser, "wallpaper-quality"), "quality controls live only in Settings")
                 root.check(browser.filter === "video" && browser.profile === "screen" && !WallpaperService.busy && WallpaperService.current.token === root.staticToken, "picker interactions never apply wallpaper")
                 root.check(UiState.wallpaperScreenName === Quickshell.screens[1].name, "browser targets requested output")
                 root.check(surfaces.instances.length === 2, "one renderer per output")
                 for (var panel of panels.instances) {
-                    root.check(panel.browserWidth <= 520 && panel.browserHeight > panel.browserWidth, "vertical sidebar geometry")
+                    if (panel.panelOpen) root.check(panel.width === panel.modelData.width && panel.height === panel.modelData.height, "stable full-screen overlay geometry")
                     root.check(panel.panelOpen === (panel.modelData.name === Quickshell.screens[1].name), "per-output browser visibility")
-                    root.check(panel.attachmentY === Theme.topBarHeight, "flare follows Rounded Screen ceiling")
-                    root.check(panel.attachmentBottom === panel.modelData.height - ScreenGeometry.bottomInset, "bottom flare follows Rounded Screen floor")
-                    if (panel.panelOpen) root.check(Math.abs(panel.currentRect.x + panel.currentRect.width - panel.modelData.width + ScreenGeometry.rightInset) < 1, "sidebar hugs the right screen frame")
                 }
                 for (var bar of bars.instances) {
                     var modules = bar.contentItem.children[0].children.find(item => item.objectName === "topbarModules")
                     root.check(!!modules && modules.visible, "TopBar module container stays visible")
                     root.check(root.findItem(modules, "leftStatusModules").visible && root.findItem(modules, "centerStatusModules").visible, "left and center TopBar modules remain visible")
-                    root.check(root.findItem(modules, "rightStatusModules").visible === (bar.modelData.name !== Quickshell.screens[1].name), "only right modules hide on the wallpaper output")
+                    root.check(root.findItem(modules, "rightStatusModules").visible, "simple keeps every right status module")
                 }
                 var artifact = Quickshell.env("HAKUSPACE_WALLPAPER_ARTIFACT_DIR")
                 for (var panel of panels.instances) {
@@ -183,7 +179,7 @@ ShellRoot {
                 if (UiState.activePanel === "wallpaper") return
                 root.check(WallpaperService.current.token === root.staticToken, "close keeps exact renderer source")
                 for (var bar of bars.instances)
-                    root.check(!bar.wallpaperOverlayOpen, "TopBar modules restore after close")
+                    root.check(bar.visible, "TopBar remains visible after close")
                 root.check(surfaces.instances.every(surface => !surface.front && !surface.visible), "browser close keeps the awww image unobstructed")
                 WallpaperService.select(fixture + "/broken.png", "low-memory", false)
             } else if (phase === 5) {
@@ -211,7 +207,10 @@ ShellRoot {
             } else if (phase === 9) {
                 if (++holdTicks < 8) return
                 for (var panel of settingsPanels.instances) {
-                    if (panel.panelOpen) root.check(panel.selectedGroup === "Wallpaper", "wallpaper settings domain")
+                    if (panel.panelOpen) {
+                        root.check(panel.selectedGroup === "Wallpaper", "wallpaper settings domain")
+                        root.check(panel.wallpaperPage.sectionFilter === "" && ["Video playback", "Video cache", "Browser"].every(section => panel.wallpaperPage.sidebarSections.includes(section)), "full Wallpaper Settings retains all sections")
+                    }
                 }
                 root.check(!WallpaperService.error, "native renderer error")
                 UiState.closeSettings()

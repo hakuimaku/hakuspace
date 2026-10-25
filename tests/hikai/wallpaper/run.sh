@@ -14,6 +14,7 @@ case "${1:-}" in
 esac
 python3 "$TEST_DIR/test_settings.py"
 if [[ ${1:-} == --runtime ]]; then
+    bash "$TEST_DIR/test_runtime.sh" --presentation
     bash "$TEST_DIR/test_runtime.sh"
     bash "$TEST_DIR/test_runtime.sh" --surface
 fi

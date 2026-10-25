@@ -82,6 +82,10 @@ QtObject {
     property string hakuMenuSelectionLabel: ""
     // Remember the requested Settings domain when opening from the wallpaper browser.
     property string settingsGroup: ""
+    // Wallpaper presentation shares one interaction owner and output.
+    property string wallpaperPresentation: "closed"
+    readonly property bool wallpaperQuickActive: activePanel === "wallpaper" && wallpaperPresentation === "quick"
+    readonly property bool wallpaperWorkspaceActive: activePanel === "wallpaper" && wallpaperPresentation === "workspace"
     property string wallpaperScreenName: ""
     property bool wallpaperCloseRequested: false
     // Preserve the source menu's actual screen rectangle for a single geometry handoff.
@@ -305,52 +309,60 @@ QtObject {
         if (hakuMenuScreenName === screenName) closeHakuMenu()
     }
 
-    // Opens wallpaper selector panel on the specified screen.
-    function openWallpaper(screenName) {
+    // Match wallpaper workspace ownership to one output.
+    function wallpaperWorkspaceActiveFor(screenName) {
+        return wallpaperWorkspaceActive && wallpaperScreenName === screenName
+    }
+
+    // Open either presentation without rescanning an existing browsing session.
+    function openWallpaperPresentation(screenName, presentation) {
+        if (!screenName) return
+        if (activePanel !== "wallpaper") WallpaperLibrary.refresh()
         wallpaperCloseRequested = false
         wallpaperScreenName = screenName
+        wallpaperPresentation = presentation
+        TooltipManager.dismiss()
         claimInteraction("wallpaper", screenName)
         activePanel = "wallpaper"
     }
 
-    // Toggles wallpaper panel visibility for the specified screen.
-    function toggleWallpaper(screenName) {
-        if (activePanel === "wallpaper" && wallpaperScreenName === screenName) {
-            // A second toggle while the close animation is running reopens the
-            // existing surface instead of tearing the layer down mid-motion.
-            if (wallpaperCloseRequested) {
-                wallpaperCloseRequested = false
-                return
-            }
-            closeWallpaper()
-            return
-        }
-        openWallpaper(screenName)
+    // Existing menu and IPC callers open the quick overlay.
+    function openWallpaper(screenName) { openWallpaperQuick(screenName) }
+    function openWallpaperQuick(screenName) { openWallpaperPresentation(screenName, "quick") }
+    function openWallpaperWorkspace(screenName) { openWallpaperPresentation(screenName, "workspace") }
+
+    // Enter workspace without replacing the shared browsing session.
+    function enterWallpaperWorkspace() {
+        if (activePanel === "wallpaper") openWallpaperWorkspace(wallpaperScreenName)
+    }
+    function leaveWallpaperWorkspace() {
+        if (wallpaperWorkspaceActive) closeWallpaper()
     }
 
-    // Request an animated close. WallpaperBrowserPanel owns the visual sequence and
-    // calls finishCloseWallpaper only after the close animation has faded out.
+    // Repeating the same shortcut reverses dismissal or closes its presentation.
+    function toggleWallpaperPresentation(screenName, presentation) {
+        if (activePanel === "wallpaper" && wallpaperScreenName === screenName && wallpaperPresentation === presentation) {
+            if (wallpaperCloseRequested) wallpaperCloseRequested = false
+            else closeWallpaper()
+        } else openWallpaperPresentation(screenName, presentation)
+    }
+    function toggleWallpaper(screenName) { toggleWallpaperQuick(screenName) }
+    function toggleWallpaperQuick(screenName) { toggleWallpaperPresentation(screenName, "quick") }
+    function toggleWallpaperWorkspace(screenName) { toggleWallpaperPresentation(screenName, "workspace") }
+
+    // The visual owner releases the surface after its closing animation finishes.
     function closeWallpaper() {
         if (activePanel === "wallpaper") wallpaperCloseRequested = true
     }
-
-    // Finalizes wallpaper panel close and resets active panel state once animation completes.
     function finishCloseWallpaper(screenName) {
         if (activePanel !== "wallpaper" || wallpaperScreenName !== screenName) return
-        wallpaperCloseRequested = false
         activePanel = ""
-        wallpaperScreenName = ""
     }
 
-    // Immediately forces wallpaper panel closed without waiting for animation.
+    // Output removal cannot leave a presentation or keyboard lease behind.
     function forceCloseWallpaperIfScreen(screenName) {
-        if (wallpaperScreenName !== screenName) return
-        wallpaperCloseRequested = false
-        if (activePanel === "wallpaper") activePanel = ""
-        wallpaperScreenName = ""
+        if (wallpaperScreenName === screenName && activePanel === "wallpaper") activePanel = ""
     }
-
-    // Requests animated close if wallpaper is active on the specified screen.
     function closeWallpaperIfScreen(screenName) {
         if (wallpaperScreenName === screenName) closeWallpaper()
     }
@@ -525,6 +537,7 @@ QtObject {
         if (activePanel !== "appMenu") appMenu = null
         if (activePanel !== "notifications") notificationPanel = null
         if (activePanel !== "wallpaper") {
+            wallpaperPresentation = "closed"
             wallpaperScreenName = ""
             wallpaperCloseRequested = false
         }

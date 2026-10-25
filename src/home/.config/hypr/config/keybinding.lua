@@ -30,8 +30,8 @@ hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("$HOME/.local/bin/clipboard_m
 hl.bind(mainMod .. " + F11",   hl.dsp.exec_cmd("$HOME/.local/bin/record.sh"))
 hl.bind(mainMod .. " + TAB",   hl.dsp.exec_cmd("$HOME/.local/bin/hakumenu.sh"))
 hl.bind(mainMod .. " + GRAVE", hl.dsp.exec_cmd("$HOME/.local/bin/navigation.sh toggle"))
-hl.bind(mainMod .. " + Y",     hl.dsp.exec_cmd("$HOME/.local/bin/wallpaper_select.sh"))
-hl.bind(mainMod .. " + SHIFT + Y", hl.dsp.exec_cmd("$HOME/.local/bin/change_theme.sh"))
+hl.bind(mainMod .. " + Y",     hl.dsp.exec_cmd("$HOME/.local/bin/wallpaper_select.sh --simple"))
+hl.bind(mainMod .. " + SHIFT + Y", hl.dsp.exec_cmd("$HOME/.local/bin/wallpaper_select.sh --shell"))
 hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exec_cmd("$HOME/.local/bin/exit.sh"))
 hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.exec_cmd("$HOME/.local/bin/shutdown.sh"))
 

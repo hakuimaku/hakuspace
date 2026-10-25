@@ -9,9 +9,10 @@ QtObject {
     property Socket connection: null
     property bool faulted: false
     property bool stopping: false
-    readonly property bool requested: Object.keys(service.surfaces).length > 0
+    readonly property bool requested: !service.rendererSuspended && Object.keys(service.surfaces).length > 0
         && (service.current.kind === "video" || service.candidate.kind === "video")
     readonly property var processId: renderer.processId
+    readonly property bool stopped: !renderer.running && !stopping
     readonly property string socketPath: Quickshell.env("XDG_RUNTIME_DIR") + "/hakuspace-wallpaper-" + Quickshell.processId + ".sock"
     // One snapshot preserves the preparation barrier and policy across every output.
     function sync() {
@@ -27,7 +28,8 @@ QtObject {
             var message = JSON.parse(line)
             if (message.name && !service.surfaces[message.name]) return
             if (message.type === "ready") service.surfaceReady(message.name, message.token)
-            else if (message.type === "error") service.fail(message.message)
+            else if (message.type === "error" && (message.token === service.candidate.token
+                    || !service.busy && message.token === service.current.token)) service.fail(message.message)
             else if (message.type === "ownership") service.takeOwnership()
             else if (message.type === "report") service.report(message.name, message.state)
             else if (message.type === "state") {
@@ -39,7 +41,7 @@ QtObject {
     function start() {
         if (requested && !faulted && !stopping && server.active) renderer.running = true
     }
-    function resumeAfterExit() { stopping = false; start() }
+    function resumeAfterExit() { stopping = false; start(); service.maybeCommit() }
     onRequestedChanged: {
         if (requested) start()
         else {

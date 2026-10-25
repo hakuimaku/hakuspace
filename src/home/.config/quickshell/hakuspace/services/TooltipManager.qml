@@ -11,6 +11,12 @@ Item {
     property bool warm: false
     property var activeBar: null
 
+    // Only opted-in workspace controls may show tooltips while wallpaper owns the shell.
+    function contextAllowed(target) {
+        return UiState.activePanel === "" || (!!target && target.wallpaperTooltipTarget === true
+            && UiState.wallpaperWorkspaceActive && !UiState.wallpaperCloseRequested)
+    }
+
     // Stops pending tooltip timers and hides active tooltip state.
     function dismiss() {
         showTimer.stop();
@@ -58,7 +64,7 @@ Item {
         id: showTimer
         interval: 400
         onTriggered: {
-            if (root.current && root.targetVisible(root.current.target) && UiState.activePanel === "")
+            if (root.current && root.targetVisible(root.current.target) && root.contextAllowed(root.current.target))
                 root.shown = true;
             else root.dismiss();
         }
@@ -83,7 +89,7 @@ Item {
     
     // Associates tooltip payload with target item and schedules display.
     function show(target, text, component, props) {
-        if (!target || !targetVisible(target) || UiState.activePanel !== "") return;
+        if (!target || !targetVisible(target) || !contextAllowed(target)) return;
         
         var newText = text !== undefined ? text : "";
         var newComp = component !== undefined ? component : null;

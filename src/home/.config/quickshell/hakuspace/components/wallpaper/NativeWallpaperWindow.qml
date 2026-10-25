@@ -44,9 +44,9 @@ PanelWindow {
     function createIncomingSurface(record) {
         if (incoming) { incoming.destroy(); incoming = null }
         var component = Qt.createComponent("VideoWallpaperSurface.qml")
-        if (component.status === Component.Error) { root.controller.fail(component.errorString()); return }
+        if (component.status === Component.Error) { root.controller.fail(component.errorString(), record.token); return }
         incoming = component.createObject(root.contentItem, {record: record, controller: root.controller, width: root.width, height: root.height, opacity: 0})
-        if (!incoming) { root.controller.fail(component.errorString() || "Wallpaper renderer unavailable"); return }
+        if (!incoming) { root.controller.fail(component.errorString() || "Wallpaper renderer unavailable", record.token); return }
         root.controller.state(modelData.name, front, incoming, visible, unloaded)
         var renderer = incoming
         renderer.ready.connect(function() {
@@ -54,7 +54,9 @@ PanelWindow {
             if (root.controller.candidate.token === record.token) root.controller.surfaceReady(root.modelData.name, record.token)
             else if (root.controller.current.token === record.token) root.promote()
         })
-        renderer.failed.connect(function(message) { root.controller.fail(message) })
+        renderer.failed.connect(function(message) {
+            if (root.incoming === renderer || root.front === renderer) root.controller.fail(message, record.token)
+        })
         if (renderer.announced) {
             if (root.controller.candidate.token === record.token) root.controller.surfaceReady(modelData.name, record.token)
             else promote()
