@@ -12,9 +12,10 @@ Row {
     property var menuOpenItem: null
     signal menuRequested(var item, var anchor)
 
-    Item { width: 4; height: 1; visible: SystemTray.items.length > 0 }
+    Item { width: 4; height: 1; visible: trayRepeater.count > 0 }
 
     Repeater {
+        id: trayRepeater
         model: SystemTray.items
 
         TopModule {
@@ -63,4 +64,6 @@ Row {
             }
         }
     }
+
+    Item { width: 4; height: 1; visible: trayRepeater.count > 0 }
 }
