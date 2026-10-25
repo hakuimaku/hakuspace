@@ -32,6 +32,9 @@ if [[ ${1:-} == --presentation ]]; then
     done
     cp tests/hikai/wallpaper/harness/panel.qml "$shell_root/shell.qml"
     expected='Wallpaper presentation checks passed'
+elif [[ ${1:-} == --navigation ]]; then
+    cp tests/hikai/wallpaper/harness/navigation.qml "$shell_root/shell.qml"
+    expected='Wallpaper held navigation checks passed'
 elif [[ ${1:-} == --flow ]]; then
     printf 'broken video fixture\n' > "$test_root/home/broken.mp4"
     cp tests/hikai/wallpaper/harness/flow.qml "$shell_root/shell.qml"

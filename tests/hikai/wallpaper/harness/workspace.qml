@@ -18,6 +18,7 @@ ShellRoot {
     property string originalAccent: ""
     property int repeatedMoves: 0
     property int finalSelection: 0
+    property int tabMove: 0
     property bool sawQualityMorph: false
     property bool sawLivelyFade: false
     property bool sawControlCompression: false
@@ -438,8 +439,54 @@ ShellRoot {
                     settle = 0; repeatedMoves = 0; phase = 26
                     return
                 }
-                browser.reveal = 0
-                phase = 8
+                // Different library sizes expose stale PathView offsets after a tab swap.
+                var records = []
+                for (var kind of ["static", "video"]) {
+                    for (var i = 0; i < (kind === "static" ? 9 : 6); ++i)
+                        records.push({path: kind + i, kind: kind, label: kind + i,
+                            thumbnail: Quickshell.env("HAKUSPACE_WALLPAPER_FIXTURE") + "/preview.png"})
+                }
+                WallpaperLibrary.items = records
+                browser.presentation = "quick"
+                tabMove = 0; settle = 0; phase = 30
+            } else if (phase === 30) {
+                var reel = find(browser, "wallpaperReel")
+                if (++settle < 6) return
+                root.check(find(browser, "wallpaper-kind-video").text === "Lively", "both modes label the video tab Lively")
+                root.check(reel.currentIndex === WallpaperLibrary.selectedIndex && !!reel.currentItem
+                    && reel.currentItem.wallpaper.path === WallpaperLibrary.selectedPath
+                    && Math.abs(reel.currentItem.x + reel.currentItem.width / 2 - reel.width / 2) < 1,
+                    "selected wallpaper is centered after tab navigation: " + JSON.stringify({mode: browser.presentation,
+                        step: tabMove, selected: WallpaperLibrary.selectedIndex, current: reel.currentIndex, offset: reel.offset,
+                        x: reel.currentItem ? reel.currentItem.x + reel.currentItem.width / 2 : -1, center: reel.width / 2}))
+                if (tabMove === 16) {
+                    if (browser.presentation === "quick") {
+                        browser.presentation = "workspace"
+                        tabMove = 0
+                    } else {
+                        browser.reveal = 0
+                        phase = 8
+                        return
+                    }
+                }
+                var operation = tabMove++ % 4
+                if (operation === 0) {
+                    WallpaperLibrary.selectIndex(4)
+                    browser.filter = "video"
+                    browser.move(1)
+                    root.check(WallpaperLibrary.selectedIndex === 1, "navigation immediately after opening Lively")
+                } else if (operation === 1) {
+                    browser.filter = "static"
+                    browser.move(-1)
+                    root.check(WallpaperLibrary.selectedIndex === 8, "navigation immediately after returning to Images")
+                } else {
+                    var previous = WallpaperLibrary.selectedIndex
+                    var direction = operation === 2 ? 1 : -1
+                    browser.move(direction)
+                    root.check(WallpaperLibrary.selectedIndex === (previous + direction + reel.count) % reel.count,
+                        "tab switching preserves immediate arrow direction")
+                }
+                settle = 0
             } else if (phase === 8) {
                 var tabs = find(browser, "wallpaper-media-tabs")
                 root.check(browser.topInputItem.y + browser.topInputItem.height <= 0 && tabs.y >= browser.height, "both headers slide fully offscreen")

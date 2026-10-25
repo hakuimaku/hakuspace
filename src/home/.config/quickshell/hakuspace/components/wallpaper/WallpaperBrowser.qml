@@ -91,7 +91,7 @@ FocusScope {
         }
     }
     Timer { id: metadataFollowup; interval: 0; onTriggered: root.requestMetadata() }
-    readonly property var kinds: [{id: "static", name: "Images"}, {id: "video", name: "Videos"}]
+    readonly property var kinds: [{id: "static", name: "Images"}, {id: "video", name: "Lively"}]
     // The quick input region surrounds controls without painting a container.
     readonly property Item quickInputItem: quickBounds
     readonly property Item topInputItem: workspaceControls
@@ -125,7 +125,7 @@ FocusScope {
 
     // Public callers delegate selection and refresh to the same session.
     function refresh() { WallpaperLibrary.refresh() }
-    function move(step) { carousel.stopIntro(); WallpaperLibrary.move(step) }
+    function move(step) { carousel.move(step) }
     function playIntro() { carousel.playIntro() }
     function pauseIntro() { carousel.pauseIntro() }
     function resumeIntro() { carousel.resumeIntro() }
@@ -692,8 +692,8 @@ FocusScope {
                     foregroundColor: root.workspace ? Theme.fgMuted : Theme.fg
                     hoverForegroundColor: Theme.fg
                     selectedForegroundColor: root.workspace ? Theme.accent : Theme.onAccentColor
-                    text: root.workspace && modelData.id === "video" ? "Lively" : modelData.name
-                    Accessible.name: root.workspace && modelData.id === "video" ? "Lively wallpapers" : modelData.name
+                    text: modelData.name
+                    Accessible.name: modelData.id === "video" ? "Lively wallpapers" : modelData.name
                     selected: root.filter === modelData.id
                     onClicked: { root.filter = modelData.id; root.forceActiveFocus() }
                     Keys.priority: Keys.BeforeItem

@@ -73,6 +73,25 @@ PathView {
     }
     objectName: "wallpaperReel"
     model: WallpaperLibrary.filteredItems
+    // Model replacement resets PathView even when the selected index stays unchanged.
+    onModelChanged: Qt.callLater(resetPosition)
+    function resetPosition() {
+        currentIndex = WallpaperLibrary.selectedIndex
+        if (currentIndex >= 0) positionViewAtIndex(currentIndex, PathView.Center)
+    }
+    // Keep input timing separate from decorative animation progress.
+    property double lastMoveAt: 0
+    // Match input cadence and preserve direction instead of falling behind a held key.
+    function move(step) {
+        stopIntro()
+        var now = Date.now()
+        highlightMoveDuration = Math.min(HAnimation.effects, Math.max(16, now - lastMoveAt))
+        lastMoveAt = now
+        movementDirection = step === 1 ? PathView.Positive : step === -1 ? PathView.Negative : PathView.Shortest
+        WallpaperLibrary.move(step)
+        movementDirection = PathView.Shortest
+        highlightMoveDuration = HAnimation.effects
+    }
     currentIndex: WallpaperLibrary.selectedIndex
     pathItemCount: 5
     cacheItemCount: 0
@@ -164,7 +183,7 @@ PathView {
         acceptedButtons: Qt.NoButton
         onWheel: event => {
             var delta = event.angleDelta.x || event.angleDelta.y
-            if (delta) { root.stopIntro(); WallpaperLibrary.move(delta < 0 ? 1 : -1) }
+            if (delta) root.move(delta < 0 ? 1 : -1)
             event.accepted = true
         }
     }

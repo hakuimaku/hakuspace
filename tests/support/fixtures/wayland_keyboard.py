@@ -61,13 +61,17 @@ def main():
             pass
 
         # Every request releases modifiers after its key to avoid cross-test state.
-        def tap(code, modifiers=0):
-            if not (0 <= code <= 255 and modifiers >= 0 and (modifiers & ~MODIFIER_MASK) == 0):
+        def tap(code, modifiers=0, hold_ms=0):
+            if not (0 <= code <= 255 and modifiers >= 0 and (modifiers & ~MODIFIER_MASK) == 0
+                    and 0 <= hold_ms <= 10000):
                 raise ValueError('invalid keyboard fixture key or modifiers')
             timestamp = int(time.monotonic() * 1000) & 0xffffffff
             send(connection, 6, 2, struct.pack('=IIII', modifiers, 0, 0, 0))
             for pressed in (1, 0):
                 send(connection, 6, 1, struct.pack('=III', timestamp, code, pressed))
+                if pressed and hold_ms:
+                    time.sleep(hold_ms / 1000)
+                    timestamp = int(time.monotonic() * 1000) & 0xffffffff
             send(connection, 6, 2, struct.pack('=IIII', 0, 0, 0, 0))
 
         for line in sys.stdin:
@@ -77,6 +81,10 @@ def main():
                     tap(KEYS[char.lower()], int(char.isupper() or char in '>~'))
             elif command == 'key':
                 tap(*map(int, value.split()))
+            elif command == 'hold':
+                code, duration = map(int, value.split())
+                tap(code, hold_ms=duration)
+                print('released', flush=True)
             elif command == 'alt-tab':
                 # Keep Alt physically held across Tab and release without a pause.
                 alt, shift, alt_first = map(int, value.split())
