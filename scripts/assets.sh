@@ -16,7 +16,7 @@ deploy_assets() {
 
     if [[ "$dry_run" -eq 1 ]]; then
         log_info "DRY RUN: would deploy assets from $ARCHIVE_REPO_URL to $ARCHIVE_DIR"
-        log_info "DRY RUN: install Haku Cursor, Hikaide, Hikaide-Symbols and wallpapers"
+        log_info "DRY RUN: install Haku Cursor, Hikaide, Hikaide-Light, Hikaide-Symbols, Hikaide-Symbols-Light and wallpapers"
         log_info "DRY RUN: verify/activate appearance, apply canonical theme and reconcile icon accent"
         return 0
     fi
