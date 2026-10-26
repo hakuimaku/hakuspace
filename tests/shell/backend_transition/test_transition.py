@@ -184,6 +184,9 @@ elif name == "kitty":
 elif name == "gsettings":
     assert args == ["set", "org.gnome.desktop.interface", "color-scheme", "prefer-dark"]
     event("color-scheme:prefer-dark")
+elif name == "appearance_ctl.sh":
+    assert args == ["apply-mode", "dark"]
+    event("appearance:dark")
 elif name == "notify-send":
     event("success-notification")
 elif name == "gdbus":
@@ -222,7 +225,7 @@ class BackendTransitionTest(unittest.TestCase):
         fixture.write_text(STUB)
         fixture.chmod(0o755)
         for name in ("qs", "pgrep", "pkill", "busctl", "setsid", "swaync", "waybar", "rm", "notify-send", "gdbus", "gsettings", "kitty",
-                     "opaque_theme.sh", "hikai_chrome_state_ctl.py", "rounded_screen_manager.sh", "edge_trigger_manager.sh",
+                     "opaque_theme.sh", "appearance_ctl.sh", "hikai_chrome_state_ctl.py", "rounded_screen_manager.sh", "edge_trigger_manager.sh",
                      "taskbar_manager.sh", "waybar_manager.sh", "desktop_icons_manager.sh", "cava_manager.sh"):
             (self.bin / name).symlink_to(fixture)
         # Wallpaper resumption is outside the disposable process model.
@@ -309,6 +312,10 @@ class BackendTransitionTest(unittest.TestCase):
         override = self.root / "home/.local/state/hakuspace/theme/kitty-mode.conf"
         self.assertEqual(override.read_text(), "")
         self.assert_order("late-kitty-preview", "start-swaync")
+        events = self.events()
+        late = next(index for index, event in enumerate(events) if event["action"] == "late-kitty-preview")
+        self.assertTrue(any(index > late and event["action"] == "appearance:dark" for index, event in enumerate(events)))
+        self.assertTrue(any(event["action"] == "appearance:dark" and event["phase"] == "covered" for event in events))
 
     def test_opaque_roundtrip_preserves_light_preference(self):
         """Both directions synchronize under cover before showing their new shell."""

@@ -33,6 +33,27 @@ resolve_engine() {
     return 1
 }
 
+# Resolve the shared native-settings helper in source and deployed layouts.
+resolve_settings_helper() {
+    local candidate
+    for candidate in "$SCRIPT_DIR/appearance_settings.py" "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/../../theme/appearance_settings.py"; do
+        if [[ -f "$candidate" ]]; then printf '%s\n' "$candidate"; return 0; fi
+    done
+    printf 'appearance: GTK settings helper unavailable\n' >&2
+    return 1
+}
+
+# User-selected third-party themes take precedence over the built-in defaults.
+load_selected_themes() {
+    local helper selected
+    helper="$(resolve_settings_helper)" || return 1
+    selected="$(python3 "$helper" current)" || return 1
+    HAKU_GTK_THEME="$(jq -r '.gtk' <<< "$selected")" || return 1
+    if [[ "$HAKU_ICON_THEME" != system ]]; then
+        HAKU_ICON_THEME="$(jq -r '.icons' <<< "$selected")" || return 1
+    fi
+}
+
 asset_warning() {
     printf 'appearance: warning: %s\n' "$*" >&2
     [[ "${HAKUSPACE_STRICT_ASSETS:-0}" != 1 ]]
@@ -49,7 +70,38 @@ cursor_directory() {
     return 1
 }
 
-gtk_installed() { [[ -f "$HOME/.themes/$HAKU_GTK_THEME/index.theme" ]]; }
+gtk_directory() {
+    local root
+    for root in "$HOME/.themes" "${XDG_DATA_HOME:-$HOME/.local/share}/themes" /usr/local/share/themes /usr/share/themes; do
+        if [[ -f "$root/$HAKU_GTK_THEME/index.theme" ]]; then
+            printf '%s\n' "$root/$HAKU_GTK_THEME"
+            return 0
+        fi
+    done
+    return 1
+}
+gtk_installed() { gtk_directory >/dev/null; }
+
+# Read validated Hikai preferences only when Hikai is the committed backend.
+effective_mode() {
+    local backend=classic candidate settings
+    if [[ -f "$HOME/.local/state/hakuspace/state/[shell].backend" ]]; then
+        read -r backend < "$HOME/.local/state/hakuspace/state/[shell].backend"
+    fi
+    if [[ "$backend" != hikai ]]; then
+        echo dark
+        return
+    fi
+    for candidate in "$SCRIPT_DIR/hikai_settings_ctl.py" "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/../user/hikai_settings_ctl.py"; do
+        if [[ -f "$candidate" ]]; then
+            settings="$(python3 "$candidate" read)" || return 1
+            jq -er '.values.appearance.colorMode | select(. == "dark" or . == "light")' <<< "$settings"
+            return $?
+        fi
+    done
+    printf 'appearance: Hikai settings controller unavailable\n' >&2
+    return 1
+}
 icon_directory() {
     local root
     for root in "$HAKU_ICON_DIR" "${XDG_DATA_HOME:-$HOME/.local/share}/icons" "$HOME/.icons" /usr/local/share/icons /usr/share/icons; do
@@ -107,7 +159,7 @@ icon_accent_targets() {
 icon_accent_policy() {
     local variant theme
     if [[ "$HAKU_ICON_THEME" == system || "$HAKU_ICON_ACCENT_MODE" == off ||
-            ( "$HAKU_ICON_ACCENT_MODE" == auto && "$HAKU_ICON_THEME" != Hikaide-Symbols && "$HAKU_ICON_THEME" != Hikaide-Symbols-Light ) ]]; then
+            ( "$HAKU_ICON_THEME" != Hikaide-Symbols && "$HAKU_ICON_THEME" != Hikaide-Symbols-Light ) ]]; then
         echo disabled
         return
     fi
@@ -120,7 +172,7 @@ icon_accent_policy() {
         return
     fi
     variant="$(managed_icon_variant "$HAKU_ICON_THEME")" || variant=''
-    if [[ "$HAKU_ICON_ACCENT_MODE" == auto && -z "$variant" ]]; then
+    if [[ -z "$variant" ]]; then
         echo not-applicable
         return
     fi
@@ -170,13 +222,16 @@ status() {
     source_library haku_theme.sh || return 1
     printf 'gtk_theme=%s\nicon_theme=%s\ncursor_theme=%s\ncursor_size=%s\naccent=%s\n' \
         "$HAKU_GTK_THEME" "$HAKU_ICON_THEME" "$HAKU_CURSOR_THEME" "$HAKU_CURSOR_SIZE" "$(theme_state_value accent)"
-    if [[ "$HAKU_ICON_THEME" == system ]]; then
-        echo icon_theme_mode=external
-    else
-        echo icon_theme_mode=managed
-    fi
+    case "$HAKU_ICON_THEME" in
+        Hikaide-Symbols|Hikaide-Symbols-Light) echo icon_theme_mode=managed ;;
+        *) echo icon_theme_mode=external ;;
+    esac
     printf 'icon_accent_mode=%s\nicon_accent_status=%s\n' "$HAKU_ICON_ACCENT_MODE" "$(icon_accent_status)"
     printf 'icon_accent_dark=%s\nicon_accent_light=%s\n' "$ACCENT_DARK" "$ACCENT_LIGHT"
+    local mode
+    mode="$(effective_mode)" || return 1
+    printf 'effective_mode=%s\ngtk_theme_effective=%s\nicon_theme_effective=%s\n' \
+        "$mode" "$(appearance_gtk_theme_for_mode "$mode")" "$(appearance_icon_theme_for_mode "$mode")"
     local component
     for component in gtk_installed icons_installed cursor_installed; do
         if "$component"; then printf '%s=yes\n' "$component"; else printf '%s=no\n' "$component"; fi
@@ -186,6 +241,12 @@ status() {
 verify() {
     local component failed=0
     for component in gtk_installed icons_installed cursor_installed; do
+        case "$component:$HAKU_GTK_THEME:$HAKU_ICON_THEME" in
+            gtk_installed:Hikaide:*|gtk_installed:Hikaide-Light:*) ;;
+            gtk_installed:*) continue ;;
+            icons_installed:*:Hikaide-Symbols|icons_installed:*:Hikaide-Symbols-Light) ;;
+            icons_installed:*) continue ;;
+        esac
         if ! "$component"; then
             printf 'appearance: missing %s\n' "$component" >&2
             failed=1
@@ -259,10 +320,33 @@ sync_accent() {
 }
 
 apply() {
-    [[ "$HAKU_CURSOR_THEME" =~ ^[a-zA-Z0-9_.-]+$ && "$HAKU_CURSOR_SIZE" =~ ^[1-9][0-9]*$ ]] || {
+    local mode="${1:-}" mode_only="${2:-0}" helper
+    local change_gtk=0 change_icons=0
+    [[ -n "$mode" ]] || mode="$(effective_mode)" || return 1
+    [[ "$mode" == dark || "$mode" == light ]] || { echo 'appearance: mode must be dark or light' >&2; return 2; }
+    if [[ "$mode_only" != 1 ]] && ! [[ "$HAKU_CURSOR_THEME" =~ ^[a-zA-Z0-9_.-]+$ && "$HAKU_CURSOR_SIZE" =~ ^[1-9][0-9]*$ ]]; then
         asset_warning 'Invalid cursor theme/size; appearance unchanged'
         return $?
-    }
+    fi
+    case "$HAKU_GTK_THEME" in Hikaide|Hikaide-Light) change_gtk=1 ;; esac
+    case "$HAKU_ICON_THEME" in Hikaide-Symbols|Hikaide-Symbols-Light) change_icons=1 ;; esac
+    local HAKU_GTK_THEME="$(appearance_gtk_theme_for_mode "$mode")"
+    local HAKU_ICON_THEME="$(appearance_icon_theme_for_mode "$mode")"
+    if { [[ "$change_gtk" == 1 ]] && ! gtk_installed; } || { [[ "$change_icons" == 1 ]] && ! icons_installed; }; then
+        asset_warning "Missing assets for $mode; appearance unchanged"
+        return $?
+    fi
+    if [[ "$mode_only" == 1 && "$change_gtk" == 0 && "$change_icons" == 0 ]]; then
+        echo appearance_status=external
+        return 0
+    fi
+    if [[ "$change_gtk" == 1 || "$change_icons" == 1 ]]; then
+        helper="$(resolve_settings_helper)" || return 1
+        local gtk='' icons='' directory=''
+        if [[ "$change_gtk" == 1 ]]; then gtk="$HAKU_GTK_THEME"; directory="$(gtk_directory)"; fi
+        if [[ "$change_icons" == 1 ]]; then icons="$HAKU_ICON_THEME"; fi
+        python3 "$helper" "$gtk" "$icons" "$mode" "$directory" || return 1
+    fi
     local setting value component failed=0
     local schema=org.gnome.desktop.interface
     local have_settings=0
@@ -272,9 +356,10 @@ apply() {
         asset_warning 'gsettings interface schema unavailable' || failed=1
     fi
     for setting in gtk-theme icon-theme cursor-theme cursor-size; do
+        [[ "$mode_only" == 1 && "$setting" == cursor-* ]] && continue
         case "$setting" in
-            gtk-theme) value="$HAKU_GTK_THEME"; component=gtk_installed ;;
-            icon-theme) [[ "$HAKU_ICON_THEME" == system ]] && continue; value="$HAKU_ICON_THEME"; component=icons_installed ;;
+            gtk-theme) [[ "$change_gtk" == 1 ]] || continue; value="$HAKU_GTK_THEME"; component=gtk_installed ;;
+            icon-theme) [[ "$change_icons" == 1 ]] || continue; value="$HAKU_ICON_THEME"; component=icons_installed ;;
             cursor-theme) value="$HAKU_CURSOR_THEME"; component=cursor_installed ;;
             cursor-size) value="$HAKU_CURSOR_SIZE"; component=cursor_installed ;;
         esac
@@ -284,7 +369,7 @@ apply() {
             gsettings set "$schema" "$setting" "$value" || { asset_warning "Cannot set $setting" || failed=1; }
         fi
     done
-    if cursor_installed; then
+    if [[ "$mode_only" != 1 ]] && cursor_installed; then
         local directory="${XDG_CONFIG_HOME:-$HOME/.config}/environment.d" temporary
         mkdir -p "$directory" || return 1
         temporary="$(mktemp "$directory/90-hakuspace-cursor.conf.XXXXXX")" || return 1
@@ -300,10 +385,13 @@ apply() {
     return "$failed"
 }
 
+load_selected_themes || exit 1
+
 case "${1:-}" in
     status) status ;;
     verify) verify ;;
     apply) apply ;;
+    apply-mode) [[ $# == 2 ]] || { echo "Usage: appearance_ctl.sh apply-mode dark|light" >&2; exit 2; }; apply "$2" 1 ;;
     sync-accent) sync_accent ;;
-    *) echo 'Usage: appearance_ctl.sh {status|verify|apply|sync-accent}' >&2; exit 2 ;;
+    *) echo 'Usage: appearance_ctl.sh {status|verify|apply|apply-mode dark|light|sync-accent}' >&2; exit 2 ;;
 esac

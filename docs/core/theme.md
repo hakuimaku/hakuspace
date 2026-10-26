@@ -82,33 +82,27 @@ Instead of having random scripts edit theme files directly, everything goes thro
 ~/.local/bin/theme_ctl.sh apply
 ```
 
-### 2. Customizing Your Look (`appearance.env`)
-Default settings live in `src/core/lib/haku_appearance.sh`, but you can easily override them by creating `~/.config/hakuspace/appearance.env`:
+### Native application mode selection
 
-```bash
-HAKU_GTK_THEME=Hikaide
-HAKU_ICON_THEME=Hikaide-Symbols   # default: use HakuSpace's icon theme
-# HAKU_ICON_THEME=Papirus-Dark    # or pick another installed icon theme
-# HAKU_ICON_THEME=system          # leave your desktop icon setting untouched
+`appearance_ctl.sh apply-mode light|dark` selects the existing asset pair without rebuilding, extracting wallpaper colors, recoloring SVGs, changing cursors, or saving Hikai preferences:
 
-HAKU_ICON_ACCENT_MODE=auto       # default: only recolor managed Hikaide-Symbols
-# HAKU_ICON_ACCENT_MODE=on        # opt in to recoloring a custom icon theme in ~/.icons
-# HAKU_ICON_ACCENT_MODE=off       # never recolor icons
+| Effective mode | GTK | Icons |
+| --- | --- | --- |
+| Dark | `Hikaide` | `Hikaide-Symbols` |
+| Light | `Hikaide-Light` | `Hikaide-Symbols-Light` |
 
-HAKU_CURSOR_THEME=Haku-Dark
-HAKU_CURSOR_SIZE=24
-# HAKU_CURSOR_THEME=Haku-Light
-# Optional color variants: Haku-Blue, Haku-Blue-Light, Haku-Pink, Haku-Pink-Light
-```
+`apply` resolves Classic to dark and Hikai to its validated saved `appearance.colorMode`. The existing `DesktopColorScheme` writer also applies these names during live preview, Apply and Discard. Classic cutovers reassert dark names after the outgoing shell exits. Custom theme names are preserved, and `HAKU_ICON_THEME=system` skips icon selection.
 
-- **How Icon Modes Work:**
-  - `auto` (default): Only recolors `Hikaide-Symbols` when it was installed by HakuSpace. Any other icon theme is left alone.
-  - `on`: Uses the internal scanner to safely recolor a compatible user-owned icon theme inside `~/.icons` (static themes simply report `not-applicable` and are left untouched). System-wide icons in `/usr/share/icons` are never modified.
-  - `off` (or `HAKU_ICON_THEME=system`): Completely disables icon recoloring.
-- **How Cursor Themes Work:**
-  - Cursor themes are installed under `~/.icons/$HAKU_CURSOR_THEME` and written to `~/.config/environment.d/90-hakuspace-cursor.conf`.
-  - On Hyprland, the cursor updates live via `hyprctl setcursor`; on Niri and MangoWM, the new cursor environment applies on your next login session.
-  - Legacy `HAKU_CURSOR_PALETTE=blue` settings still work and automatically map to `Haku-Blue` (dark variant), though setting `HAKU_CURSOR_THEME` directly is recommended.
+GTK3/GTK4 native settings are synchronized without changing fonts or user CSS. Existing managed Hikaide GTK4 links follow the selected theme. Both Hikaide names keep `gtk-application-prefer-dark-theme=0`: the theme name carries the appearance, so a persistent dark preference cannot accidentally select the Light theme's dark fallback. An already-running portal backend that cached old GTK settings may need one reload after upgrading; do not interrupt an open chooser.
+
+### 2. Appearance selection and policy
+
+The controller reads the active desktop GTK and icon theme names, with native GTK settings as a fallback. The shared defaults and family mapping live in `src/core/lib/haku_appearance.sh`; no separate appearance override file is loaded.
+
+- Mode changes affect GTK only while `Hikaide` or `Hikaide-Light` is active, and icons only while `Hikaide-Symbols` or `Hikaide-Symbols-Light` is active. A custom selection in either component is preserved independently.
+- Icon accent sync requires an active, recognized managed Hikaide-Symbols family. Third-party icon themes are never recolored, including when a legacy command environment sets `HAKU_ICON_ACCENT_MODE=on`. Both `auto` and `on` retain this managed-family restriction; `off` disables recoloring.
+- `HAKU_ICON_THEME=system` remains an explicit script-level opt-out from icon changes.
+- Cursor defaults are `Haku-Dark`, size 24. Mode-only operations leave the current cursor unchanged. Full appearance apply writes cursor settings to `~/.config/environment.d/90-hakuspace-cursor.conf`.
 
 ### 3. The Built-in Icon Recoloring Engine (`haku_icon_accent.py`)
 Located at `src/core/app/icon-accent/haku_icon_accent.py` (and linked to `~/.local/bin/haku_icon_accent.py`), this pure-Python script safely updates SVG accent colors in your icon theme without needing any external dependencies.

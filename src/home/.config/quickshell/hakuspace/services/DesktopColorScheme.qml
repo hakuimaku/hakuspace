@@ -14,7 +14,11 @@ QtObject {
     function sync() {
         if (!ShellSettingsStore.ready || !writer || writer.running) return
         writer.requestedScheme = scheme
-        writer.command = ["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", scheme]
+        writer.command = ["sh", "-c",
+            'gsettings set org.gnome.desktop.interface color-scheme "$1" && if [ -f "$2" ]; then exec bash "$2" apply-mode "$3"; else exec bash "$4" apply-mode "$3"; fi',
+            "--", scheme, (Quickshell.env("HOME") || "") + "/.local/bin/appearance_ctl.sh",
+            scheme === "prefer-light" ? "light" : "dark",
+            Quickshell.shellPath("../../../../core/backend/theme/appearance_ctl.sh")]
         writer.running = true
     }
     onSchemeChanged: sync()

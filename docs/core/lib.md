@@ -24,10 +24,8 @@ A small but critical mathematical utility used during the wallpaper color extrac
 - **The Math:** When you pass a Hex color code to this function (e.g., `#1a1a1a`), it calculates the WCAG relative luminance to accurately determine the visual brightness of the color (accounting for how the human eye perceives different wavelengths).
 - **The Fallback:** If the perceived luminance is too low (meaning the color is dangerously dark and would make your text unreadable against dark backgrounds), the script rejects the color and returns a safe fallback (usually solid white `#ffffff`). This WCAG-based calculation is vastly superior to naive RGB addition!
 
-### `haku_appearance.sh` (The Appearance Loader)
-While `haku_theme.sh` tracks dynamic runtime state (like the current wallpaper's hex color), `haku_appearance.sh` handles your personal choices for GTK, Icon, and Cursor themes.
-- **What it does:** It checks if you have a custom `~/.config/hakuspace/appearance.env` file and loads your settings. If you haven't configured anything, it provides the default HakuSpace look: `Hikaide` for GTK, `Hikaide-Symbols` for icons, and `Haku-Dark` (size 24) for your mouse cursor.
-- **Why it matters:** Keeping your theme choices separate from `[theme].appearance.env` means changing your wallpaper or accent color will never accidentally reset your favorite cursor or icon pack!
+### `haku_appearance.sh` (Appearance Defaults and Mode Mapping)
+This library defines the built-in GTK/icon families and cursor defaults, then maps only active Hikaide families to their dark or light names. The controller reads the actual desktop theme selection; third-party themes remain external and their icon accents are never modified. Hikai's saved `appearance.colorMode` determines its mode, while Classic resolves to dark. Cursor defaults remain `Haku-Dark`, size 24.
 
 ## Shell Backend & Picker Abstraction
 

@@ -17,15 +17,35 @@ cp "$TEST_DIR/harness/light.qml" "$shell_root/shell.qml"
 while IFS= read -r source; do
     ln -s "$REPO_ROOT/$source" "$test_root/home/.local/bin/${source##*/}"
 done < <(rg --files src/core -g '*.sh' -g '*.py')
-# Stub only desktop color-scheme writes so the probe cannot change the user's session.
+# Observe only the preference and theme writes made by the production mode owner.
 cat > "$test_root/home/.local/bin/gsettings" <<'GSETTINGS'
 #!/bin/sh
-[ "$1 $2 $3" = "set org.gnome.desktop.interface color-scheme" ] || exit 64
-case "$4" in prefer-dark|prefer-light) ;; *) exit 64 ;; esac
+if [ "$1" = list-schemas ]; then echo org.gnome.desktop.interface; exit 0; fi
+if [ "$1 $2" = "get org.gnome.desktop.interface" ]; then
+    case "$3" in gtk-theme) value=Hikaide ;; icon-theme) value=Hikaide-Symbols ;; *) exit 64 ;; esac
+    if [ -f "$HOME/$3" ]; then value=$(cat "$HOME/$3"); fi
+    printf "'%s'\n" "$value"
+    exit 0
+fi
+[ "$1 $2" = "set org.gnome.desktop.interface" ] || exit 64
+case "$3" in
+    color-scheme) case "$4" in prefer-dark|prefer-light) ;; *) exit 64 ;; esac ;;
+    gtk-theme|icon-theme) ;;
+    *) exit 64 ;;
+esac
 sleep 0.05
-printf '%s\n' "$4" > "$HOME/color-scheme"
-printf '%s\n' "$4" >> "$HOME/color-scheme-calls"
+printf '%s\n' "$4" > "$HOME/$3"
+printf '%s %s\n' "$3" "$4" >> "$HOME/color-scheme-calls"
 GSETTINGS
+# Mode changes consume installed assets without needing a rebuild or recolor.
+for name in Hikaide Hikaide-Light; do
+    mkdir -p "$test_root/home/.themes/$name"
+    printf '[Desktop Entry]\n' > "$test_root/home/.themes/$name/index.theme"
+done
+for name in Hikaide-Symbols Hikaide-Symbols-Light; do
+    mkdir -p "$test_root/home/.icons/$name"
+    printf '[Icon Theme]\n' > "$test_root/home/.icons/$name/index.theme"
+done
 # Kitty reload probes must never connect to sockets from the user's session.
 printf '#!/bin/sh\nexit 1\n' > "$test_root/home/.local/bin/kitty"
 chmod +x "$test_root/home/.local/bin/gsettings" "$test_root/home/.local/bin/kitty"

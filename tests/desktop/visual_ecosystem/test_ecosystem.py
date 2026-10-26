@@ -53,7 +53,20 @@ class AppearanceTests(unittest.TestCase):
             path.write_text(f'#!/bin/bash\necho {name} >> "$CALLS"\n')
             path.chmod(0o755)
             self.env[key] = str(path)
-        self.stub("gsettings", 'if [[ "$1" == list-schemas ]]; then echo org.gnome.desktop.interface; else echo "gsettings $*" >> "$CALLS"; fi')
+        self.stub("gsettings", r'''if [[ "$1" == list-schemas ]]; then
+    echo org.gnome.desktop.interface
+elif [[ "$1" == get ]]; then
+    case "$3" in
+        gtk-theme) fallback="${HAKU_GTK_THEME:-Hikaide}" ;;
+        icon-theme) fallback="${HAKU_ICON_THEME:-Hikaide-Symbols}" ;;
+        *) exit 1 ;;
+    esac
+    if [[ -f "$HOME/selected-$3" ]]; then fallback="$(cat "$HOME/selected-$3")"; fi
+    printf "'%s'\n" "$fallback"
+else
+    echo "gsettings $*" >> "$CALLS"
+    case "$3" in gtk-theme|icon-theme) printf '%s\n' "$4" > "$HOME/selected-$3" ;; esac
+fi''')
         self.stub("hyprctl", 'echo "hyprctl $*" >> "$CALLS"')
 
     def stub(self, name, code):
@@ -132,9 +145,7 @@ class AppearanceTests(unittest.TestCase):
 
     def test_cursor_overrides_and_no_schema(self):
         self.assets()
-        config = self.home / ".config/hakuspace"
-        config.mkdir(parents=True)
-        (config / "appearance.env").write_text("HAKU_CURSOR_PALETTE=pink\nHAKU_CURSOR_SIZE=32\n")
+        self.env.update(HAKU_CURSOR_PALETTE="pink", HAKU_CURSOR_SIZE="32")
         cursor = self.home / ".icons/Haku-Pink"
         cursor.mkdir()
         (cursor / "index.theme").touch()
@@ -209,12 +220,12 @@ class AppearanceTests(unittest.TestCase):
         self.env.update(HAKU_ICON_THEME="Example", HAKUSPACE_STRICT_ASSETS="1")
         self.run_script("appearance_ctl.sh", "verify")
         self.run_script("appearance_ctl.sh", "apply")
-        self.assertIn("gsettings set org.gnome.desktop.interface icon-theme Example", self.calls())
+        self.assertFalse(any("icon-theme" in call for call in self.calls()))
         self.run_script("theme_ctl.sh", "set-accent", "#AC7994")
         self.assertEqual((theme / "user-home.svg").read_bytes(), KDE)
         self.env["HAKU_ICON_ACCENT_MODE"] = "on"
-        self.run_script("appearance_ctl.sh", "sync-accent")
-        self.assertEqual(self.icon_accent("Example"), "#ac7994")
+        self.assertIn("disabled", self.run_script("appearance_ctl.sh", "sync-accent").stdout)
+        self.assertEqual((theme / "user-home.svg").read_bytes(), KDE)
 
     def test_unmanaged_default_and_off_are_never_edited(self):
         self.base_assets()
@@ -226,11 +237,11 @@ class AppearanceTests(unittest.TestCase):
         self.assertEqual((theme / "user-home.svg").read_bytes(), KDE)
         self.assertIn("icon_accent_status=disabled", self.run_script("appearance_ctl.sh", "status").stdout)
 
-    def test_static_theme_on_is_not_applicable(self):
+    def test_third_party_static_theme_on_is_blocked(self):
         theme = theme_fixture(self.home, "Static", STATIC, managed=False)
         self.env.update(HAKU_ICON_THEME="Static", HAKU_ICON_ACCENT_MODE="on", HAKUSPACE_STRICT_ASSETS="1")
-        self.assertIn("not-applicable", self.run_script("appearance_ctl.sh", "sync-accent").stdout)
-        self.assertIn("icon_accent_status=not-applicable", self.run_script("appearance_ctl.sh", "status").stdout)
+        self.assertIn("disabled", self.run_script("appearance_ctl.sh", "sync-accent").stdout)
+        self.assertIn("icon_accent_status=disabled", self.run_script("appearance_ctl.sh", "status").stdout)
         self.assertEqual((theme / "user-home.svg").read_bytes(), STATIC)
 
     def test_unsafe_engine_error_preserves_artwork_and_core_state(self):
@@ -421,6 +432,159 @@ class AppearanceTests(unittest.TestCase):
         self.assertEqual((themes["dark"] / "user-home.svg").read_bytes(), KDE)
         self.assertEqual(self.icon_accent("Hikaide-Symbols-Light"), "#3f6e2b")
 
+    def mode_assets(self):
+        """Install disposable dark/light GTK and icon families for mode selection."""
+        themes, state = self.paired_icon_assets()
+        for name in ("Hikaide", "Hikaide-Light"):
+            root = self.home / ".themes" / name
+            root.mkdir(exist_ok=True)
+            (root / "index.theme").write_text("[Desktop Entry]\n")
+            (root / "gtk-4.0").mkdir()
+            for css in ("gtk.css", "gtk-dark.css"):
+                (root / "gtk-4.0" / css).write_text("/* Fixture stylesheet. */\n")
+        return themes, state
+
+    def test_apply_mode_selects_prebuilt_pair_without_accent_mutation(self):
+        """Repeated mode changes select names without extracting colors or touching SVGs."""
+        themes, state = self.mode_assets()
+        paths = [theme / "user-home.svg" for theme in themes.values()]
+        before = [(p.read_bytes(), p.stat().st_mtime_ns) for p in paths]
+        canonical = state.read_bytes()
+        for mode in ("light", "dark", "light"):
+            self.run_script("appearance_ctl.sh", "apply-mode", mode)
+            suffix = "-Light" if mode == "light" else ""
+            self.assertIn(f"gsettings set org.gnome.desktop.interface gtk-theme Hikaide{suffix}", self.calls())
+            self.assertIn(f"gsettings set org.gnome.desktop.interface icon-theme Hikaide-Symbols{suffix}", self.calls())
+            for version in ("3.0", "4.0"):
+                settings = (self.home / f".config/gtk-{version}/settings.ini").read_text()
+                self.assertIn(f"gtk-theme-name=Hikaide{suffix}\n", settings)
+                self.assertIn(f"gtk-icon-theme-name=Hikaide-Symbols{suffix}\n", settings)
+                self.assertIn("gtk-application-prefer-dark-theme=0\n", settings)
+        self.assertEqual(before, [(p.read_bytes(), p.stat().st_mtime_ns) for p in paths])
+        self.assertEqual(canonical, state.read_bytes())
+        self.assertFalse(any("color-scheme" in call or "cursor-" in call for call in self.calls()))
+        self.assertFalse((self.home / ".config/environment.d").exists())
+
+    def test_apply_mode_preserves_custom_settings_and_retargets_managed_css(self):
+        """Existing Hikaide CSS aliases follow mode while fonts and user CSS survive."""
+        self.mode_assets()
+        config = self.home / ".config/gtk-4.0"
+        config.mkdir(parents=True)
+        settings = config / "settings.ini"
+        settings.write_text("[Settings]\n# Keep font configuration.\ngtk-font-name=Fixture Mono 18\ngtk-theme-name=Hikaide\n")
+        for name in ("gtk.css", "gtk-dark.css"):
+            (config / name).symlink_to(self.home / ".themes/Hikaide/gtk-4.0" / name)
+        for mode in ("light", "dark"):
+            self.run_script("appearance_ctl.sh", "apply-mode", mode)
+            theme = "Hikaide-Light" if mode == "light" else "Hikaide"
+            self.assertIn("# Keep font configuration.\ngtk-font-name=Fixture Mono 18", settings.read_text())
+            for name in ("gtk.css", "gtk-dark.css"):
+                self.assertEqual((config / name).readlink(), self.home / ".themes" / theme / "gtk-4.0" / name)
+        (config / "gtk.css").unlink()
+        (config / "gtk.css").write_text("/* User CSS. */\n")
+        self.run_script("appearance_ctl.sh", "apply-mode", "light")
+        self.assertEqual((config / "gtk.css").read_text(), "/* User CSS. */\n")
+
+    def test_apply_resolves_classic_dark_and_saved_hikai_mode(self):
+        """Classic ignores the saved Light choice; Hikai restores it without changing preferences."""
+        self.mode_assets()
+        preferences = self.home / "hakucfg/hikai/hikai-shell.json"
+        self.env["HAKUSPACE_HIKAI_SETTINGS_FILE"] = str(preferences)
+        self.env["HAKUSPACE_HIKAI_SETTINGS_JSON"] = json.dumps({"appearance": {"colorMode": "light"}})
+        self.run_script("hikai_settings_ctl.py", "write")
+        saved = preferences.read_bytes()
+        backend = self.home / ".local/state/hakuspace/state/[shell].backend"
+        for context, expected in (("classic", "Hikaide"), ("hikai", "Hikaide-Light"), ("classic", "Hikaide")):
+            backend.write_text(context + "\n")
+            self.log.unlink(missing_ok=True)
+            self.run_script("appearance_ctl.sh", "apply")
+            self.assertIn(f"gsettings set org.gnome.desktop.interface gtk-theme {expected}", self.calls())
+            self.assertEqual(preferences.read_bytes(), saved)
+
+    def test_apply_mode_custom_themes_and_system_icons(self):
+        """Third-party selections and native settings never change during a mode switch."""
+        self.mode_assets()
+        self.env.update(HAKU_GTK_THEME="Example", HAKU_ICON_THEME="ExampleIcons")
+        config = self.home / ".config/gtk-3.0/settings.ini"
+        config.parent.mkdir(parents=True)
+        original = "[Settings]\ngtk-theme-name=Example\ngtk-icon-theme-name=ExampleIcons\n"
+        config.write_text(original)
+        for mode in ("light", "dark"):
+            self.run_script("appearance_ctl.sh", "apply-mode", mode)
+            self.assertEqual(self.calls(), [])
+            self.assertEqual(config.read_text(), original)
+        self.env["HAKU_ICON_THEME"] = "system"
+        self.run_script("appearance_ctl.sh", "apply-mode", "light")
+        self.assertEqual(self.calls(), [])
+        self.assertEqual(config.read_text(), original)
+
+    def test_apply_mode_rejects_missing_assets_and_invalid_modes_before_mutation(self):
+        """A bad request or incomplete pair never selects only one new theme."""
+        self.mode_assets()
+        self.run_script("appearance_ctl.sh", "apply-mode", "invalid", success=False)
+        self.assertEqual(self.calls(), [])
+        shutil.rmtree(self.home / ".icons/Hikaide-Symbols-Light")
+        self.run_script("appearance_ctl.sh", "apply-mode", "light")
+        self.env["HAKUSPACE_STRICT_ASSETS"] = "1"
+        self.run_script("appearance_ctl.sh", "apply-mode", "light", success=False)
+        self.assertEqual(self.calls(), [])
+        self.assertFalse((self.home / ".config/gtk-3.0/settings.ini").exists())
+
+
+    def test_removed_appearance_file_cannot_override_or_execute(self):
+        """An old override file is ignored rather than sourced by the controller."""
+        self.mode_assets()
+        legacy = self.home / ".config/hakuspace/appearance.env"
+        legacy.parent.mkdir(parents=True)
+        legacy.write_text('HAKU_GTK_THEME=Unexpected\nHAKU_ICON_THEME=UnexpectedIcons\n'
+                          'HAKU_CURSOR_THEME=UnexpectedCursor\nHAKU_CURSOR_SIZE=48\n'
+                          'touch "$HOME/legacy-config-executed"\n')
+        status = self.run_script("appearance_ctl.sh", "status").stdout
+        self.assertIn("gtk_theme=Hikaide\n", status)
+        self.assertIn("icon_theme=Hikaide-Symbols\n", status)
+        self.assertIn("cursor_theme=Haku-Dark\n", status)
+        self.assertIn("cursor_size=24\n", status)
+        self.assertFalse((self.home / "legacy-config-executed").exists())
+        self.run_script("appearance_ctl.sh", "apply-mode", "light")
+        self.assertIn("gsettings set org.gnome.desktop.interface gtk-theme Hikaide-Light", self.calls())
+
+    def test_active_third_party_icons_block_all_accent_writes(self):
+        """The actual desktop choice blocks recoloring even with the legacy on override."""
+        self.mode_assets()
+        theme_fixture(self.home, "Example", managed=False)
+        (self.home / "selected-icon-theme").write_text("Example")
+        self.env["HAKU_ICON_ACCENT_MODE"] = "on"
+        before = {str(path): path.read_bytes() for path in (self.home / ".icons").rglob("*.svg")}
+        result = self.run_script("appearance_ctl.sh", "sync-accent")
+        self.assertIn("icon_accent_status=disabled", result.stdout)
+        self.run_script("theme_ctl.sh", "set-accent", "#7AA2F7")
+        self.assertEqual(before, {str(path): path.read_bytes() for path in (self.home / ".icons").rglob("*.svg")})
+        self.assertFalse((self.home / ".local/state/icon-accent").exists())
+
+    def test_mode_switch_changes_only_the_active_managed_component(self):
+        """Custom GTK and icon selections are preserved independently."""
+        self.mode_assets()
+        config = self.home / ".config/gtk-3.0/settings.ini"
+        config.parent.mkdir(parents=True)
+        for gtk, icons, changed in (("Example", "Hikaide-Symbols", "icon-theme"),
+                                    ("Hikaide", "ExampleIcons", "gtk-theme")):
+            with self.subTest(gtk=gtk, icons=icons):
+                (self.home / "selected-gtk-theme").write_text(gtk)
+                (self.home / "selected-icon-theme").write_text(icons)
+                config.write_text(f"[Settings]\ngtk-theme-name={gtk}\ngtk-icon-theme-name={icons}\n")
+                self.log.unlink(missing_ok=True)
+                self.run_script("appearance_ctl.sh", "apply-mode", "light")
+                self.assertEqual(len(self.calls()), 1)
+                self.assertIn(f" {changed} ", self.calls()[0])
+                settings = config.read_text()
+                if gtk == "Example":
+                    self.assertIn("gtk-theme-name=Example\n", settings)
+                    self.assertIn("gtk-icon-theme-name=Hikaide-Symbols-Light\n", settings)
+                else:
+                    self.assertIn("gtk-theme-name=Hikaide-Light\n", settings)
+                    self.assertIn("gtk-icon-theme-name=ExampleIcons\n", settings)
+
+
 
 class DeploymentTests(unittest.TestCase):
     def test_copy_and_deep_symlink_modes(self):
@@ -447,7 +611,7 @@ class DeploymentTests(unittest.TestCase):
                 calls = home / "cursor-calls"
                 env.update(CALLS=str(calls), HYPRLAND_INSTANCE_SIGNATURE="test")
                 for name, code in (
-                    ("gsettings", 'if [ "$1" = list-schemas ]; then echo org.gnome.desktop.interface; else echo "$*" >> "$CALLS"; fi'),
+                    ("gsettings", """if [ "$1" = list-schemas ]; then echo org.gnome.desktop.interface; elif [ "$1" = get ]; then case "$3" in gtk-theme) echo "'Hikaide'" ;; icon-theme) echo "'Hikaide-Symbols'" ;; esac; else echo "$*" >> "$CALLS"; fi"""),
                     ("hyprctl", 'echo "$*" >> "$CALLS"'),
                 ):
                     command = home / ".local/bin" / name
@@ -528,6 +692,10 @@ class InstalledAssetsTests(unittest.TestCase):
             self.assertTrue((home / ".icons/Haku-Dark/index.theme").is_file())
             self.assertFalse((home / ".icons/Haku-Light").exists())
             self.assertFalse((home / ".local/share/icons/Haku-Dark").exists())
+            self.assertTrue((home / ".themes/Hikaide/index.theme").is_file())
+            self.assertTrue((home / ".themes/Hikaide-Light/index.theme").is_file())
+            self.assertTrue((home / ".icons/Hikaide-Symbols/index.theme").is_file())
+            self.assertTrue((home / ".icons/Hikaide-Symbols-Light/index.theme").is_file())
             self.assertFalse((binary / "icon-accent").exists())
             self.assertFalse((binary / "icon_accent.py").exists())
             self.assertTrue(any((home / "Pictures/Wallpapers").iterdir()))
@@ -541,6 +709,9 @@ class InstalledAssetsTests(unittest.TestCase):
             self.assertFalse(any(file.exists() for file in [*legacy, receipt]))
             self.assertNotIn("ICON_ACCENT", manifest.read_text())
             self.assertEqual(len(list((home / ".icons").glob("Hikaide-Symbols"))), 1)
+            self.assertEqual(len(list((home / ".icons").glob("Hikaide-Symbols-Light"))), 1)
+            self.assertEqual(len(list((home / ".themes").glob("Hikaide"))), 1)
+            self.assertEqual(len(list((home / ".themes").glob("Hikaide-Light"))), 1)
             away = home / "archive.test-away"
             archive.rename(away)
             for color in ("#AC7994", "#5294E2", "#AC7994"):
@@ -549,15 +720,16 @@ class InstalledAssetsTests(unittest.TestCase):
             canonical = home / ".local/state/hakuspace/state/[theme].appearance.env"
             before = canonical.read_bytes()
             backup_states = list((home / ".local/state/icon-accent").glob("*/state.json"))
-            self.assertEqual(len(backup_states), 1)
-            backup_before = backup_states[0].read_bytes()
+            self.assertEqual(len(backup_states), 2)
+            backup_before = {p: p.read_bytes() for p in backup_states}
             svg = home / ".icons/Hikaide-Symbols/scalable/places/folder.svg"
             svg_before = svg.read_bytes()
             run(binary / "theme_ctl.sh", "set-accent", "#AC7994")
             self.assertEqual(canonical.read_bytes(), before)
-            self.assertEqual(backup_states[0].read_bytes(), backup_before)
+            self.assertEqual({p: p.read_bytes() for p in backup_states}, backup_before)
             self.assertEqual(svg.read_bytes(), svg_before)
             engine("restore", "Hikaide-Symbols")
+            engine("restore", "Hikaide-Symbols-Light")
             run(binary / "theme_ctl.sh", "apply")
             accent_matches("#AC7994")
             run("bash", sources / "hikaide-symbols/scripts/install.sh", "--replace")
@@ -574,7 +746,8 @@ class InstalledAssetsTests(unittest.TestCase):
             wallpaper_accent = run(binary / "theme_ctl.sh", "get", "accent").stdout.strip()
             accent_matches(wallpaper_accent)
             icons = home / ".icons/Hikaide-Symbols"
-            (icons / ".hikaide-symbols").unlink()
+            marker = (icons / ".hikaide-symbols.json") if (icons / ".hikaide-symbols.json").exists() else (icons / ".hikaide-symbols")
+            marker.unlink()
             svg_before = svg.read_bytes()
             rejected = run("bash", sources / "hikaide-symbols/scripts/install.sh", "--replace", success=False)
             self.assertIn("unmanaged", rejected.stderr)

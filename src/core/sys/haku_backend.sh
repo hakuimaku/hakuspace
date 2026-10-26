@@ -36,6 +36,7 @@ start_classic_visual_stack() {
     local failed=0
     gsettings set org.gnome.desktop.interface color-scheme prefer-dark >/dev/null 2>&1 || true
     python3 "$HOME/.local/bin/kitty_theme_ctl.py" dark 9>&- || true
+    "$HOME/.local/bin/appearance_ctl.sh" apply-mode dark 9>&- || true
     ~/.local/bin/wallpaper_resume.sh 9>&- || failed=1
     ~/.local/bin/rounded_screen_manager.sh --startup 9>&- || failed=1
     ~/.local/bin/edge_trigger_manager.sh --startup 9>&- || failed=1
@@ -73,6 +74,7 @@ start_classic_notification_service() {
     haku_qs_alive && return 1
     # Clear any Light preview written by an outgoing shell before its writer exited.
     python3 "$HOME/.local/bin/kitty_theme_ctl.py" dark 9>&- || true
+    "$HOME/.local/bin/appearance_ctl.sh" apply-mode dark 9>&- || true
     notification_owned_by swaync || wait_until notification_unowned || return 1
     if ! pgrep -x swaync >/dev/null; then
         swaync </dev/null >/dev/null 2>&1 9>&- &

@@ -15,12 +15,19 @@ ShellRoot {
     property var tones: ["ink", "dark", "soft"]
     DesktopColorScheme { id: desktopScheme }
     FileView { id: schemeFile; path: Quickshell.env("HOME") + "/color-scheme"; printErrors: false }
+    FileView { id: gtkThemeFile; path: Quickshell.env("HOME") + "/gtk-theme"; printErrors: false }
+    FileView { id: iconThemeFile; path: Quickshell.env("HOME") + "/icon-theme"; printErrors: false }
     FileView { id: kittyFile; path: Quickshell.env("HOME") + "/.local/state/hakuspace/theme/kitty-mode.conf"; printErrors: false }
     // Read the stub's completed write rather than assuming process launch means success.
     function checkScheme(expected) {
         schemeFile.reload()
         schemeFile.waitForJob()
         root.check(schemeFile.text().trim() === expected, "desktop scheme " + expected)
+        var suffix = expected === "prefer-light" ? "-Light" : ""
+        gtkThemeFile.reload(); gtkThemeFile.waitForJob()
+        iconThemeFile.reload(); iconThemeFile.waitForJob()
+        root.check(gtkThemeFile.text().trim() === "Hikaide" + suffix, "GTK follows effective mode")
+        root.check(iconThemeFile.text().trim() === "Hikaide-Symbols" + suffix, "icons follow effective mode")
         kittyFile.reload()
         kittyFile.waitForJob()
         if (expected === "prefer-light") {

@@ -332,14 +332,7 @@ Haku Space comes with its own matching visual suite installed via `hakuspace-arc
 - **[Hikaide GTK](https://github.com/hakuimaku/hikade-gtk-theme)** (default: `Hikaide`)
 - **[Hikaide-Symbols](https://github.com/hakuimaku/hikaide-symbols)** (automatically recolored to match your active wallpaper/theme accent color!)
 
-Want to use a different cursor variant or your own icon pack? Just create or edit `~/.config/hakuspace/appearance.env`:
-
-```bash
-HAKU_ICON_THEME=Hikaide-Symbols   # or another theme like Papirus-Dark, or 'system'
-HAKU_ICON_ACCENT_MODE=auto       # auto | on | off
-HAKU_CURSOR_THEME=Haku-Dark      # e.g. Haku-Light, Haku-Blue, Haku-Pink
-HAKU_CURSOR_SIZE=24
-```
+Hikai's saved color mode selects `Hikaide` / `Hikaide-Light` and `Hikaide-Symbols` / `Hikaide-Symbols-Light` only while that managed family is selected. Third-party GTK and icon themes stay unchanged. Icon accent sync is disabled whenever the active icon theme is outside the Hikaide-Symbols family.
 
 You can also control your accent color and check your visual setup from the terminal:
 
