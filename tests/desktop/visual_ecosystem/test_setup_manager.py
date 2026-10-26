@@ -14,8 +14,13 @@ COMPONENTS = {'cursor': 'haku-cursor', 'gtk': 'hikade-gtk-theme', 'symbols': 'hi
 INSTALLER = r'''import os
 from pathlib import Path
 import shutil
+import signal
 import sys
 component, action = sys.argv[1:3]
+if action == 'build' and os.environ.get('TEST_SIGNAL') and component == 'gtk':
+    number = getattr(signal, os.environ['TEST_SIGNAL'])
+    os.kill(os.getppid(), number)
+    sys.exit(128 + number)
 if action == 'build':
     with open(os.environ['TEST_BUILDS'], 'a') as log:
         log.write(component + '\n')
@@ -30,6 +35,10 @@ if action == 'cursor-build':
     (target / 'cursors').mkdir(parents=True, exist_ok=True)
     (target / 'index.theme').write_text('[Icon Theme]\nName=' + theme + '\n')
     (target / 'cursors/left_ptr').write_text('cursor')
+if action == 'install' and os.environ.get('TEST_INSTALL_FAIL') == component:
+    sys.exit(9)
+if action == 'install' and os.environ.get('TEST_BAD_INSTALL') == component:
+    sys.exit(0)
 if action == 'install':
     if component == 'cursor':
         theme = os.environ.get('HAKU_CURSOR_THEME', 'Haku-Dark')
@@ -75,7 +84,9 @@ class WorkspaceFixture(unittest.TestCase):
                         GIT_COMMITTER_NAME='Test', GIT_COMMITTER_EMAIL='test@example.invalid',
                         GIT_TERMINAL_PROMPT='0', PYTHONDONTWRITEBYTECODE='1',
                         TEST_BUILDS=str(self.home / 'builds'), TEST_RECONCILE=str(self.home / 'reconcile'),
-                        TEST_GIT_LOG=str(self.home / 'git-calls'), TEST_REAL_GIT=shutil.which('git'))
+                        TEST_GIT_LOG=str(self.home / 'git-calls'), TEST_CLONE_LOG=str(self.home / 'clones'),
+                        TMPDIR=str(self.home), TEST_REAL_GIT=shutil.which('git'))
+        self.env.pop('XDG_RUNTIME_DIR', None)
         self.remotes = {}
         for component, name in COMPONENTS.items():
             remote = self.home / 'remotes' / name
@@ -111,10 +122,26 @@ class WorkspaceFixture(unittest.TestCase):
         self.binary.mkdir()
         wrapper = self.binary / 'git'
         wrapper.write_text(r'''#!/usr/bin/env python3
-import json, os, sys
+import json, os, subprocess, sys
+from pathlib import Path
 with open(os.environ['TEST_GIT_LOG'], 'a') as log:
     log.write(json.dumps(sys.argv[1:]) + '\n')
-os.execv(os.environ['TEST_REAL_GIT'], ['git', *sys.argv[1:]])
+args = sys.argv[1:]
+real = os.environ['TEST_REAL_GIT']
+if args[0] == 'clone':
+    if os.environ.get('TEST_CLONE_FAIL') and args[-2].endswith('/' + os.environ['TEST_CLONE_FAIL'] + '.git'):
+        Path(args[-1]).mkdir()
+        (Path(args[-1]) / 'partial').write_text('partial download')
+        sys.exit(8)
+    result = subprocess.run([real, *args])
+    if result.returncode == 0:
+        def value(*options):
+            return subprocess.check_output([real, '-C', args[-1], *options], text=True).strip()
+        with open(os.environ['TEST_CLONE_LOG'], 'a') as log:
+            log.write(json.dumps({'path': args[-1], 'head': value('rev-parse', 'HEAD'),
+                                  'shallow': value('rev-parse', '--is-shallow-repository')}) + '\n')
+    sys.exit(result.returncode)
+os.execv(real, ['git', *args])
 ''')
         wrapper.chmod(0o755)
         self.env['PATH'] = str(self.binary) + ':' + self.env['PATH']
@@ -131,10 +158,6 @@ os.execv(os.environ['TEST_REAL_GIT'], ['git', *sys.argv[1:]])
         self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
         return result
 
-    def child(self, component):
-        """Resolve fallback clone paths outside the HakuSpace checkout."""
-        return self.home / COMPONENTS[component]
-
     def lines(self, name):
         """Read an optional fixture log."""
         path = self.home / name
@@ -142,7 +165,7 @@ os.execv(os.environ['TEST_REAL_GIT'], ['git', *sys.argv[1:]])
 
     def clear_logs(self):
         """Separate update effects from the preceding bootstrap."""
-        for name in ('builds', 'reconcile', 'git-calls'):
+        for name in ('builds', 'reconcile', 'git-calls', 'clones'):
             (self.home / name).unlink(missing_ok=True)
 
     def assert_no_manifest(self):
@@ -170,204 +193,167 @@ os.execv(os.environ['TEST_REAL_GIT'], ['git', *sys.argv[1:]])
 
 
 class WorkspaceTests(WorkspaceFixture):
-    def test_path_and_status_are_read_only(self):
-        """Inspection never bootstraps sources or creates state."""
-        result = self.run_manager('path', 'symbols')
-        self.assertEqual(result.stdout.strip(), str(self.child('symbols')))
-        self.assertIn('symbols\tmissing\t', self.run_manager('status').stdout)
-        self.assertFalse((self.repo / 'ecosystem').exists())
-        self.assertFalse((self.home / '.local/state').exists())
-        self.run_manager('apply', 'unknown', success=False)
+    def clones(self):
+        """Read actual clone revisions before their disposable directories disappear."""
+        return [json.loads(line) for line in self.lines('clones')]
 
-    def test_bootstrap_full_clones_and_reuse(self):
-        """Fallback sources are independent full clones outside HakuSpace."""
+    def assert_staging_removed(self):
+        """Only installation outputs and explicit development sources may remain."""
+        self.assertEqual(list(self.home.glob('hakuspace-visuals.*')), [])
+        for clone in self.clones():
+            self.assertFalse(Path(clone['path']).parent.exists())
+        for name in COMPONENTS.values():
+            self.assertFalse((self.home / name).exists())
+        self.assert_no_manifest()
+
+    def test_default_inspection_creates_no_source_checkouts(self):
+        """Read-only inspection reports disposable sources without downloading them."""
+        self.assertIn('symbols\ttemporary\tnot retained', self.run_manager('status').stdout)
+        self.run_manager('path', 'symbols', success=False)
+        self.run_manager('apply', 'unknown', success=False)
+        self.assertFalse((self.home / '.local/state').exists())
+        self.assert_staging_removed()
+        self.assertEqual(self.clones(), [])
+
+    def test_setup_uses_shallow_latest_clones_and_removes_them_after_success(self):
+        """Normal setup installs all components without retaining source or history."""
         self.run_manager('setup')
         self.assertEqual(self.lines('builds'), ['cursor', 'gtk', 'symbols'])
         self.assertEqual(len(self.lines('reconcile')), 3)
-        for component in COMPONENTS:
-            self.assertTrue((self.child(component) / '.git').is_dir())
-            self.assertEqual(self.git('-C', self.child(component), 'rev-parse', '--is-shallow-repository'), 'false')
-            self.assertNotIn(self.repo, self.child(component).parents)
-        self.run_manager('setup')
-        clones = [json.loads(line) for line in self.lines('git-calls') if json.loads(line)[0] == 'clone']
-        self.assertEqual(len(clones), 3)
-        self.assertTrue(all('--depth' not in args for args in clones))
-        self.assertEqual(self.lines('builds'), ['cursor', 'gtk', 'symbols'] * 2)
-        self.assert_no_manifest()
+        self.assertEqual(len(self.clones()), 3)
+        for component, clone in zip(COMPONENTS, self.clones()):
+            self.assertEqual(clone['shallow'], 'true')
+            self.assertEqual(clone['head'], self.git('-C', self.remotes[component], 'rev-parse', 'HEAD'))
+        self.assert_staging_removed()
         self.assertFalse(self.source_config().exists())
-
-    def test_update_only_changed_components_and_reconcile_once(self):
-        """Fast-forwarding one source installs only that component; unchanged skips builds."""
+        self.advance('symbols')
+        self.clear_logs()
         self.run_manager('setup')
-        revision = self.advance('symbols')
-        self.clear_logs()
-        self.run_manager('update')
-        self.assertEqual(self.lines('builds'), ['symbols'])
-        self.assertEqual(len(self.lines('reconcile')), 3)
-        self.assertEqual(self.git('-C', self.child('symbols'), 'rev-parse', 'HEAD'), revision)
-        self.assert_no_manifest()
-        self.clear_logs()
-        self.run_manager('update')
-        self.assertEqual(self.lines('builds'), [])
-        self.assertEqual(self.lines('reconcile'), ['appearance_ctl.sh verify'])
+        self.assertEqual(len(self.clones()), 3)
+        self.assertEqual(self.clones()[-1]['head'], self.git('-C', self.remotes['symbols'], 'rev-parse', 'HEAD'))
+        self.assert_staging_removed()
 
-    def test_dirty_update_preserves_sources_and_explicit_apply_records_dirty(self):
-        """Automatic update skips dirty files; explicit apply builds them without pulling."""
-        self.run_manager('setup')
-        path = self.child('symbols')
-        (path / 'revision').write_text('local edits')
-        (path / 'personal').write_text('keep')
-        self.clear_logs()
-        result = self.run_manager('update')
-        self.assertIn('dirty, skipped', result.stdout)
-        self.assertEqual(self.lines('builds'), [])
-        self.assertEqual((path / 'personal').read_text(), 'keep')
-        calls = [json.loads(line) for line in self.lines('git-calls')]
-        self.assertFalse(any(str(path) in args and 'pull' in args for args in calls))
+    def test_explicit_update_fetches_and_installs_disposable_sources(self):
+        """Manual visual update gets latest sources without retaining a source cache."""
+        self.run_manager('update')
+        self.assertEqual(self.lines('builds'), ['cursor', 'gtk', 'symbols'])
+        self.assert_staging_removed()
         self.clear_logs()
         self.run_manager('apply', 'symbols')
         self.assertEqual(self.lines('builds'), ['symbols'])
-        self.assert_no_manifest()
-        self.assertEqual((path / 'revision').read_text(), 'local edits')
-        self.assertEqual((path / 'personal').read_text(), 'keep')
-        calls = [json.loads(line) for line in self.lines('git-calls')]
-        self.assertFalse(any(any(command in args for command in ('pull', 'reset', 'stash', 'checkout', 'restore', 'clean', 'rebase', 'merge')) for args in calls))
+        self.assertEqual(len(self.clones()), 1)
+        self.assert_staging_removed()
 
-    def test_dirty_setup_warns_and_installs_without_pulling(self):
-        """A deliberate full setup may install local dirty development contents."""
+    def test_runtime_directory_is_preferred_for_temporary_sources(self):
+        """A private runtime directory takes precedence over TMPDIR."""
+        runtime = self.home / 'runtime'
+        runtime.mkdir()
+        self.env['XDG_RUNTIME_DIR'] = str(runtime)
         self.run_manager('setup')
-        path = self.child('gtk')
-        (path / 'revision').write_text('local changes')
-        self.clear_logs()
-        result = self.run_manager('setup')
-        self.assertIn('warning: full setup installs current dirty gtk tree', result.stderr)
-        self.assert_no_manifest()
-        calls = [json.loads(line) for line in self.lines('git-calls')]
-        self.assertFalse(any(str(path) in args and 'pull' in args for args in calls))
+        self.assertTrue(all(Path(clone['path']).parent.parent == runtime for clone in self.clones()))
+        self.assertEqual(list(runtime.iterdir()), [])
+        self.assert_staging_removed()
 
-    def test_override_lifecycle_is_unmanaged_and_apply_is_explicit(self):
-        """Overrides are never cloned or pulled and stay outside the workspace."""
-        source = self.remotes['symbols']
-        (source / 'revision').write_text('local override')
-        self.env['HAKU_ICON_THEME_SOURCE'] = str(source)
-        self.run_manager('update')
-        self.assertFalse(self.child('symbols').exists())
-        self.assertEqual(self.lines('builds'), ['cursor', 'gtk'])
-        self.assertEqual(self.run_manager('path', 'symbols').stdout.strip(), str(source))
-        self.clear_logs()
-        self.run_manager('apply', 'symbols')
-        self.assertEqual(self.lines('builds'), ['symbols'])
-        self.assert_no_manifest()
-        self.assertEqual((source / 'revision').read_text(), 'local override')
-        self.assertFalse(any('pull' in json.loads(line) for line in self.lines('git-calls')))
-
-    def test_non_git_override_records_unknown_revision_and_missing_override_fails(self):
-        """Local directories are usable without falsely claiming a clean Git revision."""
-        source = self.home / 'local symbols'
-        shutil.copytree(self.remotes['symbols'], source, ignore=shutil.ignore_patterns('.git'))
-        self.env['HAKU_ICON_THEME_SOURCE'] = str(source)
-        self.run_manager('apply', 'symbols')
-        self.assertIn('unknown\tdirty=unknown', self.run_manager('status').stdout)
-        self.assert_no_manifest()
-        self.assertFalse((source / '.git').exists())
-        self.assertFalse(self.child('symbols').exists())
-        self.env['HAKU_ICON_THEME_SOURCE'] = str(self.home / 'missing')
-        self.run_manager('apply', 'symbols', success=False)
-        self.assertFalse((self.home / 'missing').exists())
-
-    def test_detached_no_upstream_and_wrong_origin_are_not_repaired(self):
-        """Developer branch state wins over automatic update."""
-        self.run_manager('setup')
-        path = self.child('symbols')
-        revision = self.git('-C', path, 'rev-parse', 'HEAD')
-        self.git('-C', path, 'checkout', '--detach')
-        self.clear_logs()
-        self.assertIn('unmanaged, skipped', self.run_manager('update').stdout)
-        self.assertEqual(self.git('-C', path, 'rev-parse', 'HEAD'), revision)
-        self.git('-C', path, 'checkout', 'main')
-        self.git('-C', path, 'branch', '--unset-upstream')
-        self.assertIn('unmanaged, skipped', self.run_manager('update').stdout)
-        self.git('-C', path, 'remote', 'set-url', 'origin', 'https://example.invalid/unrelated.git')
-        result = self.run_manager('update', success=False)
-        self.assertIn('Wrong origin', result.stderr)
-        self.assertEqual(self.lines('builds'), [])
-        self.assertEqual(self.git('-C', path, 'config', '--get', 'remote.origin.url'), 'https://example.invalid/unrelated.git')
-
-    def test_divergent_pull_fails_without_changing_local_history(self):
-        """A failed fast-forward preserves local commits and installed revision metadata."""
-        self.run_manager('setup')
-        path = self.child('cursor')
-        (path / 'revision').write_text('local commit')
-        self.git('-C', path, 'commit', '-am', 'local')
-        local = self.git('-C', path, 'rev-parse', 'HEAD')
-        self.advance('cursor', 'remote commit')
-        self.advance('gtk')
-        self.clear_logs()
-        self.run_manager('update', success=False)
-        self.assertEqual(self.git('-C', path, 'rev-parse', 'HEAD'), local)
-        self.assertEqual((path / 'revision').read_text(), 'local commit')
-        self.assert_no_manifest()
-        self.assertEqual(self.lines('builds'), ['gtk'])
-
-    def test_build_failures_preserve_checkout_and_explicit_apply_retries(self):
-        """Failed installs return failure without inventing persistent installed revisions."""
+    def test_build_install_and_output_verification_failures_clean_staging(self):
+        """Every component failure releases clones while existing installed assets survive."""
         self.run_manager('setup')
         for component in COMPONENTS:
-            with self.subTest(component=component):
-                revision = self.advance(component)
-                self.env['TEST_FAIL_COMPONENT'] = component
-                self.clear_logs()
-                self.run_manager('update', success=False)
-                self.assertTrue((self.child(component) / '.git').is_dir())
-                self.assertEqual(self.git('-C', self.child(component), 'rev-parse', 'HEAD'), revision)
-                self.assert_no_manifest()
-                self.env.pop('TEST_FAIL_COMPONENT')
-                self.clear_logs()
-                self.run_manager('update')
-                self.assertEqual(self.lines('builds'), [])
-                self.run_manager('apply', component)
-                self.assertEqual(self.lines('builds'), [component])
+            for failure in ('TEST_FAIL_COMPONENT', 'TEST_INSTALL_FAIL'):
+                with self.subTest(component=component, failure=failure):
+                    installed = {path: path.read_bytes() for root in (self.home / '.icons', self.home / '.themes')
+                                 for path in root.rglob('*') if path.is_file()}
+                    self.env[failure] = component
+                    self.clear_logs()
+                    self.run_manager('setup', success=False)
+                    self.assertEqual(installed, {path: path.read_bytes() for path in installed})
+                    self.assert_staging_removed()
+                    self.env.pop(failure)
+        self.env['TEST_BAD_INSTALL'] = 'gtk'
+        (self.home / '.themes/Hikaide-Light/index.theme').unlink()
+        self.run_manager('setup', success=False)
+        self.assert_staging_removed()
 
-    def test_non_repository_and_symlink_paths_are_preserved(self):
-        """Invalid child targets fail without deleting user files or following symlinks."""
-        path = self.child('cursor')
-        path.mkdir(parents=True)
-        (path / 'personal').write_text('keep')
-        self.run_manager('update', success=False)
-        self.assertEqual((path / 'personal').read_text(), 'keep')
-        saved = self.home / 'saved'
-        path.rename(saved)
-        path.symlink_to(saved)
-        self.run_manager('update', success=False)
-        self.assertTrue(path.is_symlink())
-        self.assertEqual((saved / 'personal').read_text(), 'keep')
+    def test_failed_clone_is_removed_and_other_components_are_checked(self):
+        """Partial downloads are cleaned without aborting independent installations."""
+        self.env['TEST_CLONE_FAIL'] = 'haku-cursor'
+        self.run_manager('setup', success=False)
+        self.assertEqual(self.lines('builds'), ['gtk', 'symbols'])
+        self.assert_staging_removed()
+        calls = [json.loads(line) for line in self.lines('git-calls')]
+        self.assertEqual(sum(args[0] == 'clone' for args in calls), 3)
 
-    def test_arbitrary_source_paths_persist_as_intent_and_environment_wins(self):
-        """Configured roots need no shared parent and are never relocated or recloned."""
+    def test_interrupted_setup_removes_only_its_temporary_sources(self):
+        """INT and TERM traps clean downloads while local development repositories survive."""
+        for signal_name, status in (('SIGINT', 130), ('SIGTERM', 143)):
+            with self.subTest(signal=signal_name):
+                self.env['TEST_SIGNAL'] = signal_name
+                self.clear_logs()
+                result = self.run_manager('setup', success=False)
+                self.assertEqual(result.returncode, status, result.stdout + result.stderr)
+                self.assert_staging_removed()
+                self.assertTrue(all((remote / '.git').is_dir() for remote in self.remotes.values()))
+        self.env.pop('TEST_SIGNAL')
+
+    def test_configured_development_sources_are_preserved_without_git_mutation(self):
+        """Explicit and remembered local paths are never removed, pulled or reset."""
         paths = {'cursor': self.home / 'a/cursor', 'gtk': self.home / 'b/themes/gtk',
                  'symbols': self.home / 'c symbols'}
         variables = {'cursor': 'HAKU_CURSOR_SOURCE', 'gtk': 'HAKU_GTK_THEME_SOURCE', 'symbols': 'HAKU_ICON_THEME_SOURCE'}
         for component, path in paths.items():
             shutil.copytree(self.remotes[component], path)
+            (path / 'personal').write_text('keep')
             self.env[variables[component]] = str(path.relative_to(self.home))
         self.run_manager('setup')
         self.assertEqual(json.loads(self.source_config().read_text()), {key: str(path) for key, path in paths.items()})
-        self.assertFalse(any(self.child(component).exists() for component in COMPONENTS))
         for component, path in paths.items():
+            self.assertEqual((path / 'personal').read_text(), 'keep')
             self.env.pop(variables[component])
             self.assertEqual(self.run_manager('path', component).stdout.strip(), str(path))
         self.env['HAKU_ICON_THEME_SOURCE'] = str(self.remotes['symbols'])
         self.assertEqual(self.run_manager('path', 'symbols').stdout.strip(), str(self.remotes['symbols']))
-        self.assert_no_manifest()
-        self.assertFalse(any('clone' in json.loads(line) or 'pull' in json.loads(line) for line in self.lines('git-calls')))
+        self.clear_logs()
+        result = self.run_manager('update')
+        self.assertIn('override, skipped', result.stdout)
+        self.assertEqual(self.lines('builds'), [])
+        self.run_manager('apply', 'symbols')
+        self.assertEqual(self.lines('builds'), ['symbols'])
+        self.assertEqual(self.clones(), [])
+        calls = [json.loads(line) for line in self.lines('git-calls')]
+        self.assertFalse(any(any(command in args for command in ('clone', 'pull', 'reset', 'stash', 'checkout', 'clean')) for args in calls))
+        self.assert_staging_removed()
+        self.env['TEST_FAIL_COMPONENT'] = 'gtk'
+        self.run_manager('apply', 'gtk', success=False)
+        self.env.pop('TEST_FAIL_COMPONENT')
+        self.env['TEST_SIGNAL'] = 'SIGTERM'
+        self.run_manager('setup', success=False)
+        for path in paths.values():
+            self.assertEqual((path / 'personal').read_text(), 'keep')
+            self.assertTrue((path / '.git').is_dir())
+        self.assertEqual(self.clones(), [])
 
-    def test_source_state_is_data_and_read_only_commands_ignore_legacy_shell(self):
-        """Neither legacy shell configuration nor malformed central state executes code."""
+    def test_non_git_override_and_missing_override_preserve_local_files(self):
+        """Explicit source directories remain usable without being Git-managed or deleted."""
+        source = self.home / 'local symbols'
+        shutil.copytree(self.remotes['symbols'], source, ignore=shutil.ignore_patterns('.git'))
+        (source / 'personal').write_text('keep')
+        self.env['HAKU_ICON_THEME_SOURCE'] = str(source)
+        self.run_manager('apply', 'symbols')
+        self.assertIn('unknown\tdirty=unknown', self.run_manager('status').stdout)
+        self.assertEqual((source / 'personal').read_text(), 'keep')
+        self.assertFalse((source / '.git').exists())
+        self.env['HAKU_ICON_THEME_SOURCE'] = str(self.home / 'missing')
+        self.run_manager('apply', 'symbols', success=False)
+        self.assertFalse((self.home / 'missing').exists())
+        self.assertEqual(self.clones(), [])
+        self.assert_no_manifest()
+
+    def test_read_only_commands_ignore_legacy_shell_and_reject_unsafe_state(self):
+        """Source intent is inert data and legacy shell configuration never executes."""
         legacy = self.home / 'config/hakuspace/appearance.env'
         legacy.parent.mkdir(parents=True)
         legacy.write_text('touch "$HOME/executed"\nHAKU_CURSOR_SOURCE=/unexpected\n')
         self.run_manager('status')
-        self.run_manager('path', 'cursor')
+        self.run_manager('path', 'cursor', success=False)
         self.assertFalse((self.home / 'executed').exists())
         self.assertFalse(self.source_config().exists())
         self.source_config().parent.mkdir(parents=True)
@@ -380,7 +366,7 @@ class WorkspaceTests(WorkspaceFixture):
         self.assertTrue(self.source_config().is_symlink())
 
     def test_source_intent_replacement_failure_preserves_previous_state(self):
-        """Failed atomic source-state replacement leaves prior intent and no temp files."""
+        """Atomic source-state errors retain prior intent and clean temporary state files."""
         self.env['HAKU_ICON_THEME_SOURCE'] = str(self.remotes['symbols'])
         self.run_manager('apply', 'symbols')
         before = self.source_config().read_bytes()
@@ -396,65 +382,63 @@ class WorkspaceTests(WorkspaceFixture):
         wrapper.unlink()
         self.run_manager('apply', 'symbols')
         self.assertEqual(json.loads(self.source_config().read_text())['symbols'], str(alternate))
+        self.assertTrue(alternate.is_dir())
         self.assert_no_manifest()
 
-    def test_reconcile_failure_retries_on_unchanged_update_and_verify(self):
-        """Runtime activation failures never force unchanged source trees to rebuild."""
+    def test_pending_activation_retries_without_downloading_sources(self):
+        """An activation retry needs only installed assets after staging is removed."""
         self.env['TEST_RECONCILE_FAIL'] = '1'
         self.run_manager('setup', success=False)
         self.assertTrue(self.pending().exists())
+        self.assert_staging_removed()
         self.env.pop('TEST_RECONCILE_FAIL')
         self.clear_logs()
         self.run_manager('update')
         self.assertEqual(self.lines('builds'), [])
+        self.assertEqual(self.clones(), [])
         self.assertEqual(len(self.lines('reconcile')), 3)
         self.assertFalse(self.pending().exists())
         self.env['TEST_RECONCILE_FAIL'] = '1'
         self.run_manager('apply', 'gtk', success=False)
-        self.run_manager('verify', success=False)
-        self.assertTrue(self.pending().exists())
+        self.assert_staging_removed()
         self.env.pop('TEST_RECONCILE_FAIL')
         self.clear_logs()
         self.run_manager('verify')
+        self.assertEqual(self.clones(), [])
         self.assertEqual(self.lines('builds'), [])
         self.assertFalse(self.pending().exists())
-        self.assert_no_manifest()
 
-    def test_unchanged_update_verifies_installed_outputs_without_rebuilding(self):
-        """Deleted installed files are reported from live checks, without cached metadata."""
-        self.run_manager('setup')
-        (self.home / '.themes/Hikaide-Light/index.theme').unlink()
-        self.clear_logs()
-        self.run_manager('update', success=False)
-        self.assertEqual(self.lines('builds'), [])
-        self.assertIn('installed=no', self.run_manager('status').stdout)
-        self.assert_no_manifest()
-
-    def test_legacy_nested_repositories_are_warned_about_and_preserved(self):
-        """Retiring nested ownership never moves or deletes a local development tree."""
+    def test_legacy_nested_and_home_development_directories_are_not_deleted(self):
+        """New disposable installs do not adopt or remove pre-existing source trees."""
         legacy = self.repo / 'ecosystem/hikaide-symbols'
         legacy.mkdir(parents=True)
         (legacy / 'personal').write_text('keep')
-        result = self.run_manager('status')
+        existing = self.home / 'haku-cursor'
+        existing.mkdir()
+        (existing / 'personal').write_text('keep')
+        result = self.run_manager('setup')
         self.assertIn('legacy nested repository detected', result.stderr)
         self.assertEqual((legacy / 'personal').read_text(), 'keep')
-        self.assertFalse(self.child('symbols').exists())
+        self.assertEqual((existing / 'personal').read_text(), 'keep')
         self.assertFalse((self.repo / 'scripts/ecosystem.sh').exists())
         self.assertNotIn('/ecosystem/hikaide-symbols/', (self.repo / '.gitignore').read_text())
+        self.assertEqual(list(self.home.glob('hakuspace-visuals.*')), [])
 
-    def test_workspace_uses_independent_paths_and_preserves_customization(self):
-        """Workspace generation never needs code and leaves existing settings untouched."""
+    def test_workspace_requires_retained_dev_sources_and_preserves_customization(self):
+        """Workspace generation never downloads sources or overwrites customization."""
         self.git('init', '-b', 'main', self.repo)
+        self.run_manager('workspace', success=False)
+        self.assertFalse((self.home / 'HakuSpace.code-workspace').exists())
+        self.assertEqual(self.clones(), [])
         for component, variable in [('cursor', 'HAKU_CURSOR_SOURCE'), ('gtk', 'HAKU_GTK_THEME_SOURCE'), ('symbols', 'HAKU_ICON_THEME_SOURCE')]:
             self.env[variable] = str(self.remotes[component])
         code = self.binary / 'code'
         code.write_text('#!/bin/sh\ntouch "$HOME/code-called"\nexit 99\n')
         code.chmod(0o755)
-        result = self.run_manager('workspace')
+        self.run_manager('workspace')
         target = self.home / 'HakuSpace.code-workspace'
         required = [str(self.repo), *map(str, self.remotes.values())]
         self.assertEqual(json.loads(target.read_text()), {'folders': [{'path': path} for path in required]})
-        self.assertIn('Open with:', result.stdout)
         self.assertFalse((self.home / 'code-called').exists())
         self.assertFalse(self.source_config().exists())
         custom = self.home / 'workspace location/custom.code-workspace'
@@ -469,7 +453,6 @@ class WorkspaceTests(WorkspaceFixture):
         before = custom.read_bytes()
         self.run_manager('workspace', str(custom), success=False)
         self.assertEqual(custom.read_bytes(), before)
-
 
 
 class WallpaperTests(WorkspaceFixture):
@@ -571,9 +554,10 @@ ask_yes_no() { [[ "$1" != *package* ]]; }
         self.assertEqual(flow.count('assets '), 1)
         self.assertLess(flow.index('core --mode symlink'), flow.index('setup setup'))
         self.assertLess(flow.index('setup setup'), flow.index('assets '))
+        self.assertNotIn('setup workspace', flow)
 
-    def test_update_reexec_precedes_ecosystem_and_config_deployment(self):
-        """The freshly reexecuted updater checks children before selecting/deploying configs."""
+    def test_update_reexec_precedes_config_deployment_without_visual_setup(self):
+        """Dotfile update reexecutes before config deployment and never updates visual repos."""
         repo_update = self.repo / 'scripts/repo_update.sh'
         repo_update.write_text('''#!/bin/bash
 if [[ ! -f "$HOME/reexecuted" ]]; then
@@ -587,31 +571,23 @@ echo updated >> "$TEST_FLOW"
                                 text=True, capture_output=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         flow = (self.home / 'flow').read_text().splitlines()
-        self.assertEqual(flow[:3], ['reexec', 'updated', 'setup update'])
-        self.assertEqual(flow.count('setup update'), 1)
-        self.assertLess(flow.index('setup update'), flow.index('select_wm '))
-        self.assertLess(flow.index('setup update'), flow.index('core --mode symlink'))
-    def test_visual_failure_does_not_block_config_updates_and_returns_failure(self):
-        """Visual failure is reported after the remaining updater work completes."""
+        self.assertEqual(flow[:3], ['reexec', 'updated', 'select_wm '])
+        self.assertLess(flow.index('updated'), flow.index('core --mode symlink'))
+        self.assertFalse(any(line.startswith(('setup ', 'assets ')) for line in flow))
+
+    def test_update_does_not_require_visual_setup(self):
+        """Dotfile updates succeed with the visual manager absent and leave it unused."""
         (self.repo / 'scripts/repo_update.sh').write_text('#!/bin/sh\nexit 0\n')
-        (self.repo / 'scripts/setup.sh').write_text('#!/bin/sh\necho "setup $*" >> "$TEST_FLOW"\nexit 7\n')
+        (self.repo / 'scripts/setup.sh').unlink()
         result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
                                 text=True, capture_output=True)
-        self.assertEqual(result.returncode, 7, result.stdout + result.stderr)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         flow = (self.home / 'flow').read_text().splitlines()
         self.assertIn('core --mode symlink', flow)
         self.assertIn('doctor ', flow)
-        self.assertIn('incomplete visual ecosystem update', result.stdout)
-        self.assertNotIn('Update complete!', result.stdout)
+        self.assertFalse(any(line.startswith(('setup ', 'assets ')) for line in flow))
+        self.assertIn('Update complete!', result.stdout)
 
-    def test_optional_workspace_failure_does_not_fail_install(self):
-        """A missing or customized workspace cannot block a successful installation."""
-        (self.repo / 'scripts/setup.sh').write_text('#!/bin/sh\nif [ "$1" = workspace ]; then exit 9; fi\n')
-        result = subprocess.run(['bash', str(self.repo / 'install.sh')], env=self.env,
-                                text=True, capture_output=True)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn('Workspace generation skipped', result.stdout)
-        self.assertIn('assets ', (self.home / 'flow').read_text())
 
 
 if __name__ == '__main__':

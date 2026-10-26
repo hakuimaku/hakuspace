@@ -699,6 +699,60 @@ class DeploymentTests(unittest.TestCase):
 
 @unittest.skipUnless(os.environ.get("HAKUSPACE_TEST_ASSET_REPOS"), "set HAKUSPACE_TEST_ASSET_REPOS for real asset installation")
 class InstalledAssetsTests(unittest.TestCase):
+    def test_temporary_source_install_remains_usable_after_cleanup(self):
+        """Real upstream assets must retain no dependency on discarded source trees."""
+        sources = Path(os.environ["HAKUSPACE_TEST_ASSET_REPOS"]).resolve()
+        with tempfile.TemporaryDirectory(prefix="haku-temporary-install-") as temporary:
+            home = Path(temporary)
+            binary = home / ".local/bin"
+            binary.mkdir(parents=True)
+            env = isolated_env(home)
+            env.update(HAKUSPACE_STRICT_ASSETS="1", GIT_CONFIG_GLOBAL=str(home / "gitconfig"),
+                       GIT_CONFIG_NOSYSTEM="1")
+            for name in ("haku-cursor", "hikade-gtk-theme", "hikaide-symbols"):
+                result = subprocess.run(["git", "config", "--global", f"url.{(sources / name).as_uri()}.insteadOf",
+                                         f"https://github.com/hakuimaku/{name}.git"], env=env,
+                                        text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+            apply = home / "apply"
+            apply.write_text("#!/bin/sh\nexit 0\n")
+            apply.chmod(0o755)
+            env["HAKUSPACE_APPLY_STYLE"] = str(apply)
+            settings = binary / "gsettings"
+            settings.write_text('#!/bin/sh\n'
+                                'if [ "$1" = list-schemas ]; then echo org.gnome.desktop.interface; '
+                                'elif [ "$1" = get ]; then case "$3" in '
+                                'gtk-theme) echo "\'Hikaide\'" ;; icon-theme) echo "\'Hikaide-Symbols\'" ;; esac; fi\n')
+            settings.chmod(0o755)
+
+            def run(*args):
+                """Exercise source core against the real installed files in private HOME."""
+                result = subprocess.run(list(map(str, args)), env=env, text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                return result
+
+            run("bash", ROOT / "scripts/setup.sh", "setup")
+            self.assertEqual(list(home.glob("hakuspace-visuals.*")), [])
+            self.assertFalse((home / ".local/state/hakuspace/state/[system].visual-sources.json").exists())
+            self.assertFalse((home / ".local/state/hakuspace/assets/installed.env").exists())
+            for name in ("haku-cursor", "hikade-gtk-theme", "hikaide-symbols"):
+                self.assertFalse((home / name).exists())
+            for relative in (".icons/Haku-Dark", ".themes/Hikaide", ".themes/Hikaide-Light",
+                             ".icons/Hikaide-Symbols", ".icons/Hikaide-Symbols-Light"):
+                installed = home / relative
+                self.assertTrue((installed / "index.theme").is_file())
+                for path in installed.rglob("*"):
+                    if path.is_symlink():
+                        self.assertTrue(path.exists(), f"Installed link depends on discarded source: {path}")
+            core = ROOT / "src/core/backend/theme"
+            run("bash", core / "appearance_ctl.sh", "verify")
+            run("bash", core / "theme_ctl.sh", "set-accent", "#AC7994")
+            engine = ROOT / "src/core/app/icon-accent/haku_icon_accent.py"
+            result = run("python3", engine, "--icons-dir", home / ".icons", "status", "Hikaide-Symbols")
+            self.assertEqual(result.stdout.strip(), "#ac7994")
+            run("bash", core / "appearance_ctl.sh", "apply-mode", "light")
+            self.assertFalse((home / ".local/state/icon-accent").exists())
+
     def test_install_update_reconcile_and_archive_independence(self):
         sources = Path(os.environ["HAKUSPACE_TEST_ASSET_REPOS"]).resolve()
         with tempfile.TemporaryDirectory(prefix="haku-installed-") as temporary:

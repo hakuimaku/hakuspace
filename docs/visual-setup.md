@@ -1,96 +1,97 @@
-# Visual source setup and VS Code workspace
+# Visual installation and development
 
-HakuSpace orchestrates Haku Cursor, Hikaide GTK and Hikaide-Symbols through
-`scripts/setup.sh`. Each source remains an independent repository at its own
-absolute path. No common parent, nested workspace, submodule or repository move
-is required. `hakuspace-archive` and `scripts/assets.sh` supply wallpapers only.
+HakuSpace installs Haku Cursor, Hikaide GTK and Hikaide-Symbols through
+`scripts/setup.sh`. Normal users retain only installed assets: source repositories
+are shallow-cloned at their latest default branch into private temporary staging,
+built, validated and installed, then removed. Success, clone/build/install/verify
+failure and trapped INT/TERM all clean that staging. No source checkout or source
+cache is kept under HOME.
 
-| Component | Explicit source | Fallback clone destination |
-| --- | --- | --- |
-| `cursor` | `HAKU_CURSOR_SOURCE` | `~/haku-cursor` |
-| `gtk` | `HAKU_GTK_THEME_SOURCE` | `~/hikade-gtk-theme` |
-| `symbols` | `HAKU_ICON_THEME_SOURCE` | `~/hikaide-symbols` |
+```bash
+./scripts/setup.sh setup
+./scripts/setup.sh status
+./scripts/setup.sh verify
+```
 
-Environment paths take precedence over remembered source intent, then fallbacks.
-Paths are normalized to absolute paths independently; HakuSpace never searches
-other directories to discover or relocate existing clones.
+Staging uses a writable user-owned `$XDG_RUNTIME_DIR` when available, otherwise
+`${TMPDIR:-/tmp}`. Cleanup only removes directories created by this invocation;
+existing local repositories are not adopted or deleted. GTK, icons and cursor
+files already installed under `~/.themes` and `~/.icons` remain available after
+source cleanup. `hakuspace-archive` and `scripts/assets.sh` supply wallpapers only.
+
+`update.sh` updates HakuSpace dotfiles without invoking visual installation or
+pulling/building/copying visual projects. A separate explicit
+`./scripts/setup.sh update` fetches and installs current disposable sources again;
+there is no retained Git history or installed-revision manifest to compare.
+`./scripts/setup.sh apply <component>` installs just that component, using temporary
+sources when no development source was configured.
+
+## Local development sources
+
+Developers may provide their own source directories at independent absolute paths:
+
+| Component | Source variable |
+| --- | --- |
+| `cursor` | `HAKU_CURSOR_SOURCE` |
+| `gtk` | `HAKU_GTK_THEME_SOURCE` |
+| `symbols` | `HAKU_ICON_THEME_SOURCE` |
 
 ```bash
 HAKU_CURSOR_SOURCE="$HOME/src/haku-cursor" \
 HAKU_GTK_THEME_SOURCE="/mnt/themes/hikade-gtk-theme" \
 HAKU_ICON_THEME_SOURCE="$HOME/repos/hikaide-symbols" ./scripts/setup.sh setup
 
-./scripts/setup.sh status
 ./scripts/setup.sh path symbols
-./scripts/setup.sh update
 ./scripts/setup.sh apply cursor
 ./scripts/setup.sh apply gtk
 ./scripts/setup.sh apply symbols
 ./scripts/setup.sh apply all
-./scripts/setup.sh verify
 ```
 
-`setup` full-clones missing fallback sources and fast-forwards clean managed
-checkouts with `git pull --ff-only`, then installs current sources. A dirty
-managed source is installed only with a warning during this explicit full setup;
-it is never pulled. `update` builds only newly cloned or changed managed sources.
-Unchanged sources skip builds and installed outputs are verified live. If a build
-fails after a successful pull, fix it and explicitly run `apply <component>`;
-installed revisions are not cached to infer another automatic build.
+Explicit and remembered development sources are used in place and **never deleted,
+pulled, reset, stashed or switched to another branch** by HakuSpace. `setup` and
+`apply` build their current contents, including dirty changes; non-Git source
+directories are allowed. Explicit `setup.sh update` skips these overrides; developers
+manage their own Git updates and run `apply` when ready. Each upstream retains
+its own build/validation/install commands and managed destination guards.
 
-Dirty repositories and explicit/remembered source overrides skip both automatic
-pull and installation. `apply` builds current local contents, including dirty
-changes, without pulling. Non-Git source directories are allowed for explicit
-setup/apply. Detached HEAD or missing upstreams are reported and skipped; divergent
-pulls, wrong origins and unsafe managed destinations fail without repair. Other
-components are still checked. No automatic reset, stash, branch switch or source
-deletion occurs. Each upstream retains its own build/validation/install logic and
-managed installation guards.
-
-Only explicit source intent is remembered, after successful setup/apply, under
+Environment paths take precedence over remembered source intent. Successful
+setup/apply remembers only explicit paths under
 `~/.local/state/hakuspace/state/[system].visual-sources.json`, keyed by `cursor`,
-`gtk` and `symbols`. Remembered paths retain override safety. Removing a key
-returns that component to its fallback. Environment overrides always win.
-`status`, `path` and `workspace` never change that state. The legacy
-`~/.config/hakuspace/appearance.env` is never executed.
+`gtk` and `symbols`. Temporary source paths are never saved. Remove a remembered
+key to return that component to disposable downloads. `status`, `path` and
+`workspace` do not write that state. Without a retained development source, `path`
+reports that none is configured. Legacy `appearance.env` is never executed.
 
-Git revision, dirty status, origin and installed asset presence are derived live.
-No `assets/installed.env` or other visual installation manifest is read or written;
-pre-existing legacy files are left unused. Successful installation marks the
-central recovery flag `[system].visual-reconcile.pending`. Appearance reconciliation
-uses current source core once per batch; success removes the flag. A later
-`setup`, `update` or `verify` retries pending activation. An unchanged `update`
-or `verify` retries without rebuilding repositories. Light/Dark/Classic selection,
-XDG Symbols discovery and stateless icon accent behavior are unchanged.
-
-`install.sh` offers visual setup and wallpapers separately, with optional workspace
-generation. `update.sh` first updates/re-executes HakuSpace, then checks visual
-sources before package/config deployment. Visual failures do not block that other
-work; the final summary and exit status report the incomplete visual update.
-HakuSpace Stable/Latest selection does not pin visual upstream revisions.
+Git metadata and installed assets are inspected live. No `assets/installed.env`
+or other visual installation manifest is read or written. Installed assets are
+marked for activation through `[system].visual-reconcile.pending`; successful
+source-core appearance reconciliation clears it. If activation failed, a subsequent
+`update` retries activation and returns without downloading/rebuilding sources;
+`verify` also retries pending activation. Run `update` again to explicitly fetch
+new sources afterward. Light/Dark/Classic selection, XDG discovery and stateless
+icon accents remain independent of the disposable source lifetime.
 
 ## VS Code multi-root workspace
+
+Workspace generation is a development tool, not part of normal installation.
+Configure retained Git source paths first, then run:
 
 ```bash
 ./scripts/setup.sh workspace
 ./scripts/setup.sh workspace /custom/path/HakuSpace.code-workspace
 ```
 
-The default output is `~/HakuSpace.code-workspace`. HakuSpace verifies all four
-repositories and uses their actual absolute paths, including independently located
-sources and explicit overrides. The command prints `code <workspace-file>` but
-never calls VS Code or requires it to be installed.
+The default output is `~/HakuSpace.code-workspace`. It uses the four actual Git
+root paths and prints a `code <workspace-file>` command without executing it.
+Missing development sources are reported without downloading anything. Existing
+workspace settings and extra folders are preserved; differing or invalid files
+must be edited manually or moved aside before regeneration.
 
-Existing workspace files are validated without rewriting settings or additional
-folders. If required folders are missing, JSON cannot be parsed, or the destination
-is a symlink, the file is preserved and the command reports how to resolve it.
-Add the required roots manually, or move the custom file aside and rerun. Workspace
-generation failure does not fail the full installer.
+The workspace groups independent projects for editing and search without coupling
+their Git or update lifecycles. `install.sh` offers optional visual installation
+and wallpapers as separate steps and does not generate a development workspace.
 
-## Former nested clones
-
-Existing `hakuspace/ecosystem/<repo>` directories are detected and warned about.
-They are never adopted, moved or deleted automatically. The old manager, nested
-README and parent ignore entries are retired, so those local directories may now
-appear as untracked entries in parent Git. Review/back up any development work
-before handling them manually; do not add them as embedded repositories.
+Former `hakuspace/ecosystem/<repo>` directories are only detected and warned about;
+they are never moved, reused or deleted automatically. Review/back up local work
+before handling old repositories manually.

@@ -33,15 +33,14 @@ hakuspace (root)
     └── packages/              # Danh sách app cần cài
 ```
 
-Các repository visual có thể nằm ở những đường dẫn độc lập ngoài HakuSpace.
-Resolver ưu tiên `HAKU_CURSOR_SOURCE`, `HAKU_GTK_THEME_SOURCE`, `HAKU_ICON_THEME_SOURCE`,
-sau đó đường dẫn đã nhớ trong state tập trung, rồi mới fallback về `~/haku-cursor`,
-`~/hikade-gtk-theme`, `~/hikaide-symbols`. Không yêu cầu chung thư mục cha.
-`scripts/setup.sh` quản lý setup/update/apply và tạo VS Code multi-root workspace
-bằng đường dẫn thực tế; xem [hướng dẫn visual setup](../visual-setup.md).
-`hakuspace-archive` chỉ cung cấp wallpaper. Repo nested cũ chỉ được cảnh báo,
-không tự di chuyển/xóa. Git metadata và asset được kiểm tra trực tiếp; state tập
-trung chỉ giữ đường dẫn nguồn được cấu hình và cờ retry appearance.
+Cài visual thông thường dùng source clone tạm; sau build/validate/install source
+được xóa, kể cả khi lỗi hoặc nhận INT/TERM. GTK, icons và cursor đã cài vẫn được
+sử dụng độc lập. Developer có thể cấu hình `HAKU_CURSOR_SOURCE`,
+`HAKU_GTK_THEME_SOURCE`, `HAKU_ICON_THEME_SOURCE` tại những vị trí riêng; các source
+này được giữ nguyên và developer tự quản lý Git. Xem [cài visual và phát triển](../visual-setup.md).
+`hakuspace-archive` chỉ cung cấp wallpaper. Cleanup không xóa repo local/nested
+có sẵn. State tập trung chỉ giữ đường dẫn source dev được cấu hình và cờ retry
+appearance; không ghi nhớ đường dẫn staging tạm.
 
 ## Hai chế độ giao diện: `Hikai` & `Classic`
 
@@ -74,12 +73,12 @@ HakuSpace dùng cơ chế **Hybrid (Lai)**: bạn được chọn giữa **Deep 
     - Tạo các thư mục nền tảng, rải các file cấu hình cơ bản từ `src/home/.config/` và `src/core/` ra máy bạn theo đúng chế độ Symlink/Copy đã chọn.
     - Xử lý nhóm `ONCE_CONFIGS` (chỉ copy đứt đoạn 1 lần, không bao giờ symlink).
     - Tạo thư mục cá nhân `~/hakucfg` từ template nếu bạn chưa có.
-  - **Phase 4: Hậu kỳ:** Cài visual software (`scripts/setup.sh setup`) và wallpaper (`scripts/assets.sh`) bằng hai bước riêng, khởi tạo state, đồng bộ `~/hakucfg`, set quyền thực thi cho script, đổi shell mặc định sang Fish, và thiết lập Display Manager.
+  - **Phase 4: Hậu kỳ:** Cài visual software từ source tạm (`scripts/setup.sh setup`) và wallpaper (`scripts/assets.sh`) bằng hai bước riêng, khởi tạo state, đồng bộ `~/hakucfg`, set quyền thực thi cho script, đổi shell mặc định sang Fish, và thiết lập Display Manager.
 
 ### `update.sh` (Cập nhật hệ thống)
 - Chạy mỗi khi bạn kéo source mới từ GitHub về.
   - **Phase 1: Cập nhật Repo:** Hỏi bạn muốn cập nhật repository theo nhánh LATEST (`main`) hay STABLE (tag mới nhất).
-  - **Visual ecosystem:** Sau cập nhật HakuSpace và re-exec updater khi cần, `scripts/setup.sh update` kiểm tra các repo con. Repo clean theo upstream bằng `git pull --ff-only`; chỉ source mới clone hoặc có revision đổi được build. Lỗi visual không chặn package/config; updater báo chưa hoàn tất và trả mã lỗi ở cuối. Repo dirty và source override được bỏ qua cả pull lẫn cài tự động. Lựa chọn Stable/Latest của HakuSpace không pin repo con.
+  - **Phạm vi:** Updater này cập nhật dotfiles, package và cấu hình HakuSpace. Không tự pull/build/cài các repo visual. Các lệnh trong [visual setup](../visual-setup.md) chỉ là công cụ tùy chọn để quản lý và phát triển những dự án đó riêng biệt.
   - **Phase 2: Backup & Nhận diện Mode:** Giống hệt cài đặt mới, nó luôn tạo lối thoát an toàn ở `~/.backup/`. Sau đó quét cấu hình hiện tại để tự nhận diện xem bạn đang dùng Symlink hay Copy.
   - **Phase 3: Cập nhật thông minh:**
     - Deploy lại toàn bộ file theo đúng chế độ tự nhận diện được.

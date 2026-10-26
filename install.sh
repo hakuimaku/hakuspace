@@ -66,13 +66,10 @@ fi
 
 # 8. Independent visual sources and optional wallpaper archive.
 step_title "6 - VISUAL ECOSYSTEM & WALLPAPERS"
-echo "  • Visual sources: independent HAKU_*_SOURCE paths (fallback: ~/haku-cursor, ~/hikade-gtk-theme, ~/hikaide-symbols)"
+echo "  • Visual source downloads are removed after setup; configured development sources are preserved."
 echo "  • Wallpaper archive: $(shorten_path "$ARCHIVE_DIR")"
 if ask_yes_no "Install/update the HakuSpace visual ecosystem?"; then
     "$HAKU_DIR/scripts/setup.sh" setup
-    if ask_yes_no "Generate a VS Code multi-root workspace?"; then
-        "$HAKU_DIR/scripts/setup.sh" workspace || log_warn "Workspace generation skipped; visual installation completed."
-    fi
 else
     log_skip "Skipping visual ecosystem setup."
 fi

@@ -20,13 +20,10 @@ PKG_NIRI="$SOURCE_DIR/packages/pkg-niri.txt"
 PKG_MANGO="$SOURCE_DIR/packages/pkg-mango.txt"
 PKG_LABWC="$SOURCE_DIR/packages/pkg-labwc.txt"
 
-# Home clone paths are fallbacks; each configured source may live anywhere.
+# Visual downloads are temporary; configured development sources may live anywhere.
 HAKU_CURSOR_REPO_URL="https://github.com/hakuimaku/haku-cursor.git"
 HAKU_GTK_REPO_URL="https://github.com/hakuimaku/hikade-gtk-theme.git"
 HAKU_SYMBOLS_REPO_URL="https://github.com/hakuimaku/hikaide-symbols.git"
-HAKU_CURSOR_WORKTREE="$HOME/haku-cursor"
-HAKU_GTK_WORKTREE="$HOME/hikade-gtk-theme"
-HAKU_SYMBOLS_WORKTREE="$HOME/hikaide-symbols"
 
 # Wallpaper archive only; visual software is managed by setup.sh.
 ARCHIVE_REPO_URL="https://github.com/hakuimaku/hakuspace-archive.git"

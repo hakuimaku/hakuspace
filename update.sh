@@ -28,16 +28,8 @@ elif [[ $REPO_UPDATE_STATUS -ne 0 ]]; then
     log_warn "Repository update returned status $REPO_UPDATE_STATUS. Proceeding with update..."
 fi
 
-# Check visual sources only after any updater re-exec has completed.
-step_title "1 - UPDATE VISUAL ECOSYSTEM"
-VISUAL_UPDATE_STATUS=0
-"$HAKU_DIR/scripts/setup.sh" update || VISUAL_UPDATE_STATUS=$?
-if [[ "$VISUAL_UPDATE_STATUS" -ne 0 ]]; then
-    log_warn "Visual ecosystem update incomplete; continuing packages and configurations."
-fi
-
 # 3. Select Window Manager(s) & Detect Deploy Mode
-step_title "2 - SELECTION & MODE DETECTION"
+step_title "1 - SELECTION & MODE DETECTION"
 WM_LIST="$("$HAKU_DIR/scripts/select_wm.sh")"
 read -ra SELECTED_WMS <<< "$WM_LIST"
 log_ok "Selected Window Manager(s): $(registry_format_wm_list "${SELECTED_WMS[@]}")"
@@ -51,7 +43,7 @@ else
 fi
 
 # 4. Update Packages (Update Profile)
-step_title "3 - UPDATE PACKAGES"
+step_title "2 - UPDATE PACKAGES"
 "$HAKU_DIR/scripts/packages.sh" --profile update "${SELECTED_WMS[@]}" --plan
 echo ""
 if ask_yes_no "Install/update the package groups shown above?"; then
@@ -61,7 +53,7 @@ else
 fi
 
 # 5. Deploy / Update Dotfiles Configs
-step_title "4 - UPDATE CONFIGURATIONS"
+step_title "3 - UPDATE CONFIGURATIONS"
 echo -e "${C_BOLD}CONFIGURATION UPDATE PLAN${C_RESET}"
 echo "  • Deployment Mode:   $( [[ "$DEPLOY_MODE" == "copy" ]] && echo "Copy (Legacy)" || echo "Symlink (Deep Symlink)" )"
 echo "  • Window Manager(s): $(registry_format_wm_list "${SELECTED_WMS[@]}")"
@@ -87,31 +79,25 @@ fi
 
 # 6. NixOS Update (if on NixOS)
 if [[ -n "$(command -v nixos-rebuild 2>/dev/null)" ]]; then
-    step_title "5 - NIXOS SYSTEM UPDATE"
+    step_title "4 - NIXOS SYSTEM UPDATE"
     "$HAKU_DIR/scripts/nixos.sh" update
 fi
 
 # 7. State & User Control Initialization
-step_title "6 - STATE & CONFIGURATION SYNC"
+step_title "5 - STATE & CONFIGURATION SYNC"
 "$HAKU_DIR/scripts/state.sh" init
 "$HAKU_DIR/scripts/hakucfg.sh" sync
 
 # 8. Reload Active Components
-step_title "7 - RELOAD ACTIVE COMPONENTS"
+step_title "6 - RELOAD ACTIVE COMPONENTS"
 "$HAKU_DIR/scripts/reload.sh" waybar
 
 # 9. Diagnostics Check
-step_title "8 - DIAGNOSTICS & INTEGRITY"
+step_title "7 - DIAGNOSTICS & INTEGRITY"
 "$HAKU_DIR/scripts/doctor.sh"
 
 echo ""
 print_divider
-if [[ "$VISUAL_UPDATE_STATUS" -eq 0 ]]; then
-    echo -e "${C_BOLD}${C_GREEN}  Update complete! Restart session or reload WM to apply!${C_RESET}"
-else
-    log_warn "HakuSpace update finished with an incomplete visual ecosystem update; inspect errors and retry scripts/setup.sh."
-fi
+echo -e "${C_BOLD}${C_GREEN}  Update complete! Restart session or reload WM to apply!${C_RESET}"
 echo -e "${C_MAGENTA}  Backup folder for this update: $BACKUP_DIR${C_RESET}"
 print_divider
-
-exit "$VISUAL_UPDATE_STATUS"

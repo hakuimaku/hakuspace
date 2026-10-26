@@ -54,20 +54,22 @@ We've designed this system to be highly customizable. If you want to tweak how i
 
 ## Visual Ecosystem (Icons, GTK & Cursor Sync)
 
-Beyond just changing your terminal and status bar colors, HakuSpace comes with its own matching visual suite - **[Haku Cursor](https://github.com/hakuimaku/haku-cursor)**, **[Hikaide GTK](https://github.com/hakuimaku/hikade-gtk-theme)**, and **[Hikaide-Symbols](https://github.com/hakuimaku/hikaide-symbols)** - managed by HakuSpace as independent repositories at their own absolute paths; see [visual setup and multi-root development](../visual-setup.md). `./scripts/setup.sh setup` builds and installs them; `hakuspace-archive` supplies wallpapers only through `./scripts/assets.sh`.
+Beyond just changing your terminal and status bar colors, HakuSpace comes with its own matching visual suite - **[Haku Cursor](https://github.com/hakuimaku/haku-cursor)**, **[Hikaide GTK](https://github.com/hakuimaku/hikade-gtk-theme)**, and **[Hikaide-Symbols](https://github.com/hakuimaku/hikaide-symbols)** - installed from temporary source downloads; see [visual installation and development](../visual-setup.md). `./scripts/setup.sh setup` builds/validates/installs them and removes those downloads; explicitly configured development sources are preserved; `hakuspace-archive` supplies wallpapers only through `./scripts/assets.sh`.
+
+`update.sh` updates dotfiles independently and does not invoke visual source updates.
+The following commands are optional tools for visual maintenance and development.
 
 Use `./scripts/setup.sh status` to inspect source locations and dirty state,
-`./scripts/setup.sh update` to fast-forward clean sources and install changed
-revisions, or `./scripts/setup.sh apply symbols` to build local edits without
-pulling. Dirty repositories, detached/no-upstream branches and explicit source
-overrides are preserved during automatic update. Existing source trees elsewhere
-are never moved; the `HAKU_*_SOURCE` overrides remain available for explicit setup/apply.
+`./scripts/setup.sh update` to explicitly fetch/install current temporary sources,
+or `./scripts/setup.sh apply symbols` to install one component. Configured
+`HAKU_*_SOURCE` development checkouts are built in place for setup/apply and never
+pulled or deleted. Existing local repositories remain untouched by staging cleanup.
 
 HakuSpace derives repository revisions, dirty state and installed assets live.
 Only explicit source locations are remembered through registered centralized state;
 no separate installation manifest is read or written. Pending appearance activation
 is retained in `[system].visual-reconcile.pending` and retried by setup/update/verify
-without rebuilding unchanged repositories just to reactivate appearance. Reconciliation
+without fetching sources again just to reactivate appearance. Reconciliation
 uses current source core once per batch and preserves Light/Dark/Classic mapping,
 XDG discovery and stateless accent sync. Installed assets remain usable independently
 of the wallpaper archive or source checkouts.

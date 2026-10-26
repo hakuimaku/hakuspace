@@ -303,7 +303,7 @@ See the full breakdown in: [Management & Deployment](docs/management.md)
 | `./rollback.sh` | Restore previous configuration backups safely |
 
 ### Update Haku Space
-Simply run the `update.sh` script in the hakuspace folder. This will safely update the core files while preserving your personal settings in `~/hakucfg`.
+Simply run the `update.sh` script in the hakuspace folder. This will safely update the core files while preserving your personal settings in `~/hakucfg`. Visual source repositories are managed separately and are not pulled, rebuilt or installed by this command.
 ```bash
 cd ~/hakuspace
 ./update.sh
@@ -328,7 +328,7 @@ If you installed in **Symlink mode** and want to cleanly remove Haku Space symli
 
 ## Visual Ecosystem
 
-HakuSpace manages its visual suite as independent repositories at separately resolved paths, using [`scripts/setup.sh`](docs/visual-setup.md):
+HakuSpace installs its visual suite using [`scripts/setup.sh`](docs/visual-setup.md). Source downloads are temporary and removed after installation; installed assets remain available:
 - **[Haku Cursor](https://github.com/hakuimaku/haku-cursor)** (default: `Haku-Dark`, size `24`)
 - **[Hikaide GTK](https://github.com/hakuimaku/hikade-gtk-theme)** (default: `Hikaide`)
 - **[Hikaide-Symbols](https://github.com/hakuimaku/hikaide-symbols)** (automatically recolored to match your active wallpaper/theme accent color!)
@@ -336,15 +336,16 @@ HakuSpace manages its visual suite as independent repositories at separately res
 Hikai's saved color mode selects `Hikaide` / `Hikaide-Light` and `Hikaide-Symbols` / `Hikaide-Symbols-Light` only while that managed family is selected. Third-party GTK and icon themes stay unchanged. Icon accent sync is disabled whenever the active icon theme is outside the Hikaide-Symbols family.
 
 `hakuspace-archive` supplies wallpapers only through `./scripts/assets.sh`.
-`update.sh` checks clean child repositories after updating/re-executing HakuSpace,
-then rebuilds only newly cloned or changed sources. Dirty trees and explicit/remembered source
-overrides skip automatic pull and installation. Use explicit local apply after edits:
+The visual projects have independent development and update lifecycles.
+`update.sh` updates HakuSpace dotfiles without pulling, rebuilding or installing
+GTK themes, icons or cursors. The following commands are optional tools for
+installing visual assets or working with explicitly configured development sources separately:
 
 ```bash
 ./scripts/setup.sh status
 ./scripts/setup.sh update
 ./scripts/setup.sh apply symbols
-./scripts/setup.sh workspace  # Optional VS Code multi-root file
+./scripts/setup.sh workspace  # Development only: configure retained source paths first
 ```
 
 You can also control your accent color and check your visual setup from the terminal:

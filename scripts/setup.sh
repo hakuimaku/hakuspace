@@ -19,9 +19,9 @@ fail() { printf 'setup: %s\n' "$*" >&2; return 1; }
 resolve_component() {
     local component="$1" override saved=''
     case "$component" in
-        cursor) SOURCE_PATH="$HAKU_CURSOR_WORKTREE"; SOURCE_URL="$HAKU_CURSOR_REPO_URL"; override="${HAKU_CURSOR_SOURCE:-}" ;;
-        gtk) SOURCE_PATH="$HAKU_GTK_WORKTREE"; SOURCE_URL="$HAKU_GTK_REPO_URL"; override="${HAKU_GTK_THEME_SOURCE:-}" ;;
-        symbols) SOURCE_PATH="$HAKU_SYMBOLS_WORKTREE"; SOURCE_URL="$HAKU_SYMBOLS_REPO_URL"; override="${HAKU_ICON_THEME_SOURCE:-}" ;;
+        cursor) SOURCE_PATH=''; SOURCE_URL="$HAKU_CURSOR_REPO_URL"; override="${HAKU_CURSOR_SOURCE:-}" ;;
+        gtk) SOURCE_PATH=''; SOURCE_URL="$HAKU_GTK_REPO_URL"; override="${HAKU_GTK_THEME_SOURCE:-}" ;;
+        symbols) SOURCE_PATH=''; SOURCE_URL="$HAKU_SYMBOLS_REPO_URL"; override="${HAKU_ICON_THEME_SOURCE:-}" ;;
         *) fail "Unknown component: $component"; return 1 ;;
     esac
     SOURCE_OVERRIDE=0
@@ -33,7 +33,7 @@ resolve_component() {
             then .[$key] // "" else error("Invalid visual source state") end' "$VISUAL_SOURCES_FILE")" || return 1
     fi
     if [[ -n "$override" || -n "$saved" ]]; then SOURCE_PATH="${override:-$saved}"; SOURCE_OVERRIDE=1; fi
-    SOURCE_PATH="$(realpath -ms -- "$SOURCE_PATH")" || return 1
+    if [[ -n "$SOURCE_PATH" ]]; then SOURCE_PATH="$(realpath -ms -- "$SOURCE_PATH")" || return 1; fi
 }
 
 # Persist only explicit source intent, never repository revisions or installed metadata.
@@ -58,12 +58,12 @@ warn_legacy_nested() {
         case "$component" in cursor) legacy=haku-cursor ;; gtk) legacy=hikade-gtk-theme ;; symbols) legacy=hikaide-symbols ;; esac
         legacy="$HAKU_DIR/ecosystem/$legacy"
         if [[ -e "$legacy" || -L "$legacy" ]]; then
-            printf 'setup: warning: legacy nested repository detected: %s\nResolved source: %s\nOld working tree left untouched; move/backup development work manually.\n' "$legacy" "$SOURCE_PATH" >&2
+            printf 'setup: warning: legacy nested repository detected: %s\nResolved source: %s\nOld working tree left untouched; move/backup development work manually.\n' "$legacy" "${SOURCE_PATH:-temporary installation source}" >&2
         fi
     done
 }
 
-# Managed sources must be ordinary independent checkouts of the expected upstream.
+# Verify each downloaded checkout belongs to the expected upstream.
 validate_checkout() {
     local origin top
     if [[ -L "$SOURCE_PATH" || ! -d "$SOURCE_PATH/.git" || -L "$SOURCE_PATH/.git" ]]; then
@@ -77,35 +77,36 @@ validate_checkout() {
     git -C "$SOURCE_PATH" rev-parse --verify HEAD >/dev/null
 }
 
-# Git lifecycle state is separate from whether the component will be installed.
-update_component_repo() {
-    local previous
+# Only installer-created staging is removed; development sources retain their lifetime.
+cleanup_source_stage() {
+    if [[ -n "${VISUAL_SOURCE_STAGE:-}" ]]; then rm -rf -- "$VISUAL_SOURCE_STAGE"; fi
+}
+
+# Allocate lazily so inspection and developer overrides create no temporary checkouts.
+ensure_source_stage() {
+    [[ -z "${VISUAL_SOURCE_STAGE:-}" ]] || return 0
+    local base="${XDG_RUNTIME_DIR:-}"
+    if [[ -z "$base" || ! -d "$base" || ! -w "$base" || ! -O "$base" ]]; then base="${TMPDIR:-/tmp}"; fi
+    VISUAL_SOURCE_STAGE="$(mktemp -d "$base/hakuspace-visuals.XXXXXX")" || return 1
+    trap cleanup_source_stage EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+}
+
+# Fetch latest disposable sources; explicit or remembered local sources are used as-is.
+prepare_component_source() {
     REPO_STATUS=error
     if [[ "$SOURCE_OVERRIDE" == 1 ]]; then
         [[ -d "$SOURCE_PATH" ]] || { fail "Source override does not exist: $SOURCE_PATH"; return 1; }
         REPO_STATUS=override
         return 0
     fi
-    if [[ ! -e "$SOURCE_PATH" && ! -L "$SOURCE_PATH" ]]; then
-        mkdir -p "$(dirname -- "$SOURCE_PATH")" || return 1
-        git clone -- "$SOURCE_URL" "$SOURCE_PATH" || return 1
-        validate_checkout || return 1
-        REPO_STATUS=cloned
-        return 0
-    fi
+    ensure_source_stage || return 1
+    local name="${SOURCE_URL##*/}"
+    SOURCE_PATH="$VISUAL_SOURCE_STAGE/${name%.git}"
+    git clone --depth 1 -- "$SOURCE_URL" "$SOURCE_PATH" || return 1
     validate_checkout || return 1
-    local changes
-    changes="$(git -C "$SOURCE_PATH" status --porcelain)" || return 1
-    if [[ -n "$changes" ]]; then REPO_STATUS=dirty; return 0; fi
-    if ! git -C "$SOURCE_PATH" symbolic-ref -q HEAD >/dev/null ||
-            ! git -C "$SOURCE_PATH" rev-parse --verify '@{upstream}' >/dev/null 2>&1; then
-        REPO_STATUS=unmanaged
-        printf 'setup: %s has detached HEAD or no upstream; skipped\n' "$SOURCE_PATH" >&2
-        return 0
-    fi
-    previous="$(git -C "$SOURCE_PATH" rev-parse HEAD)" || return 1
-    git -C "$SOURCE_PATH" pull --ff-only || return 1
-    if [[ "$previous" == "$(git -C "$SOURCE_PATH" rev-parse HEAD)" ]]; then REPO_STATUS=unchanged; else REPO_STATUS=updated; fi
+    REPO_STATUS=cloned
 }
 
 # Derive Git metadata for status without persisting it.
@@ -197,7 +198,7 @@ mark_reconcile_pending() {
     printf '1\n' > "$RECONCILE_PENDING"
 }
 
-# Retry activation without rebuilding unchanged source trees.
+# Retry activation using installed assets without downloading sources again.
 retry_reconcile() {
     [[ -e "$RECONCILE_PENDING" || -L "$RECONCILE_PENDING" ]] || return 0
     [[ -f "$RECONCILE_PENDING" && ! -L "$RECONCILE_PENDING" ]] || { fail 'Unsafe visual reconcile state'; return 1; }
@@ -239,40 +240,29 @@ cleanup_legacy_icon_accent() {
 }
 
 # Continue independent components after failures, but never report a failed batch as success.
-run_batch() {
+run_batch() (
     local command="$1" selection="${2:-all}" component detail failed=0 installed=0
     local -a components=(cursor gtk symbols)
     [[ "$selection" == all ]] || components=("$selection")
+    VISUAL_SOURCE_STAGE=''
+    if [[ "$command" == update && ( -e "$RECONCILE_PENDING" || -L "$RECONCILE_PENDING" ) ]]; then
+        retry_reconcile
+        return $?
+    fi
     printf 'Visual ecosystem %s:\n' "$command"
     for component in "${components[@]}"; do
         resolve_component "$component" || return 2
-        if [[ "$command" == apply ]]; then
-            if [[ "$SOURCE_OVERRIDE" == 1 ]]; then
-                [[ -d "$SOURCE_PATH" ]] || { fail "Source override does not exist: $SOURCE_PATH"; failed=1; continue; }
-            elif ! validate_checkout; then failed=1; continue; fi
-            REPO_STATUS=local
-        elif ! update_component_repo; then
-            printf '  %-8s error\n' "$component"
+        if [[ "$command" == update && "$SOURCE_OVERRIDE" == 1 ]]; then
+            [[ -d "$SOURCE_PATH" ]] || { fail "Source override does not exist: $SOURCE_PATH"; failed=1; continue; }
+            printf '  %-8s override, skipped; use ./scripts/setup.sh apply %s\n' "$component" "$component"
+            continue
+        fi
+        if ! prepare_component_source; then
+            printf '  %-8s source preparation failed\n' "$component" >&2
             failed=1
             continue
         fi
         detail="$REPO_STATUS"
-        if [[ "$command" == update && ( "$REPO_STATUS" == dirty || "$REPO_STATUS" == override || "$REPO_STATUS" == unmanaged ) ]]; then
-            printf '  %-8s %s, skipped; use ./scripts/setup.sh apply %s\n' "$component" "$detail" "$component"
-            continue
-        fi
-        if [[ "$command" == setup && "$REPO_STATUS" == unmanaged ]]; then
-            printf '  %-8s unmanaged, skipped; use ./scripts/setup.sh apply %s\n' "$component" "$component"
-            continue
-        fi
-        if [[ "$command" == update && "$REPO_STATUS" == unchanged ]]; then
-            printf '  %-8s unchanged\n' "$component"
-            verify_component "$component" || failed=1
-            continue
-        fi
-        if [[ "$REPO_STATUS" == dirty ]]; then
-            printf 'setup: warning: full setup installs current dirty %s tree without pulling\n' "$component" >&2
-        fi
         if install_component "$component" && mark_reconcile_pending && verify_component "$component" && remember_source "$component"; then
             installed=1
             printf '  %-8s %s + installed\n' "$component" "$detail"
@@ -288,23 +278,17 @@ run_batch() {
         "$SOURCE_CORE/backend/theme/appearance_ctl.sh" verify || failed=1
     fi
     return "$failed"
-}
+)
 
 # Status derives repository and installed state without writing configuration.
 workspace_status() {
-    local component status revision changes installed dirty
+    local component status revision installed dirty
     for component in cursor gtk symbols; do
         resolve_component "$component"
-        status=missing
+        status=temporary
         revision=unknown
         if [[ "$SOURCE_OVERRIDE" == 1 ]]; then
             if [[ -d "$SOURCE_PATH" ]]; then status=override; else status=error; fi
-        elif [[ -e "$SOURCE_PATH" || -L "$SOURCE_PATH" ]]; then
-            if validate_checkout; then
-                revision="$(git -C "$SOURCE_PATH" rev-parse HEAD)" || return 1
-                changes="$(git -C "$SOURCE_PATH" status --porcelain)" || return 1
-                if [[ -n "$changes" ]]; then status=dirty; else status=clean; fi
-            else status=error; fi
         fi
         dirty=unknown
         if [[ -d "$SOURCE_PATH" ]]; then
@@ -313,7 +297,7 @@ workspace_status() {
             dirty="$SOURCE_DIRTY"
         fi
         if verify_component "$component" 2>/dev/null; then installed=yes; else installed=no; fi
-        printf '%s\t%s\t%s\t%s\tdirty=%s\tinstalled=%s\n' "$component" "$status" "$SOURCE_PATH" "$revision" "$dirty" "$installed"
+        printf '%s\t%s\t%s\t%s\tdirty=%s\tinstalled=%s\n' "$component" "$status" "${SOURCE_PATH:-not retained}" "$revision" "$dirty" "$installed"
     done
     if "$SOURCE_CORE/backend/theme/appearance_ctl.sh" verify >/dev/null 2>&1; then
         echo appearance_verified=yes
@@ -330,12 +314,9 @@ generate_workspace() {
     [[ "$top" == "$(cd "$HAKU_DIR" && pwd -P)" ]] || { fail "Not a repository root: $HAKU_DIR"; return 1; }
     for component in cursor gtk symbols; do
         resolve_component "$component" || return 1
-        if [[ "$SOURCE_OVERRIDE" == 1 ]]; then
-            top="$(git -C "$SOURCE_PATH" rev-parse --show-toplevel)" || return 1
-            [[ "$top" == "$(cd "$SOURCE_PATH" && pwd -P)" ]] || { fail "Not a repository root: $SOURCE_PATH"; return 1; }
-        else
-            validate_checkout || return 1
-        fi
+        [[ -n "$SOURCE_PATH" ]] || { fail "Configure HAKU_*_SOURCE development repositories before creating a workspace"; return 1; }
+        top="$(git -C "$SOURCE_PATH" rev-parse --show-toplevel)" || return 1
+        [[ "$top" == "$(cd "$SOURCE_PATH" && pwd -P)" ]] || { fail "Not a repository root: $SOURCE_PATH"; return 1; }
         folders+=("$SOURCE_PATH")
     done
     destination="$(realpath -ms -- "$destination")" || return 1
@@ -378,7 +359,11 @@ main() {
         setup|update) [[ $# == 1 ]] || return 2; run_batch "$1" ;;
         apply) [[ $# == 2 ]] || return 2; run_batch apply "$2" ;;
         status) [[ $# == 1 ]] || return 2; workspace_status ;;
-        path) [[ $# == 2 && "$2" != all ]] || return 2; resolve_component "$2" || return 2; printf '%s\n' "$SOURCE_PATH" ;;
+        path)
+            [[ $# == 2 && "$2" != all ]] || return 2
+            resolve_component "$2" || return 2
+            [[ -n "$SOURCE_PATH" ]] || { fail "No persistent source configured for $2; set HAKU_*_SOURCE for development"; return 1; }
+            printf '%s\n' "$SOURCE_PATH" ;;
         verify)
             [[ $# == 1 ]] || return 2
             retry_reconcile || return 1
