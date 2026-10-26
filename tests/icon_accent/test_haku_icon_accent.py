@@ -32,7 +32,9 @@ class AccentTests(unittest.TestCase):
         self.svg = self.theme / "user-home.svg"
         self.svg.write_bytes(KDE)
         self.scanner = app.ThemeScanner(self.icons)
-        env = patch.dict(os.environ, XDG_STATE_HOME=str(self.root / "state"))
+        runtime = self.root / "runtime"
+        runtime.mkdir()
+        env = patch.dict(os.environ, XDG_STATE_HOME=str(self.root / "state"), XDG_RUNTIME_DIR=str(runtime))
         env.start()
         self.addCleanup(env.stop)
 
@@ -82,6 +84,70 @@ class AccentTests(unittest.TestCase):
         self.assertIn("Files requiring modification: 1", output)
         self.assertEqual(self.svg.read_bytes(), KDE)
         self.assertFalse((self.root / "state").exists())
+
+    def test_stateless_apply_preserves_mode_and_creates_no_backup(self):
+        """The absolute-path CLI never constructs a backup manager."""
+        self.svg.chmod(0o640)
+        with patch.object(app, "BackupManager", side_effect=AssertionError("backup used")):
+            code, output = self.cli("apply", "--theme-dir", str(self.theme), "--accent", "89B4FA", "--no-backup")
+        self.assertEqual(code, 0, output)
+        self.assertIn(b".ColorScheme-Highlight { color:#89b4fa; }", self.svg.read_bytes())
+        self.assertEqual(stat.S_IMODE(self.svg.stat().st_mode), 0o640)
+        self.assertFalse((self.root / "state").exists())
+        self.assertEqual(list(self.theme.glob(".icon-accent-*")), [])
+        before = self.svg.stat().st_mtime_ns
+        self.assertEqual(self.cli("set", "89b4fa", "--theme", "Example", "--no-backup")[0], 0)
+        self.assertEqual(self.svg.stat().st_mtime_ns, before)
+
+    def test_stateless_invalid_staged_output_never_replaces_original(self):
+        """Validation runs independently of the recolor backend."""
+        with patch.object(app.KDEColorSchemeBackend, "patch", return_value=b"<svg>broken"):
+            self.assertEqual(self.cli("set", "89b4fa", "--theme", "Example", "--no-backup")[0], 5)
+        self.assertEqual(self.svg.read_bytes(), KDE)
+        self.assertFalse((self.root / "state").exists())
+        self.assertEqual(list(self.theme.glob(".icon-accent-*")), [])
+
+    def test_stateless_replace_failure_cleans_temporary_files(self):
+        """Atomic replacement errors leave artwork and state untouched."""
+        with patch.object(app.os, "replace", side_effect=OSError("disk failure")):
+            self.assertEqual(self.cli("set", "89b4fa", "--theme", "Example", "--no-backup")[0], 5)
+        self.assertEqual(self.svg.read_bytes(), KDE)
+        self.assertEqual(list(self.theme.glob(".icon-accent-*")), [])
+        self.assertFalse((self.root / "state").exists())
+
+    def test_stateless_partial_update_converges(self):
+        """A retry accepts mixed colors after a multi-file interruption."""
+        second = self.theme / "second.svg"
+        second.write_bytes(KDE)
+        real_write = app.atomic_write
+        writes = 0
+
+        def fail_second(path, data, mode=0o600):
+            """Commit the first SVG before simulating an interrupted batch."""
+            nonlocal writes
+            writes += 1
+            if writes == 2:
+                raise OSError("disk failure")
+            real_write(path, data, mode)
+
+        with patch.object(app, "atomic_write", side_effect=fail_second):
+            self.assertEqual(self.cli("set", "89b4fa", "--theme", "Example", "--no-backup")[0], 5)
+        self.assertEqual(sum(b"color:#89b4fa" in path.read_bytes() for path in (self.svg, second)), 1)
+        self.assertEqual(self.cli("set", "89b4fa", "--theme", "Example", "--no-backup")[0], 0)
+        self.assertEqual(self.scanner.scan("Example")[0]["editable_accents"], ["#89b4fa"])
+        self.assertFalse((self.root / "state").exists())
+
+    def test_explicit_state_directory_and_restore(self):
+        """Backed mode supports a custom state root for apply and restore."""
+        state = self.root / "custom-backups"
+        self.assertEqual(self.cli("set", "89b4fa", "--theme", "Example", "--state-dir", str(state))[0], 0)
+        self.assertEqual(len(list(state.glob("*/state.json"))), 1)
+        self.assertFalse((self.root / "state").exists())
+        self.assertEqual(self.cli("--state-dir", str(state), "restore", "Example")[0], 0)
+        self.assertEqual(self.svg.read_bytes(), KDE)
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
+            self.cli("set", "89b4fa", "--theme", "Example", "--no-backup", "--state-dir", str(state))
+        self.assertEqual(error.exception.code, 2)
 
     def test_whitespace_cdata_comments_and_stroke(self):
         for rule in (b".ColorScheme-Highlight{color:#5294e2}", b".ColorScheme-Highlight\n{\n color:\n #5294e2;\n}", b"<![CDATA[/* comment */ .ColorScheme-Highlight { color: #5294e2 !important; }]]>"):

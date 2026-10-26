@@ -255,18 +255,16 @@ def atomic_write(path, data, mode=0o600):
 
 
 class BackupManager:
-    def __init__(self, theme):
-        base = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state"))).expanduser()
+    def __init__(self, theme, state_dir=None):
+        base = Path(state_dir).expanduser() if state_dir else Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state") / "icon-accent"
         key = theme.name + "-" + digest(str(theme).encode())[:16]
-        self.directory = base / "icon-accent" / key
+        self.directory = base.expanduser() / key
         self.path = self.directory / "state.json"
         self.theme = theme
 
     @contextlib.contextmanager
     def lock(self):
-        self.directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-        with (self.directory / "lock").open("a") as stream:
-            fcntl.flock(stream, fcntl.LOCK_EX)
+        with runtime_lock(self.theme):
             yield
 
     def load(self, targets=None):
@@ -308,23 +306,68 @@ def verify_target(path, theme, expected):
         raise ValueError(f"file changed during operation: {path}")
 
 
-def set_accent(scanner, name, color, dry_run=False):
+# Locks coordinate writers without creating persistent backup metadata.
+@contextlib.contextmanager
+def runtime_lock(theme):
+    runtime = os.environ.get("XDG_RUNTIME_DIR")
+    base = Path(runtime) / "hakuspace" if runtime else Path(tempfile.gettempdir()) / f"hakuspace-{os.getuid()}"
+    for directory in (base, base / "appearance"):
+        directory.mkdir(mode=0o700, exist_ok=True)
+        if directory.is_symlink() or directory.stat().st_uid != os.getuid() or directory.stat().st_mode & 0o022:
+            raise ValueError(f"unsafe runtime directory: {directory}")
+    path = base / "appearance" / ("icon-accent-" + digest(str(theme).encode())[:16] + ".lock")
+    fd = os.open(path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "a") as stream:
+        if os.fstat(stream.fileno()).st_uid != os.getuid():
+            raise ValueError(f"unsafe runtime lock: {path}")
+        fcntl.flock(stream, fcntl.LOCK_EX)
+        yield
+
+
+# Both execution paths stage and validate the same SVG transformations.
+def prepare_changes(scanner, name, color):
+    report, files = scanner.scan(name)
+    print(f"Theme: {name}\nBackend: {report['backend']}")
+    if not report["editable"]:
+        raise AccentError("unsupported theme: no safely editable KDE highlight rules", 4)
+    changes = []
+    for path, item in files.items():
+        if item["editable"]:
+            updated = KDEColorSchemeBackend.patch(item["data"], item["edits"], color)
+            validate_svg(updated)
+            if updated != item["data"]:
+                changes.append((path, item, updated))
+    print(f"Accent: {', '.join(report['editable_accents'])} -> {color}")
+    print(f"Matched SVGs: {report['kde_matched']}\nFiles requiring modification: {len(changes)}")
+    print(f"Skipped {report['static_svg']} static SVG files; {report['gtk_symbolic']} GTK runtime symbolic files; {len(report['invalid_svg'])} invalid/unsupported XML files.")
+    return report, changes
+
+
+# Stateless writes converge mixed accents without consulting or creating backups.
+def apply_stateless(scanner, name, color, dry_run=False):
     theme = scanner.theme(name)
-    backups = BackupManager(theme)
+    with contextlib.nullcontext() if dry_run else runtime_lock(theme):
+        _, changes = prepare_changes(scanner, name, color)
+        for path, item, _ in changes:
+            verify_target(path, theme, item["data"])
+            if path.stat().st_uid != os.getuid() or not os.access(path, os.W_OK) or not os.access(path.parent, os.W_OK):
+                raise ValueError(f"target is not user-owned and writable: {path}")
+        if dry_run:
+            print("No files changed (--dry-run).")
+            return
+        for path, item, updated in changes:
+            verify_target(path, theme, item["data"])
+            atomic_write(path, updated, item["mode"])
+        if changes:
+            refresh_cache(theme)
+        print("Accent updated successfully." if changes else "Accent already set; no files changed.")
+
+
+def set_accent(scanner, name, color, dry_run=False, state_dir=None):
+    theme = scanner.theme(name)
+    backups = BackupManager(theme, state_dir)
     with contextlib.nullcontext() if dry_run else backups.lock():
-        report, files = scanner.scan(name)
-        print(f"Theme: {name}\nBackend: {report['backend']}")
-        if not report["editable"]:
-            raise AccentError("unsupported theme: no safely editable KDE highlight rules", 4)
-        changes = []
-        for path, item in files.items():
-            if item["editable"]:
-                updated = KDEColorSchemeBackend.patch(item["data"], item["edits"], color)
-                if updated != item["data"]:
-                    changes.append((path, item, updated))
-        print(f"Accent: {', '.join(report['editable_accents'])} -> {color}")
-        print(f"Matched SVGs: {report['kde_matched']}\nFiles requiring modification: {len(changes)}")
-        print(f"Skipped {report['static_svg']} static SVG files; {report['gtk_symbolic']} GTK runtime symbolic files; {len(report['invalid_svg'])} invalid/unsupported XML files.")
+        report, changes = prepare_changes(scanner, name, color)
         if dry_run:
             print("No files changed (--dry-run).")
             return
@@ -356,9 +399,9 @@ def set_accent(scanner, name, color, dry_run=False):
         print("Restart your file manager if icons remain cached.")
 
 
-def restore(scanner, name):
+def restore(scanner, name, state_dir=None):
     theme = scanner.theme(name)
-    backups = BackupManager(theme)
+    backups = BackupManager(theme, state_dir)
     with backups.lock():
         state = backups.load()
         if state is None:
@@ -406,6 +449,7 @@ def print_report(report):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--icons-dir", default=str(Path.home() / ".icons"))
+    parser.add_argument("--state-dir")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("list")
     for command in ("inspect", "status"):
@@ -418,11 +462,25 @@ def main(argv=None):
     group.add_argument("--theme")
     group.add_argument("--all", action="store_true")
     sub.add_argument("--dry-run", action="store_true")
+    sub.add_argument("--no-backup", action="store_true")
+    sub.add_argument("--state-dir", default=argparse.SUPPRESS)
+    sub = commands.add_parser("apply")
+    sub.add_argument("--theme-dir", required=True, type=Path)
+    sub.add_argument("--accent", required=True, type=normalize_color, dest="color")
+    sub.add_argument("--no-backup", action="store_true")
+    sub.add_argument("--dry-run", action="store_true")
+    sub.add_argument("--state-dir", default=argparse.SUPPRESS)
     sub = commands.add_parser("restore")
     group = sub.add_mutually_exclusive_group(required=True)
     group.add_argument("theme", nargs="?")
     group.add_argument("--all", action="store_true")
+    sub.add_argument("--state-dir", default=argparse.SUPPRESS)
     args = parser.parse_args(argv)
+    if getattr(args, "no_backup", False) and args.state_dir:
+        parser.error("--state-dir cannot be combined with --no-backup")
+    if args.command == "apply":
+        path = args.theme_dir.expanduser().absolute()
+        args.icons_dir, args.theme, args.all = path.parent, path.name, False
     try:
         scanner = ThemeScanner(args.icons_dir)
         if args.command == "list":
@@ -445,13 +503,16 @@ def main(argv=None):
             code = 0
             for name in names:
                 try:
-                    if args.command == "set":
+                    if args.command in ("set", "apply"):
                         if args.all and not scanner.scan(name)[0]["editable"]:
                             print(f"{name}: skipped (no high-confidence editable accent).")
                             continue
-                        set_accent(scanner, name, args.color, args.dry_run)
+                        if args.no_backup:
+                            apply_stateless(scanner, name, args.color, args.dry_run)
+                        else:
+                            set_accent(scanner, name, args.color, args.dry_run, args.state_dir)
                     else:
-                        restore(scanner, name)
+                        restore(scanner, name, args.state_dir)
                 except AccentError as exc:
                     print(str(exc), file=sys.stderr)
                     code = max(code, exc.code)
