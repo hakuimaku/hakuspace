@@ -21,7 +21,8 @@ def isolated_env(home):
     env.update(HOME=str(home), PATH=f"{home}/.local/bin:/usr/bin:/bin",
                XDG_DATA_HOME=str(home / ".local/share"), XDG_STATE_HOME=str(home / ".local/state"),
                XDG_CACHE_HOME=str(home / ".cache"), XDG_CONFIG_HOME=str(home / ".config"),
-               PYTHONDONTWRITEBYTECODE="1", HAKUSPACE_STRICT_ASSETS="0")
+               PYTHONDONTWRITEBYTECODE="1", HAKUSPACE_STRICT_ASSETS="0", TMPDIR=str(home))
+    env.pop("XDG_RUNTIME_DIR", None)
     return env
 
 
@@ -227,6 +228,29 @@ fi''')
         self.assertIn("disabled", self.run_script("appearance_ctl.sh", "sync-accent").stdout)
         self.assertEqual((theme / "user-home.svg").read_bytes(), KDE)
 
+    def test_third_party_sync_creates_no_state_or_runtime_directories(self):
+        """Disabled policy exits before loading canonical state or acquiring locks."""
+        theme_fixture(self.home, 'Example', managed=False)
+        self.env['HAKU_ICON_THEME'] = 'Example'
+        before = sorted(self.home.rglob('*'))
+        self.run_script('appearance_ctl.sh', 'sync-accent')
+        self.assertEqual(sorted(self.home.rglob('*')), before)
+
+    def test_runtime_lock_rejects_unsafe_directories(self):
+        """Private lock roots cannot follow a symlink or accept other writers."""
+        themes, _ = self.paired_icon_assets()
+        lock_root = self.home / f'hakuspace-{os.getuid()}'
+        outside = self.home / 'outside-runtime'
+        outside.mkdir()
+        lock_root.symlink_to(outside)
+        self.run_script('appearance_ctl.sh', 'sync-accent', success=False)
+        self.assertEqual(list(outside.iterdir()), [])
+        lock_root.unlink()
+        lock_root.mkdir(mode=0o777)
+        lock_root.chmod(0o777)
+        self.run_script('appearance_ctl.sh', 'sync-accent', success=False)
+        self.assertEqual((themes['dark'] / 'user-home.svg').read_bytes(), KDE)
+
     def test_unmanaged_default_and_off_are_never_edited(self):
         self.base_assets()
         theme = theme_fixture(self.home, managed=False)
@@ -244,30 +268,34 @@ fi''')
         self.assertIn("icon_accent_status=disabled", self.run_script("appearance_ctl.sh", "status").stdout)
         self.assertEqual((theme / "user-home.svg").read_bytes(), STATIC)
 
-    def test_unsafe_engine_error_preserves_artwork_and_core_state(self):
+    def test_managed_stateless_edits_preserve_unrelated_artwork(self):
+        """Managed edits reconcile supported colors while preserving XML comments."""
         theme = self.assets()
         self.run_script("theme_ctl.sh", "set-accent", "#AC7994")
         svg = theme / "user-home.svg"
-        edited = svg.read_bytes() + b"\n<!-- user edit -->"
-        svg.write_bytes(edited)
-        self.run_script("appearance_ctl.sh", "sync-accent")  # already the same accent
-        result = self.run_script("theme_ctl.sh", "set-accent", "#5294E2")
-        self.assertIn("warning", result.stderr)
-        self.run_script("appearance_ctl.sh", "sync-accent", success=False)
-        self.assertEqual(svg.read_bytes(), edited)
-        self.assertEqual(self.run_script("theme_ctl.sh", "get", "accent").stdout.strip(), "#5294e2")
-        self.env["HAKUSPACE_STRICT_ASSETS"] = "1"
-        self.run_script("theme_ctl.sh", "apply", success=False)
-
-    def test_corrupted_backup_is_an_actual_error(self):
-        theme = self.assets()
-        self.run_script("theme_ctl.sh", "set-accent", "#AC7994")
-        before = (theme / "user-home.svg").read_bytes()
-        backup = next((self.home / ".local/state/icon-accent").glob("*/backup/user-home.svg"))
-        backup.write_bytes(b"corrupted")
+        svg.write_bytes(svg.read_bytes() + b"\n<!-- user edit -->")
         self.run_script("theme_ctl.sh", "set-accent", "#5294E2")
-        self.run_script("appearance_ctl.sh", "sync-accent", success=False)
-        self.assertEqual((theme / "user-home.svg").read_bytes(), before)
+        self.assertEqual(self.icon_accent(), "#5294e2")
+        self.assertTrue(svg.read_bytes().endswith(b"<!-- user edit -->"))
+        self.assertFalse((self.home / ".local/state/icon-accent").exists())
+
+    def test_legacy_backup_cleanup_preserves_unrelated_and_unverified_entries(self):
+        """Only exact path/hash/family evidence authorizes legacy state deletion."""
+        self.assets()
+        for name in ("Hikaide-Symbols-Light", "SomeOtherTheme"):
+            theme_fixture(self.home, name, managed=False)
+        for name in ("Hikaide-Symbols", "Hikaide-Symbols-Light", "SomeOtherTheme"):
+            self.run_script("haku_icon_accent.py", "set", "89b4fa", "--theme", name)
+        root = self.home / ".local/state/icon-accent"
+        other = next(root.glob("SomeOtherTheme-*"))
+        forged = root / "Hikaide-Symbols-forged"
+        forged.mkdir()
+        (forged / "state.json").write_text(json.dumps({"theme": "Hikaide-Symbols", "location": "/unrelated/Hikaide-Symbols"}))
+        self.run_script("appearance_ctl.sh", "sync-accent")
+        self.run_script("appearance_ctl.sh", "sync-accent")
+        self.assertEqual(set(root.iterdir()), {other, forged})
+        self.run_script("haku_icon_accent.py", "restore", "SomeOtherTheme")
+        self.assertEqual((self.home / ".icons/SomeOtherTheme/user-home.svg").read_bytes(), KDE)
 
     def test_source_tree_resolves_internal_engine(self):
         self.assets()
@@ -395,42 +423,70 @@ fi''')
         self.assertEqual((themes["dark"] / "user-home.svg").read_bytes(), KDE)
         self.assertEqual((themes["light"] / "user-home.svg").read_bytes(), STATIC)
 
-    def test_v2_pair_second_update_failure_rolls_back_both(self):
-        """Restore both old accents when the light engine fails after writing."""
-        themes, _ = self.paired_icon_assets()
-        engine = self.bin / "haku_icon_accent.py"
-        real_engine = engine.resolve()
-        engine.unlink()
-        engine.write_text(
-            'import os, subprocess, sys\n'
-            f'command = [sys.executable, {str(real_engine)!r}, *sys.argv[1:]]\n'
-            'result = subprocess.run(command)\n'
-            'if "set" in sys.argv and "#3F6E2B" in sys.argv and "Hikaide-Symbols-Light" in sys.argv and "--dry-run" not in sys.argv:\n'
-            '    sys.exit(5)\n'
-            'sys.exit(result.returncode)\n')
-        result = self.run_script("appearance_ctl.sh", "sync-accent", success=False)
-        self.assertIn("engine failed", result.stderr)
-        for theme in themes.values():
-            self.assertEqual((theme / "user-home.svg").read_bytes(), KDE)
-
-
-    def test_v2_pair_rollback_error_still_restores_dark(self):
-        """Report a failed light restore while continuing to restore the dark tree."""
-        themes, _ = self.paired_icon_assets()
+    def test_v2_partial_failure_preserves_canonical_state_and_retry_converges(self):
+        """A failed light update needs no rollback metadata and remains retryable."""
+        themes, state = self.paired_icon_assets()
+        before = state.read_bytes()
         engine = self.bin / "haku_icon_accent.py"
         real_engine = engine.resolve()
         engine.unlink()
         engine.write_text(
             'import subprocess, sys\n'
             f'command = [sys.executable, {str(real_engine)!r}, *sys.argv[1:]]\n'
-            'light_write = "set" in sys.argv and "Hikaide-Symbols-Light" in sys.argv and "--dry-run" not in sys.argv\n'
-            'if light_write and "#5294e2" in sys.argv: sys.exit(5)\n'
-            'result = subprocess.run(command)\n'
-            'sys.exit(5 if light_write else result.returncode)\n')
+            'if "apply" in sys.argv and any(arg.endswith("/Hikaide-Symbols-Light") for arg in sys.argv) and "--dry-run" not in sys.argv: sys.exit(5)\n'
+            'sys.exit(subprocess.run(command).returncode)\n')
         result = self.run_script("appearance_ctl.sh", "sync-accent", success=False)
-        self.assertIn("rollback failed for Hikaide-Symbols-Light", result.stderr)
-        self.assertEqual((themes["dark"] / "user-home.svg").read_bytes(), KDE)
+        self.assertIn("engine failed", result.stderr)
+        self.assertEqual(state.read_bytes(), before)
+        self.assertEqual(self.icon_accent(), "#a2cb8b")
+        self.assertEqual((themes["light"] / "user-home.svg").read_bytes(), KDE)
+        engine.unlink()
+        engine.symlink_to(real_engine)
+        self.run_script("appearance_ctl.sh", "sync-accent")
         self.assertEqual(self.icon_accent("Hikaide-Symbols-Light"), "#3f6e2b")
+        self.assertFalse((self.home / ".local/state/icon-accent").exists())
+        self.assertFalse((self.home / ".local/state/hakuspace/icon-accent.lock").exists())
+
+    def test_xdg_discovery_and_multiple_managed_copies(self):
+        """All valid user copies receive the same pair despite toolkit root order."""
+        themes, _ = self.paired_icon_assets()
+        xdg = self.home / ".local/share/icons"
+        xdg.mkdir(parents=True)
+        for theme in themes.values():
+            shutil.copytree(theme, xdg / theme.name)
+        result = self.run_script("appearance_ctl.sh", "sync-accent")
+        self.assertIn("multiple managed icon installations", result.stderr)
+        for root in (self.home / ".icons", xdg):
+            self.assertIn(b"#a2cb8b", (root / "Hikaide-Symbols/user-home.svg").read_bytes())
+            self.assertIn(b"#3f6e2b", (root / "Hikaide-Symbols-Light/user-home.svg").read_bytes())
+        shutil.rmtree(self.home / ".icons/Hikaide-Symbols")
+        shutil.rmtree(self.home / ".icons/Hikaide-Symbols-Light")
+        self.run_script("appearance_ctl.sh", "sync-accent")
+        self.assertIn("icons_installed=yes", self.run_script("appearance_ctl.sh", "status").stdout)
+        self.assertIn("icon_accent_status=active", self.run_script("appearance_ctl.sh", "status").stdout)
+
+    def test_explicit_icon_root_overrides_discovery(self):
+        """An explicit root never falls through to otherwise valid default roots."""
+        themes, _ = self.paired_icon_assets()
+        override = self.home / "custom icons"
+        for theme in themes.values():
+            shutil.copytree(theme, override / theme.name)
+        self.env['HAKU_ICON_DIR'] = str(override)
+        self.run_script("appearance_ctl.sh", "sync-accent")
+        self.assertIn(b"#a2cb8b", (override / "Hikaide-Symbols/user-home.svg").read_bytes())
+        self.assertEqual((themes['dark'] / "user-home.svg").read_bytes(), KDE)
+        shutil.rmtree(override)
+        self.assertIn("icon_accent_status=missing", self.run_script("appearance_ctl.sh", "status").stdout)
+
+    def test_unsafe_symlinked_managed_theme_is_activation_only(self):
+        """An escaped managed directory cannot authorize accent writes."""
+        themes, _ = self.paired_icon_assets()
+        outside = self.home / "outside"
+        themes['dark'].rename(outside)
+        themes['dark'].symlink_to(outside)
+        self.assertIn("icon_accent_status=not-applicable", self.run_script("appearance_ctl.sh", "sync-accent").stdout)
+        self.assertEqual((outside / "user-home.svg").read_bytes(), KDE)
+        self.assertFalse((self.home / ".local/state/icon-accent").exists())
 
     def mode_assets(self):
         """Install disposable dark/light GTK and icon families for mode selection."""
@@ -648,8 +704,7 @@ class InstalledAssetsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="haku-installed-") as temporary:
             home = Path(temporary)
             archive = home / "hakuspace-archive"
-            shutil.copytree(sources / "hakuspace-archive", archive,
-                            ignore=shutil.ignore_patterns(".git", "__pycache__"))
+            shutil.copytree(sources / "hakuspace-archive/Wallpapers", archive / "Wallpapers")
             binary = home / ".local/bin"
             binary.mkdir(parents=True)
             for path in (ROOT / "src/core").rglob("*"):
@@ -664,7 +719,10 @@ class InstalledAssetsTests(unittest.TestCase):
             apply.chmod(0o755)
             env["HAKUSPACE_APPLY_STYLE"] = str(apply)
             settings = binary / "gsettings"
-            settings.write_text('#!/bin/sh\nif [ "$1" = list-schemas ]; then echo org.gnome.desktop.interface; fi\n')
+            settings.write_text('#!/bin/sh\n'
+                                'if [ "$1" = list-schemas ]; then echo org.gnome.desktop.interface; '
+                                'elif [ "$1" = get ]; then case "$3" in '
+                                'gtk-theme) echo "\'Hikaide\'" ;; icon-theme) echo "\'Hikaide-Symbols\'" ;; esac; fi\n')
             settings.chmod(0o755)
 
             def run(*args, success=True):
@@ -681,14 +739,17 @@ class InstalledAssetsTests(unittest.TestCase):
                 report = json.loads(engine("status", "Hikaide-Symbols", "--json").stdout)
                 self.assertEqual([c.lower() for c in report["editable_accents"]], [color.lower()])
 
+            run("bash", ROOT / "scripts/setup.sh", "setup")
             run("bash", ROOT / "scripts/assets.sh")
             run(binary / "appearance_ctl.sh", "verify")
             generated = home / ".local/state/hakuspace/theme/quickshell.json"
             self.assertEqual(json.loads(generated.read_text())["accentDark"], "#ffffff")
             manifest = home / ".local/state/hakuspace/assets/installed.env"
-            self.assertNotIn("ICON_ACCENT", manifest.read_text())
-            self.assertIn("HAKU_CURSOR_THEME=Haku-Dark", manifest.read_text())
-            self.assertIn(f"HAKU_CURSOR_PATH={home}/.icons/Haku-Dark", manifest.read_text())
+            self.assertFalse(manifest.exists())
+            sources_state = home / ".local/state/hakuspace/state/[system].visual-sources.json"
+            self.assertEqual(json.loads(sources_state.read_text()), {
+                "cursor": str(sources / "haku-cursor"), "gtk": str(sources / "hikade-gtk-theme"),
+                "symbols": str(sources / "hikaide-symbols")})
             self.assertTrue((home / ".icons/Haku-Dark/index.theme").is_file())
             self.assertFalse((home / ".icons/Haku-Light").exists())
             self.assertFalse((home / ".local/share/icons/Haku-Dark").exists())
@@ -699,15 +760,18 @@ class InstalledAssetsTests(unittest.TestCase):
             self.assertFalse((binary / "icon-accent").exists())
             self.assertFalse((binary / "icon_accent.py").exists())
             self.assertTrue(any((home / "Pictures/Wallpapers").iterdir()))
+            self.assertFalse((archive / "setup.sh").exists())
             # Simulate the previous archive's managed installation and receipt.
             legacy = [binary / "icon-accent", binary / "icon_accent.py"]
             for file in legacy:
                 file.write_text("legacy installed file")
             receipt = home / ".local/state/hakuspace/assets/icon-accent.sha256"
+            receipt.parent.mkdir(parents=True, exist_ok=True)
             receipt.write_bytes(subprocess.check_output(["sha256sum", *map(str, legacy)]))
+            run("bash", ROOT / "scripts/setup.sh", "setup")
             run("bash", ROOT / "scripts/assets.sh")
             self.assertFalse(any(file.exists() for file in [*legacy, receipt]))
-            self.assertNotIn("ICON_ACCENT", manifest.read_text())
+            self.assertFalse(manifest.exists())
             self.assertEqual(len(list((home / ".icons").glob("Hikaide-Symbols"))), 1)
             self.assertEqual(len(list((home / ".icons").glob("Hikaide-Symbols-Light"))), 1)
             self.assertEqual(len(list((home / ".themes").glob("Hikaide"))), 1)
@@ -720,7 +784,7 @@ class InstalledAssetsTests(unittest.TestCase):
             canonical = home / ".local/state/hakuspace/state/[theme].appearance.env"
             before = canonical.read_bytes()
             backup_states = list((home / ".local/state/icon-accent").glob("*/state.json"))
-            self.assertEqual(len(backup_states), 2)
+            self.assertEqual(len(backup_states), 0)
             backup_before = {p: p.read_bytes() for p in backup_states}
             svg = home / ".icons/Hikaide-Symbols/scalable/places/folder.svg"
             svg_before = svg.read_bytes()
@@ -728,8 +792,6 @@ class InstalledAssetsTests(unittest.TestCase):
             self.assertEqual(canonical.read_bytes(), before)
             self.assertEqual({p: p.read_bytes() for p in backup_states}, backup_before)
             self.assertEqual(svg.read_bytes(), svg_before)
-            engine("restore", "Hikaide-Symbols")
-            engine("restore", "Hikaide-Symbols-Light")
             run(binary / "theme_ctl.sh", "apply")
             accent_matches("#AC7994")
             run("bash", sources / "hikaide-symbols/scripts/install.sh", "--replace")
@@ -749,7 +811,7 @@ class InstalledAssetsTests(unittest.TestCase):
             marker = (icons / ".hikaide-symbols.json") if (icons / ".hikaide-symbols.json").exists() else (icons / ".hikaide-symbols")
             marker.unlink()
             svg_before = svg.read_bytes()
-            rejected = run("bash", sources / "hikaide-symbols/scripts/install.sh", "--replace", success=False)
+            rejected = run("bash", ROOT / "scripts/setup.sh", "apply", "symbols", success=False)
             self.assertIn("unmanaged", rejected.stderr)
             self.assertEqual(svg.read_bytes(), svg_before)
             away.rename(archive)

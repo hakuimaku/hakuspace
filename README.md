@@ -196,7 +196,8 @@ cd ~/hakuspace
 # 5. Deploy common configs + core scripts + your WM config
 ./link.sh --all niri
 
-# 6. Optional: install Haku Space icons/themes/wallpapers
+# 6. Optional: install visual software and wallpapers independently
+./scripts/setup.sh setup
 ./scripts/assets.sh
 
 # 7. Initialize Haku Space state and user overrides
@@ -327,12 +328,24 @@ If you installed in **Symlink mode** and want to cleanly remove Haku Space symli
 
 ## Visual Ecosystem
 
-Haku Space comes with its own matching visual suite installed via `hakuspace-archive` (`./scripts/assets.sh`):
+HakuSpace manages its visual suite as independent repositories at separately resolved paths, using [`scripts/setup.sh`](docs/visual-setup.md):
 - **[Haku Cursor](https://github.com/hakuimaku/haku-cursor)** (default: `Haku-Dark`, size `24`)
 - **[Hikaide GTK](https://github.com/hakuimaku/hikade-gtk-theme)** (default: `Hikaide`)
 - **[Hikaide-Symbols](https://github.com/hakuimaku/hikaide-symbols)** (automatically recolored to match your active wallpaper/theme accent color!)
 
 Hikai's saved color mode selects `Hikaide` / `Hikaide-Light` and `Hikaide-Symbols` / `Hikaide-Symbols-Light` only while that managed family is selected. Third-party GTK and icon themes stay unchanged. Icon accent sync is disabled whenever the active icon theme is outside the Hikaide-Symbols family.
+
+`hakuspace-archive` supplies wallpapers only through `./scripts/assets.sh`.
+`update.sh` checks clean child repositories after updating/re-executing HakuSpace,
+then rebuilds only newly cloned or changed sources. Dirty trees and explicit/remembered source
+overrides skip automatic pull and installation. Use explicit local apply after edits:
+
+```bash
+./scripts/setup.sh status
+./scripts/setup.sh update
+./scripts/setup.sh apply symbols
+./scripts/setup.sh workspace  # Optional VS Code multi-root file
+```
 
 You can also control your accent color and check your visual setup from the terminal:
 
@@ -512,7 +525,7 @@ Want to understand how HakuSpace works under the hood? We've written comprehensi
 
 ## Credits
 
-See **hakuspace-archive** for the assets used in this project: [hakuspace-archive](https://github.com/hakuimaku/hakuspace-archive)
+See **hakuspace-archive** for the wallpapers used in this project: [hakuspace-archive](https://github.com/hakuimaku/hakuspace-archive)
 
 ---
 

@@ -33,6 +33,16 @@ hakuspace (root)
     └── packages/              # Package lists for installation
 ```
 
+Visual source repositories may live anywhere outside HakuSpace. The resolver uses
+`HAKU_CURSOR_SOURCE`, `HAKU_GTK_THEME_SOURCE` and `HAKU_ICON_THEME_SOURCE` independently,
+then remembered centralized source intent, then `~/haku-cursor`, `~/hikade-gtk-theme`
+and `~/hikaide-symbols` as clone fallbacks. No common parent or nested-repository
+layout is required. `scripts/setup.sh` owns orchestration and can generate a VS Code
+multi-root workspace from actual source paths; see [visual setup](visual-setup.md).
+`hakuspace-archive` is wallpaper-only. Existing nested clones are warned about and
+left untouched. Git metadata and installed files are checked live; centralized
+state holds only explicit source intent and pending appearance recovery.
+
 ## Two Desktop Shells: `Hikai` & `Classic`
 
 HakuSpace comes with two desktop shell modes that you can switch between anytime without losing your theme or settings:
@@ -64,11 +74,12 @@ HakuSpace uses a **Hybrid System**: you can choose between **Deep Symlinking** o
     - Creates base directories and links or copies everything from `src/home/.config/` and `src/core/` to your machine (using `scripts/registry.sh` as the single list of targets).
     - Handles the `ONCE_CONFIGS` group (always copied, never symlinked).
     - Initializes your custom `~/hakucfg` space from the template.
-  - **Phase 4: Post-install:** Installs optional themes/icons/wallpapers (`scripts/assets.sh`), initializes state, syncs `~/hakucfg`, and configures your shell and display manager.
+  - **Phase 4: Post-install:** Installs optional visual software (`scripts/setup.sh setup`) and wallpapers (`scripts/assets.sh`) separately, initializes state, syncs `~/hakucfg`, and configures your shell and display manager.
 
 ### `update.sh` (Applying Updates)
 - Run this whenever you pull fresh code from GitHub.
   - **Phase 1: Repository Update:** Prompts you to choose between LATEST (`main` branch) or STABLE (latest tag) to update the repository.
+  - **Visual ecosystem:** After the repository update and any updater re-exec, `scripts/setup.sh update` checks independent child sources. Clean sources follow their upstream with `git pull --ff-only`; only newly cloned or changed sources rebuild. Visual failures are reported while package/config updates continue; the updater returns an incomplete status at the end. Dirty trees and source overrides skip automatic installation. HakuSpace Stable/Latest selection does not pin the children.
   - **Phase 2: Backup & Mode Detection:** Creates a safety net in `~/.backup/` before touching anything. It then heuristically scans your currently deployed files to determine whether you are using Symlink or Copy mode.
   - **Phase 3: Smart Sync:**
     - Redeploys all configs and scripts based on your mode.

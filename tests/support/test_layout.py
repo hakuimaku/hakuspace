@@ -16,7 +16,7 @@ class TestLayout(unittest.TestCase):
     def test_runtime_scripts_only(self):
         """Reject test assets, bytecode and developer tools in runtime modules."""
         expected = {
-            'assets.sh', 'core.sh', 'dependencies.sh', 'deploy_mode.sh', 'desktop_defaults.sh',
+            'assets.sh', 'core.sh', 'dependencies.sh', 'deploy_mode.sh', 'desktop_defaults.sh', 'setup.sh',
             'directories.sh', 'display_manager.sh', 'doctor.sh', 'filesystem.sh', 'functions.sh',
             'hakucfg.sh', 'legacy_copy.sh', 'link.sh', 'nixos.sh', 'once_configs.sh', 'packages.sh',
             'registry.sh', 'reload.sh', 'repo_update.sh', 'runtime.sh', 'select_wm.sh',

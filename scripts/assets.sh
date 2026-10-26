@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# HakuSpace Assets Deployment Module
-# Clones or updates hakuspace-archive repository (wallpapers, icons, themes) and runs setup.sh.
+# Copy missing wallpapers from the independent static archive checkout.
 
 set -e
 
@@ -15,9 +14,8 @@ deploy_assets() {
     local dry_run="${1:-0}"
 
     if [[ "$dry_run" -eq 1 ]]; then
-        log_info "DRY RUN: would deploy assets from $ARCHIVE_REPO_URL to $ARCHIVE_DIR"
-        log_info "DRY RUN: install Haku Cursor, Hikaide, Hikaide-Light, Hikaide-Symbols, Hikaide-Symbols-Light and wallpapers"
-        log_info "DRY RUN: verify/activate appearance, apply canonical theme and reconcile icon accent"
+        log_info "DRY RUN: update wallpaper archive from $ARCHIVE_REPO_URL at $ARCHIVE_DIR"
+        log_info "DRY RUN: copy missing wallpapers to $HOME/Pictures/Wallpapers"
         return 0
     fi
 
@@ -28,8 +26,14 @@ deploy_assets() {
 
     if [[ -n "${HAKUSPACE_ARCHIVE_SOURCE:-}" ]]; then
         [[ -d "$ARCHIVE_DIR" ]] || { log_error "Archive override not found: $ARCHIVE_DIR"; return 1; }
-    elif [[ -d "$ARCHIVE_DIR/.git" && ! -L "$ARCHIVE_DIR" ]]; then
-        if [[ -n "$(git -C "$ARCHIVE_DIR" status --porcelain)" ]]; then
+    elif [[ -d "$ARCHIVE_DIR/.git" && ! -L "$ARCHIVE_DIR" && ! -L "$ARCHIVE_DIR/.git" ]]; then
+        local origin top changes
+        top="$(git -C "$ARCHIVE_DIR" rev-parse --show-toplevel)" || return 1
+        [[ "$top" == "$(cd "$ARCHIVE_DIR" && pwd -P)" ]] || { log_error "Not an independent archive checkout"; return 1; }
+        origin="$(git -C "$ARCHIVE_DIR" config --get remote.origin.url)" || return 1
+        [[ "$origin" == "$ARCHIVE_REPO_URL" ]] || { log_error "Wrong archive origin: $origin"; return 1; }
+        changes="$(git -C "$ARCHIVE_DIR" status --porcelain)" || return 1
+        if [[ -n "$changes" ]]; then
             log_error "Dirty archive checkout; leaving untouched: $ARCHIVE_DIR"
             return 1
         fi
@@ -43,17 +47,12 @@ deploy_assets() {
         git clone --depth 1 "$ARCHIVE_REPO_URL" "$ARCHIVE_DIR" || return 1
     fi
 
-    if [[ ! -f "$ARCHIVE_DIR/setup.sh" ]]; then
-        log_error "setup.sh not found in $ARCHIVE_DIR"
+    if [[ ! -d "$ARCHIVE_DIR/Wallpapers" ]]; then
+        log_error "Wallpapers directory not found in $ARCHIVE_DIR"
         return 1
     fi
-
-    log_info "Running archive setup script..."
-    export PATH="$HOME/.local/bin:$PATH"
-    bash "$ARCHIVE_DIR/setup.sh" || return 1
-    "$SOURCE_CORE/backend/theme/appearance_ctl.sh" verify || return 1
-    "$SOURCE_CORE/backend/theme/appearance_ctl.sh" apply || return 1
-    "$SOURCE_CORE/backend/theme/theme_ctl.sh" apply
+    mkdir -p "$HOME/Pictures/Wallpapers" || return 1
+    cp -an -- "$ARCHIVE_DIR/Wallpapers/." "$HOME/Pictures/Wallpapers/"
 }
 
 # CLI Entrypoint

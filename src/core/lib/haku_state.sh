@@ -24,6 +24,8 @@ haku_state_path() {
         screen.rounded.dynamic) name='[screen].rounded.dynamic' ;;
         theme.opaque.enabled) name='[theme].opaque.enabled' ;;
         theme.appearance.env) name='[theme].appearance.env' ;;
+        system.visual-sources.json) name='[system].visual-sources.json' ;;
+        system.visual-reconcile.pending) name='[system].visual-reconcile.pending' ;;
         system.idle-inhibit.enabled) name='[system].idle-inhibit.enabled' ;;
         cava.enabled) name='[cava].enabled' ;;
         cava.position) name='[cava].position' ;;

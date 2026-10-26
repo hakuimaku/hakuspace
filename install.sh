@@ -64,17 +64,22 @@ else
     "$HAKU_DIR/scripts/legacy_copy.sh" install "${SELECTED_WMS[@]}"
 fi
 
-# 8. Extra Assets (hakuspace-archive)
-step_title "6 - ASSETS SETUP"
-echo -e "${C_BOLD}HAKUSPACE EXTRA ASSETS${C_RESET}"
-echo "  • Repository: $ARCHIVE_REPO_URL"
-echo "  • Target:     $(shorten_path "$ARCHIVE_DIR")"
-echo "  • Contents:   Icons, GTK/Cursor Themes, and Wallpapers"
-echo ""
-if ask_yes_no "Install the HakuSpace extra assets shown above?"; then
+# 8. Independent visual sources and optional wallpaper archive.
+step_title "6 - VISUAL ECOSYSTEM & WALLPAPERS"
+echo "  • Visual sources: independent HAKU_*_SOURCE paths (fallback: ~/haku-cursor, ~/hikade-gtk-theme, ~/hikaide-symbols)"
+echo "  • Wallpaper archive: $(shorten_path "$ARCHIVE_DIR")"
+if ask_yes_no "Install/update the HakuSpace visual ecosystem?"; then
+    "$HAKU_DIR/scripts/setup.sh" setup
+    if ask_yes_no "Generate a VS Code multi-root workspace?"; then
+        "$HAKU_DIR/scripts/setup.sh" workspace || log_warn "Workspace generation skipped; visual installation completed."
+    fi
+else
+    log_skip "Skipping visual ecosystem setup."
+fi
+if ask_yes_no "Install/update HakuSpace wallpapers?"; then
     "$HAKU_DIR/scripts/assets.sh"
 else
-    log_skip "Skipping assets setup."
+    log_skip "Skipping wallpapers."
 fi
 
 # 9. State & User Environment Setup

@@ -16,6 +16,8 @@ Persistent feature state lives in `~/.local/state/hakuspace/state/`. Each filena
 | `screen.rounded.dynamic` | `[screen].rounded.dynamic` |
 | `theme.opaque.enabled` | `[theme].opaque.enabled` |
 | `theme.appearance.env` | `[theme].appearance.env` |
+| `system.visual-sources.json` | `[system].visual-sources.json` |
+| `system.visual-reconcile.pending` | `[system].visual-reconcile.pending` |
 | `system.idle-inhibit.enabled` | `[system].idle-inhibit.enabled` |
 | `cava.enabled` | `[cava].enabled` |
 | `cava.position` | `[cava].position` |
@@ -41,3 +43,8 @@ alias selects `ACCENT_DARK` for Classic/global consumers. Hikai's independent
 `appearance.colorMode` preference lives in `~/hakucfg/hikai/hikai-shell.json` (v7),
 not in an additional runtime state key. `theme.opaque.enabled` records the request;
 its effective overrides apply only while the backend is Classic.
+
+Visual setup stores only explicit source locations in `system.visual-sources.json`
+and an operational activation retry flag in `system.visual-reconcile.pending`.
+Git revisions, dirty status and installed asset presence are derived live; no
+separate visual installation manifest is used. See [visual setup](../visual-setup.md).

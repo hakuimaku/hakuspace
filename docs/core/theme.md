@@ -54,7 +54,23 @@ We've designed this system to be highly customizable. If you want to tweak how i
 
 ## Visual Ecosystem (Icons, GTK & Cursor Sync)
 
-Beyond just changing your terminal and status bar colors, HakuSpace comes with its own matching visual suite - **[Haku Cursor](https://github.com/hakuimaku/haku-cursor)**, **[Hikaide GTK](https://github.com/hakuimaku/hikade-gtk-theme)**, and **[Hikaide-Symbols](https://github.com/hakuimaku/hikaide-symbols)** - installed via `hakuspace-archive` (`./scripts/assets.sh`).
+Beyond just changing your terminal and status bar colors, HakuSpace comes with its own matching visual suite - **[Haku Cursor](https://github.com/hakuimaku/haku-cursor)**, **[Hikaide GTK](https://github.com/hakuimaku/hikade-gtk-theme)**, and **[Hikaide-Symbols](https://github.com/hakuimaku/hikaide-symbols)** - managed by HakuSpace as independent repositories at their own absolute paths; see [visual setup and multi-root development](../visual-setup.md). `./scripts/setup.sh setup` builds and installs them; `hakuspace-archive` supplies wallpapers only through `./scripts/assets.sh`.
+
+Use `./scripts/setup.sh status` to inspect source locations and dirty state,
+`./scripts/setup.sh update` to fast-forward clean sources and install changed
+revisions, or `./scripts/setup.sh apply symbols` to build local edits without
+pulling. Dirty repositories, detached/no-upstream branches and explicit source
+overrides are preserved during automatic update. Existing source trees elsewhere
+are never moved; the `HAKU_*_SOURCE` overrides remain available for explicit setup/apply.
+
+HakuSpace derives repository revisions, dirty state and installed assets live.
+Only explicit source locations are remembered through registered centralized state;
+no separate installation manifest is read or written. Pending appearance activation
+is retained in `[system].visual-reconcile.pending` and retried by setup/update/verify
+without rebuilding unchanged repositories just to reactivate appearance. Reconciliation
+uses current source core once per batch and preserves Light/Dark/Classic mapping,
+XDG discovery and stateless accent sync. Installed assets remain usable independently
+of the wallpaper archive or source checkouts.
 
 Even better: your folder and system icons in `Hikaide-Symbols` automatically change color to match your active accent color! Here is how that pipeline works behind the scenes:
 
@@ -102,18 +118,27 @@ The controller reads the active desktop GTK and icon theme names, with native GT
 - Mode changes affect GTK only while `Hikaide` or `Hikaide-Light` is active, and icons only while `Hikaide-Symbols` or `Hikaide-Symbols-Light` is active. A custom selection in either component is preserved independently.
 - Icon accent sync requires an active, recognized managed Hikaide-Symbols family. Third-party icon themes are never recolored, including when a legacy command environment sets `HAKU_ICON_ACCENT_MODE=on`. Both `auto` and `on` retain this managed-family restriction; `off` disables recoloring.
 - `HAKU_ICON_THEME=system` remains an explicit script-level opt-out from icon changes.
+- Icon discovery searches `${XDG_DATA_HOME:-$HOME/.local/share}/icons`, `~/.icons`, `/usr/local/share/icons`, then `/usr/share/icons`. Empty/unset `HAKU_ICON_DIR` uses this order; a nonempty value selects that root exclusively. Activation, metadata checks, status and accent targets share this resolver.
+- Only writable, user-owned managed installations with the expected theme name and Hikaide metadata are recolored. System installations are activation-only; escaped symlinks and invalid/missing pair metadata cannot authorize writes. Multiple valid user installations produce a warning and all receive the canonical Dark/Light accents.
 - Cursor defaults are `Haku-Dark`, size 24. Mode-only operations leave the current cursor unchanged. Full appearance apply writes cursor settings to `~/.config/environment.d/90-hakuspace-cursor.conf`.
 
 ### 3. The Built-in Icon Recoloring Engine (`haku_icon_accent.py`)
 Located at `src/core/app/icon-accent/haku_icon_accent.py` (and linked to `~/.local/bin/haku_icon_accent.py`), this pure-Python script safely updates SVG accent colors in your icon theme without needing any external dependencies.
-- **Safe Backups:** Before touching any SVG file, it saves a checksum-verified backup of the original artwork in `~/.local/state/icon-accent/`. If you manually edit an icon file yourself, the engine detects the mismatch and refuses to overwrite your work!
-- **Manual CLI:** You can check the current icon color or restore the original icons anytime:
+Managed Hikaide-Symbols uses stateless accent reconciliation: Dark receives `ACCENT_DARK`, Light receives `ACCENT_LIGHT`, and `[theme].appearance.env` remains the source of truth. Sync uses `apply --no-backup`; it validates patched SVGs before atomic replacement, leaves matching files untouched, and creates no backup, receipt or current-accent state. Interrupted multi-file writes may leave mixed accents; rerun `appearance_ctl.sh sync-accent` to converge. Mode changes only select the installed variants.
+
+Locks live under `${XDG_RUNTIME_DIR}/hakuspace/appearance/`, falling back to `${TMPDIR:-/tmp}/hakuspace-$UID/appearance/`. Successful managed reconciliation removes only legacy Hikaide backup entries identified by their theme, installation path, backend and hashed directory key; unrelated or unverified entries remain.
+
+Generic usage retains checksum-verified backup/restore by default. Backups live under `${XDG_STATE_HOME:-$HOME/.local/state}/icon-accent`; `--state-dir PATH` selects a different backup root. Combining `--state-dir` with `--no-backup` is rejected. Stateless mode never constructs a backup manager and cannot restore previous artwork.
 
 ```bash
+# Inspect managed artwork or reconcile both variants from canonical state:
 python3 ~/.local/bin/haku_icon_accent.py --icons-dir ~/.icons status Hikaide-Symbols
-python3 ~/.local/bin/haku_icon_accent.py --icons-dir ~/.icons restore Hikaide-Symbols
-# Reapply your current HakuSpace accent after restoring:
-~/.local/bin/theme_ctl.sh apply
+~/.local/bin/appearance_ctl.sh sync-accent
+# Generic, explicitly requested recoloring retains backups:
+python3 ~/.local/bin/haku_icon_accent.py --icons-dir ~/.icons set '#89B4FA' --theme Example
+python3 ~/.local/bin/haku_icon_accent.py --icons-dir ~/.icons restore Example
+# Direct stateless use with a resolved path:
+python3 ~/.local/bin/haku_icon_accent.py apply --theme-dir ~/.icons/Hikaide-Symbols --accent '#89B4FA' --no-backup
 ```
 
 > [!NOTE]

@@ -17,6 +17,8 @@ STATE_FILES = {
     'screen.rounded.dynamic': '[screen].rounded.dynamic',
     'theme.opaque.enabled': '[theme].opaque.enabled',
     'theme.appearance.env': '[theme].appearance.env',
+    'system.visual-sources.json': '[system].visual-sources.json',
+    'system.visual-reconcile.pending': '[system].visual-reconcile.pending',
     'system.idle-inhibit.enabled': '[system].idle-inhibit.enabled',
     'cava.enabled': '[cava].enabled',
     'cava.position': '[cava].position',
