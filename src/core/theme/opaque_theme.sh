@@ -90,19 +90,6 @@ INNEREOF
     fi
 }
 
-render_gtk() {
-    if [[ "$IS_OPAQUE" == "1" ]]; then
-        cat > "$OPAQUE_DIR/gtk.css" <<'INNEREOF'
-.thunar {
-    background-color: #000000;
-    background: #000000;
-}
-INNEREOF
-    else
-        echo "" > "$OPAQUE_DIR/gtk.css"
-    fi
-}
-
 render_swaync() {
     if [[ "$IS_OPAQUE" == "1" ]]; then
         cat > "$OPAQUE_DIR/swaync.css" <<'INNEREOF'
@@ -130,7 +117,7 @@ INNEREOF
 }
 
 apply_renderers() {
-    # Kitty and GTK are disabled temporarily
+    # Kitty are disabled temporarily
     RENDERERS=(waybar rofi swaync)
     for renderer in "${RENDERERS[@]}"; do
         "render_${renderer}"
