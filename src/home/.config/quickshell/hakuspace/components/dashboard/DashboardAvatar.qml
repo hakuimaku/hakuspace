@@ -116,7 +116,7 @@ Item {
             radius: width / 2
             color: "transparent"
             border.width: root.isHovered ? 3 : 2
-            border.color: root.isHovered ? Theme.accent : Qt.lighter(Theme.hoverMuted, 1.45)
+            border.color: root.isHovered ? Theme.accent : Theme.surfaceHighlight(1.45)
             z: 20
 
             Behavior on border.color { ColorAnimation { duration: HAnimation.fast } }

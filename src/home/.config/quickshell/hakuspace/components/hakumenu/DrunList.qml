@@ -9,7 +9,7 @@ Item {
     id: root
 
     property string query: ""
-    property color rowHoverColor: "#202020"
+    property color rowHoverColor: Theme.hoverMuted
     property color rowSelectedColor: Theme.accent
     signal launched()
     signal highlightedLabelChanged(string label)
@@ -207,7 +207,7 @@ Item {
                     Text {
                         width: parent.width
                         text: appRow.modelData.genericName || appRow.modelData.comment || appRow.modelData.id
-                        color: (appRow.selected || appRow.focused) ? Qt.rgba(0, 0, 0, 0.70) : Theme.fgMuted
+                        color: (appRow.selected || appRow.focused) ? Theme.onAccentMuted : Theme.fgMuted
                         font.family: Theme.fontFamily
                         font.pixelSize: Math.max(10, Math.round((Theme.fontSize + 1) * 0.82))
                         elide: Text.ElideRight

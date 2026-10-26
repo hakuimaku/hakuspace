@@ -46,8 +46,8 @@ Item {
                 radius: 3.5
                 anchors.verticalCenter: parent.verticalCenter
                 color: TextStore.bioSaving ? Theme.accent
-                                           : (TextStore.bioError.length > 0 ? "#ff5555"
-                                           : (TextStore.bioDirty ? "#e5c07b" : "#98c379"))
+                                           : (TextStore.bioError.length > 0 ? Theme.danger
+                                           : (TextStore.bioDirty ? Theme.warning : Theme.success))
             }
 
             Text {
@@ -140,7 +140,7 @@ Item {
                 radius: Theme.radius
                 color: Theme.surface
                 border.width: 1
-                border.color: Qt.lighter(Theme.hoverMuted, 1.45)
+                border.color: Theme.surfaceHighlight(1.45)
                 z: 200
 
                 Behavior on opacity {

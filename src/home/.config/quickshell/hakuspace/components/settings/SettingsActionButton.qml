@@ -10,7 +10,7 @@ Motion.MorphButton {
     property Item settingsNavGroup: null
     radius: Theme.radius
     // Reserve accent fills for explicit selection and primary actions.
-    hoverColor: Qt.lighter(Theme.hoverMuted, 1.18)
+    hoverColor: Theme.surfaceHighlight(1.18)
     pressedColor: Theme.hoverMuted
     hoverForegroundColor: Theme.fg
     pressedForegroundColor: Theme.fg
@@ -25,7 +25,7 @@ Motion.MorphButton {
         anchors.bottomMargin: Theme.gap
         width: Math.max(0, Math.min(parent.width - Theme.pad * 2, Theme.fontSize * 2))
         height: 1
-        color: root.selected ? "#000000" : Theme.fg
+        color: root.selected ? Theme.onAccentColor : Theme.fg
         visible: root.flat && root.activeFocus
     }
     Accessible.role: Accessible.Button

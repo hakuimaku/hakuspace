@@ -63,40 +63,107 @@ icon_directory() {
 
 icons_installed() { [[ "$HAKU_ICON_THEME" == system ]] || icon_directory >/dev/null; }
 cursor_installed() { cursor_directory >/dev/null; }
-icon_accent_policy() {
-    if [[ "$HAKU_ICON_THEME" == system || "$HAKU_ICON_ACCENT_MODE" == off ||
-            ( "$HAKU_ICON_ACCENT_MODE" == auto && "$HAKU_ICON_THEME" != Hikaide-Symbols ) ]]; then
-        echo disabled
-    elif ! icons_installed; then
-        echo missing
-    elif [[ ! -f "$HAKU_ICON_DIR/$HAKU_ICON_THEME/index.theme" ]]; then
-        echo not-applicable
-    elif [[ "$HAKU_ICON_ACCENT_MODE" == auto ]] && {
-        [[ -L "$HAKU_ICON_DIR/$HAKU_ICON_THEME" || -L "$HAKU_ICON_DIR/$HAKU_ICON_THEME/.hikaide-symbols" ]] ||
-        [[ ! -f "$HAKU_ICON_DIR/$HAKU_ICON_THEME/.hikaide-symbols" ]] ||
-        [[ "$(cat "$HAKU_ICON_DIR/$HAKU_ICON_THEME/.hikaide-symbols")" != 'Hikaide-Symbols managed theme v1' ]];
-    }; then
-        echo not-applicable
+# Validate only this family's metadata; arbitrary themes never gain a guessed sibling.
+managed_icon_variant() {
+    python3 - "$HAKU_ICON_DIR/$1" <<'PYTHON'
+import json
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+mode = {"Hikaide-Symbols": "dark", "Hikaide-Symbols-Light": "light"}.get(path.name)
+if mode is None or path.is_symlink() or not path.is_dir():
+    sys.exit(1)
+metadata = path / ".hikaide-symbols.json"
+try:
+    if metadata.exists() or metadata.is_symlink():
+        if metadata.is_symlink() or json.loads(metadata.read_text()) != {
+                "family": "Hikaide-Symbols", "version": 2, "variant": mode}:
+            sys.exit(1)
+        print(mode)
+    else:
+        metadata = path / ".hikaide-symbols"
+        if mode != "dark" or metadata.is_symlink() or metadata.read_text().rstrip("\n") != "Hikaide-Symbols managed theme v1":
+            sys.exit(1)
+        print("legacy")
+except (OSError, ValueError):
+    sys.exit(1)
+PYTHON
+}
+
+# V2 installations reconcile both precolored themes; v1 and custom themes stay single-target.
+icon_accent_targets() {
+    local variant
+    variant="$(managed_icon_variant "$HAKU_ICON_THEME")" || variant=''
+    if [[ "$variant" == dark || "$variant" == light ]]; then
+        printf 'Hikaide-Symbols %s\nHikaide-Symbols-Light %s\n' "$ACCENT_DARK" "$ACCENT_LIGHT"
+    elif [[ "$HAKU_ICON_THEME" == Hikaide-Symbols-Light ]]; then
+        printf '%s %s\n' "$HAKU_ICON_THEME" "$ACCENT_LIGHT"
     else
-        echo active
+        printf '%s %s\n' "$HAKU_ICON_THEME" "$(theme_state_value accent)"
     fi
 }
 
+icon_accent_policy() {
+    local variant theme
+    if [[ "$HAKU_ICON_THEME" == system || "$HAKU_ICON_ACCENT_MODE" == off ||
+            ( "$HAKU_ICON_ACCENT_MODE" == auto && "$HAKU_ICON_THEME" != Hikaide-Symbols && "$HAKU_ICON_THEME" != Hikaide-Symbols-Light ) ]]; then
+        echo disabled
+        return
+    fi
+    if ! icons_installed; then
+        echo missing
+        return
+    fi
+    if [[ ! -f "$HAKU_ICON_DIR/$HAKU_ICON_THEME/index.theme" ]]; then
+        echo not-applicable
+        return
+    fi
+    variant="$(managed_icon_variant "$HAKU_ICON_THEME")" || variant=''
+    if [[ "$HAKU_ICON_ACCENT_MODE" == auto && -z "$variant" ]]; then
+        echo not-applicable
+        return
+    fi
+    if [[ "$variant" == dark || "$variant" == light ]]; then
+        for theme in Hikaide-Symbols Hikaide-Symbols-Light; do
+            if [[ ! -f "$HAKU_ICON_DIR/$theme/index.theme" ]]; then
+                echo missing
+                return
+            fi
+            if ! managed_icon_variant "$theme" >/dev/null; then
+                echo not-applicable
+                return
+            fi
+        done
+    fi
+    echo active
+}
+
 icon_accent_status() {
-    local policy engine result
+    local policy engine result theme accent
     policy="$(icon_accent_policy)"
     if [[ "$policy" != active ]]; then
         printf '%s\n' "$policy"
-    elif ! engine="$(resolve_engine)"; then
-        echo error
-    elif [[ ! -O "$HAKU_ICON_DIR/$HAKU_ICON_THEME" ]]; then
-        echo error
-    elif python3 "$engine" --icons-dir "$HAKU_ICON_DIR" set "$(theme_state_value accent)" --theme "$HAKU_ICON_THEME" --dry-run >/dev/null 2>&1; then
-        echo active
-    else
-        result=$?
-        if [[ "$result" == 4 ]]; then echo not-applicable; else echo error; fi
+        return
     fi
+    if ! engine="$(resolve_engine)"; then
+        echo error
+        return
+    fi
+    while read -r theme accent; do
+        if [[ ! -O "$HAKU_ICON_DIR/$theme" ]]; then
+            echo error
+            return
+        fi
+        if python3 "$engine" --icons-dir "$HAKU_ICON_DIR" set "$accent" --theme "$theme" --dry-run >/dev/null 2>&1; then
+            continue
+        else
+            result=$?
+        fi
+        if [[ "$result" == 4 ]]; then echo not-applicable; else echo error; fi
+        return
+    done < <(icon_accent_targets)
+    echo active
 }
 
 status() {
@@ -109,6 +176,7 @@ status() {
         echo icon_theme_mode=managed
     fi
     printf 'icon_accent_mode=%s\nicon_accent_status=%s\n' "$HAKU_ICON_ACCENT_MODE" "$(icon_accent_status)"
+    printf 'icon_accent_dark=%s\nicon_accent_light=%s\n' "$ACCENT_DARK" "$ACCENT_LIGHT"
     local component
     for component in gtk_installed icons_installed cursor_installed; do
         if "$component"; then printf '%s=yes\n' "$component"; else printf '%s=no\n' "$component"; fi
@@ -128,31 +196,66 @@ verify() {
 }
 
 sync_accent() {
-    local policy engine accent result
+    local policy engine accent result theme previous index rollback failed=0
+    local -a themes=() accents=() originals=()
     policy="$(icon_accent_policy)"
     case "$policy" in
         disabled|not-applicable) printf 'icon_accent_status=%s\n' "$policy"; return 0 ;;
-        missing) asset_warning "$HAKU_ICON_THEME unavailable; core theme preserved"; return $? ;;
+        missing) asset_warning "$HAKU_ICON_THEME appearance pair unavailable; icons unchanged"; return $? ;;
     esac
     engine="$(resolve_engine)" || return 1
-    if [[ ! -O "$HAKU_ICON_DIR/$HAKU_ICON_THEME" ]]; then
-        printf 'appearance: refusing icon theme not owned by this user\n' >&2
-        return 2
-    fi
     source_library haku_theme.sh || return 1
-    accent="$(theme_state_value accent)"
-    [[ "$accent" =~ ^#[0-9a-fA-F]{6}$ ]] || { asset_warning 'Invalid canonical accent; icons unchanged'; return $?; }
-    if python3 "$engine" --icons-dir "$HAKU_ICON_DIR" set "$accent" --theme "$HAKU_ICON_THEME"; then
-        return 0
-    else
-        result=$?
+    # Serialize reconciles, then reload the latest canonical colors after waiting.
+    local lock_fd
+    exec {lock_fd}> "$THEME_ROOT/icon-accent.lock" || return 1
+    flock -x "$lock_fd" || return 1
+    theme_load_state || return 1
+    # Validate every target and capture old colors before changing either tree.
+    while read -r theme accent; do
+        if [[ ! -O "$HAKU_ICON_DIR/$theme" ]]; then
+            printf 'appearance: refusing icon theme not owned by this user\n' >&2
+            return 2
+        fi
+        [[ "$accent" =~ ^#[0-9a-fA-F]{6}$ ]] || { asset_warning 'Invalid canonical accent; icons unchanged'; return $?; }
+        if python3 "$engine" --icons-dir "$HAKU_ICON_DIR" set "$accent" --theme "$theme" --dry-run >/dev/null; then
+            :
+        else
+            result=$?
+            if [[ "$result" == 4 ]]; then echo icon_accent_status=not-applicable; return 0; fi
+            return "$result"
+        fi
+        previous="$(python3 "$engine" --icons-dir "$HAKU_ICON_DIR" status "$theme")" || return $?
+        themes+=("$theme")
+        accents+=("$accent")
+        originals+=("$previous")
+    done < <(icon_accent_targets)
+    if (( ${#themes[@]} > 1 )); then
+        for previous in "${originals[@]}"; do
+            [[ "$previous" =~ ^#[0-9a-fA-F]{6}$ ]] || {
+                printf 'appearance: ambiguous previous icon accent; pair unchanged\n' >&2
+                return 2
+            }
+        done
     fi
-    if [[ "$result" == 4 ]]; then
-        echo icon_accent_status=not-applicable
-        return 0
-    fi
-    printf 'appearance: icon accent engine failed (%s); core theme preserved\n' "$result" >&2
-    return "$result"
+    for index in "${!themes[@]}"; do
+        if python3 "$engine" --icons-dir "$HAKU_ICON_DIR" set "${accents[index]}" --theme "${themes[index]}"; then
+            continue
+        else
+            result=$?
+        fi
+        # Restore the failed tree too: an engine error may follow partial writes.
+        if (( ${#themes[@]} > 1 )); then
+            for ((rollback=index; rollback>=0; rollback--)); do
+                if ! python3 "$engine" --icons-dir "$HAKU_ICON_DIR" set "${originals[rollback]}" --theme "${themes[rollback]}"; then
+                    printf 'appearance: rollback failed for %s; inspect icon accent backups\n' "${themes[rollback]}" >&2
+                    failed=1
+                fi
+            done
+        fi
+        printf 'appearance: icon accent engine failed (%s); core theme preserved\n' "$result" >&2
+        (( failed == 0 )) || return 5
+        return "$result"
+    done
 }
 
 apply() {

@@ -32,6 +32,7 @@ for (const item of catalog.general) {
     if (item.control === 'number') assert(item.min > 0 && item.max >= item.min, item.key)
 }
 assert.equal(catalog.search('blue light')[0].key, 'NIGHT_LIGHT_TEMPERATURE')
+assert(catalog.search('light dark white color mode').some(item => item.id === 'colorMode'))
 assert.equal(catalog.search('video cache').length, 1)
 assert.equal(catalog.general.find(item => item.key === 'REC_OPTS').category, 'Recording')
 assert.equal(catalog.general.find(item => item.key === 'AWWW_OPTS').category, 'Wallpaper')

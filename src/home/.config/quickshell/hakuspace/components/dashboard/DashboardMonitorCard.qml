@@ -7,7 +7,7 @@ Rectangle {
     radius: Theme.largeRadius
     color: Theme.surface
     border.width: 0
-    border.color: Qt.lighter(Theme.hoverMuted, 1.25)
+    border.color: Theme.surfaceHighlight(1.25)
     clip: true
 
     property bool active: false
@@ -77,7 +77,7 @@ Rectangle {
             width: pillText.implicitWidth + 14
             height: 22
             radius: 11
-            color: pageMouse.containsMouse ? Qt.lighter(Theme.hoverMuted, 1.25) : Theme.hoverMuted
+            color: pageMouse.containsMouse ? Theme.surfaceHighlight(1.25) : Theme.hoverMuted
             Behavior on color { ColorAnimation { duration: HAnimation.fast } }
 
             Text {

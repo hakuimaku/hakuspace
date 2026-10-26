@@ -44,7 +44,7 @@ Rectangle {
     property Item targetItem: null
     property Item coordinateSpace: null
     property color normalColor: Theme.accent
-    property color dangerColor: "#e05555"
+    property color dangerColor: Theme.dangerFill
 
     // Maps geometry from target Item into container coordinates and updates target bounds.
     function syncTarget(forceSnap) {

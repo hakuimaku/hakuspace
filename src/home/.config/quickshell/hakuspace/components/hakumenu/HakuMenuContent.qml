@@ -23,9 +23,9 @@ Item {
     readonly property real innerWidth: Math.max(0, width - innerPad * 2)
     readonly property real stateWidth: Math.max(124, Theme.fontSize * 8.2 + 8)
     readonly property bool showStateRegion: menu.mode === "theme"
-    readonly property color controlBg: Qt.darker(Theme.hoverMuted, 1.75)
-    readonly property color controlHoverBg: Qt.darker(Theme.hoverMuted, 1.35)
-    readonly property color listBg: Qt.darker(Theme.hoverMuted, 2.05)
+    readonly property color controlBg: Theme.surfaceSubtle(1.75)
+    readonly property color controlHoverBg: Theme.surfaceSubtle(1.35)
+    readonly property color listBg: Theme.surfaceSubtle(2.05)
     readonly property real topRowHeight: Theme.fontSize * 4
     readonly property real controlsY: controlsAtBottom ? height - innerPad - topRowHeight : innerPad
     readonly property real switcherWidth: innerWidth * 0.40
@@ -77,8 +77,8 @@ Item {
                     selected: menu.mode === modelData.key
                     selectedOverridesHover: true
                     idleColor: "transparent"
-                    hoverColor: menu.controlHoverBg
-                    pressedColor: menu.controlHoverBg
+                    hoverColor: "transparent"
+                    pressedColor: "transparent"
                     selectedColor: "transparent"
                     foregroundColor: Theme.fg
                     hoverForegroundColor: Theme.fg
@@ -218,7 +218,7 @@ Item {
             visible: menu.mode === "general"
             query: menu.query
             rowHoverColor: menu.controlHoverBg
-            rowSelectedColor: Qt.darker(Theme.hoverMuted, 1.18)
+            rowSelectedColor: Theme.surfaceSubtle(1.18)
             onHighlightedLabelChanged: label => UiState.setHakuMenuSelectionLabel(label)
             onLaunched: UiState.closeHakuMenu()
         }
@@ -230,7 +230,7 @@ Item {
             visible: menu.mode === "drun"
             query: menu.query
             rowHoverColor: menu.controlHoverBg
-            rowSelectedColor: Qt.darker(Theme.hoverMuted, 1.18)
+            rowSelectedColor: Theme.surfaceSubtle(1.18)
             onHighlightedLabelChanged: label => UiState.setHakuMenuSelectionLabel(label)
             onLaunched: UiState.closeHakuMenu()
         }
@@ -260,7 +260,7 @@ Item {
         stateColumnWidth: Math.max(0, stateRegion.width - Theme.gap * 2)
         columnGap: Theme.gap * 4
         rowHoverColor: menu.controlHoverBg
-        rowSelectedColor: Qt.darker(Theme.hoverMuted, 1.18)
+        rowSelectedColor: Theme.surfaceSubtle(1.18)
         onHighlightedLabelChanged: label => UiState.setHakuMenuSelectionLabel(label)
         onWallpaperRequested: menu.wallpaperRequested()
         onLaunched: closeMenu => {

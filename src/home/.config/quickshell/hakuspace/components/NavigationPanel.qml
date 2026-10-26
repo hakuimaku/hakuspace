@@ -117,8 +117,8 @@ Item {
     // Selection and hover are intentionally separate: selection owns accent;
     // hover uses a neutral gray and expands the sector/icon.
     readonly property color selectedColor: Theme.accent
-    readonly property color hoverColor: Qt.lighter(Theme.hoverMuted, 1.35)
-    readonly property color idleColor: Qt.darker(Theme.hoverMuted, 1.18)
+    readonly property color hoverColor: Theme.surfaceHighlight(1.35)
+    readonly property color idleColor: Theme.surfaceSubtle(1.18)
     readonly property real hoverSliceScale: 1.20
     readonly property real hoverTextScale: 1.40
     readonly property real outerSectorRadius: circleRadius - 7
@@ -1141,7 +1141,7 @@ Item {
             radius: Math.min(width, height) / 2
             color: root.blendColor(Theme.accent, Theme.surface, root.logoMorphProgress)
             border.width: root.logoMorphProgress > 0.05 ? 2 : 0
-            readonly property color baseBorderColor: Qt.lighter(Theme.hoverMuted, 1.55)
+            readonly property color baseBorderColor: Theme.surfaceHighlight(1.55)
             border.color: Qt.rgba(baseBorderColor.r, baseBorderColor.g, baseBorderColor.b,
                                   baseBorderColor.a * Math.max(0.0, Math.min(1.0, (root.logoMorphProgress - 0.1) / 0.9)))
             z: 120
@@ -1266,7 +1266,7 @@ Item {
                     radius: width / 2
                     color: "transparent"
                     border.width: 2
-                    border.color: Qt.lighter(Theme.hoverMuted, 1.75)
+                    border.color: Theme.surfaceHighlight(1.75)
                 }
 
                 Repeater {

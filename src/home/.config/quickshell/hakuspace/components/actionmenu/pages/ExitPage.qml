@@ -151,7 +151,7 @@ ActionMenu.ActionMenuPage {
             Layout.fillWidth: true
             Layout.preferredHeight: 30
             radius: 6
-            color: Qt.rgba(1, 1, 1, 0.04)
+            color: Qt.alpha(Theme.overlayInk, 0.04)
 
             Item {
                 id: headerCols
@@ -234,7 +234,7 @@ ActionMenu.ActionMenuPage {
                     width: processList.width - vbar.reservedGutter
                     height: Math.max(32, Theme.fontSize * 2.0)
                     radius: 4
-                    color: index % 2 === 0 ? "transparent" : Qt.rgba(1, 1, 1, 0.02)
+                    color: index % 2 === 0 ? "transparent" : Qt.alpha(Theme.overlayInk, 0.02)
 
                     Item {
                         id: rowCols
@@ -254,7 +254,7 @@ ActionMenu.ActionMenuPage {
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.fontSize + 1
                             font.weight: modelData.highRam ? Font.DemiBold : Font.Normal
-                            color: modelData.highRam ? "#ff8888" : Theme.fg
+                            color: modelData.highRam ? Theme.danger : Theme.fg
                             elide: Text.ElideRight
                         }
 
@@ -284,7 +284,7 @@ ActionMenu.ActionMenuPage {
                                     text: modelData.ram
                                     font.family: Theme.fontFamily
                                     font.pixelSize: Math.max(9, Math.round((Theme.fontSize + 1) * 0.82))
-                                    color: modelData.highRam ? "#ff8888" : Theme.fgDim
+                                    color: modelData.highRam ? Theme.danger : Theme.fgDim
                                 }
 
                                 Rectangle {
@@ -293,7 +293,7 @@ ActionMenu.ActionMenuPage {
                                     implicitWidth: 6
                                     implicitHeight: 6
                                     radius: 3
-                                    color: "#ff5555"
+                                    color: Theme.danger
                                 }
                             }
                         }
@@ -329,9 +329,9 @@ ActionMenu.ActionMenuPage {
                 focused: selected
                 selectedOverridesHover: true
 
-                idleColor: (selected || focused) ? "transparent" : Qt.darker(Theme.hoverMuted, 1.18)
-                hoverColor: (selected || focused) ? "transparent" : Qt.darker(Theme.hoverMuted, 1.35)
-                pressedColor: (selected || focused) ? "transparent" : Qt.darker(Theme.hoverMuted, 1.55)
+                idleColor: (selected || focused) ? "transparent" : Theme.surfaceSubtle(1.18)
+                hoverColor: (selected || focused) ? "transparent" : Theme.surfaceSubtle(1.35)
+                pressedColor: (selected || focused) ? "transparent" : Theme.surfaceSubtle(1.55)
                 selectedColor: "transparent"
                 focusColor: "transparent"
 
@@ -368,7 +368,7 @@ ActionMenu.ActionMenuPage {
                 selectedColor: "transparent"
                 focusColor: "transparent"
 
-                foregroundColor: (selected || focused) ? "#ffffff" : "#ff6b6b"
+                foregroundColor: (selected || focused) ? "#ffffff" : Theme.danger
                 hoverForegroundColor: "#ffffff"
                 selectedForegroundColor: "#ffffff"
 

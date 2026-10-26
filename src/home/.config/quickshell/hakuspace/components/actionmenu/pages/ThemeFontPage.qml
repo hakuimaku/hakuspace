@@ -180,7 +180,7 @@ ActionMenu.ActionMenuPage {
             text: root.errorMessage
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSize
-            color: "#ff6b6b"
+            color: Theme.danger
             Layout.alignment: Qt.AlignHCenter
         }
 

@@ -25,7 +25,7 @@ WallpaperActionButton {
     pressScaleDelta: 0
     radius: Math.min(8, height / 2)
     idleColor: "transparent"
-    hoverColor: Qt.lighter(Theme.hoverMuted, 1.3)
+    hoverColor: Theme.surfaceHighlight(1.3)
     Accessible.name: description
     Row {
         id: buttonContent

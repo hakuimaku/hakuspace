@@ -18,6 +18,7 @@ node "$TEST_DIR/test_reveal_geometry.js"
 node "$TEST_DIR/test_navigation.js"
 node "$TEST_DIR/test_ux.js"
 if [[ ${1:-} == --runtime ]]; then
+    bash "$TEST_DIR/test_light.sh"
     bash "$TEST_DIR/test_ink.sh"
     bash "$TEST_DIR/test_theme_action_menu.sh"
 fi

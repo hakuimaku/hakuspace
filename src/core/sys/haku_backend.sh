@@ -34,6 +34,8 @@ kill_classic_stack() {
 # Restore user-enabled Classic surfaces without competing for notifications.
 start_classic_visual_stack() {
     local failed=0
+    gsettings set org.gnome.desktop.interface color-scheme prefer-dark >/dev/null 2>&1 || true
+    python3 "$HOME/.local/bin/kitty_theme_ctl.py" dark 9>&- || true
     ~/.local/bin/wallpaper_resume.sh 9>&- || failed=1
     ~/.local/bin/rounded_screen_manager.sh --startup 9>&- || failed=1
     ~/.local/bin/edge_trigger_manager.sh --startup 9>&- || failed=1
@@ -69,6 +71,8 @@ notification_unowned() {
 # Start SwayNC only after the HakuSpace Quickshell runtime has exited.
 start_classic_notification_service() {
     haku_qs_alive && return 1
+    # Clear any Light preview written by an outgoing shell before its writer exited.
+    python3 "$HOME/.local/bin/kitty_theme_ctl.py" dark 9>&- || true
     notification_owned_by swaync || wait_until notification_unowned || return 1
     if ! pgrep -x swaync >/dev/null; then
         swaync </dev/null >/dev/null 2>&1 9>&- &
@@ -182,10 +186,16 @@ commit_backend() {
     return 1
 }
 
+# Reconcile shared applications under the transition cover without changing preferences.
+sync_opaque_context() {
+    "$HOME/.local/bin/opaque_theme.sh" sync "$1" 9>&-
+}
+
 # Recover an unresponsive transition owner to a usable Classic desktop.
 emergency_classic() {
     kill_quickshell || return 1
     commit_backend classic || return 1
+    sync_opaque_context classic || echo "Warning: could not restore Classic opaque context during recovery." >&2
     kill_classic_stack
     start_classic_stack && wait_until verify_backend
 }
@@ -195,6 +205,7 @@ rollback_classic() {
     local covered="$1"
     stop_qs_supervisor || return 1
     commit_backend classic || return 1
+    sync_opaque_context classic || { emergency_classic; return 1; }
     if [[ "$covered" == yes ]]; then
         transition_ipc hideChrome || { emergency_classic; return 1; }
         kill_classic_stack
@@ -212,6 +223,7 @@ rollback_classic() {
 rollback_hikai() {
     kill_classic_stack
     commit_backend "$QS_BACKEND_NAME" || return 1
+    sync_opaque_context "$QS_BACKEND_NAME" || { emergency_classic; return 1; }
     if quickshell_ready && start_hikai_auxiliary_stack && transition_ipc showChrome &&
         start_qs_supervisor && transition_ipc release && wait_transition_phase finished &&
         wait_until verify_backend; then
@@ -229,7 +241,8 @@ switch_to_hikai() {
         return 1
     fi
     kill_classic_stack
-    if ! ~/.local/bin/desktop_icons_manager.sh --startup 9>&- || ! transition_ipc showChrome ||
+    if ! sync_opaque_context "$QS_BACKEND_NAME" ||
+        ! ~/.local/bin/desktop_icons_manager.sh --startup 9>&- || ! transition_ipc showChrome ||
         ! commit_backend "$QS_BACKEND_NAME"; then
         rollback_classic yes
         return 1
@@ -256,7 +269,7 @@ switch_to_classic() {
         return 1
     fi
     if ! stop_qs_supervisor || ! transition_ipc hideChrome ||
-        ! commit_backend classic || ! start_classic_visual_stack; then
+        ! sync_opaque_context classic || ! commit_backend classic || ! start_classic_visual_stack; then
         rollback_hikai
         return 1
     fi

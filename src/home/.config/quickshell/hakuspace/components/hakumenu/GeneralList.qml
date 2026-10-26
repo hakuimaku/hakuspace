@@ -8,7 +8,7 @@ Item {
     id: root
 
     property string query: ""
-    property color rowHoverColor: "#202020"
+    property color rowHoverColor: Theme.hoverMuted
     property color rowSelectedColor: Theme.accent
     readonly property real itemGap: Math.max(3, Math.round(Theme.gap * 0.35) + 1)
     readonly property real rowHeight: Math.max(46, Theme.fontSize * 3.0)

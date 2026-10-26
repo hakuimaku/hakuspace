@@ -9,7 +9,7 @@ ActionMenu.ActionMenuPage {
     id: root
 
     title: "Change Accent Color"
-    subtitle: "Current: " + Theme.accent
+    subtitle: "Current: " + Theme.accentSeed
     icon: ""
     geometryProfile: "option"
     canGoBack: true
@@ -31,7 +31,7 @@ ActionMenu.ActionMenuPage {
 
     Component.onCompleted: {
         for (var i = 1; i < allItems.length; i++) {
-            if (allItems[i].hex.toLowerCase() === Theme.accent.toLowerCase()) {
+            if (allItems[i].hex.toLowerCase() === Theme.accentSeed.toLowerCase()) {
                 selectedIndex = i;
                 break;
             }
@@ -160,7 +160,7 @@ ActionMenu.ActionMenuPage {
             text: root.errorMessage
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSize
-            color: "#ff6b6b"
+            color: Theme.danger
             Layout.alignment: Qt.AlignHCenter
         }
 
@@ -270,7 +270,7 @@ ActionMenu.ActionMenuPage {
                 selected: root.selectedIndex === index
                 focused: selected
 
-                badge: !modelData.isPicker && modelData.hex.toLowerCase() === Theme.accent.toLowerCase() ? "Active" : ""
+                badge: !modelData.isPicker && modelData.hex.toLowerCase() === Theme.accentSeed.toLowerCase() ? "Active" : ""
                 badgeColor: modelData.hex ? modelData.hex : Theme.accent
 
                 Component.onCompleted: {

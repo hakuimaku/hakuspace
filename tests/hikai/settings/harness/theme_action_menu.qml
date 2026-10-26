@@ -242,7 +242,7 @@ ShellRoot {
                 root.check(hex && hex.clip && hex.font.pixelSize === Theme.fontSize - 1, "custom accent input keeps shell styling and clips text")
                 root.capture("theme-accent", function() { hex.text = "#7288AE"; hex.accepted() })
             } else if (root.phase === 12) {
-                if (panel.panelOpen || Theme.accent.toLowerCase() !== "#7288ae") return
+                if (panel.panelOpen || String(Theme.accent).toLowerCase() !== "#7288ae") return
                 WM.backendName = "niri"
                 root.openTheme()
             } else if (root.phase === 13) {

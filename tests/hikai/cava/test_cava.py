@@ -48,6 +48,8 @@ class CavaWindowTest(unittest.TestCase):
             (binary / "cava_manager.sh").symlink_to(CAVA_MANAGER)
             for name in ("haku_state.sh", "haku_theme.sh", "haku_backend_lib.sh"):
                 (binary / name).symlink_to(ROOT / "src/core/lib" / name)
+            (binary / "accent_palette.py").symlink_to(ROOT / "src/core/theme/accent_palette.py")
+            (binary / "hikai_settings_ctl.py").symlink_to(ROOT / "src/core/backend/user/hikai_settings_ctl.py")
             config_dir = work / "home/hakucfg/config"
             config_dir.mkdir(parents=True)
             audio_fifo = work / "audio.fifo"

@@ -19,7 +19,7 @@ ScrollBar {
         implicitWidth: 5
         radius: 2.5
         x: root.width - width - 1
-        color: root.pressed ? Theme.accent : (root.hovered ? Qt.rgba(1, 1, 1, 0.70) : Qt.rgba(1, 1, 1, 0.40))
+        color: root.pressed ? Theme.accent : (root.hovered ? Theme.scrollbarHover : Theme.scrollbarIdle)
         opacity: root.hovered ? 0.95 : (root.active ? 0.85 : 0.35)
 
         Behavior on opacity {

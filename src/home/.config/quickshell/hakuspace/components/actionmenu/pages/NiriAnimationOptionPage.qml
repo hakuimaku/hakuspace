@@ -193,7 +193,7 @@ ActionMenu.ActionMenuPage {
             text: root.statusMessage
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSize - 2
-            color: "#ffaa00"
+            color: Theme.warning
             Layout.alignment: Qt.AlignHCenter
         }
 

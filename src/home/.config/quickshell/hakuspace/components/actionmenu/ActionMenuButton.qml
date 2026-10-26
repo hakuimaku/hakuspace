@@ -22,7 +22,7 @@ Motion.MorphButton {
     }
     readonly property real selectionOpacity: page ? page.selectionPillOpacity : 1
     readonly property color contentForeground: (selected || focused) && page
-        ? page.selectionColor(danger ? "#ff6b6b" : Theme.fg, foreground) : foreground
+        ? page.selectionColor(danger ? Theme.danger : Theme.fg, foreground) : foreground
     signal pointerSelected()
 
     Connections {
@@ -48,7 +48,7 @@ Motion.MorphButton {
     selectedColor: "transparent"
     focusColor: "transparent"
 
-    foregroundColor: danger ? "#ff6b6b" : Theme.fg
+    foregroundColor: danger ? Theme.danger : Theme.fg
     hoverForegroundColor: (selected || focused) ? selectedForegroundColor
                                                 : (danger ? "#ffffff" : Theme.fg)
     pressedForegroundColor: selectedForegroundColor
@@ -85,7 +85,7 @@ Motion.MorphButton {
             width: root.width,
             height: root.height,
             radius: root.radius,
-            color: root.danger ? "#e05555" : Theme.accent,
+            color: root.danger ? Theme.dangerFill : Theme.accent,
             icon: root.icon,
             label: root.label,
             secondaryText: root.secondaryText

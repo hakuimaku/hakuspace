@@ -292,6 +292,14 @@ class AppearanceTests(unittest.TestCase):
         self.run_script("theme_rofi.sh")
         self.assertEqual(self.icon_accent(), "#5294e2")
 
+    def test_dark_seed_syncs_icons_to_dark_variant(self):
+        """Wallpaper/manual seed polarity never leaks a dark accent into global icons."""
+        self.assets()
+        self.run_script("theme_ctl.sh", "set-accent", "#000000")
+        dark = self.run_script("theme_ctl.sh", "get", "accent").stdout.strip()
+        self.assertNotEqual(dark, "#000000")
+        self.assertEqual(self.icon_accent().lower(), dark.lower())
+
     def test_renderer_does_not_persist(self):
         self.run_script("theme_ctl.sh", "set-font", "monospace")
         state = self.home / ".local/state/hakuspace/state/[theme].appearance.env"
@@ -300,6 +308,118 @@ class AppearanceTests(unittest.TestCase):
         self.run_script("gen_style.sh")
         self.assertEqual(state.read_bytes(), before)
         self.assertTrue((self.home / ".local/state/hakuspace/theme/quickshell.json").exists())
+
+    def paired_icon_assets(self):
+        """Create the v2 dark/light family with independent managed metadata."""
+        self.base_assets()
+        themes = {}
+        for variant, name in (("dark", "Hikaide-Symbols"), ("light", "Hikaide-Symbols-Light")):
+            directory = theme_fixture(self.home, name, managed=False)
+            (directory / ".hikaide-symbols.json").write_text(json.dumps({
+                "family": "Hikaide-Symbols", "version": 2, "variant": variant}))
+            themes[variant] = directory
+        state = self.home / ".local/state/hakuspace/state/[theme].appearance.env"
+        state.parent.mkdir(parents=True, exist_ok=True)
+        state.write_text("THEME_STATE_VERSION=2\nACCENT_SEED='#A2CB8B'\n"
+                         "ACCENT_DARK='#A2CB8B'\nACCENT_LIGHT='#3F6E2B'\nFONT_FAMILY=monospace\nFONT_SIZE=14\n")
+        return themes, state
+
+    def test_v2_pair_uses_both_canonical_accents(self):
+        """Both configured family names reconcile the same precomputed pair."""
+        themes, state = self.paired_icon_assets()
+        before = state.read_bytes()
+        for configured in ("Hikaide-Symbols", "Hikaide-Symbols-Light"):
+            self.env["HAKU_ICON_THEME"] = configured
+            self.run_script("appearance_ctl.sh", "sync-accent")
+            self.assertEqual(self.icon_accent(), "#a2cb8b")
+            self.assertEqual(self.icon_accent("Hikaide-Symbols-Light"), "#3f6e2b")
+            status = self.run_script("appearance_ctl.sh", "status").stdout
+            self.assertIn("icon_accent_status=active", status)
+            self.assertIn("icon_accent_dark=#A2CB8B", status)
+            self.assertIn("icon_accent_light=#3F6E2B", status)
+        self.assertEqual(before, state.read_bytes())
+        self.assertEqual(self.calls(), [])
+
+    def test_v2_pair_reconcile_is_idempotent(self):
+        """Repeated reconcile does not rewrite already-correct SVG artwork."""
+        themes, _ = self.paired_icon_assets()
+        self.run_script("appearance_ctl.sh", "sync-accent")
+        paths = [theme / "user-home.svg" for theme in themes.values()]
+        before = [(path.read_bytes(), path.stat().st_mtime_ns) for path in paths]
+        self.run_script("appearance_ctl.sh", "sync-accent")
+        self.assertEqual(before, [(path.read_bytes(), path.stat().st_mtime_ns) for path in paths])
+
+    def test_v2_pair_requires_safe_matching_metadata(self):
+        """Unrecognized and symlinked sibling markers never authorize mutation."""
+        themes, _ = self.paired_icon_assets()
+        metadata = themes["light"] / ".hikaide-symbols.json"
+        valid = metadata.read_text()
+        for invalid in ('{', valid.replace('"light"', '"dark"')):
+            metadata.write_text(invalid)
+            self.assertIn("not-applicable", self.run_script("appearance_ctl.sh", "sync-accent").stdout)
+            self.assertEqual((themes["dark"] / "user-home.svg").read_bytes(), KDE)
+        outside = self.home / "marker.json"
+        outside.write_text(valid)
+        metadata.unlink()
+        metadata.symlink_to(outside)
+        self.assertIn("not-applicable", self.run_script("appearance_ctl.sh", "sync-accent").stdout)
+        self.assertEqual((themes["dark"] / "user-home.svg").read_bytes(), KDE)
+
+    def test_v2_pair_missing_light_preserves_dark(self):
+        """Missing pair members warn or fail before changing the installed sibling."""
+        themes, _ = self.paired_icon_assets()
+        shutil.rmtree(themes["light"])
+        result = self.run_script("appearance_ctl.sh", "sync-accent")
+        self.assertIn("warning", result.stderr)
+        self.env["HAKUSPACE_STRICT_ASSETS"] = "1"
+        self.run_script("appearance_ctl.sh", "sync-accent", success=False)
+        self.assertEqual((themes["dark"] / "user-home.svg").read_bytes(), KDE)
+        self.assertIn("icon_accent_status=missing", self.run_script("appearance_ctl.sh", "status").stdout)
+
+    def test_v2_pair_dry_run_failure_preserves_both(self):
+        """An unsupported light tree cannot leave only the dark tree recolored."""
+        themes, _ = self.paired_icon_assets()
+        (themes["light"] / "user-home.svg").write_bytes(STATIC)
+        self.assertIn("not-applicable", self.run_script("appearance_ctl.sh", "sync-accent").stdout)
+        self.assertEqual((themes["dark"] / "user-home.svg").read_bytes(), KDE)
+        self.assertEqual((themes["light"] / "user-home.svg").read_bytes(), STATIC)
+
+    def test_v2_pair_second_update_failure_rolls_back_both(self):
+        """Restore both old accents when the light engine fails after writing."""
+        themes, _ = self.paired_icon_assets()
+        engine = self.bin / "haku_icon_accent.py"
+        real_engine = engine.resolve()
+        engine.unlink()
+        engine.write_text(
+            'import os, subprocess, sys\n'
+            f'command = [sys.executable, {str(real_engine)!r}, *sys.argv[1:]]\n'
+            'result = subprocess.run(command)\n'
+            'if "set" in sys.argv and "#3F6E2B" in sys.argv and "Hikaide-Symbols-Light" in sys.argv and "--dry-run" not in sys.argv:\n'
+            '    sys.exit(5)\n'
+            'sys.exit(result.returncode)\n')
+        result = self.run_script("appearance_ctl.sh", "sync-accent", success=False)
+        self.assertIn("engine failed", result.stderr)
+        for theme in themes.values():
+            self.assertEqual((theme / "user-home.svg").read_bytes(), KDE)
+
+
+    def test_v2_pair_rollback_error_still_restores_dark(self):
+        """Report a failed light restore while continuing to restore the dark tree."""
+        themes, _ = self.paired_icon_assets()
+        engine = self.bin / "haku_icon_accent.py"
+        real_engine = engine.resolve()
+        engine.unlink()
+        engine.write_text(
+            'import subprocess, sys\n'
+            f'command = [sys.executable, {str(real_engine)!r}, *sys.argv[1:]]\n'
+            'light_write = "set" in sys.argv and "Hikaide-Symbols-Light" in sys.argv and "--dry-run" not in sys.argv\n'
+            'if light_write and "#5294e2" in sys.argv: sys.exit(5)\n'
+            'result = subprocess.run(command)\n'
+            'sys.exit(5 if light_write else result.returncode)\n')
+        result = self.run_script("appearance_ctl.sh", "sync-accent", success=False)
+        self.assertIn("rollback failed for Hikaide-Symbols-Light", result.stderr)
+        self.assertEqual((themes["dark"] / "user-home.svg").read_bytes(), KDE)
+        self.assertEqual(self.icon_accent("Hikaide-Symbols-Light"), "#3f6e2b")
 
 
 class DeploymentTests(unittest.TestCase):
@@ -400,7 +520,7 @@ class InstalledAssetsTests(unittest.TestCase):
             run("bash", ROOT / "scripts/assets.sh")
             run(binary / "appearance_ctl.sh", "verify")
             generated = home / ".local/state/hakuspace/theme/quickshell.json"
-            self.assertEqual(json.loads(generated.read_text())["accent"], "#ffffff")
+            self.assertEqual(json.loads(generated.read_text())["accentDark"], "#ffffff")
             manifest = home / ".local/state/hakuspace/assets/installed.env"
             self.assertNotIn("ICON_ACCENT", manifest.read_text())
             self.assertIn("HAKU_CURSOR_THEME=Haku-Dark", manifest.read_text())

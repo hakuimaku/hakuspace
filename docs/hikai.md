@@ -146,6 +146,20 @@ The wallpaper picker uses saved video quality: select an item and Apply. Prepara
 
 Native folder and image choosers temporarily release the requesting layer's keyboard ownership and lower it beneath application windows. Closing the chooser restores its owner only if that surface is still current. A pinned Temp Note remains visible independently, but shares one keyboard owner with Settings and Navigation; clicking a visible note explicitly transfers input.
 
+### Hikai color mode
+
+Appearance offers Dark and Light with live draft preview, Apply and Discard. Light
+surfaces are Pure White, White and Gray White; the saved `surfaceTone` keys stay
+`ink`, `dark`, and `soft`. Schema v7 stores `appearance.colorMode` in
+`~/hakucfg/hikai/hikai-shell.json`; older preferences default to Dark.
+
+Each manual or wallpaper accent seed produces two contrast-correct variants.
+`Theme.qml` selects the active variant from `quickshell.json` without regenerating
+colors. Classic and global applications always receive the dark variant. Switching
+to Classic preserves Hikai's saved mode, so returning restores Light automatically.
+Classic Opaque also preserves its request while clearing effective overrides in
+Hikai, including Kitty application and compositor opacity. See [theme contracts](core/theme.md).
+
 ## Styling And Motion
 
 Use the shared visual language, theme-driven values and reusable primitives.

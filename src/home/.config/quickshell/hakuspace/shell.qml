@@ -12,6 +12,8 @@ import "modules/picker"
 ShellRoot {
     id: root
 
+    DesktopColorScheme {}
+
     // Bootstrap keeps all ordinary surfaces absent until the cover barrier.
     readonly property var hikaiScreenModel: ShellTransitionState.chromeEnabled ? Quickshell.screens : []
 

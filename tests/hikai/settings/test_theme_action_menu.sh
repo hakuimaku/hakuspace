@@ -17,6 +17,7 @@ cp -R src/home/.config/quickshell/hakuspace/{services,components} "$shell_root/"
 cp tests/hikai/settings/harness/theme_action_menu.qml "$shell_root/shell.qml"
 cp tests/support/fixtures/wayland_{keyboard,pointer}.py "$test_root/"
 cp src/core/backend/theme/theme_ctl.sh src/core/backend/user/hikai_settings_ctl.py "$test_root/home/.local/bin/"
+cp src/core/theme/accent_palette.py "$test_root/home/.local/bin/"
 cp src/core/lib/{haku_theme.sh,haku_state.sh,accent_color.sh} "$test_root/home/.local/bin/"
 ln -s "$test_root/home/.local/bin" "$test_root/src/home/.local/bin"
 ln -s "$test_root/home/.local/state" "$test_root/src/home/.local/state"
@@ -24,8 +25,8 @@ cat > "$test_root/render.sh" <<'RENDER'
 #!/usr/bin/env bash
 set -euo pipefail
 source "$HOME/.local/bin/haku_theme.sh"
-jq -n --arg font "$FONT_FAMILY" --argjson fontSize "$FONT_SIZE" --arg accent "$ACCENT_COLOR" \
-    '{font: $font, fontSize: $fontSize, accent: $accent}' > "$THEME_RENDER_DIR/quickshell.json.tmp"
+jq -n --arg font "$FONT_FAMILY" --argjson fontSize "$FONT_SIZE" --arg accentSeed "$ACCENT_SEED" --arg accentDark "$ACCENT_DARK" --arg accentLight "$ACCENT_LIGHT" \
+    '{font: $font, fontSize: $fontSize, accentSeed: $accentSeed, accentDark: $accentDark, accentLight: $accentLight}' > "$THEME_RENDER_DIR/quickshell.json.tmp"
 mv "$THEME_RENDER_DIR/quickshell.json.tmp" "$THEME_RENDER_DIR/quickshell.json"
 RENDER
 # Shared-page probes can read fixtures but cannot perform session actions.
@@ -65,7 +66,7 @@ esac
 CLIPBOARD
 printf '#!/bin/sh\nexit 0\n' > "$test_root/home/.local/bin/appearance_ctl.sh"
 chmod +x "$test_root/render.sh" "$test_root/home/.local/bin/"*.sh
-HOME="$test_root/home" bash -c 'source "$HOME/.local/bin/haku_theme.sh"; ACCENT_COLOR="#88c0d0"; theme_save_state'
+HOME="$test_root/home" bash -c 'source "$HOME/.local/bin/haku_theme.sh"; theme_set_seed "#88c0d0"; theme_save_state'
 HOME="$test_root/home" bash "$test_root/render.sh"
 printf '<labwc_config/>\n' > "$test_root/labwc/rc.xml"
 export THEME_TEST_ROOT="$test_root" THEME_TEST_SIZE=${THEME_TEST_SIZE:-1920x1080}

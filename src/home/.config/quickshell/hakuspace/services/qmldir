@@ -24,6 +24,7 @@ singleton DashboardTooltip 1.0 DashboardTooltip.qml
 singleton TextStore 1.0 TextStore.qml
 singleton SettingsStore 1.0 SettingsStore.qml
 singleton ShellSettingsStore 1.0 ShellSettingsStore.qml
+DesktopColorScheme 1.0 DesktopColorScheme.qml
 singleton ConfigEditorStore 1.0 ConfigEditorStore.qml
 singleton InfoStore 1.0 InfoStore.qml
 singleton TaskbarPins 1.0 TaskbarPins.qml

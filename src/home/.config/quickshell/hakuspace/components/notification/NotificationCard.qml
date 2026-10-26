@@ -23,7 +23,7 @@ Rectangle {
     border.width: showBorder ? (record.urgency === NotificationUrgency.Critical ? 2 : 1)
                                + (accentedBorder ? 1 : 0) : 0
     border.color: accentedBorder ? Theme.accent
-                                : record.urgency === NotificationUrgency.Critical ? "#ff5555" : Theme.fgMuted
+                                : record.urgency === NotificationUrgency.Critical ? Theme.danger : Theme.fgMuted
 
     // Resolves raw notification icon paths to valid Quickshell image URIs.
     function iconSource(icon) {

@@ -291,9 +291,9 @@ ShellRoot {
             } else if (phase === 11) {
                 if (++settle < 12) return
                 var pill = find(browser, "wallpaper-quality-indicator")
-                originalAccent = Theme.accent
-                Theme.accent = "#d8b530"
-                root.check(pill.color.toString() === Theme.accent, "quality pill follows a live accent change")
+                originalAccent = Theme.accentDark
+                Theme.accentDark = "#d8b530"
+                root.check(pill.color.toString() === String(Theme.accent), "quality pill follows a live accent change")
                 qualityStart = pill.x
                 var value = WallpaperSettingsStore.values.playback.profile === "original" ? "screen" : "original"
                 qualityTarget = find(browser, "wallpaper-quality-" + value)
@@ -304,7 +304,7 @@ ShellRoot {
                 var target = qualityTarget.mapToItem(pill.parent, 0, 0)
                 if (Math.abs(pill.x - target.x) > 0.5 || Math.abs(pill.width - qualityTarget.width) > 0.5) return
                 root.check(sawQualityMorph, "quality selection morphs between actual button bounds")
-                Theme.accent = originalAccent
+                Theme.accentDark = originalAccent
                 WallpaperSettingsStore.discard()
                 UiState.wallpaperPresentation = "workspace"
                 UiState.activePanel = "wallpaper"

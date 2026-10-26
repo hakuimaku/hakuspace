@@ -36,6 +36,11 @@ def save():
     temporary.replace(model_path)
 
 def finish_quit():
+    if model.get("late_kitty_override"):
+        path = root / "home/.local/state/hakuspace/theme/kitty-mode.conf"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("background #eeeeee\n")
+        event("late-kitty-preview")
     model["phase"] = "finished"
     model["procs"].remove("qs")
     model["owner"] = ""
@@ -173,10 +178,21 @@ elif name.endswith("_manager.sh"):
     if proc not in model["procs"]:
         model["procs"].append(proc)
     save()
+elif name == "kitty":
+    sys.exit(1)
+elif name == "gsettings":
+    assert args == ["set", "org.gnome.desktop.interface", "color-scheme", "prefer-dark"]
+    event("color-scheme:prefer-dark")
 elif name == "notify-send":
     event("success-notification")
 elif name == "hikai_chrome_state_ctl.py":
     event("migrate")
+elif name == "opaque_theme.sh":
+    assert args[0] == "sync"
+    event("opaque:" + args[1])
+    if os.environ.get("MOCK_OPAQUE_IMPL"):
+        import subprocess
+        sys.exit(subprocess.call(["bash", os.environ["MOCK_OPAQUE_IMPL"], *args]))
 elif name == "rm":
     assert args == ["-f", "/tmp/cava-layer.pid"]
 '''
@@ -195,13 +211,13 @@ class BackendTransitionTest(unittest.TestCase):
         self.bin.mkdir(parents=True)
         self.state.mkdir(parents=True)
         for source in ("sys/haku_backend.sh", "lib/haku_backend_lib.sh", "lib/haku_theme.sh", "lib/haku_state.sh", "lib/haku_state.py",
-                       "state/haku_state_migrate.py", "backend/user/hikai_settings_ctl.py"):
+                       "state/haku_state_migrate.py", "backend/user/hikai_settings_ctl.py", "theme/accent_palette.py", "theme/kitty_theme_ctl.py"):
             shutil.copy2(Path(__file__).resolve().parents[3] / "src/core" / source, self.bin)
         fixture = self.bin / "stub"
         fixture.write_text(STUB)
         fixture.chmod(0o755)
-        for name in ("qs", "pgrep", "pkill", "busctl", "setsid", "swaync", "waybar", "rm", "notify-send",
-                     "hikai_chrome_state_ctl.py", "rounded_screen_manager.sh", "edge_trigger_manager.sh",
+        for name in ("qs", "pgrep", "pkill", "busctl", "setsid", "swaync", "waybar", "rm", "notify-send", "gsettings", "kitty",
+                     "opaque_theme.sh", "hikai_chrome_state_ctl.py", "rounded_screen_manager.sh", "edge_trigger_manager.sh",
                      "taskbar_manager.sh", "waybar_manager.sh", "desktop_icons_manager.sh", "cava_manager.sh"):
             (self.bin / name).symlink_to(fixture)
         self.env = dict(os.environ, HOME=str(self.root / "home"), MOCK_ROOT=str(self.root),
@@ -240,13 +256,93 @@ class BackendTransitionTest(unittest.TestCase):
         self.assertEqual((self.state / "[shell].backend").read_text().strip(), backend)
         self.run_cli("--verify")
 
+    def install_opaque_fixture(self):
+        """Exercise real opaque output with inert reload and wallpaper dependencies."""
+        source = Path(__file__).resolve().parents[3] / "src/core/theme/opaque_theme.sh"
+        implementation = self.bin / "opaque_theme_impl.sh"
+        shutil.copy2(source, implementation)
+        self.env.update(MOCK_OPAQUE_IMPL=str(implementation), HAKUSPACE_APPLY_STYLE="/usr/bin/true")
+        wallpaper = self.bin / "wallpaper_resume.sh"
+        wallpaper.write_text("#!/bin/sh\nexit 0\n")
+        wallpaper.chmod(0o755)
+        (self.state / "[theme].opaque.enabled").write_text("1\n")
+        self.preference = self.root / "home/hakucfg/hikai/hikai-shell.json"
+        self.preference.parent.mkdir(parents=True, exist_ok=True)
+        self.preference.write_text('{"appearance":{"colorMode":"light"}}\n')
+
+    def assert_opaque_context(self, backend):
+        """Context synchronization must preserve both requested preferences."""
+        self.assertEqual((self.state / "[theme].opaque.enabled").read_text(), "1\n")
+        self.assertEqual(self.preference.read_text(), '{"appearance":{"colorMode":"light"}}\n')
+        kitty = self.root / "home/.local/state/hakuspace/theme/opaque/kitty.conf"
+        self.assertEqual(kitty.read_text().strip(), "background_opacity 1.0" if backend == "classic" else "")
+
+    def test_classic_startup_restores_dark_scheme(self):
+        """Classic login resets the desktop preference before showing its applications."""
+        self.prepare("classic")
+        source = Path(__file__).resolve().parents[3] / "src/core/sys/session_start.sh"
+        shutil.copy2(source, self.bin)
+        result = subprocess.run(["bash", self.bin / "session_start.sh", "--early"],
+                                env=self.env, text=True, capture_output=True, timeout=10)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("color-scheme:prefer-dark", [event["action"] for event in self.events()])
+
+    def test_classic_clears_a_preview_after_the_old_shell_exits(self):
+        """A late Light writer cannot leave Classic terminals in the wrong palette."""
+        self.prepare("hikai")
+        self.install_opaque_fixture()
+        model_path = self.root / "model.json"
+        model = json.loads(model_path.read_text())
+        model["late_kitty_override"] = True
+        model_path.write_text(json.dumps(model))
+        self.run_cli("set", "classic")
+        self.assert_backend("classic")
+        override = self.root / "home/.local/state/hakuspace/theme/kitty-mode.conf"
+        self.assertEqual(override.read_text(), "")
+        self.assert_order("late-kitty-preview", "start-swaync")
+
+    def test_opaque_roundtrip_preserves_light_preference(self):
+        """Both directions synchronize under cover before showing their new shell."""
+        self.prepare("classic")
+        self.install_opaque_fixture()
+        self.run_cli("set", "hikai")
+        self.assert_opaque_context("hikai")
+        self.run_cli("set", "classic")
+        self.assert_opaque_context("classic")
+        self.assert_order("barrier:covered", "opaque:hikai", "shellTransition:showChrome",
+                          "barrier:finished", "barrier:covered", "opaque:classic", "color-scheme:prefer-dark", "manager:waybar_manager.sh",
+                          "shellTransition:releaseAndQuit")
+        self.assertTrue(all(event["phase"] == "covered" for event in self.events() if event["action"].startswith("opaque:")))
+
+    def test_opaque_rollback_restores_original_context(self):
+        """Failed shell preparation restores opaque output without changing requests."""
+        for backend, target, failure in (("classic", "hikai", "cava_manager.sh"),
+                                         ("hikai", "classic", "waybar_manager.sh")):
+            with self.subTest(backend=backend):
+                self.prepare(backend, failure)
+                self.install_opaque_fixture()
+                self.run_cli("set", target, success=False)
+                self.assert_backend(backend)
+                self.assert_opaque_context(backend)
+                self.assert_order("opaque:" + target, "opaque:" + backend)
+
+    def test_opaque_reload_failure_keeps_recovery_desktop_usable(self):
+        """Repeated reload failure must still tear down the cover and restore Classic."""
+        self.prepare("classic")
+        self.install_opaque_fixture()
+        self.env["HAKUSPACE_APPLY_STYLE"] = "/usr/bin/false"
+        self.run_cli("set", "hikai", success=False)
+        self.assert_backend("classic")
+        self.assert_opaque_context("classic")
+        self.assert_order("opaque:hikai", "opaque:classic", "kill-qs", "manager:waybar_manager.sh")
+
     def test_classic_to_hikai(self):
         """No backend commit or Classic teardown may precede full coverage."""
         self.prepare("classic")
         self.run_cli("set", "hikai")
         self.assert_backend("hikai")
         self.assert_order("stop:swaync", "bootstrap", "shellTransition:begin", "barrier:covered",
-                          "stop:waybar", "shellTransition:showChrome", "supervisor", "shellTransition:release",
+                          "stop:waybar", "opaque:hikai", "shellTransition:showChrome", "supervisor", "shellTransition:release",
                           "barrier:finished", "success-notification")
         before_cover = self.events()[:next(i for i, e in enumerate(self.events()) if e["action"] == "barrier:covered")]
         self.assertTrue(all(e["backend"] == "classic" for e in before_cover))
@@ -259,7 +355,7 @@ class BackendTransitionTest(unittest.TestCase):
         self.run_cli("--toggle")
         self.assert_backend("classic")
         self.assert_order("shellTransition:begin", "barrier:covered", "stop:qs_supervisor.sh",
-                          "shellTransition:hideChrome", "manager:waybar_manager.sh",
+                          "shellTransition:hideChrome", "opaque:classic", "manager:waybar_manager.sh",
                           "shellTransition:releaseAndQuit", "qs-exit-after-reveal", "start-swaync", "success-notification")
         self.assertNotIn("kill-qs", [e["action"] for e in self.events()])
 
@@ -357,7 +453,7 @@ class BackendTransitionTest(unittest.TestCase):
         self.prepare("classic", "cava_manager.sh")
         self.run_cli("set", "hikai", success=False)
         self.assert_backend("classic")
-        self.assert_order("barrier:covered", "shellTransition:hideChrome", "manager:waybar_manager.sh",
+        self.assert_order("barrier:covered", "opaque:classic", "shellTransition:hideChrome", "manager:waybar_manager.sh",
                           "shellTransition:release", "barrier:finished", "shell:quit", "start-swaync")
 
     def test_undercover_classic_failure_reveals_hikai(self):
@@ -365,7 +461,7 @@ class BackendTransitionTest(unittest.TestCase):
         self.prepare("hikai", "waybar_manager.sh")
         self.run_cli("set", "classic", success=False)
         self.assert_backend("hikai")
-        self.assert_order("barrier:covered", "shellTransition:hideChrome", "manager:waybar_manager.sh",
+        self.assert_order("barrier:covered", "shellTransition:hideChrome", "opaque:classic", "manager:waybar_manager.sh",
                           "shellTransition:showChrome", "supervisor", "shellTransition:release", "barrier:finished")
         self.assertNotIn("start-swaync", [e["action"] for e in self.events()])
 

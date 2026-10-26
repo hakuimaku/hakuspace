@@ -100,7 +100,7 @@ Item {
         radius: Theme.radius
         color: Qt.darker(Theme.surface, 1.15)
         border.width: 1
-        border.color: Qt.lighter(Theme.hoverMuted, 1.35)
+        border.color: Theme.surfaceHighlight(1.35)
         opacity: root.bubbleOpacity
 
         Behavior on opacity {

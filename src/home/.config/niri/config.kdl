@@ -22,3 +22,6 @@ screenshot-path "~/Pictures/Screenshots/screenshot_%Y-%m-%d_%H-%M-%S.png"
 
 // Include user custom config file
 include optional=true "~/hakucfg/wm/niri-custom.kdl"
+
+// Managed Classic opacity takes precedence over user and application rules.
+include optional=true "~/.local/state/hakuspace/theme/opaque/niri.kdl"

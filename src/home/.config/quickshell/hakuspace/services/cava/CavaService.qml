@@ -23,8 +23,8 @@ QtObject {
     // Configuration
     property bool enabled: !rendererProcess && AppState.cavaLayerState
     property string colorMode: rendererProcess ? "accent" : AppState.cavaColorMode
-    property color surfaceColor: rendererProcess ? "#0b0b0b" : Theme.surface
-    property color accentColor: rendererProcess ? "#ffffff" : Theme.accent
+    property color surfaceColor: rendererProcess ? "transparent" : Theme.surface
+    property color accentColor: rendererProcess ? "transparent" : Theme.accent
     readonly property color underbarColor: colorMode === "surface" ? surfaceColor : accentColor
     // The parent publishes screen geometry and live settings previews as one snapshot.
     property bool top: rendererProcess ? true : AppState.cavaTopState

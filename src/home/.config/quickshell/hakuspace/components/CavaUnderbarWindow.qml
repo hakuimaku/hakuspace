@@ -45,8 +45,8 @@ Item {
             right: true
         }
         margins {
-            left: rootItem.needsSurface ? 0 : CavaService.leftInset
-            right: rootItem.needsSurface ? 0 : CavaService.rightInset
+            left: 0
+            right: 0
             bottom: rootItem.isTop ? 0 : rootItem.edgeInset - rootItem.surfaceHeight
             top: rootItem.isTop ? rootItem.edgeInset - rootItem.surfaceHeight : 0
         }
@@ -82,8 +82,6 @@ Item {
 
                 CavaUnderbar {
                     anchors.fill: parent
-                    anchors.leftMargin: rootItem.needsSurface ? CavaService.leftInset : 0
-                    anchors.rightMargin: rootItem.needsSurface ? CavaService.rightInset : 0
                     anchors.topMargin: rootItem.isTop ? rootItem.surfaceHeight : 0
                     anchors.bottomMargin: rootItem.isTop ? 0 : rootItem.surfaceHeight
                     screen: rootItem.modelData

@@ -27,9 +27,10 @@ var general = [
 // Section descriptors also make existing Shell and Wallpaper controls searchable.
 var sections = [
     {id: "layout", store: "shell", category: "Appearance", label: "Shell layout", summary: "Choose a top bar or bottom taskbar.", section: "Layout", synonyms: "dock position"},
+    {id: "colorMode", store: "shell", category: "Appearance", label: "Theme Mode", summary: "Choose Dark or Light for Hikai.", section: "Appearance", synonyms: "light dark white color mode"},
     {id: "radius", store: "shell", category: "Appearance", label: "Shell radius", summary: "Adjust the roundness of shell surfaces.", section: "Appearance"},
     {id: "rounded", store: "shell", category: "Appearance", label: "Screen corners and border", summary: "Adjust the rounded screen frame.", section: "Rounded Screen"},
-    {id: "surface", store: "shell", category: "Appearance", label: "Surface style", summary: "Choose ink, dark or soft surfaces.", section: "Surface"},
+    {id: "surface", store: "shell", category: "Appearance", label: "Surface style", summary: "Choose ink, dark, soft, pure white, white or gray white surfaces.", section: "Surface"},
     {id: "topbar", store: "shell", category: "Desktop", label: "Top Bar modules", summary: "Show clocks, workspaces and system controls.", section: "Top Bar"},
     {id: "appbar", store: "shell", category: "Desktop", label: "App Bar", summary: "Adjust icons, hover size, trash and mounted devices.", section: "App Bar"},
     {id: "dockbar", store: "shell", category: "Desktop", label: "Dockbar", summary: "Choose visibility and reserved space.", section: "Dockbar"},

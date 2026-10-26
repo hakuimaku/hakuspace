@@ -57,7 +57,7 @@ Rectangle {
                 text: modelData
                 fontSize: Math.max(10, actionFont.font.pixelSize * Math.min(1, (width - 16) / Math.max(1, actionFont.advanceWidth(modelData))))
                 idleColor: primary ? Theme.accent : Theme.hoverMuted
-                hoverColor: primary ? Theme.accent : Qt.lighter(Theme.hoverMuted, 1.18)
+                hoverColor: primary ? Theme.accent : Theme.surfaceHighlight(1.18)
                 foregroundColor: primary ? Theme.onAccentColor : Theme.fg
                 hoverForegroundColor: foregroundColor
                 disabledColor: Theme.hoverMuted

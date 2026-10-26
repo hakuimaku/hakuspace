@@ -55,7 +55,7 @@ Item {
         palette.base: Theme.surface
         palette.text: Theme.fg
         palette.highlight: Theme.accent
-        palette.highlightedText: "#000000"
+        palette.highlightedText: Theme.onAccentColor
         Accessible.name: "Configuration files"
         onActivated: index => root.fileSelected(ConfigEditorStore.files[index].id)
     }
@@ -158,9 +158,9 @@ Item {
                                     pressedColor: selected ? "transparent" : Theme.hoverMuted
                                     selectedColor: "transparent"
                                     foregroundColor: Theme.fgDim
-                                    selectedForegroundColor: "#000000"
+                                    selectedForegroundColor: Theme.onAccentColor
                                     hoverForegroundColor: Theme.fg
-                                    pressedForegroundColor: selected ? "#000000" : Theme.fg
+                                    pressedForegroundColor: selected ? Theme.onAccentColor : Theme.fg
                                     onSelectedChanged: { if (selected) treeSelection.targetItem = fileRow }
                                     Component.onCompleted: {
                                         if (selected) treeSelection.targetItem = fileRow
@@ -229,9 +229,9 @@ Item {
                         selectedColor: "transparent"
                         pressedColor: selected ? "transparent" : Theme.hoverMuted
                         foregroundColor: Theme.fgDim
-                        selectedForegroundColor: "#000000"
+                        selectedForegroundColor: Theme.onAccentColor
                         hoverForegroundColor: Theme.fg
-                        pressedForegroundColor: selected ? "#000000" : Theme.fg
+                        pressedForegroundColor: selected ? Theme.onAccentColor : Theme.fg
                         onSelectedChanged: { if (selected) buttonSelection.targetItem = fileButton }
                         Component.onCompleted: {
                             if (selected) buttonSelection.targetItem = fileButton
@@ -258,7 +258,7 @@ Item {
             height: 36
             text: "Refresh files"
             idleColor: Theme.hoverMuted
-            hoverColor: Qt.lighter(Theme.hoverMuted, 1.18)
+            hoverColor: Theme.surfaceHighlight(1.18)
             foregroundColor: Theme.fg
             hoverForegroundColor: Theme.fg
             activeFocusOnTab: true

@@ -8,7 +8,7 @@ Rectangle {
     radius: Theme.largeRadius
     color: Theme.surface
     border.width: 0
-    border.color: Qt.lighter(Theme.hoverMuted, 1.25)
+    border.color: Theme.surfaceHighlight(1.25)
     clip: true
 
     readonly property real outerPadding: Math.max(10, Math.min(14, Math.round(Theme.pad * 1.1)))
@@ -210,7 +210,7 @@ Rectangle {
                 height: 38
                 radius: 19
                 anchors.verticalCenter: parent.verticalCenter
-                color: playArea.containsMouse ? Qt.lighter(Theme.hoverMuted, 1.35) : Theme.hoverMuted
+                color: playArea.containsMouse ? Theme.surfaceHighlight(1.35) : Theme.hoverMuted
                 opacity: (Media.available && Media.canTogglePlaying) ? 1.0 : 0.35
                 enabled: Media.available && Media.canTogglePlaying
                 Behavior on color { ColorAnimation { duration: HAnimation.fast } }

@@ -119,7 +119,7 @@ ActionMenu.ActionMenuPage {
                 property bool danger: modelData.danger
                 // Keep icon and label contrast in sync with the real pill fade.
                 readonly property color contentForeground: selected || focused
-                    ? root.selectionColor(danger ? "#ff6b6b" : Theme.fg, foreground) : foreground
+                    ? root.selectionColor(danger ? Theme.danger : Theme.fg, foreground) : foreground
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 radius: Theme.radius > 0 ? Theme.radius : 12
@@ -132,15 +132,15 @@ ActionMenu.ActionMenuPage {
                 idleColor: modelData.danger ? Qt.rgba(1.0, 0.3, 0.3, 0.10) : "transparent"
                 hoverColor: (selected || focused) ? "transparent"
                                                   : (modelData.danger ? Qt.rgba(1.0, 0.3, 0.3, 0.28)
-                                                                      : Qt.darker(Theme.hoverMuted, 1.18))
+                                                                      : Theme.surfaceSubtle(1.18))
                 pressedColor: (selected || focused) ? "transparent"
                                                     : (modelData.danger ? Qt.rgba(1.0, 0.3, 0.3, 0.42)
-                                                                        : Qt.darker(Theme.hoverMuted, 1.35))
+                                                                        : Theme.surfaceSubtle(1.35))
                 selectedColor: "transparent"
                 focusColor: "transparent"
 
                 foregroundColor: (selected || focused) ? (modelData.danger ? "#ffffff" : Theme.onAccentColor)
-                                                       : (modelData.danger ? "#ff6b6b" : Theme.fg)
+                                                       : (modelData.danger ? Theme.danger : Theme.fg)
                 hoverForegroundColor: (selected || focused) ? foregroundColor
                                                             : (modelData.danger ? "#ffffff" : Theme.fg)
                 selectedForegroundColor: modelData.danger ? "#ffffff" : Theme.onAccentColor
@@ -174,7 +174,7 @@ ActionMenu.ActionMenuPage {
                         width: pBtn.width,
                         height: pBtn.height,
                         radius: pBtn.radius,
-                        color: modelData.danger ? "#e05555" : Theme.accent,
+                        color: modelData.danger ? Theme.dangerFill : Theme.accent,
                         icon: modelData.icon,
                         label: modelData.label
                     };

@@ -64,7 +64,7 @@ Item {
     signal reorderFinished(real x, real y)
     signal reorderCanceled()
     width: iconSize + 16
-    // Reserve seven pixels above artwork, a two-pixel gap and four-pixel dots.
+    // Keep artwork fixed with a two-pixel gap above and below the dots.
     height: iconSize + 13
     activeFocusOnTab: true
     Accessible.role: Accessible.Button

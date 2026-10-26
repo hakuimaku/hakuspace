@@ -29,6 +29,7 @@ ShellRoot {
 QML
 cp src/core/backend/user/{setting_ctl.py,hikai_settings_ctl.py,hikai_wallpaper_settings_ctl.py,hakucfg_editor_ctl.py,avatar_ctl.sh,text_store_ctl.sh} "$test_root/home/.local/bin/"
 cp src/core/backend/theme/theme_ctl.sh "$test_root/home/.local/bin/theme_ctl_impl.sh"
+cp src/core/theme/accent_palette.py "$test_root/home/.local/bin/"
 cp src/core/lib/{haku_theme.sh,haku_state.sh,accent_color.sh} "$test_root/home/.local/bin/"
 # Exercise canonical font persistence while rendering only the private test theme.
 cat > "$test_root/font-render.sh" <<'FONT_RENDER'

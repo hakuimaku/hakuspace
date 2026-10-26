@@ -172,3 +172,69 @@ Classic keeps its existing awww/mpvpaper flow. Native handoff stops the legacy v
 
 ---
 **Previous:** [Core Libraries](lib.md) | **Next:** [System Management](sys.md)
+
+## Hikai Light Mode and dual accents
+
+Appearance → Theme Mode previews Dark or Light in Hikai. Apply persists
+`appearance.colorMode` in `~/hakucfg/hikai/hikai-shell.json` (schema v7);
+Discard restores the saved mode. The main shell synchronizes
+`org.gnome.desktop.interface color-scheme` with the live preview (`prefer-light` or
+`prefer-dark`). Hiding Hikai during a Classic cutover restores `prefer-dark`;
+returning to Hikai restores its selected scheme. Renderer children do not write
+this desktop preference. Schema v6 migrates to Dark without changing other preferences.
+The existing surface keys remain `ink`, `dark`, and `soft`. In Light they display
+Pure White (`#FFFFFF`), White (`#EEEEEE`), and Gray White (`#D6D6D6`).
+Classic always uses its dark palette. Switching to Classic preserves Hikai's Light
+preference; returning to Hikai restores it without reanalyzing the wallpaper.
+
+`theme_ctl.sh set-accent HEX` accepts a seed. Manual selection and wallpaper extraction
+share `accent_palette.py`, which preserves hue/saturation while adjusting lightness
+for at least 4.5:1 contrast on dark surfaces and 7:1 on light surfaces.
+Grayscale seeds stay grayscale. `theme_ctl.sh apply` refreshes the saved variants
+from their existing seed, so contrast adjustments do not require wallpaper analysis.
+Canonical `[theme].appearance.env` uses `THEME_STATE_VERSION=2`, `ACCENT_SEED`,
+`ACCENT_DARK`, `ACCENT_LIGHT`, `FONT_FAMILY`, and `FONT_SIZE`. Existing single-accent
+state migrates atomically on load, retaining typography. Generated files are never
+read to recover canonical state.
+
+Legacy `ACCENT_COLOR` is a runtime alias for `ACCENT_DARK`; `theme_ctl.sh get accent`
+continues to return that dark-compatible color. Classic/global renderers and icon
+accent synchronization use it. `quickshell.json` contains `accentDark` and `accentLight`;
+`Theme.qml` chooses between them reactively, so mode changes do not rewrite generated
+files or invoke ColorThief.
+
+## Classic Opaque context
+
+`[theme].opaque.enabled` stores the requested preference. Overrides are effective only
+in Classic. `opaque_theme.sh sync classic|hikai` reconciles Waybar, Rofi, SwayNC,
+Kitty, and compositor overrides without changing the request. Backend transitions
+synchronize under their cover barrier and restore the original context on rollback;
+early session startup reconciles the saved context.
+
+Kitty loads its managed opaque override after `~/hakucfg/config/kitty.conf`. When
+effective, it sets `background_opacity 1.0`. Generated Hyprland and Niri overrides
+also force Kitty window opacity to 1.0, including inactive windows. Their includes
+follow user configuration. When ineffective these overrides are empty, restoring
+user/default transparency. Mango and Labwc have no Kitty transparency rule to override.
+Context synchronization reloads the compositor and existing Kitty sockets without
+restarting shell services. Existing Opaque on/off/toggle commands retain their API.
+Kitty enables `dynamic_background_opacity` for subsequent live toggles. Windows
+launched before that option was enabled may need to be reopened once after updating.
+
+Compositor behavior follows the [Hyprland opacity override contract](https://wiki.hypr.land/Configuring/Basics/Window-Rules/)
+and [Niri window rule contract](https://niri-wm.github.io/niri/Configuration:-Window-Rules.html).
+
+## Kitty in Hikai Light
+
+The main shell synchronizes Kitty with the live Light mode, surface and accent draft.
+The managed `theme/kitty-mode.conf` supplies light background, contrast-correct ANSI
+colors, cursor, selection and tab colors. Dark and Classic clear this override so
+Kitty resumes its base and custom colors. The include follows `~/hakucfg/config/kitty.conf`
+and precedes Classic Opaque; fonts, key bindings and user opacity remain under their
+existing owners. Open Kitty instances reload through their existing remote-control
+sockets; new terminals read the same override. Changing only a surface or mode does
+not extract wallpaper colors or rewrite the custom Kitty configuration.
+
+Cava Underbar uses opaque wave/capsule colors, matching its attachment surface.
+The crest shares the body's color, and the wave spans the full output width across
+the Rounded Screen side rails while keeping its existing stable, click-through window.

@@ -101,8 +101,8 @@ FocusScope {
             focused: selected && root.activeFocus
             selectedOverridesHover: true
             idleColor: "transparent"
-            hoverColor: selected ? "transparent" : Qt.darker(Theme.hoverMuted, 1.18)
-            pressedColor: selected ? "transparent" : Qt.darker(Theme.hoverMuted, 1.35)
+            hoverColor: selected ? "transparent" : Theme.surfaceSubtle(1.18)
+            pressedColor: selected ? "transparent" : Theme.surfaceSubtle(1.35)
             selectedColor: "transparent"
             focusColor: "transparent"
             foregroundColor: Theme.fg

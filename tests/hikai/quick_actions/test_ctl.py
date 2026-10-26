@@ -131,7 +131,7 @@ esac
             state = home / ".local/state/hakuspace/state"
             state.mkdir(parents=True)
             for source in (ROOT / "src/core/menu/hm_theme.sh", ROOT / "src/core/lib/haku_theme.sh",
-                           ROOT / "src/core/lib/haku_state.sh"):
+                           ROOT / "src/core/lib/haku_state.sh", ROOT / "src/core/theme/accent_palette.py"):
                 shutil.copy2(source, bin_dir / source.name)
             log = home / "calls"
             for feature in ("taskbar", "dockbar"):

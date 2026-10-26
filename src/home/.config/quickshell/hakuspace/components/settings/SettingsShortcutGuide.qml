@@ -111,7 +111,7 @@ Dialog {
                         id: guideTitle
                         anchors.centerIn: parent
                         text: "Keyboard shortcuts"
-                        color: "#000000"
+                        color: Theme.onAccentColor
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSize + 5
                         font.weight: Font.DemiBold
@@ -201,7 +201,7 @@ Dialog {
                                         id: groupTitle
                                         anchors.centerIn: parent
                                         text: group.modelData.title.toUpperCase()
-                                        color: "#000000"
+                                        color: Theme.onAccentColor
                                         font.family: Theme.fontFamily
                                         font.pixelSize: Math.max(11, Theme.fontSize - 1)
                                         font.weight: Font.DemiBold

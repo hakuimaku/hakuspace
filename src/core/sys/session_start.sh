@@ -13,6 +13,8 @@ haku_state_migrate || exit 1
 source "$SCRIPT_DIR/haku_backend_lib.sh"
 
 if [[ "${1:-}" == "--early" ]]; then
+    # Restore effective opaque overrides before rendering or starting either shell.
+    "$HOME/.local/bin/opaque_theme.sh" sync "$(haku_backend_get)" || true
     # Reconcile installed assets after updates or restores without failing login.
     if [[ -x "$HOME/.local/bin/appearance_ctl.sh" ]]; then
         "$HOME/.local/bin/appearance_ctl.sh" apply || true
@@ -21,6 +23,8 @@ if [[ "${1:-}" == "--early" ]]; then
         "$HOME/.local/bin/theme_ctl.sh" apply || true
     fi
     if haku_backend_is "classic"; then
+        gsettings set org.gnome.desktop.interface color-scheme prefer-dark >/dev/null 2>&1 || true
+        python3 "$HOME/.local/bin/kitty_theme_ctl.py" dark || true
         pgrep -x swaync >/dev/null || swaync &
     else
         pkill -x swaync

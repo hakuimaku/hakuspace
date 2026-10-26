@@ -57,7 +57,7 @@ class ShellSettingsTests(unittest.TestCase):
         """Patches retain unrelated preferences; reset persists the full defaults."""
         self.write({"appearance": {"baseRadius": 20, "surfaceTone": "soft"}, "topbar": {"tray": False}})
         values = self.write({"topbar": {"clock": False}})
-        self.assertEqual(values["appearance"], {"baseRadius": 20, "surfaceTone": "soft"})
+        self.assertEqual(values["appearance"], {"baseRadius": 20, "surfaceTone": "soft", "colorMode": "dark"})
         self.assertFalse(values["topbar"]["tray"])
         self.assertFalse(values["topbar"]["clock"])
         self.assertTrue(values["topbar"]["notifications"])
@@ -70,6 +70,7 @@ class ShellSettingsTests(unittest.TestCase):
         for version in (3, 4, 5):
             document = json.loads(json.dumps(ctl.DEFAULTS))
             document["version"] = version
+            document["appearance"].pop("colorMode")
             document["dock"]["iconSize"] = 48
             if version < 5:
                 for key in ("style", "showTrash", "showDevices"):
@@ -82,6 +83,26 @@ class ShellSettingsTests(unittest.TestCase):
             self.assertEqual(ctl.migrate(document)[0]["dock"]["iconSize"], 48)
         self.write({"dock": {"iconSize": 48}})
         self.assertEqual(ctl.run("reset")["values"]["dock"]["iconSize"], 36)
+
+    def test_v6_color_mode_migration_and_persistence(self):
+        """Legacy appearance migrates safely; both modes preserve other preferences."""
+        legacy = json.loads(json.dumps(ctl.DEFAULTS))
+        legacy["version"] = 6
+        legacy["appearance"] = {"baseRadius": 18, "surfaceTone": "soft"}
+        self.path.parent.mkdir(parents=True)
+        self.path.write_text(json.dumps(legacy))
+        original = self.path.read_bytes()
+        response = ctl.run("read")
+        self.assertTrue(response["needsMigration"])
+        self.assertEqual(response["values"]["appearance"], legacy["appearance"] | {"colorMode": "dark"})
+        self.assertEqual(self.path.read_bytes(), original)
+        for mode in ("light", "dark"):
+            values = self.write({"appearance": {"colorMode": mode}})
+            self.assertEqual(values["appearance"], legacy["appearance"] | {"colorMode": mode})
+            self.assertEqual(ctl.run("read")["values"], values)
+        for invalid in ("auto", "Light", True, None):
+            with self.assertRaises(ValueError):
+                self.write({"appearance": {"colorMode": invalid}})
 
     def test_invalid_patch_never_changes_disk(self):
         """Exact types, schema version, enum and radius bounds are mandatory."""
@@ -99,7 +120,7 @@ class ShellSettingsTests(unittest.TestCase):
         patches += [{"dock": {key: value}} for key in ("showTrash", "showDevices") for value in (0, "false", None)]
         patches += [{"dock": {"style": value}} for value in ("full", True, 1, None)]
         patches += [{"dock": {"enabled": True}}]
-        patches += [{"appearance": {"surfaceTone": "black"}}, {"version": True}, {"version": 7}, {"version": 1},
+        patches += [{"appearance": {"surfaceTone": "black"}}, {"version": True}, {"version": 8}, {"version": 1},
                     {"appearance": []}, {"topbar": {"logo": False}}, {"unknown": 1}, []]
         for payload in patches:
             with self.subTest(payload=payload), self.assertRaises(ValueError):
@@ -109,7 +130,7 @@ class ShellSettingsTests(unittest.TestCase):
     def test_invalid_document_and_payload(self):
         """Malformed or incomplete documents report failure without replacement."""
         self.path.parent.mkdir(parents=True)
-        for content in ("{broken", "[]", '{"version": 1}', json.dumps(dict(ctl.DEFAULTS, version=7))):
+        for content in ("{broken", "[]", '{"version": 1}', json.dumps(dict(ctl.DEFAULTS, version=8))):
             self.path.write_text(content)
             for action in ("read", "check", "reset"):
                 with self.subTest(action=action, content=content), self.assertRaises(ValueError):
@@ -165,7 +186,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
 
     def test_v1_migration_without_read_writes(self):
-        """Read/check migrate in memory; the next explicit Apply persists version 6."""
+        """Read/check migrate in memory; the next explicit Apply persists version 7."""
         self.path.parent.mkdir(parents=True)
         legacy = {"version": 1, "appearance": {"baseRadius": 24, "surfaceTone": "soft"}, "topbar": {"tray": False}}
         self.path.write_text(json.dumps(legacy))
@@ -173,15 +194,15 @@ class ShellSettingsTests(unittest.TestCase):
         for action in ("read", "check"):
             data = ctl.run(action)
             self.assertTrue(data["needsMigration"])
-            self.assertEqual(data["values"]["version"], 6)
+            self.assertEqual(data["values"]["version"], 7)
             self.assertEqual(data["values"]["dock"]["iconSize"], 36)
             self.assertEqual(data["values"]["roundedScreen"], {"radius": 20, "borderThickness": 4})
-            self.assertEqual(data["values"]["appearance"], legacy["appearance"])
+            self.assertEqual(data["values"]["appearance"], legacy["appearance"] | {"colorMode": "dark"})
             self.assertFalse(data["values"]["topbar"]["tray"])
             self.assertTrue(data["values"]["topbar"]["clock"])
             self.assertEqual(self.path.read_bytes(), original)
         self.write({})
-        self.assertEqual(json.loads(self.path.read_text())["version"], 6)
+        self.assertEqual(json.loads(self.path.read_text())["version"], 7)
         self.assertFalse(ctl.run("read")["needsMigration"])
 
     def test_v2_migration_and_dock_persistence(self):
@@ -190,6 +211,7 @@ class ShellSettingsTests(unittest.TestCase):
         legacy = json.loads(json.dumps(ctl.DEFAULTS))
         legacy.pop("dock")
         legacy["version"] = 2
+        legacy["appearance"].pop("colorMode")
         legacy["roundedScreen"] = {"radius": 9, "borderThickness": 2}
         legacy["topbar"]["clock"] = False
         self.path.write_text(json.dumps(legacy))
@@ -218,6 +240,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.path.parent.mkdir(parents=True)
         legacy = json.loads(json.dumps(ctl.DEFAULTS))
         legacy["version"] = 3
+        legacy["appearance"].pop("colorMode")
         legacy["dock"] = {"visibilityMode": "always", "exclusiveSpace": True, "iconSize": 72}
         legacy["appearance"]["baseRadius"] = 18
         self.path.write_text(json.dumps(legacy))
@@ -230,7 +253,7 @@ class ShellSettingsTests(unittest.TestCase):
         for lift, scale in ((0, 0), (48, 100), (13, 37)):
             values = self.write({"dock": {"hoverLift": lift, "hoverScale": scale}})
             self.assertEqual(values["dock"], ctl.DEFAULTS["dock"] | legacy["dock"] | {"hoverLift": lift, "hoverScale": scale})
-            self.assertEqual(values["appearance"], legacy["appearance"])
+            self.assertEqual(values["appearance"], legacy["appearance"] | {"colorMode": "dark"})
             self.assertEqual(ctl.run("read")["values"], values)
             self.assertFalse(ctl.run("read")["needsMigration"])
 
@@ -269,6 +292,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.path.parent.mkdir(parents=True)
         legacy = json.loads(json.dumps(ctl.DEFAULTS))
         legacy["version"] = 4
+        legacy["appearance"].pop("colorMode")
         for key in ("style", "showTrash", "showDevices"):
             legacy["dock"].pop(key, None)
         legacy["dock"].update(iconSize=60, hoverLift=32, exclusiveSpace=True)
@@ -283,17 +307,18 @@ class ShellSettingsTests(unittest.TestCase):
         self.assertEqual(ctl.run("reset")["values"], ctl.DEFAULTS)
 
     def test_v5_style_removal_preserves_all_other_preferences(self):
-        """Both legacy styles migrate directly to v6 without changing app preferences."""
+        """Both legacy styles migrate directly to v7 without changing app preferences."""
         for style in ("bar", "dock"):
             document = json.loads(json.dumps(ctl.DEFAULTS))
             document["version"] = 5
+            document["appearance"].pop("colorMode")
             document["dock"].update(style=style, iconSize=60, hoverLift=28, hoverScale=40,
                                     visibilityMode="always", exclusiveSpace=True, showTrash=False, showDevices=False)
             expected = dict(document["dock"])
             del expected["style"]
             migrated, changed = ctl.migrate(document)
             self.assertTrue(changed)
-            self.assertEqual(migrated["version"], 6)
+            self.assertEqual(migrated["version"], 7)
             self.assertEqual(migrated["dock"], expected)
             self.assertEqual(ctl.migrate(migrated), (migrated, False))
 

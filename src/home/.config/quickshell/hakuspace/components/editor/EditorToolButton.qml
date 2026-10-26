@@ -44,7 +44,7 @@ Item {
                : (root.selected
                   ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.22)
                   : (mouseArea.pressed
-                     ? Qt.darker(Theme.hoverMuted, 1.15)
+                     ? Theme.surfaceSubtle(1.15)
                      : (mouseArea.containsMouse ? Theme.hoverMuted : "transparent")))
         border.width: root.selected ? 1 : 0
         border.color: Theme.accent
@@ -103,7 +103,7 @@ Item {
         radius: Theme.radius
         color: Theme.surface
         border.width: 1
-        border.color: Qt.lighter(Theme.hoverMuted, 1.45)
+        border.color: Theme.surfaceHighlight(1.45)
         z: 300
 
         Behavior on opacity {

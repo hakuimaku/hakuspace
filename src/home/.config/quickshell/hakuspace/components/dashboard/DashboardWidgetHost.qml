@@ -7,7 +7,7 @@ Rectangle {
     radius: Theme.largeRadius
     color: Theme.surface
     border.width: 0
-    border.color: Qt.lighter(Theme.hoverMuted, 1.25)
+    border.color: Theme.surfaceHighlight(1.25)
     clip: true
 
     property var widgets: [

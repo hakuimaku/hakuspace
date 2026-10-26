@@ -209,7 +209,7 @@ Item {
                     height: cellItem.markerDiameter
                     radius: cellItem.markerDiameter / 2
                     visible: cellItem.today || cellItem.isHovered
-                    color: cellItem.today ? Theme.accent : Qt.lighter(Theme.hoverMuted, 1.25)
+                    color: cellItem.today ? Theme.accent : Theme.surfaceHighlight(1.25)
                     scale: (cellItem.isHovered && !cellItem.today) ? 1.08 : 1.0
                     border.width: 0
 

@@ -167,10 +167,19 @@ Item {
                 for (var tone of ["ink", "dark", "soft"]) {
                     ShellSettingsStore.setValue("appearance", "surfaceTone", tone)
                     root.check(String(Theme.surface) === ({ink: "#000000", dark: "#0b0b0b", soft: "#171717"})[tone], "surface " + tone)
-                    root.check(Theme.hoverMuted === ({ink: "#202020", dark: "#2b2b2b", soft: "#333333"})[tone], "hover " + tone)
+                    root.check(String(Theme.hoverMuted) === ({ink: "#202020", dark: "#2b2b2b", soft: "#333333"})[tone], "hover " + tone)
+                }
+                // Preview every light surface and both generated accents without invoking the controller.
+                Theme.apply(JSON.stringify({accentDark: "#a2cb8b", accentLight: "#3f6e2b"}))
+                ShellSettingsStore.setValue("appearance", "colorMode", "light")
+                root.check(Theme.isLight && String(Theme.accent) === "#3f6e2b" && String(Theme.onAccentColor) === "#ffffff", "light accent selection")
+                for (var tone of ["ink", "dark", "soft"]) {
+                    ShellSettingsStore.setValue("appearance", "surfaceTone", tone)
+                    root.check(String(Theme.surface) === ({ink: "#ffffff", dark: "#eeeeee", soft: "#d6d6d6"})[tone], "light surface " + tone)
                 }
                 ShellSettingsStore.discard()
                 root.check(Theme.radius === 12 && String(Theme.surface) === "#0b0b0b" && !ShellSettingsStore.dirty, "discard live preview")
+                root.check(!Theme.isLight && String(Theme.accent) === "#a2cb8b", "discard mode preview")
                 for (var setting of [{key: "hoverLift", maximum: 48}, {key: "hoverScale", maximum: 100}]) {
                     var control = root.find(page, function(item) { return item.from === 0 && item.to === setting.maximum })
                     root.check(control && control.enabled && control.stepSize === 1, "Dock hover slider exists and accepts input")
@@ -196,12 +205,14 @@ Item {
                     surface: "#ff0000", hoverMuted: "#ff0000", radius: 99, largeRadius: 99, hugRadius: 99, giantRadius: 99}))
                 root.check(Theme.radius === 20 && String(Theme.surface) === "#171717" && !ShellSettingsStore.showTray, "theme isolation")
                 root.check(ScreenGeometry.roundedRadius === 24 && ScreenGeometry.borderThickness === 6, "theme leaves screen preferences intact")
-                root.check(Theme.accent === "#aabbcc" && Theme.font === "monospace" && Theme.fontSize === 17, "dynamic theme still applies")
+                root.check(String(Theme.accent) === "#aabbcc" && Theme.font === "monospace" && Theme.fontSize === 17, "dynamic theme still applies")
                 ShellSettingsStore.setValue("topbar", "tray", "false")
                 ShellSettingsStore.setValue("appearance", "baseRadius", 99)
                 root.check(!ShellSettingsStore.showTray && Theme.radius === 20, "invalid edits rejected")
+                ShellSettingsStore.setValue("appearance", "colorMode", "light")
                 ShellSettingsStore.apply()
             } else if (root.phase === 1) {
+                root.check(Theme.isLight && ShellSettingsStore.savedValues.appearance.colorMode === "light", "mode persists after Apply and Reload")
                 root.checkPinSize(64)
                 root.check(!ShellSettingsStore.dockShowTrash && !ShellSettingsStore.dockShowDevices,
                     "Apply persists accessory switches")

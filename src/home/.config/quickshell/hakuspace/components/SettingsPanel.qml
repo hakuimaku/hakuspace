@@ -587,7 +587,7 @@ PanelWindow {
                             text: modelData
                             fontSize: Math.max(10, Theme.fontSize - 1)
                             idleColor: primary ? Theme.accent : Theme.hoverMuted
-                            hoverColor: primary ? Theme.accent : Qt.lighter(Theme.hoverMuted, 1.18)
+                            hoverColor: primary ? Theme.accent : Theme.surfaceHighlight(1.18)
                             foregroundColor: primary ? Theme.onAccentColor : Theme.fg
                             hoverForegroundColor: foregroundColor
                             disabledColor: Theme.hoverMuted

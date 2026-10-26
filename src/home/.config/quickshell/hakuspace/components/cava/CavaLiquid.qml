@@ -7,12 +7,11 @@ Item {
     property var bars: CavaService.bars
     property real amplitude: CavaService.amplitude
     property real motionStrength: CavaService.motionStrength
-    readonly property bool isSurfaceMode: CavaService.colorMode === "surface"
     property color inkColor: CavaService.underbarColor
-    property real inkOpacity: isSurfaceMode ? 1.0 : 0.80
+    property real inkOpacity: 1.0
     property bool showCrestLine: true
-    property color crestColor: isSurfaceMode ? Qt.lighter(CavaService.surfaceColor, 1.8) : CavaService.accentColor
-    property real crestOpacity: isSurfaceMode ? 0.75 : 0.95
+    property color crestColor: root.inkColor
+    property real crestOpacity: root.inkOpacity
 
     readonly property bool isTop: CavaService.top
     readonly property bool sleeping: CavaService.sleeping
@@ -49,7 +48,6 @@ Item {
 
     onSleepingChanged: canvas.requestPaint()
     onBarsChanged: canvas.requestPaint()
-    onIsSurfaceModeChanged: canvas.requestPaint()
     onInkColorChanged: canvas.requestPaint()
     onWidthChanged: canvas.requestPaint()
     onHeightChanged: canvas.requestPaint()

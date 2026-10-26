@@ -22,3 +22,6 @@ local ok, custom = pcall(require, "../../hakucfg/wm/hyprland-custom")
 if not ok then
     hl.dispatch(hl.dsp.exec_cmd("notify-send 'Hyprland' 'Load custom config failed' -t 5000"))
 end
+
+-- Managed Classic opacity takes precedence over user and application rules.
+pcall(dofile, os.getenv("HOME") .. "/.local/state/hakuspace/theme/opaque/hyprland.lua")

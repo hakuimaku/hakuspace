@@ -245,3 +245,20 @@ Những chi tiết này thuộc code, issue, PR hoặc commit. Git history giữ
 Thêm section mới khi có một khái niệm kiến trúc mới thực sự.
 Sửa section cũ khi contract hoặc mô hình tư duy của nó thay đổi, và giữ link đúng khi source di chuyển.
 Thêm, đổi tên hoặc redesign tính năng không nên buộc phải viết lại danh sách tính năng ở đây.
+
+## Chế độ màu Hikai
+
+Appearance có Dark và Light, hỗ trợ preview, Apply và Discard. Ba mức surface sáng
+là Pure White, White và Gray White; key `surfaceTone` vẫn là `ink`, `dark`, `soft`.
+Schema v7 lưu `appearance.colorMode` trong `~/hakucfg/hikai/hikai-shell.json`;
+preference cũ mặc định Dark và giữ nguyên các lựa chọn khác.
+
+Mỗi seed accent thủ công hoặc lấy từ wallpaper sinh đồng thời một màu cho nền tối
+và một màu cho nền sáng, bảo đảm contrast. `Theme.qml` chọn màu từ `quickshell.json`
+mà không sinh lại theme hoặc chạy ColorThief khi đổi mode. Classic và ứng dụng dùng
+chung luôn nhận accent cho nền tối. Chuyển sang Classic giữ preference Light của
+Hikai; quay lại Hikai tự khôi phục Light.
+
+Opaque chỉ có hiệu lực trong Classic. Request vẫn được lưu khi vào Hikai, nhưng các
+override được xóa, bao gồm opacity của Kitty ở cả ứng dụng lẫn compositor. Transition
+đồng bộ context dưới cover và khôi phục đúng context khi rollback. Xem [theme contracts](../core/theme.md).

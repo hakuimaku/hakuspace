@@ -8,7 +8,7 @@ import "components/base" as Base
 ShellRoot {
     id: root
     // Exercise every edge and chassis combination through the production loader.
-    property var cases: [[true, false], [false, true], [true, true], [false, false]]
+    property var cases: [[true, false], [false, true], [true, true], [false, false], [true, false], [false, true]]
     property int caseIndex: 0
     property int phase: -1
     property int ticks: 0
@@ -38,8 +38,13 @@ ShellRoot {
     function openCase() {
         AppState.cavaTopState = cases[caseIndex][0]
         AppState.taskbarManualState = cases[caseIndex][1]
-        AppState.cavaColorMode = caseIndex % 2 === 0 ? "accent" : "surface"
+        AppState.cavaColorMode = caseIndex % 3 === 0 ? "surface" : "accent"
         CavaService.height = 72 + caseIndex * 16
+        var draft = ShellSettingsStore.defaults()
+        draft.appearance.colorMode = caseIndex % 2 === 0 ? "dark" : "light"
+        draft.appearance.surfaceTone = caseIndex % 3 === 0 ? "ink" : caseIndex % 3 === 1 ? "dark" : "soft"
+        ShellSettingsStore.values = draft
+        CavaService.style = caseIndex % 3 === 0 ? "capsule" : "liquid"
         Theme.fontSize = 14 + caseIndex * 2
         hostSize = null
         sawOpen = false
@@ -54,18 +59,24 @@ ShellRoot {
         var body = host.contentItem.children[0].children[0]
         var surface = body.children[0]
         var wave = body.children[1]
-        var inset = Math.round(AppState.cavaTopState
+        // QML int properties truncate fractional font-derived attachment heights.
+        var inset = Math.floor(AppState.cavaTopState
             ? (ChromeLayout.taskbarMode ? ScreenGeometry.topBorderThickness : Theme.topBarHeight)
             : (ChromeLayout.taskbarMode ? ScreenGeometry.taskbarReservation() : ScreenGeometry.bottomInset))
         check(body.y === 0, "fully open content reaches its attachment")
         check(host.margins.top === 0 && host.margins.bottom === 0, "host reaches the screen edge")
         check(host.margins.left === 0 && host.margins.right === 0, "surface spans the output")
-        check(surface.height === inset, "surface matches the reserved chassis")
+        check(surface.height === inset, "surface matches the reserved chassis in case " + root.caseIndex + ": " + surface.height + " vs " + inset)
         check(surface.color.toString() === CavaService.underbarColor.toString(), "surface follows the Cava color mode")
         check(Math.abs(surface.y - (AppState.cavaTopState ? 0 : wave.height)) < 0.01, "surface follows the selected edge")
         check(Math.abs(wave.y - (AppState.cavaTopState ? inset : 0)) < 0.01, "wave retains its baseline")
         check(Math.abs(wave.height - CavaService.height - CavaService.ceilingHeadroom) < 0.01, "wave retains its height")
-        check(wave.x === ScreenGeometry.leftInset, "wave retains the frame inset")
+        check(wave.x === 0 && wave.width === host.width, "wave extends across the Rounded Screen side rails")
+        var visual = wave.children[0].item
+        if (visual.inkOpacity !== undefined) {
+            check(visual.inkOpacity === 1 && visual.crestOpacity === 1, "wave body and crest are opaque")
+            check(String(visual.crestColor) === String(visual.inkColor), "wave crest matches its body")
+        } else check(visual.barOpacity === 1, "capsules match the opaque attachment")
         check(host.exclusionMode === ExclusionMode.Ignore && host.exclusiveZone === 0, "no duplicate reservation")
         check(host.WlrLayershell.layer === WlrLayer.Bottom, "surface follows the Cava layer")
         check(host.mask.regions.length === 0 && host.mask.width === 0 && host.mask.height === 0, "surface remains click-through")
@@ -109,6 +120,7 @@ ShellRoot {
         onTriggered: {
             root.check(++root.ticks < 600, "animation timeout in phase " + root.phase)
             if (root.phase < 0) {
+                if (!ShellSettingsStore.ready) return
                 CavaService.process.command = ["sleep", "60"]
                 CavaService._smoothedBars = new Array(CavaService.barCount).fill(0)
                 root.check(!lifetime.active, "disabled Cava owns no surface")

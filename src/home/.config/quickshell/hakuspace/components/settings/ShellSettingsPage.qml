@@ -296,11 +296,44 @@ Item {
                 }
                 SettingsSectionCard {
                     id: appearance
-                    highlighted: root.highlightedId === "radius"
+                    highlighted: root.highlightedId === "radius" || root.highlightedId === "colorMode"
                     visible: root.category === "Appearance"
                     width: parent.width
                     title: "Appearance"
                     GeneralSettingsForm { id: accentForm; width: parent.width; category: "Appearance"; shortcutTarget: root.shortcutTarget; highlightedId: root.highlightedId }
+                    Text { text: "Theme Mode"; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize }
+                    Row {
+                        id: modeChoices
+                        spacing: 6
+                        Repeater {
+                            model: ["dark", "light"]
+                            delegate: SettingsActionButton {
+                                required property string modelData
+                                settingsNavGroup: modeChoices
+                                text: modelData === "light" ? "Light" : "Dark"
+                                width: 104
+                                height: 32
+                                hoverColor: Theme.hoverMuted
+                                selectedColor: Theme.hoverMuted
+                                focusColor: Theme.hoverMuted
+                                hoverForegroundColor: Theme.fg
+                                pressedForegroundColor: Theme.fg
+                                selectedForegroundColor: Theme.accent
+                                selectedOverridesHover: true
+                                selected: ShellSettingsStore.colorMode === modelData
+                                enabled: root.editable
+                                activeFocusOnTab: enabled
+                                focused: activeFocus
+                                Accessible.name: text + " theme mode"
+                                Accessible.role: Accessible.RadioButton
+                                Accessible.checked: selected
+                                Accessible.onPressAction: clicked()
+                                onClicked: ShellSettingsStore.setValue("appearance", "colorMode", modelData)
+                                Keys.onReturnPressed: clicked()
+                                Keys.onSpacePressed: clicked()
+                            }
+                        }
+                    }
                     SettingsSliderRow { shortcutTarget: root.shortcutTarget; available: root.editable; modelData: ({section: "appearance", key: "baseRadius", label: "Shell radius", min: 4, max: 24}) }
                 }
                 SettingsSectionCard {
@@ -325,11 +358,11 @@ Item {
                         width: parent.width
                         spacing: 6
                         Repeater {
-                            model: [{key: "ink", label: "Ink"}, {key: "dark", label: "Dark"}, {key: "soft", label: "Soft"}]
+                            model: [{key: "ink", label: Theme.isLight ? "Pure White" : "Ink"}, {key: "dark", label: Theme.isLight ? "White" : "Dark"}, {key: "soft", label: Theme.isLight ? "Gray White" : "Soft"}]
                             delegate: SettingsActionButton {
                                 settingsNavGroup: surfaceChoices
                                 required property var modelData
-                                width: Math.min(104, (parent.width - 12) / 3)
+                                width: Math.min(132, (parent.width - 12) / 3)
                                 height: 32
                                 text: modelData.label
                                 selected: ShellSettingsStore.surfaceTone === modelData.key

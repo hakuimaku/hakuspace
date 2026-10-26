@@ -209,7 +209,7 @@ ActionMenu.ActionMenuPage {
             text: root.errorMessage
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSize
-            color: "#ff6b6b"
+            color: Theme.danger
             Layout.alignment: Qt.AlignHCenter
         }
 
@@ -218,7 +218,7 @@ ActionMenu.ActionMenuPage {
             Layout.fillWidth: true
             Layout.preferredHeight: Math.max(34, Theme.fontSize * 2.2)
             radius: Theme.radius
-            color: Qt.rgba(1, 1, 1, 0.06)
+            color: Qt.alpha(Theme.overlayInk, 0.06)
             border.color: searchInput.activeFocus ? Theme.accent : "transparent"
             border.width: 1
 

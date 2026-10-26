@@ -113,7 +113,7 @@ save_and_apply() {
 set_accent() {
     local validated
     validated="$(validate_accent "${1:-}")" || return $?
-    ACCENT_COLOR="$validated"
+    theme_set_seed "$validated" || return 1
     theme_save_state || return 1
     apply_and_reconcile
 }
@@ -185,6 +185,8 @@ case "${1:-}" in
         set_size "${2:-}"
         ;;
     apply|--apply)
+        # Refresh saved variants when palette contrast rules change.
+        theme_set_seed "$ACCENT_SEED" && theme_save_state || exit 1
         apply_and_reconcile
         ;;
     -h|--help)

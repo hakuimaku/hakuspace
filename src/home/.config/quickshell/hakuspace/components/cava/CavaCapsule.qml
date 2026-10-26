@@ -6,9 +6,8 @@ Item {
     id: root
     property var bars: CavaService.bars
     property real amplitude: CavaService.amplitude
-    readonly property bool isSurfaceMode: CavaService.colorMode === "surface"
     property color barColor: CavaService.underbarColor
-    property real barOpacity: isSurfaceMode ? 1.0 : 0.85
+    property real barOpacity: 1.0
 
     readonly property int count: bars ? bars.length : 0
     readonly property real spacing: 2

@@ -20,6 +20,8 @@ QtObject {
     readonly property bool dirty: JSON.stringify(values) !== JSON.stringify(savedValues)
     readonly property bool valid: validate(values)
     readonly property int baseRadius: values.appearance.baseRadius
+    // Hikai mode previews with the appearance draft.
+    readonly property string colorMode: values.appearance.colorMode
     readonly property string surfaceTone: values.appearance.surfaceTone
     readonly property int roundedScreenRadius: values.roundedScreen.radius
     readonly property int roundedScreenBorderThickness: values.roundedScreen.borderThickness
@@ -43,7 +45,7 @@ QtObject {
 
     // Produce independent snapshots so Discard never shares mutable nested objects.
     function defaults() {
-        return {version: 6, appearance: {baseRadius: 12, surfaceTone: "dark"},
+        return {version: 7, appearance: {baseRadius: 12, surfaceTone: "dark", colorMode: "dark"},
             roundedScreen: {radius: 20, borderThickness: 4},
             dock: {visibilityMode: "autohide", exclusiveSpace: false, iconSize: 36, hoverLift: 14, hoverScale: 0,
                 showTrash: true, showDevices: true},
@@ -53,7 +55,7 @@ QtObject {
     // Mirror the backend contract before applying or accepting a response.
     function validate(draft) {
         var schema = defaults()
-        if (!draft || draft.version !== 6 || Object.keys(draft).length !== 5) return false
+        if (!draft || draft.version !== 7 || Object.keys(draft).length !== 5) return false
         for (var section of ["appearance", "roundedScreen", "topbar", "dock"]) {
             if (!draft[section] || Object.keys(draft[section]).length !== Object.keys(schema[section]).length) return false
             for (var key in schema[section]) {
@@ -66,6 +68,7 @@ QtObject {
                 if (key === "hoverScale" && (!Number.isInteger(value) || value < 0 || value > 100)) return false
                 if (section === "roundedScreen" && (!Number.isInteger(value) || value < 0 || value > (key === "radius" ? 24 : 6))) return false
                 if (key === "baseRadius" && (!Number.isInteger(value) || value < 4 || value > 24)) return false
+                if (key === "colorMode" && ["dark", "light"].indexOf(value) < 0) return false
                 if (key === "surfaceTone" && ["ink", "dark", "soft"].indexOf(value) < 0) return false
             }
         }

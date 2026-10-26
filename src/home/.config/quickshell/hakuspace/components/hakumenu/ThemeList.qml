@@ -11,7 +11,7 @@ Item {
     property real leftColumnWidth: width
     property real stateColumnWidth: 0
     property real columnGap: Theme.gap * 2
-    property color rowHoverColor: "#202020"
+    property color rowHoverColor: Theme.hoverMuted
     property color rowSelectedColor: Theme.accent
     readonly property real itemGap: Math.max(3, Math.round(Theme.gap * 0.35) + 1)
     readonly property real rowHeight: Math.max(46, Theme.fontSize * 3.0)
@@ -307,9 +307,9 @@ Item {
                     width: Math.min(parent.width - Theme.gap * 2, Math.max(102, Theme.fontSize * 6.8 + 8))
                     height: Math.max(28, Theme.fontSize * 1.9)
                     radius: height / 2
-                    color: rowWrap.stateOn ? Theme.accent : Qt.darker(Theme.hoverMuted, 1.5)
+                    color: rowWrap.stateOn ? Theme.accent : Theme.surfaceSubtle(1.5)
                     border.width: 1
-                    border.color: rowWrap.stateOn ? Theme.accent : Qt.darker(Theme.hoverMuted, 1.85)
+                    border.color: rowWrap.stateOn ? Theme.accent : Theme.surfaceSubtle(1.85)
 
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
@@ -317,7 +317,7 @@ Item {
                         text: togglePill.isPositionKind ? (rowWrap.stateOn ? "TOP" : "BOTTOM")
                             : togglePill.isColorKind ? (rowWrap.stateOn ? "ACCENT" : "SURFACE")
                             : (rowWrap.stateOn ? "ON" : "OFF")
-                        color: rowWrap.stateOn ? "#000000" : Theme.fgMuted
+                        color: rowWrap.stateOn ? Theme.onAccentColor : Theme.fgMuted
                         font.family: Theme.fontFamily
                         font.pixelSize: Math.max(9, Theme.fontSize - 2)
                         font.weight: Font.DemiBold
@@ -330,7 +330,7 @@ Item {
                         radius: width / 2
                         y: 3
                         x: rowWrap.stateOn ? togglePill.width - width - 3 : 3
-                        color: rowWrap.stateOn ? "#000000" : Theme.accent
+                        color: rowWrap.stateOn ? Theme.onAccentColor : Theme.accent
 
                         Behavior on x {
                             NumberAnimation {

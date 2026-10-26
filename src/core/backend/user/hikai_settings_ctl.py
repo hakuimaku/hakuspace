@@ -10,8 +10,8 @@ from pathlib import Path
 
 # Keep runtime state outside this versioned preference schema.
 DEFAULTS = {
-    "version": 6,
-    "appearance": {"baseRadius": 12, "surfaceTone": "dark"},
+    "version": 7,
+    "appearance": {"baseRadius": 12, "surfaceTone": "dark", "colorMode": "dark"},
     "roundedScreen": {"radius": 20, "borderThickness": 4},
     "dock": {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 36,
              "hoverLift": 14, "hoverScale": 0, "showTrash": True, "showDevices": True},
@@ -26,7 +26,7 @@ def validate(values, partial=False):
         raise ValueError("expected a shell settings object with known fields")
     if not partial and set(values) != set(DEFAULTS):
         raise ValueError("missing shell settings fields")
-    if "version" in values and (type(values["version"]) is not int or values["version"] != 6):
+    if "version" in values and (type(values["version"]) is not int or values["version"] != 7):
         raise ValueError("unsupported schema version")
     for section in ("appearance", "roundedScreen", "topbar", "dock"):
         if section not in values:
@@ -53,6 +53,8 @@ def validate(values, partial=False):
                 valid = type(value) is int and 0 <= value <= (24 if key == "radius" else 6)
             elif key == "baseRadius":
                 valid = type(value) is int and 4 <= value <= 24
+            elif key == "colorMode":
+                valid = type(value) is str and value in ("dark", "light")
             else:
                 valid = type(value) is str and value in ("ink", "dark", "soft")
             if not valid:
@@ -77,7 +79,7 @@ def migrate(values):
             raise ValueError("invalid version 2 shell settings")
         values = copy.deepcopy(values)
         values.update(version=6, dock=copy.deepcopy(DEFAULTS["dock"]))
-        return validate(values), True
+        return migrate(values)[0], True
     if type(original_version) is int and original_version == 3:
         if type(values.get("dock")) is not dict or set(values["dock"]) != {"visibilityMode", "exclusiveSpace", "iconSize"}:
             raise ValueError("invalid version 3 shell settings")
@@ -89,12 +91,19 @@ def migrate(values):
         values = copy.deepcopy(values)
         values["version"] = 6
         values["dock"].update(showTrash=True, showDevices=True)
-        return validate(values), True
+        return migrate(values)[0], True
     if type(original_version) is int and original_version == 5:
         values = copy.deepcopy(values)
         if type(values.get("dock")) is not dict or values["dock"].pop("style", None) not in ("dock", "bar"):
             raise ValueError("invalid version 5 Dock style")
         values["version"] = 6
+        return migrate(values)[0], True
+    if type(original_version) is int and original_version == 6:
+        if type(values.get("appearance")) is not dict or set(values["appearance"]) != {"baseRadius", "surfaceTone"}:
+            raise ValueError("invalid version 6 appearance")
+        values = copy.deepcopy(values)
+        values["version"] = 7
+        values["appearance"]["colorMode"] = "dark"
         return validate(values), True
     return validate(values), False
 

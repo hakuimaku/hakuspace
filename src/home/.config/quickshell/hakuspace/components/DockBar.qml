@@ -15,7 +15,7 @@ Item {
     readonly property bool enabledDock: !!modelData && ChromeLayout.dockbarActive
     readonly property bool always: ShellSettingsStore.dockVisibilityMode === "always"
     readonly property int iconSize: ShellSettingsStore.dockIconSize
-    // Four pixels above the item; indicators meet the surface's bottom edge.
+    // Four pixels above the item; indicators keep two pixels below them.
     readonly property real targetHeight: ScreenGeometry.dockbarHeight
     // Follow frame reservations explicitly without consuming the Dock's own zone.
     readonly property real bottomInset: ScreenGeometry.bottomInset

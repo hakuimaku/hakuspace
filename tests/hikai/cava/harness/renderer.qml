@@ -64,9 +64,29 @@ ShellRoot {
                 AppState.cavaTopState = false
                 AppState.cavaColorMode = "accent"
                 CavaService.height = 88
-                Theme.accent = "#7f91c3"
+                Theme.accentDark = "#7f91c3"
                 root.phase = 2
             } else if (root.phase === 2 && !state.top && state.height === 88 && state.color === "#7f91c3") {
+                if (!ShellSettingsStore.ready) return
+                AppState.cavaColorMode = "surface"
+                root.phase = 20
+            } else if (root.phase === 20 && state.color === "#0b0b0b") {
+                ShellSettingsStore.setValue("appearance", "colorMode", "light")
+                root.phase = 21
+            } else if (root.phase === 21 && state.color === "#eeeeee") {
+                root.check(CavaService.rendererPid === root.workerPid && state.audioPid === root.audioPid,
+                    "light surface updates without restarting renderer or audio")
+                Theme.apply(JSON.stringify({accentLight: "#3f6e2b"}))
+                AppState.cavaColorMode = "accent"
+                root.phase = 22
+            } else if (root.phase === 22 && state.color === "#3f6e2b") {
+                root.check(CavaService.rendererPid === root.workerPid && state.audioPid === root.audioPid,
+                    "light accent updates without restarting renderer or audio")
+                ShellSettingsStore.discard()
+                root.phase = 23
+            } else if (root.phase === 23 && state.color === "#7f91c3") {
+                root.check(CavaService.rendererPid === root.workerPid && state.audioPid === root.audioPid,
+                    "returning to dark keeps both child processes")
                 CavaService.stop()
                 root.phase = 3
             } else if (root.phase === 3 && state.enabled === false) {
