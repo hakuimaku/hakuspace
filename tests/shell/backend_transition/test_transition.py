@@ -4,6 +4,7 @@
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -185,6 +186,10 @@ elif name == "gsettings":
     event("color-scheme:prefer-dark")
 elif name == "notify-send":
     event("success-notification")
+elif name == "gdbus":
+    assert args == ["wait", "--session", "--timeout", "10", "org.freedesktop.Notifications"]
+    event("wait-notification-server")
+    sys.exit(1 if model.get("fail") == "notification-timeout" else 0)
 elif name == "hikai_chrome_state_ctl.py":
     event("migrate")
 elif name == "opaque_theme.sh":
@@ -216,10 +221,14 @@ class BackendTransitionTest(unittest.TestCase):
         fixture = self.bin / "stub"
         fixture.write_text(STUB)
         fixture.chmod(0o755)
-        for name in ("qs", "pgrep", "pkill", "busctl", "setsid", "swaync", "waybar", "rm", "notify-send", "gsettings", "kitty",
+        for name in ("qs", "pgrep", "pkill", "busctl", "setsid", "swaync", "waybar", "rm", "notify-send", "gdbus", "gsettings", "kitty",
                      "opaque_theme.sh", "hikai_chrome_state_ctl.py", "rounded_screen_manager.sh", "edge_trigger_manager.sh",
                      "taskbar_manager.sh", "waybar_manager.sh", "desktop_icons_manager.sh", "cava_manager.sh"):
             (self.bin / name).symlink_to(fixture)
+        # Wallpaper resumption is outside the disposable process model.
+        wallpaper = self.bin / "wallpaper_resume.sh"
+        wallpaper.write_text("#!/bin/sh\nexit 0\n")
+        wallpaper.chmod(0o755)
         self.env = dict(os.environ, HOME=str(self.root / "home"), MOCK_ROOT=str(self.root),
                         XDG_RUNTIME_DIR=str(self.root / "runtime"), PATH=str(self.bin) + ":" + os.environ["PATH"])
         self.env.pop("HAKUSPACE_SHELL_TRANSITION_BOOTSTRAP", None)
@@ -365,6 +374,48 @@ class BackendTransitionTest(unittest.TestCase):
         self.run_cli("set", "hikai")
         self.assert_backend("hikai")
         self.assert_order("bootstrap", "stop:swaync", "shellTransition:begin", "barrier:covered")
+
+    def test_hikai_to_classic_reclaims_notifications_before_animation(self):
+        """A boot-activated SwayNC must not force an immediate Classic recovery."""
+        self.prepare("hikai")
+        model_path = self.root / "model.json"
+        model = json.loads(model_path.read_text())
+        model["owner"] = "swaync"
+        model["procs"].append("swaync")
+        model_path.write_text(json.dumps(model))
+        self.run_cli("set", "classic")
+        self.assert_backend("classic")
+        self.assert_order("stop:swaync", "shellTransition:begin", "barrier:covered",
+                          "shellTransition:releaseAndQuit", "qs-exit-after-reveal", "start-swaync")
+        self.assertNotIn("kill-qs", [event["action"] for event in self.events()])
+
+    def test_swaync_activation_follows_backend(self):
+        """Systemd activation accepts Classic and refuses Hikai without changing it."""
+        source = Path(__file__).resolve().parents[3] / "src/home/.config/systemd/user/swaync.service.d/backend.conf"
+        condition = next(line.removeprefix("ExecCondition=") for line in source.read_text().splitlines()
+                         if line.startswith("ExecCondition="))
+        command = [part.replace("%h", self.env["HOME"]) for part in shlex.split(condition)]
+        for backend in ("classic", "hikai"):
+            with self.subTest(backend=backend):
+                self.prepare(backend)
+                result = subprocess.run(command, env=self.env, capture_output=True, text=True, timeout=10)
+                self.assertEqual(result.returncode, 0 if backend == "classic" else 1, result.stderr)
+                self.assertEqual((self.state / "[shell].backend").read_text().strip(), backend)
+
+    def test_welcome_waits_for_notification_server(self):
+        """The login greeting waits for ownership and skips sending after timeout."""
+        source = Path(__file__).resolve().parents[3] / "src/core/sys/welcome.sh"
+        for failure in ("", "notification-timeout"):
+            with self.subTest(failure=failure):
+                self.prepare("hikai", failure)
+                (self.root / "events.jsonl").write_text("")
+                result = subprocess.run(["bash", source], env=dict(self.env, WELCOME_MSG="true"),
+                                        capture_output=True, text=True, timeout=10)
+                self.assertEqual(result.returncode, 1 if failure else 0, result.stderr)
+                if failure:
+                    self.assertEqual([event["action"] for event in self.events()], ["wait-notification-server"])
+                else:
+                    self.assert_order("wait-notification-server", "success-notification")
 
     def install_waybar_controller(self):
         """Exercise the actual Waybar facade/controller behind the shell cutover."""

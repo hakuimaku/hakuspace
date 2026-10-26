@@ -121,9 +121,10 @@ wait_transition_phase() {
 quickshell_ready() {
     [[ $(timeout 2s qs -c hakuspace ipc call shell ping 2>/dev/null) == pong ]] &&
         transition_ipc status >/dev/null || return 1
-    # Classic clients can reactivate SwayNC while the bootstrap server loads.
-    if [[ ${1:-} == bootstrap ]] && notification_owned_by swaync; then
+    # Boot clients can activate SwayNC before Hikai claims the notification name.
+    if notification_owned_by swaync; then
         pkill -x swaync 2>/dev/null || true
+        wait_until notification_owned_by 'qs|quickshell' || return 1
     fi
     notification_owned_by 'qs|quickshell'
 }
@@ -133,7 +134,7 @@ start_qs_transition_bootstrap() {
     ~/.local/bin/hikai_chrome_state_ctl.py migrate 9>&- || return 1
     setsid -f env HAKUSPACE_SHELL_TRANSITION_BOOTSTRAP=classic-to-hikai \
         python3 "$HOME/.local/bin/wallpaper_ctl.py" launch -c hakuspace </dev/null >>"$(haku_runtime_dir)/qs.log" 2>&1 9>&- || return 1
-    wait_until quickshell_ready bootstrap
+    wait_until quickshell_ready
 }
 
 # The normal supervisor adopts the existing runtime without the bootstrap flag.
