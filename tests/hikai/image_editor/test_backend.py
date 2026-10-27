@@ -153,6 +153,36 @@ class BackendTests(unittest.TestCase):
         self.assertEqual(self.source.read_bytes(),self.original)
         self.assertFalse(list(self.root.glob('.hikai-edit-*')))
 
+    def test_screenshot_background_clipboard_does_not_hold_export_open(self):
+        tools = self.root/'fork-tools'; tools.mkdir()
+        clipboard = self.root/'forked-clipboard.png'
+        script = tools/'wl-copy'
+        # Match wl-copy's detached owner: stdout closes, stderr stays inherited.
+        script.write_text('#!/usr/bin/env python3\nimport os,sys,time\nfrom pathlib import Path\n'
+                          + 'Path(os.environ["IMAGE_EDITOR_CLIPBOARD"]).write_bytes(sys.stdin.buffer.read())\n'
+                          + 'with open(os.devnull,"wb") as null: os.dup2(null.fileno(),1)\n'
+                          + 'if os.fork() == 0:\n    time.sleep(2)\n    os._exit(0)\n')
+        script.chmod(0o755)
+        real_run = subprocess.run
+        def bounded_copy(args, **kwargs):
+            if args[0] == 'wl-copy': kwargs['timeout'] = .5
+            return real_run(args,**kwargs)
+        with patch.dict(os.environ,{'PATH':str(tools)+os.pathsep+os.environ['PATH'],'IMAGE_EDITOR_CLIPBOARD':str(clipboard)}):
+            with patch.object(backend.subprocess,'run',side_effect=bounded_copy):
+                result = backend.render(self.spec(mode='screenshot',outputPath=str(self.source),outputScale=.5))
+        self.assertEqual(clipboard.read_bytes(),self.source.read_bytes())
+        self.assertEqual(result['warning'],'')
+
+    def test_screenshot_clipboard_failure_preserves_successful_save(self):
+        tools = self.root/'failed-copy'; tools.mkdir()
+        script = tools/'wl-copy'; script.write_text('#!/bin/sh\nexit 1\n'); script.chmod(0o755)
+        with patch.dict(os.environ,{'PATH':str(tools)+os.pathsep+os.environ['PATH']}):
+            result = backend.render(self.spec(mode='screenshot',outputPath=str(self.source),outputScale=.5))
+        self.assertEqual((result['width'],result['height']),(40,20))
+        self.assertIn('Image saved',result['warning'])
+        self.assertEqual(backend.inspect(str(self.source))['width'],40)
+        self.assertFalse(list(self.root.glob('.hikai-edit-*')))
+
     def test_screenshot_atomic_replace_and_clipboard(self):
         tools = self.root/'bin'; tools.mkdir()
         clipboard = self.root/'clipboard.png'

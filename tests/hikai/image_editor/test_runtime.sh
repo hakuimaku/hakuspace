@@ -17,8 +17,15 @@ ln -s "$repo_root/src/core/backend/media/image_edit_ctl.py" "$test_root/src/home
 ln -s "$repo_root/src/core/backend/user/avatar_ctl.sh" "$test_root/src/home/.local/bin/avatar_ctl.sh"
 magick -size 3840x2160 gradient:navy-white "$test_root/fixtures/source # with space.png"
 cp "$test_root/fixtures/source # with space.png" "$test_root/fixtures/screenshot with space.png"
+cp "$test_root/fixtures/source # with space.png" "$test_root/fixtures/screenshot clipboard failure.png"
 source_hash=$(sha256sum "$test_root/fixtures/source # with space.png")
-printf '#!/bin/sh\ncat > "$IMAGE_EDITOR_FIXTURE/clipboard.png"\n' > "$test_root/bin/wl-copy"
+# Use the real clipboard provider, with one explicit failure path for the closing contract.
+real_wl_copy=$(command -v wl-copy)
+cat > "$test_root/bin/wl-copy" <<'COPY'
+#!/bin/sh
+[ ! -f "$IMAGE_EDITOR_FIXTURE/fail-clipboard" ] || exit 1
+exec "$IMAGE_EDITOR_REAL_WL_COPY" "$@"
+COPY
 chmod +x "$test_root/bin/wl-copy"
 printf '<labwc_config/>\n' > "$test_root/labwc/rc.xml"
 printf 'ACCENT_COLOR_BASED_ON_WALLPAPER=false\n' > "$test_root/home/hakucfg/setting.sh"
@@ -33,7 +40,7 @@ env -u DISPLAY -u WAYLAND_DISPLAY -u HYPRLAND_INSTANCE_SIGNATURE -u NIRI_SOCKET 
     HOME="$test_root/home" XDG_CACHE_HOME="$test_root/home/.cache" XDG_CONFIG_HOME="$test_root/home/.config" \
     XDG_RUNTIME_DIR="$test_root/runtime" XDG_CURRENT_DESKTOP=labwc QT_QPA_PLATFORM=wayland \
     QT_QUICK_BACKEND=software WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=2 WLR_RENDERER=pixman \
-    IMAGE_EDITOR_FIXTURE="$test_root/fixtures" IMAGE_EDITOR_ARTIFACTS="$artifact_dir" PATH="$test_root/bin:$PATH" \
+    IMAGE_EDITOR_REAL_WL_COPY="$real_wl_copy" IMAGE_EDITOR_FIXTURE="$test_root/fixtures" IMAGE_EDITOR_ARTIFACTS="$artifact_dir" PATH="$test_root/bin:$PATH" \
     timeout 55s dbus-run-session -- labwc -C "$test_root/labwc" -S "bash $test_root/start.sh $shell_root/shell.qml" > "$test_root/test.log" 2>&1 || status=$?
 cp "$test_root/test.log" "$artifact_dir/runtime.log"
 if [[ ${status:-0} -ne 0 ]] || ! rg -q 'Image editor runtime checks passed' "$test_root/test.log" || \
@@ -46,5 +53,6 @@ fi
 cmp "$test_root/fixtures/clipboard.png" "$test_root/fixtures/screenshot with space.png"
 [[ $(magick identify -format '%wx%h' "$test_root/home/.local/share/hakuspace/user/avatar.png") == 512x512 ]]
 [[ $(magick identify -format '%wx%h' "$test_root/fixtures/screenshot with space.png") == 1920x1080 ]]
+[[ $(magick identify -format '%wx%h' "$test_root/fixtures/screenshot clipboard failure.png") == 2880x1620 ]]
 [[ -z $(find "$test_root/runtime" -maxdepth 1 -name 'hikai-image-editor-*' -print -quit) ]]
 echo 'Image editor output and cleanup checks passed'

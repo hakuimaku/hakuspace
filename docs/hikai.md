@@ -178,9 +178,9 @@ rejects a source changed since inspection. Symlink sources/destinations are reje
 Screenshot notifications carry `x-hakuspace-kind` and `x-hakuspace-path` hints.
 Their shared popup/history card offers Edit on the notification's screen. Save
 atomically replaces that screenshot and copies the result to the clipboard;
-Cancel changes neither. Clipboard failure leaves a saved-image warning visible;
-close and reopen the file to continue editing. PNG's 100/75/50% controls change
-resolution. Generic files use Save As with a new filename (existing files are
+Cancel changes neither. Successful saves close the editor. Clipboard failure does
+not keep it open or undo the saved file; a notification reports the copy failure.
+PNG's 100/75/50% controls change resolution. Generic files use Save As with a new filename (existing files are
 preserved), plus JPEG/WebP encode quality; PNG ignores encode quality. Avatar
 exports always use 512×512 PNG and hide quality controls. Save completes before
 Cancel becomes available again.

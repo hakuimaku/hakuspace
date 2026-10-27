@@ -11,6 +11,7 @@ ShellRoot {
     // Drive only the image editor and its two persistence consumers in a private session.
     property int phase: 0
     property int ticks: 0
+    property bool clipboardReadRequested: false
     property int inputPhase: 0
     property int cropPhase: 0
     property int cropUndoCount: 0
@@ -60,6 +61,14 @@ ShellRoot {
     Process { id: keyboard; command: ["python3", root.fixture + "/wayland_keyboard.py"]; stdinEnabled: true; running: true }
     Process { id: capture; command: ["grim", "-o", root.firstScreen, Quickshell.env("IMAGE_EDITOR_ARTIFACTS") + "/preview.png"] }
     Process { id: cropCapture; command: ["grim", "-o", root.firstScreen, Quickshell.env("IMAGE_EDITOR_ARTIFACTS") + "/crop.png"] }
+    Process {
+        id: clipboardProbe
+        property int resultCode: -1
+        command: ["sh", "-c", 'exec wl-paste --type image/png > "$1"', "image-editor-clipboard", root.fixture + "/clipboard.png"]
+        onStarted: resultCode = -1
+        onExited: code => resultCode = code
+    }
+    Process { id: failClipboard; command: ["touch", root.fixture + "/fail-clipboard"] }
     Process { id: notify; command: ["notify-send", "-t", "0", "-h", "string:x-hakuspace-kind:screenshot", "-h", "string:x-hakuspace-path:" + root.screenshot, "Screenshot test"] }
     Component { id: card; NotificationUi.NotificationCard { record: NotificationStore.records[0] } }
     Process { id: removeOutput; command: ["wlr-randr", "--output", root.secondScreen, "--off"] }
@@ -183,6 +192,9 @@ ShellRoot {
             } else if (root.phase === 6) {
                 if (ImageEditor.busy || ImageEditor.sourcePath || root.loaded()) return
                 root.check(!ImageEditor.lastError, "screenshot export: " + ImageEditor.lastError)
+                if (!root.clipboardReadRequested) { root.clipboardReadRequested = true; clipboardProbe.running = true; return }
+                if (clipboardProbe.running) return
+                root.check(clipboardProbe.resultCode === 0, "real clipboard remains readable after export and editor teardown")
                 ImageEditor.open(root.source, root.secondScreen)
             } else if (root.phase === 7) {
                 if (!ImageEditor.ready) return
@@ -226,6 +238,24 @@ ShellRoot {
                 return
             } else if (root.phase === 15) {
                 root.check(!ImageEditor.sourcePath && !root.loaded() && UiState.interactionOwner === "", "reload discards unsaved UI and releases input")
+                root.firstScreen = Quickshell.screens[0].name
+                NotificationStore.start(root.notificationMemory)
+            } else if (root.phase === 16) {
+                if (!NotificationStore.server.objectAt(0)) return
+                failClipboard.running = true
+                ImageEditor.openScreenshot(root.fixture + "/screenshot clipboard failure.png",root.firstScreen)
+            } else if (root.phase === 17) {
+                if (failClipboard.running || !ImageEditor.ready) return
+                ImageEditor.setOutput(.75,90)
+                ImageEditor.save("")
+            } else if (root.phase === 18) {
+                if (ImageEditor.busy || ImageEditor.sourcePath || root.loaded()) return
+                root.check(ImageEditor.lastError.indexOf("clipboard") >= 0 && UiState.interactionOwner === "", "clipboard failure still closes the editor and releases focus")
+                if (!NotificationStore.records.some(function(record) { return record.summary === "Image saved" && record.body.indexOf("clipboard") >= 0 })) return
+                if (!root.clipboardReadRequested) { root.clipboardReadRequested = true; clipboardProbe.running = true; return }
+                if (clipboardProbe.running) return
+                root.check(clipboardProbe.resultCode === 0, "failed copy preserves the previous clipboard contents")
+                console.log("Image editor real clipboard and warning-close checks passed")
                 console.log("Image editor runtime checks passed")
                 Qt.quit()
             }

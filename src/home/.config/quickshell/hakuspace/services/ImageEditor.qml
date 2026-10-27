@@ -271,8 +271,9 @@ QtObject {
                     Avatar.setAvatar(result.path)
                 } else {
                     root.lastError = result.warning || ""
-                    if (!root.lastError) root.closing = true
-                    else root.sourceWidth = 0
+                    // A committed image closes the workspace even when clipboard delivery fails.
+                    if (root.lastError) Quickshell.execDetached(["notify-send", "--app-name=HakuSpace", "Image saved", root.lastError])
+                    root.closing = true
                     root.cleanup()
                 }
             } catch (error) { root.fail("The export result could not be read.") }

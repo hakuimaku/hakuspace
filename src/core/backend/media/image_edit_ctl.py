@@ -186,7 +186,9 @@ def render(spec):
     if mode == "screenshot":
         try:
             with output.open("rb") as edited:
-                subprocess.run(["wl-copy", "--type", "image/png"], stdin=edited, check=True, capture_output=True, timeout=10)
+                # The detached clipboard owner retains stderr, so captured pipes would never reach EOF.
+                subprocess.run(["wl-copy", "--type", "image/png"], stdin=edited, check=True,
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
         except (OSError, subprocess.SubprocessError):
             warning = "Image saved, but the clipboard could not be updated."
     return dict(path=str(output), width=ow, height=oh, warning=warning)
