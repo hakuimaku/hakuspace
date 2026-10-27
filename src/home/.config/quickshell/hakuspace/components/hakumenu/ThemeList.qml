@@ -34,17 +34,23 @@ Item {
         { label: "Desktop Icons", icon: "", action: "Desktop Icons", toggle: true, showState: true, statePath: Env.stateDesktopIconsEnabled, stateKind: "bool" },
         { label: "Dockbar", icon: "󰧨", action: "Dockbar", toggle: true, showState: true, chromeKey: "dockbar" },
         { label: "Auto Random Wallpaper", icon: "", action: "Auto Random Wallpaper", toggle: true, showState: true, statePath: "/tmp/random_wallpaper_status", stateKind: "bool" },
+        { label: "Dark / Light Mode", icon: "󰔎", action: "colorMode", toggle: true, showState: true, stateKind: "colorMode" },
         { label: "", icon: "󰆧", action: "", toggle: true, showState: false, statePath: Env.stateShellBackend, stateKind: "backend", backendSwitch: true }
     ]
 
     function labelFor(item) {
+        if (item && item.stateKind === "colorMode" && ShellSettingsStore.error)
+            return item.label + " · " + ShellSettingsStore.error
         if (item && item.backendSwitch)
             return hikaiBackend ? "Go back to Surface" : "Explore the Abyss"
         return item && item.label ? item.label : ""
     }
 
-    // Native chrome rows distinguish stored requests from topology availability.
-    function available(item) { return item.chromeKey !== "dockbar" || ChromeLayout.topBarMode }
+    // Gate actions on settings IO and native chrome availability.
+    function available(item) {
+        if (item.stateKind === "colorMode") return ShellSettingsStore.ready && !ShellSettingsStore.loading && !ShellSettingsStore.saving
+        return item.chromeKey !== "dockbar" || ChromeLayout.topBarMode
+    }
     function chromeEnabled(item) {
         return item.chromeKey === "taskbar" ? AppState.taskbarManualState : AppState.dockbarManualState
     }
@@ -107,6 +113,12 @@ Item {
         if (index < 0 || index >= visibleItems.length) return
         var item = visibleItems[index]
         if (!item || !available(item)) return
+        // Persist mode changes through the shared store and keep the menu open.
+        if (item.stateKind === "colorMode") {
+            ShellSettingsStore.applyColorMode(Theme.isLight ? "dark" : "light")
+            root.launched(false)
+            return
+        }
         if (item.action === "Change Wallpaper") { wallpaperRequested(); return }
 
         actionProcess.running = false
@@ -202,19 +214,20 @@ Item {
             width: themeList.width
             height: root.rowHeight
 
-            readonly property bool hasState: modelData.showState === true && modelData.toggle && (!!modelData.chromeKey || root.statePathFor(modelData).length > 0)
-            readonly property bool stateOn: modelData.chromeKey ? root.chromeEnabled(modelData)
+            readonly property bool hasState: modelData.showState === true && modelData.toggle && (modelData.stateKind === "colorMode" || !!modelData.chromeKey || root.statePathFor(modelData).length > 0)
+            readonly property bool stateOn: modelData.stateKind === "colorMode" ? Theme.isLight
+                : modelData.chromeKey ? root.chromeEnabled(modelData)
                 : hasState ? root.parseState(stateView.text(), modelData.stateKind) : false
             readonly property int observedRefreshGeneration: root.refreshGeneration
 
             onObservedRefreshGenerationChanged: {
-                if (hasState && !modelData.chromeKey) stateView.reload()
+                if (hasState && root.statePathFor(modelData)) stateView.reload()
             }
 
             FileView {
                 id: stateView
-                path: rowWrap.hasState && !rowWrap.modelData.chromeKey ? root.statePathFor(rowWrap.modelData) : ""
-                watchChanges: rowWrap.hasState && !rowWrap.modelData.chromeKey
+                path: rowWrap.hasState ? root.statePathFor(rowWrap.modelData) : ""
+                watchChanges: path.length > 0
                 printErrors: false
                 onFileChanged: this.reload()
             }
@@ -303,6 +316,8 @@ Item {
                     id: togglePill
                     readonly property bool isColorKind: rowWrap.modelData.stateKind === "cavaColor"
                     readonly property bool isPositionKind: rowWrap.modelData.stateKind === "cavaPosition"
+                    // The mode pill shows the active palette instead of ON/OFF.
+                    readonly property bool isModeKind: rowWrap.modelData.stateKind === "colorMode"
                     anchors.centerIn: parent
                     width: Math.min(parent.width - Theme.gap * 2, Math.max(102, Theme.fontSize * 6.8 + 8))
                     height: Math.max(28, Theme.fontSize * 1.9)
@@ -316,6 +331,7 @@ Item {
                         x: rowWrap.stateOn ? Theme.gap + 6 : parent.width - width - Theme.gap - 6
                         text: togglePill.isPositionKind ? (rowWrap.stateOn ? "TOP" : "BOTTOM")
                             : togglePill.isColorKind ? (rowWrap.stateOn ? "ACCENT" : "SURFACE")
+                            : togglePill.isModeKind ? (rowWrap.stateOn ? "LIGHT" : "DARK")
                             : (rowWrap.stateOn ? "ON" : "OFF")
                         color: rowWrap.stateOn ? Theme.onAccentColor : Theme.fgMuted
                         font.family: Theme.fontFamily

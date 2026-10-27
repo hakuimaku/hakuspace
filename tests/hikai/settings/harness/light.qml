@@ -4,6 +4,7 @@ import Quickshell.Io
 import "services"
 import "components/settings" as Settings
 import "components/motion" as Motion
+import "components/hakumenu" as HakuMenu
 
 ShellRoot {
     id: root
@@ -14,6 +15,16 @@ ShellRoot {
     property string captureName: ""
     property var tones: ["ink", "dark", "soft"]
     DesktopColorScheme { id: desktopScheme }
+    // Exercise the Theme tab against the real settings writer and mode owner.
+    HakuMenu.ThemeList {
+        id: themeList
+        width: 600
+        height: 600
+        leftColumnWidth: 440
+        stateColumnWidth: 144
+        query: "~ light"
+        onLaunched: closeMenu => root.check(!closeMenu, "mode toggle keeps HakuMenu open")
+    }
     FileView { id: schemeFile; path: Quickshell.env("HOME") + "/color-scheme"; printErrors: false }
     FileView { id: gtkThemeFile; path: Quickshell.env("HOME") + "/gtk-theme"; printErrors: false }
     FileView { id: iconThemeFile; path: Quickshell.env("HOME") + "/icon-theme"; printErrors: false }
@@ -143,6 +154,25 @@ ShellRoot {
                 ShellTransitionState.chromeEnabled = true
             } else if (root.phase === 10) {
                 root.checkScheme("prefer-light")
+                root.check(themeList.visibleItems.length === 1 && themeList.visibleItems[0].stateKind === "colorMode", "Theme tab searches Light")
+                ShellSettingsStore.setValue("appearance", "baseRadius", 20)
+                themeList.activateCurrent()
+            } else if (root.phase === 11) {
+                root.checkScheme("prefer-dark")
+                root.check(!Theme.isLight && ShellSettingsStore.savedValues.appearance.colorMode === "dark", "Theme tab saves Dark")
+                root.check(ShellSettingsStore.baseRadius === 20 && ShellSettingsStore.savedValues.appearance.baseRadius === 12, "mode toggle retains unrelated unsaved draft")
+                ShellSettingsStore.discard()
+                root.check(!Theme.isLight && ShellSettingsStore.baseRadius === 12, "Discard preserves applied mode only")
+                themeList.query = "~ dark"
+            } else if (root.phase === 12) {
+                root.check(themeList.visibleItems.length === 1, "Theme tab searches Dark")
+                themeList.activateCurrent()
+            } else if (root.phase === 13) {
+                root.checkScheme("prefer-light")
+                root.check(Theme.isLight && !ShellSettingsStore.dirty, "Theme tab saves Light without a draft")
+                ShellSettingsStore.reload()
+            } else if (root.phase === 14) {
+                root.check(Theme.isLight, "Theme tab mode survives Reload")
                 console.info("Hikai Light theme checks passed")
                 Qt.quit()
             }

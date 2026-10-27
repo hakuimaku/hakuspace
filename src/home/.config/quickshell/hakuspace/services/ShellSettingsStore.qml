@@ -136,17 +136,38 @@ QtObject {
         }
         saving = true
         error = ""
+        writeProc.modeOnly = false
         writeProc.command = command("write")
         writeProc.environment = {"HAKUSPACE_HIKAI_SETTINGS_JSON": JSON.stringify(patch)}
         writeProc.running = true
     }
-    // Accept only a complete valid response as the next confirmed snapshot.
-    function accept(text) {
+    // Save a quick mode change without applying unrelated Settings drafts.
+    function applyColorMode(mode) {
+        if (!ready || loading || saving || ["dark", "light"].indexOf(mode) < 0) return
+        saving = true
+        error = ""
+        writeProc.modeOnly = true
+        writeProc.command = command("write")
+        writeProc.environment = {"HAKUSPACE_HIKAI_SETTINGS_JSON": JSON.stringify({appearance: {colorMode: mode}})}
+        writeProc.running = true
+    }
+    // Accept a valid snapshot while retaining unrelated drafts after a quick mode change.
+    function accept(text, preserveDraft) {
         var data = JSON.parse(text)
         if (!data.ok || !validate(data.values)) throw new Error("Invalid shell settings response")
+        // Merge pending edits onto the confirmed disk snapshot.
+        var draft = JSON.parse(JSON.stringify(data.values))
+        if (preserveDraft) {
+            for (var section of ["appearance", "roundedScreen", "topbar", "dock", "idle"]) {
+                for (var key in values[section]) {
+                    if (section === "appearance" && key === "colorMode") continue
+                    if (values[section][key] !== savedValues[section][key]) draft[section][key] = values[section][key]
+                }
+            }
+        }
         savedValues = data.values
         migrationPending = data.needsMigration === true
-        values = JSON.parse(JSON.stringify(savedValues))
+        values = draft
         ready = true
     }
     Component.onCompleted: reload()
@@ -162,12 +183,14 @@ QtObject {
         }
     }
     property Process writeProc: Process {
+        // Mode-only writes leave other settings pending for Apply or Discard.
+        property bool modeOnly: false
         stdout: StdioCollector { id: writeOut }
         stderr: StdioCollector { id: writeErr }
         onExited: (code, status) => {
             root.saving = false
             if (code !== 0) { root.error = writeErr.text.trim() || "Could not save shell settings"; return }
-            try { root.accept(writeOut.text); root.statusMessage = "Shell preferences saved." }
+            try { root.accept(writeOut.text, modeOnly); root.statusMessage = "Shell preferences saved." }
             catch (e) { root.error = "Invalid shell save response" }
         }
     }
