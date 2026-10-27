@@ -1,6 +1,7 @@
 import QtQuick
 import "../services"
 import "base" as Base
+import "imageeditor" as ImageEditing
 
 Item {
     id: root
@@ -12,9 +13,15 @@ Item {
         property int calendarMonthOffset: 0
     }
     // Expose resource counts without retaining destroyed surface objects.
-    readonly property var loaders: [navigation, settings, note, tray, appMenu, center, wallpaper, wallpaperWorkspace, action, popup, osd, navigator]
+    readonly property var loaders: [navigation, settings, note, tray, appMenu, center, wallpaper, wallpaperWorkspace, action, popup, osd, navigator, imageEditor]
     readonly property int loadedCount: loaders.filter(function(loader) { return loader.active }).length + menu.loadedCount
     readonly property var navigationItem: navigation.active ? navigation.item : null
+
+    Base.LifecycleLoader {
+        id: imageEditor
+        requested: !!root.modelData && UiState.activePanel === "imageEditor" && UiState.imageEditorScreenName === root.modelData.name
+        ImageEditing.ImageEditorOverlay { modelData: root.modelData }
+    }
 
     HakuMenuPanel { id: menu; modelData: root.modelData }
     NotificationPopupFlare { modelData: root.modelData; popup: popup.active ? popup.item : null }

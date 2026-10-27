@@ -47,11 +47,12 @@ if [[ "$mode" == "region" ]]; then
         exit 1
     }
     geometry="$(slurp)" || exit 0
-    grim -g "$geometry" "$file"
+    grim -g "$geometry" "$file" || exit 1
 else
-    grim "$file"
+    grim "$file" || exit 1
 fi
 
 wl-copy < "$file"
 echo "Saved & copied: $file"
-notify-send "Screenshot saved & copied" "$file"
+notify-send -a HakuSpace -h "string:x-hakuspace-kind:screenshot" \
+    -h "string:x-hakuspace-path:$file" "Screenshot saved & copied" "$file"

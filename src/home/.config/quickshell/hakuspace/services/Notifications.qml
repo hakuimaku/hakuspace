@@ -28,10 +28,11 @@ QtObject {
     // Toggles do-not-disturb mode and hides active popups if enabled.
     function toggleDnd() { dnd = !dnd }
 
-    // Marks all active popup notifications as ineligible for popup display.
-    function hidePopups() {
+    // Hide one popup or all popups while preserving their history entries.
+    function hidePopups(key) {
         records = records.map(function(record) {
-            return record.popupEligible ? Object.assign({}, record, { popupEligible: false }) : record
+            return record.popupEligible && (key === undefined || record.key === key)
+                ? Object.assign({}, record, { popupEligible: false }) : record
         })
     }
 
@@ -108,7 +109,16 @@ QtObject {
             var action = notification.actions[i]
             actions.push({ identifier: action.identifier, text: action.text })
         }
+        // Preserve only bounded local screenshot metadata, never infer it from body text.
+        var hints = notification.hints || {}
+        var imagePath = hints["x-hakuspace-path"]
+        var screenshot = hints["x-hakuspace-kind"] === "screenshot"
+            && typeof imagePath === "string" && imagePath.length <= 4096
+            && imagePath[0] === "/" && !/[\u0000-\u001f]/.test(imagePath)
+            && imagePath.toLowerCase().endsWith(".png")
         return {
+            kind: screenshot ? "screenshot" : "",
+            imagePath: screenshot ? imagePath : "",
             key: key,
             id: notification.id,
             appName: notification.appName,
@@ -222,6 +232,7 @@ QtObject {
         notification.residentChanged.connect(function() { root.refresh(key, notification) })
         notification.transientChanged.connect(function() { root.refresh(key, notification) })
         notification.actionsChanged.connect(function() { root.refresh(key, notification) })
+        if (notification.hintsChanged) notification.hintsChanged.connect(function() { root.refresh(key, notification) })
     }
 
     // Dismisses notification by key, hiding it from popups and signaling client.

@@ -60,12 +60,6 @@ ShellRoot {
         EphemeralSurfaces { id: instance; Component.onCompleted: root.hosts = root.hosts.concat([instance]) }
     }
     FloatingWindow {
-        id: cropWindow
-        visible: false
-        implicitWidth: 600; implicitHeight: 700
-        Dashboard.AvatarCropper { id: cropper; parent: cropWindow.contentItem }
-    }
-    FloatingWindow {
         id: nativeWindow
         visible: false
         implicitWidth: 440; implicitHeight: 180
@@ -798,24 +792,14 @@ ShellRoot {
                 root.check(UiState.tempNoteOpen, "stale output cannot close the new owner")
                 UiState.closeTempNote()
                 root.originalAvatar = Avatar.path
-                cropWindow.visible = true
-                cropper.source = "file://" + Quickshell.env("INK_TEST_ROOT") + "/avatar-wide.png"
-                cropper.open()
+                ImageEditor.openAvatar(Quickshell.env("INK_TEST_ROOT") + "/avatar-wide.png", root.output)
             } else if (phase === 24) {
-                if (!cropper.imageReady) return
-                cropper.zoom = 2
-                cropper.pan = Qt.point(10000, -10000)
-                cropper.clampPan()
-                Avatar.saveCrop(cropper.cropCanvas)
+                if (!ImageEditor.ready) return
+                ImageEditor.save("")
             } else if (phase === 25) {
-                root.check(Avatar.path && Avatar.path !== root.originalAvatar && Avatar.revision > 0, "crop committed through the avatar controller")
-                root.check(!Avatar.lastError && !cropper.visible && !Avatar.temporaryPath, "capture cleanup and close")
-                root.originalAvatar = Avatar.path
-                cropper.source = "file://" + Quickshell.env("INK_TEST_ROOT") + "/avatar-wide.png"
-                cropper.open()
-                cropper.close()
-                root.check(Avatar.path === root.originalAvatar, "Cancel preserves existing avatar")
-                cropWindow.visible = false
+                if (ImageEditor.busy || ImageEditor.sourcePath) return
+                root.check(Avatar.path && Avatar.path !== root.originalAvatar && Avatar.revision > 0, "editor committed through the avatar controller")
+                root.check(!Avatar.lastError, "avatar persistence completed")
                 UiState.openSettings(root.hosts[1].modelData.name)
             } else if (phase === 26) {
                 if (!root.hosts[1].loaders[1].active || !root.hosts[1].loaders[1].item.interactionReady) return

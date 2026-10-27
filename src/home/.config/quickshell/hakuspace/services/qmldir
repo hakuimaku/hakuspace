@@ -41,3 +41,4 @@ WallpaperRendererHost 1.0 WallpaperRendererHost.qml
 singleton WallpaperLibrary 1.0 WallpaperLibrary.qml
 
 singleton IdleService 1.0 IdleService.qml
+singleton ImageEditor 1.0 ImageEditor.qml

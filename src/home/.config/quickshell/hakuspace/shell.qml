@@ -49,6 +49,15 @@ ShellRoot {
         function cancel(): string { return ShellTransitionState.cancel() }
     }
 
+    // Open generic image sessions independently of Dashboard and notification hosts.
+    IpcHandler {
+        target: "imageEditor"
+        function open(path: string): bool { return ImageEditor.open(path, "") }
+        function openOnScreen(path: string, screenName: string): bool { return ImageEditor.open(path, screenName) }
+        function status(): string { return ImageEditor.status() }
+        function close(): bool { return ImageEditor.close() }
+    }
+
     // Hyprland navigation keeps compositor focus separate from overlay selection.
     IpcHandler {
         target: "windowNavigator"

@@ -238,12 +238,6 @@ Item {
         z: 9
     }
 
-    AvatarCropper {
-        id: cropper
-        parent: root
-        onFinished: root.focusRequested()
-    }
-
     FileDialog {
         id: avatarChooser
         title: "Select Avatar"
@@ -254,8 +248,7 @@ Item {
         onAccepted: {
             UiState.endNativeDialog(lease)
             Avatar.lastError = ""
-            cropper.source = selectedFile
-            cropper.open()
+            ImageEditor.openAvatar(selectedFile, UiState.navigationScreenName)
         }
 
         onRejected: {

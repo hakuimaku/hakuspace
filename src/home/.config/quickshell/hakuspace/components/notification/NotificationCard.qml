@@ -108,5 +108,23 @@ Rectangle {
             maximumLineCount: root.compact ? 4 : 6
             elide: Text.ElideRight
         }
+        HButton {
+            visible: root.record.kind === "screenshot" && !!root.record.imagePath
+            text: "Edit"
+            width: parent.width; height: Math.max(40, Theme.controlHeight)
+            selected: true
+            selectedOverridesHover: true
+            pressedColor: Theme.accent
+            activeFocusOnTab: true
+            Accessible.role: Accessible.Button
+            Accessible.name: "Edit screenshot"
+            function edit() {
+                if (ImageEditor.openScreenshot(root.record.imagePath, root.record.popupScreenName))
+                    NotificationStore.hidePopups(root.record.key)
+            }
+            onClicked: edit()
+            Keys.onReturnPressed: { root.keyboardInteraction(); edit() }
+            Keys.onSpacePressed: { root.keyboardInteraction(); edit() }
+        }
     }
 }

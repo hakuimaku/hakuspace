@@ -6,6 +6,8 @@ QtObject {
     id: root
 
     property string activePanel: ""
+    // Route the standalone image workspace to its owning output.
+    property string imageEditorScreenName: ""
     // Keep keyboard ownership separate from persistent surface visibility.
     property string interactionOwner: ""
     property string interactionScreenName: ""
@@ -520,6 +522,7 @@ QtObject {
 
     onActivePanelChanged: {
         var output = activePanel === "navigation" ? navigationScreenName
+            : activePanel === "imageEditor" ? imageEditorScreenName
             : activePanel === "settings" ? settingsScreenName
             : activePanel === "wallpaper" ? wallpaperScreenName
             : activePanel === "actionMenu" ? actionMenuScreenName

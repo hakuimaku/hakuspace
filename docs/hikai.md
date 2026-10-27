@@ -142,9 +142,68 @@ The native Change Theme layer offers font family, font size and accent color, pl
 
 Appearance and Desktop share shell preferences. Wallpaper folders, rotation and Classic transitions use general preferences; video quality, playback and preparation use wallpaper preferences. Apply saves the corresponding store, and Apply & Close saves all modified stores. Configuration lists every WM configuration file, with the active WM first. Recorder options live in Recording, Classic widget fonts and custom Waybar themes in Appearance, and exit options in Session. There are no separate Advanced or Shortcuts tabs.
 
-The wallpaper picker uses saved video quality: select an item and Apply. Preparation follows the saved policy. Video cache maintenance and browser preferences are always available in Wallpaper settings. Avatar selection opens a square pan-and-zoom crop before saving a 512×512 PNG; Cancel and failed capture leave the previous avatar selected.
+The wallpaper picker uses saved video quality: select an item and Apply. Preparation follows the saved policy. Video cache maintenance and browser preferences are always available in Wallpaper settings. Avatar selection opens the independent image workspace with a square crop and exports a 512×512 PNG through the avatar controller. Cancel and failed export preserve the selected avatar.
 
 Native folder and image choosers temporarily release the requesting layer's keyboard ownership and lower it beneath application windows. Closing the chooser restores its owner only if that surface is still current. A pinned Temp Note remains visible independently, but shares one keyboard owner with Settings and Navigation; clicking a visible note explicitly transfers input.
+
+### Image workspace
+
+`services/ImageEditor.qml` owns one non-destructive session. The on-demand
+`components/imageeditor/ImageEditorOverlay.qml` has its own full-screen Overlay
+window and keyboard lease, independent of Dashboard/Navigation. Its internal
+aperture contracts before `LifecycleLoader` releases the window. Removing an
+output transfers the draft to an available screen. Reload discards unsaved edits
+and releases input; it does not write them to the source.
+
+Crop (Free, 1:1, 4:3, 16:9), pen, translucent marker and editable arrows share
+normalized coordinates on the oriented full image. Select a stroke or arrow to
+move, restyle or delete it; arrow endpoints can be dragged separately. Crop
+corners and edges resize the selection with extended hit areas outside the image;
+dragging inside moves it. The padded image viewport keeps handles clear of the
+full-height morphing tool rail and inspector. Rotation and mirror buttons occupy
+a separate row above the image; the workspace contents have an extra 12-pixel
+inset on all sides. Screenshot Edit fills its card width
+with the accent color. Rotation and mirrors
+transform annotations and crop together. Ctrl+Z/Ctrl+Shift+Z undo/redo one gesture;
+Delete removes the selection, Ctrl+S saves and Escape cancels. Reset is undoable.
+History retains 50 edits; sessions allow 1,000 annotations and 200,000 path points.
+
+Canvas previews annotations at viewport resolution; asynchronous images decode
+at display size. `image_edit_ctl.py inspect IMAGE` reports EXIF-oriented dimensions
+and MIME. `render SPEC_JSON` uses ImageMagick to orient, composite a validated SVG
+layer, crop, resize and encode into a sibling temporary file before atomic commit.
+Only local regular PNG/JPEG/WebP images up to 100 megapixels are accepted. Export
+rejects a source changed since inspection. Symlink sources/destinations are rejected.
+
+Screenshot notifications carry `x-hakuspace-kind` and `x-hakuspace-path` hints.
+Their shared popup/history card offers Edit on the notification's screen. Save
+atomically replaces that screenshot and copies the result to the clipboard;
+Cancel changes neither. Clipboard failure leaves a saved-image warning visible;
+close and reopen the file to continue editing. PNG's 100/75/50% controls change
+resolution. Generic files use Save As with a new filename (existing files are
+preserved), plus JPEG/WebP encode quality; PNG ignores encode quality. Avatar
+exports always use 512×512 PNG and hide quality controls. Save completes before
+Cancel becomes available again.
+
+```bash
+qs -c hakuspace ipc call imageEditor open ~/Pictures/test.png
+qs -c hakuspace ipc call imageEditor openOnScreen /absolute/image.png DP-1
+qs -c hakuspace ipc call imageEditor status
+qs -c hakuspace ipc call imageEditor close
+```
+
+A second open request returns false while a draft/export is active. Reopening the
+same image during its closing animation reverses dismissal. Specs and staged
+avatar files use a private runtime directory and are removed after export.
+
+Scoped checks: `node tests/hikai/image_editor/test_geometry.js`,
+`node tests/hikai/image_editor/test_ops.js`,
+`python3 tests/hikai/image_editor/test_backend.py`,
+`python3 tests/hikai/image_editor/test_screenshot.py` and
+`bash tests/hikai/image_editor/test_runtime.sh`. The runtime check uses a private
+two-output software-rendered compositor and never drives the desktop session.
+Set `HAKUSPACE_IMAGE_EDITOR_ARTIFACT_DIR=/tmp/editor-artifacts` to retain its preview
+and runtime log. Hardware GPU/FPS and long memory soaks remain separate checks.
 
 ### Hikai color mode
 

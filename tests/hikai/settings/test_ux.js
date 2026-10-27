@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Exercise settings coverage, search, crop geometry and production interaction transitions.
+// Exercise settings coverage, search and production interaction transitions.
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const vm = require('node:vm')
@@ -13,7 +13,6 @@ function moduleAt(relative) {
     return context
 }
 const catalog = moduleAt('components/settings/SettingsCatalog.js')
-const crop = moduleAt('components/dashboard/AvatarCropGeometry.js')
 // Every editable template assignment is available and searchable without a mode switch.
 const template = fs.readFileSync(path.resolve(__dirname, '../../../src/home/hakucfg/setting.sh'), 'utf8')
 const keys = [...template.matchAll(/^([A-Z_]+)=/gm)].map(match => match[1]).filter(key => key !== 'SETTING_VERSION')
@@ -45,18 +44,6 @@ for (const wm of ['hyprland', 'niri', 'mango']) {
     assert.equal(sorted.length, files.length)
     assert.equal(sorted[0].id.split('/')[1].split('-')[0], wm)
     assert.deepEqual(files.map(file => file.id), order, 'sorting does not mutate the store')
-}
-for (const [width, height] of [[4000, 1000], [1000, 4000], [512, 512]]) {
-    const scale = crop.cover(width, height, 320)
-    assert(width * scale >= 320 && height * scale >= 320)
-    for (const zoom of [1, 2, 4]) {
-        for (const desired of [-10000, 0, 10000]) {
-            const extent = width * scale * zoom
-            const center = crop.center(desired, extent, 320)
-            assert((320 - extent) / 2 + center <= 0)
-            assert((320 + extent) / 2 + center >= 320)
-        }
-    }
 }
 // Use the actual UiState methods with signals and the activePanel handler wired in order.
 const source = fs.readFileSync(path.join(shell, 'services/UiState.qml'), 'utf8')
