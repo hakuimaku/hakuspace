@@ -26,6 +26,14 @@ var general = [
 })
 // Section descriptors also make existing Shell and Wallpaper controls searchable.
 var sections = [
+    {id: "idle-enabled", store: "shell", category: "Session", label: "Idle management", section: "Idle & Power", synonyms: "idle power sleep inactivity"},
+    {id: "idle-dimTimeout", store: "shell", category: "Session", label: "Screen dim", section: "Idle & Power", synonyms: "brightness idle inactivity"},
+    {id: "idle-lockTimeout", store: "shell", category: "Session", label: "Lock after inactivity", section: "Idle & Power", synonyms: "idle secure"},
+    {id: "idle-displayOffTimeout", store: "shell", category: "Session", label: "Turn displays off", section: "Idle & Power", synonyms: "screen off dpms idle"},
+    {id: "idle-suspendTimeout", store: "shell", category: "Session", label: "Suspend after inactivity", section: "Idle & Power", synonyms: "sleep idle"},
+    {id: "idle-keep-awake", store: "shell", category: "Session", label: "Keep awake", section: "Idle & Power", synonyms: "caffeine idle inhibit"},
+    {id: "idle-respectAppInhibitors", store: "shell", category: "Session", label: "Application idle inhibitors", section: "Idle & Power", synonyms: "video game"},
+    {id: "idle-inhibitOnAudio", store: "shell", category: "Session", label: "Audio playback inhibit", section: "Idle & Power", synonyms: "music keep awake"},
     {id: "layout", store: "shell", category: "Appearance", label: "Shell layout", summary: "Choose a top bar or bottom taskbar.", section: "Layout", synonyms: "dock position"},
     {id: "colorMode", store: "shell", category: "Appearance", label: "Theme Mode", summary: "Choose Dark or Light for Hikai.", section: "Appearance", synonyms: "light dark white color mode"},
     {id: "radius", store: "shell", category: "Appearance", label: "Shell radius", summary: "Adjust the roundness of shell surfaces.", section: "Appearance"},

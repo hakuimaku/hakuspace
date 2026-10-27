@@ -10,13 +10,17 @@ from pathlib import Path
 
 # Keep runtime state outside this versioned preference schema.
 DEFAULTS = {
-    "version": 7,
+    "version": 8,
     "appearance": {"baseRadius": 12, "surfaceTone": "dark", "colorMode": "dark"},
     "roundedScreen": {"radius": 20, "borderThickness": 4},
     "dock": {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 36,
              "hoverLift": 14, "hoverScale": 0, "showTrash": True, "showDevices": True},
     "topbar": dict.fromkeys(("workspaces", "windowTitle", "center", "cava", "tray",
                              "quickControls", "recorder", "clock", "notifications"), True),
+    "idle": {"enabled": True, "dimEnabled": True, "dimTimeout": 200, "dimPercent": 10,
+             "lockEnabled": True, "lockTimeout": 230, "displayOffEnabled": True,
+             "displayOffTimeout": 300, "suspendEnabled": True, "suspendTimeout": 360,
+             "respectAppInhibitors": True, "inhibitOnAudio": True},
 }
 
 
@@ -26,9 +30,9 @@ def validate(values, partial=False):
         raise ValueError("expected a shell settings object with known fields")
     if not partial and set(values) != set(DEFAULTS):
         raise ValueError("missing shell settings fields")
-    if "version" in values and (type(values["version"]) is not int or values["version"] != 7):
+    if "version" in values and (type(values["version"]) is not int or values["version"] != 8):
         raise ValueError("unsupported schema version")
-    for section in ("appearance", "roundedScreen", "topbar", "dock"):
+    for section in ("appearance", "roundedScreen", "topbar", "dock", "idle"):
         if section not in values:
             continue
         # Validate sections before merging so an invalid patch cannot erase data.
@@ -38,7 +42,13 @@ def validate(values, partial=False):
         if not partial and set(fields) != set(DEFAULTS[section]):
             raise ValueError(f"{section}: missing fields")
         for key, value in fields.items():
-            if section == "dock":
+            if section == "idle":
+                if type(DEFAULTS[section][key]) is bool:
+                    valid = type(value) is bool
+                else:
+                    low, high = (1, 100) if key == "dimPercent" else (10, 86400)
+                    valid = type(value) is int and low <= value <= high
+            elif section == "dock":
                 if key == "visibilityMode":
                     valid = type(value) is str and value in ("autohide", "always")
                 elif key in ("exclusiveSpace", "showTrash", "showDevices"):
@@ -59,6 +69,13 @@ def validate(values, partial=False):
                 valid = type(value) is str and value in ("ink", "dark", "soft")
             if not valid:
                 raise ValueError(f"{section}.{key}: invalid value")
+    # Cross-field ordering is checked after patches are merged with saved values.
+    if not partial:
+        idle = values["idle"]
+        timeouts = [idle[stage + "Timeout"] for stage in ("dim", "lock", "displayOff", "suspend")
+                    if idle[stage + "Enabled"]]
+        if any(left >= right for left, right in zip(timeouts, timeouts[1:])):
+            raise ValueError("idle: enabled timeouts must increase: dim < lock < display off < suspend")
     return values
 
 
@@ -104,6 +121,12 @@ def migrate(values):
         values = copy.deepcopy(values)
         values["version"] = 7
         values["appearance"]["colorMode"] = "dark"
+        return migrate(values)[0], True
+    if type(original_version) is int and original_version == 7:
+        if set(values) != set(DEFAULTS) - {"idle"}:
+            raise ValueError("invalid version 7 shell settings")
+        values = copy.deepcopy(values)
+        values.update(version=8, idle=copy.deepcopy(DEFAULTS["idle"]))
         return validate(values), True
     return validate(values), False
 
@@ -185,8 +208,9 @@ def run(action):
         values, mode, migrated = read_file(parent_fd, path.name)
         if action == "write":
             patch = validate(json.loads(os.environ.get("HAKUSPACE_HIKAI_SETTINGS_JSON", "")), partial=True)
-            for section in ("appearance", "roundedScreen", "topbar", "dock"):
+            for section in ("appearance", "roundedScreen", "topbar", "dock", "idle"):
                 values[section].update(patch.get(section, {}))
+            validate(values)
         elif action == "reset":
             values = copy.deepcopy(DEFAULTS)
         if action in ("write", "reset"):

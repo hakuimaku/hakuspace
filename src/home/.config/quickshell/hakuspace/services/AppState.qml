@@ -7,6 +7,27 @@ import "."
 QtObject {
     id: root
     
+    // Backend ownership follows atomic state-file commits during shell transitions.
+    property string shellBackend: "classic"
+    property FileView shellBackendFile: FileView {
+        path: Env.stateShellBackend
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onTextChanged: root.shellBackend = text().trim() === "hikai" ? "hikai" : "classic"
+        onLoadFailed: root.shellBackend = "classic"
+    }
+    // Caffeine shares one manual inhibitor with the Classic policy helper.
+    property bool idleInhibited: false
+    property FileView idleInhibitFile: FileView {
+        path: Env.stateIdleInhibited
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onTextChanged: root.idleInhibited = text().trim() === "1"
+        onLoadFailed: root.idleInhibited = false
+    }
+
     // Rotation is controlled by the existing wallpaper facade and state file.
     property bool wallpaperRotationActive: false
     property FileView wallpaperRotationFile: FileView {

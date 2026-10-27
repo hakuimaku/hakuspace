@@ -15,7 +15,7 @@ FocusScope {
     readonly property var actions: [
         { key: "wifi", icon: "󰤨", label: "Wi-Fi", toggle: true },
         { key: "bluetooth", icon: "󰂯", label: "Bluetooth", toggle: true },
-        { key: "idleInhibit", icon: "󰈈", label: "Idle Inhibit", toggle: true },
+        { key: "idleInhibit", icon: "󰈈", label: "Keep Awake", toggle: true },
         { key: "nightLight", icon: "󰖔", label: "Night Light", toggle: true },
         { key: "dockbar", icon: "󰐃", label: "Dockbar", toggle: true },
         { key: "desktopIcons", icon: "󰀻", label: "Desktop Icons", toggle: true },

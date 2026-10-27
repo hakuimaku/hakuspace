@@ -29,11 +29,27 @@ Managing monitor power states varies wildly between different Window Managers. T
 
 ## Idle & Lock Screen
 
+### Idle ownership and native Hikai policy
+
+`idle_backend_ctl.sh reconcile` selects the idle owner during `session_start.sh --early` and every backend commit. Classic retains exactly one user-owned `hypridle`; Hikai stops it before committing native ownership. Shell transitions wait for the native FileView watcher to acknowledge activation or cleanup, and rollback/crash-loop recovery restores the matching idle owner. `idle_backend_ctl.sh status` reports the backend and daemon count without changing them.
+
+Hikai uses four independent Quickshell `IdleMonitor` objects for dim, native lock, display off, and suspend. Saved `~/hakucfg/hikai/hikai-shell.json` schema v8 preferences provide defaults of 200/230/300/360 seconds and 10% brightness. Enabled stages must have strictly increasing timeouts in 10–86400 seconds. Session → Idle & Power edits the existing Shell store; Apply commits policy, and draft edits do not arm idle actions. Migration from v7 preserves existing preferences and adds native defaults. Classic's `hypridle.conf` and user timeout overrides remain independent and unchanged.
+
+`IdleService` calls `LockState.requestLock()` directly, routes DPMS through `dpms_handler.sh`, and requests `power_ctl.sh suspend` only after `LockState.secure` and a fresh inhibitor check. A failed secure-lock deadline cancels idle suspend. `idle_actions.sh` serializes brightness/DPMS effects and stores only recovery markers under `$XDG_RUNTIME_DIR/hakuspace`; activity, disabling, reload, startup after a crash, and backend handoff restore owned effects without unlocking. It is an action helper, not another idle timer.
+
+`idle_session_watch.py` uses Gio on the system bus to watch only the current login session's Lock/Unlock and logind PrepareForSleep. It retains a logind sleep delay fd, forwards streamed JSON to QML, and releases the fd only after a matching secure-lock acknowledgment. Wake reacquires the delay before publishing resume; external Unlock never authenticates the native lock. These hooks remain active in Hikai even if idle timeouts are disabled. A disconnected bridge is restarted and native timeout actions wait for readiness.
+
+The compositor must support [ext-idle-notify-v1](https://quickshell.org/docs/v0.3.0/types/Quickshell.Wayland/IdleMonitor/). External sleep uses logind's bounded [delay inhibitor](https://www.freedesktop.org/software/systemd/man/latest/org.freedesktop.login1.html): logind may continue when `InhibitDelayMaxUSec` expires even if the shell cannot secure the lock. The bridge never acknowledges an insecure lock, but a delay inhibitor cannot veto arbitrary external suspend forever. Explicit requests to bypass inhibitors are outside this protection.
+
+Diagnostics: `qs -c hakuspace ipc call idle status` reports ownership, readiness, monitor and stage state, and errors. `idle inhibitStatus` reports the last observed custom inhibition. `idle forceStage <dim|lock|displayOff|suspend>` is rejected unless `HAKUSPACE_IDLE_TEST=1`; forced stages still use the normal condition and secure-lock gates. Do not enable that test flag in a normal session.
+
+Targeted checks live in `tests/hikai/idle/`. The runtime harness uses a private Labwc compositor, two headless outputs, software rendering, a stub lock state, and stub brightness/DPMS/power commands. It covers native notifications, Wayland app inhibition, retries, stale condition results, backend changes, secure-only suspend dispatch, external sleep/wake routing, and QML reload. `test_session.sh` checks the composed Session page and Apply with private preferences. These are protocol and lifecycle checks, not hardware GPU/FPS evidence. Real lid/power-button sleep, output hotplug, and Hyprland/Niri/Mango/Labwc hardware smoke checks remain manual; never substitute a real suspend for the harness's stub.
+
 ### `idle_inhibit.sh` (The Smart Sleep Blocker)
 There's nothing more annoying than your screen turning off while you're watching a video or listening to a podcast.
-- **What it does:** This script acts as the brain for `hypridle`. When your system is inactive, `hypridle` asks this script if it's allowed to turn off the screen.
-- **Audio Detection:** It checks PulseAudio/PipeWire sink inputs and blocks idle for unmuted, uncorked audio streams, except streams from Zen.
-- **Manual Toggle:** You can run it with `--toggle` to manually force the screen to stay on indefinitely, saving the state to a local file.
+- **What it does:** Both Classic hypridle conditions and Hikai stages call this backend-neutral policy helper. No hypridle binary is required for native checks or the Keep Awake quick action.
+- **Audio Detection:** It checks PulseAudio/PipeWire sink inputs and blocks idle for unmuted, uncorked audio streams, including browser playback.
+- **Manual Toggle:** `--toggle` and manual-only `--check` share `~/.local/state/hakuspace/state/[system].idle-inhibit.enabled` across both backends. `--condition` (also the default with no arguments) exits 0 when idle actions are allowed. `--status-json` reports manual/audio/combined inhibition; `--no-audio` skips audio for a native policy check. Active audio retains the existing five-second grace period. Blocked native stages retry every 30 seconds without requiring user activity.
 
 ### `lock.sh` (The Smart Screen Locker)
 Secures your computer when you step away.

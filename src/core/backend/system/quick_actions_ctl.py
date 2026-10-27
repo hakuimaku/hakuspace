@@ -42,7 +42,7 @@ def state(key):
         return {"available": powered in ("yes", "no"), "enabled": powered == "yes"}
     name, check_arg, _ = SCRIPTS[key]
     path = BIN_DIR / name
-    if not path.is_file() or (key == "idleInhibit" and not shutil.which("hypridle")):
+    if not path.is_file():
         return {"available": False, "enabled": False}
     if key == "nightLight":
         helper = "hyprsunset" if os.environ.get("XDG_CURRENT_DESKTOP") == "Hyprland" else "gammastep"

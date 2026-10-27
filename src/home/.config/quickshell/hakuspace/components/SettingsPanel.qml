@@ -284,6 +284,11 @@ PanelWindow {
         else UiState.closeSettings()
     }
     function requestReload() {
+        if (selectedCategory === "Session") {
+            if (SettingsStore.dirty || ShellSettingsStore.dirty) confirmation = "reload-session"
+            else { SettingsStore.reload(); ShellSettingsStore.reload() }
+            return
+        }
         if (selectedGroup === "Wallpaper") {
             if (WallpaperSettingsStore.dirty) confirmation = "reload-wallpaper"
             else WallpaperSettingsStore.reload()
@@ -308,6 +313,7 @@ PanelWindow {
         else if (action === "reset-shell") ShellSettingsStore.reset()
         else if (action === "discard-shell") { ShellSettingsStore.discard(); SettingsStore.discard() }
         else if (action === "reload-shell") ShellSettingsStore.reload()
+        else if (action === "reload-session") { SettingsStore.reload(); ShellSettingsStore.reload() }
         else if (action === "reload") SettingsStore.reload()
         else if (action === "close") {
             SettingsStore.discard()
@@ -540,7 +546,7 @@ PanelWindow {
                             + ". Apply saves all modified pages. Discard restores their saved values before closing."
                         : ["reset-shell", "reset-wallpaper"].includes(confirmationDialog.currentAction) ? "Preview default settings. Your current draft will be replaced. Nothing is saved until you choose Apply."
                         : (confirmationDialog.currentAction === "discard-shell" || confirmationDialog.currentAction === "discard-wallpaper") ? "Undo unsaved settings edits and restore saved values."
-                        : "Discard unsaved " + (confirmationDialog.currentAction === "reload-shell" ? "Shell" : confirmationDialog.currentAction === "reload-wallpaper" ? "Wallpaper" : "General") + " edits and reload the saved settings from disk."
+                        : "Discard unsaved " + (confirmationDialog.currentAction === "reload-session" ? "Session" : confirmationDialog.currentAction === "reload-shell" ? "Shell" : confirmationDialog.currentAction === "reload-wallpaper" ? "Wallpaper" : "General") + " edits and reload the saved settings from disk."
                     color: Theme.fgDim
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
@@ -681,7 +687,19 @@ PanelWindow {
                         id: generalLoader
                         anchors.fill: parent
                         active: root.selectedGroup === "General"
-                        sourceComponent: SettingsPages.GeneralSettingsPage {
+                        sourceComponent: root.selectedCategory === "Session" ? sessionPageComponent : generalPageComponent
+                    }
+                    Component {
+                        id: sessionPageComponent
+                        SettingsPages.SessionSettingsPage {
+                            highlightedId: root.highlightedId
+                            shortcutTarget: shortcutKeys
+                            onReloadRequested: root.requestReload()
+                        }
+                    }
+                    Component {
+                        id: generalPageComponent
+                        SettingsPages.GeneralSettingsPage {
                             category: root.selectedCategory
                             highlightedId: root.highlightedId
                             shortcutTarget: shortcutKeys

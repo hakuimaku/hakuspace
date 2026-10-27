@@ -61,7 +61,7 @@ if name in ("pgrep", "pkill"):
             else:
                 save()
         if matches:
-            print("123")
+            print("\n".join("123" for _ in matches))
         sys.exit(0 if matches else 1)
     event("stop:" + pattern)
     if "qs" in matches and model.get("fail") == "ignore-term" and "-KILL" not in args:
@@ -71,6 +71,10 @@ if name in ("pgrep", "pkill"):
         model["owner"] = "qs" if "qs" in model["procs"] else ""
     save()
     sys.exit(0)
+elif name == "hypridle":
+    event("start-hypridle")
+    model["procs"].append("hypridle")
+    save()
 elif name == "busctl":
     event("notification-owner")
     if not model["owner"]:
@@ -79,6 +83,7 @@ elif name == "busctl":
 elif name == "setsid":
     if any("BOOTSTRAP=" in arg for arg in args):
         event("bootstrap")
+        assert "QT_QPA_PLATFORM=wayland" in args
         assert backend == "classic"
         assert not model["owner"]
         model["procs"].append("qs")
@@ -106,6 +111,13 @@ elif name == "qs":
     event(target + ":" + method)
     if "qs" not in model["procs"]:
         sys.exit(1)
+    if target == "idle":
+        assert method == "status"
+        enabled = backend == "hikai"
+        print(json.dumps(dict(backend=backend, enabled=enabled, released=not enabled, ready=True, configuredEnabled=True,
+                              **{key: dict(enabled=enabled, monitorEnabled=enabled)
+                                 for key in ("dim", "lock", "displayOff", "suspend")})))
+        sys.exit(0)
     if target == "shell":
         if method == "ping":
             print("pong")
@@ -218,13 +230,13 @@ class BackendTransitionTest(unittest.TestCase):
         self.state = self.root / "home/.local/state/hakuspace/state"
         self.bin.mkdir(parents=True)
         self.state.mkdir(parents=True)
-        for source in ("sys/haku_backend.sh", "lib/haku_backend_lib.sh", "lib/haku_theme.sh", "lib/haku_state.sh", "lib/haku_state.py",
+        for source in ("sys/idle_backend_ctl.sh", "sys/haku_backend.sh", "lib/haku_backend_lib.sh", "lib/haku_theme.sh", "lib/haku_state.sh", "lib/haku_state.py",
                        "state/haku_state_migrate.py", "backend/user/hikai_settings_ctl.py", "theme/accent_palette.py", "theme/kitty_theme_ctl.py"):
             shutil.copy2(Path(__file__).resolve().parents[3] / "src/core" / source, self.bin)
         fixture = self.bin / "stub"
         fixture.write_text(STUB)
         fixture.chmod(0o755)
-        for name in ("qs", "pgrep", "pkill", "busctl", "setsid", "swaync", "waybar", "rm", "notify-send", "gdbus", "gsettings", "kitty",
+        for name in ("hypridle", "qs", "pgrep", "pkill", "busctl", "setsid", "swaync", "waybar", "rm", "notify-send", "gdbus", "gsettings", "kitty",
                      "opaque_theme.sh", "appearance_ctl.sh", "hikai_chrome_state_ctl.py", "rounded_screen_manager.sh", "edge_trigger_manager.sh",
                      "taskbar_manager.sh", "waybar_manager.sh", "desktop_icons_manager.sh", "cava_manager.sh"):
             (self.bin / name).symlink_to(fixture)
@@ -242,7 +254,7 @@ class BackendTransitionTest(unittest.TestCase):
         (self.state / "[desktop].waybar.requested").write_text("1\n")
         model = dict(phase="idle", polls=0, chrome=True, fail=fail,
                      owner="swaync" if backend == "classic" else "qs",
-                     procs=["swaync", "waybar", "taskbar", "rounded_screen.py", "edge_trigger.py"]
+                     procs=["hypridle", "swaync", "waybar", "taskbar", "rounded_screen.py", "edge_trigger.py"]
                      if backend == "classic" else ["qs", "qs_supervisor.sh", "desktop_icons.py", "cava_layer.py"])
         (self.root / "model.json").write_text(json.dumps(model))
 
@@ -354,6 +366,8 @@ class BackendTransitionTest(unittest.TestCase):
 
     def test_classic_to_hikai(self):
         """No backend commit or Classic teardown may precede full coverage."""
+        # Native Wayland services must ignore a launcher's inherited X11 override.
+        self.env["QT_QPA_PLATFORM"] = "xcb"
         self.prepare("classic")
         self.run_cli("set", "hikai")
         self.assert_backend("hikai")

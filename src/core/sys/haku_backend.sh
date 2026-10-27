@@ -134,7 +134,7 @@ quickshell_ready() {
 # Migrate preferences before the temporary runtime starts watching them.
 start_qs_transition_bootstrap() {
     ~/.local/bin/hikai_chrome_state_ctl.py migrate 9>&- || return 1
-    setsid -f env HAKUSPACE_SHELL_TRANSITION_BOOTSTRAP=classic-to-hikai \
+    setsid -f env QT_QPA_PLATFORM=wayland HAKUSPACE_SHELL_TRANSITION_BOOTSTRAP=classic-to-hikai \
         python3 "$HOME/.local/bin/wallpaper_ctl.py" launch -c hakuspace </dev/null >>"$(haku_runtime_dir)/qs.log" 2>&1 9>&- || return 1
     wait_until quickshell_ready
 }
@@ -181,12 +181,40 @@ start_hikai_auxiliary_stack() {
 # Publish mode atomically so concurrent facade readers never see an empty file.
 commit_backend() {
     local next_state
+    # Rollback into Hikai must release Classic idle before publishing native ownership.
+    if [[ "$1" == "$QS_BACKEND_NAME" ]]; then
+        "$HOME/.local/bin/idle_backend_ctl.sh" stop-classic 9>&- || return 1
+    fi
     next_state=$(mktemp "${BACKEND_STATE_FILE}.XXXXXX") || return 1
     if printf '%s\n' "$1" > "$next_state" && mv -f "$next_state" "$BACKEND_STATE_FILE"; then
-        return 0
+        # Observe the native watcher releasing ownership before starting Classic idle.
+        if [[ "$1" == classic ]] && haku_qs_alive; then
+            wait_until native_idle_inactive || return 1
+        fi
+        "$HOME/.local/bin/idle_backend_ctl.sh" reconcile 9>&-
+        return $?
     fi
     rm -f "$next_state"
     return 1
+}
+
+# Native readiness includes logind and the compositor protocol for enabled stages.
+native_idle_ready() {
+    timeout 2s qs -c hakuspace ipc call idle status 2>/dev/null | python3 -c '
+import json,sys
+d = json.load(sys.stdin)
+sys.exit(0 if d["backend"] == "hikai" and d["ready"] and d["enabled"] == d["configuredEnabled"]
+    and all(not d[k]["enabled"] or d[k]["monitorEnabled"] for k in ("dim", "lock", "displayOff", "suspend")) else 1)
+' 2>/dev/null
+}
+
+# FileView must acknowledge the Classic commit before hypridle can start.
+native_idle_inactive() {
+    timeout 2s qs -c hakuspace ipc call idle status 2>/dev/null | python3 -c '
+import json,sys
+d = json.load(sys.stdin)
+sys.exit(0 if d["backend"] == "classic" and not d["enabled"] and d["released"] else 1)
+' 2>/dev/null
 }
 
 # Reconcile shared applications under the transition cover without changing preferences.
@@ -225,7 +253,7 @@ rollback_classic() {
 # Keep Quickshell alive so failed Classic preparation can reveal Hikai again.
 rollback_hikai() {
     kill_classic_stack
-    commit_backend "$QS_BACKEND_NAME" || return 1
+    commit_backend "$QS_BACKEND_NAME" || { emergency_classic; return 1; }
     sync_opaque_context "$QS_BACKEND_NAME" || { emergency_classic; return 1; }
     if quickshell_ready && start_hikai_auxiliary_stack && transition_ipc showChrome &&
         start_qs_supervisor && transition_ipc release && wait_transition_phase finished &&
@@ -244,14 +272,15 @@ switch_to_hikai() {
         return 1
     fi
     kill_classic_stack
-    if ! sync_opaque_context "$QS_BACKEND_NAME" ||
+    if ! "$HOME/.local/bin/idle_backend_ctl.sh" stop-classic 9>&- ||
+        ! sync_opaque_context "$QS_BACKEND_NAME" ||
         ! ~/.local/bin/desktop_icons_manager.sh --startup 9>&- || ! transition_ipc showChrome ||
         ! commit_backend "$QS_BACKEND_NAME"; then
         rollback_classic yes
         return 1
     fi
     # Cava reads the backend preference to select Hikai's existing dynamic-mode policy.
-    if ! ~/.local/bin/cava_manager.sh --startup 9>&- || ! start_qs_supervisor; then
+    if ! ~/.local/bin/cava_manager.sh --startup 9>&- || ! start_qs_supervisor || ! wait_until native_idle_ready; then
         rollback_classic yes
         return 1
     fi
@@ -316,9 +345,11 @@ set_backend() (
 
 # Verify notification ownership and only those Classic features enabled by the user.
 verify_backend() {
-    local current proc state
+    local current proc state idle_count
     current=$(haku_backend_get)
+    idle_count=$(pgrep -u "$(id -u)" -x hypridle | wc -l)
     if [[ "$current" == "$QS_BACKEND_NAME" ]]; then
+        [[ "$idle_count" == 0 ]] || return 1
         for proc in waybar taskbar rofi edge_trigger.py rounded_screen.py swaync; do
             if [[ "$proc" == *.py ]]; then
                 process_absent -f "$proc" || return 1
@@ -327,7 +358,9 @@ verify_backend() {
             fi
         done
         haku_qs_alive && notification_owned_by 'qs|quickshell' || return 1
+        native_idle_ready || return 1
     else
+        [[ "$idle_count" == 1 ]] || return 1
         haku_qs_alive && return 1
         pgrep -x swaync >/dev/null && notification_owned_by swaync || return 1
         for state in desktop.waybar.requested:waybar desktop.taskbar.requested:taskbar \

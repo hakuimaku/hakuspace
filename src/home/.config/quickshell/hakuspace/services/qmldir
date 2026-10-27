@@ -39,3 +39,5 @@ singleton WallpaperSettingsStore 1.0 WallpaperSettingsStore.qml
 singleton WallpaperService 1.0 WallpaperService.qml
 WallpaperRendererHost 1.0 WallpaperRendererHost.qml
 singleton WallpaperLibrary 1.0 WallpaperLibrary.qml
+
+singleton IdleService 1.0 IdleService.qml

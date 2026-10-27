@@ -7,7 +7,6 @@ wl-paste --type text --watch cliphist store >/dev/null 2>&1 &
 wl-paste --type image --watch cliphist store >/dev/null 2>&1 &
 nm-applet --indicator >/dev/null 2>&1 &
 blueman-applet >/dev/null 2>&1 &
-hypridle >/dev/null 2>&1 &
 fcitx5 -d >/dev/null 2>&1 &
 
 (sleep 0.1; ~/.local/bin/polkit_start.sh >/dev/null 2>&1 &)

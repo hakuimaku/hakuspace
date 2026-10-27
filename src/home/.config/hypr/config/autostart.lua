@@ -22,7 +22,6 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("wl-paste --type image --watch cliphist store")
     hl.exec_cmd("nm-applet --indicator")
     hl.exec_cmd("blueman-applet")
-    hl.exec_cmd("hypridle")
     hl.exec_cmd("fcitx5 -d")
 
     -- Resume wallpaper on startup

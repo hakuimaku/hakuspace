@@ -70,6 +70,7 @@ class ShellSettingsTests(unittest.TestCase):
         for version in (3, 4, 5):
             document = json.loads(json.dumps(ctl.DEFAULTS))
             document["version"] = version
+            document.pop("idle", None)
             document["appearance"].pop("colorMode")
             document["dock"]["iconSize"] = 48
             if version < 5:
@@ -88,6 +89,7 @@ class ShellSettingsTests(unittest.TestCase):
         """Legacy appearance migrates safely; both modes preserve other preferences."""
         legacy = json.loads(json.dumps(ctl.DEFAULTS))
         legacy["version"] = 6
+        legacy.pop("idle", None)
         legacy["appearance"] = {"baseRadius": 18, "surfaceTone": "soft"}
         self.path.parent.mkdir(parents=True)
         self.path.write_text(json.dumps(legacy))
@@ -120,7 +122,7 @@ class ShellSettingsTests(unittest.TestCase):
         patches += [{"dock": {key: value}} for key in ("showTrash", "showDevices") for value in (0, "false", None)]
         patches += [{"dock": {"style": value}} for value in ("full", True, 1, None)]
         patches += [{"dock": {"enabled": True}}]
-        patches += [{"appearance": {"surfaceTone": "black"}}, {"version": True}, {"version": 8}, {"version": 1},
+        patches += [{"appearance": {"surfaceTone": "black"}}, {"version": True}, {"version": 9}, {"version": 1},
                     {"appearance": []}, {"topbar": {"logo": False}}, {"unknown": 1}, []]
         for payload in patches:
             with self.subTest(payload=payload), self.assertRaises(ValueError):
@@ -130,7 +132,7 @@ class ShellSettingsTests(unittest.TestCase):
     def test_invalid_document_and_payload(self):
         """Malformed or incomplete documents report failure without replacement."""
         self.path.parent.mkdir(parents=True)
-        for content in ("{broken", "[]", '{"version": 1}', json.dumps(dict(ctl.DEFAULTS, version=8))):
+        for content in ("{broken", "[]", '{"version": 1}', json.dumps(dict(ctl.DEFAULTS, version=9))):
             self.path.write_text(content)
             for action in ("read", "check", "reset"):
                 with self.subTest(action=action, content=content), self.assertRaises(ValueError):
@@ -186,7 +188,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
 
     def test_v1_migration_without_read_writes(self):
-        """Read/check migrate in memory; the next explicit Apply persists version 7."""
+        """Read/check migrate in memory; the next explicit Apply persists version 8."""
         self.path.parent.mkdir(parents=True)
         legacy = {"version": 1, "appearance": {"baseRadius": 24, "surfaceTone": "soft"}, "topbar": {"tray": False}}
         self.path.write_text(json.dumps(legacy))
@@ -194,7 +196,7 @@ class ShellSettingsTests(unittest.TestCase):
         for action in ("read", "check"):
             data = ctl.run(action)
             self.assertTrue(data["needsMigration"])
-            self.assertEqual(data["values"]["version"], 7)
+            self.assertEqual(data["values"]["version"], 8)
             self.assertEqual(data["values"]["dock"]["iconSize"], 36)
             self.assertEqual(data["values"]["roundedScreen"], {"radius": 20, "borderThickness": 4})
             self.assertEqual(data["values"]["appearance"], legacy["appearance"] | {"colorMode": "dark"})
@@ -202,7 +204,7 @@ class ShellSettingsTests(unittest.TestCase):
             self.assertTrue(data["values"]["topbar"]["clock"])
             self.assertEqual(self.path.read_bytes(), original)
         self.write({})
-        self.assertEqual(json.loads(self.path.read_text())["version"], 7)
+        self.assertEqual(json.loads(self.path.read_text())["version"], 8)
         self.assertFalse(ctl.run("read")["needsMigration"])
 
     def test_v2_migration_and_dock_persistence(self):
@@ -211,6 +213,7 @@ class ShellSettingsTests(unittest.TestCase):
         legacy = json.loads(json.dumps(ctl.DEFAULTS))
         legacy.pop("dock")
         legacy["version"] = 2
+        legacy.pop("idle", None)
         legacy["appearance"].pop("colorMode")
         legacy["roundedScreen"] = {"radius": 9, "borderThickness": 2}
         legacy["topbar"]["clock"] = False
@@ -240,6 +243,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.path.parent.mkdir(parents=True)
         legacy = json.loads(json.dumps(ctl.DEFAULTS))
         legacy["version"] = 3
+        legacy.pop("idle", None)
         legacy["appearance"].pop("colorMode")
         legacy["dock"] = {"visibilityMode": "always", "exclusiveSpace": True, "iconSize": 72}
         legacy["appearance"]["baseRadius"] = 18
@@ -292,6 +296,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.path.parent.mkdir(parents=True)
         legacy = json.loads(json.dumps(ctl.DEFAULTS))
         legacy["version"] = 4
+        legacy.pop("idle", None)
         legacy["appearance"].pop("colorMode")
         for key in ("style", "showTrash", "showDevices"):
             legacy["dock"].pop(key, None)
@@ -307,10 +312,11 @@ class ShellSettingsTests(unittest.TestCase):
         self.assertEqual(ctl.run("reset")["values"], ctl.DEFAULTS)
 
     def test_v5_style_removal_preserves_all_other_preferences(self):
-        """Both legacy styles migrate directly to v7 without changing app preferences."""
+        """Both legacy styles migrate directly to v8 without changing app preferences."""
         for style in ("bar", "dock"):
             document = json.loads(json.dumps(ctl.DEFAULTS))
             document["version"] = 5
+            document.pop("idle", None)
             document["appearance"].pop("colorMode")
             document["dock"].update(style=style, iconSize=60, hoverLift=28, hoverScale=40,
                                     visibilityMode="always", exclusiveSpace=True, showTrash=False, showDevices=False)
@@ -318,7 +324,7 @@ class ShellSettingsTests(unittest.TestCase):
             del expected["style"]
             migrated, changed = ctl.migrate(document)
             self.assertTrue(changed)
-            self.assertEqual(migrated["version"], 7)
+            self.assertEqual(migrated["version"], 8)
             self.assertEqual(migrated["dock"], expected)
             self.assertEqual(ctl.migrate(migrated), (migrated, False))
 

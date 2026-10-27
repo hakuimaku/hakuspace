@@ -11,6 +11,8 @@ import "modules/picker"
 
 ShellRoot {
     id: root
+    // Keep idle and logind hooks resident even before the first diagnostic IPC call.
+    readonly property bool nativeIdleEnabled: IdleService.enabled
 
     DesktopColorScheme {}
 
@@ -122,6 +124,14 @@ ShellRoot {
         enabled: true
         function lock(): string { return LockState.requestLock() }
         function status(): string { return LockState.status() }
+    }
+
+    // Status instantiates the sole native idle owner without a separate UI surface.
+    IpcHandler {
+        target: "idle"
+        function status(): string { return IdleService.status() }
+        function inhibitStatus(): string { return JSON.stringify({inhibited: IdleService.customInhibited || AppState.idleInhibited}) }
+        function forceStage(stage: string): string { return IdleService.forceStage(stage) }
     }
 
     LockSession {}

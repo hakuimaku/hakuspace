@@ -44,7 +44,7 @@ while true; do
     # Both login and backend switching pass here before AppState starts watching.
     "$SCRIPT_DIR/hikai_chrome_state_ctl.py" migrate >> "$LOG_FILE" 2>&1 || exit 1
     echo "[$(date -Iseconds)] Starting quickshell..." >> "$LOG_FILE"
-    python3 "$SCRIPT_DIR/wallpaper_ctl.py" launch -c hakuspace >> "$LOG_FILE" 2>&1
+    QT_QPA_PLATFORM=wayland python3 "$SCRIPT_DIR/wallpaper_ctl.py" launch -c hakuspace >> "$LOG_FILE" 2>&1
     
     EXIT_CODE=$?
     echo "[$(date -Iseconds)] Quickshell exited with code $EXIT_CODE" >> "$LOG_FILE"
@@ -69,7 +69,8 @@ while true; do
     
     if (( ${#CRASH_TIMESTAMPS[@]} >= MAX_CRASHES )); then
         echo "[$(date -Iseconds)] Crash loop detected (${#CRASH_TIMESTAMPS[@]} crashes in $CRASH_WINDOW s). Falling back to classic." >> "$LOG_FILE"
-        ~/.local/bin/haku_backend.sh set classic
+        # Detach recovery so stopping this supervisor cannot kill the rollback owner.
+        setsid -f "$HOME/.local/bin/haku_backend.sh" --recover </dev/null >> "$LOG_FILE" 2>&1
         exit 1
     fi
     

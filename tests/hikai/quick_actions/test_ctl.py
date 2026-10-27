@@ -77,7 +77,7 @@ case "$name" in
         elif [ "$current" = 1 ]; then echo 0 > "$state"; else echo 1 > "$state"; fi ;;
 esac
 """
-            names = ("nmcli", "bluetoothctl", "hypridle", "hyprsunset",
+            names = ("nmcli", "bluetoothctl", "hyprsunset",
                      "idle_inhibit.sh", "nightlight_toggle.sh", "taskbar_manager.sh", "dockbar_manager.sh",
                      "desktop_icons_manager.sh", "cava_manager.sh")
             for name in names:

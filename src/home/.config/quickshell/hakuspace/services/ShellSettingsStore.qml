@@ -42,10 +42,15 @@ QtObject {
     readonly property int dockHoverScale: values.dock.hoverScale
     readonly property bool dockShowTrash: values.dock.showTrash
     readonly property bool dockShowDevices: values.dock.showDevices
+    // Idle consumes only saved policy; editing a timeout cannot suspend during preview.
+    readonly property bool idleEnabled: savedValues.idle.enabled
 
     // Produce independent snapshots so Discard never shares mutable nested objects.
     function defaults() {
-        return {version: 7, appearance: {baseRadius: 12, surfaceTone: "dark", colorMode: "dark"},
+        return {version: 8, appearance: {baseRadius: 12, surfaceTone: "dark", colorMode: "dark"},
+            idle: {enabled: true, dimEnabled: true, dimTimeout: 200, dimPercent: 10,
+                lockEnabled: true, lockTimeout: 230, displayOffEnabled: true, displayOffTimeout: 300,
+                suspendEnabled: true, suspendTimeout: 360, respectAppInhibitors: true, inhibitOnAudio: true},
             roundedScreen: {radius: 20, borderThickness: 4},
             dock: {visibilityMode: "autohide", exclusiveSpace: false, iconSize: 36, hoverLift: 14, hoverScale: 0,
                 showTrash: true, showDevices: true},
@@ -55,11 +60,15 @@ QtObject {
     // Mirror the backend contract before applying or accepting a response.
     function validate(draft) {
         var schema = defaults()
-        if (!draft || draft.version !== 7 || Object.keys(draft).length !== 5) return false
-        for (var section of ["appearance", "roundedScreen", "topbar", "dock"]) {
+        if (!draft || draft.version !== 8 || Object.keys(draft).length !== 6) return false
+        for (var section of ["appearance", "roundedScreen", "topbar", "dock", "idle"]) {
             if (!draft[section] || Object.keys(draft[section]).length !== Object.keys(schema[section]).length) return false
             for (var key in schema[section]) {
                 var value = draft[section][key]
+                if (section === "idle") {
+                    if (typeof schema.idle[key] === "boolean") { if (typeof value !== "boolean") return false }
+                    else if (!Number.isInteger(value) || value < (key === "dimPercent" ? 1 : 10) || value > (key === "dimPercent" ? 100 : 86400)) return false
+                }
                 if (section === "topbar" && typeof value !== "boolean") return false
                 if (key === "visibilityMode" && ["autohide", "always"].indexOf(value) < 0) return false
                 if (["exclusiveSpace", "showTrash", "showDevices"].indexOf(key) >= 0 && typeof value !== "boolean") return false
@@ -71,6 +80,12 @@ QtObject {
                 if (key === "colorMode" && ["dark", "light"].indexOf(value) < 0) return false
                 if (key === "surfaceTone" && ["ink", "dark", "soft"].indexOf(value) < 0) return false
             }
+        }
+        var previous = 0
+        for (var stage of ["dim", "lock", "displayOff", "suspend"]) {
+            if (!draft.idle[stage + "Enabled"]) continue
+            if (draft.idle[stage + "Timeout"] <= previous) return false
+            previous = draft.idle[stage + "Timeout"]
         }
         return true
     }
@@ -87,7 +102,7 @@ QtObject {
         var draft = JSON.parse(JSON.stringify(values))
         if (!draft[section] || !Object.prototype.hasOwnProperty.call(draft[section], key)) return
         draft[section][key] = value
-        if (!validate(draft)) return
+        if (!validate(draft)) { error = section === "idle" ? "Use increasing timeouts for enabled stages: dim, lock, display off, suspend (10–86400 seconds)." : "Invalid shell preference"; return }
         values = draft
         error = ""
         statusMessage = ""
@@ -118,7 +133,7 @@ QtObject {
     function apply() {
         if (!ready || (!dirty && !migrationPending) || !valid || loading || saving) return
         var patch = {}
-        for (var section of ["appearance", "roundedScreen", "topbar", "dock"]) {
+        for (var section of ["appearance", "roundedScreen", "topbar", "dock", "idle"]) {
             for (var key in values[section]) {
                 if (values[section][key] === savedValues[section][key]) continue
                 if (!patch[section]) patch[section] = {}
@@ -158,7 +173,7 @@ QtObject {
         onExited: (code, status) => {
             root.saving = false
             if (code !== 0) { root.error = writeErr.text.trim() || "Could not save shell settings"; return }
-            try { root.accept(writeOut.text); root.statusMessage = "Appearance and desktop preferences saved." }
+            try { root.accept(writeOut.text); root.statusMessage = "Shell preferences saved." }
             catch (e) { root.error = "Invalid shell save response" }
         }
     }

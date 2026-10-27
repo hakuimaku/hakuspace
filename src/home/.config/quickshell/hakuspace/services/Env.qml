@@ -9,6 +9,7 @@ QtObject {
     readonly property string stateDir: Quickshell.shellPath("../../../.local/state/hakuspace/state")
 
     // Canonical paths shared by watchers and menu indicators.
+    readonly property string stateIdleInhibited: stateDir + "/[system].idle-inhibit.enabled"
     readonly property string stateShellBackend: stateDir + "/[shell].backend"
     readonly property string stateDesktopWaybarRequested: stateDir + "/[desktop].waybar.requested"
     readonly property string stateDesktopTaskbarRequested: stateDir + "/[desktop].taskbar.requested"
