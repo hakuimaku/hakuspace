@@ -122,7 +122,7 @@ class ShellSettingsTests(unittest.TestCase):
         patches += [{"dock": {key: value}} for key in ("showTrash", "showDevices") for value in (0, "false", None)]
         patches += [{"dock": {"style": value}} for value in ("full", True, 1, None)]
         patches += [{"dock": {"enabled": True}}]
-        patches += [{"appearance": {"surfaceTone": "black"}}, {"version": True}, {"version": 9}, {"version": 1},
+        patches += [{"appearance": {"surfaceTone": "black"}}, {"version": True}, {"version": 10}, {"version": 1},
                     {"appearance": []}, {"topbar": {"logo": False}}, {"unknown": 1}, []]
         for payload in patches:
             with self.subTest(payload=payload), self.assertRaises(ValueError):
@@ -132,7 +132,7 @@ class ShellSettingsTests(unittest.TestCase):
     def test_invalid_document_and_payload(self):
         """Malformed or incomplete documents report failure without replacement."""
         self.path.parent.mkdir(parents=True)
-        for content in ("{broken", "[]", '{"version": 1}', json.dumps(dict(ctl.DEFAULTS, version=9))):
+        for content in ("{broken", "[]", '{"version": 1}', json.dumps(dict(ctl.DEFAULTS, version=10))):
             self.path.write_text(content)
             for action in ("read", "check", "reset"):
                 with self.subTest(action=action, content=content), self.assertRaises(ValueError):
@@ -188,7 +188,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
 
     def test_v1_migration_without_read_writes(self):
-        """Read/check migrate in memory; the next explicit Apply persists version 8."""
+        """Read/check migrate in memory; the next explicit Apply persists version 9."""
         self.path.parent.mkdir(parents=True)
         legacy = {"version": 1, "appearance": {"baseRadius": 24, "surfaceTone": "soft"}, "topbar": {"tray": False}}
         self.path.write_text(json.dumps(legacy))
@@ -196,7 +196,7 @@ class ShellSettingsTests(unittest.TestCase):
         for action in ("read", "check"):
             data = ctl.run(action)
             self.assertTrue(data["needsMigration"])
-            self.assertEqual(data["values"]["version"], 8)
+            self.assertEqual(data["values"]["version"], 9)
             self.assertEqual(data["values"]["dock"]["iconSize"], 36)
             self.assertEqual(data["values"]["roundedScreen"], {"radius": 20, "borderThickness": 4})
             self.assertEqual(data["values"]["appearance"], legacy["appearance"] | {"colorMode": "dark"})
@@ -204,7 +204,7 @@ class ShellSettingsTests(unittest.TestCase):
             self.assertTrue(data["values"]["topbar"]["clock"])
             self.assertEqual(self.path.read_bytes(), original)
         self.write({})
-        self.assertEqual(json.loads(self.path.read_text())["version"], 8)
+        self.assertEqual(json.loads(self.path.read_text())["version"], 9)
         self.assertFalse(ctl.run("read")["needsMigration"])
 
     def test_v2_migration_and_dock_persistence(self):
@@ -312,7 +312,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.assertEqual(ctl.run("reset")["values"], ctl.DEFAULTS)
 
     def test_v5_style_removal_preserves_all_other_preferences(self):
-        """Both legacy styles migrate directly to v8 without changing app preferences."""
+        """Both legacy styles migrate directly to v9 without changing app preferences."""
         for style in ("bar", "dock"):
             document = json.loads(json.dumps(ctl.DEFAULTS))
             document["version"] = 5
@@ -324,7 +324,7 @@ class ShellSettingsTests(unittest.TestCase):
             del expected["style"]
             migrated, changed = ctl.migrate(document)
             self.assertTrue(changed)
-            self.assertEqual(migrated["version"], 8)
+            self.assertEqual(migrated["version"], 9)
             self.assertEqual(migrated["dock"], expected)
             self.assertEqual(ctl.migrate(migrated), (migrated, False))
 
@@ -337,6 +337,78 @@ class ShellSettingsTests(unittest.TestCase):
             self.write({"dock": {"iconSize": 64}})
         self.assertEqual(self.path.read_bytes(), original)
         self.assertEqual(self.pins.read_text(), "{broken")
+
+    def test_fresh_and_reset_idle_audio_defaults(self):
+        """Fresh configurations and resets default audio inhibition to false in schema v9."""
+        data = ctl.run("read")
+        self.assertEqual(data["values"]["version"], 9)
+        self.assertFalse(data["values"]["idle"]["inhibitOnAudio"])
+        self.assertFalse(data["needsMigration"])
+
+        # Explicitly enable audio, then verify reset sets it back to false
+        self.write({"idle": {"inhibitOnAudio": True}})
+        self.assertTrue(ctl.run("read")["values"]["idle"]["inhibitOnAudio"])
+        reset_data = ctl.run("reset")
+        self.assertEqual(reset_data["values"]["version"], 9)
+        self.assertFalse(reset_data["values"]["idle"]["inhibitOnAudio"])
+
+    def test_v7_to_v9_migration(self):
+        """v7 documents migrate to v9 with audio inhibition disabled."""
+        self.path.parent.mkdir(parents=True)
+        legacy = json.loads(json.dumps(ctl.DEFAULTS))
+        legacy["version"] = 7
+        legacy.pop("idle")
+        self.path.write_text(json.dumps(legacy))
+        original = self.path.read_bytes()
+
+        for action in ("read", "check"):
+            res = ctl.run(action)
+            self.assertTrue(res["needsMigration"])
+            self.assertEqual(res["values"]["version"], 9)
+            self.assertFalse(res["values"]["idle"]["inhibitOnAudio"])
+            self.assertEqual(self.path.read_bytes(), original)
+
+        self.write({})
+        saved = json.loads(self.path.read_text())
+        self.assertEqual(saved["version"], 9)
+        self.assertFalse(saved["idle"]["inhibitOnAudio"])
+        self.assertFalse(ctl.run("read")["needsMigration"])
+
+    def test_v8_to_v9_migration_resets_implicit_audio_inhibit(self):
+        """v8 documents with implicit audio inhibition migrate to v9 with audio inhibition false."""
+        self.path.parent.mkdir(parents=True)
+        v8_doc = json.loads(json.dumps(ctl.DEFAULTS))
+        v8_doc["version"] = 8
+        v8_doc["idle"]["inhibitOnAudio"] = True
+        self.path.write_text(json.dumps(v8_doc))
+        original = self.path.read_bytes()
+
+        for action in ("read", "check"):
+            res = ctl.run(action)
+            self.assertTrue(res["needsMigration"])
+            self.assertEqual(res["values"]["version"], 9)
+            self.assertFalse(res["values"]["idle"]["inhibitOnAudio"])
+            self.assertEqual(self.path.read_bytes(), original)
+
+        self.write({})
+        saved = json.loads(self.path.read_text())
+        self.assertEqual(saved["version"], 9)
+        self.assertFalse(saved["idle"]["inhibitOnAudio"])
+        self.assertFalse(ctl.run("read")["needsMigration"])
+
+    def test_v9_explicit_inhibit_on_audio_persists(self):
+        """Explicit v9 preferences persist audio inhibition true and false without reset."""
+        self.write({"idle": {"inhibitOnAudio": True}})
+        res = ctl.run("read")
+        self.assertFalse(res["needsMigration"])
+        self.assertEqual(res["values"]["version"], 9)
+        self.assertTrue(res["values"]["idle"]["inhibitOnAudio"])
+
+        self.write({"idle": {"inhibitOnAudio": False}})
+        res2 = ctl.run("read")
+        self.assertFalse(res2["needsMigration"])
+        self.assertEqual(res2["values"]["version"], 9)
+        self.assertFalse(res2["values"]["idle"]["inhibitOnAudio"])
 
 
 if __name__ == "__main__":

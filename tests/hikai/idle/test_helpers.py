@@ -72,6 +72,21 @@ esac''',
         for value in ("0", "101", "a", "1;echo", "1000"):
             self.run_helper("idle_actions.sh", "dim", value, code=2)
 
+    def test_stale_instance_cannot_restore_new_effects(self):
+        """A delayed destruction callback is fenced after a newer runtime claim."""
+        self.run_helper("idle_actions.sh", "--owner", "old", "claim")
+        self.run_helper("idle_actions.sh", "--owner", "old", "dim", "10")
+        self.run_helper("idle_actions.sh", "--owner", "new", "claim")
+        self.assertEqual((self.root / "brightness").read_text(), "55%\n")
+        self.run_helper("idle_actions.sh", "--owner", "new", "dim", "15")
+        self.run_helper("idle_actions.sh", "--owner", "new", "off")
+        for action in ("recover", "on", "restore"):
+            self.run_helper("idle_actions.sh", "--owner", "old", action, code=3)
+        self.assertEqual((self.root / "brightness").read_text(), "15%\n")
+        self.assertEqual((self.root / "dpms").read_text().splitlines(), ["off"])
+        self.run_helper("idle_actions.sh", "--owner", "new", "recover")
+        self.assertEqual((self.root / "brightness").read_text(), "55%\n")
+
     def test_caffeine_without_hypridle_and_audio_grace(self):
         """Manual state remains shared while audio checks can be disabled per request."""
         self.run_helper("idle_inhibit.sh", "--check", code=1)
@@ -106,6 +121,45 @@ esac''',
                 status = json.loads(self.run_helper("idle_inhibit.sh", "--status-json"))
                 self.assertEqual(status, {"manual": False, "audio": inhibited, "inhibited": inhibited})
                 self.run_helper("idle_inhibit.sh", "--condition", code=1 if inhibited else 0)
+        self.run_helper("idle_inhibit.sh", "--toggle")
+        status = json.loads(self.run_helper("idle_inhibit.sh", "--status-json", "--no-audio"))
+        self.assertEqual(status, {"manual": True, "audio": False, "inhibited": True})
+        self.run_helper("idle_inhibit.sh", "--condition", "--no-audio", code=1)
+
+    def test_manual_and_audio_policy_matrix(self):
+        """Verify the 8-state combination matrix of manual, audio policy, and active audio."""
+        matrix = [
+            # manual, audio_policy, active_audio, expected_inhibited
+            (False, False, False, False),
+            (False, False, True, False),
+            (False, True, False, False),
+            (False, True, True, True),
+            (True, False, False, True),
+            (True, False, True, True),
+            (True, True, False, True),
+            (True, True, True, True),
+        ]
+        state_file = self.root / ".local/state/hakuspace/state/[system].idle-inhibit.enabled"
+        state_file.parent.mkdir(parents=True, exist_ok=True)
+
+        for manual, audio_policy, active_audio, expected_inhibited in matrix:
+            with self.subTest(manual=manual, audio_policy=audio_policy, active_audio=active_audio):
+                state_file.write_text("1\n" if manual else "0\n")
+                (self.runtime / "hakuspace/idle-audio-timestamp").unlink(missing_ok=True)
+                if active_audio:
+                    (self.root / "audio").write_text('Sink Input #1\nmedia.class = "Stream/Output/Audio"\nCorked: no\nMute: no\n')
+                else:
+                    (self.root / "audio").write_text("")
+
+                args = ["--status-json"] + ([] if audio_policy else ["--no-audio"])
+                status = json.loads(self.run_helper("idle_inhibit.sh", *args))
+                expected_audio = active_audio and audio_policy
+                self.assertEqual(status["manual"], manual)
+                self.assertEqual(status["audio"], expected_audio)
+                self.assertEqual(status["inhibited"], expected_inhibited)
+
+                cond_args = ["--condition"] + ([] if audio_policy else ["--no-audio"])
+                self.run_helper("idle_inhibit.sh", *cond_args, code=1 if expected_inhibited else 0)
 
 if __name__ == "__main__":
     unittest.main()

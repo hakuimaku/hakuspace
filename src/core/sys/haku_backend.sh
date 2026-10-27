@@ -181,12 +181,20 @@ start_hikai_auxiliary_stack() {
 # Publish mode atomically so concurrent facade readers never see an empty file.
 commit_backend() {
     local next_state
+    # Finish native recovery while Hikai still owns idle, then publish Classic.
+    if [[ "$1" == classic ]] && haku_qs_alive; then
+        [[ $(timeout 2s qs -c hakuspace ipc call idle release 2>/dev/null) == ok ]] || return 1
+        wait_until native_idle_released || return 1
+    fi
     # Rollback into Hikai must release Classic idle before publishing native ownership.
     if [[ "$1" == "$QS_BACKEND_NAME" ]]; then
         "$HOME/.local/bin/idle_backend_ctl.sh" stop-classic 9>&- || return 1
     fi
     next_state=$(mktemp "${BACKEND_STATE_FILE}.XXXXXX") || return 1
     if printf '%s\n' "$1" > "$next_state" && mv -f "$next_state" "$BACKEND_STATE_FILE"; then
+        if [[ "$1" == "$QS_BACKEND_NAME" ]] && haku_qs_alive; then
+            wait_until native_idle_acquire || return 1
+        fi
         # Observe the native watcher releasing ownership before starting Classic idle.
         if [[ "$1" == classic ]] && haku_qs_alive; then
             wait_until native_idle_inactive || return 1
@@ -196,6 +204,20 @@ commit_backend() {
     fi
     rm -f "$next_state"
     return 1
+}
+
+# FileView observes atomic commits asynchronously; retry the guarded acquire request.
+native_idle_acquire() {
+    [[ $(timeout 2s qs -c hakuspace ipc call idle acquire 2>/dev/null) == ok ]]
+}
+
+# A backend commit may not overtake a native recovery timer or running mutation.
+native_idle_released() {
+    timeout 2s qs -c hakuspace ipc call idle status 2>/dev/null | python3 -c '
+import json,sys
+d = json.load(sys.stdin)
+sys.exit(0 if not d["owner"] and d["released"] else 1)
+' 2>/dev/null
 }
 
 # Native readiness includes logind and the compositor protocol for enabled stages.
@@ -225,6 +247,8 @@ sync_opaque_context() {
 # Recover an unresponsive transition owner to a usable Classic desktop.
 emergency_classic() {
     kill_quickshell || return 1
+    # A killed QML owner cannot report release; drain its serialized effects before Classic.
+    "$HOME/.local/bin/idle_actions.sh" recover 9>&- || return 1
     commit_backend classic || return 1
     sync_opaque_context classic || echo "Warning: could not restore Classic opaque context during recovery." >&2
     kill_classic_stack

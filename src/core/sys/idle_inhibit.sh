@@ -29,8 +29,21 @@ is_audio_playing() {
     local grace_period=5
 
     if [[ "$check_audio" == "1" ]]; then
-        echo "$current_time" > "$timestamp_file"
-        return 0
+        # When an uncorked audio stream exists, verify whether sound is actually playing
+        # (avoid false positives from paused browser streams like Zen/Firefox that leave streams open with silence)
+        local sound_active=1
+        if [[ -z "${TEST_ROOT:-}" ]] && command -v parec >/dev/null 2>&1; then
+            timeout 1s parec --latency-msec=10 -d @DEFAULT_SINK@.monitor 2>/dev/null | head -c 3840 | python3 -c "import sys, struct; d=sys.stdin.buffer.read(); sys.exit(2 if not d else (0 if max(abs(x) for x in struct.unpack(f'<{len(d)//2}h', d[:len(d)-len(d)%2])) > 50 else 1))" 2>/dev/null
+            local status=$?
+            if [[ $status -eq 1 ]]; then
+                sound_active=0
+            fi
+        fi
+
+        if [[ "$sound_active" == "1" ]]; then
+            echo "$current_time" > "$timestamp_file"
+            return 0
+        fi
     fi
 
     if [[ -f "$timestamp_file" ]]; then

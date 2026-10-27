@@ -130,7 +130,10 @@ ShellRoot {
     IpcHandler {
         target: "idle"
         function status(): string { return IdleService.status() }
-        function inhibitStatus(): string { return JSON.stringify({inhibited: IdleService.customInhibited || AppState.idleInhibited}) }
+        function logs(): string { return IdleService.logs() }
+        function inhibitStatus(): string { IdleService.refreshInhibit(); return JSON.stringify(IdleService.customInhibit) }
+        function release(): string { return IdleService.release() }
+        function acquire(): string { return IdleService.acquire() }
         function forceStage(stage: string): string { return IdleService.forceStage(stage) }
     }
 

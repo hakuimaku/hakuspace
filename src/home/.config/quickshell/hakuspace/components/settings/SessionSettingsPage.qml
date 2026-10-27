@@ -24,17 +24,33 @@ Item {
     readonly property var controls: [
         {key: "enabled", label: "Enable idle management", hint: "Manage inactivity in Hikai."},
         {key: "dimEnabled", label: "Screen dim"},
-        {key: "dimTimeout", label: "Dim after", min: 10, max: 86400, unit: "s"},
-        {key: "dimPercent", label: "Dim brightness", min: 1, max: 100, unit: "%"},
+        {key: "dimTimeout", label: "Dim after", min: 10, max: 86400, step: 10, unit: "s", hint: "Inactivity before dimming the screen."},
+        {key: "dimPercent", label: "Dim brightness", min: 1, max: 100, step: 5, unit: "%"},
         {key: "lockEnabled", label: "Lock after inactivity"},
-        {key: "lockTimeout", label: "Lock after", min: 10, max: 86400, unit: "s"},
+        {key: "lockTimeout", label: "Lock after", min: 10, max: 86400, step: 10, unit: "s", hint: "Delay after screen dim before locking the session."},
         {key: "displayOffEnabled", label: "Turn displays off"},
-        {key: "displayOffTimeout", label: "Display off after", min: 10, max: 86400, unit: "s"},
+        {key: "displayOffTimeout", label: "Display off after", min: 10, max: 86400, step: 10, unit: "s", hint: "Delay after lock before turning displays off."},
         {key: "suspendEnabled", label: "Suspend after inactivity"},
-        {key: "suspendTimeout", label: "Suspend after", min: 10, max: 86400, unit: "s"},
+        {key: "suspendTimeout", label: "Suspend after", min: 10, max: 86400, step: 10, unit: "s", hint: "Delay after displays turn off before suspending the system."},
         {key: "respectAppInhibitors", label: "Respect application inhibitors"},
-        {key: "inhibitOnAudio", label: "Keep awake while audio is playing"}
+        {key: "inhibitOnAudio", label: "Prevent idle while audio is playing", hint: "Automatically pauses Hikai idle actions while an active audio stream is detected."}
     ]
+
+    // Keep stepper edits within their descriptor bounds.
+    function idleDescriptor(descriptor) {
+        return descriptor
+    }
+
+    // Explain saved runtime policy independently from unsaved settings edits.
+    readonly property string idleStatus: !IdleService.owner ? "Idle management is inactive in Classic."
+        : !IdleService.settings.enabled ? "Idle management is disabled. Apply to activate your changes."
+        : !IdleService.enabled ? "Idle management is waiting for session services or display recovery."
+        : IdleService.customInhibit.manual ? "Keep Awake is on. Idle actions are paused."
+        : (IdleService.settings.inhibitOnAudio && IdleService.customInhibit.audio) ? "Audio keep-awake is active. Idle actions are paused."
+        : IdleService.customInhibit.error ? "Could not check idle inhibitors. Idle actions are paused."
+        : !IdleService.customInhibit.known ? "Checking idle inhibitors…"
+        : "Idle management is active. Waiting for inactivity."
+    Component.onCompleted: IdleService.refreshInhibit()
 
     // Save only dirty domains and retain the existing validation guards.
     function canActivate(label) {
@@ -82,7 +98,8 @@ Item {
             SettingsSectionCard {
                 width: parent.width
                 title: "Idle & Power"
-                Text { width: parent.width; text: "Enabled stages must have increasing timeouts: dim, lock, display off, suspend. Changes take effect after Apply."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 1 }
+                Text { width: parent.width; text: "Stages execute in sequence: Dim → Lock → Display off → Suspend. Timers are cumulative (each stage counts after the previous stage completes). Changes take effect after Apply."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 1 }
+                Text { width: parent.width; text: root.idleStatus; wrapMode: Text.Wrap; color: Theme.fgDim; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 1; Accessible.name: text }
                 Repeater {
                     id: idleRows
                     model: root.controls
@@ -92,6 +109,24 @@ Item {
                         spacing: Theme.spaceSm
                         Rectangle { width: parent.width; height: 1; color: root.highlightedId === "idle-" + modelData.key ? Theme.accent : Theme.hoverMuted }
                         Text { text: modelData.label; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize }
+                        Text {
+                            width: parent.width
+                            visible: !!modelData.hint
+                            text: modelData.hint || ""
+                            color: Theme.fgDescription
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Math.max(10, Theme.fontSize - 2)
+                            wrapMode: Text.Wrap
+                        }
+                        Text {
+                            width: parent.width
+                            visible: modelData.key === "inhibitOnAudio" && ShellSettingsStore.values.idle.inhibitOnAudio !== ShellSettingsStore.savedValues.idle.inhibitOnAudio
+                            text: "Change pending Apply"
+                            color: Theme.accent
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Math.max(10, Theme.fontSize - 2)
+                            wrapMode: Text.Wrap
+                        }
                         Loader {
                             width: parent.width
                             property var descriptor: modelData
@@ -122,6 +157,12 @@ Item {
         command: [Env.binDir + "/quick_actions_ctl.py", "toggle", "idleInhibit"]
         onExited: code => { if (code !== 0) root.actionError = "Could not change Keep Awake" }
     }
+    Timer {
+        interval: 2000
+        running: root.visible && IdleService.owner
+        repeat: true
+        onTriggered: IdleService.refreshInhibit()
+    }
     Component {
         id: toggle
         SettingsSwitch {
@@ -135,7 +176,8 @@ Item {
     Component {
         id: numeric
         SettingsNumberRow {
-            descriptor: parent.descriptor
+            descriptor: root.idleDescriptor(parent.descriptor)
+            showSlider: false
             value: ShellSettingsStore.values.idle[descriptor.key]
             enabled: root.editable
             shortcutTarget: root.shortcutTarget

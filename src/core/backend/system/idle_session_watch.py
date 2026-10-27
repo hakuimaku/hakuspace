@@ -29,10 +29,16 @@ class SessionWatch:
         method = "GetSession" if session_id else "GetSessionByPID"
         params = GLib.Variant("(s)", (session_id,)) if session_id else GLib.Variant("(u)", (os.getpid(),))
         self.session_path = self.call(MANAGER_PATH, MANAGER_IFACE, method, params, "(o)").unpack()[0]
+        self.subscriptions = []
+
+    def subscribe(self):
+        """Subscribe only while the sleep delay fd is already held."""
+        if self.subscriptions:
+            return
         self.subscriptions = [
-            connection.signal_subscribe(BUS_NAME, SESSION_IFACE, None, self.session_path,
+            self.connection.signal_subscribe(BUS_NAME, SESSION_IFACE, None, self.session_path,
                                         None, Gio.DBusSignalFlags.NONE, self.on_session),
-            connection.signal_subscribe(BUS_NAME, MANAGER_IFACE, "PrepareForSleep", MANAGER_PATH,
+            self.connection.signal_subscribe(BUS_NAME, MANAGER_IFACE, "PrepareForSleep", MANAGER_PATH,
                                         None, Gio.DBusSignalFlags.NONE, self.on_sleep),
         ]
 
@@ -60,6 +66,7 @@ class SessionWatch:
     def start(self):
         """Publish readiness only after the delay inhibitor has been acquired."""
         self.acquire_delay()
+        self.subscribe()
         preparing = self.call(MANAGER_PATH, "org.freedesktop.DBus.Properties", "Get",
                               GLib.Variant("(ss)", (MANAGER_IFACE, "PreparingForSleep")), "(v)").unpack()[0]
         self.emit({"event": "ready"})
@@ -73,10 +80,11 @@ class SessionWatch:
 
     def prepare_sleep(self, sleeping):
         """Rearm before publishing wake and identify each sleep transaction."""
+        if sleeping == self.sleeping:
+            return
+        self.acquire_delay()
         if sleeping:
             self.sleep_serial += 1
-        else:
-            self.acquire_delay()
         self.sleeping = sleeping
         self.emit({"event": "prepare-sleep", "sleeping": sleeping, "serial": self.sleep_serial})
 

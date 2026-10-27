@@ -90,7 +90,7 @@ from pathlib import Path
 import re
 
 values = json.loads(Path(sys.argv[1]).read_text())
-assert values["version"] == 8
+assert values["version"] == 9
 assert values["roundedScreen"] == {"radius": 20, "borderThickness": 4}
 assert values["appearance"] == {"baseRadius": 12, "surfaceTone": "dark", "colorMode": "dark"}
 assert all(values["topbar"].values())

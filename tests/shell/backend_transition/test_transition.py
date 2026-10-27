@@ -75,6 +75,11 @@ elif name == "hypridle":
     event("start-hypridle")
     model["procs"].append("hypridle")
     save()
+elif name == "idle_actions.sh":
+    assert args == ["recover"]
+    event("idle-action:recover")
+    if model.get("fail") == "idle-recover":
+        sys.exit(1)
 elif name == "busctl":
     event("notification-owner")
     if not model["owner"]:
@@ -112,9 +117,30 @@ elif name == "qs":
     if "qs" not in model["procs"]:
         sys.exit(1)
     if target == "idle":
+        if method in ("release", "acquire"):
+            if method == "acquire" and model.get("delay_idle_acquire"):
+                model["idle_acquire_polls"] = model.get("idle_acquire_polls", 0) + 1
+                if model["idle_acquire_polls"] < 3:
+                    save()
+                    print("error:backend")
+                    sys.exit(0)
+            model["idle_released"] = method == "release"
+            model["idle_polls"] = 0
+            save()
+            print("ok")
+            sys.exit(0)
         assert method == "status"
-        enabled = backend == "hikai"
-        print(json.dumps(dict(backend=backend, enabled=enabled, released=not enabled, ready=True, configuredEnabled=True,
+        enabled = backend == "hikai" and not model.get("idle_released", False)
+        if model.get("idle_released") and model.get("idle_cleanup_pending"):
+            model["idle_polls"] += 1
+            if model["idle_polls"] < 3:
+                save()
+                print(json.dumps(dict(backend=backend, enabled=False, owner=True, released=False)))
+                sys.exit(0)
+            model["idle_cleanup_pending"] = False
+            event("idle:cleanup-finished")
+            save()
+        print(json.dumps(dict(backend=backend, enabled=enabled, owner=enabled, released=not enabled, ready=True, configuredEnabled=True,
                               **{key: dict(enabled=enabled, monitorEnabled=enabled)
                                  for key in ("dim", "lock", "displayOff", "suspend")})))
         sys.exit(0)
@@ -236,7 +262,7 @@ class BackendTransitionTest(unittest.TestCase):
         fixture = self.bin / "stub"
         fixture.write_text(STUB)
         fixture.chmod(0o755)
-        for name in ("hypridle", "qs", "pgrep", "pkill", "busctl", "setsid", "swaync", "waybar", "rm", "notify-send", "gdbus", "gsettings", "kitty",
+        for name in ("idle_actions.sh", "hypridle", "qs", "pgrep", "pkill", "busctl", "setsid", "swaync", "waybar", "rm", "notify-send", "gdbus", "gsettings", "kitty",
                      "opaque_theme.sh", "appearance_ctl.sh", "hikai_chrome_state_ctl.py", "rounded_screen_manager.sh", "edge_trigger_manager.sh",
                      "taskbar_manager.sh", "waybar_manager.sh", "desktop_icons_manager.sh", "cava_manager.sh"):
             (self.bin / name).symlink_to(fixture)

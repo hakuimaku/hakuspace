@@ -106,10 +106,11 @@ ShellRoot {
                 if (IdleService.effects.running || IdleService.jobs.length) return
                 root.check(!IdleService.dim.applied && !IdleService.display.applied, "wake restores effects")
                 IdleService.forceStage("dim")
-                root.backend("classic")
+                IdleService.release()
                 root.next()
             } else if (root.step === 9) {
-                if (IdleService.enabled || AppState.shellBackend !== "classic" || IdleService.effects.running || IdleService.jobs.length) return
+                if (!JSON.parse(IdleService.status()).released) return
+                if (AppState.shellBackend !== "classic") { root.backend("classic"); return }
                 root.check(!IdleService.dim.applied && !IdleService.suspendPending, "handoff cancels pending stages")
                 root.backend("hikai")
                 root.next()

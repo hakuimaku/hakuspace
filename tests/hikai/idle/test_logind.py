@@ -67,6 +67,35 @@ class LogindBridgeTests(unittest.TestCase):
         self.assertEqual([event["event"] for event in self.events], ["ready", "prepare-sleep", "lock", "unlock"])
         self.assertEqual(self.connection.signal_subscribe.call_args_list[0].args[3], "/org/freedesktop/login1/session/test")
 
+    def test_delay_precedes_subscriptions_and_ready(self):
+        """There is no subscribed sleep callback without an already-owned delay fd."""
+        descriptor = self.supply_fd()
+        self.connection.signal_subscribe.side_effect = lambda *args: os.fstat(descriptor).st_ino
+        self.connection.call_sync.return_value = GLib.Variant("(v)", (GLib.Variant("b", False),))
+        self.watch.start()
+        calls = [call[0] for call in self.connection.mock_calls]
+        self.assertLess(calls.index("call_with_unix_fd_list_sync"), calls.index("signal_subscribe"))
+        self.assertEqual(self.events, [{"event": "ready"}])
+
+    def test_missing_fd_and_duplicate_sleep_signals(self):
+        """Defensive acquisition and duplicate signals retain one fd and one serial."""
+        descriptor = self.supply_fd()
+        self.watch.prepare_sleep(True)
+        self.watch.prepare_sleep(True)
+        os.fstat(descriptor)
+        self.assertEqual(self.watch.sleep_serial, 1)
+        self.assertEqual(self.connection.call_with_unix_fd_list_sync.call_count, 1)
+        self.assertEqual(len(self.events), 1)
+        self.watch.acknowledge(b"secure 1")
+        self.watch.acknowledge(b"secure 1")
+        with self.assertRaises(OSError):
+            os.fstat(descriptor)
+        self.supply_fd()
+        self.watch.prepare_sleep(False)
+        self.watch.prepare_sleep(False)
+        self.assertEqual(self.connection.call_with_unix_fd_list_sync.call_count, 2)
+        self.assertEqual(self.watch.sleep_serial, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

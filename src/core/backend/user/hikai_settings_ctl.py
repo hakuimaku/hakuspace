@@ -10,17 +10,17 @@ from pathlib import Path
 
 # Keep runtime state outside this versioned preference schema.
 DEFAULTS = {
-    "version": 8,
+    "version": 9,
     "appearance": {"baseRadius": 12, "surfaceTone": "dark", "colorMode": "dark"},
     "roundedScreen": {"radius": 20, "borderThickness": 4},
     "dock": {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 36,
              "hoverLift": 14, "hoverScale": 0, "showTrash": True, "showDevices": True},
     "topbar": dict.fromkeys(("workspaces", "windowTitle", "center", "cava", "tray",
                              "quickControls", "recorder", "clock", "notifications"), True),
-    "idle": {"enabled": True, "dimEnabled": True, "dimTimeout": 200, "dimPercent": 10,
-             "lockEnabled": True, "lockTimeout": 230, "displayOffEnabled": True,
-             "displayOffTimeout": 300, "suspendEnabled": True, "suspendTimeout": 360,
-             "respectAppInhibitors": True, "inhibitOnAudio": True},
+    "idle": {"enabled": True, "dimEnabled": True, "dimTimeout": 300, "dimPercent": 10,
+             "lockEnabled": True, "lockTimeout": 120, "displayOffEnabled": True,
+             "displayOffTimeout": 120, "suspendEnabled": True, "suspendTimeout": 600,
+             "respectAppInhibitors": True, "inhibitOnAudio": False},
 }
 
 
@@ -30,7 +30,7 @@ def validate(values, partial=False):
         raise ValueError("expected a shell settings object with known fields")
     if not partial and set(values) != set(DEFAULTS):
         raise ValueError("missing shell settings fields")
-    if "version" in values and (type(values["version"]) is not int or values["version"] != 8):
+    if "version" in values and (type(values["version"]) is not int or values["version"] != 9):
         raise ValueError("unsupported schema version")
     for section in ("appearance", "roundedScreen", "topbar", "dock", "idle"):
         if section not in values:
@@ -47,7 +47,7 @@ def validate(values, partial=False):
                     valid = type(value) is bool
                 else:
                     low, high = (1, 100) if key == "dimPercent" else (10, 86400)
-                    valid = type(value) is int and low <= value <= high
+                    valid = type(value) is int and low <= value <= high and (key == "dimPercent" or value % 10 == 0)
             elif section == "dock":
                 if key == "visibilityMode":
                     valid = type(value) is str and value in ("autohide", "always")
@@ -69,13 +69,6 @@ def validate(values, partial=False):
                 valid = type(value) is str and value in ("ink", "dark", "soft")
             if not valid:
                 raise ValueError(f"{section}.{key}: invalid value")
-    # Cross-field ordering is checked after patches are merged with saved values.
-    if not partial:
-        idle = values["idle"]
-        timeouts = [idle[stage + "Timeout"] for stage in ("dim", "lock", "displayOff", "suspend")
-                    if idle[stage + "Enabled"]]
-        if any(left >= right for left, right in zip(timeouts, timeouts[1:])):
-            raise ValueError("idle: enabled timeouts must increase: dim < lock < display off < suspend")
     return values
 
 
@@ -126,8 +119,32 @@ def migrate(values):
         if set(values) != set(DEFAULTS) - {"idle"}:
             raise ValueError("invalid version 7 shell settings")
         values = copy.deepcopy(values)
-        values.update(version=8, idle=copy.deepcopy(DEFAULTS["idle"]))
+        values.update(version=9, idle=copy.deepcopy(DEFAULTS["idle"]))
         return validate(values), True
+    if type(original_version) is int and original_version == 8:
+        if set(values) != set(DEFAULTS):
+            raise ValueError("invalid version 8 shell settings")
+        values = copy.deepcopy(values)
+        values["version"] = 9
+        if type(values.get("idle")) is not dict or set(values["idle"]) != set(DEFAULTS["idle"]):
+            raise ValueError("invalid version 8 idle settings")
+        values["idle"]["inhibitOnAudio"] = False
+        for stage in ("dim", "lock", "displayOff", "suspend"):
+            tk = stage + "Timeout"
+            if tk in values["idle"] and isinstance(values["idle"][tk], int) and values["idle"][tk] % 10 != 0:
+                values["idle"][tk] = max(10, round(values["idle"][tk] / 10) * 10)
+        return validate(values), True
+    if type(original_version) is int and original_version == 9:
+        if "idle" in values and isinstance(values["idle"], dict):
+            fixed_timeouts = False
+            for stage in ("dim", "lock", "displayOff", "suspend"):
+                tk = stage + "Timeout"
+                if tk in values["idle"] and isinstance(values["idle"][tk], int) and values["idle"][tk] % 10 != 0:
+                    values = copy.deepcopy(values)
+                    values["idle"][tk] = max(10, round(values["idle"][tk] / 10) * 10)
+                    fixed_timeouts = True
+            if fixed_timeouts:
+                return validate(values), True
     return validate(values), False
 
 

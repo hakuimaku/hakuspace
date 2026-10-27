@@ -36,27 +36,31 @@ class IdleSettingsTests(unittest.TestCase):
         self.assertEqual(ctl.migrate(values), (values, False))
 
     def test_invalid_types_ranges_and_keys(self):
-        """Reject unknown keys, loose boolean types, and out-of-range numeric fields."""
+        """Reject unknown keys, loose boolean types, out-of-range numeric fields, and non-multiples of 10."""
         for patch_value in ({"unknown": True}, {"enabled": 1}, {"dimTimeout": True},
-                            {"dimTimeout": 9}, {"suspendTimeout": 86401}, {"dimPercent": 0},
+                            {"dimTimeout": 9}, {"dimTimeout": 11}, {"suspendTimeout": 86401}, {"dimPercent": 0},
                             {"dimPercent": 101}, {"respectAppInhibitors": "true"}):
             with self.subTest(value=patch_value), self.assertRaises(ValueError):
                 ctl.validate({"idle": patch_value}, partial=True)
 
     def test_merged_ordering_and_disabled_stages(self):
-        """Ordering is validated against saved values before an atomic replacement."""
+        """Timeouts must be multiples of 10, while stages can be set to independent round timeouts."""
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, HAKUSPACE_HIKAI_SETTINGS_FILE=tmp + "/hikai-shell.json"):
             def write(idle):
                 """Submit an idle-only partial patch through the public API."""
                 with patch.dict(os.environ, HAKUSPACE_HIKAI_SETTINGS_JSON=json.dumps({"idle": idle})):
                     return ctl.run("write")["values"]
             values = write({"dimPercent": 12})
-            self.assertEqual(values["idle"]["dimTimeout"], 200)
+            self.assertEqual(values["idle"]["dimTimeout"], 300)
             original = Path(tmp + "/hikai-shell.json").read_bytes()
-            for idle in ({"lockTimeout": 200}, {"dimTimeout": 400}, {"suspendTimeout": 300}):
+            for idle in ({"lockTimeout": 201}, {"dimTimeout": 405}, {"suspendTimeout": 307}):
                 with self.subTest(idle=idle), self.assertRaises(ValueError):
                     write(idle)
                 self.assertEqual(Path(tmp + "/hikai-shell.json").read_bytes(), original)
+            # Equal or non-increasing round timeouts are accepted
+            values = write({"dimTimeout": 10, "lockTimeout": 10})
+            self.assertEqual(values["idle"]["dimTimeout"], 10)
+            self.assertEqual(values["idle"]["lockTimeout"], 10)
             values = write({"dimEnabled": False, "lockTimeout": 120, "displayOffTimeout": 180, "suspendTimeout": 600})
             self.assertEqual(values["idle"]["dimPercent"], 12)
             self.assertEqual(values["appearance"], ctl.DEFAULTS["appearance"])

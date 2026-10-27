@@ -80,6 +80,64 @@ class IdleOwnershipTests(unittest.TestCase):
         path.write_text(json.dumps(model))
         self.session.run_cli("--recover")
         self.session.assert_backend("classic")
+        self.session.assert_order("idle-action:recover", "start-hypridle")
+
+    def test_native_cleanup_precedes_classic_ownership(self):
+        """A pending native recovery is drained before the backend file and daemon change."""
+        self.session.prepare("hikai")
+        path = self.session.root / "model.json"
+        model = json.loads(path.read_text())
+        model["idle_cleanup_pending"] = True
+        path.write_text(json.dumps(model))
+        self.session.run_cli("set", "classic")
+        self.session.assert_backend("classic")
+        self.session.assert_order("idle:release", "idle:cleanup-finished", "start-hypridle")
+        cleanup = next(event for event in self.session.events() if event["action"] == "idle:cleanup-finished")
+        self.assertEqual(cleanup["backend"], "hikai")
+
+    def test_failed_emergency_cleanup_cannot_start_classic_idle(self):
+        """A dead runtime is not permission to skip its required effect recovery."""
+        self.session.prepare("hikai", "idle-recover")
+        self.session.run_cli("--recover", success=False)
+        model = json.loads((self.session.root / "model.json").read_text())
+        self.assertNotIn("hypridle", model["procs"])
+        self.assertEqual((self.session.state / "[shell].backend").read_text().strip(), "hikai")
+
+    def test_hikai_commit_waits_for_native_backend_watcher(self):
+        """Acquire retries until native FileView acknowledges the committed backend."""
+        self.session.prepare("classic")
+        path = self.session.root / "model.json"
+        model = json.loads(path.read_text())
+        model["delay_idle_acquire"] = True
+        path.write_text(json.dumps(model))
+        self.session.run_cli("set", "hikai")
+        self.session.assert_backend("hikai")
+        self.assertEqual(json.loads(path.read_text())["idle_acquire_polls"], 3)
+
+    def test_twenty_switch_cycles_keep_exactly_one_owner(self):
+        """Exercise the real serialized switch CLI repeatedly against inert process owners."""
+        self.session.prepare("classic")
+        path = self.session.root / "model.json"
+        config = self.session.root / "home/hakucfg/config/hypridle.conf"
+        config.parent.mkdir(parents=True)
+        config.write_text("$timeout_lock = 230\n")
+        hikai = self.session.root / "home/hakucfg/hikai/hikai-shell.json"
+        hikai.parent.mkdir(parents=True)
+        document = json.loads(subprocess.check_output([self.session.bin / "hikai_settings_ctl.py", "read"],
+                                                     env=self.session.env, text=True))["values"]
+        document["idle"].update(dimTimeout=30, lockTimeout=60)
+        hikai.write_text(json.dumps(document) + "\n")
+        original_hikai = hikai.read_bytes()
+        for cycle in range(20):
+            for backend in ("hikai", "classic"):
+                with self.subTest(cycle=cycle, backend=backend):
+                    self.session.run_cli("set", backend)
+                    model = json.loads(path.read_text())
+                    self.assertEqual(model["procs"].count("hypridle"), int(backend == "classic"))
+                    self.assertEqual(model.get("idle_released", False), backend == "classic")
+                    self.assertFalse(model.get("idle_cleanup_pending", False))
+        self.assertEqual(config.read_text(), "$timeout_lock = 230\n")
+        self.assertEqual(hikai.read_bytes(), original_hikai)
 
     def test_supervisor_crash_loop_launches_idle_recovery(self):
         """Run three inert runtime crashes through the real detached fallback path."""

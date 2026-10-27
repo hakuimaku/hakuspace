@@ -36,10 +36,11 @@ QML
 for name in idle_actions.sh power_ctl.sh; do
     cat > "$bin_root/$name" <<'SH'
 #!/bin/sh
+if [ "$1" = --owner ]; then shift 2; fi
 printf '%s %s\n' "${0##*/}" "$*" >> "$HAKUSPACE_IDLE_ACTION_LOG"
 SH
 done
-printf '#!/bin/sh\nexit 0\n' > "$bin_root/idle_inhibit.sh"
+printf '#!/bin/sh\nif [ "$1" = --status-json ]; then echo '\''{"manual":false,"audio":false,"inhibited":false}'\''; fi\nexit 0\n' > "$bin_root/idle_inhibit.sh"
 cat > "$bin_root/idle_session_watch.py" <<'PY'
 #!/usr/bin/env python3
 import json

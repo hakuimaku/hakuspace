@@ -47,10 +47,10 @@ QtObject {
 
     // Produce independent snapshots so Discard never shares mutable nested objects.
     function defaults() {
-        return {version: 8, appearance: {baseRadius: 12, surfaceTone: "dark", colorMode: "dark"},
-            idle: {enabled: true, dimEnabled: true, dimTimeout: 200, dimPercent: 10,
-                lockEnabled: true, lockTimeout: 230, displayOffEnabled: true, displayOffTimeout: 300,
-                suspendEnabled: true, suspendTimeout: 360, respectAppInhibitors: true, inhibitOnAudio: true},
+        return {version: 9, appearance: {baseRadius: 12, surfaceTone: "dark", colorMode: "dark"},
+            idle: {enabled: true, dimEnabled: true, dimTimeout: 300, dimPercent: 10,
+                lockEnabled: true, lockTimeout: 120, displayOffEnabled: true, displayOffTimeout: 120,
+                suspendEnabled: true, suspendTimeout: 600, respectAppInhibitors: true, inhibitOnAudio: false},
             roundedScreen: {radius: 20, borderThickness: 4},
             dock: {visibilityMode: "autohide", exclusiveSpace: false, iconSize: 36, hoverLift: 14, hoverScale: 0,
                 showTrash: true, showDevices: true},
@@ -60,14 +60,14 @@ QtObject {
     // Mirror the backend contract before applying or accepting a response.
     function validate(draft) {
         var schema = defaults()
-        if (!draft || draft.version !== 8 || Object.keys(draft).length !== 6) return false
+        if (!draft || draft.version !== 9 || Object.keys(draft).length !== 6) return false
         for (var section of ["appearance", "roundedScreen", "topbar", "dock", "idle"]) {
             if (!draft[section] || Object.keys(draft[section]).length !== Object.keys(schema[section]).length) return false
             for (var key in schema[section]) {
                 var value = draft[section][key]
                 if (section === "idle") {
                     if (typeof schema.idle[key] === "boolean") { if (typeof value !== "boolean") return false }
-                    else if (!Number.isInteger(value) || value < (key === "dimPercent" ? 1 : 10) || value > (key === "dimPercent" ? 100 : 86400)) return false
+                    else if (!Number.isInteger(value) || value < (key === "dimPercent" ? 1 : 10) || value > (key === "dimPercent" ? 100 : 86400) || (key.endsWith("Timeout") && value % 10 !== 0)) return false
                 }
                 if (section === "topbar" && typeof value !== "boolean") return false
                 if (key === "visibilityMode" && ["autohide", "always"].indexOf(value) < 0) return false
@@ -80,12 +80,6 @@ QtObject {
                 if (key === "colorMode" && ["dark", "light"].indexOf(value) < 0) return false
                 if (key === "surfaceTone" && ["ink", "dark", "soft"].indexOf(value) < 0) return false
             }
-        }
-        var previous = 0
-        for (var stage of ["dim", "lock", "displayOff", "suspend"]) {
-            if (!draft.idle[stage + "Enabled"]) continue
-            if (draft.idle[stage + "Timeout"] <= previous) return false
-            previous = draft.idle[stage + "Timeout"]
         }
         return true
     }
