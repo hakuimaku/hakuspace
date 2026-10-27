@@ -190,7 +190,7 @@ def main():
         for name in ("services", "components"):
             shutil.copytree(ROOT / "src/home/.config/quickshell/hakuspace" / name, shell / name)
         shutil.copy(ROOT / "tools/profiling/harness/wallpaper_soak.qml", shell / "shell.qml")
-        for name in ("backend", "lib", "theme"):
+        for name in ("backend", "lib", "theme", "state"):
             shutil.copytree(ROOT / "src/core" / name, work / "src/core" / name)
         home = work / "home"
         (home / "hakucfg").mkdir(parents=True)

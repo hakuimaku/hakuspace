@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """Preserve legacy runtime state while upgrading to owner-prefixed filenames."""
 import fcntl
+import json
 import os
 from pathlib import Path
 import stat
 import sys
+import tempfile
 
 # Support both repository sources and the flattened installed bin directory.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend/user"))
-from haku_state import STATE_FILES, state_root
+from haku_state import STATE_FILES, state_root, state_path
 from hikai_settings_ctl import open_parent
 
 # Alias order gives the current Haku Space preference priority over stale names.
@@ -38,6 +40,9 @@ LEGACY_KEYS = {
 }
 # Obsolete state has no writer; retain its bytes in the migration archive only.
 RETIRED_FILES = ("taskbar_autohide_state",)
+# Required user preferences once stored alongside disposable generated data.
+CACHED_STATE_KEYS = (("current_wallpaper", "desktop.wallpaper.current.json"),
+                     ("desktop-icons-positions.json", "desktop.icons.positions.json"))
 
 
 def read_entry(parent_fd, name):
@@ -62,7 +67,7 @@ def move_entry(source_fd, name, destination_fd, target):
     os.fsync(source_fd)
 
 
-def archive_entry(state_fd, name):
+def archive_entry(state_fd, name, data=None):
     """Keep each conflicting or obsolete preference in a private backup directory."""
     backup = state_root() / "migration-backup/state-naming-v1" / name
     backup_fd = open_parent(backup, True)
@@ -71,7 +76,22 @@ def archive_entry(state_fd, name):
         while True:
             target = name if suffix == 0 else f"{name}.{suffix}"
             try:
-                move_entry(state_fd, name, backup_fd, target)
+                if data is None:
+                    move_entry(state_fd, name, backup_fd, target)
+                else:
+                    # Legacy cache may be mounted separately from persistent state.
+                    fd, temporary = tempfile.mkstemp(prefix=".cache-state-", dir=backup.parent)
+                    try:
+                        with os.fdopen(fd, "wb") as stream:
+                            stream.write(data)
+                            stream.flush()
+                            os.fsync(stream.fileno())
+                        os.link(temporary, target, dst_dir_fd=backup_fd)
+                        os.fsync(backup_fd)
+                        os.unlink(name, dir_fd=state_fd)
+                        os.fsync(state_fd)
+                    finally:
+                        Path(temporary).unlink(missing_ok=True)
                 break
             except FileExistsError:
                 suffix += 1
@@ -82,6 +102,7 @@ def archive_entry(state_fd, name):
 
 def migrate():
     """Upgrade existing state under a directory lock without manufacturing defaults."""
+    migrate_cached_state()
     try:
         state_fd = open_parent(state_root() / "state/.entry", False)
     except FileNotFoundError:
@@ -110,6 +131,57 @@ def migrate():
                 archive_entry(state_fd, legacy)
     finally:
         os.close(state_fd)
+
+
+def migrate_cached_state():
+    """Move legacy preferences out of cache, retaining conflicts in the state archive."""
+    legacy_root = Path.home() / ".cache"
+    if not any((legacy_root / name).exists() or (legacy_root / name).is_symlink()
+               for name, key in CACHED_STATE_KEYS):
+        return
+    cache_fd = open_parent(legacy_root / ".entry", False)
+    try:
+        fcntl.flock(cache_fd, fcntl.LOCK_EX)
+        for name, key in CACHED_STATE_KEYS:
+            original = read_entry(cache_fd, name)
+            if original is None:
+                continue
+            lines = original.decode("utf-8").splitlines() if name == "current_wallpaper" else []
+            source = lines[0] if lines else ""
+            target = state_path(key)
+            state_fd = open_parent(target, True)
+            try:
+                if read_entry(state_fd, target.name) is None:
+                    if name == "desktop-icons-positions.json":
+                        # Cache and state may reside on different filesystems.
+                        payload = original
+                    else:
+                        kind = "video" if Path(source).suffix.lower() in {".mp4", ".mkv", ".webm", ".mov", ".m4v"} else "static"
+                        payload = (json.dumps({"path": source, "kind": kind}) + "\n").encode()
+                    fd, temporary = tempfile.mkstemp(prefix=".cache-state-", dir=target.parent)
+                    try:
+                        with os.fdopen(fd, "wb") as stream:
+                            stream.write(payload)
+                            stream.flush()
+                            os.fsync(stream.fileno())
+                        try:
+                            os.link(temporary, target.name, dst_dir_fd=state_fd)
+                            os.fsync(state_fd)
+                        except FileExistsError:
+                            pass
+                    finally:
+                        Path(temporary).unlink(missing_ok=True)
+                if name == "desktop-icons-positions.json" and read_entry(state_fd, target.name) != original:
+                    archive_entry(cache_fd, name, original)
+                elif name == "current_wallpaper" and json.loads(read_entry(state_fd, target.name)).get("path") != source:
+                    archive_entry(cache_fd, name, original)
+                else:
+                    os.unlink(name, dir_fd=cache_fd)
+                    os.fsync(cache_fd)
+            finally:
+                os.close(state_fd)
+    finally:
+        os.close(cache_fd)
 
 
 if __name__ == "__main__":

@@ -15,9 +15,15 @@ fi
 # This script retrieves the icon path for a given application using GTK's icon theme
 # It caches the result to avoid repeated lookups (enhance performance).
 
+# Resolve shared paths in source and flattened installations.
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$SCRIPT_DIR"
+[[ -f "$LIB_DIR/haku_cache.sh" ]] || LIB_DIR="$SCRIPT_DIR/../../lib"
+source "$LIB_DIR/haku_cache.sh" || exit 1
+
 APP="$1"
-CACHE_DIR="$HOME/.cache/taskbar_icons"
-CACHE_FILE="$HOME/.cache/taskbar_icon_cache.txt"
+CACHE_DIR="$HAKUSPACE_CACHE_DIR/taskbar/icons"
+CACHE_FILE="$HAKUSPACE_CACHE_DIR/taskbar/icon-cache.txt"
 THEME_FILE="$HOME/.config/gtk-3.0/settings.ini"
 mkdir -p "$CACHE_DIR"
 
@@ -65,6 +71,7 @@ esac
 FALLBACK_NAMES="['application-x-executable-symbolic', 'application-x-executable', 'preferences-other', 'exec', 'system-run']"
 
 PYTHON_CODE="
+import os, sys
 import gi; gi.require_version('Gtk', '3.0'); from gi.repository import Gtk, Gdk
 theme = Gtk.IconTheme.get_default()
 
@@ -87,14 +94,14 @@ if not info:
 if info:
     if info.is_symbolic():
         pixbuf, was_symbolic = info.load_symbolic(fg, fg, fg, fg)
-        out_path = '$CACHE_DIR/${APP}.png'
+        out_path = os.path.join(sys.argv[1], sys.argv[2] + '.png')
         pixbuf.savev(out_path, 'png', [], [])
         print(out_path)
     else:
         print(info.get_filename())
 "
 
-PATH_FOUND=$(python3 -c "$PYTHON_CODE")
+PATH_FOUND=$(python3 -c "$PYTHON_CODE" "$CACHE_DIR" "$APP")
 
 if [ -n "$PATH_FOUND" ]; then
     if [ ! -f "$CACHE_FILE" ]; then

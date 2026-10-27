@@ -277,7 +277,7 @@ QtObject {
         return true
     }
     // Open the managed cache without exposing a command entry field.
-    function openCache() { Quickshell.execDetached(["xdg-open", (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/hakuspace/wallpaper"]) }
+    function openCache() { Quickshell.execDetached(command(["open-cache"])) }
 
     Component.onCompleted: restore()
     property Connections chromeConnection: Connections {

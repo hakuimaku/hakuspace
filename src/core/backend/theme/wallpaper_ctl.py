@@ -17,14 +17,15 @@ from pathlib import Path
 
 # Source and flattened installations use the same settings and state helpers.
 SCRIPT_DIR = Path(__file__).resolve().parent
-sys.path.extend([str(SCRIPT_DIR.parent / "user"), str(SCRIPT_DIR.parent.parent / "lib")])
+sys.path.extend([str(SCRIPT_DIR.parent / "user"), str(SCRIPT_DIR.parent.parent / "lib"), str(SCRIPT_DIR.parent.parent / "state")])
 from hikai_wallpaper_settings_ctl import run as settings_run
 from haku_state import state_path
+from haku_cache import cache_root
 
 # Recognized local media extensions never allow network URLs as sources.
 IMAGES = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".avif"}
 VIDEOS = {".mp4", ".mkv", ".webm", ".mov", ".m4v"}
-CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "hakuspace/wallpaper"
+CACHE = cache_root() / "wallpaper"
 CURRENT = state_path("desktop.wallpaper.current.json")
 RUNTIME = state_path("desktop.wallpaper.runtime.json")
 PENDING = CACHE / "pending.json"
@@ -305,9 +306,10 @@ def cache_summary(width=1920, height=1080):
         except FileNotFoundError:
             continue
     sizes = {}
-    for folder in ("proxies", "thumbnails", "metadata"):
+    # Include Classic's nested previews and derived images in the shared disk total.
+    for folder in ("", "proxies", "thumbnails", "metadata"):
         sizes[folder] = 0
-        for path in (CACHE / folder).iterdir() if (CACHE / folder).is_dir() else []:
+        for path in (CACHE / folder).rglob("*") if folder else CACHE.glob("*.jpg"):
             try:
                 if path.is_file() and path.suffix != ".lock":
                     sizes[folder] += path.stat().st_size
@@ -387,16 +389,6 @@ def commit(token):
         raise ValueError(applied.stderr.strip() or "could not apply wallpaper")
     atomic_json(CURRENT, pending)
     PENDING.unlink(missing_ok=True)
-    # Preserve the legacy read-only compatibility pointer for other desktop tools.
-    legacy = Path.home() / ".cache/current_wallpaper"
-    legacy.parent.mkdir(parents=True, exist_ok=True)
-    fd, temporary = tempfile.mkstemp(prefix=".wallpaper-", dir=legacy.parent)
-    try:
-        with os.fdopen(fd, "w") as stream:
-            stream.write(pending["path"] + "\n")
-        os.replace(temporary, legacy)
-    finally:
-        Path(temporary).unlink(missing_ok=True)
     return pending
 
 
@@ -431,12 +423,8 @@ def discover(kind="all"):
 
 
 def current_source():
-    """Restore native state, adopting the Classic compatibility pointer on first start."""
-    record = read_json(CURRENT, {})
-    if record.get("path"):
-        return record["path"]
-    legacy = Path.home() / ".cache/current_wallpaper"
-    return legacy.read_text().splitlines()[0] if legacy.is_file() and legacy.stat().st_size else ""
+    """Read the sole persistent source shared by Classic and Hikai."""
+    return read_json(CURRENT, {}).get("path", "")
 
 
 def main():
@@ -454,7 +442,7 @@ def main():
         # Prefer keeps Qt's validated platform ordering instead of forcing a GPU vendor.
         os.execvpe("qs", ["qs", *sys.argv[2:]], environment)
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("list", "inspect", "select", "commit", "cancel", "current", "status", "restore", "proxy", "runtime", "handoff", "warm", "clear-image", "restore-image"))
+    parser.add_argument("action", choices=("list", "inspect", "select", "commit", "cancel", "current", "status", "restore", "proxy", "runtime", "handoff", "warm", "clear-image", "restore-image", "source", "remember", "open-cache"))
     parser.add_argument("source", nargs="?", default="")
     parser.add_argument("--profile", choices=("original", "screen", "low-memory"))
     parser.add_argument("--kind", choices=("all", "static", "video"), default="all")
@@ -464,6 +452,26 @@ def main():
     parser.add_argument("--probe", action="store_true")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
+    if args.action in ("current", "source", "remember", "restore", "restore-image", "status"):
+        # Import legacy preferences before either frontend reads or changes selection.
+        from haku_state_migrate import migrate_cached_state
+        migrate_cached_state()
+    if args.action == "source":
+        return current_source()
+    if args.action == "remember":
+        path = Path(args.source).expanduser().resolve(strict=True)
+        if not path.is_file():
+            raise ValueError("unsupported wallpaper source")
+        mime = subprocess.check_output(["file", "-b", "--mime-type", str(path)], text=True).strip()
+        if not mime.startswith(("image/", "video/")):
+            raise ValueError("unsupported wallpaper source")
+        record = {"path": str(path), "kind": "video" if mime.startswith("video/") else "static"}
+        atomic_json(CURRENT, record)
+        return record
+    if args.action == "open-cache":
+        CACHE.mkdir(parents=True, exist_ok=True)
+        subprocess.run(["xdg-open", str(CACHE)], check=True)
+        return {"ok": True}
     if args.action == "list":
         return discover(args.kind)
     if args.action == "inspect":
@@ -553,7 +561,8 @@ if __name__ == "__main__":
     # Termination unwinds FFmpeg cleanup instead of leaving an orphan encoder.
     signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(143))
     try:
-        print(json.dumps(main(), ensure_ascii=False))
+        result = main()
+        print(result if isinstance(result, str) else json.dumps(result, ensure_ascii=False))
     except (OSError, ValueError, KeyError, IndexError, ZeroDivisionError, subprocess.SubprocessError) as error:
         print(str(error), file=sys.stderr)
         sys.exit(1)

@@ -8,11 +8,12 @@
 // HakuSpace Rofi Theme
 // Theme: television.rasi
 
-@import "../../../.local/state/hakuspace/theme/rofi-style.rasi"
+@import "~/.local/state/hakuspace/theme/rofi-style.rasi"
+@import "~/.local/state/hakuspace/theme/rofi-wallpaper.rasi"
 
 /* ===== GLOBAL VARIABLES ===== */
 * {
-    img:                 url("../../.cache/walpaper_wide_gen.jpg", width);
+    img:                 @wallpaper-wide;
     background:          rgba(0, 0, 0, 0.7);
     foreground:          #dfdfdf;
     background-color:    transparent;

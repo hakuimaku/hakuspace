@@ -16,6 +16,8 @@ from pathlib import Path
 # Support repository modules and the flattened installed bin directory.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib"))
 from haku_state import state_path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "state"))
+from haku_state_migrate import migrate_cached_state
 
 import cairo
 import subprocess
@@ -46,7 +48,8 @@ CELL_HEIGHT = 100
 PADDING = 6
 
 CONFIG_DIR = os.path.expanduser("~/hakucfg/config")
-POSITIONS_FILE = os.path.expanduser("~/.cache/desktop-icons-positions.json")
+# Icon positions are persistent user layout, independent of generated thumbnails.
+POSITIONS_FILE = str(state_path("desktop.icons.positions.json"))
 CONF_FILE = os.path.join(CONFIG_DIR, "desktop-icons.conf")
 
 DEFAULT_CSS = """
@@ -303,6 +306,8 @@ black_labels = {BLACK_LABELS}
 load_config()
 
 def load_positions():
+    """Read persistent layout after preserving any legacy cached positions."""
+    migrate_cached_state()
     if not os.path.exists(POSITIONS_FILE):
         return {}
     try:

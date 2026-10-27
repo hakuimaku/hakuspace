@@ -14,8 +14,7 @@ WALL_DIR=${WALL_DIR:-$HOME/Pictures/Wallpapers}
 WALL_MPV_DIR=${WALL_MPV_DIR:-$HOME/Videos/Wallpapers}
 ACCENT_COLOR_BASED_ON_WALLPAPER=${ACCENT_COLOR_BASED_ON_WALLPAPER:-true}
 ACCENT_COLOR_MODE=${ACCENT_COLOR_MODE:-vivid}
-PREVIEW_DIR="$WALL_MPV_DIR/.thumbnails"
-CURRENT_WALL_FILE=${HAKUSPACE_CURRENT_WALL_FILE:-$HOME/.cache/current_wallpaper}
+
 # Backend selection belongs at this compatibility boundary, never in UI delegates.
 NATIVE_HIKAI=false
 [[ $(cat "$HOME/.local/state/hakuspace/state/[shell].backend" 2>/dev/null) == hikai ]] && NATIVE_HIKAI=true
@@ -57,10 +56,12 @@ SET_WALLPAPER_SCRIPT="$(resolve_script wallpaper_set.sh ../../theme/wallpaper_se
 GET_ACCENT_COLOR_SCRIPT="$(resolve_script get_accent_color.py ../../theme/get_accent_color.py)" || exit 1
 THEME_CTL="$(resolve_script theme_ctl.sh theme_ctl.sh)" || exit 1
 source_core_lib accent_color.sh ../../lib/accent_color.sh || exit 1
+source_core_lib haku_cache.sh ../../lib/haku_cache.sh || exit 1
+# Classic video previews are disposable and do not belong in the media library.
+PREVIEW_DIR="$HAKUSPACE_CACHE_DIR/wallpaper/thumbnails/classic"
 
 current_path() {
-    [[ -f "$CURRENT_WALL_FILE" ]] || return 0
-    head -n1 "$CURRENT_WALL_FILE"
+    python3 "$(resolve_script wallpaper_ctl.py wallpaper_ctl.py)" source
 }
 
 current_kind() {

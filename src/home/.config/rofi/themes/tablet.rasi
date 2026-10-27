@@ -8,11 +8,12 @@
 // HakuSpace Rofi Theme
 // Theme: tablet.rasi
 
-@import "../../../.local/state/hakuspace/theme/rofi-style.rasi"
+@import "~/.local/state/hakuspace/theme/rofi-style.rasi"
+@import "~/.local/state/hakuspace/theme/rofi-wallpaper.rasi"
 
 /* ===== GLOBAL VARIABLES ===== */
 * {
-    img:                 url("../../.cache/walpaper_box_gen.jpg", height);
+    img:                 @wallpaper-box;
     background:          rgba(0, 0, 0, 0.7);
     foreground:          #dfdfdf;
     background-color:    transparent;

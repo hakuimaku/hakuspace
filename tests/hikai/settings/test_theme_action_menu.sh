@@ -18,7 +18,7 @@ cp tests/hikai/settings/harness/theme_action_menu.qml "$shell_root/shell.qml"
 cp tests/support/fixtures/wayland_{keyboard,pointer}.py "$test_root/"
 cp src/core/backend/theme/theme_ctl.sh src/core/backend/user/hikai_settings_ctl.py "$test_root/home/.local/bin/"
 cp src/core/theme/accent_palette.py "$test_root/home/.local/bin/"
-cp src/core/lib/{haku_theme.sh,haku_state.sh,accent_color.sh} "$test_root/home/.local/bin/"
+cp src/core/lib/{haku_theme.sh,haku_state.sh,haku_state.py,haku_cache.py,accent_color.sh} "$test_root/home/.local/bin/"
 ln -s "$test_root/home/.local/bin" "$test_root/src/home/.local/bin"
 ln -s "$test_root/home/.local/state" "$test_root/src/home/.local/state"
 cat > "$test_root/render.sh" <<'RENDER'

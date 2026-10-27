@@ -34,6 +34,8 @@ fi
 # Validate test layout and the runtime state naming contract.
 python3 tests/support/test_layout.py
 python3 tools/checks/state_schema.py
+python3 tools/checks/cache_paths.py
+python3 tests/config/cache/test_paths.py
 python3 tests/config/state/test_naming.py
 
 # Static and component checks run without long profiling workloads.

@@ -17,6 +17,7 @@ haku_state_path() {
         desktop.taskbar.requested) name='[desktop].taskbar.requested' ;;
         desktop.dockbar.requested) name='[desktop].dockbar.requested' ;;
         desktop.icons.enabled) name='[desktop].icons.enabled' ;;
+        desktop.icons.positions.json) name='[desktop].icons.positions.json' ;;
         desktop.wallpaper.current.json) name='[desktop].wallpaper.current.json' ;;
         desktop.wallpaper.runtime.json) name='[desktop].wallpaper.runtime.json' ;;
         desktop.edge-trigger.enabled) name='[desktop].edge-trigger.enabled' ;;

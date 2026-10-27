@@ -65,7 +65,7 @@ WAYBAR_MODE_USER=()
 # What do they do? These are ImageMagick options, Generate wallpaper preview image for some Rofi themes
 # Works best with wallpapers that have the subject in the center.
 # Change the options below to your liking, or leave them as default.
-# You can see the results in ~/.cache/, change wallpaper to gen them
+# Previews live in ${XDG_CACHE_HOME:-$HOME/.cache}/hakuspace/wallpaper/; change wallpaper to regenerate them.
 
 # Rofi style: television.rasi
 # GEN_WIDE_OPTS=${GEN_WIDE_OPTS:-"-resize 800x250^ -gravity Center -crop 800x250+0+0 +repage"}

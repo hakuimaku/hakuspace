@@ -25,11 +25,11 @@ class WallpaperTests(unittest.TestCase):
     """Use a private home, state root and artifact cache for every assertion."""
 
     def setUp(self):
-        """Isolate every controller mutation, including compatibility pointers."""
+        """Isolate every controller mutation, including persistent selections."""
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.home = Path(self.temp.name)
-        environment = patch.dict(os.environ, HOME=str(self.home), HAKUSPACE_WALLPAPER_SETTINGS_FILE=str(self.home / "settings/wallpaper.json"))
+        environment = patch.dict(os.environ, HOME=str(self.home), XDG_CACHE_HOME=str(self.home / ".cache"), HAKUSPACE_WALLPAPER_SETTINGS_FILE=str(self.home / "settings/wallpaper.json"))
         environment.start()
         self.addCleanup(environment.stop)
         self.cache = self.home / "cache"
@@ -158,6 +158,17 @@ class WallpaperTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 wallpaper.inspect(video)
 
+    def test_shared_cache_total_includes_classic_images(self):
+        """Disk usage includes generated wallpaper images and nested Classic thumbnails."""
+        for path, data in ((self.cache / "walpaper_wide_gen.jpg", b"wide"),
+                           (self.cache / "thumbnails/classic/video.jpg", b"preview")):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+        summary = wallpaper.cache_summary()
+        self.assertEqual(summary["cacheTotalBytes"], 11)
+        self.assertEqual(summary["cachePreviewBytes"], 7)
+        self.assertEqual(summary["cacheBytes"], 0)
+
     def test_prepare_commit_and_failure_keep_current(self):
         """Current state changes only after an explicit matching readiness token."""
         source = self.static / "wall.png"
@@ -173,7 +184,8 @@ class WallpaperTests(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             wallpaper.prepare(str(self.video / "missing.mp4"), "low-memory", 1920, 1080)
         self.assertEqual(wallpaper.CURRENT.read_bytes(), before)
-        self.assertEqual((self.home / ".cache/current_wallpaper").read_text().strip(), str(source))
+        self.assertEqual(json.loads(wallpaper.CURRENT.read_text())["path"], str(source))
+        self.assertFalse((self.home / ".cache/current_wallpaper").exists())
 
     def test_probe_reports_missing_proxy_without_encoding_or_staging(self):
         """A missing proxy is queued separately and never changes pending selection."""
@@ -507,28 +519,28 @@ class WallpaperTests(unittest.TestCase):
             calls = (self.home / "awww.log").read_text()
             self.assertIn("img " + str(source), calls)
             for name in ("walpaper_wide_gen.jpg", "walpaper_box_gen.jpg"):
-                cache = self.home / ".cache" / name
+                cache = self.home / ".cache/hakuspace/wallpaper" / name
                 self.assertTrue(cache.is_file())
                 cache.unlink()
             record = wallpaper.prepare(str(video), "screen", 1920, 1080)
             with patch.dict(os.environ, XDG_CURRENT_DESKTOP="niri"):
                 wallpaper.commit(record["token"])
             for name in ("walpaper_wide_gen.jpg", "walpaper_box_gen.jpg"):
-                self.assertTrue((self.home / ".cache" / name).is_file())
+                self.assertTrue((self.home / ".cache/hakuspace/wallpaper" / name).is_file())
             backdrop_calls = (self.home / "awww.log").read_text()[len(calls):].splitlines()
-            self.assertEqual(backdrop_calls, ["query -n awww-daemon-backdrop", "img -n awww-daemon-backdrop --transition-type none " + str(self.home / ".cache/backdrop.jpg")])
-            self.assertTrue((self.home / ".cache/backdrop.jpg").is_file())
+            self.assertEqual(backdrop_calls, ["query -n awww-daemon-backdrop", "img -n awww-daemon-backdrop --transition-type none " + str(self.home / ".cache/hakuspace/wallpaper/backdrop.jpg")])
+            self.assertTrue((self.home / ".cache/hakuspace/wallpaper/backdrop.jpg").is_file())
             self.assertFalse((self.home / "unexpected.log").exists())
             before = wallpaper.CURRENT.read_bytes()
-            pointer = (self.home / ".cache/current_wallpaper").read_text()
+            self.assertFalse((self.home / ".cache/current_wallpaper").exists())
             with patch.dict(os.environ, AWWW_FAIL="1"):
                 record = wallpaper.prepare(str(source), "screen", 1920, 1080)
                 with self.assertRaisesRegex(ValueError, "Failed to set image"):
                     wallpaper.commit(record["token"])
             self.assertEqual(wallpaper.CURRENT.read_bytes(), before)
-            self.assertEqual((self.home / ".cache/current_wallpaper").read_text(), pointer)
+            self.assertFalse((self.home / ".cache/current_wallpaper").exists())
 
-    def test_classic_resume_reapplies_native_compatibility_selection(self):
+    def test_classic_resume_migrates_legacy_selection(self):
         """Classic reuses the latest selected image even when its daemon cached an older one."""
         source = self.static / "latest.svg"
         source.write_text('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>')
@@ -548,6 +560,9 @@ class WallpaperTests(unittest.TestCase):
             env=dict(os.environ, PATH=str(binary) + ":" + os.environ["PATH"], XDG_CURRENT_DESKTOP="labwc"), capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual((self.home / "resumed.txt").read_text().strip(), str(source))
+        self.assertFalse(pointer.exists())
+        canonical = self.home / ".local/state/hakuspace/state/[desktop].wallpaper.current.json"
+        self.assertEqual(json.loads(canonical.read_text())["path"], str(source))
 
     def test_native_random_wallpaper_uses_state_without_mpvpaper(self):
         """Video rotation follows native selection even when no legacy video process exists."""

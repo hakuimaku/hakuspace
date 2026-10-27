@@ -11,6 +11,9 @@ Persistent feature state lives in `~/.local/state/hakuspace/state/`. Each filena
 | `desktop.taskbar.requested` | `[desktop].taskbar.requested` |
 | `desktop.dockbar.requested` | `[desktop].dockbar.requested` |
 | `desktop.icons.enabled` | `[desktop].icons.enabled` |
+| `desktop.icons.positions.json` | `[desktop].icons.positions.json` |
+| `desktop.wallpaper.current.json` | `[desktop].wallpaper.current.json` |
+| `desktop.wallpaper.runtime.json` | `[desktop].wallpaper.runtime.json` |
 | `desktop.edge-trigger.enabled` | `[desktop].edge-trigger.enabled` |
 | `screen.rounded.enabled` | `[screen].rounded.enabled` |
 | `screen.rounded.dynamic` | `[screen].rounded.dynamic` |
@@ -48,3 +51,5 @@ Visual setup stores only explicit source locations in `system.visual-sources.jso
 and an operational activation retry flag in `system.visual-reconcile.pending`.
 Git revisions, dirty status and installed asset presence are derived live; no
 separate visual installation manifest is used. See [visual setup](../visual-setup.md).
+
+Wallpaper selection and desktop icon positions are persistent state. Legacy cache entries are imported before startup/default initialization or direct component access, then removed. Existing canonical data wins; conflicting legacy bytes are archived in the existing migration backup directory. Cache imports use private file permissions. Deleting the [HakuSpace cache](cache.md) preserves both preferences.

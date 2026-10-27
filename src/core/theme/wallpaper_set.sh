@@ -17,10 +17,19 @@ fi
 
 AWWW_OPTS=${AWWW_OPTS:-"--transition-type random --transition-step 90 --transition-fps 60"}
 
+# Resolve shared paths in source and flattened installations.
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$SCRIPT_DIR"
+[[ -f "$LIB_DIR/haku_cache.sh" ]] || LIB_DIR="$SCRIPT_DIR/../lib"
+source "$LIB_DIR/haku_cache.sh" || exit 1
+
 WALLPAPER="${1:-}"
 # Native commits reuse image application and cache generation without reentering IPC.
 NATIVE_COMMIT=${HAKUSPACE_WALLPAPER_NATIVE_COMMIT:-0}
-CACHE_DIR="$HOME/.cache"
+CACHE_DIR="$HAKUSPACE_CACHE_DIR/wallpaper"
+# Resolve the wallpaper state controller alongside source or installed scripts.
+WALLPAPER_CTL="$SCRIPT_DIR/wallpaper_ctl.py"
+[[ -f "$WALLPAPER_CTL" ]] || WALLPAPER_CTL="$SCRIPT_DIR/../backend/theme/wallpaper_ctl.py"
 mkdir -p "$CACHE_DIR"
 
 GEN_WIDE_OPTS=${GEN_WIDE_OPTS:-"-resize 800x250^ -gravity Center -crop 800x250+0+0 +repage"}
@@ -74,17 +83,10 @@ make_cache_img() {
         fi
     fi
 
-    # Make wallpaper current image file
-    # if magick "${WALLPAPER}[0]" "$CACHE_DIR/current_wallpaper.jpg" 2>/dev/null; then
-    #     echo "Current wallpaper image generated at $CACHE_DIR/current_wallpaper.jpg"
-    # else
-    #     is_successfull=0
-    # fi
-
     # Make wallpaper preview image for Rofi
     if magick "${WALLPAPER}[0]" $GEN_WIDE_OPTS "$CACHE_DIR/walpaper_wide_gen.jpg" 2>/dev/null && \
         magick "${WALLPAPER}[0]" $GEN_BOX_OPTS "$CACHE_DIR/walpaper_box_gen.jpg" 2>/dev/null; then
-        echo "Wallpaper preview image generated at $CACHE_DIR/walpaper_preview.jpg and $CACHE_DIR/walpaper_preview_vertical.jpg"
+        echo "Wallpaper previews generated in $CACHE_DIR"
     else
         is_successfull=0
     fi
@@ -93,6 +95,7 @@ make_cache_img() {
         echo "Set Wallpaper" "Failed to generate cache images wallpaper via ImageMagick" >&2
         notify-send "Set Wallpaper" "Failed to generate cache images wallpaper via ImageMagick"
     fi
+    python3 "$LIB_DIR/haku_cache.py" || return 1
     return 0
 }
 
@@ -138,7 +141,9 @@ case "$MIME_TYPE" in
 
         # Set static/animated image background using awww
         if awww img "$WALLPAPER" $AWWW_OPTS; then
-            echo "$WALLPAPER" > "$CACHE_DIR/current_wallpaper"
+            if [[ "$NATIVE_COMMIT" != 1 ]]; then
+                python3 "$WALLPAPER_CTL" remember "$WALLPAPER" >/dev/null || exit 1
+            fi
             make_cache_img
         else
             echo "Error: Failed to set image wallpaper using awww." >&2
@@ -170,7 +175,9 @@ case "$MIME_TYPE" in
         # Verify whether mpvpaper process started successfully
         sleep 0.3
         if kill -0 "$MPV_PID" 2>/dev/null; then
-            echo "$WALLPAPER" > "$CACHE_DIR/current_wallpaper"
+            if [[ "$NATIVE_COMMIT" != 1 ]]; then
+                python3 "$WALLPAPER_CTL" remember "$WALLPAPER" >/dev/null || exit 1
+            fi
             make_cache_img
         else
             echo "Error: mpvpaper failed to render video '$WALLPAPER' on monitor '$MONITOR'." >&2
