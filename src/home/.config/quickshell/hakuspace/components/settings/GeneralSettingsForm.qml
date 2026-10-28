@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import Quickshell.Io
 import "../../services"
-import "SettingsCatalog.js" as Catalog
+import "../../config/SettingsCatalog.js" as Catalog
 import "SettingsNavigation.js" as Navigation
 
 Column {

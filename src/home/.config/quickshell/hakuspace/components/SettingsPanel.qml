@@ -8,7 +8,7 @@ import "../services"
 import "motion/PanelRevealGeometry.js" as Reveal
 import "settings" as SettingsPages
 import "settings/SettingsNavigation.js" as Navigation
-import "settings/SettingsCatalog.js" as Catalog
+import "../config/SettingsCatalog.js" as Catalog
 
 PanelWindow {
     id: root

@@ -1,5 +1,6 @@
 import QtQuick
 import "../../services"
+import "../../config/UiCatalog.js" as UiCatalog
 
 Item {
     id: root
@@ -28,11 +29,7 @@ Item {
     readonly property real listBottomPadding: 30
     readonly property real joinOverlap: 20
 
-    readonly property var tools: [
-        { key: "quickActions", icon: "󰀻", label: "Quick Actions" },
-        { key: "clipboard", icon: "󰅌", label: "Clipboard" },
-        { key: "tempNote", icon: "󰏫", label: "Temp Note" }
-    ]
+    readonly property var tools: UiCatalog.sidebarTools
     readonly property real preferredBodyHeight: listTopPadding + tools.length * itemDiameter
         + (tools.length - 1) * itemSpacing + listBottomPadding
 

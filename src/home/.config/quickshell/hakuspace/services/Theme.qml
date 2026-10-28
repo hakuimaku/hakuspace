@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "../config"
 
 QtObject {
     id: root
@@ -9,32 +10,32 @@ QtObject {
     // Hikai preferences select a palette without regenerating shared theme files.
     readonly property string colorMode: ShellSettingsStore.colorMode
     readonly property bool isLight: colorMode === "light"
-    property string accentSeed: "#ffffff"
-    property color accentDark: "#ffffff"
-    property color accentLight: "#414141"
+    property string accentSeed: Design.defaultAccentSeed
+    property color accentDark: Design.defaultAccentDark
+    property color accentLight: Design.defaultAccentLight
     readonly property color accent: isLight ? accentLight : accentDark
-    readonly property color surface: ShellSettingsStore.surfaceTone === "ink" ? (isLight ? "#ffffff" : "#000000")
-                                      : ShellSettingsStore.surfaceTone === "soft" ? (isLight ? "#d6d6d6" : "#171717")
-                                      : (isLight ? "#eeeeee" : "#0b0b0b")
-    readonly property color onAccentColor: isLight ? "#ffffff" : "#000000"
-    readonly property color onAccentMuted: Qt.alpha(onAccentColor, 0.7)
+    readonly property color surface: ShellSettingsStore.surfaceTone === "ink" ? (isLight ? Design.surfaceInkLight : Design.surfaceInkDark)
+                                      : ShellSettingsStore.surfaceTone === "soft" ? (isLight ? Design.surfaceSoftLight : Design.surfaceSoftDark)
+                                      : (isLight ? Design.surfaceDefaultLight : Design.surfaceDefaultDark)
+    readonly property color onAccentColor: isLight ? Design.onAccentLight : Design.onAccentDark
+    readonly property color onAccentMuted: Qt.alpha(onAccentColor, Design.onAccentMutedOpacity)
     readonly property color fg: accent
-    readonly property color fgDim: Qt.alpha(accent, 0.8)
-    readonly property color fgDescription: isLight ? "#595959" : Qt.hsla(0, 0, root.fgDim.hslLightness, 1)
-    readonly property color fgMuted: isLight ? "#99000000" : "#80ffffff"
-    property string border: "transparent"
+    readonly property color fgDim: Qt.alpha(accent, Design.fgDimOpacity)
+    readonly property color fgDescription: isLight ? Design.fgDescriptionLight : Qt.hsla(0, 0, root.fgDim.hslLightness, 1)
+    readonly property color fgMuted: isLight ? Design.fgMutedLight : Design.fgMutedDark
+    property string border: Design.defaultBorder
     readonly property color surfaceHi: accent
-    readonly property color hoverMuted: ShellSettingsStore.surfaceTone === "ink" ? (isLight ? "#e9e9e9" : "#202020")
-                                         : ShellSettingsStore.surfaceTone === "soft" ? (isLight ? "#c0c0c0" : "#333333")
-                                         : (isLight ? "#d7d7d7" : "#2b2b2b")
+    readonly property color hoverMuted: ShellSettingsStore.surfaceTone === "ink" ? (isLight ? Design.hoverInkLight : Design.hoverInkDark)
+                                         : ShellSettingsStore.surfaceTone === "soft" ? (isLight ? Design.hoverSoftLight : Design.hoverSoftDark)
+                                         : (isLight ? Design.hoverDefaultLight : Design.hoverDefaultDark)
     // Neutral overlays reverse polarity with the surface.
-    readonly property color overlayInk: isLight ? "#000000" : "#ffffff"
-    readonly property color scrollbarIdle: Qt.alpha(overlayInk, 0.4)
-    readonly property color scrollbarHover: Qt.alpha(overlayInk, 0.7)
-    readonly property color guideNavigation: isLight ? "#285786" : "#8bb9e8"
-    readonly property color guideActions: isLight ? "#3d6536" : "#a7c4a0"
-    readonly property color guideEditing: isLight ? "#694581" : "#c6aedb"
-    readonly property color guideReading: isLight ? "#70501f" : "#d9bd8c"
+    readonly property color overlayInk: isLight ? Design.overlayInkLight : Design.overlayInkDark
+    readonly property color scrollbarIdle: Qt.alpha(overlayInk, Design.scrollbarIdleOpacity)
+    readonly property color scrollbarHover: Qt.alpha(overlayInk, Design.scrollbarHoverOpacity)
+    readonly property color guideNavigation: isLight ? Design.guideNavigationLight : Design.guideNavigationDark
+    readonly property color guideActions: isLight ? Design.guideActionsLight : Design.guideActionsDark
+    readonly property color guideEditing: isLight ? Design.guideEditingLight : Design.guideEditingDark
+    readonly property color guideReading: isLight ? Design.guideReadingLight : Design.guideReadingDark
 
     // Preserve dark-mode surface relationships while reversing their light-mode polarity.
     function surfaceHighlight(factor) {
@@ -44,48 +45,48 @@ QtObject {
         return isLight ? Qt.lighter(hoverMuted, factor) : Qt.darker(hoverMuted, factor)
     }
     // Status colors retain readable text contrast on light surfaces.
-    readonly property color danger: isLight ? "#b32020" : "#ff6b6b"
-    readonly property color dangerFill: isLight ? "#b32020" : "#e05555"
-    readonly property color warning: isLight ? "#805600" : "#ffaa00"
-    readonly property color success: isLight ? "#356329" : "#98c379"
+    readonly property color danger: isLight ? Design.dangerLight : Design.dangerDark
+    readonly property color dangerFill: isLight ? Design.dangerFillLight : Design.dangerFillDark
+    readonly property color warning: isLight ? Design.warningLight : Design.warningDark
+    readonly property color success: isLight ? Design.successLight : Design.successDark
     // Shared timing and foreground for the shell-mode wipe.
-    readonly property color shellTransitionBlack: "#000000"
-    readonly property int shellTransitionAccentDuration: 560
-    readonly property int shellTransitionBlackDuration: 400
-    readonly property int shellTransitionBlackDelay: 60
-    readonly property int shellTransitionHoldDuration: 240
-    readonly property color workspaceDot: isLight ? "#a0a0a0" : "#424242"
+    readonly property color shellTransitionBlack: Design.shellTransitionBlack
+    readonly property int shellTransitionAccentDuration: Motion.shellTransitionAccentDuration
+    readonly property int shellTransitionBlackDuration: Motion.shellTransitionBlackDuration
+    readonly property int shellTransitionBlackDelay: Motion.shellTransitionBlackDelay
+    readonly property int shellTransitionHoldDuration: Motion.shellTransitionHoldDuration
+    readonly property color workspaceDot: isLight ? Design.workspaceDotLight : Design.workspaceDotDark
     
     // Preserve the generated baseline with one shell-owned radius family.
     readonly property int radius: ShellSettingsStore.baseRadius
-    readonly property int largeRadius: radius + 4
-    readonly property int hugRadius: radius + 16
-    readonly property int giantRadius: radius + 36
-    property int borderWidth: 0
-    property int gap: 4
-    property int pad: 10
+    readonly property int largeRadius: radius + Design.largeRadiusOffset
+    readonly property int hugRadius: radius + Design.hugRadiusOffset
+    readonly property int giantRadius: radius + Design.giantRadiusOffset
+    property int borderWidth: Design.defaultBorderWidth
+    property int gap: Design.defaultGap
+    property int pad: Design.defaultPad
     // Comfortable metrics for floating panels, text cards and their controls.
-    readonly property int spaceXs: 4
-    readonly property int spaceSm: 8
-    readonly property int spaceMd: 12
-    readonly property int spaceLg: 16
-    readonly property int spaceXl: 24
-    readonly property int panelPadding: 24
-    readonly property int cardPadding: 16
-    readonly property int controlHeight: 36
-    readonly property int comfortableControlHeight: 40
-    readonly property int sectionGap: 24
+    readonly property int spaceXs: Design.spaceXs
+    readonly property int spaceSm: Design.spaceSm
+    readonly property int spaceMd: Design.spaceMd
+    readonly property int spaceLg: Design.spaceLg
+    readonly property int spaceXl: Design.spaceXl
+    readonly property int panelPadding: Design.panelPadding
+    readonly property int cardPadding: Design.cardPadding
+    readonly property int controlHeight: Design.controlHeight
+    readonly property int comfortableControlHeight: Design.comfortableControlHeight
+    readonly property int sectionGap: Design.sectionGap
     
-    property string font: "sans-serif"
+    property string font: Design.defaultFont
     property string fontFamily: font
-    property int fontSize: 14
-    readonly property int topBarTopPadding: 4
-    readonly property real topBarContentHeight: Math.max(30, fontSize * 2.3) + topBarTopPadding
-    readonly property int topBarBottomPadding: 4
+    property int fontSize: Design.defaultFontSize
+    readonly property int topBarTopPadding: Design.topBarTopPadding
+    readonly property real topBarContentHeight: Math.max(Design.topBarMinContentHeight, fontSize * Design.topBarFontHeightFactor) + topBarTopPadding
+    readonly property int topBarBottomPadding: Design.topBarBottomPadding
     readonly property real topBarHeight: topBarContentHeight + topBarBottomPadding
-    readonly property real levelOsdWidth: Math.max(240, fontSize * 22)
-    readonly property int levelOsdPadding: 8
-    readonly property real levelOsdHeight: Math.max(36, fontSize * 2.4 + 2 * (levelOsdPadding + gap))
+    readonly property real levelOsdWidth: Math.max(Design.levelOsdMinWidth, fontSize * Design.levelOsdFontWidthFactor)
+    readonly property int levelOsdPadding: Design.levelOsdPadding
+    readonly property real levelOsdHeight: Math.max(Design.levelOsdMinHeight, fontSize * Design.levelOsdFontHeightFactor + 2 * (levelOsdPadding + gap))
     
     // Convert rgba() to Qt-compatible #AARRGGBB before applying theme data.
     function parseColor(c) {

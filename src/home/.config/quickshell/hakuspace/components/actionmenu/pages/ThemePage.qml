@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import "../../../services"
+import "../../../config/UiCatalog.js" as UiCatalog
 import ".." as ActionMenu
 
 ActionMenu.ActionMenuPage {
@@ -15,36 +16,11 @@ ActionMenu.ActionMenuPage {
 
     property int selectedIndex: 0
 
-    readonly property var items: [
-        {
-            id: "font",
-            icon: "",
-            label: "Font family",
-            secondary: Theme.fontFamily,
-            page: "pages/ThemeFontPage.qml"
-        },
-        {
-            id: "size",
-            icon: "",
-            label: "Font size",
-            secondary: Theme.fontSize + " px",
-            page: "pages/ThemeFontSizePage.qml"
-        },
-        {
-            id: "accent",
-            icon: "",
-            label: "Accent color",
-            secondary: Theme.accent,
-            page: "pages/ThemeAccentPage.qml"
-        },
-        {
-            id: "niriAnimation",
-            icon: "󰤕",
-            label: "Niri Animation",
-            secondary: "Window transitions",
-            page: "pages/NiriAnimationPage.qml"
-        }
-    ].filter(item => item.id !== "niriAnimation" || WM.backendName === "niri")
+    // Resolve live summaries without storing runtime theme objects in the catalog.
+    readonly property var items: UiCatalog.actionMenuThemeItems.map(function(item) {
+        return Object.assign({}, item, {secondary: item.secondaryKey
+            ? Theme[item.secondaryKey] + (item.secondarySuffix || "") : item.secondary})
+    }).filter(item => item.id !== "niriAnimation" || WM.backendName === "niri")
 
     onItemsChanged: selectedIndex = Math.max(0, Math.min(selectedIndex, items.length - 1))
 

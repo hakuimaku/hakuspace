@@ -25,7 +25,7 @@ const forceSource = service.match(/function forceStage\(name\) \{([\s\S]*?)\n   
 const forceStage = new Function('Quickshell', 'enabled', 'stages', 'name', forceSource)
 assert.equal(forceStage({env: () => ''}, true, {}, 'suspend'), 'error:test-only')
 const catalog = vm.createContext({})
-vm.runInContext(fs.readFileSync(path.join(shell, 'components/settings/SettingsCatalog.js'), 'utf8'), catalog)
+vm.runInContext(fs.readFileSync(path.join(shell, 'config/SettingsCatalog.js'), 'utf8'), catalog)
 for (const query of ['sleep', 'lock', 'idle', 'screen off', 'caffeine', 'audio playback']) {
     assert(catalog.search(query).some(item => item.category === 'Session' && item.store === 'shell'), query)
 }

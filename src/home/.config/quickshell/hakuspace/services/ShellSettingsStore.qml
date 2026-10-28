@@ -3,6 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "."
+import "../config/Defaults.js" as Defaults
 
 QtObject {
     id: root
@@ -51,20 +52,12 @@ QtObject {
 
     // Produce independent snapshots so Discard never shares mutable nested objects.
     function defaults() {
-        return {version: 10, appearance: {baseRadius: 12, surfaceTone: "dark", colorMode: "dark"},
-            idle: {enabled: true, dimEnabled: true, dimTimeout: 300, dimPercent: 10,
-                lockEnabled: true, lockTimeout: 120, displayOffEnabled: true, displayOffTimeout: 120,
-                suspendEnabled: true, suspendTimeout: 600, respectAppInhibitors: true, inhibitOnAudio: false},
-            roundedScreen: {radius: 20, borderThickness: 4},
-            dock: {visibilityMode: "autohide", exclusiveSpace: false, iconSize: 36, hoverLift: 14, hoverScale: 0,
-                showTrash: true, showDevices: true},
-            topbar: {workspaces: true, windowTitle: true, center: true, cava: true, tray: true,
-                quickControls: true, powerProfile: true, wallpaperWorkspace: true, recorder: true, clock: true, notifications: true}}
+        return Defaults.shellDefaults()
     }
     // Mirror the backend contract before applying or accepting a response.
     function validate(draft) {
         var schema = defaults()
-        if (!draft || draft.version !== 10 || Object.keys(draft).length !== 6) return false
+        if (!draft || draft.version !== Defaults.shellSchemaVersion || Object.keys(draft).length !== 6) return false
         for (var section of ["appearance", "roundedScreen", "topbar", "dock", "idle"]) {
             if (!draft[section] || Object.keys(draft[section]).length !== Object.keys(schema[section]).length) return false
             for (var key in schema[section]) {

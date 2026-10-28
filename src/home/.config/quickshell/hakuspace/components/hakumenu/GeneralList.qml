@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import Quickshell.Io
 import "../../services"
+import "../../config/UiCatalog.js" as UiCatalog
 import "../motion" as Motion
 
 Item {
@@ -19,13 +20,7 @@ Item {
     signal launched()
     signal highlightedLabelChanged(string label)
 
-    readonly property var fixedItems: [
-        { label: "Wifi", icon: "󰖩", command: ["nm-connection-editor"] },
-        { label: "Bluetooth", icon: "󰂯", command: ["blueman-manager"] },
-        { label: "Disk Manager", icon: "󰋊", command: ["gparted"] },
-        { label: "Storage Manager", icon: "󰃢", command: ["kitty", "--class", "ncdu", "-e", "sudo", "ncdu", "/"] },
-        { label: "Audio Control", icon: "", command: ["pavucontrol"] }
-    ]
+    readonly property var fixedItems: UiCatalog.hakuMenuGeneralItems
 
     function cleanLabel(line) {
         var text = (line || "").trim()

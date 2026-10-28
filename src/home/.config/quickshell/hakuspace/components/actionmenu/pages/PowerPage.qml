@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell.Io
 import "../../../services"
+import "../../../config/UiCatalog.js" as UiCatalog
 import ".." as ActionMenu
 import "../../motion" as Motion
 
@@ -17,14 +18,7 @@ ActionMenu.ActionMenuPage {
 
     property int selectedIndex: 0
 
-    readonly property var actions: [
-        { id: "suspend", icon: "󰒲", label: "Suspend", danger: false },
-        { id: "reboot", icon: "󰑐", label: "Reboot", danger: true },
-        { id: "poweroff", icon: "󰐥", label: "Poweroff", danger: true },
-        { id: "hibernate", icon: "󰒲", label: "Hibernate", danger: false },
-        { id: "lock", icon: "󰌾", label: "Lock", danger: false },
-        { id: "logout", icon: "󰍃", label: "Logout", danger: false }
-    ]
+    readonly property var actions: UiCatalog.actionMenuPowerActions
 
     Process {
         id: powerProc

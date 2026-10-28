@@ -1,0 +1,3 @@
+module config
+singleton Design 1.0 Design.qml
+singleton Motion 1.0 Motion.qml

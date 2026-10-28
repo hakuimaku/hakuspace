@@ -11,7 +11,7 @@ trap 'rm -rf "$test_root"' EXIT
 shell_root="$test_root/home/.config/quickshell/hakuspace"
 mkdir -p "$shell_root" "$test_root/home/.local/bin" "$test_root/home/hakucfg/config" "$test_root/runtime" "$test_root/home/.local/state/hakuspace/theme"
 chmod 700 "$test_root/runtime"
-cp -R src/home/.config/quickshell/hakuspace/{services,components} "$shell_root/"
+cp -R src/home/.config/quickshell/hakuspace/{services,components,config} "$shell_root/"
 cp "$TEST_DIR/harness/light.qml" "$shell_root/shell.qml"
 # Expose the same flattened script layout as an installed session.
 while IFS= read -r source; do

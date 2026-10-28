@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import Quickshell.Io
 import "../../services"
+import "../../config/UiCatalog.js" as UiCatalog
 import "../motion" as Motion
 
 Item {
@@ -24,19 +25,7 @@ Item {
 
     readonly property bool hikaiBackend: (backendStateView.text() || "").trim().toLowerCase() === "hikai"
 
-    readonly property var items: [
-        { label: "Change Theme", icon: "", action: "Change Theme", toggle: false, showState: false, statePath: "", stateKind: "bool" },
-        { label: "Change Wallpaper", icon: "󰏜", action: "Change Wallpaper", toggle: false, showState: false, statePath: "", stateKind: "bool" },
-        { label: "Taskbar Mode", icon: "󰐃", action: "Taskbar Mode", toggle: true, showState: true, chromeKey: "taskbar" },
-        { label: "Cava Underbar", icon: "󰝚", action: "Cava Underbar", toggle: true, showState: true, statePath: Env.stateCavaEnabled, stateKind: "bool" },
-        { label: "Cava Dynamic Position", icon: "󰝚", action: "Cava Dynamic Position", toggle: true, showState: true, statePath: Env.stateCavaDynamicPosition, stateKind: "bool" },
-        { label: "Cava Color Mode", icon: "󰝚", action: "Cava Color Mode", toggle: true, showState: true, statePath: Env.stateCavaColorMode, stateKind: "cavaColor" },
-        { label: "Desktop Icons", icon: "", action: "Desktop Icons", toggle: true, showState: true, statePath: Env.stateDesktopIconsEnabled, stateKind: "bool" },
-        { label: "Dockbar", icon: "󰧨", action: "Dockbar", toggle: true, showState: true, chromeKey: "dockbar" },
-        { label: "Auto Random Wallpaper", icon: "", action: "Auto Random Wallpaper", toggle: true, showState: true, statePath: "/tmp/random_wallpaper_status", stateKind: "bool" },
-        { label: "Dark / Light Mode", icon: "󰔎", action: "colorMode", toggle: true, showState: true, stateKind: "colorMode" },
-        { label: "", icon: "󰆧", action: "", toggle: true, showState: false, statePath: Env.stateShellBackend, stateKind: "backend", backendSwitch: true }
-    ]
+    readonly property var items: UiCatalog.hakuMenuThemeItems
 
     function labelFor(item) {
         if (item && item.stateKind === "colorMode" && ShellSettingsStore.error)
@@ -134,9 +123,10 @@ Item {
         activateIndex(themeList.currentIndex)
     }
 
+    // Resolve static state identifiers through the runtime environment.
     function statePathFor(item) {
-        if (item.statePath && item.statePath.length > 0) return item.statePath
-        return ""
+        if (item.stateKey === "randomWallpaper") return "/tmp/random_wallpaper_status"
+        return item.stateKey ? Env[item.stateKey] : ""
     }
 
     function parseState(text, kind) {

@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Io
 import "../../services"
+import "../../config/UiCatalog.js" as UiCatalog
 
 FocusScope {
     id: root
@@ -12,16 +13,7 @@ FocusScope {
     property var toggleStates: ({})
     property string errorMessage: ""
     property string statusOutput: ""
-    readonly property var actions: [
-        { key: "wifi", icon: "󰤨", label: "Wi-Fi", toggle: true },
-        { key: "bluetooth", icon: "󰂯", label: "Bluetooth", toggle: true },
-        { key: "idleInhibit", icon: "󰈈", label: "Keep Awake", toggle: true },
-        { key: "nightLight", icon: "󰖔", label: "Night Light", toggle: true },
-        { key: "dockbar", icon: "󰐃", label: "Dockbar", toggle: true },
-        { key: "desktopIcons", icon: "󰀻", label: "Desktop Icons", toggle: true },
-        { key: "cava", icon: "󰝚", label: "Cava Underbar", toggle: true },
-        { key: "settings", icon: "󰒓", label: "Settings", toggle: false }
-    ]
+    readonly property var actions: UiCatalog.sidebarQuickActions
 
     readonly property int columnCount: 4
     readonly property int rowCount: Math.ceil(actions.length / columnCount)

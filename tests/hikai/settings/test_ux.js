@@ -12,7 +12,7 @@ function moduleAt(relative) {
     vm.runInContext(fs.readFileSync(path.join(shell, relative), 'utf8').replace(/^\.pragma library\s*$/m, ''), context)
     return context
 }
-const catalog = moduleAt('components/settings/SettingsCatalog.js')
+const catalog = moduleAt('config/SettingsCatalog.js')
 // Every editable template assignment is available and searchable without a mode switch.
 const template = fs.readFileSync(path.resolve(__dirname, '../../../src/home/hakucfg/setting.sh'), 'utf8')
 const keys = [...template.matchAll(/^([A-Z_]+)=/gm)].map(match => match[1]).filter(key => key !== 'SETTING_VERSION')

@@ -13,6 +13,7 @@ mkdir -p "$shell_root" "$bin_root" "$test_root/runtime" "$test_root/labwc" "$art
     "$test_root/home/.local/state/hakuspace/state"
 chmod 700 "$test_root/runtime"
 : > "$artifact_dir/actions.log"
+cp -R src/home/.config/quickshell/hakuspace/config "$shell_root/"
 mkdir -p "$shell_root/services"
 cp src/home/.config/quickshell/hakuspace/services/{AppState,Env,ShellSettingsStore,IdleService}.qml "$shell_root/services/"
 cp -R src/home/.config/quickshell/hakuspace/services/idle "$shell_root/services/"

@@ -21,6 +21,7 @@ class TempNoteOverlayTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             fixture = Path(directory)  # Hold the isolated QML tree and runtime.
             (fixture / "runtime").mkdir(mode=0o700)
+            shutil.copytree(SOURCE / "config", fixture / "config")
             (fixture / "services").mkdir()
             (fixture / "components").mkdir()
             for name in ("UiState", "Theme", "HAnimation"):

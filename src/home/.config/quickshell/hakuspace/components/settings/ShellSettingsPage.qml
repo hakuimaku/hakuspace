@@ -1,6 +1,6 @@
 import QtQuick
 import "../../services"
-import "SettingsCatalog.js" as Catalog
+import "../../config/SettingsCatalog.js" as Catalog
 
 SettingsCategoryPage {
     id: root

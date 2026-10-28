@@ -14,7 +14,7 @@ shell_root="$test_root/src/home/.config/quickshell/hakuspace"
 mkdir -p "$shell_root" "$test_root/home/Pictures/Wallpapers" "$test_root/home/Videos/Wallpapers" \
     "$test_root/home/hakucfg" "$test_root/runtime" "$test_root/labwc" "$test_root/src/core" "${HAKUSPACE_WALLPAPER_ARTIFACT_DIR:-$test_root/artifacts}"
 chmod 700 "$test_root/runtime"
-cp -R src/home/.config/quickshell/hakuspace/{services,components} "$shell_root/"
+cp -R src/home/.config/quickshell/hakuspace/{services,components,config} "$shell_root/"
 cp -R src/core/{backend,lib,theme,state} "$test_root/src/core/"
 cp tests/support/fixtures/wayland_{keyboard,pointer}.py "$test_root/"
 printf 'ACCENT_COLOR_BASED_ON_WALLPAPER=false\n' > "$test_root/home/hakucfg/setting.sh"

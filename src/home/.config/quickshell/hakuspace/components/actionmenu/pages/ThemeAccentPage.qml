@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell.Io
 import "../../../services"
+import "../../../config/UiCatalog.js" as UiCatalog
 import ".." as ActionMenu
 
 ActionMenu.ActionMenuPage {
@@ -18,16 +19,7 @@ ActionMenu.ActionMenuPage {
     property int selectedIndex: 0
     property string customHexInput: ""
 
-    readonly property var allItems: [
-        { isPicker: true, label: "Pick Color", secondary: "[Press Enter]", icon: "󰈊", hex: "" },
-        { isPicker: false, label: "Slate Blue", secondary: "#7288AE", icon: "", hex: "#7288AE" },
-        { isPicker: false, label: "Green", secondary: "#A2CB8B", icon: "", hex: "#A2CB8B" },
-        { isPicker: false, label: "Peach", secondary: "#FFB399", icon: "", hex: "#FFB399" },
-        { isPicker: false, label: "Yellow", secondary: "#EFBF04", icon: "", hex: "#EFBF04" },
-        { isPicker: false, label: "Pink", secondary: "#F9B2D7", icon: "", hex: "#F9B2D7" },
-        { isPicker: false, label: "White", secondary: "#FFFFFF", icon: "", hex: "#FFFFFF" },
-        { isPicker: false, label: "Grey", secondary: "#BFC9D1", icon: "", hex: "#BFC9D1" }
-    ]
+    readonly property var allItems: UiCatalog.accentPresets
 
     Component.onCompleted: {
         for (var i = 1; i < allItems.length; i++) {

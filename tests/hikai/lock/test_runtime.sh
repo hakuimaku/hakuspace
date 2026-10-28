@@ -46,7 +46,7 @@ account required pam_permit.so
 EOF
 
 # Mirror installed paths so Env.binDir resolves to a harmless suspend stub.
-cp -R src/home/.config/quickshell/hakuspace/{services,components} "$test_root/home/.config/quickshell/hakuspace/"
+cp -R src/home/.config/quickshell/hakuspace/{services,components,config} "$test_root/home/.config/quickshell/hakuspace/"
 cp tests/hikai/lock/harness/lock.qml "$test_root/home/.config/quickshell/hakuspace/shell.qml"
 cat > "$test_root/home/.local/bin/power_ctl.sh" <<'EOF'
 #!/usr/bin/env bash

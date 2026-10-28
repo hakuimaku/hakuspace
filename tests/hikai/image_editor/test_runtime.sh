@@ -11,7 +11,7 @@ chmod 700 "$test_root/runtime"
 artifact_dir=${HAKUSPACE_IMAGE_EDITOR_ARTIFACT_DIR:-"$test_root/artifacts"}
 mkdir -p "$artifact_dir"
 cp tests/support/fixtures/wayland_{pointer,keyboard}.py "$test_root/fixtures/"
-cp -R src/home/.config/quickshell/hakuspace/{services,components} "$shell_root/"
+cp -R src/home/.config/quickshell/hakuspace/{services,components,config} "$shell_root/"
 cp tests/hikai/image_editor/harness/editor.qml "$shell_root/shell.qml"
 ln -s "$repo_root/src/core/backend/media/image_edit_ctl.py" "$test_root/src/home/.local/bin/image_edit_ctl.py"
 ln -s "$repo_root/src/core/backend/user/avatar_ctl.sh" "$test_root/src/home/.local/bin/avatar_ctl.sh"

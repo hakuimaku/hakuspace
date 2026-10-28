@@ -13,7 +13,7 @@ trap 'rm -rf "$test_root"' EXIT
 shell_root="$test_root/src/home/.config/quickshell/hakuspace"
 mkdir -p "$shell_root" "$test_root/home/.local/bin" "$test_root/src/home/.local" "$test_root/runtime" "$test_root/labwc"
 chmod 700 "$test_root/runtime"
-cp -R src/home/.config/quickshell/hakuspace/{services,components} "$shell_root/"
+cp -R src/home/.config/quickshell/hakuspace/{services,components,config} "$shell_root/"
 cp tests/hikai/settings/harness/theme_action_menu.qml "$shell_root/shell.qml"
 cp tests/support/fixtures/wayland_{keyboard,pointer}.py "$test_root/"
 cp src/core/backend/theme/theme_ctl.sh src/core/backend/user/hikai_settings_ctl.py "$test_root/home/.local/bin/"

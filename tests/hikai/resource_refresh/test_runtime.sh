@@ -16,7 +16,7 @@ mkdir -p "$shell_root" "$bin_root" "$test_root/src/core/backend/user" "$test_roo
     "$test_root/src/home/.local/state/hakuspace/state" "$test_root/home/.config/gtk-3.0" \
     "$test_root/home/hakucfg/config" "$test_root/home/.local/share/applications"
 chmod 700 "$test_root/runtime"
-cp -R src/home/.config/quickshell/hakuspace/{services,components} "$shell_root/"
+cp -R src/home/.config/quickshell/hakuspace/{services,components,config} "$shell_root/"
 cp tests/hikai/resource_refresh/harness/refresh.qml "$shell_root/shell.qml"
 cp src/core/backend/user/{dock_icon_watch.py,hikai_settings_ctl.py,taskbar_pins_ctl.py,hikai_wallpaper_settings_ctl.py} "$test_root/src/core/backend/user/"
 cp src/core/backend/theme/wallpaper_ctl.py "$test_root/src/core/backend/theme/"

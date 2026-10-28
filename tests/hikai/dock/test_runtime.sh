@@ -28,7 +28,7 @@ if [[ ${HAKUSPACE_CHROME_TEST:-0} == 1 ]]; then
     export HAKUSPACE_DOCK_ARTIFACT_DIR=${HAKUSPACE_DOCK_ARTIFACT_DIR:-"$test_root/chrome-artifacts"}
     mkdir -p "$HAKUSPACE_DOCK_ARTIFACT_DIR"
 fi
-cp -R src/home/.config/quickshell/hakuspace/{components,services} "$shell_root/"
+cp -R src/home/.config/quickshell/hakuspace/{components,services,config} "$shell_root/"
 cp src/core/backend/user/{hikai_settings_ctl.py,taskbar_pins_ctl.py,dock_app_ctl.py,dock_icon_watch.py,setting_ctl.py} "$test_root/src/core/backend/user/"
 if [[ ${HAKUSPACE_CHROME_TEST:-0} == 1 ]]; then
     cp tests/hikai/chrome/harness/chrome.qml "$shell_root/shell.qml"

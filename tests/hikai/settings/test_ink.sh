@@ -14,7 +14,7 @@ shell_root="$test_root/src/home/.config/quickshell/hakuspace"
 mkdir -p "$shell_root" "$test_root/src/core/backend/user" "$test_root/src/core/backend/system" \
     "$test_root/home/.local/bin" "$test_root/home/hakucfg/wm" "$test_root/home/hakucfg/config" "$test_root/runtime" "$test_root/labwc"
 chmod 700 "$test_root/runtime"
-cp -R src/home/.config/quickshell/hakuspace/{services,components} "$shell_root/"
+cp -R src/home/.config/quickshell/hakuspace/{services,components,config} "$shell_root/"
 cp tests/hikai/settings/harness/ink.qml "$test_root/harness.qml"
 # Introduce the real page after startup to exercise Quickshell's warm type scanner.
 cp "$shell_root/components/settings/ShellSettingsPage.qml" "$test_root/ShellSettingsPage.qml"

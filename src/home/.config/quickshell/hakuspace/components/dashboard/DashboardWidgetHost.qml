@@ -1,5 +1,6 @@
 import QtQuick
 import "../../services"
+import "../../config/UiCatalog.js" as UiCatalog
 
 Rectangle {
     id: root
@@ -10,18 +11,11 @@ Rectangle {
     border.color: Theme.surfaceHighlight(1.25)
     clip: true
 
-    property var widgets: [
-        {
-            key: "calendar",
-            title: "Calendar",
-            component: calendarWidgetComponent
-        },
-        {
-            key: "bio",
-            title: "Bio",
-            component: bioWidgetComponent
-        }
-    ]
+    // Resolve presentation metadata to the existing local widget implementations.
+    property var widgets: UiCatalog.dashboardWidgets.map(function(widget) {
+        return Object.assign({}, widget, {component: ({calendar: calendarWidgetComponent,
+            bio: bioWidgetComponent})[widget.key]})
+    })
     property int currentIndex: 0
     // Calendar navigation survives unloading its visual widget.
     property int calendarMonthOffset: 0

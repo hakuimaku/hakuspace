@@ -7,7 +7,7 @@ import "services"
 import "components"
 import "components/settings" as Settings
 import "components/dashboard" as Dashboard
-import "components/settings/SettingsCatalog.js" as Catalog
+import "config/SettingsCatalog.js" as Catalog
 
 ShellRoot {
     id: root

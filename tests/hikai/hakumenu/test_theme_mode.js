@@ -6,7 +6,10 @@ const path = require('node:path')
 const vm = require('node:vm')
 const shell = path.resolve(__dirname, '../../../src/home/.config/quickshell/hakuspace')
 const source = fs.readFileSync(path.join(shell, 'services/ShellSettingsStore.qml'), 'utf8')
-const store = vm.createContext({ready: true, loading: false, saving: false, error: '', writeProc: {}})
+// Load the same default factory imported by the production store.
+const Defaults = vm.createContext({})
+vm.runInContext(fs.readFileSync(path.join(shell, 'config/Defaults.js'), 'utf8').replace(/^\.pragma library\s*$/m, ''), Defaults)
+const store = vm.createContext({Defaults, ready: true, loading: false, saving: false, error: '', writeProc: {}})
 
 // Run production store methods with a process stub at the persistence boundary.
 vm.runInContext([...source.matchAll(/^    function [\s\S]*?^    }/gm)].map(match => match[0]).join('\n'), store)

@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import "../../services"
-import "SettingsCatalog.js" as Catalog
+import "../../config/SettingsCatalog.js" as Catalog
 import "../editor" as Editor
 
 Item {

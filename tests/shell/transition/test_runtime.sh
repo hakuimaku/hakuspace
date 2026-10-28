@@ -12,7 +12,7 @@ test_root=$(mktemp -d)
 trap 'if [[ $? != 0 && -f "$test_root/result.log" ]]; then cat "$test_root/result.log"; fi; rm -rf "$test_root"' EXIT
 mkdir -p "$test_root/runtime" "$test_root/home"
 chmod 700 "$test_root/runtime"
-cp -R src/home/.config/quickshell/hakuspace/{services,components} "$test_root/"
+cp -R src/home/.config/quickshell/hakuspace/{services,components,config} "$test_root/"
 cp tests/shell/transition/harness/transition.qml "$test_root/shell.qml"
 
 # Normal startup and bootstrap must disagree only on the initial chrome gate.

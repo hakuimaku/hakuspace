@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import "../../../services"
+import "../../../config/UiCatalog.js" as UiCatalog
 import ".." as ActionMenu
 
 ActionMenu.ActionMenuPage {
@@ -16,29 +17,7 @@ ActionMenu.ActionMenuPage {
 
     property int selectedIndex: 0
 
-    readonly property var modes: [
-        {
-            id: "system-audio",
-            icon: "󰕧",
-            label: "Only Sound",
-            secondary: "Screen + System Audio",
-            isSubmenu: false
-        },
-        {
-            id: "mic-system",
-            icon: "󰍬",
-            label: "Micro and Sound",
-            secondary: "Screen + Mic + System",
-            isSubmenu: true
-        },
-        {
-            id: "no-audio",
-            icon: "󰕭",
-            label: "No Sound",
-            secondary: "Video Only",
-            isSubmenu: false
-        }
-    ]
+    readonly property var modes: UiCatalog.actionMenuRecordModes
 
     // Triggers recording mode launch or pushes the audio source submenu.
     function activateIndex(idx) {

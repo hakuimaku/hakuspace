@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import "../../services"
-import "SettingsCatalog.js" as Catalog
+import "../../config/SettingsCatalog.js" as Catalog
 import "SettingsNavigation.js" as Navigation
 
 Column {

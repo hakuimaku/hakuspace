@@ -1,0 +1,170 @@
+{
+  "actionMenuPowerActions": [
+    {
+      "id": "suspend",
+      "icon": "󰒲",
+      "label": "Suspend",
+      "danger": false
+    },
+    {
+      "id": "reboot",
+      "icon": "󰑐",
+      "label": "Reboot",
+      "danger": true
+    },
+    {
+      "id": "poweroff",
+      "icon": "󰐥",
+      "label": "Poweroff",
+      "danger": true
+    },
+    {
+      "id": "hibernate",
+      "icon": "󰒲",
+      "label": "Hibernate",
+      "danger": false
+    },
+    {
+      "id": "lock",
+      "icon": "󰌾",
+      "label": "Lock",
+      "danger": false
+    },
+    {
+      "id": "logout",
+      "icon": "󰍃",
+      "label": "Logout",
+      "danger": false
+    }
+  ],
+  "actionMenuRecordModes": [
+    {
+      "id": "system-audio",
+      "icon": "󰕧",
+      "label": "Only Sound",
+      "secondary": "Screen + System Audio",
+      "isSubmenu": false
+    },
+    {
+      "id": "mic-system",
+      "icon": "󰍬",
+      "label": "Micro and Sound",
+      "secondary": "Screen + Mic + System",
+      "isSubmenu": true
+    },
+    {
+      "id": "no-audio",
+      "icon": "󰕭",
+      "label": "No Sound",
+      "secondary": "Video Only",
+      "isSubmenu": false
+    }
+  ],
+  "sidebarTools": [
+    {
+      "key": "quickActions",
+      "icon": "󰀻",
+      "label": "Quick Actions"
+    },
+    {
+      "key": "clipboard",
+      "icon": "󰅌",
+      "label": "Clipboard"
+    },
+    {
+      "key": "tempNote",
+      "icon": "󰏫",
+      "label": "Temp Note"
+    }
+  ],
+  "sidebarQuickActions": [
+    {
+      "key": "wifi",
+      "icon": "󰤨",
+      "label": "Wi-Fi",
+      "toggle": true
+    },
+    {
+      "key": "bluetooth",
+      "icon": "󰂯",
+      "label": "Bluetooth",
+      "toggle": true
+    },
+    {
+      "key": "idleInhibit",
+      "icon": "󰈈",
+      "label": "Keep Awake",
+      "toggle": true
+    },
+    {
+      "key": "nightLight",
+      "icon": "󰖔",
+      "label": "Night Light",
+      "toggle": true
+    },
+    {
+      "key": "dockbar",
+      "icon": "󰐃",
+      "label": "Dockbar",
+      "toggle": true
+    },
+    {
+      "key": "desktopIcons",
+      "icon": "󰀻",
+      "label": "Desktop Icons",
+      "toggle": true
+    },
+    {
+      "key": "cava",
+      "icon": "󰝚",
+      "label": "Cava Underbar",
+      "toggle": true
+    },
+    {
+      "key": "settings",
+      "icon": "󰒓",
+      "label": "Settings",
+      "toggle": false
+    }
+  ],
+  "dashboardWidgets": [
+    {
+      "key": "calendar",
+      "title": "Calendar"
+    },
+    {
+      "key": "bio",
+      "title": "Bio"
+    }
+  ],
+  "wallpaperKinds": [
+    {
+      "id": "static",
+      "name": "Images"
+    },
+    {
+      "id": "video",
+      "name": "Lively"
+    }
+  ],
+  "wallpaperVideoProfiles": [
+    {
+      "label": "720p",
+      "shortLabel": "720p",
+      "description": "Save memory: 720p / 24 fps",
+      "value": "low-memory"
+    },
+    {
+      "label": "Screen",
+      "shortLabel": "Fit",
+      "description": "Match screen quality",
+      "value": "screen"
+    },
+    {
+      "label": "Original",
+      "shortLabel": "Full",
+      "description": "Original video quality",
+      "value": "original"
+    }
+  ]
+}

@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Dialogs
 import Quickshell
 import "../../services"
-import "SettingsCatalog.js" as Catalog
+import "../../config/SettingsCatalog.js" as Catalog
 
 Row {
     id: root

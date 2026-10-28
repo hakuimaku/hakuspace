@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Shapes
 import Quickshell.Io
 import "../../services"
+import "../../config/UiCatalog.js" as UiCatalog
 import "../base" as Base
 import "../motion" as Motion
 import "../flare" as Flare
@@ -91,7 +92,7 @@ FocusScope {
         }
     }
     Timer { id: metadataFollowup; interval: 0; onTriggered: root.requestMetadata() }
-    readonly property var kinds: [{id: "static", name: "Images"}, {id: "video", name: "Lively"}]
+    readonly property var kinds: UiCatalog.wallpaperKinds
     // The quick input region surrounds controls without painting a container.
     readonly property Item quickInputItem: quickBounds
     readonly property Item topInputItem: workspaceControls
@@ -434,7 +435,7 @@ FocusScope {
                     Behavior on opacity { NumberAnimation { duration: HAnimation.effects; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.effectsCurve } }
                     width: implicitWidth
                     height: root.toolbarControlHeight
-                    readonly property var options: [{label: "720p", shortLabel: "720p", description: "Save memory: 720p / 24 fps", value: "low-memory"}, {label: "Screen", shortLabel: "Fit", description: "Match screen quality", value: "screen"}, {label: "Original", shortLabel: "Full", description: "Original video quality", value: "original"}]
+                    readonly property var options: UiCatalog.wallpaperVideoProfiles
                     implicitWidth: qualityButtons.implicitWidth + 4
                     radius: 8
                     color: Theme.hoverMuted

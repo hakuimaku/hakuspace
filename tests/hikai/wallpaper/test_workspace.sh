@@ -9,7 +9,7 @@ trap 'rm -rf "$test_root"' EXIT
 shell_root="$test_root/src/home/.config/quickshell/hakuspace"
 mkdir -p "$shell_root" "$test_root/src/core" "$test_root/home/hakucfg" "$test_root/runtime"
 chmod 700 "$test_root/runtime"
-cp -R src/home/.config/quickshell/hakuspace/{services,components} "$shell_root/"
+cp -R src/home/.config/quickshell/hakuspace/{services,components,config} "$shell_root/"
 cp -R src/core/{backend,lib,theme,state} "$test_root/src/core/"
 cp tests/hikai/wallpaper/harness/workspace.qml "$shell_root/shell.qml"
 printf 'ACCENT_COLOR_BASED_ON_WALLPAPER=false\n' > "$test_root/home/hakucfg/setting.sh"

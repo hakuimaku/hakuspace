@@ -15,7 +15,7 @@ mkdir -p "$shell_root" "$test_root/src/core/backend/user" "$test_root/runtime"
 chmod 700 "$test_root/runtime"
 artifact_dir=${HAKUSPACE_TEST_ARTIFACT_DIR:-"$test_root/artifacts"}
 mkdir -p "$artifact_dir"
-cp -R src/home/.config/quickshell/hakuspace/{services,components} "$shell_root/"
+cp -R src/home/.config/quickshell/hakuspace/{services,components,config} "$shell_root/"
 cp src/core/backend/user/{hikai_settings_ctl.py,taskbar_pins_ctl.py} "$test_root/src/core/backend/user/"
 cp src/home/hakucfg/config/taskbar-pin-apps "$test_root/taskbar-pin-apps"
 if [[ ${1:-} == --headless || ${1:-} == --modules || ${1:-} == --frame ]]; then

@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import "../../services"
+import "../../config/UiCatalog.js" as UiCatalog
 import "../motion" as Motion
 
 Item {
@@ -41,12 +42,8 @@ Item {
         radius: Theme.largeRadius
         color: menu.controlBg
 
-        readonly property var modes: [
-            { key: "general", icon: "󰀻", label: "General" },
-            { key: "drun", icon: "󰍉", label: "Drun" },
-            { key: "theme", icon: "", label: "Theme" }
-        ]
-        readonly property int selectedIndex: ["general", "drun", "theme"].indexOf(menu.mode)
+        readonly property var modes: UiCatalog.hakuMenuModes
+        readonly property int selectedIndex: modes.map(function(item) { return item.key }).indexOf(menu.mode)
 
         Item {
             id: tabLane

@@ -3,7 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "."
-import "../components/settings/SettingsCatalog.js" as Catalog
+import "../config/SettingsCatalog.js" as Catalog
 
 QtObject {
     id: root

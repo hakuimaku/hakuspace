@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell.Io
 import "../../../services"
+import "../../../config/UiCatalog.js" as UiCatalog
 import ".." as ActionMenu
 
 ActionMenu.ActionMenuPage {
@@ -13,7 +14,7 @@ ActionMenu.ActionMenuPage {
     geometryProfile: "option"
     canGoBack: true
 
-    readonly property var sizes: [10, 12, 14, 16, 18]
+    readonly property var sizes: UiCatalog.fontSizePresets
     property int selectedIndex: 0
 
     Component.onCompleted: {

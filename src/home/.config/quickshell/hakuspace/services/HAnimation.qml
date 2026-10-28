@@ -1,79 +1,80 @@
 pragma Singleton
 import QtQuick
+import "../config"
 
 QtObject {
     id: root
     
     // Core timing tiers
-    property int fast: 160
-    property int normal: 320
-    property int slow: 540
+    property int fast: Motion.fast
+    property int normal: Motion.normal
+    property int slow: Motion.slow
     
-    property list<real> moduleCurve: [0.16, 1.0, 0.3, 1.0, 1, 1]
+    property list<real> moduleCurve: Motion.moduleCurve
     property int tooltipDuration: slow
-    property list<real> tooltipCurve: [0.4, 0.0, 0.2, 1.0, 1, 1]
-    property list<real> shellCurve: [0.16, 1.0, 0.3, 1.0, 1, 1]
+    property list<real> tooltipCurve: Motion.tooltipCurve
+    property list<real> shellCurve: Motion.shellCurve
     // Both wipe layers share easing while retaining independent durations.
-    property list<real> shellTransitionCurve: [0.65, 0.0, 0.35, 1.0, 1, 1]
+    property list<real> shellTransitionCurve: Motion.shellTransitionCurve
 
     // Navigation Motion (slower, modern fluid expansion)
-    property int navigationOpenDuration: 600
-    property int navigationCloseDuration: 420
-    property int navigationCollapseDuration: 240
-    property list<real> navigationOpenCurve: [0.16, 1.0, 0.25, 1.0, 1, 1]
-    property list<real> navigationCloseCurve: [0.25, 1.0, 0.35, 1.0, 1, 1]
+    property int navigationOpenDuration: Motion.navigationOpenDuration
+    property int navigationCloseDuration: Motion.navigationCloseDuration
+    property int navigationCollapseDuration: Motion.navigationCollapseDuration
+    property list<real> navigationOpenCurve: Motion.navigationOpenCurve
+    property list<real> navigationCloseCurve: Motion.navigationCloseCurve
 
     // Dashboard Motion (gentle bouncing elastic expansion & graceful unhurried close)
-    property int dashboardOpenDuration: 640
-    property int dashboardCloseDuration: 500
-    property list<real> dashboardOpenCurve: [0.24, 1.30, 0.34, 1.0, 1, 1]
-    property list<real> dashboardCloseCurve: [0.32, 0.0, 0.22, 1.0, 1, 1]
+    property int dashboardOpenDuration: Motion.dashboardOpenDuration
+    property int dashboardCloseDuration: Motion.dashboardCloseDuration
+    property list<real> dashboardOpenCurve: Motion.dashboardOpenCurve
+    property list<real> dashboardCloseCurve: Motion.dashboardCloseCurve
 
     // Sidebar Motion (tactile, bouncy elastic expansion with visible rebound)
-    property int sidebarOpenDuration: 600
-    property int sidebarCloseDuration: 320
-    property list<real> sidebarOpenCurve: [0.30, 1.48, 0.38, 1.0, 1, 1]
-    property list<real> sidebarCloseCurve: [0.38, 0.0, 0.22, 1.0, 1, 1]
+    property int sidebarOpenDuration: Motion.sidebarOpenDuration
+    property int sidebarCloseDuration: Motion.sidebarCloseDuration
+    property list<real> sidebarOpenCurve: Motion.sidebarOpenCurve
+    property list<real> sidebarCloseCurve: Motion.sidebarCloseCurve
 
     // Sidebar Tool / Temp Note Panel Motion (calm flare expansion from rail)
-    property int sidebarToolOpenDuration: 560
-    property int sidebarToolCloseDuration: 400
-    property list<real> sidebarToolOpenCurve: [0.16, 1.08, 0.30, 1.0, 1, 1]
-    property list<real> sidebarToolCloseCurve: [0.32, 0.0, 0.22, 1.0, 1, 1]
+    property int sidebarToolOpenDuration: Motion.sidebarToolOpenDuration
+    property int sidebarToolCloseDuration: Motion.sidebarToolCloseDuration
+    property list<real> sidebarToolOpenCurve: Motion.sidebarToolOpenCurve
+    property list<real> sidebarToolCloseCurve: Motion.sidebarToolCloseCurve
     // Floating panels retain the Temp Note curves with shorter reveal and collapse times.
-    readonly property int floatingPanelOpenDuration: Math.round(sidebarToolOpenDuration * 0.9)
-    readonly property int floatingPanelCloseDuration: Math.round(sidebarToolCloseDuration * 0.7)
+    readonly property int floatingPanelOpenDuration: Math.round(sidebarToolOpenDuration * Motion.floatingPanelOpenFactor)
+    readonly property int floatingPanelCloseDuration: Math.round(sidebarToolCloseDuration * Motion.floatingPanelCloseFactor)
     readonly property list<real> floatingPanelOpenCurve: sidebarToolOpenCurve
     readonly property list<real> floatingPanelCloseCurve: sidebarToolCloseCurve
 
     // Dashboard Dynamic Widget Switch Motion (subtle directional card slide-fade)
-    property int dashboardWidgetSwitchDuration: 260
-    property list<real> dashboardWidgetSwitchCurve: [0.20, 0.80, 0.20, 1.0, 1, 1]
+    property int dashboardWidgetSwitchDuration: Motion.dashboardWidgetSwitchDuration
+    property list<real> dashboardWidgetSwitchCurve: Motion.dashboardWidgetSwitchCurve
 
-    property int hakuMenuOpenDuration: 360
-    property int hakuMenuCloseDuration: 308
-    property list<real> hakuMenuOpenCurve: [0.88, 1.31, 0.25, 0.98, 1, 1]
-    property list<real> hakuMenuCloseCurve: [1, 0.3, 0.25, 1, 1, 1]
+    property int hakuMenuOpenDuration: Motion.hakuMenuOpenDuration
+    property int hakuMenuCloseDuration: Motion.hakuMenuCloseDuration
+    property list<real> hakuMenuOpenCurve: Motion.hakuMenuOpenCurve
+    property list<real> hakuMenuCloseCurve: Motion.hakuMenuCloseCurve
     // Tab-to-tab width morph is intentionally calmer than the bouncy open curve.
-    property int hakuMenuResizeDuration: 280
-    property list<real> hakuMenuResizeCurve: [0.7, 1.0, 0.6, 0.98, 1, 1]
-    property real hakuMenuBounceHeadroom: 0.04
-    property int settingsResizeDuration: 280
-    property list<real> settingsResizeCurve: [0.7, 1.0, 0.6, 0.98, 1, 1]
+    property int hakuMenuResizeDuration: Motion.hakuMenuResizeDuration
+    property list<real> hakuMenuResizeCurve: Motion.hakuMenuResizeCurve
+    property real hakuMenuBounceHeadroom: Motion.hakuMenuBounceHeadroom
+    property int settingsResizeDuration: Motion.settingsResizeDuration
+    property list<real> settingsResizeCurve: Motion.settingsResizeCurve
 
     // Bottom Dock reveal, collapse and dynamic-width motion.
-    property int dockOpenDuration: 360
-    property int dockCloseDuration: 224
-    property int dockResizeDuration: 280
-    property list<real> dockOpenCurve: [0.16, 1.0, 0.3, 1.0, 1, 1]
-    property list<real> dockCloseCurve: [0.4, 0.0, 0.2, 1.0, 1, 1]
+    property int dockOpenDuration: Motion.dockOpenDuration
+    property int dockCloseDuration: Motion.dockCloseDuration
+    property int dockResizeDuration: Motion.dockResizeDuration
+    property list<real> dockOpenCurve: Motion.dockOpenCurve
+    property list<real> dockCloseCurve: Motion.dockCloseCurve
 
     // Six control values drive the asymmetric workspace and flare motion.
-    property list<real> spatialCurve: [0.5, 1.21, 0.22, 1, 1, 1]
-    property list<real> effectsCurve: [0.56, 0.8, 0.34, 1, 1, 1]
-    property int spatial: 350
-    property int effects: 200
-    property real trailFactor: 1.5
+    property list<real> spatialCurve: Motion.spatialCurve
+    property list<real> effectsCurve: Motion.effectsCurve
+    property int spatial: Motion.spatial
+    property int effects: Motion.effects
+    property real trailFactor: Motion.trailFactor
 
     // Selection Morph & Synchronized Text Fade Timing
     // The selection pill asymmetric morph completes when its trailing edge reaches target (spatial * trailFactor = 525ms).
@@ -82,26 +83,26 @@ QtObject {
     readonly property list<real> selectionMorphCurve: spatialCurve
 
     // Shared Hikai interactive-state motion. Keep these calmer than shell-open motion.
-    property int buttonHoverDuration: 240
-    property int buttonPressDuration: 120
-    property int buttonReleaseDuration: 240
+    property int buttonHoverDuration: Motion.buttonHoverDuration
+    property int buttonPressDuration: Motion.buttonPressDuration
+    property int buttonReleaseDuration: Motion.buttonReleaseDuration
     property int buttonSelectDuration: selectionMorphDuration
-    property int buttonFocusDuration: 240
-    property list<real> buttonHoverCurve: [0.20, 0.60, 0.20, 1.0, 1, 1]
-    property list<real> buttonPressCurve: [0.40, 0.00, 0.20, 1.0, 1, 1]
-    property list<real> buttonReleaseCurve: [0.16, 1.08, 0.30, 1.0, 1, 1]
+    property int buttonFocusDuration: Motion.buttonFocusDuration
+    property list<real> buttonHoverCurve: Motion.buttonHoverCurve
+    property list<real> buttonPressCurve: Motion.buttonPressCurve
+    property list<real> buttonReleaseCurve: Motion.buttonReleaseCurve
     property list<real> buttonSelectCurve: selectionMorphCurve
-    property list<real> buttonFocusCurve: [0.20, 0.80, 0.20, 1.0, 1, 1]
+    property list<real> buttonFocusCurve: Motion.buttonFocusCurve
 
     // Shared Action Layer Motion (centered reveal, smooth morphing, fade-zoom close)
-    property int actionLayerOpenDuration: 560
-    property int actionLayerCloseDuration: 460
-    property int actionLayerMorphDuration: 600
-    property int actionLayerMorphContentDuration: 340
-    property list<real> actionLayerOpenCurve: [0.16, 1.0, 0.25, 1.0, 1, 1]
-    property list<real> actionLayerCloseCurve: [0.25, 1.0, 0.35, 1.0, 1, 1]
-    property list<real> actionLayerMorphCurve: [0.20, 0.90, 0.20, 1.0, 1, 1]
-    property list<real> actionLayerContentCurve: [0.20, 0.80, 0.20, 1.0, 1, 1]
-    property int actionLayerDataFadeDuration: 260
-    property list<real> actionLayerDataFadeCurve: [0.20, 0.80, 0.20, 1.0, 1, 1]
+    property int actionLayerOpenDuration: Motion.actionLayerOpenDuration
+    property int actionLayerCloseDuration: Motion.actionLayerCloseDuration
+    property int actionLayerMorphDuration: Motion.actionLayerMorphDuration
+    property int actionLayerMorphContentDuration: Motion.actionLayerMorphContentDuration
+    property list<real> actionLayerOpenCurve: Motion.actionLayerOpenCurve
+    property list<real> actionLayerCloseCurve: Motion.actionLayerCloseCurve
+    property list<real> actionLayerMorphCurve: Motion.actionLayerMorphCurve
+    property list<real> actionLayerContentCurve: Motion.actionLayerContentCurve
+    property int actionLayerDataFadeDuration: Motion.actionLayerDataFadeDuration
+    property list<real> actionLayerDataFadeCurve: Motion.actionLayerDataFadeCurve
 }

@@ -24,7 +24,7 @@ mkdir -p "$shell_root" "$test_root/home/.local/bin" "$test_root/home/hakucfg/con
     "$test_root/home/.local/state/hakuspace/state" \
     "$test_root/src/core/backend/user" "$test_root/src/home/.local/state/hakuspace/state"
 chmod 700 "$test_root"
-cp -R src/home/.config/quickshell/hakuspace/{services,components} "$shell_root/"
+cp -R src/home/.config/quickshell/hakuspace/{services,components,config} "$shell_root/"
 cp tests/hikai/window_navigator/harness/navigator.qml "$shell_root/shell.qml"
 cp src/core/backend/user/{hikai_settings_ctl.py,taskbar_pins_ctl.py,setting_ctl.py} "$test_root/src/core/backend/user/"
 cp src/home/hakucfg/config/taskbar-pin-apps "$test_root/home/hakucfg/config/"
