@@ -90,6 +90,17 @@ class SettingCtlTests(unittest.TestCase):
             self.call("write", payload, False)
             self.assertEqual(self.path.read_bytes(), before)
 
+    def test_ram_threshold_bounds(self):
+        """Both slider endpoints persist; invalid RAM values never replace the file."""
+        for value in (0, 300, 557, 2048):
+            self.assertEqual(self.call("write", {"RAM_THRESHOLD_MB": value})["values"]["RAM_THRESHOLD_MB"], value)
+            self.assertEqual(self.call("read")["values"]["RAM_THRESHOLD_MB"], value)
+            self.assertNotIn("RAM_THRESHOLD_MB", self.call("check")["unsupportedKeys"])
+        before = self.path.read_bytes()
+        for value in (-1, 2049, True, 1.5, "0", None):
+            self.call("write", {"RAM_THRESHOLD_MB": value}, False)
+            self.assertEqual(self.path.read_bytes(), before)
+
     def test_missing_unsupported_and_duplicates(self):
         self.path.write_text(self.path.read_text().replace("WELCOME_MSG=true", "# WELCOME_MSG=true"))
         self.assertIn("WELCOME_MSG", self.call("read")["missingKeys"])

@@ -125,7 +125,8 @@ def inspect(content):
         positions[key] = index
         raw, _ = split_comment(match.group(3))
         try:
-            value = parse_value(raw, "text" if key == "SETTING_VERSION" else KINDS[key])
+            # Zero is a valid saved RAM threshold, while other integer options stay positive.
+            value = 0 if key == "RAM_THRESHOLD_MB" and raw == "0" else parse_value(raw, "text" if key == "SETTING_VERSION" else KINDS[key])
             if key == "SETTING_VERSION":
                 version = value
             else:
@@ -138,7 +139,9 @@ def inspect(content):
 
 def validate(key, value):
     kind = KINDS[key]
-    if kind == "bool":
+    if key == "RAM_THRESHOLD_MB":
+        valid = type(value) is int and 0 <= value <= 2048
+    elif kind == "bool":
         valid = type(value) is bool
     elif kind == "int":
         valid = type(value) is int and value > 0

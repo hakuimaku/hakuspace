@@ -1,210 +1,124 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Dialogs
-import Quickshell
 import Quickshell.Io
 import "../../services"
 import "SettingsCatalog.js" as Catalog
+import "SettingsNavigation.js" as Navigation
 
 Column {
     id: root
-    // The form is reusable inside Wallpaper, Appearance and session pages.
-    property string category: "General"
+    property string category: "Look"
+    property string group: ""
+    property var excludedIds: []
+    property var onlyIds: []
     property Item shortcutTarget: null
     property string highlightedId: ""
-    readonly property var descriptors: Catalog.general.filter(item => item.category === category)
     property var fontOptions: []
     property string fontListError: ""
+    readonly property var descriptors: Catalog.descriptors.filter(function(d) { return d.category === root.category && (!root.group || d.group === root.group) && !root.excludedIds.includes(d.id) && (!root.onlyIds.length || root.onlyIds.includes(d.id)) })
     spacing: Theme.spaceLg
-
-    // Refresh from Fontconfig through the same filtered source as Change Theme.
-    function refreshFonts() {
-        if (fontList.running) return
-        fontListError = ""
-        fontOptions = []
-        fontList.command = SettingsStore.themeCommand("list-fonts")
-        fontList.running = true
-    }
-    Component.onCompleted: if (category === "General") refreshFonts()
+    // Fontconfig stays demand-driven and uses the existing theme controller.
+    function refreshFonts() { if (!fontList.running) { fontListError = ""; fontList.command = SettingsStore.themeCommand("list-fonts"); fontList.running = true } }
+    Component.onCompleted: if (descriptors.some(function(d) { return d.store === "theme" })) refreshFonts()
     Process {
         id: fontList
-        stdout: StdioCollector { id: fontListOut }
-        stderr: StdioCollector { id: fontListErr }
+        stdout: StdioCollector { id: fontOut }
+        stderr: StdioCollector { id: fontErr }
         onExited: code => {
-            if (code !== 0) { root.fontListError = fontListErr.text.trim() || "Could not load fonts. Reopen the list to try again."; return }
-            root.fontOptions = fontListOut.text.split("\n").map(family => family.trim())
-                .filter((family, index, families) => family && families.indexOf(family) === index)
-                .map(family => ({label: family, value: family}))
+            if (code !== 0) { root.fontListError = fontErr.text.trim() || "Could not load fonts"; return }
+            root.fontOptions = fontOut.text.split("\n").map(v => v.trim()).filter((v, i, a) => v && a.indexOf(v) === i).map(v => ({label: v, value: v}))
         }
     }
-
-    // Reveal a search target without hiding its surrounding category.
+    // Focus the actual control so search preserves keyboard navigation.
     function reveal(id) {
-        for (var i = 0; i < rows.count; ++i) {
+        for (var i = 0; i < rows.count; i++) {
             var row = rows.itemAt(i)
-            if (row.descriptor.id === id) { row.forceActiveFocus(); return row }
+            if (row.descriptor.id === id && row.state.visible) { var targets = Navigation.collect(row.control.item); if (targets.length) targets[0].forceActiveFocus(); return row }
         }
         return null
     }
     Repeater {
         id: rows
         model: root.descriptors
-        delegate: Rectangle {
+        delegate: SettingsReveal {
             id: row
             required property var modelData
             readonly property var descriptor: modelData
-            readonly property bool typography: descriptor.store === "theme"
-            readonly property bool editable: (typography ? SettingsStore.fontsReady : SettingsStore.isKeyEditable(descriptor.key)) && !SettingsStore.saving && !SettingsStore.loading
-            readonly property var value: typography ? SettingsStore.fontValues[descriptor.key] : SettingsStore.value(descriptor.key)
-            function setValue(value) { if (typography) SettingsStore.setFontValue(descriptor.key, value); else SettingsStore.setValue(descriptor.key, value) }
-            readonly property string settingsNavSection: descriptor.category
+            readonly property var state: SettingsCoordinator.state(descriptor.id)
+            readonly property var value: SettingsCoordinator.read(descriptor.id)
+            readonly property string settingsNavSection: descriptor.group
+            property alias control: control
+            expanded: state.visible
             width: root.width
-            height: body.implicitHeight + Theme.cardPadding * 2
+            expandedHeight: body.implicitHeight + Theme.spaceMd * 2
             radius: Theme.radius
             color: root.highlightedId === descriptor.id ? Theme.hoverMuted : "transparent"
             border.width: root.highlightedId === descriptor.id ? 1 : 0
             border.color: Theme.accent
+            // Sliders debounce persistence; discrete controls commit immediately.
+            function set(value, deferred) { SettingsCoordinator.set(descriptor.id, value, deferred) }
             Column {
                 id: body
-                x: Theme.cardPadding; y: Theme.cardPadding
-                width: Math.max(0, parent.width - Theme.cardPadding * 2)
+                x: Theme.spaceMd; y: Theme.spaceMd
+                width: Math.max(0, parent.width - x * 2)
                 spacing: Theme.spaceSm
-                Text { width: parent.width; text: row.descriptor.label; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize; font.weight: Font.Medium; wrapMode: Text.Wrap }
-                Text { width: parent.width; visible: text.length > 0; text: row.descriptor.key === "SCREENSHOT_DIR" && WM.backendName === "niri" ? "Niri’s screenshot keys save to a different folder. Change the screenshot directory in Niri’s config file like: screenshot-path ~/Pictures/Screenshots/screenshot_%Y-%m-%d_%H-%M-%S.png" : row.descriptor.summary; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 1; wrapMode: Text.Wrap }
-                Text { visible: row.descriptor.key !== "SCREENSHOT_DIR"; text: row.typography ? "Applies when you select Apply" : row.descriptor.restartPolicy === "next-session" ? "Applies at next sign-in" : "Applies on the next related action"; color: Theme.fgMuted; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2 }
+                Text { width: parent.width; text: row.descriptor.label; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 1; font.weight: Font.DemiBold; wrapMode: Text.Wrap }
+                Text { visible: !!text; width: parent.width; text: row.descriptor.summary || ""; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 1; wrapMode: Text.Wrap }
                 Loader {
+                    id: control
                     width: parent.width
-                    sourceComponent: row.descriptor.control === "switch" ? booleanControl
-                        : row.descriptor.control === "choice" ? choiceControl
-                        : row.descriptor.control === "number" ? numberControl
-                        : row.descriptor.control === "path" ? pathControl
-                        : row.descriptor.control === "list" ? listControl : textControl
+                    enabled: row.state.enabled
+                    opacity: enabled ? 1 : 0.45
+                    sourceComponent: row.descriptor.control === "switch" ? toggle : row.descriptor.control === "choice" ? (row.descriptor.provider !== "theme" && (row.descriptor.options || []).length <= 4 ? segmented : choice)
+                        : row.descriptor.control === "number" ? number : row.descriptor.control === "duration" ? duration
+                        : row.descriptor.control === "path" ? path : row.descriptor.control === "list" ? list : input
                 }
-                Text { width: parent.width; visible: text.length > 0; text: row.typography ? "" : SettingsStore.validationMessage(row.descriptor.key); color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 1; wrapMode: Text.Wrap }
+                Text { visible: !!text; width: parent.width; text: row.state.reason; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2; wrapMode: Text.Wrap }
+                SettingsActionButton { visible: row.state.action === "layout"; width: 190; height: 32; text: "Switch to Top Bar"; activeFocusOnTab: true; focused: activeFocus; onClicked: SettingsCoordinator.set("layout", "topbar"); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
+                Text { visible: row.descriptor.key === "WAYBAR_MODE_USER"; width: parent.width; text: "Used by Classic shell. Hikai shell keeps its native bars."; wrapMode: Text.Wrap; color: Theme.fgMuted; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2 }
+                Text { visible: row.descriptor.key === "SCREENSHOT_DIR" && WM.backendName === "niri"; width: parent.width; text: "Niri built-in screenshot keys do not use this folder by default. Bind the HakuSpace screenshot script or edit Niri’s screenshot-path."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2 }
+                SettingsActionButton { visible: row.descriptor.key === "SCREENSHOT_DIR" && WM.backendName === "niri"; width: 180; height: 32; text: "Open Niri config"; activeFocusOnTab: true; focused: activeFocus; onClicked: { ConfigEditorStore.selectFile("wm/niri-custom.kdl"); UiState.settingsGroup = "Advanced" } Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
+            }
+            Component { id: toggle; SettingsSwitch { checked: row.value === true; shortcutTarget: root.shortcutTarget; Accessible.name: row.descriptor.label; onToggled: value => row.set(value, false) } }
+            Component {
+                id: segmented
+                SettingsSegmentedControl {
+                    options: row.descriptor.id === "surface" ? [{value: "ink", label: Theme.isLight ? "Pure White" : "Ink"}, {value: "dark", label: Theme.isLight ? "White" : "Dark"}, {value: "soft", label: Theme.isLight ? "Gray White" : "Soft"}] : row.descriptor.options
+                    value: row.value; shortcutTarget: root.shortcutTarget
+                    onChosen: value => row.set(value, false)
+                }
             }
             Component {
-                id: booleanControl
-                SettingsSwitch {
-                    shortcutTarget: root.shortcutTarget
-                    height: Theme.comfortableControlHeight
-                    checked: row.value === true
-                    enabled: row.editable
-                    Accessible.name: row.descriptor.label
-                    onToggled: value => row.setValue(value)
-                }
-            }
-            Component {
-                id: choiceControl
+                id: choice
                 SettingsChoiceRow {
-                    options: row.typography ? root.fontOptions : row.descriptor.options
-                    value: row.value
-                    enabled: row.editable
-                    shortcutTarget: root.shortcutTarget
-                    searchable: row.typography
-                    loading: row.typography && fontList.running
-                    statusMessage: row.typography ? root.fontListError : ""
-                    searchPlaceholder: "Search fonts…"
+                    options: row.descriptor.provider === "theme" ? root.fontOptions : row.descriptor.options || []
+                    value: row.value; shortcutTarget: root.shortcutTarget
+                    searchable: row.descriptor.provider === "theme"; loading: searchable && fontList.running
+                    statusMessage: searchable ? root.fontListError : ""
                     Accessible.name: row.descriptor.label
-                    onRefreshRequested: if (row.typography) root.refreshFonts()
-                    onChosen: value => row.setValue(value)
+                    onRefreshRequested: root.refreshFonts()
+                    onChosen: value => row.set(value, false)
                 }
             }
-            Component { id: numberControl; SettingsNumberRow { descriptor: row.descriptor; value: row.value; enabled: row.editable; shortcutTarget: root.shortcutTarget; onEdited: value => row.setValue(value) } }
+            Component { id: number; SettingsValueSlider { descriptor: row.descriptor; value: Number(row.value) || 0; shortcutTarget: root.shortcutTarget; onEdited: value => row.set(value, true); onEditingFinished: SettingsCoordinator.flush() } }
+            Component { id: duration; SettingsDurationField { descriptor: row.descriptor; value: Number(row.value) || 0; shortcutTarget: root.shortcutTarget; onEdited: value => row.set(value, false) } }
+            Component { id: path; SettingsPathField { value: String(row.value || ""); label: row.descriptor.label; shortcutTarget: root.shortcutTarget; onEdited: value => row.set(value, false) } }
+            Component { id: list; SettingsChipList { value: row.value || []; label: row.descriptor.entryLabel || row.descriptor.label; shortcutTarget: root.shortcutTarget; onEdited: value => row.set(value, false) } }
             Component {
-                id: pathControl
-                Column {
-                    spacing: Theme.spaceSm
-                    width: parent.width
-                    Text { width: parent.width; text: String(row.value || "No folder selected"); color: Theme.fgDim; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 1; elide: Text.ElideMiddle }
-                    SettingsActionButton { width: 170; height: Theme.comfortableControlHeight; text: "󰉋  Choose folder…"; idleColor: Theme.hoverMuted; border.width: 0; enabled: row.editable; activeFocusOnTab: true; focused: activeFocus; Accessible.name: row.descriptor.label + ": choose folder"; onClicked: { folder.lease = UiState.beginNativeDialog("settings"); folder.open() } Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
-                    FolderDialog {
-                        id: folder
-                        title: "Choose " + row.descriptor.label.toLowerCase()
-                        property int lease: 0
-                        currentFolder: WallpaperService.fileUrl(Catalog.folderPath(row.value, Quickshell.env("HOME")))
-                        onAccepted: {
-                            row.setValue(decodeURIComponent(String(selectedFolder).substring(7)))
-                            UiState.endNativeDialog(lease)
-                        }
-                        onRejected: UiState.endNativeDialog(lease)
-                        Component.onDestruction: UiState.endNativeDialog(lease)
-                    }
-                }
-            }
-            Component {
-                id: textControl
+                id: input
                 TextField {
                     property bool settingsNavItem: true
                     property string settingsNavRole: "input"
+                    verticalAlignment: TextInput.AlignVCenter
+                    leftPadding: Theme.spaceLg; rightPadding: Theme.spaceLg
+                    topPadding: Theme.spaceSm; bottomPadding: Theme.spaceSm
                     height: Theme.comfortableControlHeight
-                    text: String(row.value || "")
-                    enabled: row.editable
-                    color: Theme.fg
-                    selectByMouse: true
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize - 1
-                    leftPadding: Theme.spaceLg
-                    rightPadding: Theme.spaceLg
+                    text: String(row.value || ""); selectByMouse: true
+                    color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 1
                     Accessible.name: row.descriptor.label
                     Keys.forwardTo: root.shortcutTarget ? [root.shortcutTarget] : []
                     background: Rectangle { radius: Theme.radius; color: Theme.hoverMuted; border.width: parent.activeFocus ? 1 : 0; border.color: Theme.accent }
-                    onTextEdited: row.setValue(text)
-                }
-            }
-            Component {
-                id: listControl
-                Column {
-                    width: parent.width
-                    spacing: Theme.spaceSm
-                    Flow {
-                        width: parent.width; spacing: Theme.spaceSm
-                        Repeater {
-                            model: Array.isArray(row.value) ? row.value : []
-                            delegate: SettingsActionButton {
-                                id: chip
-                                required property string modelData
-                                required property int index
-                                width: Math.min(260, chipMetrics.width + 32); height: Theme.controlHeight
-                                text: modelData + " ×"
-                                enabled: row.editable
-                                activeFocusOnTab: true; focused: activeFocus
-                                Accessible.name: "Remove " + modelData
-                                TextMetrics { id: chipMetrics; text: chip.text; font.pixelSize: Theme.fontSize }
-                                onClicked: { var next = row.value.slice(); next.splice(index, 1); row.setValue(next) }
-                                Keys.onReturnPressed: clicked()
-                                Keys.onSpacePressed: clicked()
-                            }
-                        }
-                    }
-                    Row {
-                        width: parent.width; spacing: Theme.spaceSm
-                        TextField {
-                            id: entry
-                            property bool settingsNavItem: true
-                            property string settingsNavRole: "input"
-                            width: Math.max(0, parent.width - 88); height: Theme.comfortableControlHeight
-                            enabled: row.editable
-                            placeholderText: row.descriptor.entryLabel || row.descriptor.label
-                            color: Theme.fg; placeholderTextColor: Theme.fgMuted
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSize - 1
-                            leftPadding: Theme.spaceLg
-                            rightPadding: Theme.spaceLg
-                            Accessible.name: "Add to " + row.descriptor.label.toLowerCase()
-                            Keys.forwardTo: root.shortcutTarget ? [root.shortcutTarget] : []
-                            background: Rectangle { radius: Theme.radius; color: Theme.hoverMuted }
-                            // Reject empty, duplicate and multiline list entries.
-                            function add() {
-                                var name = text.trim()
-                                var values = Array.isArray(row.value) ? row.value : []
-                                if (!name || /[\r\n\0]/.test(name) || values.includes(name)) return
-                                row.setValue(values.concat([name]))
-                                text = ""
-                            }
-                            onAccepted: add()
-                        }
-                        SettingsActionButton { width: 80; height: Theme.comfortableControlHeight; text: "Add"; enabled: row.editable; activeFocusOnTab: true; focused: activeFocus; onClicked: entry.add(); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
-                    }
+                    onEditingFinished: row.set(text, false)
                 }
             }
         }

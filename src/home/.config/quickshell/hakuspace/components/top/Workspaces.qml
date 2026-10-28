@@ -57,7 +57,6 @@ TopModule {
 
     color: Theme.surface
     tooltip: ""
-    visible: ShellSettingsStore.showWorkspaces && WM.supported && items.length > 0
     implicitWidth: visible ? totalWidth + Theme.pad * 2 : 0
     onActiveIdxChanged: retargetTimer.restart()
     onItemsChanged: retargetTimer.restart()

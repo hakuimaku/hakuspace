@@ -10,13 +10,13 @@ from pathlib import Path
 
 # Keep runtime state outside this versioned preference schema.
 DEFAULTS = {
-    "version": 9,
+    "version": 10,
     "appearance": {"baseRadius": 12, "surfaceTone": "dark", "colorMode": "dark"},
     "roundedScreen": {"radius": 20, "borderThickness": 4},
     "dock": {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 36,
              "hoverLift": 14, "hoverScale": 0, "showTrash": True, "showDevices": True},
     "topbar": dict.fromkeys(("workspaces", "windowTitle", "center", "cava", "tray",
-                             "quickControls", "recorder", "clock", "notifications"), True),
+                             "quickControls", "powerProfile", "wallpaperWorkspace", "recorder", "clock", "notifications"), True),
     "idle": {"enabled": True, "dimEnabled": True, "dimTimeout": 300, "dimPercent": 10,
              "lockEnabled": True, "lockTimeout": 120, "displayOffEnabled": True,
              "displayOffTimeout": 120, "suspendEnabled": True, "suspendTimeout": 600,
@@ -30,7 +30,7 @@ def validate(values, partial=False):
         raise ValueError("expected a shell settings object with known fields")
     if not partial and set(values) != set(DEFAULTS):
         raise ValueError("missing shell settings fields")
-    if "version" in values and (type(values["version"]) is not int or values["version"] != 9):
+    if "version" in values and (type(values["version"]) is not int or values["version"] != 10):
         raise ValueError("unsupported schema version")
     for section in ("appearance", "roundedScreen", "topbar", "dock", "idle"):
         if section not in values:
@@ -82,7 +82,7 @@ def migrate(values):
         validate({"topbar": values["topbar"]}, partial=True)
         upgraded = copy.deepcopy(values)
         upgraded.update(version=2, roundedScreen=copy.deepcopy(DEFAULTS["roundedScreen"]))
-        upgraded["topbar"] = DEFAULTS["topbar"] | values["topbar"]
+        upgraded["topbar"] = {k: v for k, v in DEFAULTS["topbar"].items() if k not in ("powerProfile", "wallpaperWorkspace")} | values["topbar"]
         values = upgraded
     if type(original_version) is int and original_version in (1, 2):
         if set(values) != {"version", "appearance", "roundedScreen", "topbar"}:
@@ -120,7 +120,7 @@ def migrate(values):
             raise ValueError("invalid version 7 shell settings")
         values = copy.deepcopy(values)
         values.update(version=9, idle=copy.deepcopy(DEFAULTS["idle"]))
-        return validate(values), True
+        return migrate(values)[0], True
     if type(original_version) is int and original_version == 8:
         if set(values) != set(DEFAULTS):
             raise ValueError("invalid version 8 shell settings")
@@ -133,18 +133,21 @@ def migrate(values):
             tk = stage + "Timeout"
             if tk in values["idle"] and isinstance(values["idle"][tk], int) and values["idle"][tk] % 10 != 0:
                 values["idle"][tk] = max(10, round(values["idle"][tk] / 10) * 10)
-        return validate(values), True
+        return migrate(values)[0], True
     if type(original_version) is int and original_version == 9:
         if "idle" in values and isinstance(values["idle"], dict):
-            fixed_timeouts = False
             for stage in ("dim", "lock", "displayOff", "suspend"):
                 tk = stage + "Timeout"
                 if tk in values["idle"] and isinstance(values["idle"][tk], int) and values["idle"][tk] % 10 != 0:
                     values = copy.deepcopy(values)
                     values["idle"][tk] = max(10, round(values["idle"][tk] / 10) * 10)
-                    fixed_timeouts = True
-            if fixed_timeouts:
-                return validate(values), True
+        values = copy.deepcopy(values)
+        values["version"] = 10
+        # Preserve the former shared Quick Controls gate when splitting Power Profile.
+        if type(values.get("topbar")) is dict:
+            values["topbar"].setdefault("powerProfile", values["topbar"].get("quickControls", True))
+            values["topbar"].setdefault("wallpaperWorkspace", True)
+        return validate(values), True
     return validate(values), False
 
 

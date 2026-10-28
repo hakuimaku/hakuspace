@@ -74,6 +74,6 @@ import sys
 from pathlib import Path
 
 values = json.loads(Path(sys.argv[1]).read_text())
-assert values["version"] == 9
+assert values["version"] == 10
 assert values["appearance"]["colorMode"] == "light"
 PY

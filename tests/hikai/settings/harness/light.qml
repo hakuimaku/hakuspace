@@ -12,6 +12,9 @@ ShellRoot {
     property int phase: 0
     property int ticks: 0
     property bool capturing: false
+    // Observe actual stretching frames, not only the final selected state.
+    property bool segmentMotionObserved: false
+    property bool segmentStretchObserved: false
     property string captureName: ""
     property var tones: ["ink", "dark", "soft"]
     DesktopColorScheme { id: desktopScheme }
@@ -55,7 +58,7 @@ ShellRoot {
             id: canvas
             anchors.fill: parent
             color: Theme.surface
-            Settings.ShellSettingsPage { id: page; anchors.fill: parent }
+            Settings.LookSettingsPage { id: page; anchors.fill: parent }
         }
         Motion.MorphButton { id: selectedButton; visible: false; selected: true }
     }
@@ -75,6 +78,21 @@ ShellRoot {
         }
         return null
     }
+    // Segmented controls use one moving surface beneath transparent input targets.
+    function modePill() {
+        var button = find(page, "Light")
+        return button ? Array.from(button.parent.parent.children).find(item => item.objectName === "settings-segment-selection") : null
+    }
+    Timer {
+        interval: 16; repeat: true
+        running: root.phase >= 2 && root.phase <= 4
+        onTriggered: {
+            var pill = root.modePill()
+            if (!pill) return
+            if (pill.animatedStartIndex > 0 && pill.animatedStartIndex < 1) root.segmentMotionObserved = true
+            if (Math.abs(pill.animatedEndIndex - pill.animatedStartIndex - 1) > 0.001) root.segmentStretchObserved = true
+        }
+    }
     // Save rendered frames for reviewing all light surface levels.
     function capture(name) {
         capturing = true
@@ -84,13 +102,13 @@ ShellRoot {
     // Settle color animations before recording the requested surface tone.
     Timer {
         id: captureDelay
-        interval: 320
+        interval: HAnimation.selectionMorphDuration + 40
         onTriggered: canvas.grabToImage(result => {
             root.check(result.saveToFile(Quickshell.env("HAKUSPACE_THEME_ARTIFACT_DIR") + "/" + root.captureName + ".png"), "save " + root.captureName)
             root.capturing = false
         })
     }
-    Component.onCompleted: SettingsStore.reload()
+    Component.onCompleted: { WM.backendName = "niri"; SettingsStore.reload() }
     Timer {
         interval: 100
         running: true
@@ -101,19 +119,22 @@ ShellRoot {
             root.check(!ShellSettingsStore.error, ShellSettingsStore.error)
             if (root.phase === 0) {
                 root.checkScheme("prefer-dark")
-                root.check(!Theme.isLight && ShellSettingsStore.values.version === 9, "default dark schema v9")
+                root.check(!Theme.isLight && ShellSettingsStore.values.version === 10, "default dark schema v10")
                 root.check(String(Theme.accent) === "#a2cb8b", "generated dark accent")
                 for (var tone of root.tones) {
                     ShellSettingsStore.setValue("appearance", "surfaceTone", tone)
                     root.check(String(Theme.surface) === ({ink: "#000000", dark: "#0b0b0b", soft: "#171717"})[tone], "dark " + tone)
                 }
                 ShellSettingsStore.discard()
-                page.scrollToSection("Surface")
+                page.scrollToSection("Theme")
                 root.capture("dark")
             } else if (root.phase === 1) {
                 var light = root.find(page, "Light")
                 root.check(light && light.enabled, "Light control available")
+                var pill = root.modePill()
+                root.check(pill && pill.animatedStartIndex === 0 && pill.animatedEndIndex === 1, "initial selection snaps into its segment")
                 light.clicked()
+                root.check(light.color.a === 0 && pill.animatedStartIndex === 0, "mode changes move one pill without a second button fill or an initial jump")
                 root.check(Theme.isLight && String(Theme.accent) === "#2e4820", "live mode selects generated light accent")
                 root.check(String(selectedButton.selectedForegroundColor) === "#ffffff", "selected foreground follows onAccent")
                 root.check(String(CavaService.surfaceColor) === String(Theme.surface)
@@ -125,13 +146,17 @@ ShellRoot {
                 var button = root.find(page, label)
                 root.check(button, "light surface label " + label)
                 button.clicked()
-                page.scrollToSection("Surface")
+                page.scrollToSection("Theme")
                 root.check(String(Theme.surface) === ({ink: "#ffffff", dark: "#eeeeee", soft: "#d6d6d6"})[tone], "light " + tone)
                 root.check(String(Theme.hoverMuted) === ({ink: "#e9e9e9", dark: "#d7d7d7", soft: "#c0c0c0"})[tone], "light hover " + tone)
                 root.capture("light-" + tone)
             } else if (root.phase === 5) {
+                var pill = root.modePill()
+                var light = root.find(page, "Light")
+                root.check(root.segmentMotionObserved && root.segmentStretchObserved, "selection slides with asymmetric pill morph frames")
+                root.check(Math.abs(pill.x - light.x) < 0.01 && Math.abs(pill.width - light.width) < 0.01, "pill settles exactly behind the selected segment")
                 ShellSettingsStore.discard()
-                root.check(!Theme.isLight && String(Theme.accent) === "#a2cb8b", "Discard restores dark immediately")
+                root.check(Theme.isLight, "Autosaved mode survives Discard")
                 ShellSettingsStore.setValue("appearance", "colorMode", "light")
                 ShellSettingsStore.apply()
             } else if (root.phase === 6) {
@@ -144,6 +169,8 @@ ShellRoot {
                 root.check(!Theme.isLight, "Reset previews dark")
                 ShellSettingsStore.discard()
                 root.check(Theme.isLight, "Discard restores saved light")
+                var pill = root.modePill()
+                root.check(pill.targetIndex === 1 && pill.animatedStartIndex === 1 && pill.animatedEndIndex === 2, "rapid return preserves the settled selection without a stale animation")
                 root.check(Theme.surfaceSubtle(1.18).hslLightness > Theme.hoverMuted.hslLightness, "light subtle surfaces stay lighter")
             } else if (root.phase === 8) {
                 root.checkScheme("prefer-light")

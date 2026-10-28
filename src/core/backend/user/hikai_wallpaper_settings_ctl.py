@@ -18,7 +18,7 @@ DEFAULTS = {
 }
 # Exact enum and integer constraints are shared by reads and patches.
 CHOICES = {"profile": ("original", "screen", "low-memory"), "hardwareDecode": ("auto", "prefer", "software"),
-           "buildPolicy": ("on-select", "background", "manual"), "filter": ("static", "video"), "sort": ("name",)}
+           "buildPolicy": ("on-select", "background", "manual"), "filter": ("static", "video"), "sort": ("name", "name-desc", "newest")}
 BOUNDS = {"unloadDelaySec": (1, 600), "maxCacheMiB": (64, 65536)}
 
 

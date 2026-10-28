@@ -76,6 +76,17 @@ class WallpaperTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             settings.validate({"browser": {"filter": "all"}}, partial=True)
 
+    def test_browser_sort_persistence(self):
+        """Persist each supported ordering without replacing other preferences."""
+        for order in ("name-desc", "newest", "name"):
+            with self.subTest(order=order), patch.dict(os.environ, HAKUSPACE_WALLPAPER_SETTINGS_JSON=json.dumps({"browser": {"sort": order}})):
+                saved = settings.run("write")["values"]
+                self.assertEqual(saved["browser"]["sort"], order)
+                self.assertEqual(settings.run("read")["values"], saved)
+                self.assertEqual(saved["playback"], settings.DEFAULTS["playback"])
+        with self.assertRaises(ValueError):
+            settings.validate({"browser": {"sort": "size"}}, partial=True)
+
     def test_settings_reject_symlink(self):
         """A symlink must never redirect a settings write."""
         target = self.home / "victim.json"

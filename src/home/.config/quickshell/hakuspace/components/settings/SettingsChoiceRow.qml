@@ -25,13 +25,13 @@ SettingsActionButton {
     implicitHeight: Theme.comfortableControlHeight
     height: implicitHeight
     text: ""
-    idleColor: Theme.surface
+    idleColor: Theme.hoverMuted
     hoverColor: idleColor
     pressedColor: idleColor
     focusColor: idleColor
     foregroundColor: Theme.fg
     radius: height / 2
-    border.width: 1
+    border.width: 0
     border.color: activeFocus || menu.visible ? Theme.accent : Theme.hoverMuted
     hoverScaleDelta: 0
     hoverXScaleDelta: 0
@@ -94,7 +94,7 @@ SettingsActionButton {
         }
         onOpened: root.searchable ? search.focusSearch() : choices.forceActiveFocus()
         onClosed: if (root.visible) root.forceActiveFocus()
-        background: Rectangle { color: Theme.surface; radius: Theme.largeRadius; border.width: 1; border.color: Theme.hoverMuted }
+        background: Rectangle { color: Theme.surface; radius: Theme.largeRadius; border.width: 0; border.color: Theme.hoverMuted }
         contentItem: Item {
             SettingsSearchField {
                 id: search

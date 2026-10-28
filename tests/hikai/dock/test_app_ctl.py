@@ -42,6 +42,8 @@ class DockTerminationTests(unittest.TestCase):
         setting = self.home / 'hakucfg/setting.sh'
         setting.write_text('RAM_THRESHOLD_MB=42 # custom\n')
         self.assertEqual(ctl.ram_threshold(), 42)
+        setting.write_text('RAM_THRESHOLD_MB=0 # minimum\n')
+        self.assertEqual(ctl.ram_threshold(), 0)
         for text in ('RAM_THRESHOLD_MB=$(touch unsafe)\n', 'RAM_THRESHOLD_MB=1\nRAM_THRESHOLD_MB=2\n'):
             setting.write_text(text)
             with self.assertRaises(ValueError):

@@ -9,9 +9,6 @@ TopModule {
     property bool isRecording: Recorder.isRecording
     property string recordTime: Recorder.recordTime
     
-    // An active recording always retains its visible stop/status affordance.
-    visible: ShellSettingsStore.showRecorder || isRecording
-    
     icon: isRecording ? "" : ""
     text: (isRecording && recordTime !== "") ? " " + recordTime + " " : ""
     tooltip: isRecording ? "Recording Time: " + recordTime : "Screen Recorder"

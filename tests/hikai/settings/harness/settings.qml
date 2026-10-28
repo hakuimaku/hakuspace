@@ -51,13 +51,8 @@ Item {
     // Dockbar preferences stay editable independently of Taskbar mode.
     function checkDockControls() {
         for (var key of ["visibilityMode", "exclusiveSpace"]) {
-            var control = root.find(page, function(item) {
-                return item.labels && item.parent.modelData && item.parent.modelData.key === key
-            })
-            var preference = ShellSettingsStore.values.dock[key]
-            root.check(control && control.available
-                && control.checked === (key === "visibilityMode" ? preference === "always" : preference),
-                key + " reflects the compact Dockbar preference")
+            var row = root.find(page, function(item) { return item.descriptor && item.descriptor.id === "shell.dock." + key })
+            root.check(row && row.state.enabled && row.value === ShellSettingsStore.values.dock[key], key + " reflects the compact Dockbar preference")
         }
     }
     Item { id: liveAnchor; x: 33; y: 8; width: 24; height: 20 }

@@ -10,6 +10,10 @@ PanelWindow {
     required property var modelData
     screen: modelData
 
+    // Retain the drawing window during Settings layout changes without exposing inactive chrome.
+    readonly property bool statusActive: ChromeLayout.topStatusBarVisible
+    contentItem.visible: root.statusActive
+
     property real barH: Theme.topBarHeight
     property real tipAreaH: 180
     // Keep a stable drawing plane while tooltip and OSD geometry animates inside it.
@@ -28,14 +32,14 @@ PanelWindow {
         color: "transparent"
         implicitHeight: root.barH
         exclusiveZone: root.barH
-        visible: root.visible
+        visible: root.statusActive
         mask: Region {}
     }
 
     color: "transparent"
-    visible: ChromeLayout.topStatusBarVisible
+    visible: root.statusActive || UiState.activePanel === "settings"
 
-    mask: Region { item: barBg }
+    mask: Region { item: root.statusActive ? barBg : null }
 
     // Primary background chassis and container of the top status bar.
     Rectangle {

@@ -33,6 +33,8 @@ Manage the taskbar behavior.
 Options:
     --startup           Restore previous state at boot
     --reload            Reload the taskbar
+    --layout TARGET     Set topbar or taskbar explicitly
+    --set STATE         Set enabled or disabled explicitly
     --toggle            Toggle the taskbar on/off
     --status            Print enabled or disabled
     --app-name          Toggle app name format
@@ -42,6 +44,9 @@ EOF_HELP
 }
 
 case "${1:-}" in
+    --layout|--set)
+        exec "$TASKBAR_CTL" "$@"
+        ;;
     --startup|--reload|--toggle|--status)
         exec "$TASKBAR_CTL" "$1"
         ;;

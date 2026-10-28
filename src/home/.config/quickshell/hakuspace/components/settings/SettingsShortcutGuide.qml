@@ -156,11 +156,11 @@ Dialog {
                             ]},
                             {title: "Actions", color: Theme.guideActions, rows: [
                                 {keys: ["Ctrl+F"], detail: "Search settings and jump to a matching row."},
-                                {keys: ["Ctrl+S"], detail: "Apply or save the current page."},
+                                {keys: ["Ctrl+S"], detail: "Save the config document and reload its active compositor. Other files use Save only. Preferences autosave."},
                                 {keys: ["Enter"], detail: "Enter slider editing. Otherwise arrows move focus without changing its value."},
                                 {keys: ["↑ / ↓ / ← / →", "Home / End"], detail: "Adjust values only while editing a slider."},
                                 {keys: ["Enter", "Esc"], detail: "Finish slider editing; Escape keeps Settings open."},
-                                {keys: ["F5"], detail: "Reload or refresh. Unsaved edits require confirmation."},
+                                {keys: ["F5"], detail: "Reload the config document or refresh About. Dirty documents require confirmation."},
                                 {keys: ["← / →", "Enter", "Esc"], detail: "Choose, activate or cancel a dialog action. Background navigation stays blocked."}
                             ]},
                             {title: "Config editor", color: Theme.guideEditing, rows: [

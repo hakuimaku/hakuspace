@@ -131,32 +131,31 @@ startup_taskbar() {
     fi
 }
 
-toggle_taskbar() {
-    # In Hikai this flag selects Taskbar Mode without starting a Waybar process.
+# Write a known target directly so concurrent requests cannot invert each other.
+set_layout() {
+    local target
+    case "${1:-}" in
+        topbar|disabled) target=0 ;;
+        taskbar|enabled) target=1 ;;
+        *) printf 'Invalid layout target\n' >&2; return 2 ;;
+    esac
     if haku_qs_mode; then
-        if [[ "$(cat "$MANUAL_STATE" 2>/dev/null)" == "0" ]]; then
-            echo "1" > "$MANUAL_STATE"
-            if [[ "$(cat "$(haku_state_path cava.dynamic-position)" 2>/dev/null || echo "0")" == "1" ]]; then
-                echo "0" > "$(haku_state_path cava.position)"
-            fi
-        else
-            echo "0" > "$MANUAL_STATE"
-            if [[ "$(cat "$(haku_state_path cava.dynamic-position)" 2>/dev/null || echo "0")" == "1" ]]; then
-                echo "1" > "$(haku_state_path cava.position)"
-            fi
+        printf '%s\n' "$target" > "$MANUAL_STATE"
+        if [[ "$(cat "$(haku_state_path cava.dynamic-position)" 2>/dev/null)" == 1 ]]; then
+            printf '%s\n' "$((1 - target))" > "$(haku_state_path cava.position)"
         fi
         return 0
     fi
-
     ensure_runtime || return 1
-    if [[ "$(cat "$MANUAL_STATE")" == "0" ]]; then
-        echo "1" > "$MANUAL_STATE"
-        kill_taskbar
-        launch_taskbar
-    else
-        echo "0" > "$MANUAL_STATE"
-        kill_taskbar
-    fi
+    [[ "$(cat "$MANUAL_STATE")" == "$target" ]] && return 0
+    printf '%s\n' "$target" > "$MANUAL_STATE"
+    kill_taskbar
+    [[ "$target" == 0 ]] || launch_taskbar
+}
+
+# Retain the public toggle API for existing keybindings.
+toggle_taskbar() {
+    if [[ "$(cat "$MANUAL_STATE")" == 1 ]]; then set_layout topbar; else set_layout taskbar; fi
 }
 
 get_app_name() {
@@ -226,6 +225,8 @@ Headless Taskbar control API.
 Commands:
     --startup               Restore previous state at boot
     --reload                Reload the taskbar
+    --layout topbar|taskbar  Set the layout explicitly
+    --set enabled|disabled  Set Taskbar explicitly
     --toggle                Toggle the taskbar on/off
     --status                Print enabled or disabled
     --get-app-name          Print on or off
@@ -245,6 +246,9 @@ case "${1:-}" in
         ;;
     --reload)
         reload_taskbar
+        ;;
+    --layout|--set)
+        set_layout "${2:-}"
         ;;
     --toggle)
         toggle_taskbar

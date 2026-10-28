@@ -135,7 +135,8 @@ Item {
     Column {
         anchors.fill: parent
         spacing: 6
-        Text { text: "Info"; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 5; font.weight: Font.DemiBold }
+        SettingsActionButton { width: 150; height: 34; text: "Refresh system info"; enabled: !InfoStore.loading; activeFocusOnTab: true; focused: activeFocus; onClicked: InfoStore.refresh(); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
+        Text { text: "About"; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 5; font.weight: Font.DemiBold }
         Text { width: parent.width; text: scroll.activeFocus ? "↑ / ↓ · Page Up / Down · Home / End to scroll · F6 for actions" : "HakuSpace and the system behind your session."; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 1); wrapMode: Text.Wrap }
         Flickable {
             id: scroll

@@ -60,6 +60,8 @@ Manage the cava layer process.
 Commands:
     start               Start the cava layer
     stop                Stop the cava layer
+    --enabled on|off    Set the cava layer state explicitly
+    --dynamic on|off    Set dynamic position explicitly
     toggle              Toggle the cava layer
     reload              Live-reload font/colors from the kitty config
                         (no restart, no interruption to cava itself)
@@ -321,7 +323,8 @@ set_dynamic_position() {
         echo "0" > "$DYNAMIC_STATE_FILE"
         log "Dynamic position disabled."
     else
-        toggle_dynamic
+        err "Expected on or off"
+        return 2
     fi
 }
 
@@ -497,6 +500,13 @@ case "${1:-}" in
     stop)
         stop
         ;;
+    --enabled)
+        case "${2:-}" in
+            on) start ;;
+            off) stop ;;
+            *) err "Expected on or off"; exit 2 ;;
+        esac
+        ;;
     toggle)
         shift
         toggle "$@"
@@ -518,7 +528,7 @@ case "${1:-}" in
     --sync-dynamic)
         sync_dynamic_position
         ;;
-    --dynamic-position)
+    --dynamic|--dynamic-position)
         shift
         set_dynamic_position "${1:-}"
         ;;

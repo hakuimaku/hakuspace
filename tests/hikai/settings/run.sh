@@ -14,11 +14,12 @@ case "${1:-}" in
 esac
 python3 "$TEST_DIR/test_ctl.py"
 python3 "$TEST_DIR/test_avatar.py"
+python3 "$TEST_DIR/test_transactions.py"
 node "$TEST_DIR/test_reveal_geometry.js"
 node "$TEST_DIR/test_navigation.js"
 node "$TEST_DIR/test_ux.js"
 if [[ ${1:-} == --runtime ]]; then
     bash "$TEST_DIR/test_light.sh"
-    bash "$TEST_DIR/test_ink.sh"
+    INK_SETTINGS_ONLY=1 bash "$TEST_DIR/test_ink.sh"
     bash "$TEST_DIR/test_theme_action_menu.sh"
 fi

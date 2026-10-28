@@ -45,6 +45,11 @@ if [[ $1 == list-fonts && -e $INK_TEST_ROOT/font-list-failure ]]; then
     printf 'font list fixture failure\n' >&2
     exit 1
 fi
+if [[ $1 == set-* && -e $INK_TEST_ROOT/font-save-once-failure ]]; then
+    rm "$INK_TEST_ROOT/font-save-once-failure"
+    printf 'transient font fixture failure\n' >&2
+    exit 1
+fi
 if [[ $1 == set-* && -e $INK_TEST_ROOT/font-save-failure ]]; then
     printf 'font fixture save failure\n' >&2
     exit 1
@@ -91,6 +96,24 @@ CLIPBOARD
 chmod +x "$test_root/home/.local/bin/clipboard_ctl.sh"
 printf '#!/usr/bin/env python3\nprint("{}")\n' > "$test_root/home/.local/bin/quick_actions_ctl.py"
 chmod +x "$test_root/home/.local/bin/quick_actions_ctl.py"
+# Runtime preferences use real explicit controllers against private state files.
+cp src/core/backend/desktop/{taskbar_ctl.sh,dockbar_ctl.sh} "$test_root/home/.local/bin/"
+cp src/core/facade/{taskbar_manager.sh,dockbar_manager.sh} "$test_root/home/.local/bin/"
+cp src/core/app/cava-layer/cava_manager.sh "$test_root/home/.local/bin/"
+cp src/core/sys/idle_inhibit.sh src/core/lib/haku_backend_lib.sh "$test_root/home/.local/bin/"
+mkdir -p "$test_root/home/.local/state/hakuspace/state"
+printf 'hikai\n' > "$test_root/home/.local/state/hakuspace/state/[shell].backend"
+export CAVA_PIDFILE="$test_root/cava.pid"
+# Idle policy is observed without allowing hardware, lock or sleep actions in this harness.
+printf '#!/bin/sh\nexit 0\n' > "$test_root/home/.local/bin/idle_actions.sh"
+cat > "$test_root/home/.local/bin/idle_session_watch.py" <<'IDLE_WATCH'
+#!/usr/bin/env python3
+import sys
+print('{"event":"ready"}', flush=True)
+for line in sys.stdin:
+    pass
+IDLE_WATCH
+chmod +x "$test_root/home/.local/bin/idle_actions.sh" "$test_root/home/.local/bin/idle_session_watch.py"
 cp src/core/backend/system/hakuspace_info_ctl.py "$test_root/home/.local/bin/"
 cp src/home/hakucfg/{setting.sh,config/taskbar-pin-apps} "$test_root/home/hakucfg/"
 printf 'alpha\n' > "$test_root/home/hakucfg/wm/hyprland-custom.lua"
@@ -150,7 +173,7 @@ else
     env -u DISPLAY -u WAYLAND_DISPLAY -u QT_QPA_PLATFORMTHEME -u QT_QPA_PLATFORMTHEME_QT6 \
         -u HYPRLAND_INSTANCE_SIGNATURE -u NIRI_SOCKET -u MANGO_INSTANCE_SIGNATURE -u GDK_BACKEND \
         HOME="$test_root/home" XDG_CONFIG_HOME="$test_root/home/.config" XDG_RUNTIME_DIR="$test_root/runtime" \
-        XDG_CURRENT_DESKTOP=labwc QT_QPA_PLATFORM=wayland WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=2 WLR_RENDERER=pixman \
+        XDG_STATE_HOME="$test_root/home/.local/state" XDG_CURRENT_DESKTOP=labwc QT_QPA_PLATFORM=wayland WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=2 WLR_RENDERER=pixman \
         timeout 45s dbus-run-session -- labwc -C "$test_root/labwc" -S "bash $test_root/start.sh" > "$test_root/runtime.log" 2>&1 || status=$?
 fi
 cat "$test_root/runtime.log"

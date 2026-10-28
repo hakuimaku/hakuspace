@@ -96,5 +96,41 @@ def check(directory):
     print("RoundedScreen pixel matrix passed")
 
 
+def check_frames(directory):
+    """Check every corner and rail with both bar edges and the Settings plane."""
+    images = list(directory.glob("frame-*.ppm"))
+    assert len(images) == len(CASES) * 5, "incomplete frame matrix"
+    for image in images:
+        fields = image.stem.split("-")
+        radius, border = CASES[int(fields[1])]
+        mode, top, bottom, logical_width = fields[2], float(fields[4]), float(fields[6]), float(fields[8])
+        magic, dimensions, maximum, pixels = image.read_bytes().split(b"\n", 3)
+        width, height = map(int, dimensions.split())
+        assert magic == b"P6" and maximum == b"255" and len(pixels) == width * height * 3
+        scale = width / logical_width
+        taskbar = mode in ("taskbar", "settingsTaskbar")
+        top_inset, bottom_inset = (border, 0) if taskbar else (0, border)
+
+        def pixel(x, y):
+            offset = (round(y * scale) * width + round(x * scale)) * 3
+            return pixels[offset:offset + 3]
+
+        assert pixel(logical_width / 2 + 20, (top + bottom) / 2) == BACKGROUND, image.name + ": desktop covered"
+        rail = SURFACE if border else BACKGROUND
+        assert pixel(0, (top + bottom) / 2) == rail, image.name + ": left rail"
+        assert pixel(logical_width - 1, (top + bottom) / 2) == rail, image.name + ": right rail"
+        assert pixel(logical_width / 2, top + 1) == (rail if taskbar else BACKGROUND), image.name + ": top rail"
+        assert pixel(logical_width / 2, bottom - 2) == (rail if not taskbar else BACKGROUND), image.name + ": bottom rail"
+        corner = SURFACE if radius else BACKGROUND
+        for x in (border + 1, logical_width - border - 2):
+            for y in (top + top_inset + 1, bottom - bottom_inset - 2):
+                assert pixel(x, y) == corner, image.name + ": corner mask"
+        assert pixel(border + radius + 3, top + top_inset + 2) == BACKGROUND, image.name + ": corner extends into desktop"
+    print("RoundedScreen frame-only pixel matrix passed (25 cases)")
+
+
 if __name__ == "__main__":
-    check(Path(sys.argv[1]))
+    if "--frame-only" in sys.argv:
+        check_frames(Path(sys.argv[1]))
+    else:
+        check(Path(sys.argv[1]))

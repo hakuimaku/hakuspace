@@ -45,6 +45,7 @@ QtObject {
     property color accent: "blue"
     property color onAccentColor: "black"
     property color fgMuted: "gray"
+    property color hoverMuted: "#303030"
 }
 ''')
         (cls.fixture / "main.qml").write_text('''import QtQuick

@@ -15,8 +15,8 @@ Rectangle {
     function focusSearch() { input.forceActiveFocus(Qt.ShortcutFocusReason); input.selectAll() }
     implicitHeight: Theme.comfortableControlHeight
     radius: height / 2
-    color: Theme.surface
-    border.width: 1
+    color: Theme.hoverMuted
+    border.width: input.activeFocus ? 1 : 0
     border.color: input.activeFocus ? Theme.accent : Theme.hoverMuted
     Text {
         id: icon

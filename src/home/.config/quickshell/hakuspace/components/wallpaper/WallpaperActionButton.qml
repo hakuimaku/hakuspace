@@ -28,13 +28,6 @@ Settings.SettingsActionButton {
             easing.bezierCurve: transitionCurve
         }
     }
-    Rectangle {
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom; anchors.bottomMargin: 3
-        width: 20; height: 2; radius: 1
-        visible: root.activeFocus && !root.flat
-        color: root.foreground
-    }
     Keys.onReturnPressed: clicked()
     Keys.onSpacePressed: clicked()
 }

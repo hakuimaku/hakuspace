@@ -33,6 +33,7 @@ ShellRoot {
     property bool sawSettingsFade: false
     property bool capturing: false
     property var closingEditor: null
+    property var closingPage: null
     readonly property var cases: [
         [1024, 14, "static"], [1024, 14, "video"], [1024, 18, "static"], [1024, 18, "video"],
         [1280, 14, "static"], [1280, 14, "video"], [1280, 18, "static"], [1280, 18, "video"],
@@ -363,6 +364,7 @@ ShellRoot {
                 cacheDraft = WallpaperSettingsStore.values.proxy.maxCacheMiB + 64
                 WallpaperSettingsStore.setValue("proxy", "maxCacheMiB", cacheDraft)
                 closingEditor = find(popup, "wallpaper-settings-scroll")
+                closingPage = closingEditor.parent.parent
                 browser.settingsSection = ""
                 phase = 5
             } else if (phase === 5) {
@@ -379,7 +381,7 @@ ShellRoot {
             } else if (phase === 20) {
                 if (popup.animating) return
                 root.check(popup.displayedSection === "playback" && sawSettingsMorph && sawSettingsFade, "section switch morphs the panel height and fades its content")
-                root.check(find(popup, "wallpaper-settings-scroll") === closingEditor, "section morph keeps the same editor and draft")
+                root.check(closingPage.sectionFilter === "playback" && closingPage.visible && WallpaperSettingsStore.values.proxy.maxCacheMiB === cacheDraft, "section morph retains the settings page and cache draft")
                 browser.settingsSection = "cache"
                 phase = 21
             } else if (phase === 21) {

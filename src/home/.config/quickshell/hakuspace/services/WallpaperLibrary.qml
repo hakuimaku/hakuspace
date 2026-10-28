@@ -13,8 +13,15 @@ QtObject {
     property bool refreshPending: false
     property bool initialized: false
     readonly property bool loading: listing.running
-    readonly property var filteredItems: items.filter(item => item.kind === filter
-        && item.label.toLowerCase().includes(query.trim().toLowerCase()))
+    // Sort a filtered copy so changing order preserves source records and selection paths.
+    readonly property var filteredItems: {
+        var order = WallpaperSettingsStore.savedValues.browser.sort
+        return items.filter(item => item.kind === filter && item.label.toLowerCase().includes(query.trim().toLowerCase())).sort(function(a, b) {
+            var byName = a.label.toLowerCase().localeCompare(b.label.toLowerCase()) || a.path.localeCompare(b.path)
+            if (order === "newest") return Number(b.previewVersion || 0) - Number(a.previewVersion || 0) || byName
+            return order === "name-desc" ? -byName : byName
+        })
+    }
     readonly property int selectedIndex: filteredItems.findIndex(item => item.path === selectedPath)
     readonly property var selected: filteredItems[selectedIndex] || null
 

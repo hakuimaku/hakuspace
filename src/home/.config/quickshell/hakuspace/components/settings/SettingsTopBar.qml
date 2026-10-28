@@ -15,10 +15,15 @@ Item {
     signal resultRequested(var result)
     signal shortcutsRequested()
     signal closeRequested()
-    implicitHeight: width < 700 ? 112 : 64
+    implicitHeight: width < 700 ? 108 : 62
     function focusSearch() { search.focusSearch() }
     Text { x: 12; y: 20; text: "HakuSpace Settings"; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 2; font.weight: Font.DemiBold }
-    Text { x: root.width - 176; y: 24; width: 80; elide: Text.ElideRight; text: WM.displayName; color: Theme.fgMuted; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2 }
+    Rectangle {
+        x: root.width - 182; y: 12; width: 84; height: 40; radius: Theme.radius; color: Theme.hoverMuted
+        Text { objectName: "settings-wm-label"; anchors.fill: parent; anchors.margins: Theme.spaceSm; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; elide: Text.ElideRight; text: WM.displayName; color: Theme.fgMuted; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2 }
+        HoverHandler { id: contextHover }
+        SettingsTooltip { target: parent; active: contextHover.hovered; text: "Settings adapt to the active compositor" }
+    }
     SettingsSearchField {
         id: search
         x: root.width < 700 ? 12 : 230
@@ -41,7 +46,7 @@ Item {
         closePolicy: Popup.NoAutoClose
         enter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: HAnimation.fast; easing.type: Easing.OutCubic } }
         exit: Transition { NumberAnimation { property: "opacity"; to: 0; duration: 120; easing.type: Easing.OutCubic } }
-        background: Rectangle { color: Theme.surface; radius: Theme.largeRadius; border.width: 1; border.color: Theme.hoverMuted }
+        background: Rectangle { color: Theme.surface; radius: Theme.largeRadius; border.width: 0; border.color: Theme.hoverMuted }
         contentItem: ListView {
             id: resultList
             objectName: "settings-search-results"
@@ -96,7 +101,7 @@ Item {
                     }
                     Text {
                         width: parent.width
-                        text: result.modelData.category
+                        text: Catalog.breadcrumb(result.modelData)
                         color: result.selected ? Theme.onAccentColor : Theme.fgMuted
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSize - 2
@@ -126,5 +131,4 @@ Item {
         Keys.onReturnPressed: clicked()
         Keys.onSpacePressed: clicked()
     }
-    Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Theme.hoverMuted }
 }

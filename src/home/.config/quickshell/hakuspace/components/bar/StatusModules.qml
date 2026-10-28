@@ -6,6 +6,7 @@ import QtQuick
 Item {
     id: root
 
+    // Share module order and preference gates between Top Bar and Taskbar.
     required property string screenName
     required property var ownerWindow
     property string presentation: "top"
@@ -82,6 +83,7 @@ Item {
             // Workspaces, WindowTitle and any future non-Logo left
             // modules belong in this row so they all clear Navigation.
             TopModules.Workspaces {
+                visible: ShellSettingsStore.showWorkspaces && WM.supported && items.length > 0
                 screenName: root.screenName
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -215,15 +217,24 @@ Item {
             }
 
             TopModules.SettingsGroup {
+                objectName: "quick-controls-module"
                 visible: ShellSettingsStore.showQuickControls
             }
 
+            TopModules.PowerProfileGroup {
+                objectName: "power-profile-module"
+                requested: ShellSettingsStore.showPowerProfile
+            }
+
             TopModules.WallpaperGroup {
+                visible: ShellSettingsStore.showWallpaperWorkspace
                 screenName: root.screenName
             }
 
             TopModules.RecorderGroup {
                 objectName: "screen-recorder-module"
+                // Keep the stop control available while recording.
+                visible: ShellSettingsStore.showRecorder || isRecording
             }
 
             TopModules.ClockGroup {

@@ -17,11 +17,9 @@ Row {
         if (subscribed) {
             Audio.acquire()
             Brightness.acquire()
-            PpdProfile.acquire()
         } else {
             Audio.release()
             Brightness.release()
-            PpdProfile.release()
         }
     }
     onVisibleChanged: syncSubscriptions()
@@ -30,14 +28,12 @@ Row {
         if (subscribed) {
             Audio.release()
             Brightness.release()
-            PpdProfile.release()
         }
     }
 
     property int backlight: Brightness.level
     property int volume: Audio.volume
     property bool muted: Audio.muted
-    property string ppd: PpdProfile.profile
 
     Process {
         id: execProc
@@ -173,13 +169,4 @@ Row {
         }
     }
 
-    TopModule {
-        property var icons: { "performance": "", "balanced": "", "power-saver": "" }
-        visible: root.ppd !== ""
-        isAccent: false
-        icon: icons[root.ppd] || ""
-        tooltip: "Power profile: " + root.ppd
-        
-        onClicked: PpdProfile.cycle()
-    }
 }

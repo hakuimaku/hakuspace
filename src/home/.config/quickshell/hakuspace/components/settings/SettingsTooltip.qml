@@ -49,6 +49,6 @@ ToolTip {
         radius: Theme.radius
         color: Theme.hoverMuted
         border.color: Theme.border
-        border.width: 1
+        border.width: 0
     }
 }

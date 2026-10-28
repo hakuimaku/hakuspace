@@ -40,28 +40,31 @@ Slider {
         x: root.leftPadding
         y: root.topPadding + root.availableHeight / 2 - height / 2
         width: root.availableWidth
-        height: 4
-        radius: Theme.radius
+        height: 20
+        radius: height / 2
         color: Theme.hoverMuted
         Rectangle {
-            width: root.visualPosition * parent.width
+            // Follow the animated handle so the solid fill and marker stay joined.
+            width: root.handle ? Math.max(0, Math.min(parent.width, root.handle.x - parent.x + root.handle.width)) : 0
             height: parent.height
             radius: parent.radius
             color: Theme.accent
         }
     }
-    handle: Rectangle {
+    handle: Item {
         x: root.leftPadding + root.visualPosition * (root.availableWidth - width)
         y: root.topPadding + root.availableHeight / 2 - height / 2
-        width: 12
-        height: 16
-        radius: Theme.radius
-        color: root.pressed || root.keyboardEditing ? Theme.fg : Theme.accent
-        border.width: root.activeFocus ? 2 : 0
-        border.color: Theme.fg
-        scale: root.pressed ? 1.15 : root.hovered ? 1.05 : 1
+        width: 24
+        height: 24
+        // Keep a circular grip inside the filled track without shrinking its hitbox.
+        Rectangle {
+            anchors.centerIn: parent
+            width: root.activeFocus || root.keyboardEditing ? 16 : 14
+            height: width
+            radius: width / 2
+            color: Theme.onAccentColor
+            opacity: root.pressed || root.activeFocus ? 1 : 0.8
+        }
         Behavior on x { enabled: !root.pressed; NumberAnimation { duration: HAnimation.fast } }
-        Behavior on scale { NumberAnimation { duration: HAnimation.buttonHoverDuration } }
-        Behavior on color { ColorAnimation { duration: HAnimation.fast } }
     }
 }

@@ -18,8 +18,14 @@ mkdir -p "$artifact_dir"
 cp -R src/home/.config/quickshell/hakuspace/{services,components} "$shell_root/"
 cp src/core/backend/user/{hikai_settings_ctl.py,taskbar_pins_ctl.py} "$test_root/src/core/backend/user/"
 cp src/home/hakucfg/config/taskbar-pin-apps "$test_root/taskbar-pin-apps"
-if [[ ${1:-} == --headless ]]; then
-    cp tests/hikai/shell/harness/topbar.qml "$shell_root/shell.qml"
+if [[ ${1:-} == --headless || ${1:-} == --modules || ${1:-} == --frame ]]; then
+    if [[ $1 == --frame ]]; then
+        cp tests/geometry/screen/harness/frame.qml "$shell_root/shell.qml"
+    elif [[ $1 == --modules ]]; then
+        cp tests/hikai/settings/harness/modules.qml "$shell_root/shell.qml"
+    else
+        cp tests/hikai/shell/harness/topbar.qml "$shell_root/shell.qml"
+    fi
     mkdir -p "$test_root/labwc" "$test_root/home"
     printf '<labwc_config/>\n' > "$test_root/labwc/rc.xml"
     cat > "$test_root/start.sh" <<'START'
@@ -78,9 +84,13 @@ PY
     done
 fi
 cat "$test_root/quickshell.log"
-if [[ ${status:-0} -ne 0 ]] || ! grep -Eq 'Hikai (settings|runtime) checks passed' "$test_root/quickshell.log" ||
-    grep -Eq 'TypeError|ReferenceError|is not a type|Binding loop|Hikai (settings|runtime) failed|Failed to load configuration' "$test_root/quickshell.log"; then
+if [[ ${status:-0} -ne 0 ]] || ! grep -Eq 'Hikai (settings|runtime|modules|frame) checks passed' "$test_root/quickshell.log" ||
+    grep -Eq 'TypeError|ReferenceError|is not a type|Binding loop|Hikai (settings|runtime|modules|frame) failed|Failed to load configuration' "$test_root/quickshell.log"; then
     exit 1
+fi
+if [[ ${1:-} == --frame ]]; then
+    python3 tests/geometry/screen/test_pixels.py "$artifact_dir" --frame-only
+    exit 0
 fi
 python3 - "$test_root/hakucfg/hikai/hikai-shell.json" "$test_root/taskbar-pin-apps" <<'PY'
 """Confirm that Reset followed by Apply reached disk in the isolated runtime."""
@@ -90,7 +100,7 @@ from pathlib import Path
 import re
 
 values = json.loads(Path(sys.argv[1]).read_text())
-assert values["version"] == 9
+assert values["version"] == 10
 assert values["roundedScreen"] == {"radius": 20, "borderThickness": 4}
 assert values["appearance"] == {"baseRadius": 12, "surfaceTone": "dark", "colorMode": "dark"}
 assert all(values["topbar"].values())

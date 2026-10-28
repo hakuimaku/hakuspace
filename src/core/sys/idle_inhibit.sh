@@ -64,6 +64,7 @@ Control screen idle prevention based on state and audio playback.
 
 Options:
     --check             Check whether idle is inhibited
+    --set on|off        Set manual idle inhibition explicitly
     --toggle            Toggle idle inhibition
     --condition         Exit successfully when idle actions are allowed (default)
     --status-json       Print manual, audio, and combined inhibition
@@ -83,6 +84,16 @@ if [[ "${1:-}" == "--check" ]]; then
 
     echo "Keep Awake: Allowed (Screen can turn off)"
     exit 1
+fi
+
+# Explicit targets make Settings requests idempotent while file watches settle.
+if [[ "${1:-}" == "--set" ]]; then
+    case "${2:-}" in
+        on) printf '1\n' > "$STATE_FILE" ;;
+        off) printf '0\n' > "$STATE_FILE" ;;
+        *) echo 'Expected on or off' >&2; exit 2 ;;
+    esac
+    exit 0
 fi
 
 # Handle the toggle logic

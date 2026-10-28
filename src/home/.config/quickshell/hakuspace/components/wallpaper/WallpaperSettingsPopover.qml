@@ -121,21 +121,15 @@ Item {
             spacing: 16
             Text {
                 Layout.fillWidth: true
-                text: WallpaperSettingsStore.error || WallpaperService.error || (WallpaperSettingsStore.dirty ? "Unsaved preferences" : WallpaperSettingsStore.statusMessage || "Preferences saved")
+                text: SettingsCoordinator.error || WallpaperService.error || (SettingsCoordinator.busy ? "Saving…" : "")
                 elide: Text.ElideRight
                 color: Theme.fgDescription
                 font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2
             }
             WallpaperToolbarButton {
-                objectName: "wallpaper-section-save"
-                Layout.preferredWidth: implicitWidth
-                height: 32
-                caption: WallpaperSettingsStore.saving ? "Saving…" : "Save preferences"
-                useSettingsTooltip: true
-                selected: true
-                enabled: WallpaperSettingsStore.ready && WallpaperSettingsStore.dirty && WallpaperSettingsStore.valid
-                    && !WallpaperSettingsStore.loading && !WallpaperSettingsStore.saving
-                onClicked: WallpaperSettingsStore.apply()
+                caption: "Retry save"; height: 32; visible: !!SettingsCoordinator.error
+                enabled: !SettingsCoordinator.busy
+                onClicked: SettingsCoordinator.activateAction("Retry")
             }
         }
     }

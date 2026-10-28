@@ -25,6 +25,7 @@ QtObject {
     property var fontValues: ({family: "", size: 14})
     property var savedFontValues: ({family: "", size: 14})
     property var writingFonts: ({})
+    property var writingFontKeys: []
     property bool fontsReady: false
     readonly property bool fontsDirty: JSON.stringify(fontValues) !== JSON.stringify(savedFontValues)
     readonly property bool dirty: fontsDirty || JSON.stringify(values) !== JSON.stringify(savedValues)
@@ -68,15 +69,15 @@ QtObject {
         return ["sh", "-c", 'if [ -x "$1" ]; then ctl=$1; elif [ -x "$2" ]; then ctl=$2; else ctl=$3; fi; if [ "$4" = read ]; then exec "$ctl" status; elif [ "$4" = list-fonts ]; then exec "$ctl" list-fonts; fi; if [ "$5" = 1 ]; then "$ctl" set-font "$6" || exit $?; fi; if [ "$7" = 1 ]; then "$ctl" set-size "$8" || exit $?; fi; exec "$ctl" status',
             "--", (Quickshell.env("HOME") || "") + "/.local/bin/theme_ctl.sh", Env.binDir + "/theme_ctl.sh",
             Quickshell.shellPath("../../../../core/backend/theme/theme_ctl.sh"), action,
-            writingFonts.family !== savedFontValues.family ? "1" : "0", writingFonts.family || "",
-            writingFonts.size !== savedFontValues.size ? "1" : "0", String(writingFonts.size || 14)]
+            writingFontKeys.includes("family") ? "1" : "0", writingFonts.family || "",
+            writingFontKeys.includes("size") ? "1" : "0", String(writingFonts.size || 14)]
     }
     function validateFonts(draft) {
         return typeof draft.family === "string" && draft.family.trim().length > 0 && !/[\r\n\0]/.test(draft.family)
             && Number.isInteger(draft.size) && draft.size > 0
     }
     function setFontValue(key, value) {
-        if (!fontsReady || loading || saving || !["family", "size"].includes(key)) return
+        if (!fontsReady || loading || !["family", "size"].includes(key)) return
         var draft = Object.assign({}, fontValues)
         draft[key] = value
         if (!validateFonts(draft)) return
@@ -98,7 +99,7 @@ QtObject {
     }
     // Keep one Apply operation active until both preference stores finish.
     function saveFontsOrFinish() {
-        if (fontsDirty) { fontWrite.command = themeCommand("write"); fontWrite.running = true; return }
+        if (writingFontKeys.length) { fontWrite.command = themeCommand("write"); fontWrite.running = true; return }
         saving = false
         statusMessage = "Preferences saved."
     }
@@ -110,7 +111,8 @@ QtObject {
             var item = catalog[i]
             if (!Object.prototype.hasOwnProperty.call(draft, item.key)) continue
             var value = draft[item.key]
-            if (item.type === "int" && (!/^[1-9][0-9]*$/.test(String(value)) || !Number.isSafeInteger(Number(value)))) errors[item.key] = "Enter a positive integer"
+            // Only the RAM threshold accepts zero; other integer settings stay positive.
+            if (item.type === "int" && (!/^(0|[1-9][0-9]*)$/.test(String(value)) || !Number.isSafeInteger(Number(value)) || Number(value) < (item.key === "RAM_THRESHOLD_MB" ? 0 : 1))) errors[item.key] = item.key === "RAM_THRESHOLD_MB" ? "Enter a non-negative integer" : "Enter a positive integer"
             else if ((item.type === "path" || item.type === "required") && (!String(value).length || /[\r\n\0]/.test(value))) errors[item.key] = "Enter a value on one line"
             else if (item.type === "enum" && ["vivid", "dominant", "brightest", "saturated"].indexOf(value) < 0) errors[item.key] = "Choose a listed mode"
             else if (item.type === "list" && (!Array.isArray(value) || value.some(function(entry) { return !entry || /[\r\n\0]/.test(entry) }))) errors[item.key] = "Invalid list item"
@@ -149,17 +151,19 @@ QtObject {
         readProc.running = true
     }
     // Send changed keys only; the backend preserves unrelated setting.sh lines.
-    function apply() {
-        if (!ready || !dirty || !valid || loading || saving) return
+    function apply(keys) {
+        if (!ready || (!dirty && !(keys && keys.length)) || !valid || loading || saving) return
         var changes = {}
         for (var key in values) {
-            if (JSON.stringify(values[key]) !== JSON.stringify(savedValues[key])) {
+            if (keys ? keys.includes(key) : JSON.stringify(values[key]) !== JSON.stringify(savedValues[key])) {
                 var item = values[key]
                 changes[key] = typeof item === "string" && /^[1-9][0-9]*$/.test(item) && catalog.some(function(c) { return c.key === key && c.type === "int" }) ? Number(item) : item
             }
         }
-        writingSnapshot = Object.assign({}, values)
-        writingFonts = Object.assign({}, fontValues)
+        writingSnapshot = Object.assign({}, savedValues, changes)
+        writingFonts = Object.assign({}, savedFontValues)
+        writingFontKeys = ["family", "size"].filter(function(key) { return keys ? keys.includes(key) : fontValues[key] !== savedFontValues[key] })
+        for (var fontKey of writingFontKeys) writingFonts[fontKey] = fontValues[fontKey]
         saving = true
         error = ""
         if (!Object.keys(changes).length) { saveFontsOrFinish(); return }

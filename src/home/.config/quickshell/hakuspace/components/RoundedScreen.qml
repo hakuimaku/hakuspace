@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import "../services"
@@ -6,6 +7,9 @@ import "../services"
 Item {
     id: rootItem
     required property var modelData
+
+    // Keep the drawing plane fixed while Settings changes the active bar.
+    readonly property bool settingsPlane: UiState.activePanel === "settings"
 
     // Physical corner masks and reservations share the independent screen preferences.
     readonly property real sideInset: ScreenGeometry.borderThickness
@@ -23,81 +27,52 @@ Item {
         visible: rootItem.cornerRadius > 0 || rootItem.sideInset > 0
 
         WlrLayershell.layer: WlrLayer.Top
-        exclusionMode: ChromeLayout.taskbarMode ? ExclusionMode.Ignore : ExclusionMode.Normal
+        exclusionMode: rootItem.settingsPlane || ChromeLayout.taskbarMode ? ExclusionMode.Ignore : ExclusionMode.Normal
         exclusiveZone: 0
         // Taskbar uses physical bounds so its bottom reservation is counted once.
         margins {
-            left: ChromeLayout.taskbarMode ? 0 : -ScreenGeometry.leftInset
-            right: ChromeLayout.taskbarMode ? 0 : -ScreenGeometry.rightInset
-            bottom: ChromeLayout.taskbarMode ? rootItem.taskbarInset
+            left: rootItem.settingsPlane || ChromeLayout.taskbarMode ? 0 : -ScreenGeometry.leftInset
+            right: rootItem.settingsPlane || ChromeLayout.taskbarMode ? 0 : -ScreenGeometry.rightInset
+            bottom: rootItem.settingsPlane ? 0 : ChromeLayout.taskbarMode ? rootItem.taskbarInset
                 : -ScreenGeometry.frameBottomReservation
                     - ScreenGeometry.dockbarReservation(rootItem.modelData ? rootItem.modelData.name : "")
         }
         mask: Region {}
 
-        Canvas {
-            id: canvas
-            anchors.fill: parent
-
+        // Draw only the small corner masks and rails instead of repainting an output-sized image.
+        Item {
+            id: frame
+            width: parent.width
+            y: rootItem.settingsPlane && ChromeLayout.topBarMode ? Math.round(Theme.topBarHeight) : 0
+            height: Math.max(0, parent.height - y - (rootItem.settingsPlane && ChromeLayout.taskbarMode ? rootItem.taskbarInset : 0))
             readonly property real t: rootItem.sideInset
             readonly property real topInset: ScreenGeometry.topBorderThickness
             readonly property real bottomInset: ScreenGeometry.bottomInset
             readonly property real r: ScreenGeometry.maskRadius(width, height)
-            readonly property color c: rootItem.frameColor
-
-            onWidthChanged: requestPaint()
-            onHeightChanged: requestPaint()
-            onTChanged: requestPaint()
-            onTopInsetChanged: requestPaint()
-            onBottomInsetChanged: requestPaint()
-            onRChanged: requestPaint()
-            onCChanged: requestPaint()
-
-            onPaint: {
-                var ctx = getContext("2d")
-                var w = width
-                var h = height
-
-                ctx.clearRect(0, 0, w, h)
-                ctx.fillStyle = c
-
-                // Corner masks follow the active rail bounds independently of rail width.
-                if (r > 0) {
-                    ctx.beginPath()
-                    ctx.moveTo(t, topInset)
-                    ctx.lineTo(t + r, topInset)
-                    ctx.arc(t + r, topInset + r, r, -Math.PI / 2, Math.PI, true)
-                    ctx.closePath()
-                    ctx.fill()
-
-                    ctx.beginPath()
-                    ctx.moveTo(w - t, topInset)
-                    ctx.lineTo(w - t, topInset + r)
-                    ctx.arc(w - t - r, topInset + r, r, 0, -Math.PI / 2, true)
-                    ctx.closePath()
-                    ctx.fill()
-
-                    ctx.beginPath()
-                    ctx.moveTo(w - t, h - bottomInset)
-                    ctx.lineTo(w - t - r, h - bottomInset)
-                    ctx.arc(w - t - r, h - bottomInset - r, r, Math.PI / 2, 0, true)
-                    ctx.closePath()
-                    ctx.fill()
-
-                    ctx.beginPath()
-                    ctx.moveTo(t, h - bottomInset)
-                    ctx.lineTo(t, h - bottomInset - r)
-                    ctx.arc(t + r, h - bottomInset - r, r, Math.PI, Math.PI / 2, true)
-                    ctx.closePath()
-                    ctx.fill()
-                }
-                if (t > 0) {
-                    ctx.fillRect(0, 0, t, h)
-                    ctx.fillRect(w - t, 0, t, h)
-                    ctx.fillRect(0, 0, w, topInset)
-                    ctx.fillRect(0, h - bottomInset, w, bottomInset)
+            Repeater {
+                model: 4
+                delegate: Shape {
+                    required property int index
+                    width: frame.r; height: frame.r
+                    x: index === 1 || index === 2 ? frame.width - frame.t - width : frame.t
+                    y: index >= 2 ? frame.height - frame.bottomInset - height : frame.topInset
+                    rotation: index * 90
+                    transformOrigin: Item.Center
+                    visible: frame.r > 0
+                    preferredRendererType: Shape.CurveRenderer
+                    ShapePath {
+                        fillColor: rootItem.frameColor; strokeColor: "transparent"
+                        startX: 0; startY: 0
+                        PathLine { x: frame.r; y: 0 }
+                        PathArc { x: 0; y: frame.r; radiusX: frame.r; radiusY: frame.r; direction: PathArc.Counterclockwise }
+                        PathLine { x: 0; y: 0 }
+                    }
                 }
             }
+            Rectangle { width: frame.t; height: parent.height; color: rootItem.frameColor }
+            Rectangle { x: parent.width - width; width: frame.t; height: parent.height; color: rootItem.frameColor }
+            Rectangle { width: parent.width; height: frame.topInset; color: rootItem.frameColor }
+            Rectangle { y: parent.height - height; width: parent.width; height: frame.bottomInset; color: rootItem.frameColor }
         }
     }
 

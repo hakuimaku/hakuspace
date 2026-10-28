@@ -12,6 +12,9 @@ QtObject {
     property bool loading: false
     property bool saving: false
     property bool openingExternal: false
+    property bool validating: false
+    property string validatingSnapshot: ""
+    readonly property bool reloadSupported: selectedFileId === ({hyprland: "wm/hyprland-custom.lua", niri: "wm/niri-custom.kdl", mango: "wm/mango-custom.conf"})[WM.backendName]
     property string error: ""
     property string statusMessage: ""
     property var files: []
@@ -32,7 +35,7 @@ QtObject {
     property bool _switchAfterSave: false
     readonly property bool dirty: text !== savedText
     readonly property bool hasFile: selectedFileId.length > 0 && savedRevision.length > 0
-    readonly property bool busy: listing || loading || saving
+    readonly property bool busy: listing || loading || saving || validating
     readonly property bool canSave: hasFile && dirty && !busy && !conflict && !text.includes("\0")
                             && unescape(encodeURIComponent(text)).length <= 96 * 1024
     readonly property string deployedScript: (Quickshell.env("HOME") || "") + "/.local/bin/hakucfg_editor_ctl.py"
@@ -89,14 +92,17 @@ QtObject {
         discard()
         selectFile(next)
     }
-    function save() {
-        if (!canSave) return
+    property string writeAction: "save-reload"
+    // Explicit document saves never participate in preference autosave.
+    function save(action) {
+        if (!canSave && !(action === "restore-backup" && hasFile && !busy && !dirty)) return
         _writingFileId = selectedFileId
         _writingSnapshot = text
         saving = true
         error = ""
         statusMessage = ""
-        writeProc.command = command("write", _writingFileId)
+        writeAction = action || "save-reload"
+        writeProc.command = command(writeAction, _writingFileId)
         writeProc.environment = { "HAKUSPACE_CONFIG_TEXT": _writingSnapshot,
                                   "HAKUSPACE_CONFIG_EXPECTED_REVISION": savedRevision }
         writeProc.running = true
@@ -104,7 +110,27 @@ QtObject {
     function saveAndSwitch() {
         if (!pendingFileId || !canSave) return
         _switchAfterSave = true
-        save()
+        save("write")
+    }
+    // Validation reports unsupported validators without saving or reloading the document.
+    function validateDraft() {
+        if (!hasFile || busy || text.includes("\0") || unescape(encodeURIComponent(text)).length > 96 * 1024) return
+        validating = true
+        validatingSnapshot = text
+        error = ""
+        validator.command = command("validate", selectedFileId)
+        validator.environment = {HAKUSPACE_CONFIG_TEXT: text}
+        validator.running = true
+    }
+    property Process validator: Process {
+        stdout: StdioCollector { id: validationOut }
+        stderr: StdioCollector { id: validationErr }
+        onExited: code => {
+            root.validating = false
+            if (code !== 0) { root.error = validationErr.text.trim() || "Validation failed"; return }
+            try { var result = JSON.parse(validationOut.text); root.statusMessage = result.validationMessage + (root.text !== root.validatingSnapshot ? " · newer edits need validation" : "") }
+            catch (error) { root.error = "Invalid validation response" }
+        }
     }
     function openInVsCode() {
         if (!hasFile || openingExternal) return
@@ -180,10 +206,10 @@ QtObject {
             try {
                 var data = JSON.parse(writeOut.text)
                 if (data.id !== root._writingFileId || root.selectedFileId !== data.id) return
-                root.savedText = root._writingSnapshot
+                root.savedText = data.content
                 root.savedRevision = data.revision
                 if (root.text === root._writingSnapshot) root.text = data.content
-                root.statusMessage = root.dirty ? "Saved earlier edits; newer edits remain unsaved" : "Saved — " + data.id
+                root.statusMessage = (root.dirty ? "Saved earlier edits; newer edits remain unsaved" : "Saved — " + data.id) + (data.validationMessage ? " · " + data.validationMessage : "")
                 root.conflict = false
                 if (root._switchAfterSave && root.pendingFileId && !root.dirty) {
                     var next = root.pendingFileId

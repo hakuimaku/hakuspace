@@ -8,15 +8,18 @@ Motion.MorphButton {
     property bool settingsNavItem: true
     property string settingsNavRole: "control"
     property Item settingsNavGroup: null
-    radius: Theme.radius
-    // Reserve accent fills for explicit selection and primary actions.
-    hoverColor: Theme.surfaceHighlight(1.18)
-    pressedColor: Theme.hoverMuted
-    hoverForegroundColor: Theme.fg
-    pressedForegroundColor: Theme.fg
+    // Moderate corners and quiet tonal fills keep small actions distinct from pills.
+    radius: Math.min(10, height / 3)
+    idleColor: Qt.tint(Theme.surface, Qt.alpha(Theme.overlayInk, 0.06))
+    hoverColor: selected ? selectedColor : Qt.tint(Theme.surface, Qt.alpha(Theme.overlayInk, 0.11))
+    pressedColor: selected ? Qt.darker(selectedColor, 1.08) : Qt.tint(Theme.surface, Qt.alpha(Theme.accent, 0.18))
+    focusColor: selected ? selectedColor : hoverColor
+    hoverForegroundColor: selected ? selectedForegroundColor : foregroundColor
+    pressedForegroundColor: hoverForegroundColor
+    focusForegroundColor: hoverForegroundColor
     // Transparent controls let their shared selection pill own the surface.
     readonly property bool flat: idleColor.a === 0 && selectedColor.a === 0
-    border.width: flat ? 0 : 1
+    border.width: 0
     border.color: activeFocus ? Theme.accent : Theme.hoverMuted
     // An inset underline keeps keyboard focus visible without another pill outline.
     Rectangle {
@@ -25,14 +28,14 @@ Motion.MorphButton {
         anchors.bottomMargin: Theme.gap
         width: Math.max(0, Math.min(parent.width - Theme.pad * 2, Theme.fontSize * 2))
         height: 1
-        color: root.selected ? Theme.onAccentColor : Theme.fg
-        visible: root.flat && root.activeFocus
+        color: root.selected ? Theme.onAccentColor : Theme.accent
+        visible: root.activeFocus
     }
     Accessible.role: Accessible.Button
     Accessible.name: text
     Accessible.onPressAction: clicked()
-    hoverScaleDelta: 0.012
-    pressScaleDelta: 0.045
-    hoverXScaleDelta: 0.02
-    pressXScaleDelta: 0.02
+    hoverScaleDelta: 0.006
+    pressScaleDelta: 0.02
+    hoverXScaleDelta: 0.01
+    pressXScaleDelta: 0.01
 }

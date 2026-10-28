@@ -14,6 +14,10 @@ Item {
     property int fontPixelSize: Math.max(12, Theme.fontSize - 1)
     property int wrapMode: TextEdit.Wrap
     property bool codeEditingEnabled: false
+    property bool showLineNumbers: false
+    // Owners can compact surrounding chrome without replacing the editor or its draft.
+    readonly property real contentY: scrollView.contentItem ? scrollView.contentItem.contentY || 0 : 0
+    readonly property real textContentHeight: textArea.contentHeight
     property bool leftBoundaryNavigationEnabled: false
     property string fileId: ""
     property string indentText: "    "
@@ -136,6 +140,7 @@ Item {
 
     // Let long notes scroll within the available space.
     ScrollView {
+        id: scrollView
         anchors.fill: parent
         clip: true
 
@@ -161,6 +166,27 @@ Item {
             font.family: root.fontFamily
             font.pixelSize: root.fontPixelSize
             padding: 4
+            leftPadding: root.showLineNumbers ? 56 : 4
+            FontMetrics { id: lineMetrics; font: textArea.font }
+            // Native layout spacing keeps line numbers aligned at fractional font sizes and scales.
+            readonly property real codeLineHeight: {
+                var layoutHeight = textArea.contentHeight
+                if (!root.showLineNumbers || !layoutHeight) return lineMetrics.lineSpacing
+                var nextLine = textArea.text.indexOf("\n") + 1
+                var spacing = nextLine > 0 ? textArea.positionToRectangle(nextLine).y - textArea.positionToRectangle(0).y : 0
+                return spacing > 0 ? spacing : lineMetrics.lineSpacing
+            }
+            Rectangle { visible: root.showLineNumbers; x: 52; y: textArea.cursorRectangle.y; width: Math.max(0, textArea.width - 52); height: textArea.codeLineHeight; color: Qt.alpha(Theme.hoverMuted, 0.5); z: -1 }
+            Item {
+                visible: root.showLineNumbers
+                readonly property int firstLine: Math.max(0, Math.floor((scrollView.contentItem.contentY || 0) / textArea.codeLineHeight))
+                readonly property int count: Math.min(Math.ceil(scrollView.height / textArea.codeLineHeight) + 2, textArea.lineCount - firstLine)
+                x: 0; y: 4 + firstLine * textArea.codeLineHeight; width: 48
+                Repeater {
+                    model: Math.max(0, parent.count)
+                    Text { required property int index; y: index * textArea.codeLineHeight; width: 42; height: textArea.codeLineHeight; text: parent.firstLine + index + 1; horizontalAlignment: Text.AlignRight; color: Theme.fgMuted; font: textArea.font }
+                }
+            }
             background: null
 
             onPressed: root.interactionRequested()

@@ -14,9 +14,11 @@ QtObject {
     property bool migrationPending: false
     property string error: ""
     property string statusMessage: ""
-    // Shell consumers bind to the draft; only Apply changes the disk snapshot.
+    // Shell consumers bind to the draft; autosave confirms the disk snapshot.
     property var values: defaults()
     property var savedValues: defaults()
+    // Retain edits made while the submitted snapshot is being saved.
+    property var writingSnapshot: defaults()
     readonly property bool dirty: JSON.stringify(values) !== JSON.stringify(savedValues)
     readonly property bool valid: validate(values)
     readonly property int baseRadius: values.appearance.baseRadius
@@ -31,6 +33,8 @@ QtObject {
     readonly property bool showCava: values.topbar.cava
     readonly property bool showTray: values.topbar.tray
     readonly property bool showQuickControls: values.topbar.quickControls
+    readonly property bool showPowerProfile: values.topbar.powerProfile
+    readonly property bool showWallpaperWorkspace: values.topbar.wallpaperWorkspace
     readonly property bool showRecorder: values.topbar.recorder
     readonly property bool showClock: values.topbar.clock
     readonly property bool showNotifications: values.topbar.notifications
@@ -47,7 +51,7 @@ QtObject {
 
     // Produce independent snapshots so Discard never shares mutable nested objects.
     function defaults() {
-        return {version: 9, appearance: {baseRadius: 12, surfaceTone: "dark", colorMode: "dark"},
+        return {version: 10, appearance: {baseRadius: 12, surfaceTone: "dark", colorMode: "dark"},
             idle: {enabled: true, dimEnabled: true, dimTimeout: 300, dimPercent: 10,
                 lockEnabled: true, lockTimeout: 120, displayOffEnabled: true, displayOffTimeout: 120,
                 suspendEnabled: true, suspendTimeout: 600, respectAppInhibitors: true, inhibitOnAudio: false},
@@ -55,12 +59,12 @@ QtObject {
             dock: {visibilityMode: "autohide", exclusiveSpace: false, iconSize: 36, hoverLift: 14, hoverScale: 0,
                 showTrash: true, showDevices: true},
             topbar: {workspaces: true, windowTitle: true, center: true, cava: true, tray: true,
-                quickControls: true, recorder: true, clock: true, notifications: true}}
+                quickControls: true, powerProfile: true, wallpaperWorkspace: true, recorder: true, clock: true, notifications: true}}
     }
     // Mirror the backend contract before applying or accepting a response.
     function validate(draft) {
         var schema = defaults()
-        if (!draft || draft.version !== 9 || Object.keys(draft).length !== 6) return false
+        if (!draft || draft.version !== 10 || Object.keys(draft).length !== 6) return false
         for (var section of ["appearance", "roundedScreen", "topbar", "dock", "idle"]) {
             if (!draft[section] || Object.keys(draft[section]).length !== Object.keys(schema[section]).length) return false
             for (var key in schema[section]) {
@@ -92,7 +96,7 @@ QtObject {
     }
     // Update a validated draft atomically so Theme and every output react together.
     function setValue(section, key, value) {
-        if (!ready || loading || saving) return
+        if (!ready || loading) return
         var draft = JSON.parse(JSON.stringify(values))
         if (!draft[section] || !Object.prototype.hasOwnProperty.call(draft[section], key)) return
         draft[section][key] = value
@@ -124,16 +128,18 @@ QtObject {
         readProc.running = true
     }
     // Send changed fields so unrelated valid disk preferences survive Apply.
-    function apply() {
-        if (!ready || (!dirty && !migrationPending) || !valid || loading || saving) return
+    function apply(keys) {
+        if (!ready || (!dirty && !migrationPending && !(keys && keys.length)) || !valid || loading || saving) return
         var patch = {}
         for (var section of ["appearance", "roundedScreen", "topbar", "dock", "idle"]) {
             for (var key in values[section]) {
-                if (values[section][key] === savedValues[section][key]) continue
+                if (keys ? !keys.includes(section + "." + key) : values[section][key] === savedValues[section][key]) continue
                 if (!patch[section]) patch[section] = {}
                 patch[section][key] = values[section][key]
             }
         }
+        writingSnapshot = JSON.parse(JSON.stringify(savedValues))
+        for (var submittedSection in patch) Object.assign(writingSnapshot[submittedSection], patch[submittedSection])
         saving = true
         error = ""
         writeProc.modeOnly = false
@@ -146,6 +152,7 @@ QtObject {
         if (!ready || loading || saving || ["dark", "light"].indexOf(mode) < 0) return
         saving = true
         error = ""
+        writingSnapshot = JSON.parse(JSON.stringify(values))
         writeProc.modeOnly = true
         writeProc.command = command("write")
         writeProc.environment = {"HAKUSPACE_HIKAI_SETTINGS_JSON": JSON.stringify({appearance: {colorMode: mode}})}
@@ -170,6 +177,26 @@ QtObject {
         values = draft
         ready = true
     }
+    // Merge newer draft fields onto the response instead of losing in-flight edits.
+    function acceptWrite(text, modeOnly) {
+        var pending = JSON.parse(JSON.stringify(values))
+        accept(text, modeOnly)
+        if (modeOnly) {
+            if (pending.appearance.colorMode !== writingSnapshot.appearance.colorMode) {
+                var modeDraft = JSON.parse(JSON.stringify(values)); modeDraft.appearance.colorMode = pending.appearance.colorMode; values = modeDraft
+            }
+            return
+        }
+        var next = JSON.parse(JSON.stringify(savedValues))
+        for (var section in pending) {
+            if (section === "version") continue
+            for (var key in pending[section]) {
+                if (pending[section][key] !== writingSnapshot[section][key]) next[section][key] = pending[section][key]
+            }
+        }
+        values = next
+        error = ""
+    }
     Component.onCompleted: reload()
 
     property Process readProc: Process {
@@ -190,7 +217,7 @@ QtObject {
         onExited: (code, status) => {
             root.saving = false
             if (code !== 0) { root.error = writeErr.text.trim() || "Could not save shell settings"; return }
-            try { root.accept(writeOut.text, modeOnly); root.statusMessage = "Shell preferences saved." }
+            try { root.acceptWrite(writeOut.text, modeOnly); root.statusMessage = "Shell preferences saved." }
             catch (e) { root.error = "Invalid shell save response" }
         }
     }

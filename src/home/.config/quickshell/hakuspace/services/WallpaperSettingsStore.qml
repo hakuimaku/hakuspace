@@ -8,6 +8,8 @@ QtObject {
     // Draft preferences stay separate from the renderer's confirmed snapshot.
     property var values: defaults()
     property var savedValues: defaults()
+    // Retain edits made while the submitted snapshot is being saved.
+    property var writingSnapshot: defaults()
     property bool ready: false
     property bool loading: false
     property bool saving: false
@@ -28,7 +30,7 @@ QtObject {
         var schema = defaults()
         if (!draft || draft.version !== 1 || Object.keys(draft).length !== 4) return false
         var enums = {profile: ["low-memory", "screen", "original"], hardwareDecode: ["auto", "prefer", "software"],
-            buildPolicy: ["on-select", "background", "manual"], filter: ["static", "video"], sort: ["name"]}
+            buildPolicy: ["on-select", "background", "manual"], filter: ["static", "video"], sort: ["name", "name-desc", "newest"]}
         for (var section of ["playback", "proxy", "browser"]) {
             if (!draft[section] || Object.keys(draft[section]).length !== Object.keys(schema[section]).length) return false
             for (var key in schema[section]) {
@@ -49,7 +51,7 @@ QtObject {
     }
     // Replace the draft atomically so Discard retains independent nested objects.
     function setValue(section, key, value) {
-        if (!ready || loading || saving) return
+        if (!ready || loading) return
         var next = JSON.parse(JSON.stringify(values))
         if (!next[section] || !Object.prototype.hasOwnProperty.call(next[section], key)) return
         next[section][key] = value
@@ -57,7 +59,7 @@ QtObject {
     }
     // Restore the saved snapshot without affecting persistence or playback.
     function discard() { if (!loading && !saving) { values = JSON.parse(JSON.stringify(savedValues)); error = "" } }
-    // Defaults are a draft until Apply succeeds.
+    // Defaults are a draft until persistence succeeds.
     function reset() { if (ready && !loading && !saving) values = defaults() }
     // Read preferences asynchronously while preserving failed drafts.
     function reload() {
@@ -67,16 +69,18 @@ QtObject {
         reader.running = true
     }
     // Merge changed fields on disk instead of replacing unrelated saved preferences.
-    function apply() {
-        if (!ready || !dirty || !valid || loading || saving) return
+    function apply(keys) {
+        if (!ready || (!dirty && !(keys && keys.length)) || !valid || loading || saving) return
         var patch = {}
         for (var section of ["playback", "proxy", "browser"]) {
             for (var key in values[section]) {
-                if (values[section][key] === savedValues[section][key]) continue
+                if (keys ? !keys.includes(section + "." + key) : values[section][key] === savedValues[section][key]) continue
                 if (!patch[section]) patch[section] = {}
                 patch[section][key] = values[section][key]
             }
         }
+        writingSnapshot = JSON.parse(JSON.stringify(savedValues))
+        for (var submittedSection in patch) Object.assign(writingSnapshot[submittedSection], patch[submittedSection])
         saving = true
         writer.environment = {HAKUSPACE_WALLPAPER_SETTINGS_JSON: JSON.stringify(patch)}
         writer.command = command("write")
@@ -89,6 +93,21 @@ QtObject {
         savedValues = data.values
         values = JSON.parse(JSON.stringify(data.values))
         ready = true
+        error = ""
+    }
+    // Merge newer draft fields onto the response instead of losing in-flight edits.
+    function acceptWrite(text, modeOnly) {
+        var pending = JSON.parse(JSON.stringify(values))
+        accept(text, modeOnly)
+        if (modeOnly) return
+        var next = JSON.parse(JSON.stringify(savedValues))
+        for (var section in pending) {
+            if (section === "version") continue
+            for (var key in pending[section]) {
+                if (pending[section][key] !== writingSnapshot[section][key]) next[section][key] = pending[section][key]
+            }
+        }
+        values = next
         error = ""
     }
     Component.onCompleted: reload()
@@ -109,7 +128,7 @@ QtObject {
             if (code !== 0) { root.error = writeErr.text.trim() || "Could not save wallpaper settings"; return }
             try {
                 var decodeChanged = root.savedValues.playback.hardwareDecode !== root.values.playback.hardwareDecode
-                root.accept(writeOut.text)
+                root.acceptWrite(writeOut.text)
                 root.statusMessage = decodeChanged ? "Saved · decoder policy applies on next Hikai start" : "Wallpaper settings saved"
                 root.applied()
             } catch (e) { root.error = String(e) }

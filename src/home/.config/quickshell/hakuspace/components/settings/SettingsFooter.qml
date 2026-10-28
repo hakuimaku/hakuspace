@@ -49,7 +49,7 @@ Rectangle {
                 settingsNavRole: "footer"
                 required property string modelData
                 required property int index
-                readonly property bool primary: ["Apply", "Save", "Save & Switch"].indexOf(modelData) >= 0
+                readonly property bool primary: ["Keep", "Retry", "Restart Hikai"].indexOf(modelData) >= 0
                 x: index * (root.buttonWidth + 8) + (root.labels.length === 4 && index >= 2 ? root.groupGap : 0)
                 width: root.buttonWidth
                 height: 36

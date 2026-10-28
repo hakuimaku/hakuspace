@@ -8,14 +8,14 @@ import "../services"
 import "motion/PanelRevealGeometry.js" as Reveal
 import "settings" as SettingsPages
 import "settings/SettingsNavigation.js" as Navigation
+import "settings/SettingsCatalog.js" as Catalog
 
 PanelWindow {
     id: root
     // Release only after the surface has finished its visual close.
-    readonly property bool releaseReady: !panelOpen && !morphAnim.running && morphProgress === 0
+    readonly property bool releaseReady: !panelOpen && !morphAnim.running && morphProgress === 0 && undoPopup.releaseReady
     required property var modelData
-    property string selectedGroup: "General"
-    property string selectedCategory: "General"
+    property string selectedCategory: "Look"
     property string highlightedId: ""
     // Lazy page objects leave all editable drafts in their persistent stores.
     readonly property var generalPage: generalLoader.item
@@ -27,11 +27,9 @@ PanelWindow {
 
     // Category selection keeps the existing store-specific Apply and confirmation paths.
     function selectCategory(category) {
-        selectedCategory = category
-        selectedGroup = ["Appearance", "Desktop"].includes(category) ? "Shell"
-            : category === "Configuration" ? "Config" : category === "About" ? "Info"
-            : category === "Wallpaper" ? "Wallpaper" : "General"
-        if (selectedGroup === "Config") configVisited = true
+        selectedCategory = ({General: "Look", Appearance: "Look", Desktop: "Shell", Session: "Power & Session", Recording: "Capture", Configuration: "Advanced", Info: "About"})[category] || category
+        if (!Catalog.categories.includes(selectedCategory)) selectedCategory = "Look"
+        if (selectedCategory === "Advanced") configVisited = true
         lastContentFocus = null
         contentFocus = ({})
     }
@@ -43,9 +41,12 @@ PanelWindow {
         Qt.callLater(function() {
             if (!root || !root.panelOpen) return
             var page = interior.currentPage
-            if (page && typeof page.reveal === "function") page.reveal(result.id, result.section || "")
+            if (page && typeof page.reveal === "function") page.reveal(result.id, result.group || result.section || "")
+            highlightTimer.restart()
         })
     }
+    Timer { id: highlightTimer; interval: 2500; onTriggered: root.highlightedId = "" }
+    property bool closePending: false
     property string confirmation: ""
     // Keep the close dialog open until every submitted draft finishes saving.
     property bool applyingClose: false
@@ -53,7 +54,8 @@ PanelWindow {
     readonly property bool settingsBusy: SettingsStore.loading || SettingsStore.saving
         || ShellSettingsStore.loading || ShellSettingsStore.saving || WallpaperSettingsStore.loading || WallpaperSettingsStore.saving || ConfigEditorStore.busy
     readonly property var dirtyDomains: [SettingsStore.dirty ? "General" : "",
-        ShellSettingsStore.dirty ? "Shell" : "", WallpaperSettingsStore.dirty ? "Wallpaper" : "", ConfigEditorStore.dirty ? "Config" : ""].filter(Boolean)
+        ShellSettingsStore.dirty ? "Shell" : "", WallpaperSettingsStore.dirty ? "Wallpaper" : "", ConfigEditorStore.dirty ? "Config" : "",
+        Object.keys(SettingsCoordinator.runtimePending).length ? "Runtime preferences" : ""].filter(Boolean)
     readonly property string closeSaveProblem: SettingsStore.dirty && (!SettingsStore.ready || !SettingsStore.valid)
         ? "General has invalid values. Keep editing to correct them."
         : ShellSettingsStore.dirty && (!ShellSettingsStore.ready || !ShellSettingsStore.valid)
@@ -63,7 +65,7 @@ PanelWindow {
         : ConfigEditorStore.dirty && !ConfigEditorStore.canSave && !ConfigEditorStore.busy
         ? "Config cannot be saved. Keep editing to resolve the file conflict or invalid text." : ""
     readonly property bool canApplyAndClose: !settingsBusy && !applyingClose && !closeSaveProblem
-    onSettingsBusyChanged: Qt.callLater(root.finishApplyAndClose)
+    onSettingsBusyChanged: { Qt.callLater(root.finishApplyAndClose); Qt.callLater(root.finishClose) }
     onConfirmationChanged: {
         confirmationError = ""
         if (confirmation.length > 0) confirmationDialog.activeConfirmation = confirmation
@@ -79,17 +81,17 @@ PanelWindow {
         var target = Navigation.owner(focusedItem)
         if (focusZoneIndex() === 2 && target) {
             lastContentFocus = target
-            contentFocus[selectedGroup + "|" + Navigation.section(target, interior.currentPage)] = target
+            contentFocus[selectedCategory + "|" + Navigation.section(target, interior.currentPage)] = target
         }
         revealFocus()
     }
-    readonly property bool navigationEnabled: panelOpen && interior.enabled && !confirmation && !confirmationDialog.visible && !shortcutHelp.visible && !sidebar.popupOpen
+    readonly property bool navigationEnabled: panelOpen && interior.enabled && !confirmation && !confirmationDialog.visible && !shortcutHelp.visible && !sidebar.popupOpen && !(selectedCategory === "Advanced" && configPage && configPage.popupOpen)
         && !(focusedItem && focusedItem.inputMethodComposing === true)
     // A hidden Config warning must not disable keyboard navigation on other pages.
-    readonly property bool pageConfirmation: selectedGroup === "Config" && configPage && configPage.confirmation.length > 0
+    readonly property bool pageConfirmation: selectedCategory === "Advanced" && configPage && configPage.confirmation.length > 0
     readonly property bool pageShortcutsEnabled: navigationEnabled && !pageConfirmation
     // Keep keyboard region order aligned across entry, cycling and arrow navigation.
-    readonly property var focusZones: [topbar, sidebar, interior.currentPage, footer]
+    readonly property var focusZones: [topbar, sidebar, interior.currentPage, footer, undoPopup]
 
     // Expose explicit arrow targets without consulting Tab focus metadata.
     function navItems(item, role) { return Navigation.collect(item, role) }
@@ -104,16 +106,16 @@ PanelWindow {
             var section = interior.currentPage.activeSection || ""
             var sectionItems = items.filter(item => Navigation.section(item, interior.currentPage) === section)
             if (sectionItems.length) items = sectionItems
-            var remembered = contentFocus[selectedGroup + "|" + section]
+            var remembered = contentFocus[selectedCategory + "|" + section]
             if (items.includes(remembered)) return focusItem(remembered)
-            if (selectedGroup === "Config") return focusItem(items.find(item => item.settingsNavRole === "editor") || items[0])
+            if (selectedCategory === "Advanced") return focusItem(items.find(item => item.settingsNavRole === "editor") || items[0])
         }
         var selected = index < 2 ? items.filter(item => item.selected === true || item.settingsNavSelected === true) : []
         return focusItem(selected.length ? selected[selected.length - 1] : items[0])
     }
     // F6 leaves code-editor indentation intact and skips regions without enabled controls.
     function cycleFocusZone(step) {
-        if (pageConfirmation) { focusZone(3); return }
+        if (pageConfirmation) { configPage.focusConfirmation(); return }
         var current = focusZoneIndex()
         var count = focusZones.length
         for (var i = 1; i <= count; ++i) {
@@ -128,10 +130,10 @@ PanelWindow {
     // Route save and reload shortcuts through each page's existing guards and confirmations.
     function activatePageShortcut(save) {
         if (!pageShortcutsEnabled) return
-        if (save && selectedGroup === "Config") { configPage.saveFromKeyboard(); return }
-        var label = save ? "Apply" : selectedGroup === "Info" ? "Refresh" : "Reload"
-        var page = interior.currentPage
-        if (page.actionLabels.includes(label) && page.canActivate(label)) page.activateAction(label)
+        if (save && selectedCategory === "Advanced") { configPage.saveFromKeyboard(); return }
+        if (selectedCategory === "About" && !save) InfoStore.load()
+        if (selectedCategory === "Advanced" && !save) configPage.requestReload()
+
     }
     // Keep shortcuts inside the layer's key events so reload and shutdown release them safely.
     function handleShortcut(event) {
@@ -141,7 +143,9 @@ PanelWindow {
             if (!event.isAutoRepeat) shortcutHelp.toggle()
         } else {
             if (!navigationEnabled) return false
-            if (modifiers === Qt.ControlModifier && [Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right].includes(event.key))
+            if (((modifiers === Qt.ControlModifier && [Qt.Key_K, Qt.Key_F].includes(event.key)) || (modifiers === Qt.NoModifier && event.key === Qt.Key_Slash))
+                    && !root.textInputFocused()) topbar.focusSearch()
+            else if (modifiers === Qt.ControlModifier && [Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right].includes(event.key))
                 focusZone(event.key === Qt.Key_Up ? 0 : event.key === Qt.Key_Left ? 1 : 2)
             else if (modifiers === Qt.NoModifier && handleArrowNavigation(event)) return true
             else if (modifiers === Qt.ControlModifier && event.key === Qt.Key_Tab)
@@ -176,6 +180,11 @@ PanelWindow {
             return target.selectionStart !== target.selectionEnd
                 || (event.key === Qt.Key_Left ? target.cursorPosition > 0 : target.cursorPosition < target.text.length)
         return false
+    }
+    // Search shortcuts leave text entry and code-editor commands untouched.
+    function textInputFocused() {
+        var owner = Navigation.owner(focusedItem)
+        return !!(owner && ["input", "editor"].includes(owner.settingsNavRole)) || !!(focusedItem && focusedItem.cursorPosition !== undefined)
     }
     // Content follows semantic rows; boundary transitions remain owned by the layer.
     function navigateContent(event) {
@@ -238,19 +247,15 @@ PanelWindow {
             view.contentY = Math.max(0, Math.min(next, view.contentHeight - view.height))
         }
     }
-    // Preferred widths keep 32 px of space on each side when the screen is smaller.
-    readonly property real normalPreferredWidth: 1180
-    readonly property real normalWidth: Math.min(normalPreferredWidth, Math.max(0, modelData.width - 64))
-    readonly property real targetBodyWidth: normalWidth
+    // Keep fixed dimensions with 32 px of clearance on smaller outputs.
+    readonly property real targetBodyWidth: Math.min(1180, Math.max(0, modelData.width - 64))
     readonly property real targetBodyHeight: Math.min(750, Math.max(0, modelData.height - 64))
     // One reversible value widens the diagonal neck and its centered chassis.
     property real morphProgress: 0
     // Bound the Sidebar easing overshoot before computing the silhouette.
     readonly property real revealProgress: Math.max(0, Math.min(1, morphProgress))
-    // Reveal content only after the chassis can contain it.
-    readonly property real contentProgress: Math.max(0, (revealProgress - 0.55) / 0.45)
-    // Wait for settled geometry before accepting Settings control input.
-    readonly property bool interactionReady: panelOpen && !morphAnim.running && revealProgress === 1
+    // Chassis clipping bounds input while the opening animation reveals live controls.
+    readonly property bool interactionReady: panelOpen
     // Use the Navigation corner, numbered clockwise from the top-left corner.
     property int revealPosition: ScreenGeometry.bottomAttached ? 7 : 1
     // Keep attachment geometry inside the active status bar and screen rails.
@@ -278,61 +283,49 @@ PanelWindow {
         else if (pageConfirmation) configPage.cancelConfirmation()
         else requestClose()
     }
+    // A close request waits for autosave and asks only about actionable unsaved state.
     function requestClose() {
-        if (settingsBusy) return
-        if (dirtyDomains.length) confirmation = "close"
+        closePending = true
+        SettingsCoordinator.flush()
+        finishClose()
+    }
+    function finishClose() {
+        if (!closePending || SettingsCoordinator.busy || ConfigEditorStore.busy) return
+        closePending = false
+        if (SettingsCoordinator.closeBlocked || SettingsCoordinator.dirty) confirmation = "close"
         else UiState.closeSettings()
     }
-    function requestReload() {
-        if (selectedCategory === "Session") {
-            if (SettingsStore.dirty || ShellSettingsStore.dirty) confirmation = "reload-session"
-            else { SettingsStore.reload(); ShellSettingsStore.reload() }
-            return
-        }
-        if (selectedGroup === "Wallpaper") {
-            if (WallpaperSettingsStore.dirty) confirmation = "reload-wallpaper"
-            else WallpaperSettingsStore.reload()
-            return
-        }
-        if (selectedGroup === "Shell") {
-            if (ShellSettingsStore.dirty) confirmation = "reload-shell"
-            else ShellSettingsStore.reload()
-            return
-        }
-        if (SettingsStore.dirty) confirmation = "reload"
-        else SettingsStore.reload()
+    Connections {
+        target: SettingsCoordinator
+        function onBusyChanged() { Qt.callLater(root.finishClose) }
+        function onDirtyChanged() { Qt.callLater(root.finishClose) }
+        function onImportingChanged() { Qt.callLater(root.finishClose) }
     }
-    // Reload replaces its own domain; closing restores every editable draft.
+    // Closing can discard failed preference drafts or the explicit config draft.
     function confirmDiscard() {
-        if (settingsBusy || applyingClose) return
-        var action = confirmation
+        if (settingsBusy || applyingClose || confirmation !== "close") return
         confirmation = ""
-        if (action === "reset-wallpaper") WallpaperSettingsStore.reset()
-        else if (action === "discard-wallpaper") { WallpaperSettingsStore.discard(); SettingsStore.discard() }
-        else if (action === "reload-wallpaper") WallpaperSettingsStore.reload()
-        else if (action === "reset-shell") ShellSettingsStore.reset()
-        else if (action === "discard-shell") { ShellSettingsStore.discard(); SettingsStore.discard() }
-        else if (action === "reload-shell") ShellSettingsStore.reload()
-        else if (action === "reload-session") { SettingsStore.reload(); ShellSettingsStore.reload() }
-        else if (action === "reload") SettingsStore.reload()
-        else if (action === "close") {
-            SettingsStore.discard()
-            ShellSettingsStore.discard()
-            WallpaperSettingsStore.discard()
-            ConfigEditorStore.discard()
-            if (configPage) configPage.confirmation = ""
-            UiState.closeSettings()
-        }
+        SettingsStore.discard()
+        ShellSettingsStore.discard()
+        WallpaperSettingsStore.discard()
+        SettingsCoordinator.pendingIds = ({})
+        SettingsCoordinator.runtimePending = ({})
+        SettingsCoordinator.runtimeError = ""
+        ConfigEditorStore.discard()
+        if (configPage) configPage.cancelConfirmation()
+        UiState.closeSettings()
     }
     // Submit all modified pages together and retain failed drafts for review.
     function applyAndClose() {
         if (confirmation !== "close" || !canApplyAndClose) return
         confirmationError = ""
         applyingClose = true
+        if (SettingsCoordinator.error) SettingsCoordinator.activateAction("Retry")
+        else SettingsCoordinator.flush()
         if (SettingsStore.dirty) SettingsStore.apply()
         if (ShellSettingsStore.dirty) ShellSettingsStore.apply()
         if (WallpaperSettingsStore.dirty) WallpaperSettingsStore.apply()
-        if (ConfigEditorStore.dirty) ConfigEditorStore.save()
+        if (ConfigEditorStore.dirty) ConfigEditorStore.save(ConfigEditorStore.reloadSupported ? "save-reload" : "write")
         Qt.callLater(root.finishApplyAndClose)
     }
     // Store exit handlers finish updating errors and snapshots before this runs.
@@ -351,12 +344,18 @@ PanelWindow {
         if (configPage) configPage.cancelConfirmation()
         UiState.closeSettings()
     }
-    onSelectedGroupChanged: {
+    onSelectedCategoryChanged: {
         if (!panelOpen) return
-        if (selectedGroup === "Config" && !ConfigEditorStore.ready) ConfigEditorStore.loadFiles()
-        if (selectedGroup === "Info") InfoStore.load()
+        if (selectedCategory === "Advanced" && !ConfigEditorStore.ready) ConfigEditorStore.loadFiles()
+        if (selectedCategory === "About") InfoStore.load()
     }
 
+    Connections {
+        target: UiState
+        function onSettingsGroupChanged() {
+            if (root.panelOpen && UiState.settingsGroup) { var category = UiState.settingsGroup; UiState.settingsGroup = ""; if (category === "appbar") root.revealResult({id: "shell.dock.iconSize", category: "Shell", group: "App Bar"}); else root.selectCategory(category) }
+        }
+    }
     screen: modelData
     anchors { top: true; bottom: true; left: true; right: true }
     WlrLayershell.layer: UiState.nativeDialogOwner === "settings" ? WlrLayer.Bottom : ShellTransitionState.chromeOverlayLayer
@@ -373,7 +372,7 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     color: "transparent"
-    visible: panelOpen || morphAnim.running || morphProgress > 0
+    visible: panelOpen || morphAnim.running || morphProgress > 0 || !undoPopup.releaseReady
     mask: Region {
         width: root.visible ? root.modelData.width : 0
         height: root.visible ? root.modelData.height : 0
@@ -394,12 +393,12 @@ PanelWindow {
             : HAnimation.sidebarToolCloseDuration) * Math.abs(morphAnim.to - morphProgress))
         morphAnim.easing.bezierCurve = panelOpen ? HAnimation.sidebarToolOpenCurve : HAnimation.sidebarToolCloseCurve
         morphAnim.start()
-        if (!panelOpen) shortcutHelp.close()
+        if (!panelOpen) { shortcutHelp.close(); closePending = false }
         if (panelOpen) {
             if (UiState.settingsGroup) {
                 var group = UiState.settingsGroup
                 UiState.settingsGroup = ""
-                if (group === "appbar") revealResult({id: "appbar", category: "Desktop", section: "App Bar"})
+                if (group === "appbar") revealResult({id: "shell.dock.iconSize", category: "Shell", group: "App Bar"})
                 else selectCategory(group)
             }
             confirmation = ""
@@ -407,8 +406,8 @@ PanelWindow {
             else if (!SettingsStore.dirty) SettingsStore.reload()
             if (!ShellSettingsStore.dirty) ShellSettingsStore.reload()
             if (!WallpaperSettingsStore.dirty) WallpaperSettingsStore.reload()
-            if (selectedGroup === "Config" && !ConfigEditorStore.ready) ConfigEditorStore.loadFiles()
-            if (selectedGroup === "Info") InfoStore.load()
+            if (selectedCategory === "Advanced" && !ConfigEditorStore.ready) ConfigEditorStore.loadFiles()
+            if (selectedCategory === "About") InfoStore.load()
             Qt.callLater(function() { if (root && root.panelOpen) keyHandler.forceActiveFocus() })
         }
     }
@@ -450,14 +449,6 @@ PanelWindow {
         opacity: Math.min(1, root.revealProgress / 0.12)
         border.width: 0
         clip: root.revealProgress < 0.999
-        Behavior on width {
-            enabled: root.interactionReady
-            NumberAnimation {
-                duration: HAnimation.settingsResizeDuration
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: HAnimation.settingsResizeCurve
-            }
-        }
         MouseArea { anchors.fill: parent; onClicked: mouse => mouse.accepted = true }
 
         SettingsPages.SettingsShortcutGuide {
@@ -469,7 +460,7 @@ PanelWindow {
             id: confirmationDialog
             parent: root.contentItem
             anchors.centerIn: parent
-            width: Math.max(0, Math.min(560, root.normalWidth - 24))
+            width: Math.max(0, Math.min(560, root.targetBodyWidth - 24))
             padding: 24
             spacing: 20
             modal: true
@@ -480,10 +471,7 @@ PanelWindow {
             property Item previousFocus: null
             property string activeConfirmation: ""
             readonly property string currentAction: activeConfirmation || root.confirmation
-            readonly property var labels: currentAction === "close"
-                ? ["Keep Editing", "Discard & Close", "Apply & Close"]
-                : ["Keep Editing", ["reset-shell", "reset-wallpaper"].includes(currentAction) ? "Reset to Defaults"
-                    : (currentAction === "discard-shell" || currentAction === "discard-wallpaper") ? "Discard Changes" : "Discard & Reload"]
+            readonly property var labels: ["Keep Editing", "Discard & Close", "Save & Close"]
             onAboutToShow: {
                 activeConfirmation = root.confirmation
                 previousFocus = root.contentItem.Window.window.activeFocusItem
@@ -530,9 +518,7 @@ PanelWindow {
                 spacing: 12
                 Text {
                     width: parent.width
-                    text: confirmationDialog.currentAction === "close" ? "Unsaved changes"
-                        : ["reset-shell", "reset-wallpaper"].includes(confirmationDialog.currentAction) ? "Reset settings?"
-                        : (confirmationDialog.currentAction === "discard-shell" || confirmationDialog.currentAction === "discard-wallpaper") ? "Discard settings changes?" : "Reload saved settings?"
+                    text: "Unsaved changes"
                     color: Theme.fg
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize + 3
@@ -541,12 +527,8 @@ PanelWindow {
                 }
                 Text {
                     width: parent.width
-                    text: root.applyingClose ? "Applying changes… Please wait."
-                        : confirmationDialog.currentAction === "close" ? "Unsaved changes in " + root.dirtyDomains.join(", ")
-                            + ". Apply saves all modified pages. Discard restores their saved values before closing."
-                        : ["reset-shell", "reset-wallpaper"].includes(confirmationDialog.currentAction) ? "Preview default settings. Your current draft will be replaced. Nothing is saved until you choose Apply."
-                        : (confirmationDialog.currentAction === "discard-shell" || confirmationDialog.currentAction === "discard-wallpaper") ? "Undo unsaved settings edits and restore saved values."
-                        : "Discard unsaved " + (confirmationDialog.currentAction === "reload-session" ? "Session" : confirmationDialog.currentAction === "reload-shell" ? "Shell" : confirmationDialog.currentAction === "reload-wallpaper" ? "Wallpaper" : "General") + " edits and reload the saved settings from disk."
+                    text: root.applyingClose ? "Saving changes… Please wait."
+                        : "Unsaved changes in " + root.dirtyDomains.join(", ") + ". Save retries pending changes; Discard restores saved values. A layout preview is reverted before closing."
                     color: Theme.fgDim
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
@@ -586,7 +568,7 @@ PanelWindow {
                         delegate: SettingsPages.SettingsActionButton {
                             id: dialogAction
                             required property string modelData
-                            readonly property bool primary: modelData === "Apply & Close"
+                            readonly property bool primary: modelData === "Save & Close"
                             TextMetrics { id: dialogMetrics; font.family: Theme.fontFamily; font.pixelSize: Math.max(10, Theme.fontSize - 1); text: dialogAction.modelData }
                             width: Math.min(dialogButtons.width, Math.max(100, dialogMetrics.width + 28))
                             height: 40
@@ -624,11 +606,10 @@ PanelWindow {
             height: Math.max(0, root.targetBodyHeight - y)
             clip: true
             // Keep page objects alive so navigation never resets a draft or confirmation.
-            readonly property var currentPage: (root.selectedGroup === "General" ? generalPage
-                : root.selectedGroup === "Shell" ? shellPage : root.selectedGroup === "Wallpaper" ? wallpaperPage
-                : root.selectedGroup === "Config" ? configPage : infoPage) || emptyPage
+            readonly property var currentPage: (["Look", "Power & Session", "Capture"].includes(root.selectedCategory) ? generalPage
+                : root.selectedCategory === "Shell" ? shellPage : root.selectedCategory === "Wallpaper" ? wallpaperPage
+                : root.selectedCategory === "Advanced" ? configPage : infoPage) || emptyPage
             readonly property bool compact: width < 760
-            opacity: root.contentProgress
             enabled: root.interactionReady
             Keys.onEscapePressed: event => { root.handleEscape(); event.accepted = true }
             Keys.onPressed: event => root.handleShortcut(event)
@@ -660,7 +641,7 @@ PanelWindow {
             SettingsPages.SettingsSidebar {
                 id: sidebar
                 y: topbar.height
-                width: interior.compact ? 138 : parent.width >= 1050 ? 220 : 180
+                width: interior.compact ? 178 : parent.width >= 1050 ? 240 : 210
                 height: Math.max(0, footer.y - y)
                 selected: root.selectedCategory
                 onSelectedRequested: category => root.selectCategory(category)
@@ -686,47 +667,45 @@ PanelWindow {
                     Loader {
                         id: generalLoader
                         anchors.fill: parent
-                        active: root.selectedGroup === "General"
-                        sourceComponent: root.selectedCategory === "Session" ? sessionPageComponent : generalPageComponent
+                        active: ["Look", "Power & Session", "Capture"].includes(root.selectedCategory)
+                        sourceComponent: root.selectedCategory === "Power & Session" ? sessionPageComponent : root.selectedCategory === "Capture" ? capturePageComponent : generalPageComponent
                     }
                     Component {
                         id: sessionPageComponent
-                        SettingsPages.SessionSettingsPage {
+                        SettingsPages.PowerSessionSettingsPage {
                             highlightedId: root.highlightedId
                             shortcutTarget: shortcutKeys
-                            onReloadRequested: root.requestReload()
                         }
                     }
                     Component {
                         id: generalPageComponent
-                        SettingsPages.GeneralSettingsPage {
+                        SettingsPages.LookSettingsPage {
                             category: root.selectedCategory
                             highlightedId: root.highlightedId
                             shortcutTarget: shortcutKeys
-                            onReloadRequested: root.requestReload()
                         }
+                    }
+                    Component {
+                        id: capturePageComponent
+                        SettingsPages.CaptureSettingsPage { shortcutTarget: shortcutKeys; highlightedId: root.highlightedId }
                     }
                     Loader {
                         id: shellLoader
                         anchors.fill: parent
-                        active: root.selectedGroup === "Shell"
+                        active: root.selectedCategory === "Shell"
                         sourceComponent: SettingsPages.ShellSettingsPage {
                             category: root.selectedCategory
                             highlightedId: root.highlightedId
                             shortcutTarget: shortcutKeys
-                            onReloadRequested: root.requestReload()
-                            onConfirmationRequested: action => root.confirmation = action
                         }
                     }
                     Loader {
                         id: wallpaperLoader
                         anchors.fill: parent
-                        active: root.selectedGroup === "Wallpaper"
+                        active: root.selectedCategory === "Wallpaper"
                         sourceComponent: SettingsPages.WallpaperSettingsPage {
                             highlightedId: root.highlightedId
                             shortcutTarget: shortcutKeys
-                            onReloadRequested: root.requestReload()
-                            onConfirmationRequested: action => root.confirmation = action
                         }
                     }
                     // Keep an in-progress file-switch confirmation until the panel closes.
@@ -734,16 +713,17 @@ PanelWindow {
                         id: configLoader
                         anchors.fill: parent
                         active: root.configVisited
-                        visible: root.selectedGroup === "Config"
-                        sourceComponent: SettingsPages.ConfigEditorPage {
+                        visible: root.selectedCategory === "Advanced"
+                        sourceComponent: SettingsPages.AdvancedSettingsPage {
                             shortcutTarget: shortcutKeys
+                            highlightedId: root.highlightedId
                             onCloseRequested: root.handleEscape()
                         }
                     }
                     Loader {
                         id: infoLoader
                         anchors.fill: parent
-                        active: root.selectedGroup === "Info"
+                        active: root.selectedCategory === "About"
                         sourceComponent: SettingsPages.InfoPage { }
                     }
                 }
@@ -752,15 +732,24 @@ PanelWindow {
                     id: pageTransition
                     NumberAnimation { target: viewport; property: "opacity"; from: 0.65; to: 1; duration: 160; easing.type: Easing.OutCubic }
                 }
-                Connections { target: root; function onSelectedGroupChanged() { pageTransition.restart() } }
+                Connections { target: root; function onSelectedCategoryChanged() { pageTransition.restart() } }
             }
             SettingsPages.SettingsFooter {
                 id: footer
                 width: parent.width
-                height: implicitHeight
+                height: visible ? implicitHeight : 0
                 anchors.bottom: parent.bottom
-                page: interior.currentPage
+                visible: SettingsCoordinator.actionLabels.length > 0
+                page: SettingsCoordinator
             }
         }
+    }
+    SettingsPages.SettingsUndoPopup {
+        id: undoPopup
+        objectName: "settings-undo-popup"
+        anchors.fill: parent
+        panelRect: Qt.rect((root.width - root.targetBodyWidth) / 2, (root.height - root.targetBodyHeight) / 2, root.targetBodyWidth, root.targetBodyHeight)
+        requested: root.interactionReady && !!SettingsCoordinator.message
+        shortcutTarget: shortcutKeys
     }
 }
