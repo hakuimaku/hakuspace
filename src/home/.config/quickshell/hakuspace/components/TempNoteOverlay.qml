@@ -14,9 +14,11 @@ PanelWindow {
     required property var modelData
     // Display the shared scratch editor only on its owning output.
     readonly property bool panelOpen: UiState.tempNoteOpen && UiState.tempNoteScreenName === modelData.name
-    // Keep the editor layout fixed while the visual chassis changes shape.
-    readonly property real cardWidth: Math.max(1, Math.min(460, width))
-    readonly property real cardHeight: Math.max(1, Math.min(330, height))
+    // Keep the requested size until the note finishes closing.
+    property size cardSize: Qt.size(460, 330)
+    // Bound the editor layout to its output independently of the opening morph.
+    readonly property real cardWidth: Math.max(1, Math.min(cardSize.width, width))
+    readonly property real cardHeight: Math.max(1, Math.min(cardSize.height, height))
     // Keep the entire card within the current output geometry.
     readonly property real maxCardX: Math.max(0, width - cardWidth)
     readonly property real maxCardY: Math.max(0, height - cardHeight)
@@ -47,9 +49,7 @@ PanelWindow {
     anchors { top: true; bottom: true; left: true; right: true }
     WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
     WlrLayershell.namespace: "hakuspace-temp-note"
-    WlrLayershell.keyboardFocus: !panelOpen ? WlrKeyboardFocus.None
-        : UiState.ownsInteraction("tempNote", modelData.name) ? WlrKeyboardFocus.Exclusive
-        : interactionReady ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: interactionReady ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     color: "transparent"
@@ -57,8 +57,9 @@ PanelWindow {
     // The opening capsule must not intercept the Sidebar button beneath it.
     mask: Region { item: root.interactionReady ? noteCard : null; radius: noteCard.radius }
 
-    // Reset transient coordinates whenever ownership ends or a note opens.
+    // Restore default geometry after a completed close or output transfer.
     function resetPosition() {
+        cardSize = Qt.size(460, 330)
         dragOffset = Qt.point(0, 0)
     }
 
@@ -120,7 +121,9 @@ PanelWindow {
     Connections {
         target: root.contentItem.Window.window
         function onActiveChanged() {
-            if (root.contentItem.Window.active && root.interactionReady
+            if (!root.contentItem.Window.active) {
+                UiState.releaseInteraction("tempNote", root.modelData.name)
+            } else if (root.interactionReady
                     && !UiState.ownsInteraction("tempNote", root.modelData.name)) root.takeFocus()
         }
     }
@@ -182,6 +185,8 @@ PanelWindow {
         id: noteCard
         onXChanged: root.publishRect()
         onYChanged: root.publishRect()
+        onWidthChanged: root.publishRect()
+        onHeightChanged: root.publishRect()
         x: root.seedX + (Math.max(0, Math.min(root.maxCardX, root.defaultX + root.dragOffset.x)) - root.seedX) * root.revealProgress
         y: Math.max(0, Math.min(root.maxCardY, root.defaultY + root.dragOffset.y)) + (root.cardHeight - height) / 2
         width: root.seedSize + (root.cardWidth - root.seedSize) * root.revealProgress
@@ -261,8 +266,52 @@ PanelWindow {
                 anchors { top: dragHandle.bottom; left: parent.left; right: parent.right; bottom: parent.bottom }
                 anchors.margins: 16
                 anchors.topMargin: 16
+                anchors.bottomMargin: Theme.controlHeight + 8
                 onInteractionRequested: root.takeFocus()
                 onCloseRequested: root.requestClose()
+            }
+
+            // Resize from the lower-right grip without moving the upper-left corner.
+            Item {
+                anchors { right: parent.right; bottom: parent.bottom; margins: 4 }
+                width: Theme.controlHeight
+                height: Theme.controlHeight
+                Accessible.role: Accessible.Grip
+                Accessible.name: "Resize Temp Note"
+                HoverHandler { cursorShape: Qt.SizeFDiagCursor }
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 12
+                    height: 2
+                    rotation: -45
+                    color: Theme.fgMuted
+                }
+                Rectangle {
+                    x: parent.width / 2 + 3
+                    y: parent.height / 2 + 4
+                    width: 6
+                    height: 2
+                    rotation: -45
+                    color: Theme.fgMuted
+                }
+                DragHandler {
+                    target: null
+                    // Capture geometry once so resizing never shifts the drag origin.
+                    property size startSize: Qt.size(0, 0)
+                    property point startPosition: Qt.point(0, 0)
+                    acceptedButtons: Qt.LeftButton
+                    maximumPointCount: 1
+                    onActiveChanged: if (active) {
+                        startSize = Qt.size(noteCard.width, noteCard.height)
+                        startPosition = Qt.point(noteCard.x, noteCard.y)
+                    }
+                    onActiveTranslationChanged: if (active) {
+                        root.cardSize = Qt.size(
+                            Math.min(root.width - startPosition.x, Math.max(280, startSize.width + activeTranslation.x)),
+                            Math.min(root.height - startPosition.y, Math.max(180, startSize.height + activeTranslation.y)))
+                        root.dragOffset = Qt.point(startPosition.x - root.defaultX, startPosition.y - root.defaultY)
+                    }
+                }
             }
         }
     }
