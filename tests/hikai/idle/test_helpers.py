@@ -161,5 +161,30 @@ esac''',
                 cond_args = ["--condition"] + ([] if audio_policy else ["--no-audio"])
                 self.run_helper("idle_inhibit.sh", *cond_args, code=1 if expected_inhibited else 0)
 
+    def test_quiet_playback_on_nondefault_sink_inhibits_without_test_bypass(self):
+        """Active playback survives silent default-sink samples and expires after pause."""
+        self.env.pop("TEST_ROOT")
+        self.env["IDLE_AUDIO_FIXTURE"] = str(self.root)
+        (self.bin / "pactl").write_text('#!/bin/sh\ncat "$IDLE_AUDIO_FIXTURE/audio"\n')
+        # A silent default monitor must not override the active stream on another sink.
+        capture = self.bin / "parec"
+        capture.write_text(
+            '#!/usr/bin/env python3\nimport os, sys\nfrom pathlib import Path\n'
+            'Path(os.environ["IDLE_AUDIO_FIXTURE"], "captured").touch()\n'
+            'sys.stdout.buffer.write(bytes(3840))\n')
+        capture.chmod(0o755)
+        (self.root / "audio").write_text(
+            'Sink Input #1\nSink: 42\nmedia.class = "Stream/Output/Audio"\nCorked: no\nMute: no\n')
+        for _ in range(2):
+            status = json.loads(self.run_helper("idle_inhibit.sh", "--status-json"))
+            self.assertEqual(status, {"manual": False, "audio": True, "inhibited": True})
+            self.run_helper("idle_inhibit.sh", "--condition", code=1)
+        self.assertFalse((self.root / "captured").exists())
+        (self.root / "audio").write_text(
+            'Sink Input #1\nSink: 42\nmedia.class = "Stream/Output/Audio"\nCorked: yes\nMute: no\n')
+        self.run_helper("idle_inhibit.sh", "--condition", code=1)
+        (self.runtime / "hakuspace/idle-audio-timestamp").write_text(str(int(time.time()) - 6))
+        self.run_helper("idle_inhibit.sh", "--condition")
+
 if __name__ == "__main__":
     unittest.main()
