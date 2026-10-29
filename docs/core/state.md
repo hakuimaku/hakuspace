@@ -5,6 +5,7 @@ Persistent feature state lives in `~/.local/state/hakuspace/state/`. Each filena
 | Key | Filename |
 | --- | --- |
 | `shell.backend` | `[shell].backend` |
+| `shell.memory-maintenance.json` | `[shell].memory-maintenance.json` |
 | `shell.haku-space.enabled` | `[shell].haku-space.enabled` |
 | `desktop.waybar.requested` | `[desktop].waybar.requested` |
 | `desktop.waybar.mode` | `[desktop].waybar.mode` |

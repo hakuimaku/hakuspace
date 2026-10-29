@@ -26,6 +26,26 @@ mkdir -p "$shell_root" "$test_root/home/.local/bin" "$test_root/home/hakucfg/con
 chmod 700 "$test_root"
 cp -R src/home/.config/quickshell/hakuspace/{services,components,config} "$shell_root/"
 cp tests/hikai/window_navigator/harness/navigator.qml "$shell_root/shell.qml"
+# Count real capture-object destruction only in the disposable profiling copy.
+if [[ ${HAKUSPACE_NAV_MEMORY_LOOPS:-0} -gt 0 ]]; then
+    cat > "$shell_root/services/CaptureProbe.qml" <<'QML'
+pragma Singleton
+import QtQuick
+QtObject {
+    property int born: 0
+    property int destroyed: 0
+}
+QML
+    printf '\nsingleton CaptureProbe 1.0 CaptureProbe.qml\n' >> "$shell_root/services/qmldir"
+    python3 - "$shell_root/components/windownav/WindowPreview.qml" <<'PY'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+source = path.read_text().replace('import Quickshell.Wayland', 'import Quickshell.Wayland\nimport "../../services"')
+source = source.replace('id: preview', 'id: preview\n        Component.onCompleted: CaptureProbe.born++\n        Component.onDestruction: CaptureProbe.destroyed++')
+path.write_text(source)
+PY
+fi
 cp src/core/backend/user/{hikai_settings_ctl.py,taskbar_pins_ctl.py,setting_ctl.py} "$test_root/src/core/backend/user/"
 cp src/home/hakucfg/config/taskbar-pin-apps "$test_root/home/hakucfg/config/"
 cp src/core/facade/window_navigator.sh "$test_root/home/.local/bin/"
@@ -99,9 +119,33 @@ env -u DISPLAY -u NIRI_SOCKET -u MANGO_INSTANCE_SIGNATURE -u QT_QPA_PLATFORMTHEM
     HAKUSPACE_TEST_KEYBOARD="$repo_root/tests/support/fixtures/wayland_keyboard.py" \
     HAKUSPACE_TEST_POINTER="$repo_root/tests/support/fixtures/wayland_pointer.py" \
     HAKUSPACE_TEST_POINTER_OUTPUT=WAYLAND-1 \
+    HAKUSPACE_MEMORY_CTL="$repo_root/src/core/backend/system/hikai_memory_ctl.py" \
     HAKUSPACE_HIKAI_SETTINGS_FILE="$test_root/home/hakucfg/hikai/hikai-shell.json" \
     HAKUSPACE_TASKBAR_PINS_FILE="$test_root/home/hakucfg/config/taskbar-pin-apps" \
-    timeout 55s dbus-run-session -- qs -p "$shell_root/shell.qml" > "$test_root/shell.log" 2>&1 || status=$?
+    timeout "${HAKUSPACE_NAV_TIMEOUT:-55s}" dbus-run-session -- qs -p "$shell_root/shell.qml" > "$test_root/shell.log" 2>&1 || status=$?
+if [[ -n ${HAKUSPACE_NAV_ARTIFACT_DIR:-} ]]; then
+    mkdir -p "$HAKUSPACE_NAV_ARTIFACT_DIR"
+    cp "$test_root/"{shell,compositor}.log "$HAKUSPACE_NAV_ARTIFACT_DIR/"
+    find "$test_root/hypr" "$test_root/home/.cache/hyprland" -type f \
+        \( -name 'hyprland.log' -o -name 'hyprlandCrashReport*.txt' \) \
+        -exec cp {} "$HAKUSPACE_NAV_ARTIFACT_DIR/" \; 2>/dev/null || true
+    python3 - "$HAKUSPACE_NAV_ARTIFACT_DIR" <<'PY'
+import json
+import os
+from pathlib import Path
+import re
+import sys
+directory = Path(sys.argv[1])
+log = (directory / "shell.log").read_text(errors="replace")
+rows = [json.loads(match[1]) for match in re.finditer(r'NAV_MEMORY (\{[^\n]+\})', log)]
+report = {"renderer": os.environ.get("QT_QUICK_BACKEND", "default"), "compositor": "nested-hyprland",
+          "warmupMs": int(os.environ.get("HAKUSPACE_NAV_MEMORY_WARMUP_MS", "120000")),
+          "complete": "PASS: Hikai Window Navigator runtime and capture memory soak" in log,
+          "allCapturesDestroyed": bool(rows) and all(row["captureBorn"] == row["captureDestroyed"] for row in rows),
+          "samples": rows}
+(directory / "report.json").write_text(json.dumps(report, indent=2) + "\n")
+PY
+fi
 rg 'INFO: Configuration|WARN.*(qml|scene|quickshell)|ERROR|PASS:' "$test_root/shell.log" || true
 if [[ $status != 0 ]] || ! rg -q 'PASS: Hikai Window Navigator runtime' "$test_root/shell.log" || \
     rg -q 'TypeError|ReferenceError|is not a type|Binding loop|Cannot assign|non-existent|Failed to load configuration|Window Navigator failed' "$test_root/shell.log"; then

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Sample a live Hikai process or exercise a disposable two-output Hikai session."""
 import argparse
+import base64
 import json
 import os
 from pathlib import Path
@@ -14,42 +15,13 @@ import time
 # Resolve production sources without placing benchmark state in the checkout.
 ROOT = Path(__file__).resolve().parents[2]
 SURFACES = ("navigation", "dashboard", "sidebar", "clipboard", "settings", "hakumenu",
-            "actionMenu", "notifications", "wallpaper", "tempNote")
+            "actionMenu", "notifications", "wallpaper", "tempNote", "navigator", "imageEditor")
 
 
-def sample(pid):
-    """Read memory, CPU and resource counts without double-counting DRM clients."""
-    process = Path("/proc") / str(pid)
-    status = dict(line.split(":", 1) for line in (process / "status").read_text().splitlines() if ":" in line)
-    stat = (process / "stat").read_text().rsplit(")", 1)[1].split()
-    pss = None
-    try:
-        for line in (process / "smaps_rollup").read_text().splitlines():
-            if line.startswith("Pss:"):
-                pss = int(line.split()[1])
-    except (PermissionError, FileNotFoundError):
-        pass
-    clients = {}
-    for path in (process / "fdinfo").iterdir():
-        try:
-            fields = dict(line.split(":", 1) for line in path.read_text().splitlines() if ":" in line)
-            resident = [int(value.split()[0]) for key, value in fields.items() if key.startswith("drm-resident-")]
-            if resident:
-                client = (fields.get("drm-pdev"), fields.get("drm-client-id", path.name))
-                clients[client] = sum(resident)
-        except (OSError, ValueError):
-            continue
-    children = set()
-    for task in (process / "task").iterdir():
-        try:
-            children.update((task / "children").read_text().split())
-        except FileNotFoundError:
-            continue
-    return {"rssKiB": int(status["VmRSS"].split()[0]), "pssKiB": pss,
-            "gpuResidentKiB": sum(clients.values()) if clients else None,
-            "cpuSeconds": (int(stat[11]) + int(stat[12])) / os.sysconf("SC_CLK_TCK"),
-            "fdCount": len(list((process / "fd").iterdir())),
-            "threadCount": int(status["Threads"]), "childCount": len(children)}
+# Reuse the production sampler while preserving existing KiB report fields.
+import sys
+sys.path.insert(0, str(ROOT / "src/core/lib"))
+from haku_memory import sample
 
 
 def plateau(samples, field):
@@ -70,11 +42,19 @@ def measure(pid, args, ipc=None):
     report = {"pid": pid, "renderer": "software" if args.software else "default",
               "outputs": args.outputs if ipc else None, "warmupSec": args.warmup,
               "idleSec": args.seconds, "cycles": args.cycles if ipc else 0,
-              "notifications": args.notifications if ipc else 0, "samples": [], "complete": False}
+              "notifications": args.notifications if ipc else 0, "samples": [], "complete": False,
+              "backend": args.backend if ipc else "live", "skippedSurfaces": []}
 
     # Flush every checkpoint to preserve evidence if the target exits during stress.
     def record(phase, **extra):
         value = sample(pid) | {"elapsedSec": round(time.monotonic() - start, 3), "phase": phase} | extra
+        if ipc:
+            value["runtime"] = json.loads(ipc("status"))
+        previous = report["samples"]
+        baseline = next((row for row in previous if row["phase"] == "idle"), value)
+        value.update(rssDeltaKiB=value["rssKiB"] - baseline["rssKiB"],
+                     pssDeltaKiB=value["pssKiB"] - baseline["pssKiB"] if value["pssKiB"] is not None and baseline["pssKiB"] is not None else None,
+                     fdDelta=value["fdCount"] - baseline["fdCount"])
         report["samples"].append(value)
         args.output.write_text(json.dumps(report, indent=2) + "\n")
         return value
@@ -90,11 +70,16 @@ def measure(pid, args, ipc=None):
         time.sleep(min(args.interval, remaining))
     if ipc and args.cycles:
         for surface in args.surfaces:
+            if surface == "navigator" and not json.loads(ipc("status"))["navigatorSupported"]:
+                report["skippedSurfaces"].append({"surface": surface, "reason": "requires Hyprland with live toplevels"})
+                continue
             for batch in (1, 2):
                 record("before", surface=surface, batch=batch)
                 for cycle in range(1, args.cycles + 1):
                     ipc("open", surface, str((cycle - 1) % args.outputs))
                     time.sleep(args.dwell)
+                    if cycle == 1:
+                        record("opened", surface=surface, batch=batch)
                     ipc("close", surface)
                     time.sleep(args.dwell)
                     if cycle in (10, 50, args.cycles):
@@ -114,6 +99,59 @@ def measure(pid, args, ipc=None):
         if state["records"] > 100 or state["handles"] or state["deadlines"] or state["loaded"]:
             raise RuntimeError("notification churn did not settle: " + json.dumps(state))
         record("notification-settled", lifecycle=state)
+    if ipc and args.maintenance_check:
+        # Exercise actual editor ownership and visual completion under forced pressure.
+        initial = json.loads(ipc("status"))["memory"]
+        if not initial or not initial["maintenanceSafe"]:
+            raise RuntimeError("maintenance profile needs an established idle baseline")
+        ipc("open", "imageEditor", "0")
+        time.sleep(1)
+        ipc("pressure")
+        time.sleep(1)
+        active = record("maintenance-unsafe")["runtime"]["memory"]
+        if active["activeLayer"] != "imageEditor" or active["maintenanceSafe"] or active["gcCount"] != initial["gcCount"]:
+            raise RuntimeError("editor failed to defer pressure collection")
+        if "unsafe" not in ipc("collect"):
+            raise RuntimeError("manual collection bypassed editor ownership")
+        ipc("close", "imageEditor")
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            current = json.loads(ipc("status"))["memory"]
+            if current["postGc"] is not None:
+                break
+            time.sleep(0.1)
+        else:
+            raise RuntimeError("deferred GC did not complete after editor teardown")
+        if current["loadedSurfaces"] or current["gcCount"] != initial["gcCount"] + 1:
+            raise RuntimeError("GC count or completed lifecycle mismatch")
+        if "cooldown" not in ipc("collect"):
+            raise RuntimeError("manual GC cooldown was bypassed")
+        record("maintenance-collected")
+    if ipc and args.picker_check:
+        # Keep a private FIFO reader open while the real picker delivers its response.
+        descriptor = os.open(os.environ["HAKUSPACE_MEMORY_PICKER_OUTPUT"], os.O_RDONLY | os.O_NONBLOCK)
+        try:
+            ipc("pickerOpen")
+            if json.loads(ipc("status"))["pickerItems"] != 20000:
+                raise RuntimeError("picker fixture did not load its item model")
+            ipc("pickerFinish")
+            deadline = time.monotonic() + 5
+            payload = b""
+            while time.monotonic() < deadline:
+                try:
+                    payload += os.read(descriptor, 4096)
+                except BlockingIOError:
+                    pass
+                current = json.loads(ipc("status"))
+                if payload and not current["pickerBusy"]:
+                    break
+                time.sleep(0.02)
+            record("picker-result", payloadDelivered=payload == b"memory-picker-result\n")
+            if payload != b"memory-picker-result\n" or current["pickerItems"] or current["pickerBusy"]:
+                raise RuntimeError("closed picker retained its model or failed FIFO delivery")
+            record("picker-settled")
+        finally:
+            os.close(descriptor)
     report.update(complete=True, rssSlopeKiBPerMin=plateau(report["samples"], "rssKiB"),
                   pssSlopeKiBPerMin=plateau(report["samples"], "pssKiB"))
     args.output.write_text(json.dumps(report, indent=2) + "\n")
@@ -141,6 +179,11 @@ def session(args):
             else:
                 raise RuntimeError("Quickshell IPC did not initialize")
             measure(process.pid, args, ipc)
+            if args.backend == "classic":
+                result = subprocess.run(["quickshell", "ipc", "--pid", str(process.pid), "call", "memory", "status"],
+                                        capture_output=True, timeout=5)
+                if result.returncode == 0:
+                    raise RuntimeError("Classic unexpectedly loaded memory IPC/runtime")
             log.flush()
             errors = ("TypeError", "ReferenceError", "Binding loop", "Failed to load configuration")
             if any(error in args.output.with_suffix(".qs.log").read_text() for error in errors):
@@ -159,9 +202,10 @@ def headless(args):
     with tempfile.TemporaryDirectory(prefix="hikai-memory-") as temporary:
         work = Path(temporary)
         shell = work / "src/home/.config/quickshell/hakuspace"
-        shutil.copytree(ROOT / "src/home/.config/quickshell/hakuspace", shell)
-        for name in ("backend", "lib", "theme", "state"):
-            shutil.copytree(ROOT / "src/core" / name, work / "src/core" / name)
+        source = args.source_root
+        shutil.copytree(source / "src/home/.config/quickshell/hakuspace", shell)
+        for name in ("backend", "lib", "theme", "state", "sys"):
+            shutil.copytree(source / "src/core" / name, work / "src/core" / name)
         bin_dir = work / "src/home/.local/bin"
         bin_dir.mkdir(parents=True)
         for helper in (work / "src/core/backend").rglob("*"):
@@ -173,10 +217,31 @@ def headless(args):
         production = (shell / "shell.qml").read_text()
         hosts = "ephemeralHosts.instances" if "id: ephemeralHosts" in production else "[]"
         (shell / "shell.qml").write_text(production.rsplit("}", 1)[0]
-            + "\n    MemoryProbe { hosts: " + hosts + "; lazy: " + str(hosts != "[]").lower() + " }\n}\n")
+            + "\n    MemoryProbe { hosts: " + hosts + "; picker: pickerWindow; lazy: " + str(hosts != "[]").lower() + " }\n}\n")
         home = work / "home"
-        shutil.copytree(ROOT / "src/home/hakucfg", home / "hakucfg")
+        shutil.copytree(source / "src/home/hakucfg", home / "hakucfg")
         (home / "hakucfg/setting.sh").write_text("ACCENT_COLOR_BASED_ON_WALLPAPER=false\n")
+        # Private profiles select Hikai explicitly and never drive system idle actions.
+        state = work / "src/home/.local/state/hakuspace/state"
+        state.mkdir(parents=True)
+        (state / "[shell].backend").write_text(args.backend + "\n")
+        settings_script = work / "src/core/backend/user/hikai_settings_ctl.py"
+        defaults = subprocess.check_output(["python3", str(settings_script), "read"],
+            env={**os.environ, "HOME": str(home)}, text=True)
+        settings = json.loads(defaults)["values"]
+        settings["idle"]["enabled"] = False
+        settings_path = home / "hakucfg/hikai/hikai-shell.json"
+        settings_path.parent.mkdir(parents=True, exist_ok=True)
+        settings_path.write_text(json.dumps(settings))
+        if args.maintenance_policy:
+            config = shell / "config/Memory.js"
+            config.write_text(config.read_text().replace("function defaults()", "function originalDefaults()")
+                + "\nfunction defaults() { return Object.assign({}, originalDefaults(), " + json.dumps(args.maintenance_policy) + "); }\n")
+        # A tiny PNG exercises the real editor without reading user images.
+        image = work / "memory-editor.png"
+        image.write_bytes(base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg=="))
+        picker_output = work / "memory-picker.fifo"
+        os.mkfifo(picker_output, mode=0o600)
         runtime = work / "runtime"
         runtime.mkdir(mode=0o700)
         compositor = work / "labwc"
@@ -188,7 +253,9 @@ def headless(args):
         environment.update(HOME=str(home), XDG_CONFIG_HOME=str(home / ".config"), XDG_CACHE_HOME=str(home / ".cache"),
                            XDG_RUNTIME_DIR=str(runtime), XDG_CURRENT_DESKTOP="labwc", QT_QPA_PLATFORM="wayland",
                            WLR_BACKENDS="headless", WLR_HEADLESS_OUTPUTS=str(args.outputs), WLR_RENDERER="pixman",
-                           HAKUSPACE_MEMORY_SHELL=str(shell / "shell.qml"))
+                           HAKUSPACE_MEMORY_SHELL=str(shell / "shell.qml"), HAKUSPACE_MEMORY_IMAGE=str(image), QS_NO_RELOAD_POPUP="1",
+                           HAKUSPACE_MEMORY_PICKER_OUTPUT=str(picker_output),
+                           DBUS_SYSTEM_BUS_ADDRESS="unix:path=" + str(work / "no-system-bus"))
         if args.software:
             environment["QT_QUICK_BACKEND"] = "software"
         else:
@@ -226,7 +293,16 @@ def main():
     parser.add_argument("--outputs", type=int, choices=(1, 2), default=2)
     parser.add_argument("--surfaces", nargs="+", choices=SURFACES, default=list(SURFACES))
     parser.add_argument("--software", action="store_true", help="Explicit debug profile; GPU residency is unavailable")
+    parser.add_argument("--source-root", type=Path, default=ROOT, help="Source snapshot for matched before/after profiles")
+    parser.add_argument("--backend", choices=("hikai", "classic"), default="hikai")
+    parser.add_argument("--maintenance-policy", type=json.loads, help="Private headless policy overrides as a JSON object")
+    parser.add_argument("--maintenance-check", action="store_true", help="Private editor/pressure/GC integration check; use shortened policy durations")
+    parser.add_argument("--picker-check", action="store_true", help="Private resident-picker release and FIFO check")
     args = parser.parse_args()
+    if args.maintenance_policy is not None and (not args.headless or type(args.maintenance_policy) is not dict):
+        parser.error("maintenance policy overrides require --headless and a JSON object")
+    if (args.maintenance_check or args.picker_check) and (not args.headless or args.backend != "hikai"):
+        parser.error("maintenance check requires a private Hikai session")
     if args.seconds < 0 or args.warmup < 0 or args.interval <= 0 or args.cycles < 0 or args.dwell < 0 or args.settle < 0 or args.notifications < 0:
         parser.error("durations and cycles must be nonnegative; interval must be positive")
     args.output = args.output.resolve()

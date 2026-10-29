@@ -4,6 +4,7 @@ from pathlib import Path
 # Registered state keys and their owner-prefixed basenames.
 STATE_FILES = {
     'shell.backend': '[shell].backend',
+    'shell.memory-maintenance.json': '[shell].memory-maintenance.json',
     'shell.haku-space.enabled': '[shell].haku-space.enabled',
     'desktop.waybar.requested': '[desktop].waybar.requested',
     'desktop.waybar.mode': '[desktop].waybar.mode',

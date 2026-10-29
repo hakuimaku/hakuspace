@@ -8,6 +8,8 @@ Item {
     // Production hosts expose loader counts without retaining their loaded items.
     property var hosts: []
     property bool lazy: false
+    // Inspect the existing resident picker without creating a second window.
+    property var picker: null
 
     IpcHandler {
         target: "memoryProbe"
@@ -29,6 +31,8 @@ Item {
             else if (surface === "notifications") UiState.toggleNotifications(screen.name, anchor)
             else if (surface === "wallpaper") UiState.openWallpaper(screen.name)
             else if (surface === "tempNote") UiState.openTempNote(screen.name)
+            else if (surface === "navigator") WindowNavigator.open("overview", 0)
+            else if (surface === "imageEditor") ImageEditor.open(Quickshell.env("HAKUSPACE_MEMORY_IMAGE"), screen.name)
         }
 
         // Request normal visual closing instead of forcing loader destruction.
@@ -40,12 +44,28 @@ Item {
             else if (surface === "notifications") UiState.closeNotifications()
             else if (surface === "wallpaper") UiState.closeWallpaper()
             else if (surface === "tempNote") UiState.closeTempNote()
+            else if (surface === "navigator") WindowNavigator.cancel()
+            else if (surface === "imageEditor") ImageEditor.close()
         }
 
         // Close native handles and let popup animations finish normally.
         function expireAll() {
             for (var key of Object.keys(NotificationStore._handles)) NotificationStore.expire(Number(key))
         }
+
+        // Private stress profiles lower pressure gates without changing production config.
+        function pressure() {
+            MemoryMaintenance.baseline = Object.assign({}, MemoryMaintenance.baseline, {rssMiB: 1})
+            MemoryMaintenance.policy = Object.assign({}, MemoryMaintenance.policy, {softGrowthMiB: 1, hardGrowthMiB: 100000})
+            MemoryMaintenance.requestSample("observe")
+        }
+        function collect(): string { return MemoryMaintenance.collect() }
+        function pickerOpen() {
+            var items = []
+            for (var i = 0; i < 10000; ++i) items.push("memory picker item " + i)
+            root.picker.open(Quickshell.env("HAKUSPACE_MEMORY_PICKER_OUTPUT"), "Memory picker", items, false, false)
+        }
+        function pickerFinish() { root.picker.finish("memory-picker-result") }
 
         // Report resource ownership without keeping references to loaded surfaces.
         function status(): string {
@@ -57,6 +77,10 @@ Item {
                     releaseReady: loader.item ? loader.item.releaseReady : null,
                     panelOpen: loader.item && loader.item.panelOpen, closing: loader.item && loader.item.closing})
             return JSON.stringify({surfaces: surfaces, activePanel: UiState.activePanel, loaded: root.lazy ? loaded : null, records: NotificationStore.records.length,
+                pickerItems: root.picker ? root.picker.allItems.length + root.picker.filteredItems.length : null,
+                pickerBusy: root.picker ? (root.picker.maintenanceBusy !== undefined ? root.picker.maintenanceBusy : root.picker.visible) : null,
+                navigatorSupported: WindowNavigator.supported,
+                memory: AppState.shellBackend === "hikai" && typeof MemoryMaintenance !== "undefined" ? JSON.parse(MemoryMaintenance.status()) : null,
                 handles: Object.keys(NotificationStore._handles).length,
                 deadlines: Object.keys(NotificationStore._deadlines).length})
         }

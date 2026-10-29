@@ -11,6 +11,7 @@
 | Wallpaper kinds and video quality profiles | `UiCatalog.js` → Wallpaper |
 | Settings rows, search metadata and reset descriptors | `SettingsCatalog.js` |
 | Shell preference defaults and schema version | `Defaults.js` |
+| Internal Hikai memory thresholds, warmup, sampling and cooldowns | `Memory.js` |
 | Runtime state, IO, validation and persistence | `../services/` |
 
 `Theme` and `HAnimation` remain the public runtime facades. Components keep

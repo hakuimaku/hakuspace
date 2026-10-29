@@ -26,6 +26,8 @@ PanelWindow {
     }
     
     property string currentFifo: ""
+    // A FIFO write can outlive the visible picker and must finish before recycle.
+    readonly property bool maintenanceBusy: visible || writer.running
     property var allItems: []
     property var filteredItems: []
     property bool passwordMode: false
@@ -49,6 +51,10 @@ PanelWindow {
         var f = currentFifo;
         currentFifo = "";
         visible = false;
+        // Closed resident pickers must release their last model and typed input.
+        allItems = [];
+        filteredItems = [];
+        inputField.text = "";
         
         writer.environment = { "HAKU_PICK_TEXT": line };
         writer.command = ["sh", "-c", "printf '%s\\n' \"$HAKU_PICK_TEXT\" > \"$1\"", "_", f];
@@ -73,6 +79,8 @@ PanelWindow {
     
     Process {
         id: writer
+        // Drop the submitted payload after delivery, including password responses.
+        onExited: environment = ({})
     }
     
     MouseArea {

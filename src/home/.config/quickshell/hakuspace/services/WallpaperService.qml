@@ -47,6 +47,9 @@ QtObject {
     property bool cacheRefreshPending: false
     readonly property bool cacheBusy: !!(activeBuild || preloader.running || maintenance.running || cacheMaintenanceActive || cacheRefreshPending || (buildQueue || []).length)
     readonly property bool buildingVideos: !!(activeBuild || preloader.running || (buildQueue || []).length)
+    // Maintenance waits for commits, cache work and renderer handoffs to finish.
+    readonly property bool maintenanceBusy: busy || cacheBusy || handoff.running || canceller.running || accent.running || statusWriter.running || renderer.stopping
+        || Object.values(rendererStates).some(state => !!state.incoming)
     property string cacheMessage: ""
     property string requestedPath: ""
     property string requestedProfile: "screen"

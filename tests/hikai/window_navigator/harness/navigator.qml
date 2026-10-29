@@ -16,6 +16,10 @@ ShellRoot {
     // Repeat rapid taps to cover release before the switcher obtains focus.
     property int rapidTaps: 0
     property string rapidTarget: ""
+    // Optional capture soaks reuse the production overlay after interaction checks.
+    readonly property int memoryLoops: Number(Quickshell.env("HAKUSPACE_NAV_MEMORY_LOOPS") || 0)
+    property int memoryCycle: 0
+    property bool memoryWarmed: false
     property var overlay: {
         for (var host of hosts.instances) for (var loader of host.loaders)
             if (loader.active && loader.item && loader.item.ownsSession) return loader.item
@@ -43,6 +47,39 @@ ShellRoot {
         id: outputRemoval
         command: ["hyprctl", "output", "remove", "NAV-2"]
         onExited: code => root.check(code === 0, "remove disposable output")
+    }
+    // Keep the soak output independent from the nested desktop window's visibility.
+    Process {
+        id: memoryOutputCreator
+        command: ["hyprctl", "output", "create", "headless", "NAV-MEM"]
+        onExited: code => {
+            root.check(code === 0, "create capture soak output")
+            Hyprland.dispatch('hl.dsp.focus({monitor = "NAV-MEM"})')
+            memoryWarmup.start()
+        }
+    }
+    Timer {
+        id: memoryWarmup
+        interval: Number(Quickshell.env("HAKUSPACE_NAV_MEMORY_WARMUP_MS") || 120000)
+        onTriggered: root.memoryWarmed = true
+    }
+    Process {
+        id: memorySampler
+        command: ["python3", Quickshell.env("HAKUSPACE_MEMORY_CTL"), "sample", String(Quickshell.processId), "--gpu"]
+        stdout: StdioCollector { id: memoryOutput }
+        onExited: code => {
+            root.check(code === 0, "capture memory sampling")
+            var counters = JSON.parse(memoryOutput.text)
+            counters.cycle = root.memoryCycle
+            counters.captureBorn = CaptureProbe.born
+            counters.captureDestroyed = CaptureProbe.destroyed
+            root.check(CaptureProbe.born === CaptureProbe.destroyed, "capture QObject survived close")
+            console.log("NAV_MEMORY " + JSON.stringify(counters))
+            if (root.memoryCycle >= root.memoryLoops) {
+                console.log("PASS: Hikai Window Navigator runtime and capture memory soak")
+                Qt.quit()
+            } else { root.phase = 46; root.ticks = 0 }
+        }
     }
     IpcHandler {
         target: "windowNavigator"
@@ -87,6 +124,7 @@ ShellRoot {
     Timer {
         interval: 220; running: true; repeat: true
         onTriggered: {
+            if (root.phase === 48 && !root.memoryWarmed) return
             root.check(++root.ticks < 45, "runtime timeout")
             var nav = WindowNavigator
             var focused = Hyprland.activeToplevel ? Hyprland.activeToplevel.address : ""
@@ -211,8 +249,18 @@ ShellRoot {
             case 45:
                 if (nav.active || nav.pendingAddress || focused !== root.rapidTarget) return
                 if (++root.rapidTaps < 8) { root.phase = 43; break }
+                if (root.memoryLoops > 0) { memoryOutputCreator.running = true; root.phase = 47; break }
                 console.log("PASS: Hikai Window Navigator runtime, keyboard, pointer, previews and lifecycle")
                 Qt.quit(); break
+            case 46: nav.open("overview", 0); break
+            case 47:
+                if (!root.overlay || !root.find(root.overlay, function(item) { return item.hasContent === true && item.live === false })) return
+                ++root.memoryCycle
+                nav.cancel(); break
+            case 48:
+                if (nav.sessionWindows.length || !hosts.instances.every(function(host) { return host.loadedCount === 0 })) return
+                memorySampler.running = true; break
+            case 49: return
             }
             root.phase++
             root.ticks = 0

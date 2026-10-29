@@ -11,6 +11,7 @@ haku_state_path() {
     local name
     case "${1:-}" in
         shell.backend) name='[shell].backend' ;;
+        shell.memory-maintenance.json) name='[shell].memory-maintenance.json' ;;
         shell.haku-space.enabled) name='[shell].haku-space.enabled' ;;
         desktop.waybar.requested) name='[desktop].waybar.requested' ;;
         desktop.waybar.mode) name='[desktop].waybar.mode' ;;

@@ -146,7 +146,16 @@ ShellRoot {
         function forceStage(stage: string): string { return IdleService.forceStage(stage) }
     }
 
-    LockSession {}
+    LockSession { id: lockSession }
+
+    // Classic instantiates neither the telemetry service nor its timers/processes.
+    LazyLoader {
+        active: AppState.shellBackend === "hikai"
+        MemoryMaintenanceHost {
+            hosts: ephemeralHosts.instances
+            externalBusy: pickerWindow.maintenanceBusy || lockSession.releaseActive
+        }
+    }
 
 
     IpcHandler {
