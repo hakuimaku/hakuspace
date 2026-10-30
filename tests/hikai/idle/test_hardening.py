@@ -358,6 +358,26 @@ if backend=='classic':
         self.ipc('event','false','1')
         self.assertEqual(len(self.actions('restore')),restores)
 
+    def test_display_power_confirmation_tracks_completed_actions(self):
+        """Visual power state changes after successful DPMS, never merely from ownership."""
+        self.fault('gate-off')
+        self.force('displayOff')
+        state=self.wait(lambda s:s['mutating'] and s['cleanupRequired'])
+        self.assertFalse(state['displayPoweredOff'])
+        self.fault('gate-off',False)
+        self.wait(lambda s:not s['mutating'] and s['displayPoweredOff'])
+        self.fault('gate-on')
+        self.ipc('resume','displayOff')
+        state=self.wait(lambda s:s['mutating'])
+        self.assertTrue(state['displayPoweredOff'])
+        self.fault('gate-on',False)
+        self.wait(lambda s:not s['mutating'] and not s['displayPoweredOff'])
+        count=len(self.actions('off'))
+        self.fault('fail-off')
+        self.force('displayOff')
+        state=self.wait(lambda s:len(self.actions('off'))>count and not s['displayOff']['applied'])
+        self.assertFalse(state['displayPoweredOff'])
+
     def test_insecure_external_and_native_sleep_are_separate(self):
         """Neither path can bypass secure locking, and external sleep never calls power."""
         self.ipc('deadline','100')

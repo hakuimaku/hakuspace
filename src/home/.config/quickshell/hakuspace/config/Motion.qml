@@ -2,6 +2,8 @@ pragma Singleton
 import QtQuick
 
 QtObject {
+    // Limit lock decoration to a short window after entry or interaction.
+    readonly property int lockAmbientDuration: 10000
     // Core timing tiers
     readonly property int fast: 160
     // Standard transition duration.

@@ -10,6 +10,17 @@ Item {
 
     property bool interactive: true
     property bool animationsEnabled: true
+    // Ownership alone is not proof that the display-off action completed.
+    property bool displayActive: !IdleService.displayOff && !IdleService.sleepPending
+    // Freeze clock presentation while preserving the shared logical clock.
+    property date displayedDate: new Date()
+    Component.onCompleted: displayedDate = Clock.date
+    onDisplayActiveChanged: if (displayActive) displayedDate = Clock.date
+    Connections {
+        target: Clock
+        enabled: root.displayActive
+        function onDateChanged() { root.displayedDate = Clock.date }
+    }
     property string previewPhase: ""
     // Expose visual milestones for lock-specific runtime probes.
     readonly property alias motionController: motion
@@ -17,7 +28,7 @@ Item {
     readonly property bool inputFocused: authPill.inputFocused
 
     // Suspend only after the compositor confirms the session is securely covered.
-    readonly property bool canSuspend: root.interactive && root.animationsEnabled && root.inputReady
+    readonly property bool canSuspend: root.interactive && root.animationsEnabled && root.displayActive && root.inputReady
         && root.previewPhase === "" && LockState.locked && LockState.secure
         && LockState.authState !== "Authenticating" && LockState.authState !== "Success"
         && !suspendProcess.running
@@ -81,18 +92,24 @@ Item {
         anchors.fill: parent
         acceptedButtons: Qt.AllButtons
         onPressed: mouse => {
+            motion.wakeAmbient()
             root.focusInput()
             mouse.accepted = true
         }
         onWheel: wheel => {
+            motion.wakeAmbient()
             wheel.accepted = true
         }
     }
+
+    // Passive pointer observation preserves the secure surface's input routing.
+    HoverHandler { onPointChanged: motion.wakeAmbient() }
 
     LockMotionController {
         id: motion
         inputFocused: authPill.inputFocused
         animationsEnabled: root.animationsEnabled
+        displayActive: root.displayActive
         previewPhase: root.previewPhase
         onInputReady: {
             if (root.interactive && (!root.Window.window || root.Window.window.active)) {
@@ -102,6 +119,7 @@ Item {
     }
 
     LockLayerTransition {
+        visible: root.displayActive
         anchors.fill: parent
         metrics: root.layoutMetrics
         motionState: motion.motionState
@@ -161,7 +179,7 @@ Item {
                     id: clockLabel
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
-                    text: Qt.formatDateTime(Clock.date, "hh:mm")
+                    text: Qt.formatDateTime(root.displayedDate, "hh:mm")
                     color: root.primaryTextColor
                     font.family: Theme.fontFamily
                     font.pixelSize: root.layoutMetrics.clockPixelSize
@@ -178,7 +196,7 @@ Item {
                 Text {
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
-                    text: Qt.formatDateTime(Clock.date, "ddd · dd MMM").toUpperCase()
+                    text: Qt.formatDateTime(root.displayedDate, "ddd · dd MMM").toUpperCase()
                     color: root.mutedLabelColor
                     font.family: Theme.fontFamily
                     font.pixelSize: root.layoutMetrics.eyebrowPixelSize
@@ -200,6 +218,7 @@ Item {
                     submitFgColor: root.fgPaperColor
                     interactive: root.interactive && root.animationsEnabled && root.inputReady && root.previewPhase === ""
                     onKeystrokeTyped: motion.pulseKeystroke()
+                    onActivity: motion.wakeAmbient()
                 }
 
                 Item { width: 1; height: Theme.pad + Theme.gap }

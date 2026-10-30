@@ -22,6 +22,7 @@ class MemoryChecks(unittest.TestCase):
     def test_sampler(self):
         values = sample(os.getpid())
         self.assertGreater(values["rssKiB"], 0)
+        self.assertGreaterEqual(values["privateKiB"], 0)
         self.assertGreater(values["fdCount"], 0)
         self.assertGreater(values["threadCount"], 0)
         self.assertEqual(plateau([{"phase": "idle", "elapsedSec": 0, "pssKiB": 100},

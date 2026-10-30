@@ -19,6 +19,9 @@ QtObject {
     readonly property string ownerToken: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2)
     property bool brightnessOwned: false
     property bool displayOwned: false
+    // Confirm power-off only after the compositor action succeeds.
+    // shortcut: observes native idle actions; add compositor events for external DPMS changes.
+    property bool displayOff: false
     readonly property bool cleanupRequired: brightnessOwned || displayOwned
     readonly property var settings: ShellSettingsStore.savedValues.idle
     readonly property bool enabled: Policy.active(AppState.shellBackend,
@@ -220,6 +223,7 @@ QtObject {
                 && !recoveryRetry.running && !watchRetry.running && !secureDeadline.running && !cleanupRequired
                 && Object.keys(stages).every(key => !stages[key].pending && !stages[key].retry.running),
             dim: dim.status(), lock: lock.status(), displayOff: display.status(), suspend: suspend.status(),
+            displayPoweredOff: displayOff,
             customInhibit: customInhibit, customInhibited: customInhibited, error: error})
     }
     // Test forcing still executes the normal inhibitor and secure-lock gates.
@@ -391,6 +395,8 @@ QtObject {
                     recoveryRetry.restart()
                 }
             } else {
+                if (action === "off") root.displayOff = true
+                if (action === "on" || action === "recover" || action === "claim") root.displayOff = false
                 if (action === "restore" || action === "recover" || action === "claim") root.brightnessOwned = false
                 if (action === "on" || action === "recover" || action === "claim") root.displayOwned = false
                 if (action === "recover" || action === "claim") root.recovered = true

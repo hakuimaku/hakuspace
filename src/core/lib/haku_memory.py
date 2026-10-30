@@ -27,12 +27,17 @@ def sample(pid, classify=False, gpu=True):
     status = dict(line.split(":", 1) for line in (process / "status").read_text().splitlines() if ":" in line)
     stat = (process / "stat").read_text().rsplit(")", 1)[1].split()
     pss = None
+    # Expose private resident pages alongside RSS/PSS without another proc read.
+    private = None
     try:
+        private = 0
         for line in (process / "smaps_rollup").read_text().splitlines():
             if line.startswith("Pss:"):
                 pss = int(line.split()[1])
+            elif line.startswith(("Private_Clean:", "Private_Dirty:")):
+                private += int(line.split()[1])
     except (PermissionError, FileNotFoundError):
-        pass
+        private = None
     # DRM reads are optional: software/unsupported backends report null, never zero.
     clients = {}
     if gpu:
@@ -51,7 +56,7 @@ def sample(pid, classify=False, gpu=True):
             children.update((task / "children").read_text().split())
         except FileNotFoundError:
             continue
-    return {"rssKiB": int(status["VmRSS"].split()[0]), "pssKiB": pss,
+    return {"rssKiB": int(status["VmRSS"].split()[0]), "pssKiB": pss, "privateKiB": private,
             "gpuResidentKiB": sum(clients.values()) if clients else None,
             "cpuSeconds": (int(stat[11]) + int(stat[12])) / os.sysconf("SC_CLK_TCK"),
             "fdCount": len(list((process / "fd").iterdir())),

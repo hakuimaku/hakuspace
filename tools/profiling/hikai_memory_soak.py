@@ -44,10 +44,12 @@ def measure(pid, args, ipc=None):
               "idleSec": args.seconds, "cycles": args.cycles if ipc else 0,
               "notifications": args.notifications if ipc else 0, "samples": [], "complete": False,
               "backend": args.backend if ipc else "live", "skippedSurfaces": []}
+    if args.lock_profile:
+        report["lockProfile"] = args.lock_profile
 
     # Flush every checkpoint to preserve evidence if the target exits during stress.
     def record(phase, **extra):
-        value = sample(pid) | {"elapsedSec": round(time.monotonic() - start, 3), "phase": phase} | extra
+        value = sample(pid) | {"timestamp": time.time(), "elapsedSec": round(time.monotonic() - start, 3), "phase": phase} | extra
         if ipc:
             value["runtime"] = json.loads(ipc("status"))
         previous = report["samples"]
@@ -59,6 +61,10 @@ def measure(pid, args, ipc=None):
         args.output.write_text(json.dumps(report, indent=2) + "\n")
         return value
 
+    if ipc and args.lock_profile and args.lock_repeats:
+        time.sleep(min(args.settle, args.warmup))
+        record("unlocked-initial")
+        ipc("lock")
     record("startup")
     time.sleep(args.warmup)
     deadline = time.monotonic() + args.seconds
@@ -68,7 +74,43 @@ def measure(pid, args, ipc=None):
         if remaining <= 0:
             break
         time.sleep(min(args.interval, remaining))
-    if ipc and args.cycles:
+    if ipc and args.lock_profile and args.lock_off_seconds:
+        # Keep native surfaces resident while exercising the visual display-off contract.
+        set_display_power(False)
+        ipc("displayOff", "true")
+        before_off = record("display-off")
+        deadline = time.monotonic() + args.lock_off_seconds
+        while time.monotonic() < deadline:
+            time.sleep(max(0, min(args.interval, deadline - time.monotonic())))
+            record("display-off-idle")
+        after_off = record("display-off-settled")
+        before_views = sorted(before_off["runtime"]["surfaces"], key=lambda view: view["output"])
+        after_views = sorted(after_off["runtime"]["surfaces"], key=lambda view: view["output"])
+        # One queued frame may finish after power-off; continuous rendering must stop.
+        report["displayOffFrozen"] = len(before_views) == len(after_views) == args.outputs and all(
+            first["output"] == last["output"] and not last["idleAnimationRunning"]
+            and last["frames"] - first["frames"] <= 1 and all(last[key] == first[key]
+            for key in ("idlePhase", "idleSteps", "motionUpdates", "orbitUpdates", "dropletsUpdates", "pillUpdates"))
+            for first, last in zip(before_views, after_views))
+        set_display_power(True)
+        ipc("displayOff", "false")
+        ipc("wake")
+        time.sleep(args.settle)
+        record("display-on")
+    if ipc and args.lock_profile:
+        for cycle in range(args.lock_repeats):
+            ipc("unlock")
+            deadline = time.monotonic() + 8
+            while json.loads(ipc("status"))["lock"]["locked"]:
+                if time.monotonic() > deadline:
+                    raise RuntimeError("private PAM did not unlock the profiling compositor")
+                time.sleep(0.02)
+            time.sleep(args.settle)
+            record("lock-released", cycle=cycle)
+            ipc("lock")
+            time.sleep(max(3, args.settle))
+            record("lock-repeated", cycle=cycle)
+    if ipc and args.cycles and not args.lock_profile:
         for surface in args.surfaces:
             if surface == "navigator" and not json.loads(ipc("status"))["navigatorSupported"]:
                 report["skippedSurfaces"].append({"surface": surface, "reason": "requires Hyprland with live toplevels"})
@@ -179,12 +221,19 @@ def session(args):
             else:
                 raise RuntimeError("Quickshell IPC did not initialize")
             measure(process.pid, args, ipc)
-            if args.backend == "classic":
+            if args.backend == "classic" and not args.lock_profile:
                 result = subprocess.run(["quickshell", "ipc", "--pid", str(process.pid), "call", "memory", "status"],
                                         capture_output=True, timeout=5)
                 if result.returncode == 0:
                     raise RuntimeError("Classic unexpectedly loaded memory IPC/runtime")
             log.flush()
+            if args.lock_profile:
+                report = json.loads(args.output.read_text())
+                report["graphicsRenderer"] = [line.strip() for line in args.output.with_suffix(".qs.log").read_text().splitlines()
+                                              if "OpenGL VENDOR:" in line]
+                if any("llvmpipe" in line for line in report["graphicsRenderer"]):
+                    report["renderer"] = "software-OpenGL-llvmpipe"
+                args.output.write_text(json.dumps(report, indent=2) + "\n")
             errors = ("TypeError", "ReferenceError", "Binding loop", "Failed to load configuration")
             if any(error in args.output.with_suffix(".qs.log").read_text() for error in errors):
                 raise RuntimeError("QML runtime error during soak; see " + str(args.output.with_suffix(".qs.log")))
@@ -213,11 +262,14 @@ def headless(args):
                 destination = bin_dir / helper.name
                 if not destination.exists():
                     destination.symlink_to(helper)
-        shutil.copy(ROOT / "tools/profiling/harness/memory.qml", shell / "MemoryProbe.qml")
-        production = (shell / "shell.qml").read_text()
-        hosts = "ephemeralHosts.instances" if "id: ephemeralHosts" in production else "[]"
-        (shell / "shell.qml").write_text(production.rsplit("}", 1)[0]
-            + "\n    MemoryProbe { hosts: " + hosts + "; picker: pickerWindow; lazy: " + str(hosts != "[]").lower() + " }\n}\n")
+        if args.lock_profile:
+            prepare_lock_profile(shell, args.lock_profile)
+        else:
+            shutil.copy(ROOT / "tools/profiling/harness/memory.qml", shell / "MemoryProbe.qml")
+            production = (shell / "shell.qml").read_text()
+            hosts = "ephemeralHosts.instances" if "id: ephemeralHosts" in production else "[]"
+            (shell / "shell.qml").write_text(production.rsplit("}", 1)[0]
+                + "\n    MemoryProbe { hosts: " + hosts + "; picker: pickerWindow; lazy: " + str(hosts != "[]").lower() + " }\n}\n")
         home = work / "home"
         shutil.copytree(source / "src/home/hakucfg", home / "hakucfg")
         (home / "hakucfg/setting.sh").write_text("ACCENT_COLOR_BASED_ON_WALLPAPER=false\n")
@@ -244,6 +296,10 @@ def headless(args):
         os.mkfifo(picker_output, mode=0o600)
         runtime = work / "runtime"
         runtime.mkdir(mode=0o700)
+        pam = work / "pam.d"
+        if args.lock_repeats:
+            pam.mkdir()
+            (pam / "lock-profile-permit").write_text("auth required pam_permit.so\naccount required pam_permit.so\n")
         compositor = work / "labwc"
         compositor.mkdir()
         (compositor / "rc.xml").write_text("<labwc_config/>\n")
@@ -255,7 +311,14 @@ def headless(args):
                            WLR_BACKENDS="headless", WLR_HEADLESS_OUTPUTS=str(args.outputs), WLR_RENDERER="pixman",
                            HAKUSPACE_MEMORY_SHELL=str(shell / "shell.qml"), HAKUSPACE_MEMORY_IMAGE=str(image), QS_NO_RELOAD_POPUP="1",
                            HAKUSPACE_MEMORY_PICKER_OUTPUT=str(picker_output),
+                           HAKUSPACE_LOCK_PROFILE_PAM=str(pam),
                            DBUS_SYSTEM_BUS_ADDRESS="unix:path=" + str(work / "no-system-bus"))
+        if args.lock_profile:
+            environment["QSG_INFO"] = "1"
+            if args.lock_repeats:
+                environment["HAKUSPACE_LOCK_PROFILE_DEFER"] = "1"
+            if args.lock_profile == "reduced":
+                environment["HAKUSPACE_REDUCED_MOTION"] = "1"
         if args.software:
             environment["QT_QUICK_BACKEND"] = "software"
         else:
@@ -273,6 +336,114 @@ def headless(args):
                     process.wait(timeout=10)
         if code or not args.output.exists() or not json.loads(args.output.read_text()).get("complete"):
             raise RuntimeError("benchmark failed; see " + str(args.output.with_suffix(".log")))
+
+
+def prepare_lock_profile(shell, profile):
+    """Instrument only disposable copies; production auth and release paths stay intact."""
+    shutil.copy(ROOT / "tools/profiling/harness/lock.qml", shell / "shell.qml")
+    shutil.copy(ROOT / "tools/profiling/harness/LockMemoryProbe.qml", shell / "services/LockMemoryProbe.qml")
+    with (shell / "services/qmldir").open("a") as stream:
+        stream.write("\nsingleton LockMemoryProbe 1.0 LockMemoryProbe.qml\n")
+    session = shell / "components/LockSession.qml"
+    session.write_text(session.read_text().replace("id: surfaceItem", """id: surfaceItem
+                property string profileOutputName: surf.boundScreen ? surf.boundScreen.name : ""
+                Component.onCompleted: LockMemoryProbe.add(surfaceItem)
+                Component.onDestruction: LockMemoryProbe.remove(surfaceItem)"""))
+    controller = shell / "components/lock/LockMotionController.qml"
+    text = controller.read_text().replace("id: root", """id: root
+    property int profileIdleSteps: 0
+    property int profileMotionUpdates: 0
+    readonly property bool profileIdleRunning: idleLoop.running && !idleLoop.paused
+    onIdlePhaseChanged: ++profileIdleSteps
+    onMotionStateChanged: ++profileMotionUpdates""", 1)
+    if profile == "ambient-disabled":
+        begin = text.index("id: idleLoop")
+        start = text.index("        running:", begin)
+        end = text.index("        paused:", start)
+        text = text[:start] + "        running: false\n" + text[end:]
+    controller.write_text(text)
+    surface = shell / "components/lock/LockSurface.qml"
+    text = surface.read_text().replace("id: root", """id: root
+    property int profileOrbitUpdates: 0
+    property int profileDropletUpdates: 0
+    property int profilePillUpdates: 0
+    property int profileRenderedOrbitUpdates: 0
+    property int profileFrames: 0
+    Connections { target: root.Window.window; function onFrameSwapped() { ++root.profileFrames } }
+    onOrbitGeoChanged: ++profileOrbitUpdates
+    onDropletsGeoChanged: ++profileDropletUpdates
+    onPillGeoChanged: ++profilePillUpdates""", 1)
+    if profile == "geometry-frozen":
+        text = text.replace("motion.motionState)", "({entryProgress: 1}))")
+    elif profile == "shapes-frozen":
+        text = text.replace("orbit: root.orbitGeo", "orbit: LM.orbitGeometry(root.layoutMetrics, {entryProgress: 1})")
+        text = text.replace("droplets: root.dropletsGeo", "droplets: []")
+        text = text.replace("pillGeo: root.pillGeo", "pillGeo: LM.authPillGeometry(root.layoutMetrics, {entryProgress: 1})")
+    elif profile == "orbit-only":
+        text = text.replace("readonly property var dropletsGeo: LM.dropletsGeometry(layoutMetrics, orbitGeo, motion.motionState)", "readonly property var dropletsGeo: []")
+        text = text.replace("LM.authPillGeometry(layoutMetrics, motion.motionState)", "LM.authPillGeometry(layoutMetrics, {entryProgress: 1})")
+        text = text.replace("droplets: root.dropletsGeo", "droplets: []")
+        text = text.replace("pillGeo: root.pillGeo", "pillGeo: LM.authPillGeometry(root.layoutMetrics, {entryProgress: 1})")
+    elif profile == "droplets-only":
+        text = text.replace("LM.orbitGeometry(layoutMetrics, motion.motionState)", "LM.orbitGeometry(layoutMetrics, {entryProgress: 1})")
+        text = text.replace("LM.authPillGeometry(layoutMetrics, motion.motionState)", "LM.authPillGeometry(layoutMetrics, {entryProgress: 1})")
+        text = text.replace("orbit: root.orbitGeo", "orbit: LM.orbitGeometry(root.layoutMetrics, {entryProgress: 1})")
+        text = text.replace("pillGeo: root.pillGeo", "pillGeo: LM.authPillGeometry(root.layoutMetrics, {entryProgress: 1})")
+    # Count the actual Shape consumer separately from source geometry allocations.
+    text = text.replace("LiquidOrbit {", "LiquidOrbit {\n            onOrbitChanged: ++root.profileRenderedOrbitUpdates", 1)
+    surface.write_text(text)
+
+
+def set_display_power(enabled):
+    """Change and confirm power on private outputs without disabling their native lock surfaces."""
+    import socket
+    import struct
+    sys.path.insert(0, str(ROOT / "tests/support/fixtures"))
+    from wayland_pointer import receive, send, string
+    runtime = Path(os.environ["XDG_RUNTIME_DIR"])
+    display = Path(os.environ["WAYLAND_DISPLAY"])
+    display = display if display.is_absolute() else runtime / display
+    if not os.environ.get("HAKUSPACE_MEMORY_SHELL") or not display.is_relative_to(runtime):
+        raise RuntimeError("power profiling requires the private compositor socket")
+    with socket.socket(socket.AF_UNIX) as connection:
+        connection.settimeout(5)
+        connection.connect(str(display))
+        send(connection, 1, 1, struct.pack("=I", 2))
+        send(connection, 1, 0, struct.pack("=I", 3))
+        manager = None
+        outputs = []
+        while True:
+            object_id, opcode, payload = receive(connection)
+            if object_id == 3 and opcode == 0:
+                break
+            if object_id == 2 and opcode == 0:
+                name, length = struct.unpack_from("=II", payload)
+                interface = payload[8:8 + length - 1].decode()
+                if interface == "wl_output":
+                    outputs.append(name)
+                elif interface == "zwlr_output_power_manager_v1":
+                    manager = name
+        if manager is None or not outputs:
+            raise RuntimeError("private compositor lacks output power management")
+        send(connection, 2, 0, struct.pack("=I", manager) + string("zwlr_output_power_manager_v1") + struct.pack("=II", 1, 4))
+        powers = set()
+        for index, name in enumerate(outputs):
+            output_id = 5 + index
+            send(connection, 2, 0, struct.pack("=I", name) + string("wl_output") + struct.pack("=II", 1, output_id))
+        for index in range(len(outputs)):
+            output_id = 5 + index
+            power_id = 5 + len(outputs) + index
+            send(connection, 4, 0, struct.pack("=II", power_id, output_id))
+            send(connection, power_id, 0, struct.pack("=I", int(enabled)))
+            powers.add(power_id)
+        pending = set(powers)
+        while pending:
+            object_id, opcode, payload = receive(connection)
+            if object_id in powers:
+                if opcode == 1:
+                    raise RuntimeError("private output rejected power mode")
+                if opcode == 0 and struct.unpack("=I", payload)[0] == int(enabled):
+                    pending.discard(object_id)
 
 
 def main():
@@ -298,7 +469,16 @@ def main():
     parser.add_argument("--maintenance-policy", type=json.loads, help="Private headless policy overrides as a JSON object")
     parser.add_argument("--maintenance-check", action="store_true", help="Private editor/pressure/GC integration check; use shortened policy durations")
     parser.add_argument("--picker-check", action="store_true", help="Private resident-picker release and FIFO check")
+    parser.add_argument("--lock-profile", choices=("normal", "ambient-disabled", "reduced", "geometry-frozen", "shapes-frozen", "orbit-only", "droplets-only"))
+    parser.add_argument("--lock-off-seconds", type=float, default=0, help="Append an isolated visual display-off observation")
+    parser.add_argument("--lock-repeats", type=int, default=0, help="Append private PAM unlock/relock cycles")
     args = parser.parse_args()
+    if args.lock_profile and (not args.headless or args.backend != "hikai" or args.cycles != 0):
+        parser.error("lock profiles require --headless, Hikai and --cycles 0")
+    if args.lock_off_seconds < 0 or (args.lock_off_seconds and not args.lock_profile):
+        parser.error("display-off observation requires a lock profile and a nonnegative duration")
+    if args.lock_repeats < 0 or (args.lock_repeats and not args.lock_profile):
+        parser.error("unlock/relock observations require a lock profile and a nonnegative count")
     if args.maintenance_policy is not None and (not args.headless or type(args.maintenance_policy) is not dict):
         parser.error("maintenance policy overrides require --headless and a JSON object")
     if (args.maintenance_check or args.picker_check) and (not args.headless or args.backend != "hikai"):

@@ -57,6 +57,7 @@ chmod +x "$test_root/home/.local/bin/power_ctl.sh"
 
 # Exercise both authored motion and direct-state accessibility behavior.
 for reduced_motion in 0 1; do
+    cp tests/hikai/lock/harness/lock.qml "$test_root/home/.config/quickshell/hakuspace/shell.qml"
     env -u DISPLAY -u WAYLAND_DISPLAY -u QT_QPA_PLATFORMTHEME -u QT_QPA_PLATFORMTHEME_QT6 \
         -u GDK_BACKEND HOME="$test_root/home" XDG_RUNTIME_DIR="$test_root/runtime" \
         QT_QPA_PLATFORM=offscreen HAKUSPACE_TEST_PAM_DIR="$test_root/pam.d" \
@@ -66,6 +67,17 @@ for reduced_motion in 0 1; do
     grep -q 'Hikai lock checks passed' "$test_root/result.log"
     if grep -Eq 'wrong-pass|correct-pass|TypeError|ReferenceError|Binding loop|Failed to load configuration' "$test_root/result.log"; then
         echo "Unexpected error or leaked secret in harness log" >&2
+        exit 1
+    fi
+    cp tests/hikai/lock/harness/lifecycle.qml "$test_root/home/.config/quickshell/hakuspace/shell.qml"
+    env -u DISPLAY -u WAYLAND_DISPLAY -u QT_QPA_PLATFORMTHEME -u QT_QPA_PLATFORMTHEME_QT6 \
+        HOME="$test_root/home" XDG_RUNTIME_DIR="$test_root/runtime" QT_QPA_PLATFORM=offscreen \
+        HAKUSPACE_REDUCED_MOTION="$reduced_motion" \
+        timeout 15s quickshell -p "$test_root/home/.config/quickshell/hakuspace/shell.qml" > "$test_root/result.log" 2>&1
+    cat "$test_root/result.log"
+    grep -q 'Hikai lock visual lifecycle checks passed' "$test_root/result.log"
+    if grep -Eq 'TypeError|ReferenceError|Binding loop|non-root animation|Failed to load configuration' "$test_root/result.log"; then
+        echo "Unexpected lock lifecycle runtime error" >&2
         exit 1
     fi
 done
@@ -85,7 +97,7 @@ from pathlib import Path
 import sys
 
 shell = Path(sys.argv[1])
-source = shell.read_text().replace('LockSession {}', 'LockSession { id: testedLockSession }', 1)
+source = shell.read_text()
 fixtures = '''
     IpcHandler {
         target: "lockTest"
@@ -95,8 +107,8 @@ fixtures = '''
             return LockState.submit(password)
         }
         function releaseStatus(): string {
-            return JSON.stringify({ active: testedLockSession.releaseActive,
-                progress: testedLockSession.releaseProgress, reduced: LockState.reducedMotion })
+            return JSON.stringify({ active: lockSession.releaseActive,
+                progress: lockSession.releaseProgress, reduced: LockState.reducedMotion })
         }
     }
     Variants {

@@ -1,5 +1,226 @@
 # Hikai memory maintenance
 
+## Lock screen investigation
+
+Pre-change audit (2026-10-30): the native lock owner and opaque security cover
+remain resident intentionally. No screencopy, Canvas, ShaderEffect, dynamic
+QObject creation or repeated connection allocation exists in the lock visual
+path. Three droplet Rectangle delegates remain fixed in count. PAM/unlock timers
+belong to LockState and are independent of visual animation.
+
+The allocation/update dependency is:
+
+```text
+idleLoop (infinite NumberAnimation, 10-second period)
+  -> idlePhase
+     -> new motionState object
+        -> orbitGeometry -> new points/blobs -> LiquidOrbit -> ShapePath/PathCubic
+        -> dropletsGeometry -> specs[], out[], point objects -> 3 Rectangle delegates
+        -> authPillGeometry -> new capsule geometry -> text/capsule properties
+```
+
+`recoilWave` and `quadPoint` allocate additional temporary objects. Reduced motion
+removes the ambient loop. Auth circulation is separate and PAM has a 15-second
+watchdog. The hidden layer-seal wave receives motionState but its primitive
+capture/release progress stays unchanged during ambient motion. Clock uses the
+shared SystemClock, not a per-frame lock timer.
+
+Confirmed from source: idleLoop has no display-power gate and runs indefinitely
+while locked. IdleService tracks display ownership before starting an effect,
+which is not confirmation that power-off succeeded. The lock consumes no
+confirmed display-off state. Confirmed allocation churn is not yet a confirmed
+unbounded leak or an explanation of overnight PSS growth.
+
+Profiling extends the existing memory sampler with native session-lock fixtures
+on two private outputs. Only disposable copies receive update counters and
+isolation changes. Required profiles are `normal`, `ambient-disabled` (only the
+ambient loop disabled), and `reduced` (existing reduced-motion path), with a
+120-second warmup and 20-minute observation sampled every 30 seconds. Further
+profiles isolate geometry, rendered Shape consumers, orbit and droplets. No
+maintenance GC/recycle runs in these fixtures. Display-power probes use confirmed
+wlr output-power mode events while keeping lock surfaces resident.
+
+### Reproduction and environment
+
+The 2026-10-30 investigation compares the pre-change `e6c50f9e` source snapshot
+under `/tmp/hikai-lock-before-source` with the working implementation. Each run
+uses two private Labwc headless outputs at 1280x720, scale 1, a native
+`LockSession`, the production lock services and no maintenance host. This isolates
+lock visuals; it does not reproduce the entire resident wallpaper/dashboard shell.
+The compositor uses pixman; Qt Quick uses OpenGL **llvmpipe**, LLVM 23.1.1, Mesa
+26.2.4. These are software-renderer measurements, not hardware GPU/FPS evidence.
+DRM resident memory is unavailable (`null`) in every run.
+
+The three profiles within each cohort run concurrently. Additional isolation
+sessions start/finish during the after cohort, changing shared-page attribution.
+PSS comparisons therefore cannot establish memory savings. The shared sampler
+also reports `privateKiB` from Private_Clean + Private_Dirty in the existing
+smaps_rollup read; unavailable data remains null. It is resident private memory,
+not a QML heap-size estimate. Private_Clean can also increase when other mappings
+of shared library pages disappear, without changing RSS. Samples include
+timestamps, CPU time, FD/thread/child
+counts, lock/secure/power state and primitive per-surface counters. Instrumentation
+is injected only into disposable source copies, not into production rendering.
+
+```bash
+python3 tools/profiling/hikai_memory_soak.py --headless --cycles 0 \
+  --lock-profile normal --source-root /tmp/hikai-lock-before-source \
+  --warmup 120 --seconds 1200 --interval 30 \
+  --output /tmp/hikai-lock-before-normal.json
+```
+
+Repeat with `ambient-disabled` and `reduced`; omit `--source-root` for after-fix
+runs. For real power-off testing use `--seconds 0 --lock-off-seconds 1200
+--settle 12`. The probe waits for compositor power-mode confirmation on **both**
+outputs before publishing its private power state. It preserves native lock
+surfaces. `--lock-repeats 3` adds cold unlocked sampling and real PAM unlock/relock
+using a permit configuration confined to the temporary test environment.
+
+### A/B/C results
+
+All endpoints below are after the 120-second warmup, over 20 minutes, in MiB.
+CPU is parent process CPU time / elapsed time; 100% represents one logical core.
+
+| Before profile | RSS start → end | PSS start → end | FD start → end | Threads | CPU |
+| --- | --- | --- | --- | --- | --- |
+| Current lock | 386.33 → 386.35 | 226.45 → 216.36 | 46 → 46 | 33 → 33 | 429.36% |
+| Only ambient disabled | 387.27 → 386.70 | 227.62 → 215.32 | 46 → 46 | 33 → 33 | 2.42% |
+| Existing reduced motion | 378.95 → 378.38 | 219.33 → 210.72 | 46 → 46 | 33 → 33 | 2.37% |
+
+| After profile | RSS start → end | PSS start → end | Private start → end | FD | Threads | CPU |
+| --- | --- | --- | --- | --- | --- | --- |
+| Normal | 388.55 → 389.82 | 216.98 → 228.70 | 202.77 → 204.07 | 46 → 46 | 33 → 33 | 3.50% |
+| Only ambient disabled | 389.62 → 389.39 | 218.21 → 235.13 | 204.03 → 203.80 | 46 → 46 | 33 → 33 | 3.57% |
+| Reduced motion | 391.31 → 390.96 | 219.78 → 225.83 | 205.60 → 205.27 | 46 → 46 | 33 → 33 | 3.75% |
+
+After-normal RSS ranged 388.16–392.23 MiB. Transient FD counts reached 50 while
+short-lived service helpers ran, then returned to 46; threads stayed fixed. Idle
+geometry counters remained unchanged throughout every after run. Before-normal
+continued updating. The before A/B/C profiles **do not reproduce unbounded memory
+growth**; the CPU difference confirms expensive continuous visual computation in
+this software renderer. After-normal's +1.30 MiB private endpoint delta does not
+establish an overnight bound. PSS increases after peer sessions exit are not proof
+of allocation growth.
+
+### Attribution and display-off
+
+Two additional 60-second pre-change probes retained idlePhase animation:
+
+| Isolation | Idle/motion updates per surface | Source geometry updates | Rendered orbit updates | Parent CPU time |
+| --- | --- | --- | --- | --- |
+| Geometry frozen | +3750 | 0 | 0 | 0.79 s |
+| JS geometry active, Shape consumers frozen | +3748 | +3748 | 0 | 2.27 s |
+
+These distinguish JS/binding work from rendered geometry work. Neither showed
+monotonic memory growth. Orbit-only/droplets-only fixtures are available but were
+not needed to localize an unproven leak. Production geometry math and Shape paths
+were consequently left intact.
+
+Four additional 20-minute power-off profiles compared normal before/after and
+the two isolation paths. Over the sampled off interval, private resident changes
+were +0.14, +0.06, +0.33 and -0.02 MiB respectively. Before-normal still generated
+about 73,125 idle/geometry updates **per surface** and consumed 7.68% parent CPU;
+after-normal had zero additional geometry updates and consumed 0.23%. Both
+remained securely locked on two outputs. The off isolation paths consumed 1.52%
+and 4.98% CPU. FD counts returned to baseline and thread counts stayed fixed.
+
+The final implementation (including clock freezing and frame instrumentation)
+also completed a separate 20-minute confirmed power-off run. RSS was
+321.83 → 321.72 MiB (range 321.71–322.15), FD stayed 46, threads stayed 33 and
+parent CPU averaged 0.21%. Idle, motion, orbit, droplet and pill counters did not
+change on either output. One already queued frame finished on HEADLESS-2; none
+finished on HEADLESS-1. `displayOffFrozen` was true, native surfaces stayed secure,
+and display-on retained the same auth generation.
+
+PSS was 149.12 → 182.73 MiB and private resident was 136.21 → 150.43 MiB, despite
+flat RSS. Steps coincided with peer profiling sessions exiting; a rollup snapshot
+afterward showed 14.33 MiB Private_Clean and 136.16 MiB Private_Dirty. This is
+consistent with shared-library page reattribution, not evidence of new heap
+allocations. In the final isolated 11-minute segment, RSS/PSS/private resident
+all stayed within roughly 0.16 MiB ranges. These sharing effects are why raw
+before/after PSS endpoints are not advertised as memory savings.
+
+A separate cold lock/three-release/relock probe measured private resident memory
+50.0 MiB unlocked → 198.3 MiB after the first lock, then 124.7/127.4/120.7 MiB
+after release and 193.2/175.2/179.6 MiB after relock. Surface count went 2 → 0 → 2
+on every cycle; settled FD count alternated 46 → 44 → 46. This confirms a large
+first-use scene/renderer cost and retained process memory, not monotonically
+accumulating lock surfaces. It does not identify the cause of the user's physical
+machine's overnight increase.
+
+### Lifecycle fix and validation
+
+Before: lock entry → infinite ambient geometry updates until unlock, including
+while the output was powered off. After: lock entry → up to 10 seconds of ambient
+motion → quiescent. Pointer movement, presses, wheel input, keyboard edits and auth
+completion briefly wake ambient motion. Active cycles extend without restarting.
+The policy lives in `config/Motion.qml`, without new user settings.
+
+IdleService publishes `displayOff` only after the current owned DPMS action
+succeeds; intent/ownership does not qualify. Lock surfaces and the release overlay
+stop visual jobs immediately on that signal or pending sleep. The shared logical
+clock continues; lock text freezes off-screen and refreshes on display-on.
+Display-on joins elapsed entry time and preserves the auth generation. Focus and
+pressure tweens are standalone NumberAnimations so they can stop immediately,
+without trying to stop non-root Behavior jobs. Native lock ownership, the opaque
+security cover, password handling and PAM timing remain independent and resident.
+No GC/recycle, disk-cache clearing or allocator tuning was introduced.
+
+The lock-specific runtime test passes normal/reduced motion, enter/ready, ambient
+timeout, interaction wake, two-surface off/on, frozen clock with advancing logical
+time, interrupted entry, auth/failure feedback and unlock while visuals are off.
+Its native Wayland/PAM checks also pass secure coverage, hotplug, reload guard and
+transparent desktop reveal. The private profiling regression passes actual
+output-power confirmation, frozen geometry/frame checks and PAM release/relock.
+The two targeted idle checks pass successful/failed/gated DPMS state publication
+and secure acknowledgement without waiting for DPMS. Shared sampler/lifecycle
+tests pass (3 tests). Changed QML bracket/string syntax, Python compilation,
+shell syntax and `git diff --check` pass. The repository-wide suite and unrelated
+components/compositors were intentionally not run.
+
+Targeted commands and evidence:
+
+```text
+bash tests/hikai/lock/test_runtime.sh
+  PASS: geometry, two normal/reduced visual lifecycle passes, two native PAM passes
+python3 tests/hikai/lock/test_profile.py
+  PASS: 2 tests, 10.637 seconds
+bash tests/hikai/idle/test_hardening.sh IdleHardeningTests.test_display_power_confirmation_tracks_completed_actions IdleHardeningTests.test_secure_ack_does_not_wait_for_dpms
+  PASS: 2 tests, 1.295 seconds
+python3 tests/hikai/memory/test_lifecycle.py
+  PASS: 3 tests, 2.433 seconds
+```
+
+Raw JSON/log artifacts remain outside the checkout under
+`/tmp/hikai-lock-{before,after}-{normal,ambient-disabled,reduced}.*`,
+`/tmp/hikai-lock-off-{before,after,geometry-frozen,shapes-frozen,final}.*`,
+`/tmp/hikai-lock-{geometry-frozen,shapes-frozen,cold-relock}.*`.
+`/tmp/hikai-lock-investigation-summary.json` consolidates all 13 completed
+comparison/isolation profiles with endpoints, ranges, CPU and per-output deltas.
+
+### Conclusions and remaining uncertainty
+
+- **Confirmed:** indefinite JS/binding/Shape update churn and missing display-off
+  gating in the old lock; the bounded lifecycle stops it without destroying lock
+  surfaces. Software rendering makes the visual path particularly expensive.
+- **Likely:** scene/renderer first-use allocations and allocator retention explain
+  part of the cold-to-warm increase in this test environment.
+- **Ruled out in these runs:** monotonic FD/thread growth and accumulation of live
+  native lock surfaces. No source evidence of an append-only lock model or dynamic
+  QObject leak was found.
+- **Unknown:** the original 400 → 600+ MiB overnight cause, hardware DRM/buffer
+  lifetime, behavior of the entire resident shell and bounds beyond these runs.
+
+Production power state currently observes successful **native idle actions**;
+external DPMS changes are not independently subscribed. The existing Labwc DPMS
+helper targets its first output, while the private power probe explicitly powers
+both outputs; the probe is not an end-to-end test of that production helper.
+Static auth content remains available even if only one display powers down.
+Compositor power-event integration is needed to cover externally controlled DPMS.
+Next investigation: repeat matched on/off 1–2 hour soaks on the user's actual
+compositor, outputs, scale and hardware driver, including the whole resident
+shell, using PSS/private/DRM/FD trends. Do not call this a confirmed memory-leak fix.
+
 ## Pre-implementation audit
 
 The root shell retains IPC, lock ownership, notification server/history, screen

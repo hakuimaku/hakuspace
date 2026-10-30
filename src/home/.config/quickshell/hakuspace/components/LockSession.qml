@@ -10,11 +10,20 @@ Scope {
     // Prepare an ordinary overlay while locked, then reveal the desktop after PAM unlock.
     property bool releaseActive: false
     property real releaseProgress: 0
+    // Pause visual work without changing native lock ownership or PAM timing.
+    readonly property bool visualsActive: !IdleService.displayOff && !IdleService.sleepPending
+    onVisualsActiveChanged: {
+        if (!visualsActive) {
+            releaseAnim.stop()
+            releaseActive = false
+            releaseProgress = 0
+        }
+    }
 
     Connections {
         target: LockState
         function onAuthStateChanged() {
-            if (LockState.authState === "Success" && !LockState.reducedMotion) {
+            if (LockState.authState === "Success" && !LockState.reducedMotion && root.visualsActive) {
                 root.releaseProgress = 0
                 root.releaseActive = true
             }
@@ -84,6 +93,7 @@ Scope {
                 width: surf.boundScreen ? surf.boundScreen.width : 1920
                 height: surf.boundScreen ? surf.boundScreen.height : 1080
                 interactive: true
+                displayActive: root.visualsActive
                 animationsEnabled: surf.screenValid
             }
         }

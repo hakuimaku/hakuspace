@@ -1,5 +1,6 @@
 import QtQuick
 import "../../services"
+import "../../config" as Config
 import "LockMotion.js" as LM
 
 Item {
@@ -15,6 +16,12 @@ Item {
     property int failureCount: LockState.failureCount
     property bool inputFocused: false
     property bool animationsEnabled: true
+    // Freeze visual work while confirmed display power or sleep state is inactive.
+    property bool displayActive: true
+    // Developer tests shorten this window without changing production policy.
+    property int ambientDuration: Config.Motion.lockAmbientDuration
+    // Resume the idle cycle from its current silhouette after a quiet interval.
+    property real ambientStartPhase: 0
     property bool reducedMotion: LockState.reducedMotion
 
     // Optional visual-only preview state for isolated harness testing (never unlocks).
@@ -34,6 +41,12 @@ Item {
     property real failureImpulse: 0
     property real keystrokeImpulse: 0
     property real successProgress: 0
+
+    // Quiescence excludes every running visual tween, not only the idle loop.
+    readonly property bool quiescent: locked && captureProgress === 1 && entryProgress === 1
+        && !idleLoop.running && !authCirculationLoop.running && !failureAnim.running
+        && !keystrokeAnim.running && !successAnim.running && !releaseSequence.running
+        && !focusAnim.running && !pressureAnim.running
 
     readonly property bool isAuthenticating: (previewPhase === "Authenticating")
                                              || (previewPhase === "" && authState === "Authenticating")
@@ -79,6 +92,9 @@ Item {
 
     // Stop visual work without changing the authoritative session-lock state.
     function stopMotion() {
+        ambientHold.stop()
+        focusAnim.stop()
+        pressureAnim.stop()
         captureAnim.stop()
         entrySequence.stop()
         releaseSequence.stop()
@@ -86,6 +102,32 @@ Item {
         failureAnim.stop()
         keystrokeAnim.stop()
         inputReadyTimer.stop()
+    }
+
+    // Extend a finite ambient window without restarting an active cycle or auth session.
+    function wakeAmbient(duration) {
+        if (!root.animationsEnabled || !root.displayActive || root.reducedMotion
+                || (!root.locked && !root.previewPhase) || root.entryProgress < 1
+                || root.isAuthenticating || root.isSuccess) return
+        if (!idleLoop.running) root.ambientStartPhase = root.idlePhase % 1
+        ambientHold.interval = duration === undefined ? root.ambientDuration : Math.max(1, duration)
+        ambientHold.restart()
+    }
+
+    // Standalone tweens can stop immediately when power turns off; Behavior child jobs cannot.
+    function syncAuthMotion() {
+        if (root.previewPhase || root.isSuccess) return
+        focusAnim.stop()
+        pressureAnim.stop()
+        var focus = root.inputFocused || root.isAuthenticating ? 1 : 0
+        var pressure = root.isAuthenticating ? 1 : 0
+        if (!root.animationsEnabled || !root.displayActive || !root.locked) {
+            root.focusProgress = focus
+            root.authPressure = pressure
+        } else {
+            if (root.focusProgress !== focus) { focusAnim.to = focus; focusAnim.start() }
+            if (root.authPressure !== pressure) { pressureAnim.to = pressure; pressureAnim.start() }
+        }
     }
 
     // Join the shared lock timeline, including surfaces created during hotplug.
@@ -100,7 +142,8 @@ Item {
         root.inputReadyEmitted = root.previewPhase === "" && root.inputReadySessionId === root.lockSessionId
         root.captureProgress = root.reducedMotion ? 1 : LM.clamp(elapsed / 525, 0, 1)
         root.entryProgress = root.reducedMotion ? 1 : LM.clamp((elapsed - 525) / 1675, 0, 1)
-        if (!root.animationsEnabled) return
+        syncAuthMotion()
+        if (!root.animationsEnabled || !root.displayActive) return
         if (root.captureProgress < 1) {
             captureAnim.from = root.captureProgress
             captureAnim.duration = Math.max(1, 525 - elapsed)
@@ -113,6 +156,7 @@ Item {
             entrySequence.start()
         } else {
             root.lockInFinished()
+            if (elapsed < 2200 + root.ambientDuration) root.wakeAmbient(2200 + root.ambientDuration - elapsed)
         }
         if (root.reducedMotion || elapsed >= 1150) {
             markInputReady()
@@ -138,7 +182,7 @@ Item {
         // Secure surfaces hold the nucleus; only previews render the post-unlock phase.
         root.releaseProgress = root.reducedMotion || root.previewPhase === "" ? 0
             : LM.clamp((elapsed - 850) / 1600, 0, 1)
-        if (!root.animationsEnabled) return
+        if (!root.animationsEnabled || !root.displayActive) return
         if (root.successProgress < 1) {
             successAnim.from = root.successProgress
             successAnim.duration = Math.max(1, duration - elapsed)
@@ -154,13 +198,15 @@ Item {
 
     // Apply a restrained local impulse for password edits.
     function pulseKeystroke() {
-        if (!root.animationsEnabled || root.reducedMotion || root.isAuthenticating || root.isSuccess) return
+        root.wakeAmbient()
+        if (!root.animationsEnabled || !root.displayActive || root.reducedMotion || root.isAuthenticating || root.isSuccess) return
         keystrokeAnim.restart()
     }
 
     // Recoil stays local and never restarts the layer transition.
     function triggerFailureRecoil() {
-        if (!root.animationsEnabled || root.isSuccess) return
+        if (!root.animationsEnabled || !root.displayActive || root.isSuccess) return
+        root.wakeAmbient()
         failureAnim.stop()
         root.failureImpulse = 0
         failureAnim.duration = root.reducedMotion ? 180 : 520
@@ -211,6 +257,21 @@ Item {
     onIsSuccessChanged: {
         if (root.initialized && root.previewPhase === "" && root.isSuccess) startSuccess()
     }
+    onIsAuthenticatingChanged: {
+        if (root.isAuthenticating) ambientHold.stop()
+        else if (root.initialized) root.wakeAmbient()
+        if (root.initialized) root.syncAuthMotion()
+    }
+    onInputFocusedChanged: if (root.initialized) root.syncAuthMotion()
+    onDisplayActiveChanged: {
+        if (!root.initialized) return
+        if (!root.displayActive) { stopMotion(); syncAuthMotion() }
+        else {
+            if (root.previewPhase) applyPreviewPhase(root.previewPhase)
+            else if (root.locked) startLockIn(Math.max(0, Date.now() - root.lockedSinceMs))
+            root.wakeAmbient()
+        }
+    }
     Component.onCompleted: {
         root.initialized = true
         if (root.previewPhase !== "") applyPreviewPhase(root.previewPhase)
@@ -218,7 +279,7 @@ Item {
     }
     onAnimationsEnabledChanged: {
         if (!root.initialized) return
-        if (!root.animationsEnabled) stopMotion()
+        if (!root.animationsEnabled) { stopMotion(); syncAuthMotion() }
         else if (root.previewPhase !== "") applyPreviewPhase(root.previewPhase)
         else if (root.locked) startLockIn(Math.max(0, Date.now() - root.lockedSinceMs))
     }
@@ -226,6 +287,10 @@ Item {
         if (!root.initialized) return
         if (root.previewPhase !== "") applyPreviewPhase(root.previewPhase)
         else if (root.locked) startLockIn(Math.max(0, Date.now() - root.lockedSinceMs))
+    }
+
+    Timer {
+        id: ambientHold
     }
 
     Timer {
@@ -251,7 +316,7 @@ Item {
             to: 1
             easing.type: Easing.Linear
         }
-        onFinished: root.lockInFinished()
+        onFinished: { root.lockInFinished(); root.wakeAmbient() }
     }
 
     SequentialAnimation {
@@ -270,42 +335,29 @@ Item {
         id: idleLoop
         target: root
         property: "idlePhase"
-        from: 0
-        to: 1
+        from: root.ambientStartPhase
+        to: root.ambientStartPhase + 1
         duration: 10000
         loops: Animation.Infinite
-        running: root.animationsEnabled && (root.locked || root.previewPhase !== "") && !root.reducedMotion
+        running: root.animationsEnabled && root.displayActive && ambientHold.running
+            && (root.locked || root.previewPhase !== "") && !root.reducedMotion
         paused: running && (root.entryProgress < 0.7 || root.isSuccess)
     }
 
-    Behavior on focusProgress {
-        NumberAnimation {
-            duration: root.reducedMotion ? 90 : 220
-            easing.type: Easing.InOutCubic
-        }
-    }
-
-    Binding {
+    NumberAnimation {
+        id: focusAnim
         target: root
         property: "focusProgress"
-        value: (root.inputFocused || root.isAuthenticating) ? 1 : 0
-        restoreMode: Binding.RestoreNone
-        when: root.previewPhase === "" && !root.isSuccess
+        duration: root.reducedMotion ? 90 : 220
+        easing.type: Easing.InOutCubic
     }
 
-    Behavior on authPressure {
-        NumberAnimation {
-            duration: root.reducedMotion ? 100 : 260
-            easing.type: Easing.InOutCubic
-        }
-    }
-
-    Binding {
+    NumberAnimation {
+        id: pressureAnim
         target: root
         property: "authPressure"
-        value: root.isAuthenticating ? 1 : 0
-        restoreMode: Binding.RestoreNone
-        when: root.previewPhase === "" && !root.isSuccess
+        duration: root.reducedMotion ? 100 : 260
+        easing.type: Easing.InOutCubic
     }
 
     NumberAnimation {
@@ -316,7 +368,7 @@ Item {
         to: 1
         duration: 1120
         loops: Animation.Infinite
-        running: root.animationsEnabled && (root.isAuthenticating || root.isSuccess) && !root.reducedMotion
+        running: root.animationsEnabled && root.displayActive && (root.isAuthenticating || root.isSuccess) && !root.reducedMotion
         paused: running && (root.isSuccess || root.entryProgress < 0.3)
     }
 

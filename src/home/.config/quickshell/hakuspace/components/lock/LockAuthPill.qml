@@ -16,6 +16,8 @@ Item {
     readonly property bool busy: LockState.authState === "Authenticating" || LockState.authState === "Success"
 
     signal keystrokeTyped()
+    // Wake decoration for keyboard and capsule interaction without changing auth state.
+    signal activity()
 
     width: pillGeo.width
     height: pillGeo.height
@@ -27,6 +29,7 @@ Item {
 
     function focusInput() {
         if (!root.interactive || root.busy) return
+        root.activity()
         focusArea.forceActiveFocus()
     }
 
@@ -60,6 +63,7 @@ Item {
 
         Keys.onPressed: event => {
             if (!root.interactive || root.busy) return
+            root.activity()
             if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                 root.submitCurrentInput()
                 event.accepted = true
