@@ -8,6 +8,16 @@ QtObject {
     property var items: []
     property string query: ""
     property string filter: WallpaperSettingsStore.savedValues.browser.filter
+    // Each media type retains its category for this session only.
+    property string staticCategory: ""
+    property string videoCategory: ""
+    readonly property string activeCategory: filter === "video" ? videoCategory : staticCategory
+    // Empty category is the All selector, independent of the media filter.
+    readonly property var staticCategories: categoriesFor("static")
+    readonly property var videoCategories: categoriesFor("video")
+    readonly property var categories: filter === "video" ? videoCategories : staticCategories
+    onStaticCategoriesChanged: if (!staticCategories.includes(staticCategory)) staticCategory = ""
+    onVideoCategoriesChanged: if (!videoCategories.includes(videoCategory)) videoCategory = ""
     property string selectedPath: ""
     property string loadError: ""
     property bool refreshPending: false
@@ -16,7 +26,9 @@ QtObject {
     // Sort a filtered copy so changing order preserves source records and selection paths.
     readonly property var filteredItems: {
         var order = WallpaperSettingsStore.savedValues.browser.sort
-        return items.filter(item => item.kind === filter && item.label.toLowerCase().includes(query.trim().toLowerCase())).sort(function(a, b) {
+        return items.filter(item => item.kind === filter
+            && (activeCategory === "" || item.category === activeCategory)
+            && item.label.toLowerCase().includes(query.trim().toLowerCase())).sort(function(a, b) {
             var byName = a.label.toLowerCase().localeCompare(b.label.toLowerCase()) || a.path.localeCompare(b.path)
             if (order === "newest") return Number(b.previewVersion || 0) - Number(a.previewVersion || 0) || byName
             return order === "name-desc" ? -byName : byName
@@ -24,6 +36,18 @@ QtObject {
     }
     readonly property int selectedIndex: filteredItems.findIndex(item => item.path === selectedPath)
     readonly property var selected: filteredItems[selectedIndex] || null
+
+    // Derive named categories from media records without rescanning the filesystem.
+    function categoriesFor(kind) {
+        return [""].concat(Array.from(new Set(items.filter(item => item.kind === kind && item.category)
+            .map(item => item.category))).sort((a, b) => a.localeCompare(b)))
+    }
+    // Apply category navigation to the current media type without persisting it.
+    function setCategory(category) {
+        if (!categories.includes(category)) return
+        if (filter === "video") videoCategory = category
+        else staticCategory = category
+    }
 
     // Coalesce scans without interrupting a running backend request.
     function refresh() {

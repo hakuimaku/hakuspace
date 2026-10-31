@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exercise native wallpaper settings, cache safety and real bounded proxy output."""
 import copy
+import contextlib
 import importlib.util
 import json
 import os
@@ -148,6 +149,149 @@ class WallpaperTests(unittest.TestCase):
             self.assertIn("metadata", next(item for item in items if item["kind"] == "video"))
             self.assertEqual(next(item for item in items if item["kind"] == "static")["fileSize"], 5)
         self.assertFalse((self.video / ".thumbnails").exists())
+
+    def test_category_discovery_depth_hidden_and_root_roles(self):
+        """Discover visible categories only in their media root, retaining root hidden files."""
+        # Map root-relative files to their expected category and media kind.
+        fixtures = [(self.static, "root.png", "", "static"),
+                    (self.static, ".root.png", "", "static"),
+                    (self.static, "Anime/a.png", "Anime", "static"),
+                    (self.static, "Nature/a.png", "Nature", "static"),
+                    (self.static, "Ảnh chill để code lúc 3 giờ sáng/a.jpg", "Ảnh chill để code lúc 3 giờ sáng", "static"),
+                    (self.static, "日本/a.avif", "日本", "static"),
+                    (self.video, "root.mp4", "", "video"),
+                    (self.video, ".root.mp4", "", "video"),
+                    (self.video, "Anime/v.mp4", "Anime", "video"),
+                    (self.video, "Space/v.webm", "Space", "video")]
+        for directory, relative, category, kind in fixtures:
+            path = directory / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"media")
+        # Hidden folders, deeper files and wrong-root media never reach media workers.
+        for path in (self.static / "Anime/Nested/ignored.png", self.video / "Space/Nested/ignored.mp4",
+                     self.static / ".Private/hidden.png", self.static / ".thumbnails/preview.jpg",
+                     self.static / ".cache/hidden.jpg", self.video / ".Private/hidden.mp4",
+                     self.static / "Wrong/clip.mp4", self.video / "Wrong/picture.png",
+                     self.static / "wrong-root.mp4", self.video / "wrong-root.png", self.static / "Empty/ignore.txt"):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.touch()
+        (self.static / "Anime/alias.png").symlink_to(self.static / "root.png")
+        wallpaper.atomic_json(wallpaper.CURRENT, {"path": str(self.static / "Nature/a.png")})
+        with patch.object(wallpaper, "thumbnail", return_value="still.jpg") as thumbnail, \
+                patch.object(wallpaper, "inspect", return_value=self.metadata) as inspect:
+            items = wallpaper.discover()
+            self.assertEqual(len(items), len(fixtures))
+            self.assertEqual(len(items), len({item["id"] for item in items}))
+            self.assertFalse(any(item["category"].startswith(".") for item in items))
+            for directory, relative, category, kind in fixtures:
+                with self.subTest(relative=relative):
+                    item = next(item for item in items if item["path"] == str(directory / relative))
+                    self.assertEqual((item["id"], item["category"], item["kind"]), (relative, category, kind))
+                    self.assertEqual((item["thumbnail"], item["fileSize"]), ("still.jpg", 5))
+                    self.assertEqual(item.get("metadata"), self.metadata if kind == "video" else None)
+                    self.assertEqual(item["selected"], relative == "Nature/a.png")
+                    self.assertEqual(wallpaper.resolve(item["id"]), directory / relative)
+            self.assertEqual({call.args[0] for call in thumbnail.call_args_list},
+                             {directory / relative for directory, relative, category, kind in fixtures})
+            self.assertEqual({call.args[0] for call in inspect.call_args_list},
+                             {directory / relative for directory, relative, category, kind in fixtures if kind == "video"})
+            self.assertEqual(thumbnail.call_count, len(fixtures))
+            self.assertEqual(inspect.call_count, 4)
+            for kind in ("static", "video"):
+                self.assertEqual({item["path"] for item in wallpaper.discover(kind)},
+                                 {item["path"] for item in items if item["kind"] == kind})
+    def test_category_identity_and_resolve(self):
+        """Wrong-root and working-directory copies cannot hijack discovered relative IDs."""
+        # Same relative names exist in both roots and in the caller's working directory.
+        working = self.home / "working"
+        for directory in (self.static, self.video, working):
+            (directory / "Anime").mkdir(parents=True)
+            for name in ("picture.png", "clip.mp4"):
+                (directory / "Anime" / name).write_bytes(b"media")
+        (self.static / "Nature").mkdir()
+        (self.static / "Nature/picture.png").touch()
+        with patch.object(wallpaper, "thumbnail", return_value=""), patch.object(wallpaper, "inspect", return_value=self.metadata):
+            items = wallpaper.discover()
+        self.assertEqual(len(items), 3)
+        self.assertEqual(len(items), len({item["id"] for item in items}))
+        with contextlib.chdir(working):
+            for item in items:
+                with self.subTest(id=item["id"]):
+                    self.assertEqual(wallpaper.resolve(item["id"]), Path(item["path"]))
+            self.assertEqual(wallpaper.resolve("Anime/picture.png"), self.static / "Anime/picture.png")
+            self.assertEqual(wallpaper.resolve("Anime/clip.mp4"), self.video / "Anime/clip.mp4")
+        # Absolute paths retain supported-local-media behavior even outside the role root.
+        self.assertEqual(wallpaper.resolve(str(self.static / "Anime/clip.mp4")), self.static / "Anime/clip.mp4")
+        self.assertEqual(wallpaper.resolve(str(self.video / "Anime/picture.png")), self.video / "Anime/picture.png")
+
+    def test_category_scan_survives_filesystem_errors(self):
+        """A failed root, category, stat or canonical lookup leaves healthy media available."""
+        for relative in ("good.png", "Healthy/image.png", "Unreadable/image.png", "Gone/image.png", "Healthy/stat.png", "Healthy/resolve.png"):
+            path = self.static / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.touch()
+        (self.video / "healthy.mp4").touch()
+        # Inject failures at real filesystem boundaries without relying on user privileges.
+        original_iterdir, original_stat, original_resolve = Path.iterdir, Path.stat, Path.resolve
+
+        def entries(path):
+            """Fail only the selected category directories."""
+            if path.name == "Unreadable":
+                raise PermissionError("private category")
+            if path.name == "Gone":
+                raise FileNotFoundError("category disappeared")
+            return original_iterdir(path)
+
+        def stat(path, *args, **kwargs):
+            """Simulate a file that fails between directory listing and inspection."""
+            if path.name == "stat.png":
+                raise OSError("file I/O error")
+            return original_stat(path, *args, **kwargs)
+
+        def resolve(path, *args, **kwargs):
+            """Simulate a canonical path lookup racing with removal."""
+            if path.name == "resolve.png":
+                raise FileNotFoundError("source disappeared")
+            return original_resolve(path, *args, **kwargs)
+
+        def root_entries(path):
+            """Leave the Lively root readable when the Images root becomes unavailable."""
+            if path == self.static:
+                raise OSError("unavailable root")
+            return original_iterdir(path)
+
+        with patch.object(Path, "iterdir", entries), patch.object(Path, "stat", stat), patch.object(Path, "resolve", resolve), \
+                patch.object(wallpaper, "thumbnail", return_value=""), patch.object(wallpaper, "inspect", return_value=self.metadata):
+            self.assertEqual({item["id"] for item in wallpaper.discover()}, {"good.png", "Healthy/image.png", "healthy.mp4"})
+        with patch.object(Path, "iterdir", root_entries), \
+                patch.object(wallpaper, "thumbnail", return_value=""), patch.object(wallpaper, "inspect", return_value=self.metadata):
+            self.assertEqual([item["id"] for item in wallpaper.discover()], ["healthy.mp4"])
+
+    def test_cached_sources_reads_lively_categories(self):
+        """Legacy manifestless proxies share the visible, depth-limited video-root scanner."""
+        # Cache metadata for valid and excluded files so filtering cannot be a cache miss.
+        valid = [self.video / "root.mp4", self.video / "Space/video.mp4"]
+        excluded = [self.video / ".Private/hidden.mp4", self.video / "Space/Nested/ignored.mp4",
+                    self.static / "Wrong/video.mp4", self.video / "Wrong/picture.png"]
+        for path in valid + excluded:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"media")
+            wallpaper.atomic_json(self.cache / "metadata" / (wallpaper.digest(wallpaper.fingerprint(path)) + ".json"), self.metadata)
+        (self.video / "Space/alias.mp4").symlink_to(valid[0])
+        with patch.object(wallpaper, "inspect", side_effect=AssertionError("legacy cache scanning must not probe")), \
+                patch.object(wallpaper, "thumbnail", side_effect=AssertionError("legacy cache scanning must not decode")), \
+                patch.object(wallpaper, "run_ffmpeg", side_effect=AssertionError("legacy cache scanning must not encode")):
+            records = wallpaper.cached_sources(1920, 1080)
+            self.assertEqual({record["source"]["path"] for record in records.values()}, {str(path) for path in valid})
+            self.assertEqual(len(records), len(valid) * 2)
+            for path in valid + excluded:
+                key = wallpaper.proxy_identity(path, "screen", 1920, 1080, self.metadata)
+                proxy = self.cache / "proxies" / (key + ".mp4")
+                proxy.parent.mkdir(parents=True, exist_ok=True)
+                proxy.write_bytes(b"legacy copy")
+                self.assertEqual(str(proxy) in records, path in valid)
+            summary = wallpaper.cache_summary()
+            self.assertEqual({entry["path"] for entry in summary["cacheEntries"]}, {"", *(str(path) for path in valid)})
 
     def test_image_metadata_cache(self):
         """Still metadata uses source dimensions and size, with no invented frame rate."""
@@ -339,7 +483,8 @@ class WallpaperTests(unittest.TestCase):
         """Real H.264 output is capped, muted, reusable and leaves the original intact."""
         if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
             self.skipTest("FFmpeg unavailable")
-        path = self.video / "fixture # clip.mp4"
+        path = self.video / "Anime/fixture # clip.mp4"
+        path.parent.mkdir()
         subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=c=navy:s=1920x1080:r=60", "-f", "lavfi", "-i", "sine=frequency=440", "-t", "0.4", "-c:v", "libx264", "-preset", "ultrafast", "-threads", "2", "-pix_fmt", "yuv420p", "-c:a", "aac", str(path)], check=True)
         before = wallpaper.fingerprint(path)
         output, metadata, render = wallpaper.ensure_proxy(path, "low-memory", 1920, 1080, True)
@@ -375,7 +520,8 @@ class WallpaperTests(unittest.TestCase):
         """Sharp previews replace the 480px cache, stay bounded and reuse completed files."""
         if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
             self.skipTest("FFmpeg unavailable")
-        source = self.static / "large.png"
+        source = self.static / "Nature/large.png"
+        source.parent.mkdir()
         subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc=size=3840x2160", "-frames:v", "1", "-threads", "1", str(source)], check=True)
         legacy = self.cache / "thumbnails" / (wallpaper.digest(wallpaper.fingerprint(source)) + ".jpg")
         legacy.parent.mkdir(parents=True)

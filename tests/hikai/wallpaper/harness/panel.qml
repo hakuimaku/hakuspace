@@ -437,6 +437,9 @@ ShellRoot {
                 root.check(WallpaperLibrary.filteredItems.length === 1, "search filters shared items")
                 WallpaperLibrary.query = ""
                 WallpaperLibrary.filter = "video"
+                WallpaperLibrary.setCategory("Space")
+                root.check(WallpaperLibrary.activeCategory === "Space" && WallpaperLibrary.filteredItems.length === 5,
+                    "Quick selects the discovered video category without changing media")
                 if (layout === 1) WallpaperLibrary.query = "extra"
                 WallpaperLibrary.move(1)
                 libraryItems = WallpaperLibrary.items
@@ -449,6 +452,8 @@ ShellRoot {
                 if (!UiState.wallpaperWorkspaceActive || !workspace.active || workspace.item.expansion !== 1 || quick.active) return
                 root.check(!quick.active, "retired quick owner released")
                 root.check(WallpaperLibrary.selectedPath === selectedPath && WallpaperLibrary.filter === "video", "mode switch preserves selection and filter")
+                root.check(WallpaperLibrary.activeCategory === "Space"
+                    && !!find(workspace.item.browserItem, "wallpaper-category-Space"), "Quick to Workspace retains the shared category")
                 root.check(WallpaperLibrary.query === (layout === 1 ? "extra" : "") && WallpaperLibrary.items === libraryItems, "mode switch retains query without rescanning")
                 root.check(tasks.instances.every(task => task.active === (layout === 1)), "workspace leaves normal Taskbars active")
                 root.check(docks.instances.every(dock => dock.enabledDock === (layout === 0)), "workspace leaves normal Docks enabled")
@@ -587,6 +592,8 @@ ShellRoot {
                     return
                 }
                 if (quick.item.expansion !== 1 || find(quick.item.browserItem, "wallpaperReel").introRunning) return
+                root.check(WallpaperLibrary.activeCategory === "Space"
+                    && find(quick.item.browserItem, "wallpaper-category-Space").selected, "Workspace to Quick retains the shared category")
                 root.screenshot("simple-" + layout)
                 if (!artifact) UiState.closeWallpaper()
             } else if (phase === 4) {

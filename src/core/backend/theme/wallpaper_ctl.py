@@ -86,11 +86,46 @@ def directories():
     return [Path(os.fsdecode(value)) for value in result.stdout.split(b"\0")[:2]]
 
 
+def media_roots():
+    """Attach the fixed media role to each configured root without changing preferences."""
+    static_root, video_root = directories()
+    return ((static_root, "static", IMAGES), (video_root, "video", VIDEOS))
+
+
+def iter_media_files(directory, extensions):
+    """Scan root files before visible category files, isolating filesystem failures."""
+    try:
+        entries = list(directory.iterdir())
+    except OSError:
+        return
+    # Preserve root-file precedence when a category contains a canonical alias.
+    folders = [directory]
+    for entry in entries:
+        try:
+            if not entry.name.startswith(".") and entry.is_dir():
+                folders.append(entry)
+        except OSError:
+            continue
+    for folder in folders:
+        try:
+            for path in entries if folder == directory else folder.iterdir():
+                try:
+                    if path.suffix.lower() in extensions and path.is_file():
+                        yield path
+                except OSError:
+                    continue
+        except OSError:
+            continue
+
+
 def resolve(source):
-    """Resolve paths or discovered names to a supported regular local media file."""
+    """Resolve relative IDs against their media root and preserve absolute local paths."""
     path = Path(source).expanduser()
-    if not path.is_absolute() and not path.is_file():
-        path = next((directory / source for directory in directories() if (directory / source).is_file()), path)
+    if not path.is_absolute():
+        directory = next((root for root, kind, extensions in media_roots() if path.suffix.lower() in extensions), None)
+        if directory is None:
+            raise ValueError("unsupported wallpaper source")
+        path = directory / path
     path = path.resolve(strict=True)
     if not path.is_file() or path.suffix.lower() not in IMAGES | VIDEOS:
         raise ValueError("unsupported wallpaper source")
@@ -244,12 +279,10 @@ def cached_sources(width, height):
         if record.get("kind") == "video" and record.get("proxyPath"):
             records[record["proxyPath"]] = {"source": {"path": record["path"]}, "profile": record.get("profile", "screen"), "render": record.get("render", {})}
             sizes.add((record.get("targetWidth", width), record.get("targetHeight", height)))
-    for directory in directories():
-        if not directory.is_dir():
+    for directory, kind, extensions in media_roots():
+        if kind != "video":
             continue
-        for path in directory.iterdir():
-            if path.suffix.lower() not in VIDEOS or not path.is_file():
-                continue
+        for path in iter_media_files(directory, extensions):
             try:
                 source = fingerprint(path)
                 metadata = read_json(CACHE / "metadata" / (digest(source) + ".json"))
@@ -393,28 +426,29 @@ def commit(token):
 
 
 def discover(kind="all"):
-    """Discover local images and videos with cached metadata and still thumbnails."""
+    """Discover root and first-level category media with existing cached previews."""
     items = []
     seen = set()
     current = read_json(CURRENT, {}).get("path")
-    for directory in directories():
-        if not directory.is_dir():
+    for directory, media_kind, extensions in media_roots():
+        if kind != "all" and media_kind != kind:
             continue
-        for path in directory.iterdir():
-            suffix = path.suffix.lower()
-            category = "video" if suffix in VIDEOS else "static"
-            if suffix not in IMAGES | VIDEOS or not path.is_file() or (kind != "all" and category != kind):
+        for path in iter_media_files(directory, extensions):
+            try:
+                canonical = str(path.resolve())
+                info = path.stat()
+            except OSError:
                 continue
-            canonical = str(path.resolve())
             if canonical in seen:
                 continue
             seen.add(canonical)
-            record = {"id": path.name, "path": canonical, "label": path.stem, "kind": category,
-                      "selected": canonical == current, "thumbnail": "", "fileSize": path.stat().st_size,
-                      "previewVersion": str(path.stat().st_mtime_ns)}
+            record = {"id": path.relative_to(directory).as_posix(), "path": canonical, "label": path.stem, "kind": media_kind,
+                      "category": "" if path.parent == directory else path.parent.name,
+                      "selected": canonical == current, "thumbnail": "", "fileSize": info.st_size,
+                      "previewVersion": str(info.st_mtime_ns)}
             try:
                 record["thumbnail"] = thumbnail(path)
-                if category == "video":
+                if media_kind == "video":
                     record["metadata"] = inspect(path)
             except (OSError, ValueError, KeyError, IndexError, ZeroDivisionError, subprocess.SubprocessError) as error:
                 record["error"] = str(error)

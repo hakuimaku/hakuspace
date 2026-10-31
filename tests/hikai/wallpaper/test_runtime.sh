@@ -30,8 +30,28 @@ if [[ ${1:-} == --presentation ]]; then
         cp "$test_root/home/Pictures/Wallpapers/other.png" "$test_root/home/Pictures/Wallpapers/extra-$index.png"
         cp "$test_root/home/Videos/Wallpapers/second.mp4" "$test_root/home/Videos/Wallpapers/extra-$index.mp4"
     done
+    # Keep the presentation fixture count while exercising categorized video paths.
+    mkdir -p "$test_root/home/Videos/Wallpapers/Space"
+    mv "$test_root/home/Videos/Wallpapers/"*.mp4 "$test_root/home/Videos/Wallpapers/Space/"
     cp tests/hikai/wallpaper/harness/panel.qml "$shell_root/shell.qml"
     expected='Wallpaper presentation checks passed'
+elif [[ ${1:-} == --categories ]]; then
+    # Exercise category state and controls on the same private Wayland outputs.
+    cp "$test_root/home/Pictures/Wallpapers/other.png" "$test_root/home/preview.png"
+    mkdir -p "$test_root/home/Pictures/Wallpapers/RuntimeCategory" "$test_root/home/Pictures/Wallpapers/Nested/Inner"
+    # Hidden categories and media in the wrong role root must never reach QML.
+    mkdir -p "$test_root/home/Pictures/Wallpapers/.HiddenCategory" "$test_root/home/Pictures/Wallpapers/.thumbnails" \
+        "$test_root/home/Videos/Wallpapers/.HiddenCategory" "$test_root/home/Pictures/Wallpapers/WrongMedia" \
+        "$test_root/home/Videos/Wallpapers/WrongMedia"
+    cp "$test_root/home/preview.png" "$test_root/home/Pictures/Wallpapers/RuntimeCategory/inside.png"
+    cp "$test_root/home/preview.png" "$test_root/home/Pictures/Wallpapers/Nested/Inner/ignored.png"
+    cp "$test_root/home/preview.png" "$test_root/home/Pictures/Wallpapers/.HiddenCategory/hidden.png"
+    cp "$test_root/home/preview.png" "$test_root/home/Pictures/Wallpapers/.thumbnails/preview.png"
+    cp "$test_root/home/Videos/Wallpapers/clip.mp4" "$test_root/home/Videos/Wallpapers/.HiddenCategory/hidden.mp4"
+    cp "$test_root/home/Videos/Wallpapers/clip.mp4" "$test_root/home/Pictures/Wallpapers/WrongMedia/clip.mp4"
+    cp "$test_root/home/preview.png" "$test_root/home/Videos/Wallpapers/WrongMedia/image.png"
+    cp tests/hikai/wallpaper/harness/workspace.qml "$shell_root/shell.qml"
+    expected='Wallpaper workspace checks passed'
 elif [[ ${1:-} == --navigation ]]; then
     cp tests/hikai/wallpaper/harness/navigation.qml "$shell_root/shell.qml"
     expected='Wallpaper held navigation checks passed'

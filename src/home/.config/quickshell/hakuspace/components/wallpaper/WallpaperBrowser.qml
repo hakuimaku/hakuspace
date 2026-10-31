@@ -105,7 +105,9 @@ FocusScope {
     readonly property real panelPadding: 16
     readonly property real mediaTabHeight: Math.max(44, toolbarControlHeight + 12)
     readonly property real mediaTabWidth: Math.min(Math.max(320, Theme.fontSize * 20), width - panelPadding * 4)
-    readonly property real panelTopPadding: mediaTabHeight + panelPadding * 2
+    // Reserve category navigation above the gallery in both presentations.
+    readonly property real categoryTabHeight: Math.max(32, toolbarControlHeight)
+    readonly property real panelTopPadding: mediaTabHeight + Theme.gap + categoryTabHeight + panelPadding * 2
     // Overlay surfaces match the bars without changing their state or reservations.
     readonly property real bottomBarHeight: ScreenGeometry.taskbarHeight
     // Every visual in a panel shares one translation, including open settings.
@@ -118,6 +120,7 @@ FocusScope {
         target: WallpaperLibrary
         function onQueryChanged() { root.query = WallpaperLibrary.query }
         function onFilterChanged() { root.filter = WallpaperLibrary.filter }
+        function onActiveCategoryChanged() { carousel.stopIntro() }
         function onSelectedPathChanged() {
             if (!root.workspace && root.enabled && root.interactionReady && root.reveal === 1
                     && !carousel.introRunning && !carousel.introPending) navigationBounce.restart()
@@ -141,19 +144,35 @@ FocusScope {
     function shuffle() {
         if (filteredItems.length > 1) move(1 + Math.floor(Math.random() * (filteredItems.length - 1)))
     }
+    // Category arrows and shortcuts stop at either end of the current media's list.
+    function moveCategory(step) {
+        var categories = WallpaperLibrary.categories
+        var index = categories.indexOf(WallpaperLibrary.activeCategory)
+        WallpaperLibrary.setCategory(categories[Math.max(0, Math.min(categories.length - 1, index + step))])
+    }
 
     // Parent-priority dispatch keeps apply and navigation consistent inside inputs.
     function handleShortcut(event) {
         var control = event.modifiers === Qt.ControlModifier
+        // Alt navigates categories without consuming the media selector's Ctrl shortcuts.
+        var alt = event.modifiers === Qt.AltModifier
         var plain = event.modifiers === Qt.NoModifier
         if (plain && event.key === Qt.Key_Escape) dismiss()
         else if (settingsSection) return false
         else if (control && [Qt.Key_Return, Qt.Key_Enter].includes(event.key)) UiState.enterWallpaperWorkspace()
-        else if (plain && [Qt.Key_Return, Qt.Key_Enter].includes(event.key)) applySelected()
+        else if (plain && [Qt.Key_Return, Qt.Key_Enter].includes(event.key) && !categoryLane.activeFocus) applySelected()
         else if ((control && event.key === Qt.Key_F) || (plain && event.key === Qt.Key_Slash && !search.activeFocus)) search.forceActiveFocus()
-        else if (control && [Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down].includes(event.key)) {
+        else if ((control || alt) && [Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down].includes(event.key)) {
             var step = [Qt.Key_Left, Qt.Key_Up].includes(event.key) ? -1 : 1
-            filter = kinds[(kinds.findIndex(choice => choice.id === filter) + step + kinds.length) % kinds.length].id
+            if (control) filter = kinds[(kinds.findIndex(choice => choice.id === filter) + step + kinds.length) % kinds.length].id
+            else {
+                moveCategory(step)
+                if (categoryLane.activeFocus) {
+                    // Keep Enter/Space on the category selected by the shortcut.
+                    var button = categoryButtons.children.find(item => item.modelData === WallpaperLibrary.activeCategory)
+                    if (button) button.forceActiveFocus()
+                }
+            }
         } else if (plain && [Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down].includes(event.key) && (!search.activeFocus || [Qt.Key_Up, Qt.Key_Down].includes(event.key))) {
             search.focus = false
             carousel.forceActiveFocus()
@@ -587,7 +606,7 @@ FocusScope {
         x: (root.width - width) / 2
         y: (root.height - height) / 2
         width: Math.min(carousel.width, carousel.cardStep * 4 + carousel.cardWidth * carousel.farScale)
-        height: Math.min(root.height, 128 + carousel.height)
+        height: Math.min(root.height, controls.height + root.panelPadding * 2 + carousel.height)
     }
     // The empty desktop between workspace panels remains pointer-transparent.
     Item {
@@ -596,7 +615,7 @@ FocusScope {
         width: root.width
         height: root.height - y
     }
-    // Search and tabs are the only controls above the quick carousel.
+    // Search, media and category navigation reserve space above the quick carousel.
     Item {
         id: controls
         objectName: "wallpaper-quick-controls"
@@ -605,13 +624,15 @@ FocusScope {
         x: (parent.width - width) / 2
         y: quickBounds.y
         width: Math.min(460, parent.width - 48)
-        height: 94
+        height: searchControl.implicitHeight + 12 + typeLane.implicitHeight + Theme.gap + root.categoryTabHeight
         opacity: root.contentOpacity
         scale: (0.96 + 0.04 * root.reveal) * navigationScale
         Item {
+            id: searchControl
             parent: root.workspace ? searchSlot : controls
             anchors.fill: root.workspace ? parent : undefined
-            width: controls.width; height: 42
+            implicitHeight: 42
+            width: controls.width; height: implicitHeight
             TextField {
                 id: search
                 objectName: "wallpaperSearch"
@@ -643,9 +664,10 @@ FocusScope {
             id: typeLane
             parent: root.workspace ? typeSlot : controls
             anchors.fill: root.workspace ? parent : undefined
-            y: root.workspace ? 0 : 54
+            y: root.workspace ? 0 : searchControl.implicitHeight + 12
             width: root.workspace ? parent.width : Math.min(parent.width, 248)
-            height: root.workspace ? root.mediaTabHeight : 40
+            implicitHeight: root.workspace ? root.mediaTabHeight : 40
+            height: implicitHeight
             radius: root.workspace ? 0 : height / 2
             color: root.workspace ? "transparent" : Theme.surface
             border.width: 0
@@ -703,6 +725,138 @@ FocusScope {
             }
         }
     }
+    // One scrolling category lane follows the shared library across presentations.
+    FocusScope {
+        id: categoryLane
+        objectName: "wallpaper-category-lane"
+        parent: root.workspace ? root : controls
+        z: 30
+        x: root.workspace ? (root.width - width) / 2 : 0
+        y: root.workspace ? typeSlot.y + typeSlot.height + Theme.gap : typeLane.y + typeLane.height + Theme.gap
+        width: root.workspace ? root.mediaTabWidth : controls.width
+        height: root.categoryTabHeight
+
+        // Keep focused and selected chips within the horizontal viewport.
+        function ensureVisible(item) {
+            if (!item) return
+            categoryScroll.contentX = Math.max(0, Math.min(categoryScroll.contentWidth - categoryScroll.width,
+                Math.max(item.x + item.width - categoryScroll.width, Math.min(categoryScroll.contentX, item.x))))
+        }
+        WallpaperToolbarButton {
+            id: categoryPrevious
+            objectName: "wallpaper-prev-category"
+            width: root.categoryTabHeight; height: root.categoryTabHeight
+            horizontalPadding: 6
+            icon: "\uf104"; description: "Previous category (Alt+Left)"
+            showTooltip: root.workspace
+            foregroundColor: Theme.fgMuted
+            hoverForegroundColor: Theme.fgDescription
+            enabled: WallpaperLibrary.categories.indexOf(WallpaperLibrary.activeCategory) > 0
+            onClicked: root.moveCategory(-1)
+        }
+        Flickable {
+            id: categoryScroll
+            objectName: "wallpaper-category-scroll"
+            anchors {
+                left: categoryPrevious.right; right: categoryNext.left
+                top: parent.top; bottom: parent.bottom
+                leftMargin: Theme.gap; rightMargin: Theme.gap
+            }
+            contentWidth: Math.max(width, categoryButtons.width)
+            contentHeight: height
+            flickableDirection: Flickable.HorizontalFlick
+            boundsBehavior: Flickable.StopAtBounds
+            clip: true
+            onContentWidthChanged: categoryPosition.restart()
+            onWidthChanged: categoryPosition.restart()
+            // One shared surface morphs between variable-width category buttons.
+            Motion.SelectionPill {
+                id: categoryPill
+                objectName: "wallpaper-category-indicator"
+                coordinateSpace: categoryScroll.contentItem
+                color: Theme.accent
+            }
+            Row {
+                id: categoryButtons
+                z: 1
+                // Center short category groups while allowing long groups to overflow.
+                x: Math.max(0, (categoryScroll.width - width) / 2)
+                spacing: Theme.gap
+                onXChanged: categoryPill.syncTarget(true)
+                onPositioningComplete: categoryPill.syncTarget(true)
+                Repeater {
+                    model: WallpaperLibrary.categories
+                    delegate: WallpaperActionButton {
+                        id: categoryButton
+                        // Folder names are kept intact for selection and accessibility.
+                        required property string modelData
+                        objectName: "wallpaper-category-" + modelData
+                        width: Math.min(220, Math.max(64, categoryLabel.implicitWidth + 24))
+                        height: root.categoryTabHeight
+                        radius: height / 2
+                        // The moving pill owns selection; buttons retain text, focus and input.
+                        idleColor: "transparent"
+                        selectedColor: "transparent"
+                        hoverColor: "transparent"
+                        pressedColor: "transparent"
+                        focusColor: "transparent"
+                        // Unselected labels use neutral dim text; the pill keeps its current contrast.
+                        foregroundColor: Theme.fgMuted
+                        hoverForegroundColor: selected ? selectedForegroundColor : foregroundColor
+                        pressedForegroundColor: hoverForegroundColor
+                        focusForegroundColor: hoverForegroundColor
+                        selected: WallpaperLibrary.activeCategory === modelData
+                        Accessible.role: Accessible.PageTab
+                        Accessible.name: modelData || "All"
+                        Accessible.selected: selected
+                        onClicked: WallpaperLibrary.setCategory(modelData)
+                        Component.onCompleted: if (selected) categoryPill.targetItem = this
+                        onSelectedChanged: if (selected) {
+                            categoryPill.targetItem = this
+                            categoryPosition.restart()
+                        }
+                        onActiveFocusChanged: if (activeFocus) categoryLane.ensureVisible(this)
+                        Keys.onReturnPressed: event => event.modifiers === Qt.NoModifier ? clicked() : root.handleShortcut(event)
+                        Keys.onEnterPressed: event => event.modifiers === Qt.NoModifier ? clicked() : root.handleShortcut(event)
+                        Keys.onSpacePressed: event => event.modifiers === Qt.NoModifier ? clicked() : root.handleShortcut(event)
+                        Text {
+                            id: categoryLabel
+                            objectName: "wallpaper-category-label"
+                            anchors.centerIn: parent
+                            width: parent.width - 24
+                            text: categoryButton.modelData || "All"
+                            textFormat: Text.PlainText
+                            elide: Text.ElideRight
+                            maximumLineCount: 1
+                            horizontalAlignment: Text.AlignHCenter
+                            color: categoryButton.foreground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize - 1
+                        }
+                    }
+                }
+            }
+        }
+        WallpaperToolbarButton {
+            id: categoryNext
+            objectName: "wallpaper-next-category"
+            anchors.right: parent.right
+            width: root.categoryTabHeight; height: root.categoryTabHeight
+            horizontalPadding: 6
+            icon: "\uf105"; description: "Next category (Alt+Right)"
+            showTooltip: root.workspace
+            foregroundColor: Theme.fgMuted
+            hoverForegroundColor: Theme.fgDescription
+            enabled: WallpaperLibrary.categories.indexOf(WallpaperLibrary.activeCategory) < WallpaperLibrary.categories.length - 1
+            onClicked: root.moveCategory(1)
+        }
+        // Run after the row lays out; destruction also cancels pending positioning.
+        Timer {
+            id: categoryPosition
+            interval: 0
+            onTriggered: categoryLane.ensureVisible(categoryButtons.children.find(item => item.selected))
+        }
+    }
     // Compress and rebound the quick controls without changing their layout bounds.
     SequentialAnimation {
         id: navigationBounce
@@ -723,7 +877,7 @@ FocusScope {
         id: carousel
         z: root.workspace ? 20 : 0
         x: (root.width - width) / 2
-        y: root.workspace ? root.height - root.bottomBarHeight - root.bottomPanelHeight + root.bottomSlide : quickBounds.y + 112
+        y: root.workspace ? root.height - root.bottomBarHeight - root.bottomPanelHeight + root.bottomSlide : controls.y + controls.height + root.panelPadding
         width: root.workspace ? Math.min(root.width - ScreenGeometry.leftInset - ScreenGeometry.rightInset - 24, 1900) : Math.min(root.width * 0.88, 1600)
         height: root.workspace ? root.bottomPanelHeight + root.bottomBarHeight : Math.min(root.height * 0.5, 560)
         presentation: root.presentation

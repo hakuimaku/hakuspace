@@ -22,7 +22,7 @@ Item {
     signal applied()
     height: width * 9 / 16
     Accessible.role: Accessible.ListItem
-    Accessible.name: wallpaper.label + ", " + wallpaper.kind
+    Accessible.name: wallpaper.label + (wallpaper.category ? ", " + wallpaper.category : "") + ", " + wallpaper.kind
     Accessible.selected: chosen
     Accessible.onPressAction: selected()
 
