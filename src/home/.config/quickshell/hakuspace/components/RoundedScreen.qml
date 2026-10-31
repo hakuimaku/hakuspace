@@ -8,9 +8,6 @@ Item {
     id: rootItem
     required property var modelData
 
-    // Keep the drawing plane fixed while Settings changes the active bar.
-    readonly property bool settingsPlane: UiState.activePanel === "settings"
-
     // Physical corner masks and reservations share the independent screen preferences.
     readonly property real sideInset: ScreenGeometry.borderThickness
     readonly property real cornerRadius: ScreenGeometry.roundedRadius
@@ -27,24 +24,16 @@ Item {
         visible: rootItem.cornerRadius > 0 || rootItem.sideInset > 0
 
         WlrLayershell.layer: WlrLayer.Top
-        exclusionMode: rootItem.settingsPlane || ChromeLayout.taskbarMode ? ExclusionMode.Ignore : ExclusionMode.Normal
-        exclusiveZone: 0
-        // Taskbar uses physical bounds so its bottom reservation is counted once.
-        margins {
-            left: rootItem.settingsPlane || ChromeLayout.taskbarMode ? 0 : -ScreenGeometry.leftInset
-            right: rootItem.settingsPlane || ChromeLayout.taskbarMode ? 0 : -ScreenGeometry.rightInset
-            bottom: rootItem.settingsPlane ? 0 : ChromeLayout.taskbarMode ? rootItem.taskbarInset
-                : -ScreenGeometry.frameBottomReservation
-                    - ScreenGeometry.dockbarReservation(rootItem.modelData ? rootItem.modelData.name : "")
-        }
+        // Keep compositor geometry fixed when Settings opens or switches layouts.
+        exclusionMode: ExclusionMode.Ignore
         mask: Region {}
 
         // Draw only the small corner masks and rails instead of repainting an output-sized image.
         Item {
             id: frame
             width: parent.width
-            y: rootItem.settingsPlane && ChromeLayout.topBarMode ? Math.round(Theme.topBarHeight) : 0
-            height: Math.max(0, parent.height - y - (rootItem.settingsPlane && ChromeLayout.taskbarMode ? rootItem.taskbarInset : 0))
+            y: ChromeLayout.topBarMode ? Math.round(Theme.topBarHeight) : 0
+            height: Math.max(0, parent.height - y - rootItem.taskbarInset)
             readonly property real t: rootItem.sideInset
             readonly property real topInset: ScreenGeometry.topBorderThickness
             readonly property real bottomInset: ScreenGeometry.bottomInset

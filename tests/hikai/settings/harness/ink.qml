@@ -98,11 +98,10 @@ ShellRoot {
         }
         for (var frame of layoutFrames.instances) {
             var window = frame.data.find(item => item.contentItem && item.anchors.top && item.anchors.bottom && item.anchors.left && item.anchors.right)
-            check(frame.settingsPlane === settingsOpen, "frame drawing plane follows Settings lifetime")
-            if (settingsOpen) {
-                check(window && window.width === frame.modelData.width && window.height === frame.modelData.height, "frame keeps a fixed output-sized drawing window during layout switching")
-                windows.push(window.contentItem.Window.window)
-            }
+            check(window && window.width === frame.modelData.width && window.height === frame.modelData.height,
+                "frame keeps an output-sized drawing window across Settings open, layout switching and close")
+            check(window.exclusionMode === ExclusionMode.Ignore, "frame geometry ignores exclusive reservations")
+            if (settingsOpen) windows.push(window.contentItem.Window.window)
         }
         if (settingsOpen && !layoutDrawingWindows.length) layoutDrawingWindows = windows
         else if (settingsOpen) check(windows.every((window, index) => window && window === layoutDrawingWindows[index]), "layout switches preserve the same drawing windows")
@@ -751,6 +750,11 @@ ShellRoot {
         } else if (step === 21) {
             check(ConfigEditorStore.dirty, "category switch retains document draft")
             panel.selectCategory("Advanced")
+            panel.configPage.tab = "options"
+            check(!find(panel.configPage, item => item.descriptor && item.descriptor.key === "WAYBAR_MODE_USER"),
+                "Advanced options omit Waybar themes")
+            check(!find(panel.configPage, item => item.text === "Classic shell"), "Advanced options omit the Classic heading")
+            capture("settings-advanced-options", function() { root.panel.configPage.tab = "editor" })
         } else if (step === 22) {
             ConfigEditorStore.setText(Array.from({length: 120}, function(_, i) { return "line " + i }).join("\n"))
             var editor = find(panel.configPage, item => item.forceEditorFocus !== undefined)
@@ -856,6 +860,7 @@ ShellRoot {
             if (phase === 0) {
                 WM.backendName = "niri"
                 Theme.apply(JSON.stringify({accent: "#88c0d0", font: "monospace", fgDim: "#b39ab8"}))
+                root.checkLayoutWindows(false)
                 UiState.openSettings(root.output)
             } else if (phase === 1) {
                 if (root.animationPhase < 6 || !root.panel || !root.panel.interactionReady || !SettingsStore.ready) return

@@ -13,9 +13,9 @@ function moduleAt(relative) {
     return context
 }
 const catalog = moduleAt('config/SettingsCatalog.js')
-// Every editable template assignment is available and searchable without a mode switch.
+// Hikai exposes shared preferences while leaving Classic-only Waybar themes hidden.
 const template = fs.readFileSync(path.resolve(__dirname, '../../../src/home/hakucfg/setting.sh'), 'utf8')
-const keys = [...template.matchAll(/^([A-Z_]+)=/gm)].map(match => match[1]).filter(key => key !== 'SETTING_VERSION')
+const keys = [...template.matchAll(/^([A-Z_]+)=/gm)].map(match => match[1]).filter(key => !['SETTING_VERSION', 'WAYBAR_MODE_USER'].includes(key))
 assert.deepEqual(Array.from(catalog.general.filter(item => item.store === 'general'), item => item.key).sort(), keys.sort())
 const typography = Array.from(catalog.general.filter(item => item.store === 'theme'))
 assert.deepEqual(typography.map(item => item.id).sort(), ['font-family', 'font-size'])
@@ -35,7 +35,10 @@ assert(catalog.search('cache').some(item => item.id === 'wallpaper.proxy.maxCach
 assert.equal(catalog.descriptor('layout').persistMode, 'auto')
 assert.equal(catalog.general.find(item => item.key === 'REC_OPTS').category, 'Advanced')
 assert.equal(catalog.general.find(item => item.key === 'AWWW_OPTS').category, 'Advanced')
-assert.equal(catalog.general.find(item => item.key === 'WAYBAR_MODE_USER').category, 'Advanced')
+assert.equal(catalog.descriptor('WAYBAR_MODE_USER'), undefined)
+assert.equal(catalog.search('waybar').length, 0)
+assert.equal(catalog.search('classic').length, 0)
+assert(!catalog.groups('Advanced').includes('Classic shell'))
 for (const wm of ['hyprland', 'niri', 'mango']) {
     const files = ['hyprland-custom.lua', 'niri-custom.kdl', 'mango-custom.conf'].map(name => ({id: `wm/${name}`}))
     files.push({id: 'config/cava-layer'})

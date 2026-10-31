@@ -18,6 +18,13 @@ def check(directory):
         width, height = map(int, dimensions.split())
         assert len(pixels) == width * height * 3, "truncated screenshot"
 
+        # The fixed drawing plane retains the TopBar lane while its fixture is hidden.
+        images = list(directory.glob(f"bar-case-{index}-top-*-width-*.ppm"))
+        assert len(images) == 1, f"{radius}/{border}: missing TopBar screenshot"
+        parts = images[0].stem.split("-")
+        top, logical_width = float(parts[4]), float(parts[6])
+        corner_y = round((top + 1) * width / logical_width)
+
         # Sample away from antialiasing boundaries and the compositor's cursor.
         def pixel(x, y):
             offset = (y * width + x) * 3
@@ -28,14 +35,10 @@ def check(directory):
         assert pixel(0, height // 2) == expected, f"{radius}/{border}: left rail"
         assert pixel(width - 1, height // 2) == expected, f"{radius}/{border}: right rail"
         assert pixel(width // 2, height - 1) == expected, f"{radius}/{border}: bottom rail"
-        assert pixel(0, 0) == (SURFACE if radius or border else BACKGROUND), f"{radius}/{border}: corner mask"
+        assert pixel(0, corner_y) == (SURFACE if radius or border else BACKGROUND), f"{radius}/{border}: corner mask"
         assert pixel(width // 2, height // 2) == BACKGROUND, f"{radius}/{border}: covered desktop"
 
-        # With TopBar visible, corners must follow its exclusive zone without doubling side/bottom insets.
-        images = list(directory.glob(f"bar-case-{index}-top-*-width-*.ppm"))
-        assert len(images) == 1, f"{radius}/{border}: missing TopBar screenshot"
-        parts = images[0].stem.split("-")
-        top, logical_width = float(parts[4]), float(parts[6])
+        # Mapping TopBar must preserve the corner position and side/bottom insets.
         magic, dimensions, maximum, pixels = images[0].read_bytes().split(b"\n", 3)
         assert magic == b"P6" and maximum == b"255"
         width, height = map(int, dimensions.split())

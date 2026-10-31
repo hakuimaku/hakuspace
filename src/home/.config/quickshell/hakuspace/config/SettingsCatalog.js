@@ -20,7 +20,6 @@ var general = [
     {key: "HAKU_CLOCK_FONT_SIZE", category: "Appearance", label: "Widget clock size", summary: "Clock font size for the Haku widget.", control: "number", min: 1, max: 256, step: 1},
     {key: "HAKU_GENERAL_FONT_SIZE", category: "Appearance", label: "Widget text size", summary: "Text font size for the Haku widget.", control: "number", min: 1, max: 256, step: 1},
     {key: "HAKU_TERMINAL_FONT_SIZE", category: "Appearance", label: "Widget terminal size", summary: "Terminal font size for the Haku widget.", control: "number", min: 1, max: 256, step: 1},
-    {key: "WAYBAR_MODE_USER", category: "Appearance", label: "Custom Waybar themes", summary: "Classic only. Add theme folder names from ~/hakucfg/config/waybar; each needs config and style.css.", control: "list", entryLabel: "Theme folder name"},
     {key: "RAM_THRESHOLD_MB", category: "Session", label: "RAM warning threshold", summary: "Flag apps using at least this much RAM in the exit dialog.", control: "number", min: 0, max: 2048, step: 1, unit: "MB"},
     {key: "EXIT_APP_LIST_USER", category: "Session", label: "Apps to close on exit", summary: "Ask these applications to close before ending your desktop session (avoid zombie processes).", control: "list", entryLabel: "Application name"}
 ].map(function(item) {
@@ -35,14 +34,14 @@ var generalDefaults = {
     AWWW_OPTS: "--transition-type random --transition-step 90 --transition-fps 60",
     SCREENREC_SAVE_DIR: "$HOME/Videos", REC_COMMAND: "wl-screenrec", REC_OPTS: "--max-fps 60",
     HAKU_CLOCK_FONT_SIZE: 10, HAKU_GENERAL_FONT_SIZE: 11, HAKU_TERMINAL_FONT_SIZE: 14,
-    WAYBAR_MODE_USER: [], RAM_THRESHOLD_MB: 300, EXIT_APP_LIST_USER: []
+    RAM_THRESHOLD_MB: 300, EXIT_APP_LIST_USER: []
 }
 general = general.map(function(item) {
     var category = ({General: "Look", Appearance: "Look", Recording: "Capture", Session: "Power & Session"})[item.category] || item.category
     if (item.key === "WELCOME_MSG") category = "Shell"
     if (item.key === "NIGHT_LIGHT_TEMPERATURE") category = "Power & Session"
     if (item.key === "SCREENSHOT_DIR") category = "Capture"
-    if (["WAYBAR_MODE_USER", "AWWW_OPTS", "REC_OPTS"].includes(item.key)) category = "Advanced"
+    if (["AWWW_OPTS", "REC_OPTS"].includes(item.key)) category = "Advanced"
     return Object.assign(item, {category: category, provider: item.store, group: item.key === "WELCOME_MSG" ? "Startup" : category,
         defaultValue: generalDefaults[item.key], persistMode: "auto", effectMode: item.store === "theme" ? "live" : item.restartPolicy,
         dependsOn: item.key === "ACCENT_COLOR_MODE" ? [{id: "ACCENT_COLOR_BASED_ON_WALLPAPER", equals: true, behavior: "disable"}] : [],
@@ -178,7 +177,6 @@ general.forEach(function(item) {
     else if (item.category === "Wallpaper") item.group = "Folders & rotation"
     else if (["SCREENSHOT_DIR", "SCREENREC_SAVE_DIR"].includes(item.key)) item.group = "Folders"
     else if (item.category === "Capture") item.group = "Recorder"
-    else if (item.key === "WAYBAR_MODE_USER") item.group = "Classic shell"
     else if (item.category === "Advanced") item.group = "Extra arguments"
 })
 // Theme Mode leads Look, followed by wallpaper accent and surface tone.

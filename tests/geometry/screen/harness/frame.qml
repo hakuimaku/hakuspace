@@ -67,7 +67,8 @@ ShellRoot {
                 root.phase = 1
             } else {
                 var output = root.outputs[0]
-                var top = root.hasBar && !root.bottom ? output.barHeight : 0
+                // The frame retains its status lane even without a mapped fixture bar.
+                var top = root.bottom ? 0 : Math.round(Theme.topBarHeight)
                 var bottom = output.modelData.height - (root.bottom ? output.barHeight : 0)
                 capture.command = ["grim", "-t", "ppm", "-o", output.modelData.name,
                     Quickshell.env("HAKUSPACE_GEOMETRY_ARTIFACT_DIR") + "/frame-" + caseIndex + "-" + mode
