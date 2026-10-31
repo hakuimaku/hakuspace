@@ -10,5 +10,6 @@ build/
 *.zip
 *.iso
 temp/
-docs/task/
-docs/plan/
+.agents/
+.aws/
+.codex/
