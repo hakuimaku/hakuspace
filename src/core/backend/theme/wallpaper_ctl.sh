@@ -82,7 +82,8 @@ current_kind() {
 preview_for_video() {
     local path="$1"
     local filename base
-    filename="$(basename -- "$path")"
+    filename="${path#"${WALL_MPV_DIR%/}/"}"
+    [[ "$filename" == "$path" ]] && filename="$(basename -- "$path")"
     base="${filename%.*}"
     if [[ -f "$PREVIEW_DIR/$base.gif" ]]; then
         printf '%s\n' "$PREVIEW_DIR/$base.gif"
@@ -99,16 +100,29 @@ generate_thumbnails() {
     [[ -d "$WALL_MPV_DIR" ]] || return 0
 
     while IFS= read -r -d '' file; do
-        filename="$(basename -- "${file%.*}")"
+        filename="${file#"${WALL_MPV_DIR%/}/"}"
+        filename="${filename%.*}"
         if [[ -f "$PREVIEW_DIR/$filename.gif" || -f "$PREVIEW_DIR/$filename.jpg" || -f "$PREVIEW_DIR/$filename.png" ]]; then
             continue
         fi
+        mkdir -p "$(dirname -- "$PREVIEW_DIR/$filename")"
         if command -v magick >/dev/null 2>&1; then
             magick "$file[0]" "$PREVIEW_DIR/$filename.jpg" 2>/dev/null || true
         elif command -v convert >/dev/null 2>&1; then
             convert "$file[0]" "$PREVIEW_DIR/$filename.jpg" 2>/dev/null || true
         fi
-    done < <(find "$WALL_MPV_DIR" -maxdepth 1 \( -type f -o -type l \) -name '*.mp4' -print0 2>/dev/null)
+    done < <(python3 - "$(resolve_script wallpaper_ctl.py wallpaper_ctl.py)" "$WALL_MPV_DIR" <<'PY'
+import os
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(sys.argv[1]).parent))
+from wallpaper_ctl import iter_media_files
+
+for path in iter_media_files(Path(sys.argv[2]), {".mp4"}):
+    sys.stdout.buffer.write(os.fsencode(path) + b"\0")
+PY
+    )
 }
 
 apply_accent_color() {
@@ -209,19 +223,23 @@ list_json() {
         *) return 2 ;;
     esac
 
-    python3 - "$kind" "$dir" "$preview_dir" "$current" <<'PY'
+    python3 - "$kind" "$dir" "$preview_dir" "$current" "$(resolve_script wallpaper_ctl.py wallpaper_ctl.py)" <<'PY'
 import json
 import os
+from pathlib import Path
 import sys
 
-kind, directory, preview_dir, current = sys.argv[1:]
+kind, directory, preview_dir, current, controller = sys.argv[1:]
+sys.path.insert(0, str(Path(controller).parent))
+from wallpaper_ctl import iter_media_files
+
 items = []
 if os.path.isdir(directory):
     allowed = {".jpg", ".jpeg", ".png", ".gif", ".webp"} if kind == "static" else {".mp4"}
-    for name in sorted(os.listdir(directory), key=str.casefold):
-        path = os.path.join(directory, name)
-        if not os.path.isfile(path) or os.path.splitext(name)[1].lower() not in allowed:
-            continue
+    # Classic always lists every category; relative labels remain valid apply IDs.
+    for source in sorted(iter_media_files(Path(directory), allowed), key=lambda path: str(path).casefold()):
+        name = source.relative_to(directory).as_posix()
+        path = str(source)
         thumb = path
         if kind == "lively":
             stem = os.path.splitext(name)[0]

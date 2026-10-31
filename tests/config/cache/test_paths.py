@@ -203,6 +203,49 @@ Gdk = None
             self.assertTrue(thumbnail.is_file())
             self.assertFalse((directory / ".thumbnails").exists())
 
+    def test_classic_wallpaper_lists_all_categories(self):
+        """Rofi lists all visible categories with unambiguous IDs and isolated previews."""
+        self.stub("magick", 'printf "%s" "$1" > "${@: -1}"')
+        self.stub("wallpaper_set.sh", 'printf "%s" "$1" > "$HOME/applied.txt"')
+        with patch.dict(os.environ, ACCENT_COLOR_BASED_ON_WALLPAPER="false"):
+            for kind, root, extension, option in (
+                ("static", self.home / "Pictures/Wallpapers", ".png", "--static"),
+                ("lively", self.home / "Videos/Wallpapers", ".mp4", "--lively"),
+            ):
+                with self.subTest(kind=kind):
+                    expected = {"same" + extension, ".root" + extension,
+                                "Anime/same" + extension, "Thiên nhiên/same" + extension}
+                    excluded = {".Hidden/secret" + extension, ".thumbnails/cache" + extension,
+                                "Anime/Deep/hidden" + extension,
+                                "WrongMedia/file" + (".mp4" if kind == "static" else ".png")}
+                    for relative in expected | excluded:
+                        path = root / relative
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        path.touch()
+                    choice = "Thiên nhiên/same" + extension
+                    current = state_path("desktop.wallpaper.current.json")
+                    current.parent.mkdir(parents=True, exist_ok=True)
+                    current.write_text(json.dumps({"path": str(root / choice), "kind": kind}))
+                    items = json.loads(self.run_script("wallpaper_ctl.sh", "list-" + kind, "--json"))
+                    self.assertEqual({item["id"] for item in items}, expected)
+                    self.assertEqual([item["id"] for item in items if item["selected"]], [choice])
+                    self.assertEqual(set(self.run_script("wallpaper_ctl.sh", "list-" + kind).splitlines()), expected)
+                    rows = self.run_script("wallpaper_rofi.sh", option).splitlines()
+                    self.assertEqual({row.split("\0icon\x1f")[0] for row in rows}, expected)
+                    for item in items:
+                        self.assertEqual(item["path"], str(root / item["id"]))
+                        self.assertEqual(item["label"], item["id"])
+                        if kind == "lively":
+                            preview = cache_root() / "wallpaper/thumbnails/classic" / Path(item["id"]).with_suffix(".jpg")
+                            self.assertEqual(item["thumbnail"], str(preview))
+                            self.assertEqual(preview.read_text(), item["path"] + "[0]")
+                    result = subprocess.run(["bash", "-c", 'source "$1" "$2" "$3"; wait',
+                                             "test", str(self.binary / "wallpaper_rofi.sh"), option, choice],
+                                            capture_output=True, text=True, timeout=15)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual((self.home / "applied.txt").read_text(), str(root / choice))
+                    self.assertFalse((root / ".thumbnails/cache.jpg").exists())
+
     @unittest.skipUnless(shutil.which("rofi"), "Rofi parser unavailable")
     def test_rofi_resolves_generated_preview_urls(self):
         """Parse both real themes with custom XDG paths without opening a launcher window."""
