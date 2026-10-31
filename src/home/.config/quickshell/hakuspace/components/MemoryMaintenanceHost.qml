@@ -16,7 +16,7 @@ Item {
     readonly property var blockers: {
         var reasons = []
         if (externalBusy || LockState.locked || !ShellTransitionState.chromeEnabled || ShellTransitionState.active) reasons.push("lock-picker-transition")
-        if (loadedCount || UiState.activePanel || UiState.tempNoteOpen || UiState.dashboardVisuallyActive) reasons.push("surface")
+        if (loadedCount || UiState.activePanel || UiState.tempNoteOpen || UiState.taskManagerOpen || UiState.dashboardVisuallyActive) reasons.push("surface")
         if (UiState.nativeDialogOpen) reasons.push("native-dialog")
         if (WindowNavigator.active || WindowNavigator.sessionWindows.length || WindowNavigator.pendingAddress) reasons.push("screencopy")
         if (ImageEditor.sourcePath || ImageEditor.busy || ImageEditor.dirty) reasons.push("image-editor")

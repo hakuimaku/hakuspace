@@ -382,7 +382,13 @@ PanelWindow {
             width: UiState.tempNoteScreenName === root.modelData.name ? UiState.tempNoteRect.width : 0
             height: UiState.tempNoteScreenName === root.modelData.name ? UiState.tempNoteRect.height : 0
         }
-        // Settings controls keep precedence where the note is visually covered.
+        Region {
+            intersection: Intersection.Subtract
+            x: UiState.taskManagerRect.x; y: UiState.taskManagerRect.y
+            width: UiState.taskManagerScreenName === root.modelData.name ? UiState.taskManagerRect.width : 0
+            height: UiState.taskManagerScreenName === root.modelData.name ? UiState.taskManagerRect.height : 0
+        }
+        // Settings controls keep precedence where floating utilities are visually covered.
         Region { x: settingsBody.x; y: settingsBody.y; width: settingsBody.width; height: settingsBody.height }
     }
     Component.onDestruction: UiState.closeSettingsIfScreen(modelData.name)

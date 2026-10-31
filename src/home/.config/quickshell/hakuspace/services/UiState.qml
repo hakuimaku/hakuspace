@@ -105,6 +105,12 @@ QtObject {
     signal tempNoteClosing(string screenName)
     // Transfer keyboard input only after an explicit note focus request.
     signal tempNoteFocusRequested(string screenName)
+    // Keep the Task Manager visible independently of mutually exclusive panels.
+    property bool taskManagerOpen: false
+    property string taskManagerScreenName: ""
+    property rect taskManagerRect: Qt.rect(0, 0, 0, 0)
+    signal taskManagerClosing(string screenName)
+    signal taskManagerFocusRequested(string screenName)
     readonly property string hakuMenuTabLabel: hakuMenuMode === "general" ? "General"
                                                    : hakuMenuMode === "drun" ? "Drun"
                                                    : hakuMenuMode === "theme" ? "Theme"
@@ -158,6 +164,38 @@ QtObject {
     // Clear ownership when its output disappears.
     function closeTempNoteIfScreen(screenName) {
         if (tempNoteScreenName === screenName) closeTempNote()
+    }
+
+    // Open or transfer the utility without closing other floating surfaces.
+    function openTaskManager(screenName) {
+        if (!screenName) return
+        if (taskManagerOpen && taskManagerScreenName === screenName) { taskManagerFocusRequested(screenName); return }
+        if (activePanel === "navigation") closeNavigation()
+        if (taskManagerOpen) closeTaskManager()
+        taskManagerScreenName = screenName
+        taskManagerOpen = true
+        taskManagerFocusRequested(screenName)
+    }
+
+    // Notify the visual owner before releasing visibility and input ownership.
+    function closeTaskManager() {
+        if (!taskManagerOpen) return
+        taskManagerClosing(taskManagerScreenName)
+        taskManagerOpen = false
+        taskManagerRect = Qt.rect(0, 0, 0, 0)
+        releaseInteraction("taskManager", taskManagerScreenName)
+        taskManagerScreenName = ""
+    }
+
+    // Toggle on the current output or transfer to another output.
+    function toggleTaskManager(screenName) {
+        if (taskManagerOpen && taskManagerScreenName === screenName) closeTaskManager()
+        else openTaskManager(screenName)
+    }
+
+    // Output destruction must not close a newer owner on another screen.
+    function closeTaskManagerIfScreen(screenName) {
+        if (taskManagerScreenName === screenName) closeTaskManager()
     }
 
     // Opens navigation surface with anchor coordinates and updates active panel.

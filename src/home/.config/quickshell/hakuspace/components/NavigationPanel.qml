@@ -313,13 +313,14 @@ Item {
         focusSidebarRail(fromKeyboard)
     }
 
-    // A second activation closes the current tool.
+    // Launch floating utilities or toggle the attached Sidebar tool.
     function toggleSidebarTool(key, fromKeyboard) {
-        if (key === "tempNote") {
+        if (key === "tempNote" || key === "taskManager") {
             activeSidebarTool = ""
             sidebarKeyboardMode = false
             lifetime.reset()
-            UiState.openTempNote(modelData.name)
+            if (key === "taskManager") UiState.openTaskManager(modelData.name)
+            else UiState.openTempNote(modelData.name)
             return
         }
         if (activeSidebarTool === key) closeSidebarTool(fromKeyboard)

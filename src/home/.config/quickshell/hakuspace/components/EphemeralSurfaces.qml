@@ -13,7 +13,7 @@ Item {
         property int calendarMonthOffset: 0
     }
     // Expose resource counts without retaining destroyed surface objects.
-    readonly property var loaders: [navigation, settings, note, tray, appMenu, center, wallpaper, wallpaperWorkspace, action, popup, osd, navigator, imageEditor]
+    readonly property var loaders: [navigation, settings, note, taskManager, tray, appMenu, center, wallpaper, wallpaperWorkspace, action, popup, osd, navigator, imageEditor]
     readonly property int loadedCount: loaders.filter(function(loader) { return loader.active }).length + menu.loadedCount
     readonly property var navigationItem: navigation.active ? navigation.item : null
 
@@ -44,6 +44,11 @@ Item {
         id: note
         requested: UiState.tempNoteOpen && UiState.tempNoteScreenName === root.modelData.name
         TempNoteOverlay { modelData: root.modelData }
+    }
+    Base.LifecycleLoader {
+        id: taskManager
+        requested: UiState.taskManagerOpen && UiState.taskManagerScreenName === root.modelData.name
+        TaskManagerOverlay { modelData: root.modelData }
     }
     Base.LifecycleLoader {
         id: tray

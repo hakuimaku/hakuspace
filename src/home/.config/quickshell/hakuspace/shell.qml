@@ -329,6 +329,32 @@ ShellRoot {
         }
     }
 
+    // Task Manager remains demand-owned and unavailable to Classic mode.
+    IpcHandler {
+        target: "taskManager"
+        function open(screenName: string) {
+            if (AppState.shellBackend !== "hikai") return
+            for (var screen of Quickshell.screens) if (screen.name === screenName) {
+                UiState.openTaskManager(screenName)
+                return
+            }
+        }
+        function openDefault() {
+            if (AppState.shellBackend === "hikai" && Quickshell.screens.length) UiState.openTaskManager(Quickshell.screens[0].name)
+        }
+        function toggle() {
+            if (UiState.taskManagerOpen) UiState.closeTaskManager()
+            else openDefault()
+        }
+        function close() { UiState.closeTaskManager() }
+        function status(): string {
+            return JSON.stringify(Object.assign(TaskManagerService.status(), {
+                open: UiState.taskManagerOpen, screen: UiState.taskManagerScreenName,
+                interactionOwner: UiState.interactionOwner
+            }))
+        }
+    }
+
     // Toggle only the floating note, independently of Navigation and Sidebar.
     IpcHandler {
         target: "tempNote"

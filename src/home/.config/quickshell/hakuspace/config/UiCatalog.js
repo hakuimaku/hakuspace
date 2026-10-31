@@ -123,7 +123,8 @@ var actionMenuRecordModes = [
 var sidebarTools = [
     { key: "quickActions", icon: "󰀻", label: "Quick Actions" },
     { key: "clipboard", icon: "󰅌", label: "Clipboard" },
-    { key: "tempNote", icon: "󰏫", label: "Temp Note" }
+    { key: "tempNote", icon: "󰏫", label: "Temp Note" },
+    { key: "taskManager", icon: "󰍛", label: "Task Manager" }
 ]
 
 // Quick action metadata; availability and state remain runtime-owned.

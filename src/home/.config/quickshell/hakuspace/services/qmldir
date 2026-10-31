@@ -44,3 +44,4 @@ singleton WallpaperLibrary 1.0 WallpaperLibrary.qml
 singleton IdleService 1.0 IdleService.qml
 singleton ImageEditor 1.0 ImageEditor.qml
 singleton SettingsCoordinator 1.0 SettingsCoordinator.qml
+singleton TaskManagerService 1.0 TaskManagerService.qml
