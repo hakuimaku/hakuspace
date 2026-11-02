@@ -13,6 +13,7 @@ python3 tools/checks/qml_syntax.py \
     src/home/.config/quickshell/hakuspace/services/{TaskManagerService,UiState}.qml \
     src/home/.config/quickshell/hakuspace/components/{TaskManagerOverlay,EphemeralSurfaces,MemoryMaintenanceHost,SettingsPanel,NavigationPanel}.qml \
     src/home/.config/quickshell/hakuspace/components/taskmanager/{TaskManagerContent,TaskManagerSummary,TaskManagerProcessRow}.qml \
+    src/home/.config/quickshell/hakuspace/components/taskmanager/glassgrid/*.qml \
     src/home/.config/quickshell/hakuspace/shell.qml \
-    tests/hikai/task_manager/harness/{task_manager,profile}.qml
+    tests/hikai/task_manager/harness/{task_manager,glass_grid,profile}.qml
 git diff --check

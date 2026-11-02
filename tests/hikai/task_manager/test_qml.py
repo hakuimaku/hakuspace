@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[3]
 SOURCE = ROOT / 'src/home/.config/quickshell/hakuspace'
 
 
-def prepare(work):
+def prepare(work, harness_name='task_manager.qml'):
     """Assemble the real overlay, service and Temp Note in a disposable QML tree."""
     shell = work / 'shell'
     shutil.copytree(SOURCE / 'config', shell / 'config')
@@ -39,22 +39,22 @@ def prepare(work):
         shutil.copytree(SOURCE / 'components' / name, shell / 'components' / name)
     for name in ('TaskManagerOverlay', 'TempNoteOverlay'):
         shutil.copy2(SOURCE / f'components/{name}.qml', shell / f'components/{name}.qml')
-    harness = (Path(__file__).with_name('harness') / 'task_manager.qml').read_text()
-    settings = (SOURCE / 'components/SettingsPanel.qml').read_text()
-    mask = settings[settings.index('    mask: Region {'):settings.index('    Component.onDestruction:')]
-    (shell / 'shell.qml').write_text(harness.replace('/*SETTINGS_MASK*/', mask.replace('root.', 'settingsProbe.')))
+    harness = (Path(__file__).with_name('harness') / harness_name).read_text()
+    if '/*SETTINGS_MASK*/' in harness:
+        settings = (SOURCE / 'components/SettingsPanel.qml').read_text()
+        mask = settings[settings.index('    mask: Region {'):settings.index('    Component.onDestruction:')]
+        harness = harness.replace('/*SETTINGS_MASK*/', mask.replace('root.', 'settingsProbe.'))
+    (shell / 'shell.qml').write_text(harness)
     return shell
 
 
 class QmlTest(unittest.TestCase):
     """Use real collectors and Qt events without taking over the user's desktop."""
 
-    @unittest.skipUnless(shutil.which('labwc') and shutil.which('quickshell'), 'Labwc and Quickshell required')
-    def test_floating_lifecycle(self):
-        """Exercise ownership, keyboard, geometry, actions and twenty complete releases."""
+    def _run_harness(self, harness_name, expected_marker, log_path):
         with tempfile.TemporaryDirectory(prefix='hikai-task-manager-') as directory:
             work = Path(directory)
-            shell = prepare(work)
+            shell = prepare(work, harness_name)
             (work / 'runtime').mkdir(mode=0o700)
             (work / 'labwc').mkdir()
             (work / 'labwc/rc.xml').write_text('<labwc_config/>\n')
@@ -78,10 +78,20 @@ class QmlTest(unittest.TestCase):
                         pass
                     child.wait(timeout=3)
             log = stdout + stderr
-            Path('/tmp/hikai-task-manager-qml.log').write_text(log)
+            Path(log_path).write_text(log)
             self.assertEqual(child.returncode, 0, log[-10000:])
-            self.assertIn('Task Manager QML passed', log[-10000:])
+            self.assertIn(expected_marker, log[-10000:])
             self.assertNotRegex(log, r'ReferenceError|TypeError|Binding loop|Unable to assign|Failed to load')
+
+    @unittest.skipUnless(shutil.which('labwc') and shutil.which('quickshell'), 'Labwc and Quickshell required')
+    def test_floating_lifecycle(self):
+        """Exercise ownership, keyboard, geometry, actions and twenty complete releases."""
+        self._run_harness('task_manager.qml', 'Task Manager QML passed', '/tmp/hikai-task-manager-qml.log')
+
+    @unittest.skipUnless(shutil.which('labwc') and shutil.which('quickshell'), 'Labwc and Quickshell required')
+    def test_glass_grid_style(self):
+        """Exercise Focus Card switching, reset semantics, responsive sizes and light/dark themes."""
+        self._run_harness('glass_grid.qml', 'Glass Grid harness passed', '/tmp/hikai-task-manager-glass-grid.log')
 
 
 if __name__ == '__main__':

@@ -1,11 +1,15 @@
-// Filter and sort only when process data or explicit controls change.
-function processRows(processes, query, sortKey, descending) {
-    var needle = query.trim().toLowerCase()
-    var rows = processes.filter(function(process) {
+// Filter and sort rows, keeping pinned process identities first.
+function processRows(processes, query, sortKey, descending, pinnedKeys) {
+    var needle = (query || "").trim().toLowerCase()
+    var rows = (processes || []).filter(function(process) {
         return !needle || [process.pid, process.name, process.cmdline, process.user].join(" ").toLowerCase().includes(needle)
     })
     var field = {cpu: "cpuTotalPercent", memory: "rss", pid: "pid", name: "name"}[sortKey] || "cpuTotalPercent"
+    var pinnedList = Array.isArray(pinnedKeys) ? pinnedKeys : []
     rows.sort(function(a, b) {
+        var aPinned = pinnedList.includes(a.key) || pinnedList.includes(String(a.pid))
+        var bPinned = pinnedList.includes(b.key) || pinnedList.includes(String(b.pid))
+        if (aPinned !== bPinned) return aPinned ? -1 : 1
         var first = a[field], second = b[field]
         var order = field === "name" ? first.localeCompare(second) : (first || 0) - (second || 0)
         return (descending ? -order : order) || a.pid - b.pid
