@@ -108,20 +108,28 @@ class IntelGpuProvider:
             self.descriptors.clear()
             self.inaccessible.clear()
             return {}, int(isinstance(error, PermissionError))
-        live = {path.name for path in processes}
-        self.descriptors = {pid: paths for pid, paths in self.descriptors.items() if pid in live}
-        self.inaccessible.intersection_update(live)
+        # Reused PIDs need immediate discovery even between global discovery passes.
+        identities = {}
+        for process in processes:
+            try:
+                identities[(process.name, parse_stat((process / 'stat').read_text())['startTime'])] = process
+            except PermissionError:
+                denied_fds.add((process.name, None))
+            except (OSError, ValueError, IndexError):
+                continue
+        self.descriptors = {key: paths for key, paths in self.descriptors.items() if key in identities}
+        self.inaccessible.intersection_update(identities)
         discover = now >= self.discovery_due
         if discover:
             self.discovery_due = now + 5
             self.inaccessible.clear()
-        for process in processes:
-            if discover or process.name not in self.descriptors:
+        for identity, process in identities.items():
+            if discover or identity not in self.descriptors:
                 paths = []
                 try:
                     descriptors = list((process / 'fd').iterdir())
                 except PermissionError:
-                    self.inaccessible.add(process.name)
+                    self.inaccessible.add(identity)
                     descriptors = []
                 except OSError:
                     descriptors = []
@@ -131,16 +139,16 @@ class IntelGpuProvider:
                         if str(descriptor.readlink()).startswith('/dev/dri/'):
                             paths.append(descriptor)
                     except PermissionError:
-                        self.inaccessible.add(process.name)
+                        self.inaccessible.add(identity)
                         break
                     except OSError:
                         continue
-                self.descriptors[process.name] = paths
-            for descriptor in self.descriptors[process.name]:
+                self.descriptors[identity] = paths
+            for descriptor in self.descriptors[identity]:
                 try:
                     text = (process / 'fdinfo' / descriptor.name).read_text(errors='replace')
                 except PermissionError:
-                    denied_fds.add(process.name)
+                    denied_fds.add(identity)
                     continue
                 except OSError:
                     continue
@@ -497,7 +505,7 @@ class Monitor:
         snapshot['processMonotonicMs'] = round(self.previous.get('processes', (0, {}))[0] * 1000)
         snapshot['capabilities'] = dict(gpu=any(row['available'] for row in snapshot['gpus']),
             gpuTemperature=any(row['temperatureC'] is not None for row in snapshot['gpus']),
-            diskIo=snapshot['disks'].get('available', False), processControl=hasattr(os, 'kill'))
+            diskIo=snapshot['disks'].get('available', False), processControl=hasattr(os, 'pidfd_open') and hasattr(signal, 'pidfd_send_signal'))
         return snapshot
 
 

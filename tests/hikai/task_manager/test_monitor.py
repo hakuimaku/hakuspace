@@ -148,14 +148,14 @@ class MonitorTest(unittest.TestCase):
     def test_process_races_and_permissions(self):
         """A process disappearing or refusing a read cannot discard other telemetry."""
         original = Path.read_text
-        for exception in (FileNotFoundError, PermissionError):
+        for index, exception in enumerate((FileNotFoundError, PermissionError)):
             with self.subTest(exception=exception):
                 def read(path, *args, **kwargs):
                     if path == self.proc / '12/status':
                         raise exception()
                     return original(path, *args, **kwargs)
                 with patch.object(Path, 'read_text', read):
-                    sample = self.collector.sample(10)
+                    sample = self.collector.sample(10 + index * 2)
                 self.assertEqual(sample['processes'], [])
                 self.assertTrue(sample['memory']['available'])
         self.assertEqual(self.collector.previous['processes'][1], {})
@@ -187,6 +187,8 @@ class MonitorTest(unittest.TestCase):
 
     def intel_client(self, client=7, counter=0, pid=12, fd=8, pci='0000:00:02.0', engine='render', capacity=1):
         """Model a DRM FD and its standardized nanosecond client counters."""
+        if not (self.proc / str(pid) / 'stat').exists():
+            self.process(pid, 100, 0)
         descriptor = self.root / f'proc/{pid}/fd/{fd}'
         descriptor.parent.mkdir(parents=True, exist_ok=True)
         if not descriptor.is_symlink():
@@ -259,6 +261,22 @@ class MonitorTest(unittest.TestCase):
         self.write('sys/class/drm/card2/device/uevent', 'DRIVER=other\nPCI_SLOT_NAME=0000:00:02.0')
         self.assertEqual(provider.sample(12)[0]['status'], 'unsupported')
 
+    def test_intel_identity_permission(self):
+        """Unreadable process identity stays permission-denied rather than using a stale cache."""
+        self.intel_card()
+        self.intel_client()
+        provider = monitor.IntelGpuProvider(self.proc, self.sys)
+        provider.sample(10)
+        original = Path.read_text
+        def read(path, *args, **kwargs):
+            if path == self.proc / '12/stat':
+                raise PermissionError()
+            return original(path, *args, **kwargs)
+        with patch.object(Path, 'read_text', read):
+            row = provider.sample(12)[0]
+        self.assertEqual(row['status'], 'permissionDenied')
+        self.assertEqual(provider.descriptors, {})
+
     def test_intel_capacity_exit_and_multi_gpu(self):
         """Keep capacity, vanished clients and mixed-card ordering deterministic."""
         self.intel_card(2)
@@ -290,7 +308,7 @@ class MonitorTest(unittest.TestCase):
         self.assertEqual(provider.sample(15)[0]['clientCount'], 2)
         shutil.rmtree(self.proc / '13')
         provider.sample(17)
-        self.assertNotIn('13', provider.descriptors)
+        self.assertNotIn(('13', 100), provider.descriptors)
         self.assertEqual(len(provider.previous), 1)
 
     def test_intel_fd_exit_during_discovery(self):
@@ -326,6 +344,69 @@ class MonitorTest(unittest.TestCase):
         sample = self.collector.sample(12)
         self.assertEqual(sample['disks']['readBps'], 0)
         self.assertEqual(sample['disks']['writeBps'], 0)
+
+    def test_disk_exit_new_baseline_and_nonpositive_elapsed(self):
+        """Removed devices release counters; new devices and zero deltas warm up."""
+        self.collector.disk_io(10)
+        self.write('proc/diskstats', '')
+        self.assertEqual(self.collector.disk_io(11)['devices'], [])
+        self.assertEqual(self.collector.previous['disk'][1], {})
+        self.write('proc/diskstats', '8 0 sda 1 0 999999 0 1 0 999999 0 0 0 0')
+        for now in (12, 12, 11):
+            row = self.collector.disk_io(now)
+            self.assertIsNone(row['readBps'])
+            self.assertIsNone(row['writeBps'])
+
+
+    def test_pidfd_capability(self):
+        """Only the controller's complete safe signaling path advertises process control."""
+        for missing in (None, 'open', 'send'):
+            with self.subTest(missing=missing), patch.object(monitor.os, 'pidfd_open', create=True), \
+                    patch.object(monitor.signal, 'pidfd_send_signal', create=True):
+                if missing == 'open':
+                    del monitor.os.pidfd_open
+                elif missing == 'send':
+                    del monitor.signal.pidfd_send_signal
+                self.assertEqual(self.collector.sample(10)['capabilities']['processControl'], missing is None)
+
+    def test_intel_reused_pid_discovers_new_descriptors_immediately(self):
+        """A reused PID cannot reuse the old lifetime's descriptor cache."""
+        self.intel_card()
+        self.process(1234, 100, 0)
+        self.intel_client(pid=1234, fd=10)
+        provider = monitor.IntelGpuProvider(self.proc, self.sys)
+        provider.sample(10)
+        self.assertIn(('1234', 100), provider.descriptors)
+        self.process(1234, 200, 0)
+        (self.proc / '1234/fd/10').unlink()
+        self.intel_client(pid=1234, fd=14, client=8)
+        original = Path.read_text
+        reads = []
+        def read(path, *args, **kwargs):
+            reads.append(path)
+            return original(path, *args, **kwargs)
+        with patch.object(Path, 'read_text', read):
+            row = provider.sample(12)[0]
+        self.assertNotIn(('1234', 100), provider.descriptors)
+        self.assertEqual([path.name for path in provider.descriptors[('1234', 200)]], ['14'])
+        self.assertNotIn(self.proc / '1234/fdinfo/10', reads)
+        self.assertIn(self.proc / '1234/fdinfo/14', reads)
+        self.assertEqual(row['clientCount'], 1)
+
+    def test_nvidia_timeout_and_failure(self):
+        """Driver timeouts and failed commands cannot crash or leave a helper alive."""
+        for failure in (subprocess.TimeoutExpired('nvidia-smi', 2), None):
+            with patch.object(monitor.subprocess, 'Popen') as spawn:
+                child = spawn.return_value
+                child.communicate.side_effect = failure
+                child.communicate.return_value = ('', None)
+                child.returncode = 1
+                child.poll.return_value = None
+                self.assertEqual(monitor.NvidiaSmiProvider('nvidia-smi').sample(), [])
+                child.communicate.assert_called_once_with(timeout=2)
+                child.kill.assert_called_once()
+                child.wait.assert_called_once()
+
 
     def test_malformed_and_missing_files(self):
         """Broken providers degrade independently and recover on subsequent samples."""
