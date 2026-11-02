@@ -357,6 +357,24 @@ class MonitorTest(unittest.TestCase):
             self.assertIsNone(row['readBps'])
             self.assertIsNone(row['writeBps'])
 
+    def test_process_payload_only_on_scan(self):
+        """Unchanged process rows never enter ordinary telemetry serialization."""
+        with patch.object(self.collector, 'processes', wraps=self.collector.processes) as scan:
+            first = self.collector.sample(10)
+            for now in (10.1, 10.5, 10.9):
+                frame = self.collector.sample(now)
+                self.assertNotIn('processes', frame)
+                self.assertNotIn('"processes"', json.dumps(frame))
+                self.assertEqual(frame['processMonotonicMs'], first['processMonotonicMs'])
+            second = self.collector.sample(11)
+            self.assertEqual(scan.call_count, 2)
+        self.assertIn('processes', second)
+        self.assertEqual(second['processMonotonicMs'], 11000)
+        with patch.object(self.collector, 'processes', side_effect=PermissionError):
+            failed = self.collector.sample(12)
+        self.assertNotIn('processes', failed)
+        self.assertEqual(failed['processMonotonicMs'], 11000)
+        self.assertEqual(failed['errors']['processes'], 'PermissionError')
 
     def test_pidfd_capability(self):
         """Only the controller's complete safe signaling path advertises process control."""
@@ -407,6 +425,13 @@ class MonitorTest(unittest.TestCase):
                 child.kill.assert_called_once()
                 child.wait.assert_called_once()
 
+    def test_interval_bounds(self):
+        """CLI and service share the documented 100–2000 ms contract."""
+        for interval in (99, 2001):
+            result = subprocess.run([sys.executable, str(SOURCE), '--once', '--interval-ms', str(interval)],
+                capture_output=True, text=True, timeout=3)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn('100–2000', result.stderr)
 
     def test_malformed_and_missing_files(self):
         """Broken providers degrade independently and recover on subsequent samples."""

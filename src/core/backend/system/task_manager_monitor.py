@@ -493,19 +493,24 @@ class Monitor:
             'gpus': lambda: self.slow('gpus', now, 2, lambda: self.gpus(now)),
             'disks': lambda: self.disk_io(now) | {'mounts': self.slow('mounts', now, 5, self.mounts)},
             'network': lambda: self.network(now),
-            'processes': lambda: self.slow('processes', now, 1, lambda: self.processes(
-                now, snapshot.get('memory', {}).get('total', 0), snapshot.get('cpu', {}).get('logicalCount', 0))),
         }
+        # Only successful fresh process scans travel over stdout.
+        if now >= self.due.get('processes', 0):
+            providers['processes'] = lambda: self.processes(
+                now, snapshot.get('memory', {}).get('total', 0), snapshot.get('cpu', {}).get('logicalCount', 0))
+            self.due['processes'] = now + 1
         for name, callback in providers.items():
             try:
                 snapshot[name] = callback()
             except (OSError, ValueError, IndexError, TypeError) as error:
-                snapshot[name] = [] if name in ('gpus', 'processes') else {'available': False}
+                if name != 'processes':
+                    snapshot[name] = [] if name == 'gpus' else {'available': False}
                 snapshot['errors'][name] = type(error).__name__
         snapshot['processMonotonicMs'] = round(self.previous.get('processes', (0, {}))[0] * 1000)
         snapshot['capabilities'] = dict(gpu=any(row['available'] for row in snapshot['gpus']),
             gpuTemperature=any(row['temperatureC'] is not None for row in snapshot['gpus']),
-            diskIo=snapshot['disks'].get('available', False), processControl=hasattr(os, 'pidfd_open') and hasattr(signal, 'pidfd_send_signal'))
+            diskIo=snapshot['disks'].get('available', False),
+            processControl=hasattr(os, 'pidfd_open') and hasattr(signal, 'pidfd_send_signal'))
         return snapshot
 
 
@@ -516,14 +521,14 @@ def main():
     mode.add_argument('--stream', action='store_true')
     mode.add_argument('--once', action='store_true')
     parser.add_argument('--pretty', action='store_true')
-    parser.add_argument('--interval-ms', type=int, default=750)
+    parser.add_argument('--interval-ms', type=int, default=1000)
     parser.add_argument('--proc-root', default='/proc')
     parser.add_argument('--sys-root', default='/sys')
     parser.add_argument('--mount-root', default='/')
     parser.add_argument('--nvidia-smi', default=None)
     args = parser.parse_args()
-    if args.interval_ms < 100 or (args.stream and args.pretty):
-        parser.error('interval must be at least 100 ms; pretty output requires --once')
+    if not 100 <= args.interval_ms <= 2000 or (args.stream and args.pretty):
+        parser.error('interval must be 100–2000 ms; pretty output requires --once')
     monitor = Monitor(args.proc_root, args.sys_root, args.mount_root, args.nvidia_smi)
     # Interrupt sleep immediately so UI destruction never leaves an idle collector.
     signal.signal(signal.SIGTERM, lambda *_: exit(0))

@@ -10,17 +10,22 @@ QtObject {
     readonly property bool active: subscribers > 0 && AppState.shellBackend === "hikai"
     readonly property bool collectorRunning: monitor.running
     readonly property int collectorPid: monitor.processId || 0
-    // Retain one complete snapshot and bounded graph data per live session.
+    // Wait for exit before replacing a collector or reopening a closing session.
+    property bool monitorRestartPending: false
+    property bool monitorStopPending: false
+    property bool monitorFailed: false
+    // Retain current telemetry, the latest process model and a fixed history window.
     property var snapshot: ({})
     property var processes: []
     property real processTimestamp: -1
     property var history: []
+    readonly property int historyWindowMs: 60000
     readonly property var cpu: snapshot.cpu || ({})
     readonly property var memory: snapshot.memory || ({})
     readonly property var gpus: snapshot.gpus || []
     readonly property var disks: snapshot.disks || ({})
     readonly property var network: snapshot.network || ({})
-    readonly property bool ready: active && !!snapshot.seq
+    readonly property bool ready: active && !monitorFailed && !!snapshot.seq
     readonly property bool warmingUp: !ready || !!cpu.warmingUp
     // Surface collector and action failures without logging every sample.
     property string error: ""
@@ -40,30 +45,37 @@ QtObject {
     function release() { subscribers = Math.max(0, subscribers - 1) }
     onActiveChanged: {
         if (!active) {
+            monitorStopPending = monitorStopPending || monitor.running || monitorRestartPending
+            monitorRestartPending = false
             controller.running = false
             snapshot = ({}); processes = []; processTimestamp = -1; history = []
             error = ""; actionError = ""; actionStatus = ""
+        } else {
+            monitorFailed = false
         }
     }
 
     // Validate complete JSONL frames before publishing them atomically.
     function receive(line) {
-        if (!active) return
+        if (!active || monitorFailed) return
         try {
             var value = JSON.parse(line)
-            if (value.schema !== 1 || !Number.isFinite(value.seq) || !Number.isFinite(value.processMonotonicMs) || !value.cpu || !value.memory
-                    || !Array.isArray(value.processes) || !Array.isArray(value.gpus)
+            if (value.schema !== 1 || !Number.isFinite(value.seq) || !Number.isFinite(value.monotonicMs)
+                    || !Number.isFinite(value.processMonotonicMs) || !value.cpu || !value.memory
+                    || (value.processes != null && !Array.isArray(value.processes)) || !Array.isArray(value.gpus)
                     || !value.network || !value.disks) throw new Error("Unsupported telemetry frame")
+            if (value.monotonicMs < (snapshot.monotonicMs || 0)) return
             snapshot = value
-            if (processTimestamp !== value.processMonotonicMs) {
+            if (Array.isArray(value.processes) && processTimestamp !== value.processMonotonicMs) {
                 processes = value.processes
                 processTimestamp = value.processMonotonicMs
             }
             history = history.concat([{
+                t: value.monotonicMs,
                 cpu: cpu.usage, gpu: gpus.length ? gpus[0].usage : null, memory: memory.percent,
                 rx: (network.all || {}).rxBps, tx: (network.all || {}).txBps,
                 read: disks.readBps, write: disks.writeBps
-            }]).slice(-120)
+            }]).filter(sample => sample.t >= value.monotonicMs - historyWindowMs).slice(-800)
             error = ""
         } catch (exception) { error = "Invalid telemetry: " + exception.message }
     }
@@ -93,16 +105,34 @@ QtObject {
     function status() {
         return {active: active, ready: ready, subscribers: subscribers, collectorRunning: collectorRunning,
             collectorPid: collectorPid, seq: snapshot.seq || 0, monotonicMs: snapshot.monotonicMs || 0,
+            intervalMs: intervalMs, restartPending: monitorRestartPending, failed: monitorFailed,
             processCount: processes.length, historyCount: history.length, error: error, actionError: actionError}
     }
 
+    // Restart once with the latest requested interval after the previous child exits.
+    property int intervalMs: 1000
+    readonly property var monitorCommand: command("task_manager_monitor.py", ["--stream", "--interval-ms", String(intervalMs)])
+    function setIntervalMs(ms) {
+        if (!Number.isFinite(ms)) return
+        var clamped = Math.max(100, Math.min(2000, Math.round(ms / 100) * 100))
+        if (intervalMs === clamped) return
+        if (monitor.running) monitorRestartPending = true
+        intervalMs = clamped
+    }
+
     property Process monitor: Process {
-        command: root.command("task_manager_monitor.py", ["--stream"])
-        running: root.active
+        command: root.monitorCommand
+        running: root.active && !root.monitorRestartPending && !root.monitorStopPending && !root.monitorFailed
         stdout: SplitParser { onRead: line => root.receive(line) }
         stderr: SplitParser { onRead: line => { if (root.active) root.error = line.slice(0, 512) } }
         onExited: (exitCode, exitStatus) => {
-            if (root.active) root.error = "Collector stopped (exit " + exitCode + ")"
+            if (root.active && !root.monitorRestartPending && !root.monitorStopPending) {
+                root.monitorFailed = true
+                root.snapshot = ({})
+                root.error = "Collector stopped (exit " + exitCode + ")"
+            }
+            root.monitorStopPending = false
+            root.monitorRestartPending = false
         }
     }
     property Process controller: Process {

@@ -205,11 +205,12 @@ ShellRoot {
                 root.check(!UiState.tempNoteOpen && UiState.taskManagerOpen, "Escape closed the wrong floating utility")
                 root.overlay.takeFocus()
                 // Inject fixture frames through the actual parser and bounded-history path.
+                var initialTime = TaskManagerService.snapshot.monotonicMs
                 for (var i = 0; i < 130; i++) {
-                    TaskManagerService.receive(JSON.stringify({schema: 1, seq: i + 1, processMonotonicMs: i,
+                    TaskManagerService.receive(JSON.stringify({schema: 1, seq: i + 1, monotonicMs: initialTime + i * 1000, processMonotonicMs: i,
                         cpu: {usage: 20}, memory: {percent: 30}, gpus: [], network: {all: {}}, disks: {}, processes: root.fixture}))
                 }
-                root.check(TaskManagerService.history.length === 120, "unbounded history")
+                root.check(TaskManagerService.history.length === 61, "history must retain sixty seconds")
                 root.phase = 30
                 return
             } else if (root.phase === 30) {
