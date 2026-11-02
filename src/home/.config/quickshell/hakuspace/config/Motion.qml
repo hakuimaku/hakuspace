@@ -153,4 +153,23 @@ QtObject {
     readonly property real floatingPanelOpenFactor: 0.9
     // Floating panel close factor.
     readonly property real floatingPanelCloseFactor: 0.7
+
+    // Task Manager card, dropdown and control motion.
+    readonly property int taskManagerFocusMorphDuration: 520
+    readonly property list<real> taskManagerFocusMorphCurve: [0.16, 1.0, 0.30, 1.0, 1, 1]
+    readonly property int taskDropdownOpenDuration: 340
+    readonly property list<real> taskDropdownOpenCurve: [0.22, 1.0, 0.36, 1.0, 1, 1]
+    readonly property int taskDropdownCloseDuration: 300
+    readonly property list<real> taskDropdownCloseCurve: [0.40, 0.0, 0.20, 1.0, 1, 1]
+    readonly property int taskSelectionRailDuration: 260
+    readonly property list<real> taskSelectionRailCurve: [0.16, 1.0, 0.30, 1.0, 1, 1]
+    readonly property int taskDetailsFoldDuration: 440
+    readonly property list<real> taskDetailsFoldCurve: [0.22, 1.0, 0.36, 1.0, 1, 1]
+    readonly property int taskConfirmationMorphDuration: 400
+    readonly property list<real> taskConfirmationMorphCurve: [0.22, 1.0, 0.36, 1.0, 1, 1]
+    readonly property int taskTooltipStemDuration: 120
+    readonly property int taskTooltipUnfurlDuration: 220
+    readonly property int taskTooltipSlideDuration: 140
+    readonly property list<real> taskTooltipCurve: [0.22, 1.0, 0.36, 1.0, 1, 1]
+    readonly property int taskBarFillDuration: 180
 }
