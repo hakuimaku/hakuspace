@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import Quickshell
 import Quickshell.Io
 import "../../services"
 import "../../config/UiCatalog.js" as UiCatalog
@@ -114,11 +115,10 @@ Item {
         var item = visibleItems[index]
         if (!item) return
 
-        actionProcess.running = false
-        actionProcess.command = item.fixed
+        var command = item.fixed
             ? item.command
             : [Env.binDir + "/hm_general.sh", item.raw]
-        actionProcess.running = true
+        Quickshell.execDetached(command)
         root.launched()
     }
 
@@ -149,9 +149,7 @@ Item {
         }
     }
 
-    Process {
-        id: actionProcess
-    }
+
 
 
     ListView {
