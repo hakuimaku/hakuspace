@@ -14,7 +14,7 @@ FocusScope {
     property var snapshot: ({})
     property var pinnedProcesses: TaskManagerPins.pinnedProcesses
     property bool reducedMotion: false
-    // Keep confirmation tied to the process lifetime across telemetry refreshes.
+    // Keep the open action column tied to the process lifetime across telemetry refreshes.
     property string pendingUnpinKey: ""
     property Item hoveredPinRow: null
     // Retain geometry across row gaps without retaining the active hover state.
@@ -61,13 +61,10 @@ FocusScope {
         if (root && root.hoveredPinRow && !root.hoveredPinRow.hovered) root.hoveredPinRow = null
     }
 
-    // First activation asks; only another activation of the same identity removes its pin.
+    // Toggle the action column without changing the pin itself.
     function activatePin(process) {
         if (!process || !process.key) return
-        if (pendingUnpinKey === process.key) {
-            pendingUnpinKey = ""
-            TaskManagerPins.unpin(process)
-        } else pendingUnpinKey = process.key
+        pendingUnpinKey = pendingUnpinKey === process.key ? "" : process.key
     }
 
     Glass.TaskManagerVisuals { id: miniVisuals }
@@ -336,86 +333,128 @@ FocusScope {
                                 if (hovered) root.hoveredPinRow = pinRow
                                 else Qt.callLater(root.clearPinHover)
                             }
-                            readonly property bool confirming: root.pendingUnpinKey === modelData.key
+                            readonly property bool unpinShown: root.pendingUnpinKey === modelData.key
+                            property real unpinColumnWidth: unpinShown ? Theme.comfortableControlHeight : 0
+                            Behavior on unpinColumnWidth {
+                                enabled: !root.reducedMotion
+                                NumberAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+                            }
                             color: miniVisuals.wellSurface
                             activeFocusOnTab: true
                             Accessible.role: Accessible.Button
                             Accessible.name: modelData.name + ", CPU " + Logic.metric(modelData.cpuTotalPercent, "%") + ", memory " + Logic.bytes(modelData.rss)
-                            Accessible.description: confirming ? "Press again to unpin" : "Press twice to unpin"
+                            Accessible.description: unpinShown ? "Hide unpin button. Tab to the red X to unpin." : "Show unpin button"
                             Accessible.onPressAction: root.activatePin(modelData)
                             Keys.onReturnPressed: event => { if (!event.isAutoRepeat) root.activatePin(modelData); event.accepted = true }
+                            Keys.onEnterPressed: event => { if (!event.isAutoRepeat) root.activatePin(modelData); event.accepted = true }
                             Keys.onSpacePressed: event => { if (!event.isAutoRepeat) root.activatePin(modelData); event.accepted = true }
                             HoverHandler { id: rowHover; cursorShape: Qt.PointingHandCursor }
-                            TapHandler {
-                                acceptedButtons: Qt.LeftButton
-                                onTapped: { pinRow.forceActiveFocus(); root.activatePin(pinRow.modelData) }
-                            }
-                            RowLayout {
-                                anchors { fill: parent; leftMargin: Theme.spaceMd; rightMargin: Theme.spaceMd }
-                                spacing: Theme.spaceSm
+                            Item {
+                                anchors { top: parent.top; bottom: parent.bottom; left: parent.left; right: unpinButton.left }
+                                TapHandler {
+                                    acceptedButtons: Qt.LeftButton
+                                    onTapped: { pinRow.forceActiveFocus(); root.activatePin(pinRow.modelData) }
+                                }
                                 RowLayout {
-                                    objectName: "taskManagerMiniPinNameGroup"
-                                    Layout.fillWidth: true
-                                    Layout.minimumWidth: 0
+                                    objectName: "taskManagerMiniPinnedContent"
+                                    anchors { fill: parent; leftMargin: Theme.spaceMd; rightMargin: Theme.spaceMd }
                                     spacing: Theme.spaceSm
-                                    // Nudge the name group while numeric columns stay aligned.
-                                    transform: Translate {
-                                        x: pinRow.hovered && !root.reducedMotion ? 3 : 0
-                                        Behavior on x {
-                                            enabled: !root.reducedMotion
-                                            NumberAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+                                    RowLayout {
+                                        objectName: "taskManagerMiniPinNameGroup"
+                                        Layout.fillWidth: true
+                                        Layout.minimumWidth: 0
+                                        spacing: Theme.spaceSm
+                                        // Nudge the name group while numeric columns stay aligned.
+                                        transform: Translate {
+                                            x: pinRow.hovered && !root.reducedMotion ? 3 : 0
+                                            Behavior on x {
+                                                enabled: !root.reducedMotion
+                                                NumberAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+                                            }
+                                        }
+                                        Text {
+                                            text: Catalog.taskManagerIcons.pin
+                                            color: pinRow.hovered ? Theme.accent : miniVisuals.secondaryFg
+                                            Behavior on color {
+                                                enabled: !root.reducedMotion
+                                                ColorAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+                                            }
+                                            rotation: pinRow.hovered && !root.reducedMotion ? -6 : 0
+                                            Behavior on rotation {
+                                                enabled: !root.reducedMotion
+                                                NumberAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+                                            }
+                                            font.family: Theme.iconFontFamily
+                                            font.pixelSize: Theme.fontSize
+                                            Accessible.ignored: true
+                                        }
+                                        Text {
+                                            objectName: "taskManagerMiniPinnedName"
+                                            Layout.fillWidth: true
+                                            Layout.minimumWidth: 0
+                                            text: pinRow.modelData.name
+                                            color: miniVisuals.primaryFg
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.fontSize
+                                            elide: Text.ElideRight
                                         }
                                     }
                                     Text {
-                                        text: Catalog.taskManagerIcons.pin
-                                        color: pinRow.hovered ? Theme.accent : miniVisuals.secondaryFg
+                                        objectName: "taskManagerMiniPinnedCpu"
+                                        Layout.preferredWidth: Theme.fontSize * 8
+                                        horizontalAlignment: Text.AlignRight
+                                        text: "CPU " + Logic.metric(pinRow.modelData.cpuTotalPercent, "%")
+                                        elide: Text.ElideRight
+                                        color: Qt.alpha(Theme.accent, pinRow.hovered ? 1 : 0.85)
                                         Behavior on color {
                                             enabled: !root.reducedMotion
                                             ColorAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
                                         }
-                                        rotation: pinRow.hovered && !root.reducedMotion ? -6 : 0
-                                        Behavior on rotation {
-                                            enabled: !root.reducedMotion
-                                            NumberAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
-                                        }
-                                        font.family: Theme.iconFontFamily
-                                        font.pixelSize: Theme.fontSize
-                                        Accessible.ignored: true
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Theme.fontSize - 1
                                     }
                                     Text {
-                                        objectName: "taskManagerMiniPinnedName"
-                                        Layout.fillWidth: true
-                                        Layout.minimumWidth: 0
-                                        text: pinRow.modelData.name
-                                        color: miniVisuals.primaryFg
-                                        font.family: Theme.fontFamily
-                                        font.pixelSize: Theme.fontSize
+                                        Layout.preferredWidth: Theme.fontSize * 8
+                                        horizontalAlignment: Text.AlignRight
+                                        text: "RAM " + Logic.bytes(pinRow.modelData.rss)
                                         elide: Text.ElideRight
+                                        color: miniVisuals.secondaryFg
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Theme.fontSize - 1
                                     }
                                 }
-                                Text {
-                                    objectName: "taskManagerMiniUnpinPrompt"
-                                    Layout.preferredWidth: Theme.fontSize * (pinRow.confirming ? 16 : 8) + (pinRow.confirming ? Theme.spaceSm : 0)
-                                    horizontalAlignment: Text.AlignRight
-                                    text: pinRow.confirming ? "Unpin? Click again" : "CPU " + Logic.metric(pinRow.modelData.cpuTotalPercent, "%")
-                                    elide: Text.ElideRight
-                                    color: Qt.alpha(Theme.accent, pinRow.hovered ? 1 : 0.85)
-                                    Behavior on color {
-                                        enabled: !root.reducedMotion
-                                        ColorAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
-                                    }
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.fontSize - 1
-                                }
-                                Text {
-                                    visible: !pinRow.confirming
-                                    Layout.preferredWidth: Theme.fontSize * 8
-                                    horizontalAlignment: Text.AlignRight
-                                    text: "RAM " + Logic.bytes(pinRow.modelData.rss)
-                                    elide: Text.ElideRight
-                                    color: miniVisuals.secondaryFg
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.fontSize - 1
+                            }
+                            Glass.TaskActionButton {
+                                id: unpinButton
+                                objectName: "taskManagerMiniUnpinButton"
+                                anchors { top: parent.top; bottom: parent.bottom; right: parent.right }
+                                width: pinRow.unpinColumnWidth
+                                visible: pinRow.unpinShown || width > 0
+                                enabled: pinRow.unpinShown
+                                clip: true
+                                radius: Theme.radius
+                                text: "×"
+                                fontSize: Theme.fontSize + 6
+                                fontBold: true
+                                horizontalPadding: 0
+                                minimumWidth: 0
+                                danger: true
+                                visuals: miniVisuals
+                                reducedMotion: root.reducedMotion
+                                color: Qt.alpha(Theme.danger, 0.12)
+                                border.width: activeFocus ? 1 : 0
+                                border.color: Theme.danger
+                                Accessible.name: "Unpin " + pinRow.modelData.name
+                                Accessible.ignored: !pinRow.unpinShown
+                                Accessible.onPressAction: unpinButton.clicked()
+                                Keys.onReturnPressed: event => { if (!event.isAutoRepeat) clicked(); event.accepted = true }
+                                Keys.onEnterPressed: event => { if (!event.isAutoRepeat) clicked(); event.accepted = true }
+                                Keys.onSpacePressed: event => { if (!event.isAutoRepeat) clicked(); event.accepted = true }
+                                onClicked: {
+                                    if (root.pendingUnpinKey !== pinRow.modelData.key) return
+                                    root.pendingUnpinKey = ""
+                                    root.forcePrimaryFocus()
+                                    TaskManagerPins.unpin(pinRow.modelData)
                                 }
                             }
                         }
