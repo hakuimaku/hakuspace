@@ -1,10 +1,9 @@
 import QtQuick
-import QtQuick.Controls
 import "../../../services"
-import "TaskManagerMotion.js" as Motion
 
 Item {
     id: root
+    objectName: "taskWaterGauge"
 
     // Bind metric identity and values as one telemetry sample.
     property var sample: null
@@ -13,12 +12,6 @@ Item {
     property string metricId: ""
     property real value: 0
     property bool available: true
-    property string mainText: ""
-    property string secondaryText: ""
-    property string usedText: ""
-    property string totalText: ""
-    property string unit: "%"
-    property real expansionProgress: 0.0
     property real wavePhase: 0.0
     property real diameter: 84
     property bool showNumeric: false
@@ -69,15 +62,15 @@ Item {
 
     onSampleChanged: _applySample(sample)
 
-    onMetricIdChanged: if (!sample) _applySample({ metricId: metricId, value: value, available: available, usedText: usedText, totalText: totalText })
-    onValueChanged: if (!sample) _applySample({ metricId: metricId, value: value, available: available, usedText: usedText, totalText: totalText })
-    onAvailableChanged: if (!sample) _applySample({ metricId: metricId, value: value, available: available, usedText: usedText, totalText: totalText })
+    onMetricIdChanged: if (!sample) _applySample({ metricId: metricId, value: value, available: available })
+    onValueChanged: if (!sample) _applySample({ metricId: metricId, value: value, available: available })
+    onAvailableChanged: if (!sample) _applySample({ metricId: metricId, value: value, available: available })
 
     Component.onCompleted: {
         if (sample) {
             _applySample(sample)
         } else if (metricId !== "" || value !== 0) {
-            _applySample({ metricId: metricId, value: value, available: available, usedText: usedText, totalText: totalText })
+            _applySample({ metricId: metricId, value: value, available: available })
         }
     }
 
@@ -92,34 +85,11 @@ Item {
     }
 
     readonly property bool currentAvailable: sample ? (typeof sample.available !== "undefined" ? !!sample.available : true) : available
-    readonly property string currentUsedText: sample ? (sample.usedText || "") : usedText
-    readonly property string currentTotalText: sample ? (sample.totalText || "") : totalText
 
     // Keep telemetry independent of card expansion.
     readonly property real fillRatio: Math.max(0, Math.min(1.0, displayValue / 100.0))
-    readonly property real fillY: {
-        var r = (diameter / 2) - 1.5
-        var cy = diameter / 2
-        return (cy + r) - (2.0 * r * fillRatio)
-    }
-
-    // Remove byte units from compact value labels.
-    function stripUnits(str) {
-        if (!str) return "—"
-        var m = String(str).match(/^([\d.,]+)/)
-        return m ? m[1] : str.replace(/\s*[A-Za-z/]+$/, "").trim()
-    }
-
+    // Surrounding cards place this reading outside the water surface.
     readonly property string percentText: currentAvailable && Number.isFinite(displayValue) ? Math.round(displayValue) + "%" : "—"
-    readonly property string usedNumberOnly: stripUnits(currentUsedText)
-
-    readonly property string focusText: {
-        if (!currentAvailable) return "—"
-        if (showNumeric) {
-            return usedNumberOnly !== "" ? usedNumberOnly : percentText
-        }
-        return percentText
-    }
 
     onWavePhaseChanged: canvas.requestPaint()
     onDisplayValueChanged: canvas.requestPaint()
@@ -128,9 +98,11 @@ Item {
     onWidthChanged: canvas.requestPaint()
     onHeightChanged: canvas.requestPaint()
 
+    // Repaint theme colors even when the wave clock is paused.
     Connections {
         target: Theme
         function onIsLightChanged() { canvas.requestPaint() }
+        function onAccentChanged() { canvas.requestPaint() }
     }
 
     Canvas {
@@ -160,7 +132,7 @@ Item {
             ctx.fillStyle = Theme.isLight ? "#cecac3" : "#16151b"
             ctx.fill()
 
-            if (root.available && root.fillRatio > 0.001) {
+            if (root.currentAvailable && root.fillRatio > 0.001) {
                 var ratio = root.fillRatio
                 var waterY = (cy + r) - (2.0 * r * ratio)
                 var amp = (ratio <= 0.025 || ratio >= 0.975) ? 0.6 : Math.max(1.2, Math.min(3.2, r * 0.065))
@@ -175,7 +147,7 @@ Item {
                 }
                 ctx.lineTo(cx + r, cy + r)
                 ctx.closePath()
-                ctx.fillStyle = Theme.isLight ? Qt.alpha("#000000", 0.09) : Qt.alpha("#ffffff", 0.10)
+                ctx.fillStyle = Qt.alpha(Theme.accent, 0.35)
                 ctx.fill()
 
                 // Front wave.
@@ -188,7 +160,7 @@ Item {
                 }
                 ctx.lineTo(cx + r, cy + r)
                 ctx.closePath()
-                ctx.fillStyle = Theme.isLight ? Qt.alpha("#000000", 0.16) : Qt.alpha("#ffffff", 0.20)
+                ctx.fillStyle = Theme.accent
                 ctx.fill()
             }
 
@@ -202,57 +174,6 @@ Item {
         }
     }
 
-    // Clip text colors at the current waterline.
-    Item {
-        id: airViewport
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        height: Math.max(0, Math.min(root.height, root.fillY))
-        clip: true
-
-        Item {
-            width: root.width
-            height: root.height
-            anchors.top: parent.top
-
-            Label {
-                id: airMainLabel
-                anchors.centerIn: parent
-                text: root.focusText
-                color: Theme.isLight ? "#111015" : "#ffffff"
-                font.bold: true
-                font.pixelSize: Math.max(12, Math.round(root.diameter * 0.25))
-                elide: Text.ElideRight
-            }
-        }
-    }
-
-    Item {
-        id: waterViewport
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.topMargin: Math.max(0, Math.min(root.height, root.fillY))
-        height: Math.max(0, root.height - root.fillY)
-        clip: true
-
-        Item {
-            width: root.width
-            height: root.height
-            y: -waterViewport.anchors.topMargin
-
-            Label {
-                id: waterMainLabel
-                anchors.centerIn: parent
-                text: root.focusText
-                color: Theme.isLight ? "#111015" : "#ffffff"
-                font.bold: true
-                font.pixelSize: Math.max(12, Math.round(root.diameter * 0.25))
-                elide: Text.ElideRight
-            }
-        }
-    }
 
     MouseArea {
         id: clickArea

@@ -15,7 +15,8 @@ Rectangle {
     property real waterWavePhase: 0
     property bool reducedMotion: false
     property bool compact: false
-    implicitHeight: title.implicitHeight + water.diameter + details.implicitHeight + Theme.cardPadding * 2 + Theme.spaceSm * 2
+    implicitHeight: title.implicitHeight + water.diameter + reading.implicitHeight + details.implicitHeight
+        + Theme.cardPadding * 2 + Theme.spaceSm * 3
     radius: Theme.radius
     color: visuals.cardSurface
     Accessible.role: Accessible.Grouping
@@ -47,6 +48,18 @@ Rectangle {
             wavePhase: root.waterWavePhase
             interactive: false
             reducedMotion: root.reducedMotion || !root.visible
+            Accessible.ignored: true
+        }
+        Text {
+            id: reading
+            objectName: "taskManagerMiniMetricValue"
+            Layout.fillWidth: true
+            horizontalAlignment: Text.AlignHCenter
+            text: water.percentText
+            color: Theme.accent
+            font.family: Theme.fontFamily
+            font.pixelSize: root.visuals.heroFontSize
+            font.bold: true
             Accessible.ignored: true
         }
         Text {

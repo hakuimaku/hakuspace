@@ -39,7 +39,7 @@ FocusScope {
     RowLayout {
         id: header
         anchors { top: parent.top; left: parent.left; right: parent.right }
-        height: Theme.controlHeight
+        height: openFull.implicitHeight
         spacing: Theme.spaceSm
         Rectangle {
             width: 5; height: 5; radius: 2.5
@@ -70,7 +70,7 @@ FocusScope {
 
     // Scroll only when small outputs or larger fonts exceed the compact overview.
     Flickable {
-        anchors { top: header.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; topMargin: Theme.spaceMd }
+        anchors { top: header.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; topMargin: Theme.spaceSm }
         contentWidth: width
         contentHeight: body.implicitHeight
         interactive: contentHeight > height

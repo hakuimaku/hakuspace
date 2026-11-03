@@ -92,29 +92,11 @@ Item {
         return Number.isFinite(root.memory.percent)
     }
 
-    readonly property string gaugeUsedText: {
-        if (!visuals) return ""
-        if (metricId === "gpu") return (root.primaryGpu && root.hasDedicatedVram) ? visuals.dashBytes(root.primaryGpu.memoryUsed) : ""
-        if (metricId === "disk") return root.mainMount ? visuals.dashBytes(root.mainMount.used) : ""
-        if (metricId === "network") return visuals.dashRate(root.netTraffic.rxBps)
-        return visuals.dashBytes(root.memory.used)
-    }
-
-    readonly property string gaugeTotalText: {
-        if (!visuals) return ""
-        if (metricId === "gpu") return (root.primaryGpu && root.hasDedicatedVram) ? visuals.dashBytes(root.primaryGpu.memoryTotal) : ""
-        if (metricId === "disk") return root.mainMount ? visuals.dashBytes(root.mainMount.total) : ""
-        if (metricId === "network") return visuals.dashRate(root.netTraffic.txBps)
-        return visuals.dashBytes(root.memory.total)
-    }
-
     // Capture metric identity and values together for the gauge.
     readonly property var gaugeSample: ({
         metricId: root.metricId,
         value: root.gaugeValue,
-        available: root.gaugeAvailable,
-        usedText: root.gaugeUsedText,
-        totalText: root.gaugeTotalText
+        available: root.gaugeAvailable
     })
 
     readonly property int compactPad: visuals ? visuals.compactCardPadding(root.height * 6, root.width * 6) : 9
@@ -156,11 +138,6 @@ Item {
                     ))
                 }
 
-                Item {
-                    Layout.fillWidth: true
-                    Layout.minimumWidth: 4
-                }
-
                 Label {
                     id: heroLabel
                     objectName: root.metricId === "memory" ? "focusMemoryPercent"
@@ -175,6 +152,8 @@ Item {
                         root.clampedRole
                     ))
                     horizontalAlignment: Text.AlignRight
+                    elide: Text.ElideRight
+                    Layout.fillWidth: true
                     Layout.minimumWidth: 0
                 }
             }
@@ -203,7 +182,6 @@ Item {
                     id: gauge
                     anchors.centerIn: parent
                     diameter: root.currentDiameter
-                    expansionProgress: root.clampedRole
                     interactive: root.interactive && root.clampedRole > 0.8
                     sample: root.gaugeSample
                     wavePhase: root.waterWavePhase
