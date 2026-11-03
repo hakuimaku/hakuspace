@@ -124,7 +124,7 @@ Item {
             var cx = w / 2
             var cy = h / 2
             // Keep the thicker stroke inside the existing outer edge.
-            var r = Math.min(cx, cy) - 1
+            var r = Math.min(cx, cy) - 2.5
             if (r <= 0) return
 
             ctx.save()
@@ -172,7 +172,7 @@ Item {
 
             ctx.beginPath()
             ctx.arc(cx, cy, r, 0, Math.PI * 2)
-            ctx.lineWidth = 1.5
+            ctx.lineWidth = 3.5
             ctx.strokeStyle = root.emphasized ? Qt.alpha(Theme.accent, 0.45) : (Theme.isLight ? "#aba59c" : "#36353d")
             ctx.stroke()
         }
