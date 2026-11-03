@@ -177,8 +177,19 @@ QtObject {
         taskManagerFocusRequested(screenName)
     }
 
+    // Hand the menu's output and keyboard ownership to the standalone utility.
+    function openTaskManagerFromHakuMenu() {
+        var screenName = hakuMenuScreenName
+        if (!screenName || !Quickshell.screens.some(output => output.name === screenName)) return
+        if (taskManagerOpen && taskManagerScreenName !== screenName) closeTaskManager()
+        TaskManagerService.beginHandoff(screenName)
+        closeHakuMenu()
+        openTaskManager(screenName)
+    }
+
     // Notify the visual owner before releasing visibility and input ownership.
     function closeTaskManager() {
+        TaskManagerService.finishHandoff()
         if (!taskManagerOpen) return
         taskManagerClosing(taskManagerScreenName)
         taskManagerOpen = false

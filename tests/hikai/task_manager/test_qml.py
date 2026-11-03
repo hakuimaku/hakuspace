@@ -20,7 +20,7 @@ def prepare(work, harness_name='task_manager.qml'):
     shutil.copytree(SOURCE / 'config', shell / 'config')
     (shell / 'services').mkdir()
     (shell / 'components').mkdir()
-    services = ['UiState', 'Theme', 'HAnimation', 'ShellTransitionState', 'TaskManagerService']
+    services = ['UiState', 'Theme', 'HAnimation', 'ShellTransitionState', 'TaskManagerService', 'TaskManagerPins']
     for name in services:
         shutil.copy2(SOURCE / f'services/{name}.qml', shell / f'services/{name}.qml')
     stubs = {
@@ -37,7 +37,7 @@ def prepare(work, harness_name='task_manager.qml'):
     (shell / 'services/qmldir').write_text(''.join(f'singleton {name} 1.0 {name}.qml\n' for name in services + list(stubs)))
     for name in ('editor', 'sidebar', 'motion', 'flare', 'base', 'taskmanager'):
         shutil.copytree(SOURCE / 'components' / name, shell / 'components' / name)
-    for name in ('TaskManagerOverlay', 'TempNoteOverlay'):
+    for name in ('TaskManagerOverlay', 'TaskManagerHost', 'TempNoteOverlay'):
         shutil.copy2(SOURCE / f'components/{name}.qml', shell / f'components/{name}.qml')
     harness = (Path(__file__).with_name('harness') / harness_name).read_text()
     if '/*SETTINGS_MASK*/' in harness:

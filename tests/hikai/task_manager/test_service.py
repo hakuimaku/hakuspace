@@ -56,6 +56,9 @@ ShellRoot {
         target: "probe"
         function open() { TaskManagerService.acquire() }
         function close() { TaskManagerService.release() }
+        function handoff(output: string) { TaskManagerService.beginHandoff(output) }
+        function finishHandoff(output: string) { TaskManagerService.finishHandoff(output) }
+        function backend(name: string) { AppState.shellBackend = name }
         function interval(ms: int) { TaskManagerService.setIntervalMs(ms) }
         function rapid(close: bool) {
             TaskManagerService.setIntervalMs(900)
@@ -237,6 +240,44 @@ ShellRoot {
         self.closed(pid)
         time.sleep(0.2)
         self.assertFalse(self.record('settled')['children'])
+
+    def test_handoff_lease_retargets_without_collector_restart(self):
+        """One transfer lease bridges owners, ignores foreign acknowledgements and releases once."""
+        pid = self.open()
+        before = self.status()
+        self.ipc('handoff', 'A')
+        self.ipc('handoff', 'B')
+        self.assertEqual(self.status()['subscribers'], 2)
+        self.ipc('finishHandoff', 'A')
+        self.assertEqual(self.status()['handoffScreenName'], 'B')
+        self.ipc('close')
+        state = self.record('transfer-only')
+        self.assertEqual(state['subscribers'], 1)
+        self.assertEqual(state['collectorPid'], pid)
+        self.assertGreaterEqual(state['seq'], before['seq'])
+        self.assertGreaterEqual(state['historyCount'], before['historyCount'])
+        self.assertGreater(state['processCount'], 0)
+        self.ipc('open')
+        self.ipc('finishHandoff', 'B')
+        self.ipc('finishHandoff', 'B')
+        state = self.record('transferred')
+        self.assertEqual(state['subscribers'], 1)
+        self.assertEqual(state['collectorPid'], pid)
+        self.assertFalse(state['handoffScreenName'])
+        self.assertEqual(len(self.starts()), 1)
+        self.ipc('close')
+        self.closed(pid)
+
+    def test_backend_exit_cancels_only_the_transfer_lease(self):
+        """Backend shutdown cannot strand the temporary subscription or consume its real owner."""
+        pid = self.open()
+        self.ipc('handoff', 'A')
+        self.ipc('backend', 'classic')
+        state = self.status()
+        self.assertFalse(state['handoffScreenName'])
+        self.assertEqual(state['subscribers'], 1)
+        self.ipc('close')
+        self.closed(pid)
 
     def test_twenty_cycles_per_restart_mode(self):
         """Check ordinary close, changed intervals and immediate close for twenty cycles each."""

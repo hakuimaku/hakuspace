@@ -45,10 +45,9 @@ Item {
         requested: UiState.tempNoteOpen && UiState.tempNoteScreenName === root.modelData.name
         TempNoteOverlay { modelData: root.modelData }
     }
-    Base.LifecycleLoader {
+    TaskManagerHost {
         id: taskManager
-        requested: UiState.taskManagerOpen && UiState.taskManagerScreenName === root.modelData.name
-        TaskManagerOverlay { modelData: root.modelData }
+        modelData: root.modelData
     }
     Base.LifecycleLoader {
         id: tray

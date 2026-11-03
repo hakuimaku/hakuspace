@@ -12,7 +12,9 @@ PanelWindow {
     id: root
     // Route this floating utility to exactly one output.
     required property var modelData
-    readonly property bool panelOpen: UiState.taskManagerOpen && UiState.taskManagerScreenName === modelData.name
+    // Deferred deletion must not let an old window acknowledge or close a newer owner.
+    property bool presentationOwned: true
+    readonly property bool panelOpen: presentationOwned && UiState.taskManagerOpen && UiState.taskManagerScreenName === modelData.name
     readonly property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
     // Keep a stable drawing window and morph the floating card directly from a left-rail seed capsule (no opacity fade).
     property real morphProgress: 0
@@ -36,6 +38,9 @@ PanelWindow {
     readonly property int headerGap: (cardWidth < 760 || cardHeight < 500) ? 8 : ((cardWidth < 880 || cardHeight < 580) ? 12 : 15)
     // Expose the inner content for focused lifecycle probes.
     readonly property alias content: content
+    // Acknowledge a transfer only after this presentation owns its subscription.
+    property bool serviceLeaseHeld: false
+    property string outputName: ""
 
     screen: modelData
     anchors { top: true; bottom: true; left: true; right: true }
@@ -88,6 +93,7 @@ PanelWindow {
     // Claim the shared input lease without closing any other floating surface.
     function takeFocus() {
         if (!panelOpen) return
+        if (serviceLeaseHeld) TaskManagerService.finishHandoff(modelData.name)
         UiState.claimInteraction("taskManager", modelData.name)
         content.forceFocus()
     }
@@ -121,10 +127,16 @@ PanelWindow {
         }
     }
     onPanelOpenChanged: syncOpen()
-    Component.onCompleted: { TaskManagerService.acquire(); syncOpen() }
+    Component.onCompleted: {
+        outputName = modelData.name
+        TaskManagerService.acquire()
+        serviceLeaseHeld = true
+        if (panelOpen) TaskManagerService.finishHandoff(modelData.name)
+        syncOpen()
+    }
     Component.onDestruction: {
-        TaskManagerService.release()
-        UiState.closeTaskManagerIfScreen(modelData.name)
+        if (serviceLeaseHeld) TaskManagerService.release()
+        if (presentationOwned) UiState.closeTaskManagerIfScreen(outputName)
     }
 
     Connections {

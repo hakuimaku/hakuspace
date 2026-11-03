@@ -7,6 +7,8 @@ QtObject {
     id: root
     // Subscribers own the collector only while Hikai owns the shell.
     property int subscribers: 0
+    // A handoff owns one temporary subscription until its target acquires or cancels.
+    property string handoffScreenName: ""
     readonly property bool active: subscribers > 0 && AppState.shellBackend === "hikai"
     readonly property bool collectorRunning: monitor.running
     readonly property int collectorPid: monitor.processId || 0
@@ -43,8 +45,21 @@ QtObject {
     function acquire() { subscribers++ }
     // Drop heavyweight data after the last visual owner finishes closing.
     function release() { subscribers = Math.max(0, subscribers - 1) }
+    function beginHandoff(screenName) {
+        if (!screenName) return
+        if (handoffScreenName) { handoffScreenName = screenName; return }
+        handoffScreenName = screenName
+        acquire()
+    }
+    // Only the matching output may acknowledge or abandon the transfer.
+    function finishHandoff(screenName) {
+        if (!handoffScreenName || (screenName && handoffScreenName !== screenName)) return
+        handoffScreenName = ""
+        release()
+    }
     onActiveChanged: {
         if (!active) {
+            finishHandoff()
             monitorStopPending = monitorStopPending || monitor.running || monitorRestartPending
             monitorRestartPending = false
             controller.running = false
@@ -106,7 +121,8 @@ QtObject {
         return {active: active, ready: ready, subscribers: subscribers, collectorRunning: collectorRunning,
             collectorPid: collectorPid, seq: snapshot.seq || 0, monotonicMs: snapshot.monotonicMs || 0,
             intervalMs: intervalMs, restartPending: monitorRestartPending, failed: monitorFailed,
-            processCount: processes.length, historyCount: history.length, error: error, actionError: actionError}
+            processCount: processes.length, historyCount: history.length, handoffScreenName: handoffScreenName,
+            error: error, actionError: actionError}
     }
 
     // Restart once with the latest requested interval after the previous child exits.

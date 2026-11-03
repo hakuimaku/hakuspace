@@ -19,7 +19,7 @@ Rectangle {
     property string query: ""
     property string sortKey: "cpu"
     property bool descending: true
-    property var pinnedKeys: []
+    readonly property var pinnedKeys: TaskManagerPins.pinnedKeys
     readonly property var rows: Logic.processRows(root.processes, root.query, root.sortKey, root.descending, root.pinnedKeys)
     property string selectedKey: ""
     readonly property var selectedProcess: root.processes.find(row => row.key === root.selectedKey) || null
@@ -36,57 +36,6 @@ Rectangle {
     property real detailsFoldProgress: 0.0
     property real confirmationProgress: 0.0
     property real actionMorphProgress: 1.0
-
-    readonly property string pinStorePath: Quickshell.env("HAKUSPACE_TM_PINS_FILE")
-        || ((Quickshell.env("XDG_STATE_HOME") || ((Quickshell.env("HOME") || "") + "/.local/state")) + "/hakuspace/task_manager_pins.json")
-
-    FileView {
-        id: pinStoreFile
-        path: root.pinStorePath
-        watchChanges: true
-        printErrors: false
-        atomicWrites: true
-        onTextChanged: {
-            try {
-                var txt = text().trim()
-                if (txt) {
-                    var parsed = JSON.parse(txt)
-                    if (Array.isArray(parsed)) {
-                        root.pinnedKeys = parsed
-                    }
-                }
-            } catch (e) {}
-        }
-    }
-
-    Component.onCompleted: {
-        try {
-            var txt = pinStoreFile.text().trim()
-            if (txt) {
-                var parsed = JSON.parse(txt)
-                if (Array.isArray(parsed)) {
-                    root.pinnedKeys = parsed
-                }
-            }
-        } catch (e) {}
-    }
-
-    function togglePin(key) {
-        if (!key) return
-        var arr = (root.pinnedKeys || []).slice()
-        var idx = arr.indexOf(key)
-        if (idx >= 0) {
-            arr.splice(idx, 1)
-        } else {
-            arr.push(key)
-        }
-        root.pinnedKeys = arr
-        try {
-            if (pinStoreFile.path) {
-                pinStoreFile.setText(JSON.stringify(root.pinnedKeys))
-            }
-        } catch (e) {}
-    }
 
     function _syncDetailsFold() {
         detailsFoldAnim.stop()
@@ -510,7 +459,7 @@ Rectangle {
                                 compact: root.compact
                                 visuals: root.visuals
                                 reducedMotion: root.reducedMotion
-                                onClicked: root.togglePin(root.selectedKey)
+                                onClicked: TaskManagerPins.toggle(root.selectedProcess)
                             }
 
                             TaskActionButton {
@@ -553,7 +502,7 @@ Rectangle {
                             compact: root.compact
                             visuals: root.visuals
                             reducedMotion: root.reducedMotion
-                            onClicked: root.togglePin(root.selectedKey)
+                            onClicked: TaskManagerPins.toggle(root.selectedProcess)
                         }
 
                         TaskActionButton {
@@ -804,7 +753,7 @@ Rectangle {
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
                         onClicked: mouse => {
                             if (mouse.button === Qt.RightButton) {
-                                root.togglePin(row.modelData.key)
+                                TaskManagerPins.toggle(row.modelData)
                             } else {
                                 root.selectedKey = row.modelData.key
                                 root.killKey = ""
@@ -890,7 +839,7 @@ Rectangle {
                     elide: Text.ElideRight
                     text: root.killConfirmActive
                         ? "Force kill PID " + root.selectedProcess.pid + "? Unsaved work may be lost."
-                        : (root.actionError || root.actionStatus
+                        : (root.actionError || TaskManagerPins.error || root.actionStatus
                             || (root.selectedProcess ? root.selectedProcess.pid + " · " + root.selectedProcess.name : "Select a process"))
                 }
 
@@ -951,7 +900,7 @@ Rectangle {
                                     Accessible.name: modelData
                                     onClicked: {
                                         if (modelData === "Details") root.detailsOpen = !root.detailsOpen
-                                        else if (modelData === "Pin" || modelData === "Unpin") root.togglePin(root.selectedKey)
+                                        else if (modelData === "Pin" || modelData === "Unpin") TaskManagerPins.toggle(root.selectedProcess)
                                         else if (modelData === "Terminate") root.signalRequested(root.selectedProcess, "TERM")
                                         else if (modelData === "Force kill") root.killKey = root.selectedKey
                                         else if (modelData === "Confirm kill") {
