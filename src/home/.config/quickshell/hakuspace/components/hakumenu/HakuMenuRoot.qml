@@ -8,6 +8,7 @@ FocusScope {
     id: root
     // Hosts retain this page and its geometry through the closing animation.
     property bool panelOpen: false
+    property bool bottomAttached: UiState.hakuMenuStyle === "bottomFlare"
     property bool focusOnOpen: true
     property bool interactionOwned: false
     property string tab: "hakumenu"
@@ -83,8 +84,8 @@ FocusScope {
     Item {
         id: tabs
         objectName: "hakumenu-root-tabs"
-        x: Theme.pad * 2
-        y: Theme.pad
+        x: Theme.pad * 2 + 4
+        y: (Theme.pad + 4) + (root.bottomAttached ? 8 : 0)
         width: Math.max(0, parent.width - x * 2)
         height: Theme.fontSize * 2.4 + Theme.gap * 2
 
@@ -94,8 +95,12 @@ FocusScope {
             anchors.margins: Theme.gap
             Motion.SelectionPill {
                 // Reuse selection motion as a top border without filling either tab.
-                height: 2
+                height: 3
                 radius: 0
+                topLeftRadius: root.taskManagerTab ? 0 : Theme.radius
+                topRightRadius: root.taskManagerTab ? Theme.radius : 0
+                bottomLeftRadius: 0
+                bottomRightRadius: 0
                 slotCount: 2
                 slotSpacing: Theme.gap
                 targetIndex: root.taskManagerTab ? 1 : 0
@@ -103,6 +108,18 @@ FocusScope {
                 trailFactor: 1
                 fadeDuration: root.switchDuration
                 curve: HAnimation.hakuMenuResizeCurve
+                Behavior on topLeftRadius {
+                    NumberAnimation {
+                        duration: root.switchDuration
+                        easing.bezierCurve: HAnimation.hakuMenuResizeCurve
+                    }
+                }
+                Behavior on topRightRadius {
+                    NumberAnimation {
+                        duration: root.switchDuration
+                        easing.bezierCurve: HAnimation.hakuMenuResizeCurve
+                    }
+                }
             }
             Repeater {
                 model: ["HakuMenu", "Task Manager"]
@@ -162,7 +179,7 @@ FocusScope {
 
     Loader {
         id: miniLoader
-        anchors { top: tabs.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; margins: Theme.pad; topMargin: 0 }
+        anchors { top: tabs.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; margins: Theme.pad + 4; topMargin: 0 }
         active: root.miniLoaded
         enabled: root.panelOpen && root.taskManagerTab
         opacity: root.taskManagerTab ? 1 : 0

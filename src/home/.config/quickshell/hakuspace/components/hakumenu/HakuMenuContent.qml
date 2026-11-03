@@ -20,7 +20,7 @@ Item {
     function forceSearchFocus() { searchInput.forceActiveFocus() }
     function clearSearchFocus() { searchInput.focus = false }
 
-    readonly property real innerPad: Theme.pad * 2
+    readonly property real innerPad: Theme.pad * 2 + 4
     readonly property real innerWidth: Math.max(0, width - innerPad * 2)
     readonly property real stateWidth: Math.max(124, Theme.fontSize * 8.2 + 8)
     readonly property bool showStateRegion: menu.mode === "theme"
