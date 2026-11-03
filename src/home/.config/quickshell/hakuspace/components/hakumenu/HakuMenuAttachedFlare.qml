@@ -264,6 +264,7 @@ Item {
                 width: root.targetMenuWidth
                 height: root.menuHeight
                 panelOpen: root.panelOpen
+                bottomAttached: root.bottomAttached
                 tab: root.renderTab
                 interactionOwned: root.panelOpen && UiState.ownsInteraction("hakumenu", root.modelData.name)
                 onKeyboardActivity: lifetime.beginKeyboardLease()
@@ -325,7 +326,8 @@ Item {
                         to: 7 / 6
                         duration: 2200
                         loops: Animation.Infinite
-                        running: returnButton.hovered && returnButton.enabled && root.panelOpen && !root.reducedMotion
+                        running: (returnButton.hovered || returnButton.hoverReveal > 0)
+                            && returnButton.enabled && root.panelOpen && !root.reducedMotion
                         onRunningChanged: if (!running) returnButton.arrowPhase = 1 / 6
                     }
                     Accessible.role: Accessible.Button
@@ -373,9 +375,11 @@ Item {
                             height: 14
                             x: returnButton.width * (index + 0.5) / 3 - width / 2
                             y: (returnButton.height - height) / 2
-                                + (returnButton.hovered && !root.reducedMotion ? (progress - 0.5) * returnButton.height : 0)
-                            opacity: !returnButton.hovered ? (index === 1 ? 1 : 0)
-                                : root.reducedMotion ? (index === 1 ? 1 : 0.55) : Math.sin(progress * Math.PI)
+                                + (root.reducedMotion ? 0 : (progress - 0.5) * returnButton.height * returnButton.hoverReveal)
+                            // Blend back to the resting center arrow while the moving hint fades out.
+                            opacity: (index === 1 ? 1 - returnButton.hoverReveal : 0)
+                                + returnButton.hoverReveal * (root.reducedMotion ? (index === 1 ? 1 : 0.55)
+                                    : Math.sin(progress * Math.PI))
                             Accessible.ignored: true
                             ShapePath {
                                 strokeColor: returnButton.foreground
