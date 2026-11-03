@@ -17,6 +17,9 @@ Rectangle {
     property bool compact: false
     property var visuals
     property bool reducedMotion: false
+    // Allow filled actions to supply a contrasting icon and label color.
+    property color foregroundColor: danger ? Theme.danger : (accent ? Theme.accent
+        : (visuals ? visuals.primaryFg : (hoverHandler.hovered ? Theme.fg : Theme.fgMuted)))
     signal clicked()
 
     activeFocusOnTab: true
@@ -80,9 +83,7 @@ Rectangle {
             font.family: Theme.fontFamily
             font.pixelSize: root.fontSize
             font.bold: root.fontBold
-            color: root.danger ? Theme.danger : (root.accent ? Theme.accent
-                : (hoverHandler.hovered ? (visuals ? visuals.primaryFg : Theme.fg)
-                    : (visuals ? visuals.primaryFg : Theme.fgMuted)))
+            color: root.foregroundColor
         }
     }
 }

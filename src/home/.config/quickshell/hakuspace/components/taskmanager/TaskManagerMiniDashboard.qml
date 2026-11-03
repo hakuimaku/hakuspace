@@ -17,9 +17,12 @@ FocusScope {
     // Keep confirmation tied to the process lifetime across telemetry refreshes.
     property string pendingUnpinKey: ""
     property Item hoveredPinRow: null
+    // Retain geometry across row gaps without retaining the active hover state.
+    property Item pinHoverTarget: null
+    onHoveredPinRowChanged: if (hoveredPinRow) pinHoverTarget = hoveredPinRow
     onPinnedProcessesChanged: if (!pinnedProcesses.some(process => process.key === pendingUnpinKey)) pendingUnpinKey = ""
-    onVisibleChanged: if (!visible) { pendingUnpinKey = ""; hoveredPinRow = null }
-    onEnabledChanged: if (!enabled) { pendingUnpinKey = ""; hoveredPinRow = null }
+    onVisibleChanged: if (!visible) { pendingUnpinKey = ""; hoveredPinRow = null; pinHoverTarget = null }
+    onEnabledChanged: if (!enabled) { pendingUnpinKey = ""; hoveredPinRow = null; pinHoverTarget = null }
     Keys.onEscapePressed: event => {
         if (pendingUnpinKey) { pendingUnpinKey = ""; event.accepted = true }
         else event.accepted = false
@@ -48,7 +51,7 @@ FocusScope {
 
     // Keep the standalone handoff as the initial Mini focus target.
     function forcePrimaryFocus() { openFull.forceActiveFocus() }
-    function clearPrimaryFocus() { pendingUnpinKey = ""; hoveredPinRow = null; focus = false }
+    function clearPrimaryFocus() { pendingUnpinKey = ""; hoveredPinRow = null; pinHoverTarget = null; focus = false }
 
     // Coalesce leave/enter so a row-to-row move retargets the existing pill.
     function clearPinHover() {
@@ -105,10 +108,11 @@ FocusScope {
             reducedMotion: root.reducedMotion
             compact: root.compact
             accent: true
-            color: openHover.hovered ? Qt.alpha(Theme.accent, 0.14)
-                : activeFocus ? miniVisuals.controlFocusSurface : miniVisuals.controlSurface
+            horizontalPadding: (compact ? 8 : 10) + 8
+            foregroundColor: Theme.onAccentColor
+            color: Theme.accent
             border.width: 1
-            border.color: Qt.alpha(Theme.accent, openHover.hovered ? 0.48 : activeFocus ? 0.30 : 0)
+            border.color: Qt.alpha(Theme.onAccentColor, activeFocus ? 0.55 : openHover.hovered ? 0.24 : 0)
             Behavior on border.color {
                 enabled: !root.reducedMotion
                 ColorAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
@@ -198,10 +202,11 @@ FocusScope {
                     anchors.fill: parent
                     Motion.SelectionPill {
                         objectName: "taskManagerMiniPinHoverPill"
-                        targetItem: root.hoveredPinRow
+                        targetItem: root.pinHoverTarget
                         coordinateSpace: hoverLayer
                         normalColor: miniVisuals.miniRowHoverSurface
                         shown: root.visible && root.enabled && targetItem !== null
+                        opacity: root.hoveredPinRow ? 1 : 0
                         duration: root.reducedMotion ? 0 : HAnimation.taskBarFillDuration
                         fadeDuration: root.reducedMotion ? 0 : HAnimation.fast
                         curve: HAnimation.moduleCurve
