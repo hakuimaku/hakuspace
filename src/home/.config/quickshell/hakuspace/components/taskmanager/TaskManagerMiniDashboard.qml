@@ -98,6 +98,8 @@ FocusScope {
                 id: metricsRow
                 objectName: "taskManagerMiniMetricsRow"
                 Layout.fillWidth: true
+                // Leave room for the painted lift inside the clipped viewport.
+                Layout.topMargin: Theme.spaceXs
                 spacing: Theme.spaceMd
                 TaskManagerMiniMetric {
                     objectName: "taskManagerMiniCpu"
@@ -144,6 +146,7 @@ FocusScope {
                 implicitHeight: pins.implicitHeight + root.contentPadding * 2
                 radius: Theme.radius
                 color: miniVisuals.paneSurface
+                HoverHandler { id: paneHover; cursorShape: Qt.ArrowCursor }
                 ColumnLayout {
                     id: pins
                     anchors { top: parent.top; left: parent.left; right: parent.right; margins: root.contentPadding }
@@ -153,7 +156,11 @@ FocusScope {
                         spacing: Theme.spaceSm
                         Text {
                             text: Catalog.taskManagerIcons.pin
-                            color: miniVisuals.secondaryFg
+                            color: paneHover.hovered ? Theme.accent : miniVisuals.secondaryFg
+                            Behavior on color {
+                                enabled: !root.reducedMotion
+                                ColorAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+                            }
                             font.family: Theme.iconFontFamily
                             font.pixelSize: Theme.fontSize
                             Accessible.ignored: true
@@ -194,16 +201,33 @@ FocusScope {
                             Layout.fillWidth: true
                             implicitHeight: Theme.comfortableControlHeight
                             radius: Theme.radius
-                            color: rowHover.hovered ? miniVisuals.rowHoverSurface : miniVisuals.wellSurface
+                            readonly property bool hovered: rowHover.hovered
+                            color: hovered ? miniVisuals.miniRowHoverSurface : miniVisuals.wellSurface
+                            Behavior on color {
+                                enabled: !root.reducedMotion
+                                ColorAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+                            }
                             Accessible.role: Accessible.Grouping
                             Accessible.name: modelData.name + ", CPU " + Logic.metric(modelData.cpuTotalPercent, "%") + ", memory " + Logic.bytes(modelData.rss)
-                            HoverHandler { id: rowHover }
+                            HoverHandler { id: rowHover; cursorShape: Qt.ArrowCursor }
                             RowLayout {
                                 anchors { fill: parent; leftMargin: Theme.spaceMd; rightMargin: Theme.spaceMd }
                                 spacing: Theme.spaceSm
+                                // Nudge only the content, preserving the row's hover hit box.
+                                transform: Translate {
+                                    x: pinRow.hovered && !root.reducedMotion ? 3 : 0
+                                    Behavior on x {
+                                        enabled: !root.reducedMotion
+                                        NumberAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+                                    }
+                                }
                                 Text {
                                     text: Catalog.taskManagerIcons.pin
-                                    color: miniVisuals.secondaryFg
+                                    color: pinRow.hovered ? Theme.accent : miniVisuals.secondaryFg
+                                    Behavior on color {
+                                        enabled: !root.reducedMotion
+                                        ColorAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+                                    }
                                     font.family: Theme.iconFontFamily
                                     font.pixelSize: Theme.fontSize
                                     Accessible.ignored: true
@@ -223,7 +247,11 @@ FocusScope {
                                     horizontalAlignment: Text.AlignRight
                                     text: "CPU " + Logic.metric(pinRow.modelData.cpuTotalPercent, "%")
                                     elide: Text.ElideRight
-                                    color: Qt.alpha(Theme.accent, 0.85)
+                                    color: Qt.alpha(Theme.accent, pinRow.hovered ? 1 : 0.85)
+                                    Behavior on color {
+                                        enabled: !root.reducedMotion
+                                        ColorAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+                                    }
                                     font.family: Theme.fontFamily
                                     font.pixelSize: Theme.fontSize - 1
                                 }

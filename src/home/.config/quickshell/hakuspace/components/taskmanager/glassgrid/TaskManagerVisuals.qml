@@ -115,6 +115,8 @@ QtObject {
     readonly property color rowHoverSurface: Theme.isLight
         ? Qt.alpha(Theme.overlayInk, 0.038)
         : Qt.alpha(Theme.overlayInk, 0.032)
+    // Keep Mini pin hover distinct from its inset surface in both palettes.
+    readonly property color miniRowHoverSurface: Qt.alpha(Theme.overlayInk, 0.08)
     readonly property color dangerSurface: Qt.alpha(Theme.dangerFill, Theme.isLight ? 0.12 : 0.16)
     readonly property color primaryFg: Qt.alpha(Theme.overlayInk, Theme.isLight ? 0.88 : 0.90)
     readonly property color secondaryFg: Qt.alpha(Theme.overlayInk, Theme.isLight ? 0.66 : 0.68)

@@ -17,6 +17,9 @@ Item {
     property bool showNumeric: false
     property bool interactive: true
     property bool reducedMotion: false
+    // Change only the painted emphasis; telemetry and the wave clock remain independent.
+    property bool emphasized: false
+    onEmphasizedChanged: canvas.requestPaint()
     signal showNumericToggled(bool showNumeric)
 
     width: diameter
@@ -120,7 +123,8 @@ Item {
 
             var cx = w / 2
             var cy = h / 2
-            var r = Math.min(cx, cy) - 1.5
+            // Keep the thicker stroke inside the existing outer edge.
+            var r = Math.min(cx, cy) - 1
             if (r <= 0) return
 
             ctx.save()
@@ -147,7 +151,7 @@ Item {
                 }
                 ctx.lineTo(cx + r, cy + r)
                 ctx.closePath()
-                ctx.fillStyle = Qt.alpha(Theme.accent, 0.35)
+                ctx.fillStyle = Qt.alpha(Theme.accent, root.emphasized ? 0.45 : 0.35)
                 ctx.fill()
 
                 // Front wave.
@@ -169,7 +173,7 @@ Item {
             ctx.beginPath()
             ctx.arc(cx, cy, r, 0, Math.PI * 2)
             ctx.lineWidth = 1.5
-            ctx.strokeStyle = Theme.isLight ? "#aba59c" : "#36353d"
+            ctx.strokeStyle = root.emphasized ? Qt.alpha(Theme.accent, 0.45) : (Theme.isLight ? "#aba59c" : "#36353d")
             ctx.stroke()
         }
     }
