@@ -12,6 +12,7 @@ Item {
     readonly property bool releaseReady: !panelOpen && visuallyClosed
     property bool visuallyClosed: true
     required property var modelData
+    readonly property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
 
     property bool bottomAttached: false
     readonly property bool available: bottomAttached ? ChromeLayout.taskbarMode : ChromeLayout.topBarMode
@@ -71,10 +72,10 @@ Item {
             capturedAnchor = UiState.hakuMenuAnchorRect
             Qt.callLater(function() {
                 if (!root) return
-                if (root.panelOpen) menu.forceSearchFocus()
+                if (root.panelOpen) menu.forcePrimaryFocus()
             })
         } else {
-            menu.clearSearchFocus()
+            menu.clearPrimaryFocus()
         }
     }
 
@@ -152,7 +153,7 @@ Item {
                 if (!hovered) lifetime.pointerExited()
                 else {
                     lifetime.pointerEntered(point.position.x, point.position.y)
-                    if (root.panelOpen) menu.forceSearchFocus()
+                    if (root.panelOpen) menu.forcePrimaryFocus()
                 }
             }
             onPointChanged: lifetime.pointerMoved(point.position.x, point.position.y)
@@ -237,18 +238,26 @@ Item {
                         contentSurface.y + point.position.y)
             }
 
-            HakuMenuContent {
+            HakuMenuRoot {
                 id: menu
                 anchors.top: parent.top
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: root.targetMenuWidth
                 height: root.menuHeight
                 panelOpen: root.panelOpen
+                tab: UiState.hakuPanelTab
+                interactionOwned: root.panelOpen && UiState.ownsInteraction("hakumenu", root.modelData.name)
                 onKeyboardActivity: lifetime.beginKeyboardLease()
                 onWallpaperRequested: UiState.openWallpaper(root.modelData.name)
                 Behavior on width {
                     NumberAnimation {
-                        duration: HAnimation.hakuMenuResizeDuration
+                        duration: root.reducedMotion ? 0 : HAnimation.hakuMenuResizeDuration
+                        easing.bezierCurve: HAnimation.hakuMenuResizeCurve
+                    }
+                }
+                Behavior on height {
+                    NumberAnimation {
+                        duration: root.reducedMotion ? 0 : HAnimation.hakuMenuResizeDuration
                         easing.bezierCurve: HAnimation.hakuMenuResizeCurve
                     }
                 }

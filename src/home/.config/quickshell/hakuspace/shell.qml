@@ -241,6 +241,7 @@ ShellRoot {
         }
         function close() { UiState.closeHakuMenu() }
         function setMode(mode: string) { UiState.setHakuMenuMode(mode) }
+        function setTab(tab: string) { UiState.setHakuPanelTab(tab) }
     }
 
     IpcHandler {

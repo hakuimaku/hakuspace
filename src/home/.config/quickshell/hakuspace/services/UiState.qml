@@ -75,6 +75,8 @@ QtObject {
     property var trayMenu: null
     property var appMenu: null
     property var notificationPanel: null
+    // Select the root page independently of HakuMenu submodes.
+    property string hakuPanelTab: "hakumenu"
     property string hakuMenuMode: "closed"
     property string hakuMenuScreenName: ""
     // Retain the source-selected presentation for the current menu lifetime.
@@ -301,6 +303,7 @@ QtObject {
             }
         }
         hakuMenuScreenName = screenName
+        hakuPanelTab = "hakumenu"
         claimInteraction("hakumenu", screenName)
         hakuMenuMode = (mode === "drun" || mode === "theme" || mode === "general") ? mode : "general"
         hakuMenuQuery = ""
@@ -314,6 +317,12 @@ QtObject {
         if (!nextStyle) return
         if (activePanel === "hakumenu" && hakuMenuScreenName === screenName && hakuMenuStyle === nextStyle) closeHakuMenu()
         else openHakuMenu(screenName, mode, source, anchorRect)
+    }
+
+    // Switch root pages without changing the panel or HakuMenu submode.
+    function setHakuPanelTab(tab) {
+        if (tab !== "hakumenu" && tab !== "taskManager") return
+        hakuPanelTab = tab
     }
 
     // Switches HakuMenu tab mode (general, drun, theme).
@@ -332,6 +341,7 @@ QtObject {
 
     // Updates HakuMenu search query and auto-switches mode based on prefix trigger.
     function setHakuMenuQuery(query) {
+        if (hakuPanelTab !== "hakumenu") return
         hakuMenuQuery = query
         if (activePanel !== "hakumenu" || query.length === 0) return
 
@@ -348,6 +358,7 @@ QtObject {
     function closeHakuMenu() {
         if (activePanel === "hakumenu") activePanel = ""
         hakuMenuMode = "closed"
+        hakuPanelTab = "hakumenu"
         hakuMenuScreenName = ""
         hakuMenuQuery = ""
         hakuMenuSelectionLabel = ""
@@ -599,6 +610,7 @@ QtObject {
             actionMenuFlow = ""
         }
         if (activePanel !== "hakumenu") {
+            hakuPanelTab = "hakumenu"
             hakuMenuMode = "closed"
             hakuMenuScreenName = ""
             hakuMenuQuery = ""
