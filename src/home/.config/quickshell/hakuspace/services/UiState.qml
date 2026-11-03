@@ -84,6 +84,7 @@ QtObject {
     property var hakuMenuAnchorRect: null
     // Keep the trigger owner separate from its visual attachment edge.
     property string hakuMenuSource: ""
+    signal hakuMenuReturnRequested(string screenName)
     property string hakuMenuQuery: ""
     property string hakuMenuSelectionLabel: ""
     // Remember the requested Settings domain when opening from the wallpaper browser.
@@ -355,6 +356,13 @@ QtObject {
             hakuMenuMode = nextMode
             hakuMenuSelectionLabel = ""
         }
+    }
+
+    // Let the owning host reveal itself before the menu releases interaction.
+    function returnFromHakuMenu() {
+        if (activePanel !== "hakumenu" || !hakuMenuScreenName) return
+        hakuMenuReturnRequested(hakuMenuScreenName)
+        closeHakuMenu()
     }
 
     // Closes HakuMenu panel and resets query and selection state.

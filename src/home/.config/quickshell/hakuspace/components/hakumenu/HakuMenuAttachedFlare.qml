@@ -29,16 +29,18 @@ Item {
     property string renderTab: "hakumenu"
     readonly property bool taskManagerTab: renderTab === "taskManager"
     readonly property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
+    readonly property real controlHeight: bottomAttached ? ScreenGeometry.bottomHostControlHeight : 0
     readonly property var taskSize: Geometry.attachedTaskSize(screenWidth, screenHeight,
         ScreenGeometry.leftInset, ScreenGeometry.rightInset,
-        bottomAttached ? ScreenGeometry.bottomHostReservation() : Theme.topBarHeight,
+        bottomAttached ? ScreenGeometry.bottomHostReservation() + controlHeight : Theme.topBarHeight,
         bottomAttached ? ScreenGeometry.bottomHostOppositeInset : ScreenGeometry.bottomInset)
     readonly property real maxMenuWidth: taskManagerTab ? taskSize.width : root.screenWidth * 0.42
     readonly property real targetMenuWidth: Geometry.targetWidth(screenWidth, renderTab, UiState.hakuMenuMode,
         ScreenGeometry.leftInset, ScreenGeometry.rightInset)
     readonly property real menuHeight: taskManagerTab ? taskSize.height : root.screenHeight * 0.40
+    readonly property real surfaceHeight: menuHeight + controlHeight
     readonly property real menuTop: bottomAttached ? ScreenGeometry.bottomHostTop(screenHeight) : Theme.topBarHeight
-    readonly property real bounceHeadroom: menuHeight * HAnimation.hakuMenuBounceHeadroom
+    readonly property real bounceHeadroom: surfaceHeight * HAnimation.hakuMenuBounceHeadroom
     readonly property bool contentReady: isFinite(menu.width) && menu.width > 0
                                          && isFinite(menu.height) && menu.height > 0
     readonly property bool safeExpanded: available && (UiState.activePanel !== "hakumenu" || panelOpen) && (panelOpen || morph.mHeight > 0.01)
@@ -46,7 +48,7 @@ Item {
         if (!safeExpanded || !capturedAnchor) return []
         var body = attachedRect(
             Math.min(morph.mStart, (screenWidth - maxMenuWidth) / 2),
-            Math.max(maxMenuWidth, morph.mEnd - morph.mStart), Math.max(morph.mHeight, menuHeight + bounceHeadroom))
+            Math.max(maxMenuWidth, morph.mEnd - morph.mStart), Math.max(morph.mHeight, surfaceHeight + bounceHeadroom))
         var zones = [SafeZoneGeometry.inflate(capturedAnchor, Interaction.safeZoneAnchorMargin)]
             .concat(SafeZoneGeometry.orthogonalBridge(capturedAnchor, body, bottomAttached ? Interaction.safeZoneCorridorWidth : capturedAnchor.width),
                 [SafeZoneGeometry.inflate(body, Interaction.safeZoneMargin)])
@@ -179,7 +181,7 @@ Item {
             zones: root.safeZones.map(function(zone, index) {
                 return { rect: zone, kind: index === 0 ? "anchor"
                     : index < root.safeZones.length - 1 ? "corridor"
-                    : morph.mHeight > 0.01 && morph.mHeight < root.menuHeight
+                    : morph.mHeight > 0.01 && morph.mHeight < root.surfaceHeight
                         ? "animation" : "surface" }
             })
         }
@@ -212,7 +214,7 @@ Item {
             hostRect: ({x: 0, y: 0, width: root.screenWidth, height: root.screenHeight})
             shown: root.panelOpen && root.contentReady
             contentW: root.targetMenuWidth
-            contentH: root.menuHeight
+            contentH: root.surfaceHeight
             minW: 0
             maxW: root.maxMenuWidth
             padX: 0
@@ -232,9 +234,9 @@ Item {
         Rectangle {
             id: contentSurface
             x: morph.mStart
-            y: root.bottomAttached ? root.menuTop - height : root.menuTop
+            y: root.bottomAttached ? root.menuTop - morph.mHeight : root.menuTop
             width: Math.max(0, morph.mEnd - morph.mStart)
-            height: morph.mHeight
+            height: root.controlHeight > 0 ? Math.max(0, Math.min(root.menuHeight, morph.mHeight - root.controlHeight)) : morph.mHeight
             radius: Math.min(Theme.hugRadius, width / 2, height / 2)
             color: Theme.surface
             clip: true
@@ -275,6 +277,41 @@ Item {
                         duration: root.reducedMotion ? 0 : HAnimation.hakuMenuResizeDuration
                         easing.bezierCurve: HAnimation.hakuMenuResizeCurve
                     }
+                }
+            }
+        }
+
+        // Reveal the host return control inside the same clipped surface and input window.
+        Loader {
+            active: root.controlHeight > 0
+            visible: root.panelOpen
+            x: morph.mStart
+            y: root.menuTop - morph.mHeight
+            width: Math.max(0, morph.mEnd - morph.mStart)
+            height: Math.max(0, morph.mHeight)
+            clip: true
+            sourceComponent: Item {
+                TextMetrics {
+                    id: returnMetrics
+                    text: returnButton.text
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                }
+                Base.HButton {
+                    id: returnButton
+                    objectName: "hakumenu-return-button"
+                    text: "Close HakuMenu"
+                    width: Math.min(returnMetrics.advanceWidth + 32, Math.max(0, parent.width - 24))
+                    height: Math.min(36, root.controlHeight - 8)
+                    x: (parent.width - width) / 2
+                    y: parent.height - root.controlHeight + (root.controlHeight - height) / 2
+                    enabled: root.panelOpen && morph.mHeight >= root.controlHeight
+                        && UiState.ownsInteraction("hakumenu", root.modelData.name)
+                    disabledOpacity: 1
+                    Accessible.role: Accessible.Button
+                    Accessible.name: text
+                    Accessible.onPressAction: UiState.returnFromHakuMenu()
+                    onClicked: UiState.returnFromHakuMenu()
                 }
             }
         }

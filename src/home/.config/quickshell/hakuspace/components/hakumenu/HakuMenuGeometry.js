@@ -1,4 +1,4 @@
-// Resolve the final span shared by attached content and its host bridge.
+// Resolve the final span for each HakuMenu profile.
 function targetWidth(width, tab, mode, leftInset, rightInset) {
     if (tab === "taskManager") return Math.min(width * 0.40, Math.max(1, width - leftInset - rightInset))
     if (mode === "general") return width * 0.38
