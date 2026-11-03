@@ -14,6 +14,8 @@ Rectangle {
 
     property int hoveredCoreIndex: -1
     property bool tooltipVisible: false
+    property int tooltipCoreIndex: -1
+    onTooltipVisibleChanged: if (tooltipVisible) tooltipCoreIndex = hoveredCoreIndex
     readonly property int hoverDelayMs: 250
 
     readonly property var cores: Array.isArray(cpu.cores) ? cpu.cores.slice(0, 32) : []
@@ -254,13 +256,29 @@ Rectangle {
     Settings.SettingsTooltip {
         objectName: "cpuCoreTooltip"
         // Keep the popup parent stable while its anchor follows the highlighted core.
-        readonly property Item coreCell: root.hoveredCoreIndex >= 0 ? coreRepeater.itemAt(root.hoveredCoreIndex) : null
+        readonly property Item coreCell: root.tooltipCoreIndex >= 0 ? coreRepeater.itemAt(root.tooltipCoreIndex) : null
         readonly property point anchor: coreCell ? coreCell.mapToItem(root, coreCell.width / 2, coreCell.height) : Qt.point(0, 0)
         target: root
         x: Math.max(0, Math.min(root.width - width, anchor.x - width / 2))
         y: anchor.y + Theme.spaceXs
-        text: root.formatCoreTooltip(root.hoveredCoreIndex)
+        text: root.formatCoreTooltip(root.tooltipCoreIndex)
         active: root.tooltipVisible && coreCell !== null
         immediate: true
+        // Preserve the text and anchor until the fade-out has completed.
+        onClosed: if (!root.tooltipVisible) root.tooltipCoreIndex = -1
+        enter: Transition {
+            NumberAnimation {
+                property: "opacity"; from: 0; to: 1
+                duration: root.reducedMotion ? 0 : HAnimation.fast
+                easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.tooltipCurve
+            }
+        }
+        exit: Transition {
+            NumberAnimation {
+                property: "opacity"; from: 1; to: 0
+                duration: root.reducedMotion ? 0 : HAnimation.fast
+                easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.tooltipCurve
+            }
+        }
     }
 }

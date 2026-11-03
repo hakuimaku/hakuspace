@@ -35,6 +35,9 @@ FocusScope {
     readonly property string hoveredMetric: cpuMetric.hovered ? "CPU" : memoryMetric.hovered ? "Memory" : gpuMetric.hovered ? "GPU" : ""
     // Fit the presentation to its actual rows instead of reserving an empty table.
     readonly property int contentPadding: Theme.spaceMd
+    // Leave paint room for 5% scaling without changing the cards' allocated widths.
+    readonly property int metricBleed: Math.ceil(width / 3 * 0.025)
+    readonly property real metricOverlayHeight: Math.max(0, viewport.height - metricsRow.y + viewport.contentY - Theme.spaceXs)
     implicitHeight: header.height + Theme.spaceSm + body.implicitHeight
     // Share one decorative clock and stop it when the Mini page is no longer painted.
     property real waterWavePhase: 0
@@ -142,7 +145,10 @@ FocusScope {
     Flickable {
         id: viewport
         objectName: "taskManagerMiniViewport"
-        anchors { top: header.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; topMargin: Theme.spaceSm }
+        anchors {
+            top: header.bottom; left: parent.left; right: parent.right; bottom: parent.bottom
+            topMargin: Theme.spaceSm; leftMargin: -root.metricBleed; rightMargin: -root.metricBleed
+        }
         contentWidth: width
         contentHeight: body.implicitHeight
         interactive: contentHeight > height
@@ -152,13 +158,15 @@ FocusScope {
         ColumnLayout {
             id: body
             objectName: "taskManagerMiniGrid"
-            width: parent.width
+            x: root.metricBleed
+            width: parent.width - root.metricBleed * 2
             spacing: Theme.spaceMd
             RowLayout {
                 id: metricsRow
                 objectName: "taskManagerMiniMetricsRow"
                 Layout.fillWidth: true
-                // Leave room for the painted lift inside the clipped viewport.
+                z: 1
+                // Inset the metric row below the header.
                 Layout.topMargin: Theme.spaceXs
                 spacing: Theme.spaceMd
                 TaskManagerMiniMetric {
@@ -168,11 +176,22 @@ FocusScope {
                     compact: root.compact
                     visuals: miniVisuals
                     label: "CPU"
+                    maximumOverlayHeight: root.metricOverlayHeight
                     subdued: root.hoveredMetric !== "" && root.hoveredMetric !== "CPU"
                     waterWavePhase: root.waterWavePhase
                     value: Logic.metric(root.cpu.usage, "%", 0)
                     usage: Number.isFinite(root.cpu.usage) ? root.cpu.usage : NaN
                     secondary: Number.isFinite(root.cpu.temperatureC) ? Logic.metric(root.cpu.temperatureC, "°C", 0) : "—"
+                    detailRows: [
+                        {label: "Temp", value: miniVisuals.dashMetric(root.cpu.temperatureC, " °C")},
+                        {label: "Highest", value: miniVisuals.dashMetric(root.cpu.frequencyHighestMHz ?? root.cpu.frequencyMHz, " MHz", 0)},
+                        {label: "Average", value: miniVisuals.dashMetric(root.cpu.frequencyAverageMHz, " MHz", 0)},
+                        {label: "Lowest", value: miniVisuals.dashMetric(root.cpu.frequencyLowestMHz, " MHz", 0)},
+                        {label: "Load 1m", value: miniVisuals.dashMetric((root.cpu.load || [])[0], "", 2)},
+                        {label: "Load 5m", value: miniVisuals.dashMetric((root.cpu.load || [])[1], "", 2)},
+                        {label: "Load 15m", value: miniVisuals.dashMetric((root.cpu.load || [])[2], "", 2)}
+                    ].filter(row => row.value !== "—")
+                    coreUsage: Array.isArray(root.cpu.cores) ? root.cpu.cores : []
                     reducedMotion: root.reducedMotion
                 }
                 TaskManagerMiniMetric {
@@ -182,12 +201,22 @@ FocusScope {
                     compact: root.compact
                     visuals: miniVisuals
                     label: "Memory"
+                    maximumOverlayHeight: root.metricOverlayHeight
                     subdued: root.hoveredMetric !== "" && root.hoveredMetric !== "Memory"
                     waterWavePhase: root.waterWavePhase
                     value: Logic.metric(root.memory.percent, "%", 0)
                     usage: Number.isFinite(root.memory.percent) ? root.memory.percent : NaN
                     secondary: Number.isFinite(root.memory.used) && Number.isFinite(root.memory.total)
                         ? Logic.bytes(root.memory.used) + " / " + Logic.bytes(root.memory.total) : "—"
+                    detailRows: [
+                        {label: "Used", value: miniVisuals.dashBytes(root.memory.used)},
+                        {label: "Total", value: miniVisuals.dashBytes(root.memory.total)},
+                        {label: "Available", value: miniVisuals.dashBytes(root.memory.availableBytes)},
+                        {label: "Cache", value: miniVisuals.dashBytes(root.memory.cache)},
+                        {label: "Buffers", value: miniVisuals.dashBytes(root.memory.buffers)},
+                        {label: "Swap used", value: miniVisuals.dashBytes(root.memory.swapUsed)},
+                        {label: "Swap total", value: miniVisuals.dashBytes(root.memory.swapTotal)}
+                    ].filter(row => row.value !== "—")
                     reducedMotion: root.reducedMotion
                 }
                 TaskManagerMiniMetric {
@@ -197,11 +226,22 @@ FocusScope {
                     compact: root.compact
                     visuals: miniVisuals
                     label: "GPU"
+                    maximumOverlayHeight: root.metricOverlayHeight
                     subdued: root.hoveredMetric !== "" && root.hoveredMetric !== "GPU"
                     waterWavePhase: root.waterWavePhase
                     value: Number.isFinite(root.gpu.usage) ? Logic.gpuUsage(root.gpu) : "Unavailable"
                     usage: Number.isFinite(root.gpu.usage) ? root.gpu.usage : NaN
                     secondary: Number.isFinite(root.gpu.temperatureC) ? Logic.metric(root.gpu.temperatureC, "°C", 0) : "—"
+                    detailRows: [
+                        {label: "Device", value: root.gpu.name || "—"},
+                        {label: "Temp", value: miniVisuals.dashMetric(root.gpu.temperatureC, " °C")},
+                        {label: "Clock", value: miniVisuals.dashMetric(root.gpu.clockMHz, " MHz", 0)},
+                        {label: "Power", value: miniVisuals.dashMetric(root.gpu.powerW, " W", 2)},
+                        {label: "Memory", value: root.gpu.memoryType === "shared" ? "Shared" : miniVisuals.dashBytes(root.gpu.memoryUsed)},
+                        {label: "VRAM total", value: miniVisuals.dashBytes(root.gpu.memoryTotal)},
+                        {label: "Status", value: Number.isFinite(root.gpu.usage) ? "—" : Logic.gpuUsage(root.gpu)},
+                        {label: "Details", value: root.gpu.detail || "—"}
+                    ].filter(row => row.value !== "—")
                     reducedMotion: root.reducedMotion
                 }
             }
@@ -291,7 +331,7 @@ FocusScope {
                             Layout.fillWidth: true
                             implicitHeight: Theme.comfortableControlHeight
                             radius: Theme.radius
-                            readonly property bool hovered: visible && enabled && rowHover.hovered
+                            readonly property bool hovered: visible && enabled && root.hoveredMetric === "" && rowHover.hovered
                             onHoveredChanged: {
                                 if (hovered) root.hoveredPinRow = pinRow
                                 else Qt.callLater(root.clearPinHover)
