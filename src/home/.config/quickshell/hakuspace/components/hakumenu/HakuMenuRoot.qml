@@ -97,10 +97,6 @@ FocusScope {
                 // Reuse selection motion as a top border without filling either tab.
                 height: 3
                 radius: 0
-                topLeftRadius: root.taskManagerTab ? 0 : Theme.radius
-                topRightRadius: root.taskManagerTab ? Theme.radius : 0
-                bottomLeftRadius: 0
-                bottomRightRadius: 0
                 slotCount: 2
                 slotSpacing: Theme.gap
                 targetIndex: root.taskManagerTab ? 1 : 0
@@ -108,18 +104,6 @@ FocusScope {
                 trailFactor: 1
                 fadeDuration: root.switchDuration
                 curve: HAnimation.hakuMenuResizeCurve
-                Behavior on topLeftRadius {
-                    NumberAnimation {
-                        duration: root.switchDuration
-                        easing.bezierCurve: HAnimation.hakuMenuResizeCurve
-                    }
-                }
-                Behavior on topRightRadius {
-                    NumberAnimation {
-                        duration: root.switchDuration
-                        easing.bezierCurve: HAnimation.hakuMenuResizeCurve
-                    }
-                }
             }
             Repeater {
                 model: ["HakuMenu", "Task Manager"]
@@ -179,7 +163,7 @@ FocusScope {
 
     Loader {
         id: miniLoader
-        anchors { top: tabs.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; margins: Theme.pad + 4; topMargin: 0 }
+        anchors { top: tabs.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; margins: Theme.panelPadding; topMargin: Theme.spaceSm }
         active: root.miniLoaded
         enabled: root.panelOpen && root.taskManagerTab
         opacity: root.taskManagerTab ? 1 : 0

@@ -2,105 +2,107 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../../services"
-import "../motion" as Motion
+import "glassgrid" as Glass
 import "TaskManagerLogic.js" as Logic
 
 FocusScope {
     id: root
-    // Share only telemetry and live-instance pins with the standalone presentation.
+    // Share telemetry and live-instance pins with the standalone presentation.
     property var snapshot: ({})
     property var pinnedProcesses: TaskManagerPins.pinnedProcesses
     property bool reducedMotion: false
     readonly property int maxVisiblePins: 4
-    readonly property bool compact: height < 260
+    readonly property bool compact: height < 300
     readonly property var cpu: snapshot.cpu || ({})
     readonly property var memory: snapshot.memory || ({})
     readonly property var gpu: (snapshot.gpus || [])[0] || ({})
     readonly property var network: (snapshot.network || {}).all || ({})
     readonly property var disks: snapshot.disks || ({})
-    readonly property real frequency: Number.isFinite(cpu.frequencyHighestMHz) ? cpu.frequencyHighestMHz
-        : Number.isFinite(cpu.frequencyAverageMHz) ? cpu.frequencyAverageMHz : NaN
+    // Share one decorative clock and stop it when the Mini page is no longer painted.
+    property real waterWavePhase: 0
+    NumberAnimation on waterWavePhase {
+        from: 0
+        to: Math.PI * 2
+        duration: 3400
+        loops: Animation.Infinite
+        running: root.visible && !root.reducedMotion
+    }
     signal openFullRequested()
 
-    // Keep the only Mini action in the focus path, including at compact heights.
+    // Keep the standalone handoff as the only Mini action in the focus path.
     function forcePrimaryFocus() { openFull.forceActiveFocus() }
     function clearPrimaryFocus() { focus = false }
     function rate(value) { return Number.isFinite(value) ? Logic.bytes(value) + "/s" : "—" }
 
+    Glass.TaskManagerVisuals { id: miniVisuals }
+
     RowLayout {
         id: header
         anchors { top: parent.top; left: parent.left; right: parent.right }
-        height: Math.max(26, Theme.fontSize * 2)
-        spacing: Theme.gap
-        Text {
-            text: "SYSTEM"
-            color: Theme.fgMuted
-            font.family: Theme.fontFamily
-            font.pixelSize: Math.max(10, Theme.fontSize - 2)
-            font.bold: true
+        height: Theme.controlHeight
+        spacing: Theme.spaceSm
+        Rectangle {
+            width: 5; height: 5; radius: 2.5
+            color: TaskManagerService.error ? Theme.danger : Theme.accent
         }
         Text {
             Layout.fillWidth: true
-            horizontalAlignment: Text.AlignRight
-            text: TaskManagerService.error || (TaskManagerService.warmingUp ? "Warming up…" : "Live")
-            color: TaskManagerService.error ? Theme.danger : Theme.fgMuted
+            text: TaskManagerService.error || (TaskManagerService.warmingUp ? "Warming up…" : "System overview")
+            color: TaskManagerService.error ? Theme.danger : miniVisuals.secondaryFg
             elide: Text.ElideRight
             font.family: Theme.fontFamily
-            font.pixelSize: Math.max(10, Theme.fontSize - 3)
+            font.pixelSize: miniVisuals.metaFontSize
         }
-        Motion.MorphButton {
+        Glass.TaskActionButton {
             id: openFull
             objectName: "taskManagerMiniOpenFull"
-            Layout.preferredWidth: Theme.fontSize * 11
-            Layout.fillHeight: true
+            Layout.preferredWidth: implicitWidth
+            Layout.preferredHeight: implicitHeight
             text: "↗ Task Manager"
-            radius: Theme.radius
-            idleColor: "transparent"
-            hoverColor: Theme.surfaceSubtle(1.5)
-            foregroundColor: Theme.accent
-            hoverForegroundColor: Theme.accent
-            hoverScaleDelta: 0
-            pressScaleDelta: 0
-            focused: activeFocus
-            activeFocusOnTab: true
-            Accessible.role: Accessible.Button
+            visuals: miniVisuals
+            reducedMotion: root.reducedMotion
+            compact: root.compact
+            accent: true
             Accessible.name: "Open Task Manager"
             onClicked: root.openFullRequested()
-            Keys.onReturnPressed: clicked()
-            Keys.onSpacePressed: clicked()
         }
     }
 
+    // Scroll only when small outputs or larger fonts exceed the compact overview.
     Flickable {
-        anchors { top: header.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; topMargin: Theme.gap }
+        anchors { top: header.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; topMargin: Theme.spaceMd }
         contentWidth: width
         contentHeight: body.implicitHeight
+        interactive: contentHeight > height
         boundsBehavior: Flickable.StopAtBounds
         clip: true
         ScrollBar.vertical: ScrollBar {}
         ColumnLayout {
             id: body
             width: parent.width
-            spacing: root.compact ? Theme.gap / 2 : Theme.gap
+            spacing: Theme.spaceMd
             RowLayout {
                 Layout.fillWidth: true
-                spacing: Theme.pad * 2
+                spacing: Theme.spaceMd
                 TaskManagerMiniMetric {
                     objectName: "taskManagerMiniCpu"
-                    compact: root.compact
                     Layout.fillWidth: true
+                    compact: root.compact
+                    visuals: miniVisuals
                     label: "CPU"
+                    waterWavePhase: root.waterWavePhase
                     value: Logic.metric(root.cpu.usage, "%", 0)
                     usage: Number.isFinite(root.cpu.usage) ? root.cpu.usage : NaN
-                    secondary: [Number.isFinite(root.frequency) ? Logic.metric(root.frequency / 1000, " GHz") : "",
-                        Number.isFinite(root.cpu.temperatureC) ? Logic.metric(root.cpu.temperatureC, "°C", 0) : ""].filter(value => !!value).join(" · ")
+                    secondary: Number.isFinite(root.cpu.temperatureC) ? Logic.metric(root.cpu.temperatureC, "°C", 0) : "—"
                     reducedMotion: root.reducedMotion
                 }
                 TaskManagerMiniMetric {
                     objectName: "taskManagerMiniMemory"
-                    compact: root.compact
                     Layout.fillWidth: true
-                    label: "MEMORY"
+                    compact: root.compact
+                    visuals: miniVisuals
+                    label: "Memory"
+                    waterWavePhase: root.waterWavePhase
                     value: Logic.metric(root.memory.percent, "%", 0)
                     usage: Number.isFinite(root.memory.percent) ? root.memory.percent : NaN
                     secondary: Number.isFinite(root.memory.used) && Number.isFinite(root.memory.total)
@@ -109,9 +111,11 @@ FocusScope {
                 }
                 TaskManagerMiniMetric {
                     objectName: "taskManagerMiniGpu"
-                    compact: root.compact
                     Layout.fillWidth: true
+                    compact: root.compact
+                    visuals: miniVisuals
                     label: "GPU"
+                    waterWavePhase: root.waterWavePhase
                     value: Number.isFinite(root.gpu.usage) ? Logic.gpuUsage(root.gpu) : "Unavailable"
                     usage: Number.isFinite(root.gpu.usage) ? root.gpu.usage : NaN
                     secondary: Number.isFinite(root.gpu.temperatureC) ? Logic.metric(root.gpu.temperatureC, "°C", 0) : "—"
@@ -120,102 +124,133 @@ FocusScope {
             }
             RowLayout {
                 Layout.fillWidth: true
-                spacing: Theme.pad * 2
+                spacing: Theme.spaceMd
                 Repeater {
-                    model: ["NET", "DISK"]
-                    ColumnLayout {
+                    model: ["Network", "Disk"]
+                    Rectangle {
                         required property string modelData
                         Layout.fillWidth: true
-                        spacing: 2
+                        implicitHeight: Theme.controlHeight + Theme.cardPadding * 2
+                        radius: Theme.radius
+                        color: miniVisuals.cardSurface
                         Accessible.role: Accessible.Grouping
                         Accessible.name: modelData + ", " + ioValue.text
-                        Text {
-                            visible: !root.compact
-                            text: modelData
-                            color: Theme.fgMuted
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Math.max(10, Theme.fontSize - 2)
-                        }
-                        Text {
-                            id: ioValue
-                            objectName: modelData === "NET" ? "taskManagerMiniNetwork" : "taskManagerMiniDisk"
-                            Layout.fillWidth: true
-                            text: (root.compact ? modelData + "  " : "") + (modelData === "NET"
-                                ? "↓ " + root.rate(root.network.rxBps) + "  ↑ " + root.rate(root.network.txBps)
-                                : "R " + root.rate(root.disks.readBps) + "  W " + root.rate(root.disks.writeBps))
-                            color: Theme.fgMuted
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Math.max(10, Theme.fontSize - 3)
-                            elide: Text.ElideRight
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: Theme.cardPadding
+                            spacing: Theme.spaceXs
+                            Text {
+                                text: modelData
+                                color: miniVisuals.primaryFg
+                                font.family: Theme.fontFamily
+                                font.pixelSize: miniVisuals.metaFontSize
+                            }
+                            Text {
+                                id: ioValue
+                                objectName: modelData === "Network" ? "taskManagerMiniNetwork" : "taskManagerMiniDisk"
+                                Layout.fillWidth: true
+                                text: modelData === "Network"
+                                    ? "↓ " + root.rate(root.network.rxBps) + "  ↑ " + root.rate(root.network.txBps)
+                                    : "R " + root.rate(root.disks.readBps) + "  W " + root.rate(root.disks.writeBps)
+                                color: miniVisuals.secondaryFg
+                                font.family: Theme.fontFamily
+                                font.pixelSize: miniVisuals.metaFontSize
+                                elide: Text.ElideRight
+                            }
                         }
                     }
                 }
             }
-            Text {
+            // Keep pinned rows read-only; process management remains in the standalone window.
+            Rectangle {
                 Layout.fillWidth: true
-                text: TaskManagerPins.error || "PINNED"
-                color: TaskManagerPins.error ? Theme.danger : Theme.fgMuted
-                elide: Text.ElideRight
-                font.family: Theme.fontFamily
-                font.pixelSize: Math.max(10, Theme.fontSize - 2)
-            }
-            Text {
-                objectName: "taskManagerMiniEmptyPins"
-                Layout.fillWidth: true
-                visible: root.pinnedProcesses.length === 0
-                text: "No pinned processes\nPin a process in Task Manager to monitor it here."
-                color: Theme.fgMuted
-                font.family: Theme.fontFamily
-                font.pixelSize: Math.max(10, Theme.fontSize - 3)
-                wrapMode: Text.WordWrap
-            }
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 2
-                Repeater {
-                    model: root.pinnedProcesses.slice(0, root.maxVisiblePins)
+                implicitHeight: pins.implicitHeight + Theme.cardPadding * 2
+                radius: Theme.radius
+                color: miniVisuals.paneSurface
+                ColumnLayout {
+                    id: pins
+                    anchors { top: parent.top; left: parent.left; right: parent.right; margins: Theme.cardPadding }
+                    spacing: Theme.spaceSm
                     RowLayout {
-                        required property var modelData
-                        objectName: "taskManagerMiniPinnedRow"
                         Layout.fillWidth: true
-                        Layout.preferredHeight: root.compact ? 16 : 20
-                        spacing: Theme.gap
-                        Accessible.role: Accessible.Grouping
-                        Accessible.name: modelData.name + ", CPU " + Logic.metric(modelData.cpuTotalPercent, "%") + ", memory " + Logic.bytes(modelData.rss)
+                        spacing: Theme.spaceSm
                         Text {
                             Layout.fillWidth: true
-                            text: "󰐃 " + modelData.name
-                            color: Theme.fgMuted
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Math.max(11, Theme.fontSize - 2)
+                            text: TaskManagerPins.error || "Pinned"
+                            color: TaskManagerPins.error ? Theme.danger : miniVisuals.secondaryFg
                             elide: Text.ElideRight
-                        }
-                        Text {
-                            Layout.preferredWidth: Theme.fontSize * 6
-                            horizontalAlignment: Text.AlignRight
-                            text: Logic.metric(modelData.cpuTotalPercent, "%")
-                            color: Theme.accent
                             font.family: Theme.fontFamily
-                            font.pixelSize: Math.max(11, Theme.fontSize - 2)
+                            font.pixelSize: miniVisuals.metaFontSize
                         }
-                        Text {
-                            Layout.preferredWidth: Theme.fontSize * 7
-                            horizontalAlignment: Text.AlignRight
-                            text: Logic.bytes(modelData.rss)
-                            color: Theme.fgMuted
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Math.max(11, Theme.fontSize - 2)
+                        Repeater {
+                            model: ["CPU", "RAM"]
+                            Text {
+                                required property string modelData
+                                visible: root.pinnedProcesses.length > 0
+                                Layout.preferredWidth: Theme.fontSize * (modelData === "CPU" ? 5 : 6)
+                                horizontalAlignment: Text.AlignRight
+                                text: modelData
+                                color: miniVisuals.secondaryFg
+                                font.family: Theme.fontFamily
+                                font.pixelSize: miniVisuals.metaFontSize
+                            }
                         }
                     }
+                    Text {
+                        objectName: "taskManagerMiniEmptyPins"
+                        Layout.fillWidth: true
+                        visible: root.pinnedProcesses.length === 0
+                        text: "Pin processes in Task Manager to follow them here."
+                        color: miniVisuals.secondaryFg
+                        font.family: Theme.fontFamily
+                        font.pixelSize: miniVisuals.metaFontSize
+                        wrapMode: Text.WordWrap
+                    }
+                    Repeater {
+                        model: root.pinnedProcesses.slice(0, root.maxVisiblePins)
+                        RowLayout {
+                            required property var modelData
+                            objectName: "taskManagerMiniPinnedRow"
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: Theme.controlHeight
+                            spacing: Theme.spaceSm
+                            Accessible.role: Accessible.Grouping
+                            Accessible.name: modelData.name + ", CPU " + Logic.metric(modelData.cpuTotalPercent, "%") + ", memory " + Logic.bytes(modelData.rss)
+                            Text {
+                                Layout.fillWidth: true
+                                text: modelData.name
+                                color: miniVisuals.primaryFg
+                                font.family: Theme.fontFamily
+                                font.pixelSize: miniVisuals.metaFontSize
+                                elide: Text.ElideRight
+                            }
+                            Text {
+                                Layout.preferredWidth: Theme.fontSize * 5
+                                horizontalAlignment: Text.AlignRight
+                                text: Logic.metric(modelData.cpuTotalPercent, "%")
+                                color: Theme.accent
+                                font.family: Theme.fontFamily
+                                font.pixelSize: miniVisuals.metaFontSize
+                            }
+                            Text {
+                                Layout.preferredWidth: Theme.fontSize * 6
+                                horizontalAlignment: Text.AlignRight
+                                text: Logic.bytes(modelData.rss)
+                                color: miniVisuals.secondaryFg
+                                font.family: Theme.fontFamily
+                                font.pixelSize: miniVisuals.metaFontSize
+                            }
+                        }
+                    }
+                    Text {
+                        objectName: "taskManagerMiniMorePins"
+                        visible: root.pinnedProcesses.length > root.maxVisiblePins
+                        text: "+" + (root.pinnedProcesses.length - root.maxVisiblePins) + " pinned"
+                        color: miniVisuals.secondaryFg
+                        font.family: Theme.fontFamily
+                        font.pixelSize: miniVisuals.metaFontSize
+                    }
                 }
-            }
-            Text {
-                objectName: "taskManagerMiniMorePins"
-                visible: root.pinnedProcesses.length > root.maxVisiblePins
-                text: "+" + (root.pinnedProcesses.length - root.maxVisiblePins) + " pinned"
-                color: Theme.fgMuted
-                font.family: Theme.fontFamily
-                font.pixelSize: Math.max(10, Theme.fontSize - 3)
             }
         }
     }
