@@ -15,11 +15,39 @@ Item {
     property real waterWavePhase: 0
     property bool reducedMotion: false
     property bool compact: false
+    property bool subdued: false
+    opacity: subdued ? 0.92 : 1
+    Behavior on opacity {
+        enabled: !root.reducedMotion
+        NumberAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+    }
     readonly property int contentPadding: compact ? Theme.spaceMd : Theme.cardPadding
     implicitHeight: header.implicitHeight + water.diameter + details.implicitHeight
         + contentPadding * 2 + Theme.spaceXs * 2 + Theme.spaceSm
-    // Keep the hit box fixed while only the painted card lifts.
-    readonly property bool hovered: metricHover.hovered
+    // Keep hover parameters separate from telemetry and settle from their current value.
+    readonly property bool hovered: visible && enabled && metricHover.hovered
+    property real hoverStrength: hovered && !reducedMotion ? 1 : 0
+    property real hoverBiasX: hovered && !reducedMotion && width > 0
+        ? Math.round(Math.max(-1, Math.min(1, metricHover.point.position.x / width * 2 - 1)) * 16) / 16 : 0
+    // Damped ink returns to the category icon instead of following the pointer outside.
+    property real inkX: hovered && !reducedMotion ? Math.round(metricHover.point.position.x / 4) * 4 : contentPadding + Theme.fontSize / 2
+    property real inkY: hovered && !reducedMotion ? Math.round(metricHover.point.position.y / 4) * 4 : contentPadding + Theme.fontSize / 2
+    Behavior on inkX {
+        enabled: !root.reducedMotion
+        NumberAnimation { duration: HAnimation.taskBarFillDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+    }
+    Behavior on inkY {
+        enabled: !root.reducedMotion
+        NumberAnimation { duration: HAnimation.taskBarFillDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+    }
+    Behavior on hoverStrength {
+        enabled: !root.reducedMotion
+        NumberAnimation { duration: HAnimation.taskBarFillDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+    }
+    Behavior on hoverBiasX {
+        enabled: !root.reducedMotion
+        NumberAnimation { duration: HAnimation.taskBarFillDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+    }
     HoverHandler { id: metricHover; cursorShape: Qt.ArrowCursor }
     Accessible.role: Accessible.Grouping
     Accessible.name: label + " " + value + (secondary ? ", " + secondary : "")
@@ -32,13 +60,6 @@ Item {
         color: root.hovered ? root.visuals.hoverSurface : root.visuals.cardSurface
         border.width: 1
         border.color: Qt.alpha(Theme.accent, root.hovered ? 0.18 : 0)
-        transform: Translate {
-            y: root.hovered && !root.reducedMotion ? -2 : 0
-            Behavior on y {
-                enabled: !root.reducedMotion
-                NumberAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
-            }
-        }
         Behavior on color {
             enabled: !root.reducedMotion
             ColorAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
@@ -46,6 +67,56 @@ Item {
         Behavior on border.color {
             enabled: !root.reducedMotion
             ColorAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+        }
+
+        Canvas {
+            id: ink
+            objectName: "taskManagerMiniInk"
+            anchors.fill: parent
+            visible: !root.reducedMotion && root.hoverStrength > 0.001
+            renderTarget: Canvas.Image
+            // Quantized paint inputs avoid repainting for subpixel pointer noise.
+            readonly property real paintX: Math.round(root.inkX / 3) * 3
+            readonly property real paintY: Math.round(root.inkY / 3) * 3
+            readonly property real amount: Math.round(root.hoverStrength * 24) / 24
+            onPaintXChanged: if (visible) requestPaint()
+            onPaintYChanged: if (visible) requestPaint()
+            onAmountChanged: if (visible) requestPaint()
+            onVisibleChanged: if (visible) requestPaint()
+            Connections {
+                target: Theme
+                function onAccentChanged() { if (ink.visible) ink.requestPaint() }
+            }
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.reset()
+                var r = Math.min(Theme.radius, width / 2, height / 2)
+                ctx.save()
+                ctx.beginPath()
+                ctx.moveTo(r, 0)
+                ctx.lineTo(width - r, 0)
+                ctx.quadraticCurveTo(width, 0, width, r)
+                ctx.lineTo(width, height - r)
+                ctx.quadraticCurveTo(width, height, width - r, height)
+                ctx.lineTo(r, height)
+                ctx.quadraticCurveTo(0, height, 0, height - r)
+                ctx.lineTo(0, r)
+                ctx.quadraticCurveTo(0, 0, r, 0)
+                ctx.clip()
+                // Layer broad asymmetric ink shapes; total accent alpha stays below 0.055.
+                for (var i = 0; i < 5; i++) {
+                    var spread = (0.2 + 0.8 * amount) * (1 - i * 0.14)
+                    var rx = width * 0.44 * spread
+                    var ry = height * 0.23 * spread
+                    ctx.beginPath()
+                    ctx.moveTo(paintX - rx, paintY)
+                    ctx.bezierCurveTo(paintX - rx * 0.8, paintY - ry, paintX + rx * 0.6, paintY - ry * 0.9, paintX + rx, paintY)
+                    ctx.bezierCurveTo(paintX + rx * 0.6, paintY + ry * 0.8, paintX - rx * 0.65, paintY + ry, paintX - rx, paintY)
+                    ctx.fillStyle = Qt.alpha(Theme.accent, 0.011 * amount)
+                    ctx.fill()
+                }
+                ctx.restore()
+            }
         }
 
         ColumnLayout {
@@ -102,6 +173,8 @@ Item {
                 wavePhase: root.waterWavePhase
                 interactive: false
                 emphasized: root.hovered
+                hoverStrength: root.hoverStrength
+                hoverBiasX: root.hoverBiasX
                 reducedMotion: root.reducedMotion || !root.visible
                 Accessible.ignored: true
             }

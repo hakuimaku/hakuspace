@@ -20,6 +20,11 @@ Item {
     // Change only the painted emphasis; telemetry and the wave clock remain independent.
     property bool emphasized: false
     onEmphasizedChanged: canvas.requestPaint()
+    // Neutral by default; Mini may bias the painted wave without changing its level.
+    property real hoverStrength: 0
+    property real hoverBiasX: 0
+    onHoverStrengthChanged: canvas.requestPaint()
+    onHoverBiasXChanged: canvas.requestPaint()
     signal showNumericToggled(bool showNumeric)
 
     width: diameter
@@ -140,13 +145,17 @@ Item {
                 var ratio = root.fillRatio
                 var waterY = (cy + r) - (2.0 * r * ratio)
                 var amp = (ratio <= 0.025 || ratio >= 0.975) ? 0.6 : Math.max(1.2, Math.min(3.2, r * 0.065))
+                // A zero-mean slope lifts water toward the pointer, bounded to 2.5% of diameter.
+                var slope = root.reducedMotion ? 0 : Math.max(-1, Math.min(1, root.hoverBiasX))
+                    * Math.max(0, Math.min(1, root.hoverStrength)) * Math.min(w, h) * 0.025
+                    * Math.min(1, Math.min(ratio, 1 - ratio) * 10)
 
                 // Back wave.
                 ctx.beginPath()
                 ctx.moveTo(cx - r, cy + r)
                 for (var x = cx - r; x <= cx + r; x += 3) {
                     var relX = (x - (cx - r)) / (2 * r)
-                    var wy1 = waterY + amp * Math.sin(relX * Math.PI * 2.2 + root.wavePhase + 1.2)
+                    var wy1 = waterY + amp * Math.sin(relX * Math.PI * 2.2 + root.wavePhase + 1.2) - slope * (relX * 2 - 1)
                     ctx.lineTo(x, wy1)
                 }
                 ctx.lineTo(cx + r, cy + r)
@@ -159,7 +168,7 @@ Item {
                 ctx.moveTo(cx - r, cy + r)
                 for (var x2 = cx - r; x2 <= cx + r; x2 += 3) {
                     var relX2 = (x2 - (cx - r)) / (2 * r)
-                    var wy2 = waterY + amp * Math.sin(relX2 * Math.PI * 2.2 + root.wavePhase)
+                    var wy2 = waterY + amp * Math.sin(relX2 * Math.PI * 2.2 + root.wavePhase) - slope * (relX2 * 2 - 1)
                     ctx.lineTo(x2, wy2)
                 }
                 ctx.lineTo(cx + r, cy + r)
