@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import "../../services"
 import "glassgrid" as Glass
 import "TaskManagerLogic.js" as Logic
+import "../../config/UiCatalog.js" as Catalog
 
 FocusScope {
     id: root
@@ -12,12 +13,13 @@ FocusScope {
     property var pinnedProcesses: TaskManagerPins.pinnedProcesses
     property bool reducedMotion: false
     readonly property int maxVisiblePins: 4
-    readonly property bool compact: height < 300
+    readonly property bool compact: width < Theme.fontSize * 44
     readonly property var cpu: snapshot.cpu || ({})
     readonly property var memory: snapshot.memory || ({})
     readonly property var gpu: (snapshot.gpus || [])[0] || ({})
-    // Keep the extra inset local to Task Manager cards.
-    readonly property int contentPadding: Theme.cardPadding + 4
+    // Fit the presentation to its actual rows instead of reserving an empty table.
+    readonly property int contentPadding: Theme.spaceMd
+    implicitHeight: header.height + Theme.spaceSm + body.implicitHeight
     // Share one decorative clock and stop it when the Mini page is no longer painted.
     property real waterWavePhase: 0
     NumberAnimation on waterWavePhase {
@@ -42,9 +44,12 @@ FocusScope {
         anchors { top: parent.top; left: parent.left; right: parent.right }
         height: openFull.implicitHeight
         spacing: Theme.spaceSm
-        Rectangle {
-            width: 5; height: 5; radius: 2.5
+        Text {
+            text: Catalog.taskManagerIcons.overview
             color: TaskManagerService.error ? Theme.danger : Theme.accent
+            font.family: Theme.iconFontFamily
+            font.pixelSize: Theme.fontSize
+            Accessible.ignored: true
         }
         Text {
             Layout.fillWidth: true
@@ -52,18 +57,22 @@ FocusScope {
             color: TaskManagerService.error ? Theme.danger : miniVisuals.secondaryFg
             elide: Text.ElideRight
             font.family: Theme.fontFamily
-            font.pixelSize: miniVisuals.metaFontSize
+            font.pixelSize: Theme.fontSize
         }
         Glass.TaskActionButton {
             id: openFull
             objectName: "taskManagerMiniOpenFull"
             Layout.preferredWidth: implicitWidth
             Layout.preferredHeight: implicitHeight
-            text: "↗ Task Manager"
+            text: "Task Manager"
+            icon: Catalog.taskManagerIcons.open
+            fontSize: Theme.fontSize
+            implicitHeight: Theme.controlHeight
+            radius: Theme.radius
             visuals: miniVisuals
             reducedMotion: root.reducedMotion
             compact: root.compact
-            accent: true
+            accent: false
             Accessible.name: "Open Task Manager"
             onClicked: root.openFullRequested()
         }
@@ -128,7 +137,7 @@ FocusScope {
                     reducedMotion: root.reducedMotion
                 }
             }
-            // Keep pinned rows read-only; process management remains in the standalone window.
+            // Pinned processes remain read-only informational objects.
             Rectangle {
                 objectName: "taskManagerMiniPinsPane"
                 Layout.fillWidth: true
@@ -138,31 +147,33 @@ FocusScope {
                 ColumnLayout {
                     id: pins
                     anchors { top: parent.top; left: parent.left; right: parent.right; margins: root.contentPadding }
-                    spacing: Theme.spaceSm
+                    spacing: Theme.spaceXs
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.spaceSm
                         Text {
-                            Layout.fillWidth: true
+                            text: Catalog.taskManagerIcons.pin
+                            color: miniVisuals.secondaryFg
+                            font.family: Theme.iconFontFamily
+                            font.pixelSize: Theme.fontSize
+                            Accessible.ignored: true
+                        }
+                        Text {
                             text: TaskManagerPins.error || "Pinned"
-                            color: TaskManagerPins.error ? Theme.danger : miniVisuals.secondaryFg
+                            color: TaskManagerPins.error ? Theme.danger : miniVisuals.primaryFg
                             elide: Text.ElideRight
+                            Layout.maximumWidth: pins.width - Theme.fontSize * 5
                             font.family: Theme.fontFamily
-                            font.pixelSize: miniVisuals.metaFontSize
+                            font.pixelSize: Theme.fontSize
                         }
-                        Repeater {
-                            model: ["CPU", "RAM"]
-                            Text {
-                                required property string modelData
-                                visible: root.pinnedProcesses.length > 0
-                                Layout.preferredWidth: Theme.fontSize * (modelData === "CPU" ? 5 : 6)
-                                horizontalAlignment: Text.AlignRight
-                                text: modelData
-                                color: miniVisuals.secondaryFg
-                                font.family: Theme.fontFamily
-                                font.pixelSize: miniVisuals.metaFontSize
-                            }
+                        Text {
+                            visible: root.pinnedProcesses.length > 1
+                            text: "· " + root.pinnedProcesses.length
+                            color: miniVisuals.secondaryFg
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize - 1
                         }
+                        Item { Layout.fillWidth: true }
                     }
                     Text {
                         objectName: "taskManagerMiniEmptyPins"
@@ -171,42 +182,60 @@ FocusScope {
                         text: "Pin processes in Task Manager to follow them here."
                         color: miniVisuals.secondaryFg
                         font.family: Theme.fontFamily
-                        font.pixelSize: miniVisuals.metaFontSize
+                        font.pixelSize: Theme.fontSize - 1
                         wrapMode: Text.WordWrap
                     }
                     Repeater {
                         model: root.pinnedProcesses.slice(0, root.maxVisiblePins)
-                        RowLayout {
+                        Rectangle {
+                            id: pinRow
                             required property var modelData
                             objectName: "taskManagerMiniPinnedRow"
                             Layout.fillWidth: true
-                            Layout.preferredHeight: Theme.controlHeight
-                            spacing: Theme.spaceSm
+                            implicitHeight: Theme.comfortableControlHeight
+                            radius: Theme.radius
+                            color: rowHover.hovered ? miniVisuals.rowHoverSurface : miniVisuals.wellSurface
                             Accessible.role: Accessible.Grouping
                             Accessible.name: modelData.name + ", CPU " + Logic.metric(modelData.cpuTotalPercent, "%") + ", memory " + Logic.bytes(modelData.rss)
-                            Text {
-                                Layout.fillWidth: true
-                                text: modelData.name
-                                color: miniVisuals.primaryFg
-                                font.family: Theme.fontFamily
-                                font.pixelSize: miniVisuals.metaFontSize
-                                elide: Text.ElideRight
-                            }
-                            Text {
-                                Layout.preferredWidth: Theme.fontSize * 5
-                                horizontalAlignment: Text.AlignRight
-                                text: Logic.metric(modelData.cpuTotalPercent, "%")
-                                color: Theme.accent
-                                font.family: Theme.fontFamily
-                                font.pixelSize: miniVisuals.metaFontSize
-                            }
-                            Text {
-                                Layout.preferredWidth: Theme.fontSize * 6
-                                horizontalAlignment: Text.AlignRight
-                                text: Logic.bytes(modelData.rss)
-                                color: miniVisuals.secondaryFg
-                                font.family: Theme.fontFamily
-                                font.pixelSize: miniVisuals.metaFontSize
+                            HoverHandler { id: rowHover }
+                            RowLayout {
+                                anchors { fill: parent; leftMargin: Theme.spaceMd; rightMargin: Theme.spaceMd }
+                                spacing: Theme.spaceSm
+                                Text {
+                                    text: Catalog.taskManagerIcons.pin
+                                    color: miniVisuals.secondaryFg
+                                    font.family: Theme.iconFontFamily
+                                    font.pixelSize: Theme.fontSize
+                                    Accessible.ignored: true
+                                }
+                                Text {
+                                    objectName: "taskManagerMiniPinnedName"
+                                    Layout.fillWidth: true
+                                    Layout.minimumWidth: 0
+                                    text: pinRow.modelData.name
+                                    color: miniVisuals.primaryFg
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSize
+                                    elide: Text.ElideRight
+                                }
+                                Text {
+                                    Layout.preferredWidth: Theme.fontSize * 8
+                                    horizontalAlignment: Text.AlignRight
+                                    text: "CPU " + Logic.metric(pinRow.modelData.cpuTotalPercent, "%")
+                                    elide: Text.ElideRight
+                                    color: Qt.alpha(Theme.accent, 0.85)
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSize - 1
+                                }
+                                Text {
+                                    Layout.preferredWidth: Theme.fontSize * 8
+                                    horizontalAlignment: Text.AlignRight
+                                    text: "RAM " + Logic.bytes(pinRow.modelData.rss)
+                                    elide: Text.ElideRight
+                                    color: miniVisuals.secondaryFg
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSize - 1
+                                }
                             }
                         }
                     }
@@ -216,7 +245,7 @@ FocusScope {
                         text: "+" + (root.pinnedProcesses.length - root.maxVisiblePins) + " pinned"
                         color: miniVisuals.secondaryFg
                         font.family: Theme.fontFamily
-                        font.pixelSize: miniVisuals.metaFontSize
+                        font.pixelSize: Theme.fontSize - 1
                     }
                 }
             }

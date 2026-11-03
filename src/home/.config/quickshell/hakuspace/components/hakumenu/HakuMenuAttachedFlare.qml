@@ -34,7 +34,7 @@ Item {
     readonly property var taskSize: Geometry.attachedTaskSize(screenWidth, screenHeight,
         ScreenGeometry.leftInset, ScreenGeometry.rightInset,
         bottomAttached ? ScreenGeometry.bottomHostReservation() + controlHeight : Theme.topBarHeight,
-        bottomAttached ? ScreenGeometry.bottomHostOppositeInset : ScreenGeometry.bottomInset)
+        bottomAttached ? ScreenGeometry.bottomHostOppositeInset : ScreenGeometry.bottomInset, menu.miniHeight)
     readonly property real maxMenuWidth: taskManagerTab ? taskSize.width : root.screenWidth * 0.42
     readonly property real targetMenuWidth: Geometry.targetWidth(screenWidth, renderTab, UiState.hakuMenuMode,
         ScreenGeometry.leftInset, ScreenGeometry.rightInset)

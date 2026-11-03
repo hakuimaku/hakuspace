@@ -3,6 +3,7 @@ import Quickshell
 import "../../services"
 import "../motion" as Motion
 import "../taskmanager" as TaskManager
+import "../../config/UiCatalog.js" as Catalog
 
 FocusScope {
     id: root
@@ -20,6 +21,9 @@ FocusScope {
     // Load on first visit and retain UI state until the host finishes closing.
     property bool miniLoaded: false
     readonly property alias mini: miniLoader.item
+    // Include the root tabs and insets when sizing the embedded dashboard.
+    readonly property real miniHeight: tabs.y + tabs.height + Theme.spaceSm + Theme.panelPadding
+        + (mini ? mini.content.implicitHeight : 0)
     signal keyboardActivity()
     signal wallpaperRequested()
     focus: panelOpen && interactionOwned
@@ -134,12 +138,22 @@ FocusScope {
                     Keys.onReturnPressed: clicked()
                     Keys.onSpacePressed: clicked()
 
-                    Text {
+                    Row {
                         anchors.centerIn: parent
-                        text: tabButton.modelData
-                        color: tabButton.selected ? Theme.accent : Theme.fgMuted
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
+                        spacing: Theme.spaceSm
+                        Text {
+                            text: tabButton.index === 0 ? Catalog.taskManagerIcons.menu : Catalog.taskManagerIcons.overview
+                            color: tabButton.selected ? Theme.accent : Theme.fgMuted
+                            font.family: Theme.iconFontFamily
+                            font.pixelSize: Theme.fontSize
+                            Accessible.ignored: true
+                        }
+                        Text {
+                            text: tabButton.modelData
+                            color: tabButton.selected ? Theme.accent : Theme.fgMuted
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize
+                        }
                     }
                 }
             }
@@ -163,7 +177,7 @@ FocusScope {
 
     Loader {
         id: miniLoader
-        anchors { top: tabs.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; margins: Theme.panelPadding + 4; topMargin: Theme.spaceSm + 4 }
+        anchors { top: tabs.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; margins: Theme.panelPadding; topMargin: Theme.spaceSm }
         active: root.miniLoaded
         enabled: root.panelOpen && root.taskManagerTab
         opacity: root.taskManagerTab ? 1 : 0

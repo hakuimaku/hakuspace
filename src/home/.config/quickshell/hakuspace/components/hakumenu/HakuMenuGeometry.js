@@ -7,7 +7,7 @@ function targetWidth(width, tab, mode, leftInset, rightInset) {
 }
 
 // Fit the embedded profile inside the attached surface's usable output bounds.
-function attachedTaskSize(width, height, leftInset, rightInset, barHeight, oppositeInset) {
+function attachedTaskSize(width, height, leftInset, rightInset, barHeight, oppositeInset, contentHeight) {
     return {width: targetWidth(width, "taskManager", "", leftInset, rightInset),
-        height: Math.min(height * 0.45, Math.max(1, height - barHeight - oppositeInset))}
+        height: Math.min(Math.max(height * 0.45, contentHeight || 0), Math.max(1, height - barHeight - oppositeInset))}
 }
