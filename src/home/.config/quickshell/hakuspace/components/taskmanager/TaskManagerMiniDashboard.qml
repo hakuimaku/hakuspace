@@ -211,8 +211,15 @@ FocusScope {
                         font.pixelSize: Theme.fontSize - 1
                         wrapMode: Text.WordWrap
                     }
+                    // Update payloads in place so telemetry cannot reset hover, focus or taps.
+                    ScriptModel {
+                        id: pinnedModel
+                        values: root.pinnedProcesses.slice(0, root.maxVisiblePins)
+                        objectProp: "key"
+                        comparisonMode: ObjectComparison.Structure
+                    }
                     Repeater {
-                        model: root.pinnedProcesses.slice(0, root.maxVisiblePins)
+                        model: pinnedModel
                         Rectangle {
                             id: pinRow
                             required property var modelData
