@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import "../../services"
@@ -301,17 +302,53 @@ Item {
                     enabled: root.panelOpen && morph.mHeight >= root.controlHeight
                         && UiState.ownsInteraction("hakumenu", root.modelData.name)
                     disabledOpacity: 1
+                    idleColor: "transparent"
+                    hoverColor: "transparent"
+                    pressedColor: "transparent"
+                    hoverForegroundColor: Theme.fg
+                    pressedForegroundColor: Theme.fg
+                    hoverScaleDelta: 0
+                    pressScaleDelta: 0
+                    clip: true
+                    // One shared phase keeps the downward chevrons evenly spaced.
+                    property real arrowPhase: 1 / 6
+                    NumberAnimation on arrowPhase {
+                        from: 1 / 6
+                        to: 7 / 6
+                        duration: 900
+                        loops: Animation.Infinite
+                        running: returnButton.hovered && returnButton.enabled && root.panelOpen && !root.reducedMotion
+                        onRunningChanged: if (!running) returnButton.arrowPhase = 1 / 6
+                    }
                     Accessible.role: Accessible.Button
                     Accessible.name: "Close HakuMenu"
                     Accessible.onPressAction: UiState.returnFromHakuMenu()
                     onClicked: UiState.returnFromHakuMenu()
-                    Text {
-                        anchors.centerIn: parent
-                        text: "⌄"
-                        color: returnButton.foreground
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize + 8
-                        Accessible.ignored: true
+                    Repeater {
+                        model: 3
+                        delegate: Shape {
+                            required property int index
+                            // Fade each arrow at the ends of its downward path.
+                            readonly property real progress: (returnButton.arrowPhase + index / 3) % 1
+                            width: 28
+                            height: 14
+                            x: (returnButton.width - width) / 2
+                            y: (returnButton.height - height) / 2
+                                + (returnButton.hovered ? (progress - 0.5) * returnButton.height : 0)
+                            opacity: !returnButton.hovered ? (index === 1 ? 1 : 0)
+                                : root.reducedMotion ? (index === 1 ? 1 : 0.55) : Math.sin(progress * Math.PI)
+                            Accessible.ignored: true
+                            ShapePath {
+                                strokeColor: returnButton.foreground
+                                strokeWidth: 2.5
+                                fillColor: "transparent"
+                                capStyle: ShapePath.RoundCap
+                                joinStyle: ShapePath.RoundJoin
+                                startX: 1.5; startY: 1.5
+                                PathLine { x: 14; y: 12.5 }
+                                PathLine { x: 26.5; y: 1.5 }
+                            }
+                        }
                     }
                 }
             }
