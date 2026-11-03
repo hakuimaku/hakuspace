@@ -28,27 +28,27 @@ QtObject {
     }
 
     function cpuCardPadding(totalHeight, totalWidth) {
-        if ((totalHeight || 0) < 450 || (totalWidth || 0) < 750) return 14
-        if ((totalHeight || 0) < 540 || (totalWidth || 0) < 860) return 16
-        return 19
+        if ((totalHeight || 0) < 450 || (totalWidth || 0) < 750) return 18
+        if ((totalHeight || 0) < 540 || (totalWidth || 0) < 860) return 20
+        return 23
     }
 
     function focusCardPadding(totalHeight, totalWidth) {
-        if ((totalHeight || 0) < 450 || (totalWidth || 0) < 750) return 14
-        if ((totalHeight || 0) < 540 || (totalWidth || 0) < 860) return 17
-        return 20
+        if ((totalHeight || 0) < 450 || (totalWidth || 0) < 750) return 18
+        if ((totalHeight || 0) < 540 || (totalWidth || 0) < 860) return 21
+        return 24
     }
 
     function compactCardPadding(totalHeight, totalWidth) {
-        if ((totalHeight || 0) < 450 || (totalWidth || 0) < 750) return 13
-        if ((totalHeight || 0) < 540 || (totalWidth || 0) < 860) return 15
-        return 17
+        if ((totalHeight || 0) < 450 || (totalWidth || 0) < 750) return 17
+        if ((totalHeight || 0) < 540 || (totalWidth || 0) < 860) return 19
+        return 21
     }
 
     function processPanePadding(totalHeight, totalWidth) {
-        if ((totalHeight || 0) < 450 || (totalWidth || 0) < 750) return 14
-        if ((totalHeight || 0) < 540 || (totalWidth || 0) < 860) return 17
-        return 20
+        if ((totalHeight || 0) < 450 || (totalWidth || 0) < 750) return 18
+        if ((totalHeight || 0) < 540 || (totalWidth || 0) < 860) return 21
+        return 24
     }
 
     // Fit telemetry cards to the available height.

@@ -26,7 +26,7 @@ PanelWindow {
     readonly property bool releaseReady: !panelOpen && !morphAnim.running && morphProgress === 0
     readonly property bool interactionReady: panelOpen && morphProgress === 1 && !morphAnim.running
     // Clamp geometry against real outputs, including screens smaller than the minimum.
-    property size cardSize: Qt.size(980, 560)
+    property size cardSize: Qt.size(1100, 660)
     // Align fresh windows with their entry edge; dragging replaces this binding.
     property point position: {
         var anchor = Reveal.anchor(revealPosition, Qt.rect(
@@ -51,7 +51,7 @@ PanelWindow {
     readonly property var revealGeometry: Reveal.neck(revealPosition, revealBounds,
         Qt.rect(card.x, card.y, card.width, card.height), revealProgress, Theme.fontSize * 12)
     readonly property bool ownsKeyboard: UiState.ownsInteraction("taskManager", modelData.name)
-    readonly property int shellMargin: (cardWidth < 760 || cardHeight < 500) ? 16 : ((cardWidth < 880 || cardHeight < 580) ? 19 : 22)
+    readonly property int shellMargin: (cardWidth < 760 || cardHeight < 500) ? 20 : ((cardWidth < 880 || cardHeight < 580) ? 23 : 26)
     readonly property int headerGap: (cardWidth < 760 || cardHeight < 500) ? 8 : ((cardWidth < 880 || cardHeight < 580) ? 12 : 15)
     // Expose the inner content for focused lifecycle probes.
     readonly property alias content: content
