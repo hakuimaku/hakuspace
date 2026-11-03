@@ -13,3 +13,4 @@ temp/
 .agents/
 .aws/
 .codex/
+.vscode/
