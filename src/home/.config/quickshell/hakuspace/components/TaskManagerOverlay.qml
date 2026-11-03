@@ -34,7 +34,7 @@ PanelWindow {
     readonly property real targetX: Math.max(0, Math.min(width - cardWidth, position.x))
     readonly property real targetY: Math.max(0, Math.min(height - cardHeight, position.y))
     readonly property bool ownsKeyboard: UiState.ownsInteraction("taskManager", modelData.name)
-    readonly property int shellMargin: (cardWidth < 760 || cardHeight < 500) ? 12 : ((cardWidth < 880 || cardHeight < 580) ? 15 : 18)
+    readonly property int shellMargin: (cardWidth < 760 || cardHeight < 500) ? 16 : ((cardWidth < 880 || cardHeight < 580) ? 19 : 22)
     readonly property int headerGap: (cardWidth < 760 || cardHeight < 500) ? 8 : ((cardWidth < 880 || cardHeight < 580) ? 12 : 15)
     // Expose the inner content for focused lifecycle probes.
     readonly property alias content: content
@@ -319,7 +319,7 @@ PanelWindow {
                     topMargin: root.headerGap
                     leftMargin: root.shellMargin
                     rightMargin: root.shellMargin
-                    bottomMargin: Math.max(18, root.shellMargin + 4)
+                    bottomMargin: Math.max(22, root.shellMargin + 4)
                 }
                 onCloseRequested: UiState.closeTaskManagerIfScreen(root.modelData.name)
             }
