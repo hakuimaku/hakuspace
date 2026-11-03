@@ -58,7 +58,8 @@ Item {
     function attachedRect(x, width, height) {
         return {x: x, y: bottomAttached ? menuTop - height : menuTop, width: width, height: height}
     }
-    function safeZone(index) { return safeZones[index] || SafeZoneGeometry.rect(0, 0, 0, 0) }
+    // Closing paint keeps its geometry while pointer input returns to the host immediately.
+    function safeZone(index) { return (panelOpen ? safeZones[index] : null) || SafeZoneGeometry.rect(0, 0, 0, 0) }
     // The top trigger keeps its own input so presentation transfers cannot synthesize re-entry.
     function trackTrigger(x, y) { lifetime.pointerMoved(x, y) }
     function leaveTrigger() { lifetime.pointerExited() }
@@ -291,27 +292,27 @@ Item {
             height: Math.max(0, morph.mHeight)
             clip: true
             sourceComponent: Item {
-                TextMetrics {
-                    id: returnMetrics
-                    text: returnButton.text
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
-                }
                 Base.HButton {
                     id: returnButton
                     objectName: "hakumenu-return-button"
-                    text: "Close HakuMenu"
-                    width: Math.min(returnMetrics.advanceWidth + 32, Math.max(0, parent.width - 24))
-                    height: Math.min(36, root.controlHeight - 8)
-                    x: (parent.width - width) / 2
-                    y: parent.height - root.controlHeight + (root.controlHeight - height) / 2
+                    width: parent.width
+                    height: root.controlHeight
+                    y: parent.height - height
                     enabled: root.panelOpen && morph.mHeight >= root.controlHeight
                         && UiState.ownsInteraction("hakumenu", root.modelData.name)
                     disabledOpacity: 1
                     Accessible.role: Accessible.Button
-                    Accessible.name: text
+                    Accessible.name: "Close HakuMenu"
                     Accessible.onPressAction: UiState.returnFromHakuMenu()
                     onClicked: UiState.returnFromHakuMenu()
+                    Text {
+                        anchors.centerIn: parent
+                        text: "⌄"
+                        color: returnButton.foreground
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize + 8
+                        Accessible.ignored: true
+                    }
                 }
             }
         }

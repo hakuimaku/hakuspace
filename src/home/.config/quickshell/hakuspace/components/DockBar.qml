@@ -29,6 +29,8 @@ Item {
     readonly property bool menuOwned: enabledDock && UiState.activePanel === "hakumenu"
         && UiState.hakuMenuSource === "dockbar" && UiState.hakuMenuScreenName === modelData.name
     readonly property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
+    // Install restored geometry before revealing the stable Dock window's content.
+    property bool menuGeometrySuspended: false
     readonly property bool appMenuDockLease: !!modelData && UiState.activePanel === "appMenu"
         && UiState.appMenu && UiState.appMenu.screenName === modelData.name
     readonly property bool shown: enabledDock && !menuOwned && (always || revealed || appMenuDockLease)
@@ -64,9 +66,15 @@ Item {
     // Revealing persistent chrome does not change UiState's transient panel ownership.
     function reveal() { if (enabledDock && !always) revealed = true }
     function close() { appContent.cancelTermination(); revealed = false }
-    // Cancel transient input before hiding the resident app content and model.
+    // Snap hidden Dock geometry and cancel transient input during menu ownership.
     onMenuOwnedChanged: {
-        if (!menuOwned) return
+        if (!menuOwned) {
+            Qt.callLater(function() {
+                if (root && root.modelData && !root.menuOwned) root.menuGeometrySuspended = false
+            })
+            return
+        }
+        menuGeometrySuspended = true
         revealed = false
         TooltipManager.dismiss()
         appContent.cancelTermination()
@@ -102,7 +110,7 @@ Item {
         shown: root.shown
         targetWidth: root.targetWidth
         targetHeight: root.targetHeight
-        reducedMotion: root.reducedMotion
+        reducedMotion: root.reducedMotion || root.menuOwned || root.menuGeometrySuspended
         onMovingChanged: {
             if (moving) lifetime.beginAnimationLease()
             else lifetime.endAnimationLease()
@@ -133,7 +141,7 @@ Item {
         exclusionMode: ExclusionMode.Ignore
         margins.left: root.sideInset
         margins.right: root.sideInset
-        visible: ChromeLayout.topBarMode && !root.menuOwned && (root.enabledDock || morph.height > 0)
+        visible: ChromeLayout.topBarMode && (root.enabledDock || morph.height > 0)
         color: "transparent"
         implicitHeight: root.targetHeight + 180
         // Keyboard navigation ends when an application or another panel takes focus.
@@ -175,7 +183,7 @@ Item {
             y: dockWindow.height - root.bottomInset - height
             width: morph.width
             height: morph.height
-            visible: height > 0.1
+            visible: !root.menuOwned && height > 0.1
         }
         AppBar.AppBarContent {
             id: appContent
