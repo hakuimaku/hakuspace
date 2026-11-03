@@ -15,8 +15,7 @@ Item {
     required property var modelData
 
     property bool bottomAttached: false
-    readonly property bool available: bottomAttached ? ChromeLayout.taskbarMode || ChromeLayout.dockbarActive : ChromeLayout.topBarMode
-    readonly property bool dockAttached: bottomAttached && ChromeLayout.dockbarActive && !ChromeLayout.taskbarMode
+    readonly property bool available: bottomAttached ? ScreenGeometry.bottomHostAvailable : ChromeLayout.topBarMode
     readonly property string presentation: bottomAttached ? "bottomFlare" : "topFlare"
     readonly property real screenWidth: modelData ? modelData.width : 0
     readonly property real screenHeight: modelData ? modelData.height : 0
@@ -26,27 +25,19 @@ Item {
         && UiState.hakuMenuScreenName === modelData.name
     // Retain the real App Menu rect while the closing morph finishes.
     property var capturedAnchor: null
-    // A reversal keeps the original Dock span until the surface fully closes.
-    property var capturedSeed: null
     // Keep the outgoing profile until its visual close completes.
     property string renderTab: "hakumenu"
     readonly property bool taskManagerTab: renderTab === "taskManager"
     readonly property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
     readonly property var taskSize: Geometry.attachedTaskSize(screenWidth, screenHeight,
         ScreenGeometry.leftInset, ScreenGeometry.rightInset,
-        dockAttached ? ScreenGeometry.dockbarHeight + ScreenGeometry.bottomInset
-            : bottomAttached ? ScreenGeometry.taskbarHeight : Theme.topBarHeight,
-        dockAttached ? Theme.topBarHeight : bottomAttached ? ScreenGeometry.topBorderThickness : ScreenGeometry.bottomInset)
+        bottomAttached ? ScreenGeometry.bottomHostReservation() : Theme.topBarHeight,
+        bottomAttached ? ScreenGeometry.bottomHostOppositeInset : ScreenGeometry.bottomInset)
     readonly property real maxMenuWidth: taskManagerTab ? taskSize.width : root.screenWidth * 0.42
-    readonly property real targetMenuWidth: {
-        if (taskManagerTab) return taskSize.width
-        if (UiState.hakuMenuMode === "general") return root.screenWidth * 0.38
-        if (UiState.hakuMenuMode === "theme") return root.screenWidth * 0.36
-        return root.screenWidth * 0.40
-    }
+    readonly property real targetMenuWidth: Geometry.targetWidth(screenWidth, renderTab, UiState.hakuMenuMode,
+        ScreenGeometry.leftInset, ScreenGeometry.rightInset)
     readonly property real menuHeight: taskManagerTab ? taskSize.height : root.screenHeight * 0.40
-    readonly property real menuTop: dockAttached ? screenHeight - ScreenGeometry.bottomInset - ScreenGeometry.dockbarHeight
-        : bottomAttached ? screenHeight - ScreenGeometry.taskbarHeight : Theme.topBarHeight
+    readonly property real menuTop: bottomAttached ? ScreenGeometry.bottomHostTop(screenHeight) : Theme.topBarHeight
     readonly property real bounceHeadroom: menuHeight * HAnimation.hakuMenuBounceHeadroom
     readonly property bool contentReady: isFinite(menu.width) && menu.width > 0
                                          && isFinite(menu.height) && menu.height > 0
@@ -85,7 +76,6 @@ Item {
             renderTab = UiState.hakuPanelTab
             if (visuallyClosed) {
                 capturedAnchor = UiState.hakuMenuAnchorRect
-                capturedSeed = dockAttached ? UiState.hakuMenuSeedRect : null
             }
             visuallyClosed = false
             Qt.callLater(function() {
@@ -220,8 +210,6 @@ Item {
             // Center the menu physically; the captured App Menu rect owns interaction only.
             anchorRect: ({x: root.screenWidth / 2, y: root.menuTop, width: 0, height: 0})
             hostRect: ({x: 0, y: 0, width: root.screenWidth, height: root.screenHeight})
-            animateOpenSpan: !!root.capturedSeed
-            collapseSpan: root.capturedSeed ? {start: root.capturedSeed.x, end: root.capturedSeed.x + root.capturedSeed.width} : null
             shown: root.panelOpen && root.contentReady
             contentW: root.targetMenuWidth
             contentH: root.menuHeight
@@ -239,8 +227,6 @@ Item {
             retargetWidthCurve: HAnimation.hakuMenuResizeCurve
             openHeightCurve: HAnimation.hakuMenuOpenCurve
             closeHeightCurve: HAnimation.hakuMenuCloseCurve
-            openWidthCurve: HAnimation.hakuMenuOpenCurve
-            closeWidthCurve: HAnimation.hakuMenuCloseCurve
         }
 
         Rectangle {

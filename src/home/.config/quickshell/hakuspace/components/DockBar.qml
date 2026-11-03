@@ -7,6 +7,7 @@ import "appbar" as AppBar
 import "base/SafeZoneGeometry.js" as Safe
 import "dock" as Dock
 import "dock/DockGeometry.js" as Geometry
+import "hakumenu/HakuMenuGeometry.js" as MenuGeometry
 
 Item {
     id: root
@@ -25,26 +26,48 @@ Item {
     readonly property real targetWidth: modelData
         ? Math.min(Math.max(0, modelData.width - ScreenGeometry.leftInset - ScreenGeometry.rightInset - Theme.hugRadius * 2),
             appContent.contentWidth + horizontalPadding * 2) : 0
-    // Only the Dock presentation keeps its owning output's autohide surface alive.
-    readonly property bool hakuMenuDockLease: !!modelData && UiState.activePanel === "hakumenu"
-        && ChromeLayout.dockbarActive && UiState.hakuMenuStyle === "bottomFlare"
+    // Ownership is per output; the Dock retains its return animation independently.
+    readonly property bool menuOwned: enabledDock && UiState.activePanel === "hakumenu"
         && UiState.hakuMenuSource === "dockbar" && UiState.hakuMenuScreenName === modelData.name
+    readonly property bool hakuMenuDockLease: menuOwned
+    readonly property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
+    property real menuMorphProgress: 0
+    property bool menuReturnLease: false
+    property bool menuReturnKeepVisible: false
+    property bool menuControlReady: false
+    readonly property bool menuVisualActive: menuOwned || menuMorphProgress > 0.001 || menuReturnLease
+    // Retain the outgoing profile while UiState clears the closed menu.
+    property string menuTab: "hakumenu"
+    property string menuMode: "drun"
+    readonly property real menuWidth: modelData ? MenuGeometry.targetWidth(modelData.width, menuTab, menuMode,
+        ScreenGeometry.leftInset, ScreenGeometry.rightInset) : 0
+    readonly property bool visualMoving: morph.moving || menuMotion.running
     readonly property bool appMenuDockLease: !!modelData && UiState.activePanel === "appMenu"
         && UiState.appMenu && UiState.appMenu.screenName === modelData.name
-    readonly property bool shown: enabledDock && (always || revealed || hakuMenuDockLease || appMenuDockLease)
+    readonly property bool shown: enabledDock && (always || revealed || menuOwned || menuReturnLease || appMenuDockLease)
     property bool revealed: false
     property string registeredOutput: ""
     readonly property var triggerRect: Geometry.trigger(dockWindow.width, dockWindow.height)
     readonly property var safeRect: Geometry.envelope(dockWindow.width, dockWindow.height,
-        targetWidth + Theme.hugRadius * 2, targetHeight + bottomInset,
-        morph.width + Theme.hugRadius * 2, morph.height + bottomInset, appContent.headroom)
+        (menuVisualActive ? Math.max(targetWidth, menuWidth) : targetWidth) + Theme.hugRadius * 2, targetHeight + bottomInset,
+        surface.width + Theme.hugRadius * 2, morph.height + bottomInset, appContent.headroom)
     readonly property var safeZones: shown ? [triggerRect, safeRect] : []
     // Release compact input immediately while its closing frames finish.
     onEnabledDockChanged: {
-        if (!enabledDock) { revealed = false; appContent.cancelTermination(); appContent.cancelReorder(); appContent.clearPinFeedback(); UiState.closeAppMenuIfScreen(modelData ? modelData.name : "") }
+        if (enabledDock) return
+        menuMorphProgress = 0
+        menuReturnLease = false
+        menuReturnKeepVisible = false
+        menuControlReady = false
+        revealed = false
+        appContent.cancelTermination()
+        appContent.cancelReorder()
+        appContent.clearPinFeedback()
+        UiState.closeAppMenuIfScreen(modelData ? modelData.name : "")
     }
     Component.onCompleted: syncGeometry()
     Component.onDestruction: {
+        menuReturnLease = false
         ScreenGeometry.setDockbarShown(registeredOutput, false)
     }
     onShownChanged: {
@@ -63,10 +86,66 @@ Item {
     // Revealing persistent chrome does not change UiState's transient panel ownership.
     function reveal() { if (enabledDock && !always) revealed = true }
     function close() { appContent.cancelTermination(); revealed = false }
-    // Capture the painted chassis in output-local coordinates at activation time.
-    function hakuMenuSeedRect() {
-        return {x: sideInset + surface.x, y: modelData.height - dockWindow.height + surface.y,
-            width: surface.width, height: surface.height}
+    // Only the Close control adds an explicit keep-visible return intent.
+    function closeMenuFromDock() {
+        if (!menuOwned) return
+        menuReturnKeepVisible = true
+        UiState.closeHakuMenu()
+    }
+    // Release the visual lease only after the reverse morph has actually finished.
+    function finishMenuReturn() {
+        if (menuOwned || menuMotion.running || menuMorphProgress > 0.001 || !menuReturnLease) return
+        var inside = lifetime.pointerInside && Safe.containsAny(safeZones, lifetime.lastPointerX, lifetime.lastPointerY)
+        if (enabledDock && !always) revealed = menuReturnKeepVisible || inside
+        menuReturnKeepVisible = false
+        menuReturnLease = false
+        lifetime.forcePointerMode()
+        lifetime.pointerMoved(lifetime.lastPointerX, lifetime.lastPointerY)
+        if (!inside) lifetime.pointerExited()
+    }
+    // Keep the final width in sync without retaining references to HakuMenu content.
+    function syncMenuProfile() {
+        if (!menuOwned) return
+        menuTab = UiState.hakuPanelTab
+        menuMode = UiState.hakuMenuMode
+    }
+    onMenuOwnedChanged: {
+        menuControlReady = false
+        if (menuOwned) {
+            menuReturnLease = true
+            menuReturnKeepVisible = false
+            syncMenuProfile()
+            TooltipManager.dismiss()
+            appContent.cancelTermination()
+            appContent.cancelReorder()
+            appContent.clearPinFeedback()
+            appContent.pendingPin = null
+            Qt.callLater(function() {
+                if (root && root.menuOwned) root.menuControlReady = true
+            })
+        }
+        menuMorphProgress = menuOwned ? 1 : 0
+        if (!menuOwned) Qt.callLater(finishMenuReturn)
+    }
+    onMenuMorphProgressChanged: if (menuMorphProgress <= 0.001) Qt.callLater(finishMenuReturn)
+    onVisualMovingChanged: {
+        if (visualMoving) lifetime.beginAnimationLease()
+        else lifetime.endAnimationLease()
+    }
+    Connections {
+        target: UiState
+        function onHakuPanelTabChanged() { root.syncMenuProfile() }
+        function onHakuMenuModeChanged() { root.syncMenuProfile() }
+    }
+    Behavior on menuMorphProgress {
+        enabled: root.enabledDock
+        NumberAnimation {
+            id: menuMotion
+            duration: root.reducedMotion ? 0 : root.menuOwned ? HAnimation.dockOpenDuration : HAnimation.dockCloseDuration
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: HAnimation.hakuMenuResizeCurve
+            onRunningChanged: if (!running) root.finishMenuReturn()
+        }
     }
     // Remove stale output entries before publishing the current visible state.
     function syncGeometry() {
@@ -90,10 +169,7 @@ Item {
         shown: root.shown
         targetWidth: root.targetWidth
         targetHeight: root.targetHeight
-        onMovingChanged: {
-            if (moving) lifetime.beginAnimationLease()
-            else lifetime.endAnimationLease()
-        }
+        reducedMotion: root.reducedMotion
     }
 
     // Reserve once per reveal; visual animation never changes the zone's height.
@@ -156,12 +232,16 @@ Item {
                 lifetime.pointerMoved(point.position.x, point.position.y)
             }
         }
-        Dock.DockFlareSurface {
+        Dock.DockMenuBridgeSurface {
             id: surface
             x: (dockWindow.width - width) / 2
-            y: dockWindow.height - root.bottomInset - height
-            width: morph.width
-            height: morph.height
+            y: dockWindow.height - root.bottomInset - morph.height
+            progress: root.menuMorphProgress
+            normalWidth: morph.width
+            bridgeWidth: root.menuWidth
+            normalHeight: morph.height
+            bottomInset: root.bottomInset
+            reducedMotion: root.reducedMotion
             visible: height > 0.1
         }
         AppBar.AppBarContent {
@@ -171,10 +251,11 @@ Item {
             hostWindow: dockWindow
             inputLifetime: lifetime
             activationSource: "dockbar"
-            hakuMenuSeedProvider: root.hakuMenuSeedRect
             active: root.enabledDock
             shown: root.shown
-            suppressTooltips: root.hakuMenuDockLease || root.appMenuDockLease
+            suppressTooltips: root.menuVisualActive || root.appMenuDockLease
+            enabled: !root.menuVisualActive
+            opacity: Math.max(0, 1 - root.menuMorphProgress / 0.3)
             bottomInset: root.bottomInset
             sideInset: root.sideInset
             targetHeight: root.targetHeight
@@ -185,4 +266,58 @@ Item {
             pointerY: hover.hovered ? hover.point.position.y : NaN
         }
     }
+    PanelWindow {
+        id: closeOverlay
+        objectName: "dock-menu-close-overlay"
+        screen: root.modelData
+        anchors { bottom: true; left: true; right: true }
+        margins.left: root.sideInset
+        margins.right: root.sideInset
+        implicitHeight: root.targetHeight + root.bottomInset
+        visible: root.enabledDock && root.menuOwned && root.menuControlReady && closeContainer.opacity > 0.001
+        color: "transparent"
+        exclusionMode: ExclusionMode.Ignore
+        exclusiveZone: 0
+        WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
+        WlrLayershell.namespace: "hakuspace-dock-menu-close"
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+        mask: Region {
+            x: closeContainer.x; y: closeContainer.y
+            width: closeButton.enabled ? closeButton.width : 0
+            height: closeButton.enabled ? closeButton.height : 0
+        }
+        TextMetrics {
+            id: closeMetrics
+            text: closeButton.text
+            font.family: Theme.fontFamily
+            font.pixelSize: Theme.fontSize
+        }
+        // Parent opacity avoids the button's independent enabled-state fade.
+        Item {
+            id: closeContainer
+            width: Math.min(closeMetrics.advanceWidth + 32, Math.max(0, root.menuWidth - 24))
+            height: Math.min(36, root.targetHeight - 8)
+            x: (closeOverlay.width - width) / 2
+            y: (root.targetHeight - height) / 2
+            opacity: Math.max(0, Math.min(1, (root.menuMorphProgress - 0.45) / 0.55))
+            Base.HButton {
+                id: closeButton
+                anchors.fill: parent
+                objectName: "dock-close-hakumenu"
+                text: "Close HakuMenu"
+                disabledOpacity: 1
+                enabled: root.menuOwned && root.menuMorphProgress > 0.45
+                Accessible.role: Accessible.Button
+                Accessible.name: text
+                Accessible.onPressAction: root.closeMenuFromDock()
+                onClicked: root.closeMenuFromDock()
+                HoverHandler {
+                    onPointChanged: if (root.menuOwned) lifetime.pointerMoved(closeContainer.x + point.position.x,
+                        dockWindow.height - closeOverlay.height + closeContainer.y + point.position.y)
+                    onHoveredChanged: if (!hovered) lifetime.pointerExited()
+                }
+            }
+        }
+    }
+
 }

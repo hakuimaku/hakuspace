@@ -17,6 +17,13 @@ QtObject {
     readonly property real appBarHeight: Math.ceil(ShellSettingsStore.dockIconSize + 17)
     readonly property real taskbarHeight: Math.ceil(Math.max(appBarHeight, Theme.fontSize * 1.8))
     readonly property real dockbarHeight: appBarHeight
+    // Bottom-attached panels share host geometry without knowing its visual chassis.
+    readonly property bool bottomHostAvailable: ChromeLayout.taskbarMode || ChromeLayout.dockbarActive
+    readonly property real bottomHostOppositeInset: ChromeLayout.taskbarMode ? topBorderThickness : Theme.topBarHeight
+    function bottomHostReservation() {
+        return bottomInset + (ChromeLayout.taskbarMode ? taskbarHeight : ChromeLayout.dockbarActive ? dockbarHeight : 0)
+    }
+    function bottomHostTop(screenHeight) { return screenHeight - bottomHostReservation() }
     property var shownDockbars: ({})
     function setDockbarShown(name, shown) {
         if (!name || !!shownDockbars[name] === shown) return

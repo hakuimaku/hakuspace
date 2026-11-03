@@ -7,6 +7,8 @@ Item {
     property bool shown: false
     property real targetWidth: 0
     property real targetHeight: 0
+    // Hosts use the same reveal contract when animation is disabled.
+    property bool reducedMotion: false
     readonly property bool moving: widthMotion.running || heightMotion.running
     readonly property string phase: height < 0.1 ? "hidden" : moving ? (shown ? "opening" : "closing") : "shown"
     width: shown ? targetWidth : Math.min(28, targetWidth)
@@ -14,7 +16,7 @@ Item {
     Behavior on width {
         NumberAnimation {
             id: widthMotion
-            duration: root.shown ? (root.height >= root.targetHeight - 1 ? HAnimation.dockResizeDuration : HAnimation.dockOpenDuration)
+            duration: root.reducedMotion ? 0 : root.shown ? (root.height >= root.targetHeight - 1 ? HAnimation.dockResizeDuration : HAnimation.dockOpenDuration)
                 : HAnimation.dockCloseDuration
             easing.type: Easing.BezierSpline
             easing.bezierCurve: root.shown ? HAnimation.dockOpenCurve : HAnimation.dockCloseCurve
@@ -23,7 +25,7 @@ Item {
     Behavior on height {
         NumberAnimation {
             id: heightMotion
-            duration: root.shown ? HAnimation.dockOpenDuration : HAnimation.dockCloseDuration
+            duration: root.reducedMotion ? 0 : root.shown ? HAnimation.dockOpenDuration : HAnimation.dockCloseDuration
             easing.type: Easing.BezierSpline
             easing.bezierCurve: root.shown ? HAnimation.dockOpenCurve : HAnimation.dockCloseCurve
         }

@@ -84,8 +84,6 @@ QtObject {
     property var hakuMenuAnchorRect: null
     // Keep the trigger owner separate from its visual attachment edge.
     property string hakuMenuSource: ""
-    // Capture the host chassis independently of the interaction anchor.
-    property var hakuMenuSeedRect: null
     property string hakuMenuQuery: ""
     property string hakuMenuSelectionLabel: ""
     // Remember the requested Settings domain when opening from the wallpaper browser.
@@ -285,8 +283,8 @@ QtObject {
         return ""
     }
 
-    // Open an available source and capture its real anchor or topology-specific seed.
-    function openHakuMenu(screenName, mode, source, anchorRect, seedRect) {
+    // Open an available source with its interaction anchor or topology fallback.
+    function openHakuMenu(screenName, mode, source, anchorRect) {
         var presentation = resolveHakuMenuPresentation(source)
         if (!presentation) return
         var captured = anchorRect
@@ -296,10 +294,6 @@ QtObject {
         if (source === "dockbar" && !captured) return
         hakuMenuStyle = presentation
         hakuMenuSource = source || "default"
-        hakuMenuSeedRect = source === "dockbar" && seedRect
-            && [seedRect.x, seedRect.y, seedRect.width, seedRect.height].every(Number.isFinite)
-            && seedRect.width > 0 && seedRect.height > 0
-            ? {x: seedRect.x, y: seedRect.y, width: seedRect.width, height: seedRect.height} : null
         hakuMenuAnchorRect = captured
         if (!hakuMenuAnchorRect) {
             for (var output of Quickshell.screens) if (output.name === screenName) {
@@ -321,11 +315,11 @@ QtObject {
     }
 
     // Toggle matching ownership; a different source presentation replaces the menu.
-    function toggleHakuMenu(screenName, mode, source, anchorRect, seedRect) {
+    function toggleHakuMenu(screenName, mode, source, anchorRect) {
         var nextStyle = resolveHakuMenuPresentation(source)
         if (!nextStyle) return
         if (activePanel === "hakumenu" && hakuMenuScreenName === screenName && hakuMenuStyle === nextStyle) closeHakuMenu()
-        else openHakuMenu(screenName, mode, source, anchorRect, seedRect)
+        else openHakuMenu(screenName, mode, source, anchorRect)
     }
 
     // Switch root pages without changing the panel or HakuMenu submode.
@@ -374,7 +368,6 @@ QtObject {
         hakuMenuStyle = "topFlare"
         hakuMenuAnchorRect = null
         hakuMenuSource = ""
-        hakuMenuSeedRect = null
     }
 
     // Closes HakuMenu if active on the specified screen.
@@ -629,7 +622,6 @@ QtObject {
             hakuMenuStyle = "topFlare"
             hakuMenuAnchorRect = null
             hakuMenuSource = ""
-            hakuMenuSeedRect = null
         }
         if (activePanel !== "settings") {
             settingsScreenName = ""
