@@ -30,7 +30,11 @@ if [[ ${HAKUSPACE_CHROME_TEST:-0} == 1 ]]; then
 fi
 cp -R src/home/.config/quickshell/hakuspace/{components,services,config} "$shell_root/"
 cp src/core/backend/user/{hikai_settings_ctl.py,taskbar_pins_ctl.py,dock_app_ctl.py,dock_icon_watch.py,setting_ctl.py} "$test_root/src/core/backend/user/"
-if [[ ${HAKUSPACE_CHROME_TEST:-0} == 1 ]]; then
+if [[ ${HAKUSPACE_DOCK_MENU_TEST:-0} == 1 ]]; then
+    cp tests/hikai/dock/harness/menu.qml "$shell_root/shell.qml"
+    mkdir -p "$test_root/src/core/backend/system"
+    cp src/core/backend/system/task_manager_{monitor,ctl}.py "$test_root/src/core/backend/system/"
+elif [[ ${HAKUSPACE_CHROME_TEST:-0} == 1 ]]; then
     cp tests/hikai/chrome/harness/chrome.qml "$shell_root/shell.qml"
 elif [[ ${HAKUSPACE_HAKUMENU_TEST:-0} == 1 ]]; then
     cp tests/hikai/hakumenu/harness/hakumenu.qml "$shell_root/shell.qml"
@@ -56,7 +60,7 @@ printf '%s\n' "$@" > "$HAKUSPACE_TEST_GIO_LOG"
 GIO
 chmod +x "$test_root/bin/fixture-app" "$test_root/bin/gio"
 # Pinned test icons must never launch installed applications if a drag becomes a click.
-if [[ ${HAKUSPACE_DOCK_REORDER:-0} == 1 ]]; then
+if [[ ${HAKUSPACE_DOCK_REORDER:-0} == 1 || ${HAKUSPACE_DOCK_MENU_TEST:-0} == 1 ]]; then
     for app in kitty thunar firefox; do
         printf '[Desktop Entry]\nType=Application\nName=Reorder %s\nExec=%s/bin/fixture-app\nIcon=application-x-executable\n' \
             "$app" "$test_root" > "$test_root/data/applications/$app.desktop"
@@ -87,7 +91,7 @@ quit_command=:
 pointer_output=""
 case "$mode" in
     --headless)
-        if [[ ${HAKUSPACE_HAKUMENU_TEST:-0} == 1 ]]; then pointer_output=HEADLESS-1; fi
+        if [[ ${HAKUSPACE_HAKUMENU_TEST:-0} == 1 || ${HAKUSPACE_DOCK_MENU_TEST:-0} == 1 ]]; then pointer_output=HEADLESS-1; fi
         compositor=labwc
         backend_env=(WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=2 WLR_RENDERER=pixman)
         launch=(labwc -C "$test_root/labwc" -S "bash $test_root/start.sh")
@@ -119,14 +123,20 @@ status=0
 if [[ \${HAKUSPACE_TEST_SCALE:-1} != 1 && \${XDG_CURRENT_DESKTOP:-} == labwc ]]; then
     wlr-randr --output HEADLESS-1 --scale "\$HAKUSPACE_TEST_SCALE" --output HEADLESS-2 --scale "\$HAKUSPACE_TEST_SCALE" || exit 1
 fi
-if [[ \${HAKUSPACE_HAKUMENU_TEST:-0} == 1 && \${XDG_CURRENT_DESKTOP:-} == labwc ]]; then
-    wlr-randr --output HEADLESS-2 --custom-mode 1024x768 --pos 1280,0 || exit 1
+if [[ ( \${HAKUSPACE_HAKUMENU_TEST:-0} == 1 || \${HAKUSPACE_DOCK_MENU_TEST:-0} == 1 ) && \${XDG_CURRENT_DESKTOP:-} == labwc ]]; then
+    secondary_mode=1024x768
+    # Keep the small-output fixture's virtual screens distinguishable.
+    if [[ \${HAKUSPACE_DOCK_MENU_TEST:-0} == 1 && \${HAKUSPACE_TEST_WIDTH:-1280} == 1024 ]]; then secondary_mode=800x600; fi
+    wlr-randr --output HEADLESS-1 --custom-mode "\${HAKUSPACE_TEST_WIDTH:-1280}x\${HAKUSPACE_TEST_HEIGHT:-720}" \\
+        --output HEADLESS-2 --custom-mode "\$secondary_mode" --pos "\${HAKUSPACE_TEST_WIDTH:-1280},0" || exit 1
 fi
 quickshell -p "$shell_root/shell.qml" > "$test_root/shell.log" 2>&1 || status=\$?
 $quit_command
 exit \$status
 START
 # Every mode isolates preferences, manual state, pins and the D-Bus session.
+runtime_timeout=60
+if [[ ${HAKUSPACE_DOCK_MENU_TEST:-0} == 1 ]]; then runtime_timeout=150; fi
 env -u DISPLAY -u WAYLAND_DISPLAY -u QT_QPA_PLATFORMTHEME -u QT_QPA_PLATFORMTHEME_QT6 \
     -u HYPRLAND_INSTANCE_SIGNATURE -u NIRI_SOCKET -u MANGO_INSTANCE_SIGNATURE -u GDK_BACKEND \
     HOME="$test_root/home" XDG_CONFIG_HOME="$test_root/home/.config" XDG_RUNTIME_DIR="$test_root/runtime" \
@@ -142,7 +152,7 @@ env -u DISPLAY -u WAYLAND_DISPLAY -u QT_QPA_PLATFORMTHEME -u QT_QPA_PLATFORMTHEM
     HAKUSPACE_TEST_POINTER_OUTPUT="$pointer_output" \
     HAKUSPACE_TEST_KEYBOARD="$PWD/tests/support/fixtures/wayland_keyboard.py" \
     HAKUSPACE_TASKBAR_PINS_FILE="$test_root/home/hakucfg/config/taskbar-pin-apps" \
-    timeout 60s dbus-run-session -- "${launch[@]}" > "$test_root/compositor.log" 2>&1 || status=$?
+    timeout "${runtime_timeout}s" dbus-run-session -- "${launch[@]}" > "$test_root/compositor.log" 2>&1 || status=$?
 cat "$test_root/compositor.log" "${test_root}/shell.log" > "$test_root/dock.log"
 cat "$test_root/dock.log"
 if [[ ${status:-0} -ne 0 ]] || ! grep -Eq 'Hikai (Dock|HakuMenu|Chrome) checks passed' "$test_root/dock.log" || \

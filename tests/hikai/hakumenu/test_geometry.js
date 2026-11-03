@@ -1,32 +1,37 @@
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const vm = require('node:vm')
-// Exercise local coordinates independently of monitor placement and layer-shell origins.
+// Check attached bounds with either bottom host and physical frame reservations.
 const geometry = vm.createContext({})
 vm.runInContext(fs.readFileSync(require('node:path').resolve(__dirname, '../../../src/home/.config/quickshell/hakuspace/components/hakumenu/HakuMenuGeometry.js'), 'utf8'), geometry)
-const json = value => JSON.parse(JSON.stringify(value))
-for (const [width, height] of [[320, 240], [640, 480], [1280, 720], [1920, 1080], [2560, 1440]]) {
+for (const [width, height] of [[320, 240], [1024, 768], [1280, 720], [1920, 1080], [2560, 1440]]) {
     for (const border of [0, 4, 6]) {
         for (const icon of [32, 48, 72]) {
-            for (const dock of [0, icon + 17]) {
-                const card = geometry.finalRect(width, height, border, 52, border, dock, 16)
-                assert.equal(card.x + card.width / 2, width / 2)
-                assert.ok(card.x >= border && card.x + card.width <= width - border)
-                assert.ok(card.y >= 52 && card.y + card.height <= height - border - dock - 16)
-                const anchor = {x: border + 32, y: height - border - icon, width: icon, height: icon}
-                const seed = geometry.seedRect(anchor, width, height, icon, border, 16, card)
-                assert.equal(seed.x + seed.width / 2, anchor.x + anchor.width / 2)
-                assert.equal(seed.y + seed.height / 2, anchor.y + anchor.height / 2)
-                assert.deepEqual(json(geometry.mixRect(seed, card, -0.1)), json(seed))
-                assert.deepEqual(json(geometry.mixRect(seed, card, 1.08)), json(card))
-                const halfway = geometry.mixRect(seed, card, 0.5)
-                assert.equal(halfway.x, (seed.x + card.x) / 2)
-                assert.equal(halfway.height, (seed.height + card.height) / 2)
-                const fallback = geometry.seedRect(null, width, height, icon, border, 16, card)
-                assert.equal(fallback.x + fallback.width / 2, width / 2)
-                assert.ok(fallback.y + fallback.height <= height - border)
+            for (const [barHeight, opposite] of [[icon + 17, border], [icon + 17 + border, 52]]) {
+                const attached = geometry.attachedTaskSize(width, height, border, border, barHeight, opposite)
+                assert.equal(attached.width, Math.min(width * 0.45, width - border * 2))
+                assert.equal(attached.height, Math.min(height * 0.45, height - barHeight - opposite))
+                assert.ok(attached.height <= height - barHeight - opposite)
             }
         }
     }
 }
-console.log('HakuMenu geometry checks passed')
+console.log('HakuMenu attached geometry checks passed')
+// Preserve every existing profile while sharing the final width with host chrome.
+for (const width of [1, 320, 1024, 1280, 1920, 2560]) {
+    for (const border of [0, 4, 6, width]) {
+        for (const mode of ['general', 'theme', 'drun', 'closed']) {
+            const expected = width * (mode === 'general' ? 0.38 : mode === 'theme' ? 0.36 : 0.40)
+            assert.equal(geometry.targetWidth(width, 'hakumenu', mode, border, border), expected)
+            assert.equal(geometry.targetWidth(width, 'taskManager', mode, border, border),
+                Math.min(width * 0.45, Math.max(1, width - border * 2)))
+        }
+    }
+}
+console.log('HakuMenu shared target width checks passed')
+
+// Content may grow for four readable pin rows while staying inside the same host bounds.
+for (const preferred of [0, 390, 570, 900]) {
+    const size = geometry.attachedTaskSize(1280, 720, 4, 4, 69, 48, preferred)
+    assert.equal(size.height, Math.min(Math.max(720 * 0.45, preferred), 720 - 69 - 48))
+}

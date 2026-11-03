@@ -14,7 +14,6 @@ ShellRoot {
     property int clientClicks: 0
     property string launched: ""
     property var expectedAnchor: null
-    property real floatingWidth: 0
     property real clientHeight: 0
     property bool reversed: false
     property var transferOutput: null
@@ -22,9 +21,6 @@ ShellRoot {
     property int initialEnterAttempts: 0
     property var crowdedAnchor: null
     property bool crowdedReady: false
-    property bool openingProbeObserved: false
-    property bool openingInputObserved: false
-    property var openingPanel: phase === 12 || phase === 13 ? floating() : null
     property int tooltipClicks: 0
     readonly property var output: outputs.find(function(surface) { return surface.modelData.name === "HEADLESS-1" }) || outputs[0] || null
     // Isolate tooltip gestures from unrelated fullscreen-client checks on a live desktop.
@@ -105,18 +101,32 @@ ShellRoot {
     function key(code) { keyboard.write("key " + code + "\n") }
     function type(text) { keyboard.write("text " + text + "\n") }
     function search() { return find(output.menu, function(item) { return item.objectName === "hakumenu-searchInput" && item.activeFocus }) }
-    function floating(surface) { return find((surface || output).menu, function(item) { return typeof item.morphProgress === "number" }) }
+    function bottomHost(surface) { return find((surface || output).menu, function(item) { return item.bottomAttached === true }) }
+    function span(surface) { return find(bottomHost(surface), function(item) { return typeof item.mStart === "number" }) }
+    function bodyRect() { var morph = span(); return bottomHost().attachedRect(morph.mStart, morph.mEnd - morph.mStart, morph.mHeight) }
+    // Full-width hosts retain their existing flare shoulders.
+    function checkRailFlare() {
+        var surface = find(output.menu, function(item) { return typeof item.earStartRadius === "number" })
+        check(surface && surface.earStartRadius > 0 && surface.earEndRadius > 0,
+            "full-width rail keeps the normal flare contour")
+    }
     function appHost(surface) { return ChromeLayout.taskbarMode ? (surface || output).taskbar : (surface || output).dock }
     function appMenu(surface) { return find(appHost(surface), function(item) { return item.label === "Applications" }) }
     // Dock windows have side margins and a bounded bottom host; item maps include scrolling.
     function clickAppMenu() {
+        if (root.output.dock.menuOwned) {
+            var button = root.find(root.output.menu, function(item) { return item.objectName === "hakumenu-return-button" })
+            var point = button.mapToItem(null, button.width / 2, button.height / 2)
+            root.move(point.x, point.y, 272)
+            return
+        }
         var item = appMenu()
         expectedAnchor = root.content(appHost()).menuAnchor(item)
         var point = item.mapToItem(null, item.width / 2, item.height / 2)
         var window = item.Window.window
         move((ChromeLayout.taskbarMode ? 0 : output.dock.sideInset) + point.x, output.modelData.height - window.height + point.y, 272)
     }
-    // Stress focus restoration while the floating menu reverses its animation.
+    // Stress focus restoration while the bottom flare reverses its animation.
     Timer {
         id: tooltipBurst
         interval: 100
@@ -124,12 +134,16 @@ ShellRoot {
         onTriggered: {
             var tooltips = root.dockTooltips()
             root.check(tooltips.length <= 1, "rapid menu toggles never leave competing Dock tooltips")
-            if (root.output.dock.hakuMenuDockLease)
-                root.check(tooltips.length === 0, "floating menu suppresses Dock tooltips")
-            if (++root.tooltipClicks <= 12) root.clickAppMenu()
+            if (root.output.dock.menuOwned)
+                root.check(tooltips.length === 0, "bottom flare suppresses Dock tooltips")
+            if (++root.tooltipClicks <= 12) {
+                if (root.output.dock.menuOwned) UiState.returnFromHakuMenu()
+                else UiState.openHakuMenu(root.output.modelData.name, "drun", "dockbar", root.content(root.output.dock).menuAnchor(root.appMenu()))
+            }
             else {
-                stop()
                 UiState.closeHakuMenu()
+                if (root.output.menu.loadedCount > 0) return
+                stop()
                 var trash = root.find(root.output.dock, function(item) { return item.label === "Trash" })
                 var point = trash.mapToItem(null, trash.width / 2, trash.height / 2)
                 root.move(root.output.dock.sideInset + point.x, root.output.modelData.height - root.output.dock.targetHeight - 180 + point.y)
@@ -155,59 +169,17 @@ ShellRoot {
         writer.command = ["env", "HOME=" + Quickshell.shellPath("../../../"), "bash", Quickshell.env("HAKUSPACE_TEST_TASKBAR_CTL"), "--toggle"]
         writer.running = true
     }
-    // Probe the first fully revealed frame while the opening bounce still runs.
-    Connections {
-        target: root.openingPanel
-        function onRevealProgressChanged() {
-            if (root.phase === 13 && !root.openingProbeObserved && root.floating().revealProgress === 1) openingProbe.restart()
-        }
-    }
-    Timer {
-        id: openingProbe
-        interval: 16
-        onTriggered: {
-            root.openingProbeObserved = true
-            var panel = root.floating()
-            var searchBox = root.find(panel, function(item) { return item.objectName === "hakumenu-searchBox" })
-            var row = root.find(panel, function(item) { return typeof item.disabledOpacity === "number" && item.modelData && item.modelData.name })
-            root.check(panel.morphProgress > 1 && panel.interactionReady && root.search(),
-                "fully revealed menu accepts input before the opening bounce finishes")
-            root.check(searchBox.enabled && searchBox.opacity === 1 && row && row.enabled && row.opacity === 1,
-                "revealed controls never wait for a disabled-opacity fade")
-            var tab = root.find(panel, function(item) { return typeof item.clicked === "function" && item.text === "󰀻" })
-            var point = tab.mapToItem(null, tab.width / 2, tab.height / 2)
-            root.move(point.x, point.y, 272)
-            openingClick.start()
-        }
-    }
-    Timer {
-        id: openingClick
-        interval: 40
-        onTriggered: {
-            root.check(UiState.hakuMenuMode === "general", "tab click works during the settling bounce")
-            root.type("dock")
-            openingKeys.start()
-        }
-    }
-    Timer {
-        id: openingKeys
-        interval: 40
-        onTriggered: {
-            root.check(UiState.hakuMenuQuery === "dock" && UiState.hakuMenuMode === "drun", "typing works as soon as content is revealed")
-            UiState.setHakuMenuQuery("")
-            root.openingInputObserved = true
-        }
-    }
-    // Reverse before the close can finish, preserving the current scalar and seed.
+    // Reverse before the close can finish, preserving the current geometry and seed.
     Timer {
         id: reverse
         interval: 80
         onTriggered: {
-            var panel = root.floating()
-            var progress = panel.morphProgress
-            root.check(progress > 0 && progress < 1, "close is in progress before reversal")
+            var panel = root.bottomHost()
+            var morph = root.span()
+            var height = morph.mHeight
+            root.check(height > 0 && height < panel.surfaceHeight, "close is in progress before reversal")
             UiState.toggleHakuMenu(root.output.modelData.name, "drun", "dockbar", root.expectedAnchor)
-            root.check(panel.morphProgress === progress, "reopen does not reset the scalar")
+            root.check(morph.mHeight === height, "reopen preserves the current slide height")
             root.reversed = true
         }
     }
@@ -260,6 +232,7 @@ ShellRoot {
                 root.check(content && !content.controlsAtBottom, "Taskbar Flare controls stay at the top")
                 var attached = root.find(root.output.menu, function(item) { return item.bottomAttached === true && typeof item.menuHeight === "number" })
                 root.check(attached && attached.menuHeight === height * 0.4, "Taskbar attached menu occupies forty percent of the screen height")
+                root.checkRailFlare()
                 root.capture("bottomFlare")
                 root.toggleDock()
             } else if (root.phase === 2) {
@@ -313,61 +286,61 @@ ShellRoot {
                 root.clientHeight = client.height
                 root.clickAppMenu()
             } else if (root.phase === 13) {
-                var panel = root.floating()
-                if (!panel.interactionReady || !root.openingInputObserved) return
-                root.check(UiState.hakuMenuStyle === "dockFloating" && UiState.hakuMenuMode === "drun", "App Menu opens dockFloating Drun")
-                root.check(root.search(), "floating search focuses after the morph: " + panel.morphProgress)
+                var panel = root.bottomHost()
+                if (!panel.panelOpen || !root.search()) return
+                root.check(UiState.hakuMenuStyle === "bottomFlare" && UiState.hakuMenuMode === "drun", "App Menu opens bottomFlare Drun")
+                root.check(root.search(), "bottom flare search focuses after the morph")
                 root.check(Math.abs(UiState.hakuMenuAnchorRect.x - root.expectedAnchor.x) < 1
                     && Math.abs(UiState.hakuMenuAnchorRect.y - root.expectedAnchor.y) < 1, "captured lifted artwork anchor is screen-local")
-                root.check(root.output.dock.hakuMenuDockLease && root.output.dock.shown, "owning Dock stays shown")
-                root.check(panel.finalRect.x + panel.finalRect.width / 2 === width / 2
-                    && panel.finalRect.y + panel.finalRect.height === height - ScreenGeometry.bottomInset - ScreenGeometry.dockbarHeight - panel.floatingGap,
-                    "floating card rests above Dock with a gap")
-                root.check(client.height === root.clientHeight, "floating menu reserves no client space")
-                root.floatingWidth = panel.finalRect.width
-                root.capture("dockFloating-drun")
-                root.move(root.expectedAnchor.x + root.expectedAnchor.width / 2,
-                    root.expectedAnchor.y + root.expectedAnchor.height / 2, 272)
+                root.check(root.output.dock.menuOwned && !root.output.dock.shown, "owning Dock hides while the menu is open")
+                root.check(panel.menuTop === height - ScreenGeometry.bottomInset
+                    && root.bodyRect().y + root.bodyRect().height === panel.menuTop, "bottom flare slides from the screen rail")
+                root.check(!root.content(root.output.dock).enabled
+                    && root.content(root.output.dock).opacity === 0, "hidden Dock suppresses every normal control")
+                root.check(client.height === root.clientHeight, "bottom flare reserves no client space")
+                root.capture("bottomFlare-drun")
+                root.clickAppMenu()
             } else if (root.phase === 14) {
-                root.check(UiState.activePanel === "" && !UiState.hakuMenuAnchorRect && !root.output.dock.hakuMenuDockLease, "second App Menu click closes and releases ownership")
+                root.check(UiState.activePanel === "" && !UiState.hakuMenuAnchorRect && !root.output.dock.menuOwned, "Dock close control releases menu ownership")
                 root.move(width / 2, height - 1)
             } else if (root.phase === 15) root.clickAppMenu()
             else if (root.phase === 16) {
-                if (!root.floating().interactionReady) return
-                root.check(root.floating().interactionReady, "floating reopens")
+                if (!root.bottomHost().panelOpen) return
+                root.check(root.bottomHost().panelOpen, "attached reopens")
                 UiState.closeHakuMenu()
                 reverse.start()
             } else if (root.phase === 17) {
-                if (!root.floating().interactionReady) return
-                root.check(root.reversed && root.floating().interactionReady, "mid-close reopen settles")
-                var content = root.find(root.floating(), function(item) { return typeof item.controlsAtBottom === "boolean" })
+                if (!root.bottomHost().panelOpen) return
+                root.check(root.reversed && root.bottomHost().panelOpen, "mid-close reopen settles")
+                var content = root.find(root.bottomHost(), function(item) { return typeof item.controlsAtBottom === "boolean" })
                 var list = root.find(content, function(item) { return item.objectName === "hakumenu-mainList" })
-                root.check(!content.controlsAtBottom && list.y > content.controlsY + content.topRowHeight, "floating controls sit above the content")
+                root.check(!content.controlsAtBottom && list.y > content.controlsY + content.topRowHeight, "attached controls sit above the content")
                 root.key(105)
             } else if (root.phase === 18) {
-                root.check(UiState.hakuMenuMode === "general" && root.floating().finalRect.width === root.floatingWidth, "General keeps the floating chassis stable")
+                root.check(UiState.hakuMenuMode === "general" && Math.abs(root.span().mEnd - root.span().mStart - width * 0.38) < 1, "General retargets the attached width")
                 root.type(">")
             } else if (root.phase === 19) {
-                root.check(UiState.hakuMenuMode === "general" && UiState.hakuMenuStyle === "dockFloating", "General prefix keeps presentation")
+                root.check(UiState.hakuMenuMode === "general" && UiState.hakuMenuStyle === "bottomFlare", "General prefix keeps presentation")
                 root.key(14)
                 root.type("~")
             } else if (root.phase === 20) {
-                root.check(UiState.hakuMenuMode === "theme" && root.floating().finalRect.width === root.floatingWidth,
-                    "Theme keeps the floating chassis stable: mode=" + UiState.hakuMenuMode
-                    + " width=" + root.floating().finalRect.width + " initial=" + root.floatingWidth + " output=" + width)
-                var content = root.find(root.floating(), function(item) { return typeof item.controlsAtBottom === "boolean" })
+                root.check(UiState.hakuMenuMode === "theme" && Math.abs(root.span().mEnd - root.span().mStart - width * 0.36) < 1,
+                    "Theme retargets the attached width: mode=" + UiState.hakuMenuMode
+                    + " output=" + width)
+                var content = root.find(root.bottomHost(), function(item) { return typeof item.controlsAtBottom === "boolean" })
                 var state = root.find(content, function(item) { return item.objectName === "hakumenu-stateRegion" })
                 root.check(state.visible && state.y > content.controlsY + content.topRowHeight, "Theme state column starts below the controls")
-                root.capture("dockFloating-theme")
+                root.capture("bottomFlare-theme")
                 root.key(105)
             } else if (root.phase === 21) root.type("dock launch fixture")
             else if (root.phase === 22) root.key(28)
             else if (root.phase === 23) {
-                root.check(root.launched.split("\n").length === 2 && UiState.activePanel === "", "floating Enter launches and closes")
+                root.check(root.launched.split("\n").length === 2 && UiState.activePanel === "", "attached Enter launches and closes")
+                UiState.openHakuMenu(root.output.modelData.name, "drun", "dockbar", root.expectedAnchor)
                 root.toggleDock()
             } else if (root.phase === 24) {
                 UiState.openHakuMenu(root.output.modelData.name, "general", "dockbar", root.expectedAnchor)
-                root.check(!UiState.activePanel, "disabled Dockbar rejects floating activation")
+                root.check(!UiState.activePanel, "disabled Dockbar rejects attached activation")
                 root.move(width / 2, 1)
             } else if (root.phase === 25) {
                 root.check(!AppState.dockbarManualState && UiState.hakuMenuStyle === "topFlare" && root.search(),
@@ -387,29 +360,29 @@ ShellRoot {
                 root.check(root.expectedAnchor.width === 72 && root.expectedAnchor.height === 72, "anchor follows icon size")
                 UiState.openHakuMenu(root.transferOutput.modelData.name, "drun", "dockbar", root.expectedAnchor)
             } else if (root.phase === 28) {
-                if (!root.floating(root.transferOutput).interactionReady) return
-                root.check(root.floating(root.transferOutput).interactionReady && root.transferOutput.dock.hakuMenuDockLease, "requested output owns the floating card and lease")
-                if (root.transferOutput !== root.output) root.check((!root.floating() || !root.floating().visible) && !root.output.dock.hakuMenuDockLease, "other output has no ghost or lease")
+                if (!root.bottomHost(root.transferOutput).panelOpen) return
+                root.check(root.bottomHost(root.transferOutput).panelOpen && root.transferOutput.dock.menuOwned, "requested output owns the bottom flare and lease")
+                if (root.transferOutput !== root.output) root.check((!root.bottomHost() || !root.bottomHost().panelOpen) && !root.output.dock.menuOwned, "other output has no ghost or lease")
                 root.check(UiState.hakuMenuAnchorRect.x >= 0 && UiState.hakuMenuAnchorRect.x < root.transferOutput.modelData.width, "second output anchor excludes its desktop-global origin")
                 root.expectedAnchor = root.content(root.output.dock).menuAnchor(root.appMenu())
                 UiState.openHakuMenu(root.output.modelData.name, "drun", "dockbar", root.expectedAnchor)
             } else if (root.phase === 29) {
-                if (!root.floating().interactionReady) return
-                root.check(root.floating().interactionReady && root.output.dock.hakuMenuDockLease, "ownership transfers back")
-                if (root.transferOutput !== root.output) root.check((!root.floating(root.transferOutput) || !root.floating(root.transferOutput).visible), "old output resets immediately")
+                if (!root.bottomHost().panelOpen) return
+                root.check(root.bottomHost().panelOpen && root.output.dock.menuOwned, "ownership transfers back")
+                if (root.transferOutput !== root.output) root.check((!root.bottomHost(root.transferOutput) || !root.bottomHost(root.transferOutput).panelOpen), "old output resets immediately")
                 fullscreenClient.visible = true
             } else if (root.phase === 30) {
-                root.check(root.search(), "floating menu stays focused over fullscreen")
+                root.check(root.search(), "bottom flare stays focused over fullscreen")
                 root.type("x")
                 root.move(10, 100)
             } else if (root.phase === 31) {
                 root.check(UiState.activePanel === "hakumenu", "typing lease survives pointer exit")
-                var rect = root.floating().finalRect
+                var rect = root.bodyRect()
                 root.move(rect.x + rect.width / 2, rect.y + 20)
             } else if (root.phase === 32) {
-                var rect = root.floating().finalRect
+                var rect = root.bodyRect()
                 root.move(rect.x + rect.width / 2 + 20, rect.y + 20)
-            } else if (root.phase === 33) root.move(10, height - 20, 272)
+            } else if (root.phase === 33) root.move(width / 2, 100, 272)
             else if (root.phase === 34) {
                 root.check(UiState.activePanel === "" && root.clientClicks === 1,
                     "pointer exit closes and transparent outside remains clickable: panel=" + UiState.activePanel + " clicks=" + root.clientClicks)
@@ -417,9 +390,9 @@ ShellRoot {
                 ShellSettingsStore.discard()
                 UiState.openHakuMenu(root.output.modelData.name, "drun", "dockbar", {x: NaN, y: 0, width: 10, height: 10})
             } else if (root.phase === 35) {
-                root.check(!UiState.activePanel && (!root.floating() || !root.floating().visible), "invalid Dockbar anchor rejects floating activation")
+                root.check(!UiState.activePanel && (!root.bottomHost() || !root.bottomHost().panelOpen), "invalid Dockbar anchor rejects attached activation")
             } else if (root.phase === 36) {
-                root.check(UiState.activePanel === "" && !root.output.dock.hakuMenuDockLease, "floating Escape releases lease")
+                root.check(UiState.activePanel === "" && !root.output.dock.menuOwned, "attached Escape releases lease")
                 ShellSettingsStore.setValue("dock", "visibilityMode", "always")
                 AppState.taskbarManualState = true
             } else if (root.phase === 37) {
@@ -487,6 +460,7 @@ ShellRoot {
             } else if (root.phase === 46) {
                 root.check(ChromeLayout.dockbarActive && root.search() && UiState.hakuMenuStyle === "topFlare",
                     "top hover opens topFlare with Dockbar ON")
+                root.checkRailFlare()
                 root.capture("topFlare-dockbar-on")
                 UiState.closeHakuMenu()
                 AppState.taskbarManualState = true

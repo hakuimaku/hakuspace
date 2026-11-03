@@ -260,7 +260,7 @@ ShellRoot {
                 root.screenshot("taskbar-calendar")
                 UiState.openHakuMenu(output.modelData.name, "drun")
             } else if (phase === 7) {
-                root.check(UiState.hakuMenuStyle === "bottomFlare" && output.menu.panelOpen && !output.dock.hakuMenuDockLease, "Full default HakuMenu is attached")
+                root.check(UiState.hakuMenuStyle === "bottomFlare" && output.menu.panelOpen && !output.dock.menuOwned, "Full default HakuMenu is attached")
                 root.check(root.find(output.menu, value => value.controlsAtBottom === false), "Taskbar menu controls stay at the top")
                 var attachedMenu = root.find(output.menu, value => value.bottomAttached === true && typeof value.menuHeight === "number")
                 root.check(attachedMenu && attachedMenu.menuHeight === output.modelData.height * 0.4,
@@ -274,7 +274,7 @@ ShellRoot {
             } else if (phase === 9) {
                 root.check(UiState.hakuMenuStyle === "topFlare" && !!UiState.hakuMenuAnchorRect, "TopBar default stays top-attached with Dockbar enabled")
                 root.checkTopology(false, true)
-                root.check(UiState.resolveHakuMenuPresentation("dockbar") === "dockFloating"
+                root.check(UiState.resolveHakuMenuPresentation("dockbar") === "bottomFlare"
                     && UiState.resolveHakuMenuPresentation("edge") === "topFlare", "simultaneous TopBar source mapping")
                 AppState.taskbarManualState = true
                 NotificationStore.records = [{key: 1, id: 1, summary: "Unified notification", body: "History fixture", appName: "fixture", actions: [], timestamp: Date.now(), screenName: output.modelData.name, popup: false}]

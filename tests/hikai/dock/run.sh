@@ -20,4 +20,6 @@ if [[ ${1:-} == --runtime ]]; then
     bash "$TEST_DIR/test_runtime.sh" --headless
     HAKUSPACE_DOCK_INPUT=1 bash "$TEST_DIR/test_runtime.sh" --headless
     HAKUSPACE_DOCK_REORDER=1 bash "$TEST_DIR/test_runtime.sh" --headless
+    HAKUSPACE_DOCK_MENU_TEST=1 bash "$TEST_DIR/test_runtime.sh" --headless
+    HAKUSPACE_DOCK_MENU_TEST=1 HAKUSPACE_REDUCED_MOTION=1 bash "$TEST_DIR/test_runtime.sh" --headless
 fi
