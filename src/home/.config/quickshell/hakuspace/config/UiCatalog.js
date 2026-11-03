@@ -3,12 +3,12 @@
 // HakuMenu
 
 // Shared Task Manager category and action glyphs.
-var taskManagerIcons = { menu: "󰍜", overview: "󰍛", cpu: "", memory: "", gpu: "󰢮", pin: "󰐃", open: "󰏌" }
+var taskManagerIcons = { menu: "", overview: "", cpu: "", memory: "", gpu: "󰢮", pin: "󰐃", open: "󰏌" }
 
 // Static hakuMenuModes presentation entries.
 var hakuMenuModes = [
-    { key: "general", icon: "󰀻", label: "General" },
-    { key: "drun", icon: "󰍉", label: "Drun" },
+    { key: "general", icon: "", label: "General" },
+    { key: "drun", icon: "", label: "Drun" },
     { key: "theme", icon: "", label: "Theme" }
 ]
 
@@ -127,7 +127,7 @@ var sidebarTools = [
     { key: "quickActions", icon: "󰀻", label: "Quick Actions" },
     { key: "clipboard", icon: "󰅌", label: "Clipboard" },
     { key: "tempNote", icon: "󰏫", label: "Temp Note" },
-    { key: "taskManager", icon: "󰍛", label: "Task Manager" }
+    { key: "taskManager", icon: "", label: "Task Manager" }
 ]
 
 // Quick action metadata; availability and state remain runtime-owned.

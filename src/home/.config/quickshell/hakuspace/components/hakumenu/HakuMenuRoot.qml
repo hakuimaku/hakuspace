@@ -96,7 +96,8 @@ FocusScope {
         Item {
             id: lane
             anchors.fill: parent
-            anchors.margins: Theme.gap
+            anchors.leftMargin: Theme.gap
+            anchors.rightMargin: Theme.gap
             Motion.SelectionPill {
                 // Reuse selection motion as a top border without filling either tab.
                 height: 3
@@ -110,14 +111,15 @@ FocusScope {
                 curve: HAnimation.hakuMenuResizeCurve
             }
             Repeater {
-                model: ["HakuMenu", "Task Manager"]
+                // Menu: Haku Menu, Performance: Task Manager
+                model: ["Menu", "Performance"]
                 Motion.MorphButton {
                     id: tabButton
                     required property string modelData
                     required property int index
                     x: index * (width + Theme.gap)
                     width: Math.max(0, (lane.width - Theme.gap) / 2)
-                    height: lane.height
+                    height: lane.height + 10
                     radius: Theme.radius
                     selected: root.taskManagerTab === (index === 1)
                     idleColor: "transparent"
@@ -138,21 +140,32 @@ FocusScope {
                     Keys.onReturnPressed: clicked()
                     Keys.onSpacePressed: clicked()
 
-                    Row {
+                    // Fit stacked labels inside the existing tab height below the border.
+                    Column {
                         anchors.centerIn: parent
-                        spacing: Theme.spaceSm
+                        anchors.verticalCenterOffset: 2
+                        width: parent.width
+                        spacing: 1
                         Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            height: font.pixelSize
                             text: tabButton.index === 0 ? Catalog.taskManagerIcons.menu : Catalog.taskManagerIcons.overview
                             color: tabButton.selected ? Theme.accent : Theme.fgMuted
                             font.family: Theme.iconFontFamily
-                            font.pixelSize: Theme.fontSize
+                            font.pixelSize: Math.round(Theme.fontSize * 1.5)
+                            verticalAlignment: Text.AlignVCenter
                             Accessible.ignored: true
                         }
                         Text {
+                            width: parent.width
+                            height: font.pixelSize + 2
                             text: tabButton.modelData
                             color: tabButton.selected ? Theme.accent : Theme.fgMuted
                             font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSize
+                            font.pixelSize: Theme.fontSize - 2
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
                         }
                     }
                 }
