@@ -183,6 +183,22 @@ ShellRoot {
         }
     }
 
+    // Keep one reading in the right header and no duplicated text inside the water.
+    function assertGaugeLabels() {
+        var focus = root.findByObjectName(root.content, "taskFocusCard")
+        var visual = root.findByObjectName(focus, "focusCardVisualLayer")
+        var gauge = root.findByObjectName(visual, "taskWaterGauge")
+        var title = root.findByObjectName(visual, "taskMetricTitle_" + focus.metricId)
+        var heroName = focus.metricId === "memory" ? "focusMemoryPercent"
+            : focus.metricId === "gpu" ? "focusGpuHero" : focus.metricId === "disk" ? "focusDiskPercent" : "taskMetricPrimary_network"
+        var reading = root.findByObjectName(visual, heroName)
+        root.check(gauge && root.collectTexts(gauge, []).length === 0, "standalone water contains no numeric text")
+        root.check(reading && reading.text.length > 0 && reading.horizontalAlignment === Text.AlignRight
+            && reading.x >= title.x + title.width + reading.parent.spacing - 0.5
+            && Math.abs(reading.x + reading.width - reading.parent.width) <= 0.5,
+            "standalone keeps its reading at the right edge of the header")
+    }
+
     function assertResponsiveLayout(expectedW, expectedH) {
         root.check(Math.abs(root.card.width - expectedW) < 1.1 && Math.abs(root.card.height - expectedH) < 1.1,
             "Unexpected card size: " + root.card.width + "x" + root.card.height)
@@ -197,6 +213,7 @@ ShellRoot {
         root.check(leftPane.x + leftPane.width <= procPane.x + 0.5, "Left and right panes overlap")
         root.check(procPane.x + procPane.width <= root.content.width + 0.5, "Process pane overflows content width")
         root.check(table.height >= 40, "Process table collapsed at " + expectedW + "x" + expectedH)
+        root.assertGaugeLabels()
 
         // Verify borderless visual contract across shell, cards, panes and controls.
         var cpuCard = findByObjectName(root.content, "taskCpuCard")
@@ -258,9 +275,9 @@ ShellRoot {
                 && Math.abs(rPid.color.r - rItem.fgCol.r) < 0.02
                 && Math.abs(rPid.color.a - rItem.fgCol.a) < 0.02,
                 "PID/USER/MEM columns must use foreground color")
-            root.check(Qt.colorEqual(rName.color, Theme.accent)
-                && Qt.colorEqual(rCpu.color, Theme.accent)
-                && Qt.colorEqual(rThr.color, Theme.accent),
+            root.check(Qt.colorEqual(rName.color, rItem.selected ? Theme.onAccentColor : Theme.accent)
+                && Qt.colorEqual(rCpu.color, rItem.selected ? Theme.onAccentColor : Theme.accent)
+                && Qt.colorEqual(rThr.color, rItem.selected ? Theme.onAccentColor : Theme.accent),
                 "PROCESS/CPU/THR columns must use Theme.accent")
         }
 
@@ -269,17 +286,10 @@ ShellRoot {
         root.check(core0 && core0.height >= 11, "CPU logical core hit area too small: " + (core0 ? core0.height : 0))
         if (expectedW === 980 && expectedH === 680) {
             root.check(core0.height >= 14, "Normal 980x680 CPU core hit area should be >= 14px: " + core0.height)
-            cpuCard.showCoreTooltip(0)
-            var tip = findByObjectName(cpuCard, "cpuCoreTooltip")
-            var stem = findByObjectName(cpuCard, "cpuCoreTooltipStem")
-            root.check(tip && tip.visible && tip.border.width === 0 && tip.text === "Core 0 · 62.5%"
-                && stem && stem.visible && stem.height === 5,
-                "Unexpected CPU core 0 tooltip: " + (tip ? tip.text : "missing"))
-            cpuCard.setCoreTooltipMotion(0, 1.0, 0.45)
-            root.check(tip.width < tip.fullWidth && stem.height === 5, "Core Stem Tooltip mid-unfurl failed")
-            cpuCard.showCoreTooltip(1)
-            root.check(tip.text === "Core 1 · 12%", "Unexpected CPU core 1 integer tooltip: " + tip.text)
-            cpuCard.clearCoreTooltip()
+            root.check(cpuCard.formatCoreTooltip(0) === "Core 0 · 62.5%"
+                && cpuCard.formatCoreTooltip(1) === "Core 1 · 12%"
+                && cpuCard.stemProgress === undefined && cpuCard.unfurlProgress === undefined,
+                "CPU core tooltip formatting without obsolete motion state")
         }
     }
 
@@ -305,6 +315,8 @@ ShellRoot {
                 UiState.openTaskManager(root.output)
             } else if (root.phase === 1) {
                 if (!root.overlay || !root.overlay.interactionReady) return
+                // Keep this responsive-size fixture independent of the fitted default height.
+                root.overlay.cardSize = Qt.size(980, 680)
                 root.applySnapshot(root.normalSnapshot)
             } else if (root.phase === 2) {
                 root.applySnapshot(root.normalSnapshot)
@@ -317,38 +329,51 @@ ShellRoot {
                 root.assertNoInvalidStrings()
                 root.assertResponsiveLayout(980, 680)
 
-                // Check open/close checkpoints without inner layout reflow.
+                // Check the stationary chassis and every Settings attachment position.
                 var shellSurface = root.findByObjectName(root.overlay, "taskManagerShellSurface")
                 root.overlay.setMorphProgress(0.00)
                 root.check(root.card.opacity === 1
-                    && Math.abs(root.card.width - root.overlay.seedSize) < 0.5
-                    && Math.abs(root.card.height - root.overlay.seedSize) < 0.5
-                    && Math.abs(root.card.x - root.overlay.seedX) < 0.5
+                    && root.card.width === 0 && root.card.height === 0
+                    && Math.abs(root.card.x - root.overlay.targetX - root.overlay.cardWidth / 2) < 0.5
                     && shellSurface.width === root.overlay.cardWidth
-                    && shellSurface.height === root.overlay.cardHeight, "Capsule morph checkpoint 0.00 failed")
+                    && shellSurface.height === root.overlay.cardHeight, "Settings-style morph checkpoint 0.00 failed")
                 root.overlay.setMorphProgress(0.20)
                 var w20 = root.card.width
                 var h20 = root.card.height
-                root.check(root.card.opacity === 1 && w20 > root.overlay.seedSize && w20 < root.overlay.cardWidth
-                    && h20 > root.overlay.seedSize && h20 < root.overlay.cardHeight
-                    && shellSurface.width === root.overlay.cardWidth, "Capsule morph checkpoint 0.20 failed")
+                root.check(root.card.opacity === 1 && w20 > 0 && w20 < root.overlay.cardWidth
+                    && h20 > 0 && h20 < root.overlay.cardHeight
+                    && shellSurface.width === root.overlay.cardWidth, "Settings-style morph checkpoint 0.20 failed")
                 root.overlay.setMorphProgress(0.50)
                 var w50 = root.card.width
                 var h50 = root.card.height
                 root.check(root.card.opacity === 1 && w50 > w20 && w50 < root.overlay.cardWidth
                     && h50 > h20 && h50 < root.overlay.cardHeight
-                    && shellSurface.width === root.overlay.cardWidth, "Capsule morph checkpoint 0.50 failed")
+                    && shellSurface.width === root.overlay.cardWidth, "Settings-style morph checkpoint 0.50 failed")
+                for (var position = 1; position <= 8; position++) {
+                    root.overlay.revealPosition = position
+                    var geometry = root.overlay.revealGeometry
+                    var bounds = root.overlay.revealBounds
+                    root.check(geometry.path.length > 0 && geometry.anchor.x >= bounds.x
+                        && geometry.anchor.x <= bounds.x + bounds.width && geometry.anchor.y >= bounds.y
+                        && geometry.anchor.y <= bounds.y + bounds.height
+                        && Math.abs(geometry.center.x - root.overlay.targetX - root.overlay.cardWidth / 2) < 0.5
+                        && Math.abs(geometry.center.y - root.overlay.targetY - root.overlay.cardHeight / 2) < 0.5,
+                        "Settings-style fixed endpoints at position " + position)
+                    if (position === 2) root.check(geometry.anchor.y === 0, "HakuMenu foot reaches the top screen edge")
+                    if (position === 8) root.check(geometry.anchor.x === 0, "Sidebar foot reaches the left screen edge")
+                }
                 root.overlay.setMorphProgress(0.80)
                 root.check(root.card.opacity === 1 && root.card.width > w50 && root.card.width < root.overlay.cardWidth
                     && root.card.height > h50 && root.card.height < root.overlay.cardHeight
-                    && shellSurface.width === root.overlay.cardWidth, "Capsule morph checkpoint 0.80 failed")
+                    && shellSurface.width === root.overlay.cardWidth, "Settings-style morph checkpoint 0.80 failed")
                 root.overlay.setMorphProgress(1.00)
                 root.check(root.card.opacity === 1
                     && Math.abs(root.card.width - root.overlay.cardWidth) < 0.5
                     && Math.abs(root.card.height - root.overlay.cardHeight) < 0.5
                     && Math.abs(root.card.x - root.overlay.targetX) < 0.5
                     && Math.abs(root.card.y - root.overlay.targetY) < 0.5
-                    && Math.abs(root.card.radius - Theme.largeRadius) < 0.5, "Capsule morph checkpoint 1.00 failed")
+                    && Math.abs(root.card.radius - Theme.largeRadius) < 0.5
+                    && root.overlay.revealGeometry.path === "", "Settings-style morph checkpoint 1.00 failed")
 
                 root.initialFocusRect = Qt.rect(focusCard.x, focusCard.y, focusCard.width, focusCard.height)
 
@@ -519,9 +544,8 @@ ShellRoot {
                 // Check process selection from metric-card keyboard focus.
                 root.content.selectedKey = ""
                 input.keyClick(Qt.Key_Down, Qt.NoModifier, 0)
-                var selRail = root.findByObjectName(root.content, "taskProcessSelectionRail")
-                root.check(!!root.content.selectedKey && selRail && selRail.visible && selRail.width === 3,
-                    "Down arrow failed or Selection Rail not visible")
+                var pill = root.findByObjectName(root.content, "taskProcessSelectionPill")
+                root.check(!!root.content.selectedKey && pill, "Down arrow selects the shared process pill")
 
                 // Verify Details Footer Fold and Kill Confirmation Morph in-place
                 var procPane = root.findByObjectName(root.content, "taskProcessPane")

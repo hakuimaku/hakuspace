@@ -46,11 +46,13 @@ ShellRoot {
     }
     // Find real action controls without adding test hooks to production content.
     function find(item, text) {
-        if (item.text === text && typeof item.clicked === "function") return item
+        if (!item) return null
+        if (item.objectName === text || (item.text === text && typeof item.clicked === "function")) return item
         for (var child of item.children || []) {
             var found = find(child, text)
             if (found) return found
         }
+        if (item.contentItem) return find(item.contentItem, text)
         return null
     }
     // Verify the real header and rows agree at minimum and default window widths.
@@ -168,6 +170,20 @@ ShellRoot {
                 root.collectorPid = TaskManagerService.collectorPid
                 root.check(root.collectorPid > 0, "collector pid unavailable")
                 root.check(UiState.taskManagerRect.width === root.card.width, "published rectangle")
+                root.check(root.card.width === Math.min(1100, root.overlay.width)
+                    && root.card.height === Math.min(660, root.overlay.height)
+                    && root.overlay.revealPosition === 8, "default fitted height and left entry")
+                var bounds = root.overlay.placementBounds
+                root.check(root.card.x === bounds.x + Theme.panelPadding
+                    && Math.abs(root.card.y + root.card.height / 2 - bounds.y - bounds.height / 2) < 0.5,
+                    "Sidebar entry places the default card at the left, vertically centered")
+                var telemetry = root.find(root.overlay.content, "taskTelemetryPane")
+                for (var name of ["taskCpuCard", "taskFocusSlot", "taskMetricCard_memory", "taskMetricCard_gpu", "taskMetricCard_disk", "taskMetricCard_network"]) {
+                    var tile = root.find(root.overlay.content, name)
+                    root.check(tile && tile.mapToItem(telemetry, 0, 0).y >= -0.5
+                        && tile.mapToItem(telemetry, 0, tile.height).y <= telemetry.height + 0.5,
+                        "default height contains the complete telemetry tile " + name)
+                }
                 root.overlay.position = Qt.point(10000, 10000)
                 root.check(root.card.x + root.card.width === root.overlay.width && root.card.y + root.card.height === root.overlay.height, "drag lower clamp")
                 root.overlay.position = Qt.point(-10000, -10000)
@@ -228,6 +244,12 @@ ShellRoot {
                 root.overlay.content.sortKey = "name"
                 root.overlay.content.descending = false
                 root.check(root.overlay.content.rows[0].pid === 1234567 && root.overlay.content.selectedProcess.pid === 123456, "selection reordered by index")
+                root.find(root.overlay.content, "Pin").clicked()
+                root.check(TaskManagerPins.isPinned(root.fixture[0]) && root.overlay.content.rows[0].pid === 123456, "shared pin action sorts selected identity first")
+                root.overlay.content.detailsOpen = true
+                root.find(root.overlay.content, "unpin").clicked()
+                root.check(!TaskManagerPins.isPinned(root.fixture[0]), "details unpin uses shared model")
+                root.overlay.content.detailsOpen = false
                 root.overlay.content.killKey = "123456:1"
                 root.overlay.content.handleEscape()
                 root.check(!root.overlay.content.killKey && UiState.taskManagerOpen, "Escape confirmation")
@@ -263,6 +285,7 @@ ShellRoot {
                 root.check(surface.active && TaskManagerService.subscribers === 1, "destroyed before visual close")
             } else if (root.phase === 5) {
                 root.check(surface.active, "closing surface destroyed early")
+                root.check(root.overlay.revealGeometry.anchor.x === 0, "closing foot reaches the left screen edge")
                 var reveal = root.overlay.reveal
                 UiState.openTaskManager(root.output)
                 root.check(root.overlay.reveal === reveal && TaskManagerService.subscribers === 1, "close reversal lost owner")

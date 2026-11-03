@@ -65,6 +65,34 @@ assert.equal(launcher.activeSidebarTool, '')
 assert.equal(launcher.sidebarKeyboardMode, false)
 console.info('Task Manager Sidebar dispatch passed')
 
+// Preserve the current owner's origin and route fresh HakuMenu entries to the top.
+const uiSource = fs.readFileSync(path.join(shell, 'services/UiState.qml'), 'utf8')
+const entry = {
+    activePanel: '', taskManagerOpen: false, taskManagerScreenName: '', taskManagerRevealPosition: 8,
+    hakuMenuScreenName: 'B', Quickshell: {screens: [{name: 'A'}, {name: 'B'}]},
+    TaskManagerService: {beginHandoff() {}}, taskManagerFocusRequested() {},
+    closeNavigation() { this.activePanel = '' }, closeHakuMenu() { this.activePanel = '' },
+    closeTaskManager() { this.taskManagerOpen = false; this.taskManagerScreenName = '' }
+}
+vm.runInNewContext(['openTaskManager', 'openTaskManagerFromHakuMenu'].map(name =>
+    uiSource.match(new RegExp('^    function ' + name + '\\([^]*?^    }', 'm'))[0]).join('\n'), entry)
+for (const position of [1, 2, 3, 4, 5, 6, 7, 8]) {
+    entry.openTaskManager('A', position)
+    assert.equal(entry.taskManagerRevealPosition, position)
+    entry.closeTaskManager()
+}
+for (const invalid of [undefined, null, 0, 9, 1.5, '2']) {
+    entry.openTaskManager('A', invalid)
+    assert.equal(entry.taskManagerRevealPosition, 8)
+    entry.closeTaskManager()
+}
+entry.openTaskManagerFromHakuMenu()
+assert.equal(entry.taskManagerScreenName, 'B')
+assert.equal(entry.taskManagerRevealPosition, 2)
+entry.openTaskManager('B', 8)
+assert.equal(entry.taskManagerRevealPosition, 2, 'refocusing must retain the current entry edge')
+console.info('Task Manager entry anchor checks passed')
+
 // Verify Glass Grid Focus Card state transitions, reset contract, and presentation fallbacks.
 const glassGridSource = fs.readFileSync(
     path.join(shell, 'components/taskmanager/glassgrid/TaskManagerGlassGrid.qml'), 'utf8')
@@ -134,22 +162,15 @@ assert.match(motionQml, /sidebarToolCloseDuration:\s*400/)
 assert.match(motionQml, /taskManagerFocusMorphDuration:\s*520/)
 assert.match(motionQml, /taskDropdownOpenDuration:\s*340/)
 assert.match(motionQml, /taskDropdownCloseDuration:\s*300/)
-assert.match(motionQml, /taskSelectionRailDuration:\s*260/)
 assert.match(motionQml, /taskDetailsFoldDuration:\s*440/)
 assert.match(motionQml, /taskConfirmationMorphDuration:\s*400/)
-assert.match(motionQml, /taskTooltipStemDuration:\s*120/)
-assert.match(motionQml, /taskTooltipUnfurlDuration:\s*220/)
-assert.match(motionQml, /taskTooltipSlideDuration:\s*140/)
 assert.match(motionQml, /taskBarFillDuration:\s*180/)
 for (const prop of [
     'taskManagerFocusMorphDuration', 'taskManagerFocusMorphCurve',
     'taskDropdownOpenDuration', 'taskDropdownOpenCurve',
     'taskDropdownCloseDuration', 'taskDropdownCloseCurve',
-    'taskSelectionRailDuration', 'taskSelectionRailCurve',
     'taskDetailsFoldDuration', 'taskDetailsFoldCurve',
     'taskConfirmationMorphDuration', 'taskConfirmationMorphCurve',
-    'taskTooltipStemDuration', 'taskTooltipUnfurlDuration',
-    'taskTooltipSlideDuration', 'taskTooltipCurve',
     'taskBarFillDuration'
 ]) {
     assert.ok(hanimQml.includes(prop), `HAnimation.qml must expose ${prop}`)
@@ -291,3 +312,8 @@ for (const file of qmlFiles) {
     }
 }
 console.info('Task Manager Glass Grid logic and motion checks passed')
+
+// Keep obsolete CPU tooltip and selection-rail motion out of production tokens.
+for (const token of ['taskTooltipStemDuration', 'taskTooltipUnfurlDuration', 'taskTooltipSlideDuration', 'taskTooltipCurve', 'taskSelectionRailDuration', 'taskSelectionRailCurve']) {
+    assert.ok(!motionQml.includes(token) && !hanimQml.includes(token), token + ' must be removed')
+}
