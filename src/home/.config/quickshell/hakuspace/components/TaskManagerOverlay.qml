@@ -27,17 +27,27 @@ PanelWindow {
     readonly property bool interactionReady: panelOpen && morphProgress === 1 && !morphAnim.running
     // Clamp geometry against real outputs, including screens smaller than the minimum.
     property size cardSize: Qt.size(980, 560)
-    property point position: Qt.point(80, 60)
+    // Align fresh windows with their entry edge; dragging replaces this binding.
+    property point position: {
+        var anchor = Reveal.anchor(revealPosition, Qt.rect(
+            placementBounds.x + Math.min(Theme.panelPadding, (placementBounds.width - cardWidth) / 2),
+            placementBounds.y + Math.min(Theme.panelPadding, (placementBounds.height - cardHeight) / 2),
+            Math.max(0, placementBounds.width - cardWidth - Theme.panelPadding * 2),
+            Math.max(0, placementBounds.height - cardHeight - Theme.panelPadding * 2)))
+        return Qt.point(anchor.x, anchor.y)
+    }
     readonly property real cardWidth: Math.max(1, Math.min(cardSize.width, width))
     readonly property real cardHeight: Math.max(1, Math.min(cardSize.height, height))
     readonly property real targetX: Math.max(0, Math.min(width - cardWidth, position.x))
     readonly property real targetY: Math.max(0, Math.min(height - cardHeight, position.y))
-    // Match Settings attachment bounds without changing the stable drawing-window geometry.
-    readonly property rect revealBounds: Qt.rect(ScreenGeometry.leftInset,
+    // Place the chassis inside the active status bar and screen rails.
+    readonly property rect placementBounds: Qt.rect(ScreenGeometry.leftInset,
         ScreenGeometry.bottomAttached ? ScreenGeometry.topBorderThickness : ScreenGeometry.chromeAttachmentY(height),
         Math.max(0, width - ScreenGeometry.leftInset - ScreenGeometry.rightInset),
         Math.max(0, ScreenGeometry.bottomAttached ? ScreenGeometry.chromeAttachmentY(height) - ScreenGeometry.topBorderThickness
             : height - ScreenGeometry.bottomInset - ScreenGeometry.chromeAttachmentY(height)))
+    // Extend the transition foot to the physical screen edge.
+    readonly property rect revealBounds: Qt.rect(0, 0, width, height)
     readonly property var revealGeometry: Reveal.neck(revealPosition, revealBounds,
         Qt.rect(card.x, card.y, card.width, card.height), revealProgress, Theme.fontSize * 12)
     readonly property bool ownsKeyboard: UiState.ownsInteraction("taskManager", modelData.name)
