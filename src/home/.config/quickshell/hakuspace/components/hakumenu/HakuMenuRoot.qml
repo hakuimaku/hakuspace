@@ -163,7 +163,7 @@ FocusScope {
 
     Loader {
         id: miniLoader
-        anchors { top: tabs.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; margins: Theme.panelPadding; topMargin: Theme.spaceSm }
+        anchors { top: tabs.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; margins: Theme.panelPadding + 4; topMargin: Theme.spaceSm + 4 }
         active: root.miniLoaded
         enabled: root.panelOpen && root.taskManagerTab
         opacity: root.taskManagerTab ? 1 : 0

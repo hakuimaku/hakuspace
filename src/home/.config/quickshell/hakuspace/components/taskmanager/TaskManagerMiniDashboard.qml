@@ -16,8 +16,8 @@ FocusScope {
     readonly property var cpu: snapshot.cpu || ({})
     readonly property var memory: snapshot.memory || ({})
     readonly property var gpu: (snapshot.gpus || [])[0] || ({})
-    readonly property var network: (snapshot.network || {}).all || ({})
-    readonly property var disks: snapshot.disks || ({})
+    // Keep the extra inset local to Task Manager cards.
+    readonly property int contentPadding: Theme.cardPadding + 4
     // Share one decorative clock and stop it when the Mini page is no longer painted.
     property real waterWavePhase: 0
     NumberAnimation on waterWavePhase {
@@ -26,13 +26,14 @@ FocusScope {
         duration: 3400
         loops: Animation.Infinite
         running: root.visible && !root.reducedMotion
+            && metricsRow.y + metricsRow.height > viewport.contentY
+            && metricsRow.y < viewport.contentY + viewport.height
     }
     signal openFullRequested()
 
     // Keep the standalone handoff as the only Mini action in the focus path.
     function forcePrimaryFocus() { openFull.forceActiveFocus() }
     function clearPrimaryFocus() { focus = false }
-    function rate(value) { return Number.isFinite(value) ? Logic.bytes(value) + "/s" : "—" }
 
     Glass.TaskManagerVisuals { id: miniVisuals }
 
@@ -68,8 +69,10 @@ FocusScope {
         }
     }
 
-    // Scroll only when small outputs or larger fonts exceed the compact overview.
+    // Keep the three metrics in row one and pinned processes directly in row two.
     Flickable {
+        id: viewport
+        objectName: "taskManagerMiniViewport"
         anchors { top: header.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; topMargin: Theme.spaceSm }
         contentWidth: width
         contentHeight: body.implicitHeight
@@ -79,9 +82,12 @@ FocusScope {
         ScrollBar.vertical: ScrollBar {}
         ColumnLayout {
             id: body
+            objectName: "taskManagerMiniGrid"
             width: parent.width
             spacing: Theme.spaceMd
             RowLayout {
+                id: metricsRow
+                objectName: "taskManagerMiniMetricsRow"
                 Layout.fillWidth: true
                 spacing: Theme.spaceMd
                 TaskManagerMiniMetric {
@@ -122,54 +128,16 @@ FocusScope {
                     reducedMotion: root.reducedMotion
                 }
             }
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Theme.spaceMd
-                Repeater {
-                    model: ["Network", "Disk"]
-                    Rectangle {
-                        required property string modelData
-                        Layout.fillWidth: true
-                        implicitHeight: Theme.controlHeight + Theme.cardPadding * 2
-                        radius: Theme.radius
-                        color: miniVisuals.cardSurface
-                        Accessible.role: Accessible.Grouping
-                        Accessible.name: modelData + ", " + ioValue.text
-                        ColumnLayout {
-                            anchors.fill: parent
-                            anchors.margins: Theme.cardPadding
-                            spacing: Theme.spaceXs
-                            Text {
-                                text: modelData
-                                color: miniVisuals.primaryFg
-                                font.family: Theme.fontFamily
-                                font.pixelSize: miniVisuals.metaFontSize
-                            }
-                            Text {
-                                id: ioValue
-                                objectName: modelData === "Network" ? "taskManagerMiniNetwork" : "taskManagerMiniDisk"
-                                Layout.fillWidth: true
-                                text: modelData === "Network"
-                                    ? "↓ " + root.rate(root.network.rxBps) + "  ↑ " + root.rate(root.network.txBps)
-                                    : "R " + root.rate(root.disks.readBps) + "  W " + root.rate(root.disks.writeBps)
-                                color: miniVisuals.secondaryFg
-                                font.family: Theme.fontFamily
-                                font.pixelSize: miniVisuals.metaFontSize
-                                elide: Text.ElideRight
-                            }
-                        }
-                    }
-                }
-            }
             // Keep pinned rows read-only; process management remains in the standalone window.
             Rectangle {
+                objectName: "taskManagerMiniPinsPane"
                 Layout.fillWidth: true
-                implicitHeight: pins.implicitHeight + Theme.cardPadding * 2
+                implicitHeight: pins.implicitHeight + root.contentPadding * 2
                 radius: Theme.radius
                 color: miniVisuals.paneSurface
                 ColumnLayout {
                     id: pins
-                    anchors { top: parent.top; left: parent.left; right: parent.right; margins: Theme.cardPadding }
+                    anchors { top: parent.top; left: parent.left; right: parent.right; margins: root.contentPadding }
                     spacing: Theme.spaceSm
                     RowLayout {
                         Layout.fillWidth: true
