@@ -91,7 +91,7 @@ hl.config({
         shadow = {
             enabled      = true,
             range        = 24,
-            render_power = 6,
+            render_power = 4,
             offset       = { 0, 0 },
             color        = "rgba(000000ee)",
         },
@@ -101,7 +101,7 @@ hl.config({
             size      = 24,
             brightness = 0.5,
             passes    = 3,
-            vibrancy  = 2,
+            vibrancy  = 0.6,
             contrast  = 1.4,
             noise     = 0.05,
             special   = false,
