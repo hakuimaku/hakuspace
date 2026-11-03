@@ -113,15 +113,9 @@ QtObject {
     property list<real> taskDropdownOpenCurve: Motion.taskDropdownOpenCurve
     property int taskDropdownCloseDuration: Motion.taskDropdownCloseDuration
     property list<real> taskDropdownCloseCurve: Motion.taskDropdownCloseCurve
-    property int taskSelectionRailDuration: Motion.taskSelectionRailDuration
-    property list<real> taskSelectionRailCurve: Motion.taskSelectionRailCurve
     property int taskDetailsFoldDuration: Motion.taskDetailsFoldDuration
     property list<real> taskDetailsFoldCurve: Motion.taskDetailsFoldCurve
     property int taskConfirmationMorphDuration: Motion.taskConfirmationMorphDuration
     property list<real> taskConfirmationMorphCurve: Motion.taskConfirmationMorphCurve
-    property int taskTooltipStemDuration: Motion.taskTooltipStemDuration
-    property int taskTooltipUnfurlDuration: Motion.taskTooltipUnfurlDuration
-    property int taskTooltipSlideDuration: Motion.taskTooltipSlideDuration
-    property list<real> taskTooltipCurve: Motion.taskTooltipCurve
     property int taskBarFillDuration: Motion.taskBarFillDuration
 }

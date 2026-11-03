@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import "../../../services"
 import "../../sidebar" as Sidebar
+import "../../motion" as HMotion
 import "../TaskManagerLogic.js" as Logic
 import "TaskManagerMotion.js" as Motion
 
@@ -110,6 +111,8 @@ Rectangle {
     clip: true
 
     onQueryChanged: if (search.text !== root.query) search.text = root.query
+    onSelectedIndexChanged: Qt.callLater(root.syncSelection)
+    onRowsChanged: Qt.callLater(root.syncSelection)
     onProcessesChanged: {
         if (root.selectedKey && !(root.processes || []).some(row => row.key === root.selectedKey)) {
             root.selectedKey = ""
@@ -145,6 +148,11 @@ Rectangle {
         root.selectedKey = root.rows[index].key
         root.killKey = ""
         table.positionViewAtIndex(index, ListView.Contain)
+    }
+
+    // ListView may adjust its index during keyed model moves; restore the selected process afterward.
+    function syncSelection() {
+        if (root && table) table.currentIndex = root.selectedIndex
     }
 
     function handleEscape() {
@@ -712,8 +720,22 @@ Rectangle {
                 cacheBuffer: 600
                 Keys.priority: Keys.BeforeItem
                 Keys.onPressed: event => root.handleKey(event)
-                currentIndex: root.selectedIndex
                 ScrollBar.vertical: ScrollBar {}
+
+                // Scroll the single pill with the content instead of animating viewport offsets.
+                HMotion.SelectionPill {
+                    objectName: "taskProcessSelectionPill"
+                    parent: table.contentItem
+                    z: -1
+                    targetItem: table.currentItem
+                    coordinateSpace: table.contentItem
+                    shown: root.selectedIndex >= 0 && targetItem !== null
+                    visible: shown
+                    duration: root.reducedMotion ? 0 : HAnimation.spatial
+                    fadeDuration: root.reducedMotion ? 0 : HAnimation.buttonReleaseDuration
+                    onDurationChanged: if (duration === 0) snap()
+                    onNormalColorChanged: syncTarget(root.reducedMotion)
+                }
 
                 delegate: Rectangle {
                     id: row
@@ -722,16 +744,9 @@ Rectangle {
                     readonly property bool isSelected: root.selectedKey === modelData.key
                     width: table.width
                     height: root.ultraCompact ? 25 : 28
-                    radius: 5
+                    radius: Theme.radius
                     border.width: 0
-                    color: isSelected
-                        ? visuals.rowSelectedSurface
-                        : (rowHover.hovered ? visuals.rowHoverSurface : "transparent")
-
-                    Behavior on color {
-                        enabled: !root.reducedMotion
-                        ColorAnimation { duration: HAnimation.fast }
-                    }
+                    color: !isSelected && rowHover.hovered ? visuals.rowHoverSurface : "transparent"
 
                     Accessible.role: Accessible.ListItem
                     Accessible.name: modelData.pid + " " + modelData.name + " " + Logic.metric(modelData.cpuTotalPercent, "%")
@@ -765,33 +780,6 @@ Rectangle {
                 }
             }
 
-            // Keep the selection rail inside the list viewport.
-            Rectangle {
-                id: selectionRail
-                objectName: "taskProcessSelectionRail"
-                z: 20
-                readonly property int rowHeight: root.ultraCompact ? 25 : 28
-                readonly property int rowStride: rowHeight + table.spacing
-                readonly property real targetY: root.selectedIndex >= 0
-                    ? (root.selectedIndex * rowStride - table.contentY + Math.round((rowHeight - height) / 2))
-                    : 0
-                visible: root.selectedIndex >= 0 && (targetY + height > 0) && (targetY < table.height)
-                x: 2
-                y: targetY
-                width: 3
-                height: root.ultraCompact ? 13 : 16
-                radius: 1.5
-                border.width: 0
-                color: Theme.accent
-                Behavior on y {
-                    enabled: !root.reducedMotion
-                    NumberAnimation {
-                        duration: HAnimation.taskSelectionRailDuration
-                        easing.type: Easing.BezierSpline
-                        easing.bezierCurve: HAnimation.taskSelectionRailCurve
-                    }
-                }
-            }
         }
 
         // Keep kill confirmation in the existing action row.

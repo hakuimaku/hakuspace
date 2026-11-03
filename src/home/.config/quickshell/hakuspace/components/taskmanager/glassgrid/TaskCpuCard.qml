@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "../../../services"
-import "TaskManagerMotion.js" as Motion
+import "../../settings" as Settings
 
 Rectangle {
     id: root
@@ -14,9 +14,7 @@ Rectangle {
 
     property int hoveredCoreIndex: -1
     property bool tooltipVisible: false
-    property int hoverDelayMs: 280
-    property real stemProgress: 0.0
-    property real unfurlProgress: 0.0
+    readonly property int hoverDelayMs: 250
 
     readonly property var cores: Array.isArray(cpu.cores) ? cpu.cores.slice(0, 32) : []
     readonly property int gridColumns: Math.min(6, Math.max(4, Math.ceil(cores.length / 2)))
@@ -39,155 +37,26 @@ Rectangle {
         return "Core " + index + " · " + visuals.dashMetric(raw, "%", digits)
     }
 
-    function _openTooltipWithMotion() {
-        tooltipCloseAnim.stop()
-        root.tooltipVisible = true
-        if (root.reducedMotion) {
-            tooltipOpenAnim.stop()
-            root.stemProgress = 1.0
-            root.unfurlProgress = 1.0
-        } else if (!tooltipOpenAnim.running && (root.stemProgress < 1.0 || root.unfurlProgress < 1.0)) {
-            tooltipOpenAnim.restart()
-        }
-    }
-
-    function _closeTooltipWithMotion() {
-        tooltipOpenAnim.stop()
-        root.tooltipVisible = false
-        if (root.reducedMotion) {
-            tooltipCloseAnim.stop()
-            root.stemProgress = 0.0
-            root.unfurlProgress = 0.0
-            root.hoveredCoreIndex = -1
-        } else {
-            tooltipCloseAnim.restart()
-        }
-    }
-
+    // Keep the hovered core highlighted while a conventional tooltip waits.
     function handleCoreHover(index, active) {
         if (active) {
-            leaveTimer.stop()
-            root.hoveredCoreIndex = index
-            if (root.tooltipVisible) {
-                tooltipTimer.stop()
-                tooltipCloseAnim.stop()
-                root.stemProgress = 1.0
-                root.unfurlProgress = 1.0
-            } else {
-                tooltipTimer.restart()
-            }
-        } else if (root.hoveredCoreIndex === index) {
-            tooltipTimer.stop()
-            leaveTimer.restart()
-        }
+            hoveredCoreIndex = index
+            if (!tooltipVisible) tooltipTimer.restart()
+        } else if (hoveredCoreIndex === index) clearCoreTooltip()
     }
 
-    function showCoreTooltip(index) {
-        tooltipTimer.stop()
-        leaveTimer.stop()
-        tooltipOpenAnim.stop()
-        tooltipCloseAnim.stop()
-        if (index >= 0 && index < root.cores.length) {
-            root.hoveredCoreIndex = index
-            root.tooltipVisible = true
-            root.stemProgress = 1.0
-            root.unfurlProgress = 1.0
-        } else {
-            root.hoveredCoreIndex = -1
-            root.tooltipVisible = false
-            root.stemProgress = 0.0
-            root.unfurlProgress = 0.0
-        }
-    }
-
-    function setCoreTooltipMotion(index, stemP, unfurlP) {
-        tooltipTimer.stop()
-        leaveTimer.stop()
-        tooltipOpenAnim.stop()
-        tooltipCloseAnim.stop()
-        if (index >= 0 && index < root.cores.length) {
-            root.hoveredCoreIndex = index
-            root.tooltipVisible = true
-            root.stemProgress = Motion.clamp01(stemP)
-            root.unfurlProgress = Motion.clamp01(unfurlP)
-        } else {
-            root.hoveredCoreIndex = -1
-            root.tooltipVisible = false
-            root.stemProgress = 0.0
-            root.unfurlProgress = 0.0
-        }
-    }
-
+    // Release pending hover state when the card is hidden or the pointer leaves.
     function clearCoreTooltip() {
         tooltipTimer.stop()
-        leaveTimer.stop()
-        tooltipOpenAnim.stop()
-        tooltipCloseAnim.stop()
-        root.hoveredCoreIndex = -1
-        root.tooltipVisible = false
-        root.stemProgress = 0.0
-        root.unfurlProgress = 0.0
+        tooltipVisible = false
+        hoveredCoreIndex = -1
     }
+    onVisibleChanged: if (!visible) clearCoreTooltip()
 
     Timer {
         id: tooltipTimer
         interval: root.hoverDelayMs
-        repeat: false
-        onTriggered: {
-            if (root.hoveredCoreIndex >= 0 && root.hoveredCoreIndex < root.cores.length) {
-                root._openTooltipWithMotion()
-            }
-        }
-    }
-
-    Timer {
-        id: leaveTimer
-        interval: 35
-        repeat: false
-        onTriggered: root._closeTooltipWithMotion()
-    }
-
-    SequentialAnimation {
-        id: tooltipOpenAnim
-        NumberAnimation {
-            target: root
-            property: "stemProgress"
-            to: 1.0
-            duration: HAnimation.taskTooltipStemDuration
-            easing.type: Easing.BezierSpline
-            easing.bezierCurve: HAnimation.taskTooltipCurve
-        }
-        NumberAnimation {
-            target: root
-            property: "unfurlProgress"
-            to: 1.0
-            duration: HAnimation.taskTooltipUnfurlDuration
-            easing.type: Easing.BezierSpline
-            easing.bezierCurve: HAnimation.taskTooltipCurve
-        }
-    }
-
-    SequentialAnimation {
-        id: tooltipCloseAnim
-        NumberAnimation {
-            target: root
-            property: "unfurlProgress"
-            to: 0.0
-            duration: Math.round(HAnimation.taskTooltipUnfurlDuration * 0.72)
-            easing.type: Easing.BezierSpline
-            easing.bezierCurve: HAnimation.taskDropdownCloseCurve
-        }
-        NumberAnimation {
-            target: root
-            property: "stemProgress"
-            to: 0.0
-            duration: Math.round(HAnimation.taskTooltipStemDuration * 0.72)
-            easing.type: Easing.BezierSpline
-            easing.bezierCurve: HAnimation.taskDropdownCloseCurve
-        }
-        ScriptAction {
-            script: if (!root.tooltipVisible) root.hoveredCoreIndex = -1
-        }
+        onTriggered: root.tooltipVisible = root.hoveredCoreIndex >= 0 && root.hoveredCoreIndex < root.cores.length
     }
 
     objectName: "taskCpuCard"
@@ -381,79 +250,17 @@ Rectangle {
         }
     }
 
-    // Hover stem.
-    Rectangle {
-        id: coreTooltipStem
-        objectName: "cpuCoreTooltipStem"
-        z: 49
-        readonly property int fullStemHeight: 5
-        readonly property real targetStemX: Math.round(coreTooltip.cellPos.x - width / 2)
-        visible: (root.tooltipVisible || root.stemProgress > 0) && root.hoveredCoreIndex >= 0
-        width: 2
-        height: Math.round(fullStemHeight * root.stemProgress)
-        radius: 1
-        border.width: 0
-        x: targetStemX
-        y: Math.round(coreTooltip.cellPos.y - height)
-        color: Theme.accent
-        Behavior on x {
-            enabled: !root.reducedMotion && root.tooltipVisible
-            NumberAnimation {
-                duration: HAnimation.taskTooltipSlideDuration
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: HAnimation.taskTooltipCurve
-            }
-        }
-    }
-
-    // Reveal the tooltip by clipping its geometry.
-    Rectangle {
-        id: coreTooltip
+    // Reuse the lightweight popup style rather than the bar's Flare tooltip host.
+    Settings.SettingsTooltip {
         objectName: "cpuCoreTooltip"
-        z: 50
-        readonly property Item targetCell: (root.hoveredCoreIndex >= 0 && root.hoveredCoreIndex < coreRepeater.count)
-            ? coreRepeater.itemAt(root.hoveredCoreIndex)
-            : null
-        readonly property point cellPos: targetCell ? targetCell.mapToItem(root, targetCell.width / 2, 0) : Qt.point(root.width / 2, root.height - 28)
-        readonly property string text: root.formatCoreTooltip(root.hoveredCoreIndex)
-        readonly property int fullWidth: tooltipLabel.implicitWidth + 18
-        readonly property int fullHeight: tooltipLabel.implicitHeight + 10
-        readonly property real targetBaseX: Math.max(8, Math.min(root.width - fullWidth - 8, Math.round(cellPos.x - fullWidth / 2)))
-        property real animatedBaseX: targetBaseX
-        Behavior on animatedBaseX {
-            enabled: !root.reducedMotion && root.tooltipVisible
-            NumberAnimation {
-                duration: HAnimation.taskTooltipSlideDuration
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: HAnimation.taskTooltipCurve
-            }
-        }
-
-        visible: (root.tooltipVisible || root.unfurlProgress > 0) && root.hoveredCoreIndex >= 0 && text !== "" && width > 0
-        width: Math.round(fullWidth * root.unfurlProgress)
-        height: fullHeight
-        x: Math.round(animatedBaseX + (fullWidth - width) / 2)
-        y: Math.max(4, Math.round(cellPos.y - height - coreTooltipStem.fullStemHeight))
-        radius: 6
-        border.width: 0
-        color: visuals.popupSurface
-        clip: true
-
-        Item {
-            x: -(coreTooltip.x - Math.round(coreTooltip.animatedBaseX))
-            y: 0
-            width: coreTooltip.fullWidth
-            height: coreTooltip.fullHeight
-
-            Label {
-                id: tooltipLabel
-                objectName: "cpuCoreTooltipLabel"
-                anchors.centerIn: parent
-                text: coreTooltip.text
-                color: visuals.primaryFg
-                font.family: Theme.fontFamily
-                font.pixelSize: visuals.metaFontSize
-            }
-        }
+        // Keep the popup parent stable while its anchor follows the highlighted core.
+        readonly property Item coreCell: root.hoveredCoreIndex >= 0 ? coreRepeater.itemAt(root.hoveredCoreIndex) : null
+        readonly property point anchor: coreCell ? coreCell.mapToItem(root, coreCell.width / 2, coreCell.height) : Qt.point(0, 0)
+        target: root
+        x: Math.max(0, Math.min(root.width - width, anchor.x - width / 2))
+        y: anchor.y + Theme.spaceXs
+        text: root.formatCoreTooltip(root.hoveredCoreIndex)
+        active: root.tooltipVisible && coreCell !== null
+        immediate: true
     }
 }

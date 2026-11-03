@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import "../../../services"
 import "../TaskManagerLogic.js" as Logic
+import "../../../config/UiCatalog.js" as Catalog
 
 RowLayout {
     id: root
@@ -23,7 +24,7 @@ RowLayout {
     readonly property int memColumnWidth: compactColumns ? 70 : 96
     readonly property int thrColumnWidth: compactColumns ? 36 : 44
 
-    readonly property color fgCol: visuals ? visuals.primaryFg : Theme.fg
+    readonly property color fgCol: selected ? Theme.onAccentColor : (visuals ? visuals.primaryFg : Theme.fg)
     readonly property color headerAccentCol: visuals ? visuals.headerAccentFg : Qt.alpha(Theme.accent, 0.68)
 
     spacing: compactColumns ? 6 : 10
@@ -48,16 +49,29 @@ RowLayout {
         elide: Text.ElideNone
     }
 
-    Label {
-        objectName: "taskManagerProcessName"
+    RowLayout {
         Layout.fillWidth: true
         Layout.minimumWidth: 0
-        font.family: Theme.fontFamily
-        font.pixelSize: root.labelFontSize
-        font.bold: !root.header && (root.selected || root.isPinned)
-        text: root.header ? "PROCESS" : ((root.isPinned ? "󰐃 " : "") + String(root.process.name || "—"))
-        color: root.header ? root.headerAccentCol : Theme.accent
-        elide: Text.ElideRight
+        spacing: Theme.spaceXs
+        Label {
+            objectName: "taskManagerProcessPin"
+            visible: !root.header && root.isPinned
+            text: Catalog.taskManagerIcons.pin
+            color: root.selected ? Theme.onAccentColor : Theme.accent
+            font.family: Theme.iconFontFamily
+            font.pixelSize: root.labelFontSize
+        }
+        Label {
+            objectName: "taskManagerProcessName"
+            Layout.fillWidth: true
+            Layout.minimumWidth: 0
+            font.family: Theme.fontFamily
+            font.pixelSize: root.labelFontSize
+            font.bold: !root.header && (root.selected || root.isPinned)
+            text: root.header ? "PROCESS" : String(root.process.name || "—")
+            color: root.header ? root.headerAccentCol : (root.selected ? Theme.onAccentColor : Theme.accent)
+            elide: Text.ElideRight
+        }
     }
 
     Label {
@@ -80,7 +94,7 @@ RowLayout {
         font.family: Theme.fontFamily
         font.pixelSize: root.labelFontSize
         text: root.header ? "CPU" : Logic.metric(root.process.cpuTotalPercent, "%")
-        color: root.header ? root.headerAccentCol : Theme.accent
+        color: root.header ? root.headerAccentCol : (root.selected ? Theme.onAccentColor : Theme.accent)
         horizontalAlignment: Text.AlignRight
         elide: Text.ElideRight
     }
@@ -106,7 +120,7 @@ RowLayout {
         font.family: Theme.fontFamily
         font.pixelSize: root.labelFontSize
         text: root.header ? "THR" : String(root.process.threads !== undefined ? root.process.threads : "—")
-        color: root.header ? root.headerAccentCol : Theme.accent
+        color: root.header ? root.headerAccentCol : (root.selected ? Theme.onAccentColor : Theme.accent)
         horizontalAlignment: Text.AlignRight
         elide: Text.ElideNone
     }

@@ -112,7 +112,6 @@ QtObject {
         ? Qt.darker(Theme.surface, 1.04)
         : Qt.lighter(Theme.surface, 1.55)
     readonly property color selectedSurface: Qt.alpha(Theme.accent, Theme.isLight ? 0.13 : 0.11)
-    readonly property color rowSelectedSurface: selectedSurface
     readonly property color rowHoverSurface: Theme.isLight
         ? Qt.alpha(Theme.overlayInk, 0.038)
         : Qt.alpha(Theme.overlayInk, 0.032)
