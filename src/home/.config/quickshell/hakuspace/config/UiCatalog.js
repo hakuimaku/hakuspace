@@ -2,6 +2,9 @@
 
 // HakuMenu
 
+// Shared Task Manager category and action glyphs.
+var taskManagerIcons = { menu: "󰍜", overview: "󰍛", cpu: "", memory: "", gpu: "󰢮", pin: "󰐃", open: "󰏌" }
+
 // Static hakuMenuModes presentation entries.
 var hakuMenuModes = [
     { key: "general", icon: "󰀻", label: "General" },

@@ -79,6 +79,8 @@ QtObject {
     
     property string font: Design.defaultFont
     property string fontFamily: font
+    // Keep Nerd Font glyphs independent of the user's text font.
+    readonly property string iconFontFamily: "JetBrainsMono Nerd Font"
     property int fontSize: Design.defaultFontSize
     readonly property int topBarTopPadding: Design.topBarTopPadding
     readonly property real topBarContentHeight: Math.max(Design.topBarMinContentHeight, fontSize * Design.topBarFontHeightFactor) + topBarTopPadding
