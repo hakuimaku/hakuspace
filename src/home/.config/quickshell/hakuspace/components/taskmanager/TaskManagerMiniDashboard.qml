@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell
 import "../../services"
 import "glassgrid" as Glass
 import "TaskManagerLogic.js" as Logic
@@ -12,6 +13,15 @@ FocusScope {
     property var snapshot: ({})
     property var pinnedProcesses: TaskManagerPins.pinnedProcesses
     property bool reducedMotion: false
+    // Keep confirmation tied to the process lifetime across telemetry refreshes.
+    property string pendingUnpinKey: ""
+    onPinnedProcessesChanged: if (!pinnedProcesses.some(process => process.key === pendingUnpinKey)) pendingUnpinKey = ""
+    onVisibleChanged: if (!visible) pendingUnpinKey = ""
+    onEnabledChanged: if (!enabled) pendingUnpinKey = ""
+    Keys.onEscapePressed: event => {
+        if (pendingUnpinKey) { pendingUnpinKey = ""; event.accepted = true }
+        else event.accepted = false
+    }
     readonly property int maxVisiblePins: 4
     readonly property bool compact: width < Theme.fontSize * 44
     readonly property var cpu: snapshot.cpu || ({})
@@ -33,9 +43,18 @@ FocusScope {
     }
     signal openFullRequested()
 
-    // Keep the standalone handoff as the only Mini action in the focus path.
+    // Keep the standalone handoff as the initial Mini focus target.
     function forcePrimaryFocus() { openFull.forceActiveFocus() }
-    function clearPrimaryFocus() { focus = false }
+    function clearPrimaryFocus() { pendingUnpinKey = ""; focus = false }
+
+    // First activation asks; only another activation of the same identity removes its pin.
+    function activatePin(process) {
+        if (!process || !process.key) return
+        if (pendingUnpinKey === process.key) {
+            pendingUnpinKey = ""
+            TaskManagerPins.unpin(process)
+        } else pendingUnpinKey = process.key
+    }
 
     Glass.TaskManagerVisuals { id: miniVisuals }
 
@@ -139,7 +158,7 @@ FocusScope {
                     reducedMotion: root.reducedMotion
                 }
             }
-            // Pinned processes remain read-only informational objects.
+            // Confirm unpinning inline without opening full process controls.
             Rectangle {
                 objectName: "taskManagerMiniPinsPane"
                 Layout.fillWidth: true
@@ -202,14 +221,24 @@ FocusScope {
                             implicitHeight: Theme.comfortableControlHeight
                             radius: Theme.radius
                             readonly property bool hovered: rowHover.hovered
+                            readonly property bool confirming: root.pendingUnpinKey === modelData.key
                             color: hovered ? miniVisuals.miniRowHoverSurface : miniVisuals.wellSurface
                             Behavior on color {
                                 enabled: !root.reducedMotion
                                 ColorAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
                             }
-                            Accessible.role: Accessible.Grouping
+                            activeFocusOnTab: true
+                            Accessible.role: Accessible.Button
                             Accessible.name: modelData.name + ", CPU " + Logic.metric(modelData.cpuTotalPercent, "%") + ", memory " + Logic.bytes(modelData.rss)
-                            HoverHandler { id: rowHover; cursorShape: Qt.ArrowCursor }
+                            Accessible.description: confirming ? "Press again to unpin" : "Press twice to unpin"
+                            Accessible.onPressAction: root.activatePin(modelData)
+                            Keys.onReturnPressed: event => { if (!event.isAutoRepeat) root.activatePin(modelData); event.accepted = true }
+                            Keys.onSpacePressed: event => { if (!event.isAutoRepeat) root.activatePin(modelData); event.accepted = true }
+                            HoverHandler { id: rowHover; cursorShape: Qt.PointingHandCursor }
+                            TapHandler {
+                                acceptedButtons: Qt.LeftButton
+                                onTapped: { pinRow.forceActiveFocus(); root.activatePin(pinRow.modelData) }
+                            }
                             RowLayout {
                                 anchors { fill: parent; leftMargin: Theme.spaceMd; rightMargin: Theme.spaceMd }
                                 spacing: Theme.spaceSm
@@ -243,9 +272,10 @@ FocusScope {
                                     elide: Text.ElideRight
                                 }
                                 Text {
-                                    Layout.preferredWidth: Theme.fontSize * 8
+                                    objectName: "taskManagerMiniUnpinPrompt"
+                                    Layout.preferredWidth: Theme.fontSize * (pinRow.confirming ? 16 : 8) + (pinRow.confirming ? Theme.spaceSm : 0)
                                     horizontalAlignment: Text.AlignRight
-                                    text: "CPU " + Logic.metric(pinRow.modelData.cpuTotalPercent, "%")
+                                    text: pinRow.confirming ? "Unpin? Click again" : "CPU " + Logic.metric(pinRow.modelData.cpuTotalPercent, "%")
                                     elide: Text.ElideRight
                                     color: Qt.alpha(Theme.accent, pinRow.hovered ? 1 : 0.85)
                                     Behavior on color {
@@ -256,6 +286,7 @@ FocusScope {
                                     font.pixelSize: Theme.fontSize - 1
                                 }
                                 Text {
+                                    visible: !pinRow.confirming
                                     Layout.preferredWidth: Theme.fontSize * 8
                                     horizontalAlignment: Text.AlignRight
                                     text: "RAM " + Logic.bytes(pinRow.modelData.rss)
