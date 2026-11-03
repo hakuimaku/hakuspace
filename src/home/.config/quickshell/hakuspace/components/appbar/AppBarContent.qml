@@ -15,6 +15,8 @@ Item {
     property bool active: false
     property bool shown: false
     property bool suppressTooltips: false
+    // Hosts optionally supply their visual chassis independently of the icon anchor.
+    property var hakuMenuSeedProvider: null
     property real bottomInset: 0
     property real sideInset: 0
     property real targetHeight: ScreenGeometry.appBarHeight
@@ -311,7 +313,8 @@ Item {
                         onActivated: {
                             if (!appSlot.app || !root.active) return
                             root.cancelTermination()
-                            if (appSlot.app.type === "system") UiState.toggleHakuMenu(root.modelData.name, "drun", root.activationSource, root.menuAnchor(appIcon))
+                            if (appSlot.app.type === "system") UiState.toggleHakuMenu(root.modelData.name, "drun", root.activationSource,
+                                root.menuAnchor(appIcon), root.hakuMenuSeedProvider ? root.hakuMenuSeedProvider() : null)
                             else DockApps.activate(appSlot.app)
                         }
                         onContextMenuRequested: {

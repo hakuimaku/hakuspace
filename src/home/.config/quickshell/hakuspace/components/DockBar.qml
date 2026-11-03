@@ -27,7 +27,8 @@ Item {
             appContent.contentWidth + horizontalPadding * 2) : 0
     // Only the Dock presentation keeps its owning output's autohide surface alive.
     readonly property bool hakuMenuDockLease: !!modelData && UiState.activePanel === "hakumenu"
-        && UiState.hakuMenuStyle === "dockFloating" && UiState.hakuMenuScreenName === modelData.name
+        && ChromeLayout.dockbarActive && UiState.hakuMenuStyle === "bottomFlare"
+        && UiState.hakuMenuSource === "dockbar" && UiState.hakuMenuScreenName === modelData.name
     readonly property bool appMenuDockLease: !!modelData && UiState.activePanel === "appMenu"
         && UiState.appMenu && UiState.appMenu.screenName === modelData.name
     readonly property bool shown: enabledDock && (always || revealed || hakuMenuDockLease || appMenuDockLease)
@@ -62,6 +63,11 @@ Item {
     // Revealing persistent chrome does not change UiState's transient panel ownership.
     function reveal() { if (enabledDock && !always) revealed = true }
     function close() { appContent.cancelTermination(); revealed = false }
+    // Capture the painted chassis in output-local coordinates at activation time.
+    function hakuMenuSeedRect() {
+        return {x: sideInset + surface.x, y: modelData.height - dockWindow.height + surface.y,
+            width: surface.width, height: surface.height}
+    }
     // Remove stale output entries before publishing the current visible state.
     function syncGeometry() {
         var name = modelData ? modelData.name : ""
@@ -165,6 +171,7 @@ Item {
             hostWindow: dockWindow
             inputLifetime: lifetime
             activationSource: "dockbar"
+            hakuMenuSeedProvider: root.hakuMenuSeedRect
             active: root.enabledDock
             shown: root.shown
             suppressTooltips: root.hakuMenuDockLease || root.appMenuDockLease

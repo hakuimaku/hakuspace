@@ -12,6 +12,9 @@ Item {
     property real contentW: 0
     property real contentH: 0
     property bool shown: false
+    // Optional host-local span for simultaneous width and height reveals.
+    property var collapseSpan: null
+    property bool animateOpenSpan: false
     property var bounds: ({start: 0, end: 1920})
     
     property real minW: 80
@@ -29,6 +32,10 @@ Item {
     // use their own calmer profile. Initial opening remains a vertical slide.
     property int retargetDuration: HAnimation.normal
     property var retargetWidthCurve: HAnimation.spatialCurve
+    // Hosts can synchronize height retargets without changing their opening reveal.
+    property int retargetHeightDuration: openDuration
+    property var retargetHeightCurve: openHeightCurve
+    property var _activeHeightCurve: openHeightCurve
     property var _activeWidthCurve: openWidthCurve
     
     property real mStart: 0
@@ -40,6 +47,8 @@ Item {
     
     property var _lastExpected: ({start: 0, end: 0, height: 0})
     property real _lastAnimTime: 0
+    property bool _opening: false
+    property bool _settingTargets: false
     
     Timer {
         id: throttleTimer
@@ -49,9 +58,27 @@ Item {
     
     // Emits settled signal when all position and height animations have completed.
     function checkSettled() {
-        if (!animStart.running && !animEnd.running && !animHeight.running) {
+        if (!_settingTargets && !animStart.running && !animEnd.running && !animHeight.running) {
             root.settled(root.shown);
         }
+    }
+
+    // Install every target before zero-duration animations can report completion.
+    function animateSpan(start, end, height, duration, widthCurve, heightCurve) {
+        _settingTargets = true;
+        animStart.stop(); animEnd.stop(); animHeight.stop();
+        _activeWidthCurve = widthCurve;
+        _activeHeightCurve = heightCurve;
+        if (duration <= 0) {
+            mStart = start; mEnd = end; mHeight = height;
+        } else {
+            animStart.to = start; animStart.duration = duration;
+            animEnd.to = end; animEnd.duration = duration;
+            animHeight.to = height; animHeight.duration = duration;
+            animStart.restart(); animEnd.restart(); animHeight.restart();
+        }
+        _settingTargets = false;
+        checkSettled();
     }
     
     // Resolves global horizontal start and end bounds of the anchor item.
@@ -85,6 +112,18 @@ Item {
         var eH = contentH + padY;
         
         hugging = (eL <= bounds.start || eR >= bounds.end);
+
+        if (_opening && animateOpenSpan && collapseSpan) {
+            _opening = false;
+            if (mHeight <= 0.01 && !animStart.running && !animEnd.running && !animHeight.running) {
+                mStart = collapseSpan.start;
+                mEnd = collapseSpan.end;
+            }
+            _lastExpected = {start: eL, end: eR, height: eH};
+            animateSpan(eL, eR, eH, openDuration, openWidthCurve, openHeightCurve);
+            return;
+        }
+        _opening = false;
         
         // Initial open keeps the established HakuMenu slide-down motion:
         // resolve the final horizontal span immediately, then animate only
@@ -98,6 +137,7 @@ Item {
             _lastExpected = {start: eL, end: eR, height: eH};
 
             animHeight.to = eH;
+            _activeHeightCurve = openHeightCurve;
             animHeight.duration = openDuration;
             animHeight.restart();
             return;
@@ -130,7 +170,8 @@ Item {
                 
                 if (Math.abs(eH - mHeight) > 0.5) {
                     animHeight.to = eH;
-                    animHeight.duration = openDuration;
+                    _activeHeightCurve = retargetHeightCurve;
+                    animHeight.duration = retargetHeightDuration;
                     animHeight.restart();
                 }
             } else {
@@ -141,9 +182,17 @@ Item {
     
     onShownChanged: {
         if (shown) {
+            _opening = true;
+            _lastAnimTime = 0;
             Qt.callLater(updateTargetBounds);
         } else {
             throttleTimer.stop();
+            if (animateOpenSpan && collapseSpan) {
+                // A close before the first reveal has no visible frames to animate.
+                var duration = mHeight <= 0.01 && !animHeight.running ? 0 : closeDuration;
+                animateSpan(collapseSpan.start, collapseSpan.end, 0, duration, closeWidthCurve, closeHeightCurve);
+                return;
+            }
 
             // Opening resolves the horizontal span first and then reveals the
             // surface vertically. Closing is the exact visual reverse: keep
@@ -152,6 +201,7 @@ Item {
             animStart.stop();
             animEnd.stop();
             animHeight.to = 0;
+            _activeHeightCurve = closeHeightCurve;
             animHeight.duration = closeDuration;
             animHeight.restart();
         }
@@ -184,9 +234,9 @@ Item {
         target: root
         property: "mHeight"
         duration: HAnimation.normal
-        easing.bezierCurve: root.shown ? root.openHeightCurve : root.closeHeightCurve
+        easing.bezierCurve: root._activeHeightCurve
         onFinished: {
-            if (!root.shown && root.mHeight <= 0.01) {
+            if (!root.shown && !root.animateOpenSpan && root.mHeight <= 0.01) {
                 var anchor = root.anchorSpan();
                 if (anchor) {
                     root.mStart = anchor.start;

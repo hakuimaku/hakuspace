@@ -5,6 +5,7 @@ import "../../services"
 import "../base" as Base
 import "../base/SafeZoneGeometry.js" as SafeZoneGeometry
 import "../flare" as Flare
+import "HakuMenuGeometry.js" as Geometry
 
 Item {
     id: root
@@ -12,10 +13,10 @@ Item {
     readonly property bool releaseReady: !panelOpen && visuallyClosed
     property bool visuallyClosed: true
     required property var modelData
-    readonly property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
 
     property bool bottomAttached: false
-    readonly property bool available: bottomAttached ? ChromeLayout.taskbarMode : ChromeLayout.topBarMode
+    readonly property bool available: bottomAttached ? ChromeLayout.taskbarMode || ChromeLayout.dockbarActive : ChromeLayout.topBarMode
+    readonly property bool dockAttached: bottomAttached && ChromeLayout.dockbarActive && !ChromeLayout.taskbarMode
     readonly property string presentation: bottomAttached ? "bottomFlare" : "topFlare"
     readonly property real screenWidth: modelData ? modelData.width : 0
     readonly property real screenHeight: modelData ? modelData.height : 0
@@ -25,14 +26,27 @@ Item {
         && UiState.hakuMenuScreenName === modelData.name
     // Retain the real App Menu rect while the closing morph finishes.
     property var capturedAnchor: null
-    readonly property real maxMenuWidth: root.screenWidth * 0.42
+    // A reversal keeps the original Dock span until the surface fully closes.
+    property var capturedSeed: null
+    // Keep the outgoing profile until its visual close completes.
+    property string renderTab: "hakumenu"
+    readonly property bool taskManagerTab: renderTab === "taskManager"
+    readonly property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
+    readonly property var taskSize: Geometry.attachedTaskSize(screenWidth, screenHeight,
+        ScreenGeometry.leftInset, ScreenGeometry.rightInset,
+        dockAttached ? ScreenGeometry.dockbarHeight + ScreenGeometry.bottomInset
+            : bottomAttached ? ScreenGeometry.taskbarHeight : Theme.topBarHeight,
+        dockAttached ? Theme.topBarHeight : bottomAttached ? ScreenGeometry.topBorderThickness : ScreenGeometry.bottomInset)
+    readonly property real maxMenuWidth: taskManagerTab ? taskSize.width : root.screenWidth * 0.42
     readonly property real targetMenuWidth: {
+        if (taskManagerTab) return taskSize.width
         if (UiState.hakuMenuMode === "general") return root.screenWidth * 0.38
         if (UiState.hakuMenuMode === "theme") return root.screenWidth * 0.36
         return root.screenWidth * 0.40
     }
-    readonly property real menuHeight: root.screenHeight * 0.40
-    readonly property real menuTop: bottomAttached ? screenHeight - ScreenGeometry.taskbarHeight : Theme.topBarHeight
+    readonly property real menuHeight: taskManagerTab ? taskSize.height : root.screenHeight * 0.40
+    readonly property real menuTop: dockAttached ? screenHeight - ScreenGeometry.bottomInset - ScreenGeometry.dockbarHeight
+        : bottomAttached ? screenHeight - ScreenGeometry.taskbarHeight : Theme.topBarHeight
     readonly property real bounceHeadroom: menuHeight * HAnimation.hakuMenuBounceHeadroom
     readonly property bool contentReady: isFinite(menu.width) && menu.width > 0
                                          && isFinite(menu.height) && menu.height > 0
@@ -68,8 +82,12 @@ Item {
 
     onPanelOpenChanged: {
         if (panelOpen) {
+            renderTab = UiState.hakuPanelTab
+            if (visuallyClosed) {
+                capturedAnchor = UiState.hakuMenuAnchorRect
+                capturedSeed = dockAttached ? UiState.hakuMenuSeedRect : null
+            }
             visuallyClosed = false
-            capturedAnchor = UiState.hakuMenuAnchorRect
             Qt.callLater(function() {
                 if (!root) return
                 if (root.panelOpen) menu.forcePrimaryFocus()
@@ -77,6 +95,11 @@ Item {
         } else {
             menu.clearPrimaryFocus()
         }
+    }
+
+    Connections {
+        target: UiState
+        function onHakuPanelTabChanged() { if (root.panelOpen) root.renderTab = UiState.hakuPanelTab }
     }
 
     // Top-layer visual shell. This remains a pure visual surface: it owns the
@@ -197,6 +220,8 @@ Item {
             // Center the menu physically; the captured App Menu rect owns interaction only.
             anchorRect: ({x: root.screenWidth / 2, y: root.menuTop, width: 0, height: 0})
             hostRect: ({x: 0, y: 0, width: root.screenWidth, height: root.screenHeight})
+            animateOpenSpan: !!root.capturedSeed
+            collapseSpan: root.capturedSeed ? {start: root.capturedSeed.x, end: root.capturedSeed.x + root.capturedSeed.width} : null
             shown: root.panelOpen && root.contentReady
             contentW: root.targetMenuWidth
             contentH: root.menuHeight
@@ -206,12 +231,16 @@ Item {
             padY: 0
             snap: 0
             bounds: ScreenGeometry.horizontalBounds(root.screenWidth)
-            openDuration: HAnimation.hakuMenuOpenDuration
-            closeDuration: HAnimation.hakuMenuCloseDuration
-            retargetDuration: HAnimation.hakuMenuResizeDuration
+            openDuration: root.reducedMotion ? 0 : HAnimation.hakuMenuOpenDuration
+            closeDuration: root.reducedMotion ? 0 : HAnimation.hakuMenuCloseDuration
+            retargetDuration: root.reducedMotion ? 0 : HAnimation.hakuMenuResizeDuration
+            retargetHeightDuration: root.reducedMotion ? 0 : HAnimation.hakuMenuResizeDuration
+            retargetHeightCurve: HAnimation.hakuMenuResizeCurve
             retargetWidthCurve: HAnimation.hakuMenuResizeCurve
             openHeightCurve: HAnimation.hakuMenuOpenCurve
             closeHeightCurve: HAnimation.hakuMenuCloseCurve
+            openWidthCurve: HAnimation.hakuMenuOpenCurve
+            closeWidthCurve: HAnimation.hakuMenuCloseCurve
         }
 
         Rectangle {
@@ -245,7 +274,7 @@ Item {
                 width: root.targetMenuWidth
                 height: root.menuHeight
                 panelOpen: root.panelOpen
-                tab: UiState.hakuPanelTab
+                tab: root.renderTab
                 interactionOwned: root.panelOpen && UiState.ownsInteraction("hakumenu", root.modelData.name)
                 onKeyboardActivity: lifetime.beginKeyboardLease()
                 onWallpaperRequested: UiState.openWallpaper(root.modelData.name)

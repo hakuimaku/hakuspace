@@ -75,13 +75,17 @@ QtObject {
     property var trayMenu: null
     property var appMenu: null
     property var notificationPanel: null
-    // Select the root page independently of HakuMenu submodes.
+    // Select the root page independently of HakuMenu's retained submode.
     property string hakuPanelTab: "hakumenu"
     property string hakuMenuMode: "closed"
     property string hakuMenuScreenName: ""
     // Retain the source-selected presentation for the current menu lifetime.
     property string hakuMenuStyle: "topFlare"
     property var hakuMenuAnchorRect: null
+    // Keep the trigger owner separate from its visual attachment edge.
+    property string hakuMenuSource: ""
+    // Capture the host chassis independently of the interaction anchor.
+    property var hakuMenuSeedRect: null
     property string hakuMenuQuery: ""
     property string hakuMenuSelectionLabel: ""
     // Remember the requested Settings domain when opening from the wallpaper browser.
@@ -126,7 +130,7 @@ QtObject {
     property Connections chromeConnections: Connections {
         target: ChromeLayout
         function onDockbarActiveChanged() {
-            if (!ChromeLayout.dockbarActive && root.hakuMenuStyle === "dockFloating") root.closeHakuMenu()
+            if (!ChromeLayout.dockbarActive && root.hakuMenuSource === "dockbar") root.closeHakuMenu()
         }
         function onTaskbarModeChanged() {
             TooltipManager.dismiss()
@@ -277,12 +281,12 @@ QtObject {
         if (!source || source === "default") return ChromeLayout.defaultHakuMenuPresentation
         if (source === "edge") return ChromeLayout.topEdgeHakuMenuEnabled ? "topFlare" : ""
         if (source === "taskbar") return ChromeLayout.taskbarMode ? "bottomFlare" : ""
-        if (source === "dockbar") return ChromeLayout.dockbarActive ? "dockFloating" : ""
+        if (source === "dockbar") return ChromeLayout.dockbarActive ? "bottomFlare" : ""
         return ""
     }
 
     // Open an available source and capture its real anchor or topology-specific seed.
-    function openHakuMenu(screenName, mode, source, anchorRect) {
+    function openHakuMenu(screenName, mode, source, anchorRect, seedRect) {
         var presentation = resolveHakuMenuPresentation(source)
         if (!presentation) return
         var captured = anchorRect
@@ -291,6 +295,11 @@ QtObject {
             ? {x: anchorRect.x, y: anchorRect.y, width: anchorRect.width, height: anchorRect.height} : null
         if (source === "dockbar" && !captured) return
         hakuMenuStyle = presentation
+        hakuMenuSource = source || "default"
+        hakuMenuSeedRect = source === "dockbar" && seedRect
+            && [seedRect.x, seedRect.y, seedRect.width, seedRect.height].every(Number.isFinite)
+            && seedRect.width > 0 && seedRect.height > 0
+            ? {x: seedRect.x, y: seedRect.y, width: seedRect.width, height: seedRect.height} : null
         hakuMenuAnchorRect = captured
         if (!hakuMenuAnchorRect) {
             for (var output of Quickshell.screens) if (output.name === screenName) {
@@ -312,11 +321,11 @@ QtObject {
     }
 
     // Toggle matching ownership; a different source presentation replaces the menu.
-    function toggleHakuMenu(screenName, mode, source, anchorRect) {
+    function toggleHakuMenu(screenName, mode, source, anchorRect, seedRect) {
         var nextStyle = resolveHakuMenuPresentation(source)
         if (!nextStyle) return
         if (activePanel === "hakumenu" && hakuMenuScreenName === screenName && hakuMenuStyle === nextStyle) closeHakuMenu()
-        else openHakuMenu(screenName, mode, source, anchorRect)
+        else openHakuMenu(screenName, mode, source, anchorRect, seedRect)
     }
 
     // Switch root pages without changing the panel or HakuMenu submode.
@@ -364,6 +373,8 @@ QtObject {
         hakuMenuSelectionLabel = ""
         hakuMenuStyle = "topFlare"
         hakuMenuAnchorRect = null
+        hakuMenuSource = ""
+        hakuMenuSeedRect = null
     }
 
     // Closes HakuMenu if active on the specified screen.
@@ -617,6 +628,8 @@ QtObject {
             hakuMenuSelectionLabel = ""
             hakuMenuStyle = "topFlare"
             hakuMenuAnchorRect = null
+            hakuMenuSource = ""
+            hakuMenuSeedRect = null
         }
         if (activePanel !== "settings") {
             settingsScreenName = ""
