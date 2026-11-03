@@ -7,6 +7,10 @@ TEST_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$TEST_DIR/../../.." && pwd)"
 cd -- "$REPO_ROOT"
 node "$TEST_DIR/test_theme_mode.js"
+node "$TEST_DIR/test_root_tabs.js"
+node "$TEST_DIR/test_geometry.js"
+node "$TEST_DIR/test_host_contract.js"
+python3 "$TEST_DIR/test_mini.py"
 
 # Reuse the Dock runner's private compositor, HOME, launch fixtures and state.
 export HAKUSPACE_HAKUMENU_TEST=1
