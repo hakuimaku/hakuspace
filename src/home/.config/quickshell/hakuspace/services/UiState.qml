@@ -113,6 +113,8 @@ QtObject {
     // Keep the Task Manager visible independently of mutually exclusive panels.
     property bool taskManagerOpen: false
     property string taskManagerScreenName: ""
+    // Use the shared clockwise panel anchors: left by default, top for HakuMenu.
+    property int taskManagerRevealPosition: 8
     property rect taskManagerRect: Qt.rect(0, 0, 0, 0)
     signal taskManagerClosing(string screenName)
     signal taskManagerFocusRequested(string screenName)
@@ -172,11 +174,12 @@ QtObject {
     }
 
     // Open or transfer the utility without closing other floating surfaces.
-    function openTaskManager(screenName) {
+    function openTaskManager(screenName, revealPosition) {
         if (!screenName) return
         if (taskManagerOpen && taskManagerScreenName === screenName) { taskManagerFocusRequested(screenName); return }
         if (activePanel === "navigation") closeNavigation()
         if (taskManagerOpen) closeTaskManager()
+        taskManagerRevealPosition = Number.isInteger(revealPosition) && revealPosition >= 1 && revealPosition <= 8 ? revealPosition : 8
         taskManagerScreenName = screenName
         taskManagerOpen = true
         taskManagerFocusRequested(screenName)
@@ -189,7 +192,7 @@ QtObject {
         if (taskManagerOpen && taskManagerScreenName !== screenName) closeTaskManager()
         TaskManagerService.beginHandoff(screenName)
         closeHakuMenu()
-        openTaskManager(screenName)
+        openTaskManager(screenName, 2)
     }
 
     // Notify the visual owner before releasing visibility and input ownership.

@@ -1,10 +1,11 @@
 import QtQuick
 import QtQuick.Window
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import "../services"
 import "sidebar" as Sidebar
-import "flare" as Flare
+import "motion/PanelRevealGeometry.js" as Reveal
 import "taskmanager" as TaskManager
 import "taskmanager/glassgrid/TaskManagerMotion.js" as Motion
 
@@ -16,23 +17,29 @@ PanelWindow {
     property bool presentationOwned: true
     readonly property bool panelOpen: presentationOwned && UiState.taskManagerOpen && UiState.taskManagerScreenName === modelData.name
     readonly property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
-    // Keep a stable drawing window and morph the floating card directly from a left-rail seed capsule (no opacity fade).
+    // Grow the chassis in place while the shared Settings neck follows its entry edge.
     property real morphProgress: 0
     readonly property alias motionProgress: root.morphProgress
     readonly property alias reveal: root.morphProgress
     readonly property real revealProgress: Math.max(0, Math.min(1, morphProgress))
-    readonly property real neckProgress: Math.max(0, Math.min(1, (1 - revealProgress) / 0.35))
+    property int revealPosition: 8
     readonly property bool releaseReady: !panelOpen && !morphAnim.running && morphProgress === 0
     readonly property bool interactionReady: panelOpen && morphProgress === 1 && !morphAnim.running
     // Clamp geometry against real outputs, including screens smaller than the minimum.
-    property size cardSize: Qt.size(980, 680)
+    property size cardSize: Qt.size(980, 560)
     property point position: Qt.point(80, 60)
     readonly property real cardWidth: Math.max(1, Math.min(cardSize.width, width))
     readonly property real cardHeight: Math.max(1, Math.min(cardSize.height, height))
-    readonly property real seedSize: Math.min(Theme.fontSize * 3, cardWidth, cardHeight)
-    readonly property real seedX: Math.min(ScreenGeometry.leftInset, Math.max(0, width - seedSize))
     readonly property real targetX: Math.max(0, Math.min(width - cardWidth, position.x))
     readonly property real targetY: Math.max(0, Math.min(height - cardHeight, position.y))
+    // Match Settings attachment bounds without changing the stable drawing-window geometry.
+    readonly property rect revealBounds: Qt.rect(ScreenGeometry.leftInset,
+        ScreenGeometry.bottomAttached ? ScreenGeometry.topBorderThickness : ScreenGeometry.chromeAttachmentY(height),
+        Math.max(0, width - ScreenGeometry.leftInset - ScreenGeometry.rightInset),
+        Math.max(0, ScreenGeometry.bottomAttached ? ScreenGeometry.chromeAttachmentY(height) - ScreenGeometry.topBorderThickness
+            : height - ScreenGeometry.bottomInset - ScreenGeometry.chromeAttachmentY(height)))
+    readonly property var revealGeometry: Reveal.neck(revealPosition, revealBounds,
+        Qt.rect(card.x, card.y, card.width, card.height), revealProgress, Theme.fontSize * 12)
     readonly property bool ownsKeyboard: UiState.ownsInteraction("taskManager", modelData.name)
     readonly property int shellMargin: (cardWidth < 760 || cardHeight < 500) ? 16 : ((cardWidth < 880 || cardHeight < 580) ? 19 : 22)
     readonly property int headerGap: (cardWidth < 760 || cardHeight < 500) ? 8 : ((cardWidth < 880 || cardHeight < 580) ? 12 : 15)
@@ -53,7 +60,7 @@ PanelWindow {
     visible: panelOpen || morphProgress > 0
     mask: Region { item: root.panelOpen ? card : null; radius: card.radius }
 
-    // Keep the connecting flare below the Sidebar's interactive Overlay surface.
+    // Keep the input-free attachment below the interactive utility surface.
     PanelWindow {
         objectName: "taskManagerFlareLayer"
         screen: root.modelData
@@ -64,25 +71,17 @@ PanelWindow {
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
         color: "transparent"
-        visible: root.visible && root.revealProgress > 0.001 && root.neckProgress > 0.001
+        visible: root.visible && root.revealGeometry.path.length > 0
         mask: Region {}
 
-        // Rotate the ceiling flare into a temporary connection to the left rail.
-        Flare.FlareSurface {
-            // Pinch the neck symmetrically around the card's vertical center.
-            readonly property real span: Math.min(card.height, root.seedSize + card.height * root.revealProgress) * root.neckProgress
-            x: root.seedX
-            y: card.y + card.height
-            rotation: -90
-            transformOrigin: Item.TopLeft
-            start: (card.height - span) / 2
-            end: start + span
-            currentHeight: Math.max(0, card.x - root.seedX + card.radius)
-            r: Math.min(Theme.hugRadius, (end - start) / 2)
-            rf: 0
-            bottomRadius: r
-            bounds: ({start: start - r, end: end + r})
-            surfaceColor: Theme.surface
+        Shape {
+            anchors.fill: parent
+            preferredRendererType: Shape.CurveRenderer
+            ShapePath {
+                fillColor: Theme.surface
+                strokeColor: "transparent"
+                PathSvg { path: root.revealGeometry.path }
+            }
         }
     }
 
@@ -105,9 +104,10 @@ PanelWindow {
     function setMotionProgress(value) {
         setMorphProgress(value)
     }
-    // Animate reversible capsule-to-card morph transitions from the current morphProgress.
+    // Retain the captured entry through closure and interrupted close/reopen transitions.
     function syncOpen() {
         morphAnim.stop()
+        if (panelOpen && revealProgress === 0) revealPosition = UiState.taskManagerRevealPosition
         var target = panelOpen ? 1 : 0
         var baseMs = panelOpen ? HAnimation.sidebarToolOpenDuration : HAnimation.sidebarToolCloseDuration
         var dur = Motion.reversibleDuration(baseMs, revealProgress, target, root.reducedMotion)
@@ -173,11 +173,11 @@ PanelWindow {
     Rectangle {
         id: card
         objectName: "taskManagerCard"
-        width: root.seedSize + (root.cardWidth - root.seedSize) * root.revealProgress
-        height: root.seedSize + (root.cardHeight - root.seedSize) * root.revealProgress
-        x: root.seedX + (root.targetX - root.seedX) * root.revealProgress
+        width: root.cardWidth * root.revealProgress
+        height: root.cardHeight * root.revealProgress
+        x: root.targetX + (root.cardWidth - width) / 2
         y: root.targetY + (root.cardHeight - height) / 2
-        radius: Math.min(width / 2, height / 2, root.seedSize / 2 + (Theme.largeRadius - root.seedSize / 2) * root.revealProgress)
+        radius: Math.min(width / 2, height / 2, Theme.largeRadius)
         color: Theme.surface
         border.width: 0
         opacity: 1
@@ -195,7 +195,7 @@ PanelWindow {
             onPressed: mouse => { if (root.interactionReady) { root.takeFocus(); mouse.accepted = false } }
         }
 
-        // Fixed-size inner chassis so internal layouts never reflow while the outer card morphs from capsule to panel.
+        // Keep internal layouts fixed while the outer chassis grows.
         Item {
             id: cardSurface
             objectName: "taskManagerShellSurface"
