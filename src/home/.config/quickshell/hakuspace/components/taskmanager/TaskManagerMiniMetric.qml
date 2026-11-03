@@ -29,7 +29,7 @@ Item {
     z: hovered ? 2 : detailProgress > 0 ? 1 : 0
     Behavior on detailProgress {
         enabled: !root.reducedMotion
-        NumberAnimation { duration: HAnimation.buttonHoverDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+        NumberAnimation { duration: HAnimation.slow; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
     }
     opacity: subdued ? 0.92 : 1
     Behavior on opacity {
@@ -78,7 +78,7 @@ Item {
         scale: root.hovered && !root.reducedMotion ? 1.05 : 1
         Behavior on scale {
             enabled: !root.reducedMotion
-            NumberAnimation { duration: HAnimation.buttonHoverDuration; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+            NumberAnimation { duration: HAnimation.slow; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
         }
         radius: Theme.radius
         // An opaque backing keeps covered process text from showing through the card.
