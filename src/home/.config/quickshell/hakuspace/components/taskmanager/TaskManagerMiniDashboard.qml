@@ -94,32 +94,47 @@ FocusScope {
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSize
         }
-        Glass.TaskActionButton {
-            id: openFull
-            objectName: "taskManagerMiniOpenFull"
+        Item {
+            // Keep the hover region and layout stable while the action grows visually.
+            implicitWidth: openFull.implicitWidth
+            implicitHeight: openFull.implicitHeight
             Layout.preferredWidth: implicitWidth
             Layout.preferredHeight: implicitHeight
-            text: "Task Manager"
-            icon: Catalog.taskManagerIcons.open
-            fontSize: Theme.fontSize
-            implicitHeight: Theme.controlHeight
-            radius: Theme.radius
-            visuals: miniVisuals
-            reducedMotion: root.reducedMotion
-            compact: root.compact
-            accent: true
-            horizontalPadding: (compact ? 8 : 10) + 8
-            foregroundColor: Theme.onAccentColor
-            color: Theme.accent
-            border.width: 1
-            border.color: Qt.alpha(Theme.onAccentColor, activeFocus ? 0.55 : openHover.hovered ? 0.24 : 0)
-            Behavior on border.color {
-                enabled: !root.reducedMotion
-                ColorAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
-            }
             HoverHandler { id: openHover; cursorShape: Qt.PointingHandCursor }
-            Accessible.name: "Open Task Manager"
-            onClicked: root.openFullRequested()
+            Glass.TaskActionButton {
+                id: openFull
+                objectName: "taskManagerMiniOpenFull"
+                anchors.centerIn: parent
+                scale: openHover.hovered && !root.reducedMotion ? 1.1 : 1
+                Behavior on scale {
+                    enabled: !root.reducedMotion
+                    NumberAnimation {
+                        duration: openHover.hovered ? HAnimation.buttonHoverDuration : HAnimation.buttonReleaseDuration
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: openHover.hovered ? HAnimation.buttonHoverCurve : HAnimation.buttonReleaseCurve
+                    }
+                }
+                text: "Task Manager"
+                icon: Catalog.taskManagerIcons.open
+                fontSize: Theme.fontSize
+                implicitHeight: Theme.controlHeight
+                radius: Theme.radius
+                visuals: miniVisuals
+                reducedMotion: root.reducedMotion
+                compact: root.compact
+                accent: true
+                horizontalPadding: (compact ? 8 : 10) + 8
+                foregroundColor: Theme.onAccentColor
+                color: Theme.accent
+                border.width: 1
+                border.color: Qt.alpha(Theme.onAccentColor, activeFocus ? 0.55 : openHover.hovered ? 0.24 : 0)
+                Behavior on border.color {
+                    enabled: !root.reducedMotion
+                    ColorAnimation { duration: HAnimation.fast; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
+                }
+                Accessible.name: "Open Task Manager"
+                onClicked: root.openFullRequested()
+            }
         }
     }
 
