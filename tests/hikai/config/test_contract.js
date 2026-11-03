@@ -54,7 +54,7 @@ for (const [service, names] of Object.entries({
 // Migrated lists must bind to the catalog instead of reintroducing local arrays.
 for (const [file, property, catalog] of [
     ['hakumenu/HakuMenuContent.qml', 'modes', 'hakuMenuModes'],
-    ['hakumenu/GeneralList.qml', 'fixedItems', 'hakuMenuGeneralItems'],
+    ['hakumenu/GeneralList.qml', 'staticItems', 'hakuMenuGeneralItems'],
     ['hakumenu/ThemeList.qml', 'items', 'hakuMenuThemeItems'],
     ['actionmenu/pages/ThemePage.qml', 'items', 'actionMenuThemeItems'],
     ['actionmenu/pages/ThemeAccentPage.qml', 'allItems', 'accentPresets'],

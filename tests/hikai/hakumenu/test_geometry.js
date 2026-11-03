@@ -35,3 +35,25 @@ for (const preferred of [0, 390, 570, 900]) {
     const size = geometry.attachedTaskSize(1280, 720, 4, 4, 69, 48, preferred)
     assert.equal(size.height, Math.min(Math.max(720 * 0.45, preferred), 720 - 69 - 48))
 }
+
+// Evaluate the host's production bindings so editor sizing respects either attachment edge.
+const path = require('node:path')
+const hostSource = fs.readFileSync(path.resolve(__dirname, '../../../src/home/.config/quickshell/hakuspace/components/hakumenu/HakuMenuAttachedFlare.qml'), 'utf8')
+const availableExpression = hostSource.match(/readonly property real availableMenuHeight: ([\s\S]*?)\n    readonly property real menuHeight:/)[1]
+const heightExpression = hostSource.match(/readonly property real menuHeight: ([\s\S]*?)\n    readonly property real surfaceHeight:/)[1]
+for (const screenHeight of [240, 720, 1080]) {
+    for (const bottomAttached of [false, true]) {
+        for (const editorHeight of [0, 460, 610, 1000]) {
+            const bar = bottomAttached ? 69 : 40
+            const state = vm.createContext({screenHeight, bottomAttached, controlHeight: bottomAttached ? 32 : 0,
+                taskManagerTab: false, taskSize: {}, menu: {editorHeight}, root: {screenHeight},
+                Theme: {topBarHeight: 40}, ScreenGeometry: {bottomHostReservation: () => 37,
+                    bottomHostOppositeInset: 40, bottomInset: 4}})
+            state.availableMenuHeight = vm.runInContext(availableExpression, state)
+            assert.equal(state.availableMenuHeight, screenHeight - bar - (bottomAttached ? 40 : 4))
+            assert.equal(vm.runInContext(heightExpression, state),
+                Math.min(Math.max(screenHeight * 0.4, editorHeight), state.availableMenuHeight))
+        }
+    }
+}
+console.log('General editor host height and output bounds passed')

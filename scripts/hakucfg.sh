@@ -29,6 +29,12 @@ hakucfg_check() {
         fi
     done < <(registry_get_hakucfg_files)
 
+    # Match the General backend's refusal to follow configuration symlinks.
+    if [[ -L "$DEST_CUSTOM_DIR" || -L "$DEST_CUSTOM_DIR/config" || -L "$DEST_CUSTOM_DIR/config/hakumenu-general.json" ]]; then
+        log_warn "General menu configuration must not use symlinks."
+        issues=$((issues + 1))
+    fi
+
     # Check version of setting.sh
     if [[ -f "$DEST_CUSTOM_DIR/setting.sh" && -f "$HAKUSPACE_CUSTOM_DIR/setting.sh" ]]; then
         local current_version
@@ -57,8 +63,19 @@ hakucfg_sync() {
     local non_interactive="${1:-0}"
 
     log_info "Synchronizing ~/hakucfg templates..."
+    # Keep General menu storage inside the real user configuration directory.
+    if [[ -L "$DEST_CUSTOM_DIR" ]]; then
+        log_error "Cannot synchronize a symlinked hakucfg directory."
+        return 1
+    fi
     ensure_dir "$DEST_CUSTOM_DIR"
     ensure_dir "$DEST_CUSTOM_DIR/wm"
+    # Reject redirected menu storage before template copying can replace it.
+    if [[ -L "$DEST_CUSTOM_DIR/config" || -L "$DEST_CUSTOM_DIR/config/hakumenu-general.json"
+        || ( -e "$DEST_CUSTOM_DIR/config/hakumenu-general.json" && ! -f "$DEST_CUSTOM_DIR/config/hakumenu-general.json" ) ]]; then
+        log_error "Cannot use non-regular General menu configuration."
+        return 1
+    fi
     ensure_dir "$DEST_CUSTOM_DIR/config"
     ensure_dir "$DEST_CUSTOM_DIR/config/waybar"
     ensure_dir "$DEST_CUSTOM_DIR/config/rofi"
@@ -101,7 +118,13 @@ hakucfg_sync() {
     done < <(registry_get_hakucfg_files)
 
     [[ -f "$DEST_CUSTOM_DIR/setting.sh" ]] && chmod +x "$DEST_CUSTOM_DIR/setting.sh"
-    [[ -f "$DEST_CUSTOM_DIR/general-menu.sh" ]] && chmod +x "$DEST_CUSTOM_DIR/general-menu.sh"
+    # Warn once without modifying, renaming or executing the legacy user script.
+    local legacy_menu_marker="$DEST_CUSTOM_DIR/config/.general-menu-legacy-warned"
+    if [[ ( -e "$DEST_CUSTOM_DIR/general-menu.sh" || -L "$DEST_CUSTOM_DIR/general-menu.sh" ) && ! -e "$legacy_menu_marker" && ! -L "$legacy_menu_marker" ]]; then
+        if (set -o noclobber; : > "$legacy_menu_marker") 2>/dev/null; then
+            log_warn "general-menu.sh is retained but inactive; General now uses config/hakumenu-general.json. Copy custom actions manually."
+        fi
+    fi
 
     # Version check and upgrade prompt
     if [[ -f "$DEST_CUSTOM_DIR/setting.sh" && -f "$HAKUSPACE_CUSTOM_DIR/setting.sh" ]]; then

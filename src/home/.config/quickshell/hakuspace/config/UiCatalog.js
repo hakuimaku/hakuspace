@@ -12,13 +12,15 @@ var hakuMenuModes = [
     { key: "theme", icon: "", label: "Theme" }
 ]
 
-// Static hakuMenuGeneralItems presentation entries.
+// Hikai-only shell controls remain separate from editable custom actions.
 var hakuMenuGeneralItems = [
-    { label: "Wifi", icon: "󰖩", command: ["nm-connection-editor"] },
-    { label: "Bluetooth", icon: "󰂯", command: ["blueman-manager"] },
-    { label: "Disk Manager", icon: "󰋊", command: ["gparted"] },
-    { label: "Storage Manager", icon: "󰃢", command: ["kitty", "--class", "ncdu", "-e", "sudo", "ncdu", "/"] },
-    { label: "Audio Control", icon: "", command: ["pavucontrol"] }
+    { id: "static-wifi", label: "Wifi", icon: "󰖩", command: ["nm-connection-editor"] },
+    { id: "static-bluetooth", label: "Bluetooth", icon: "󰂯", command: ["blueman-manager"] },
+    { id: "static-disk-manager", label: "Disk Manager", icon: "󰋊", command: ["gparted"] },
+    { id: "static-storage-manager", label: "Storage Manager", icon: "󰃢", command: ["kitty", "--class", "ncdu", "-e", "sudo", "ncdu", "/"] },
+    { id: "static-audio-control", label: "Audio Control", icon: "", command: ["pavucontrol"] },
+    { id: "static-task-manager", label: "Task Manager", icon: "", action: "taskManager" },
+    { id: "static-settings", label: "Settings", icon: "", action: "settings" }
 ]
 
 // Static hakuMenuThemeItems presentation entries.

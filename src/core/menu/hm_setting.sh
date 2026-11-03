@@ -34,7 +34,7 @@ if [[ $# -eq 0 ]]; then
 󰝚  Cava Dynamic Exclusive $IS_CAVA_DYNAMIC
 󰍹  Rounded Screen Dynamic Exclusive $IS_DYNAMIC
 󱁤  Settings Folder
-󱁤  HakuMenu General Tab
+󱁤  HakuMenu General Config
 󰖩  Wifi
 󰂯  Bluetooth
 󰋊  Disk Manager
@@ -53,7 +53,7 @@ case "$chosen" in
     *"Cava Dynamic Exclusive"*) spawn $HOME/.local/bin/cava_manager.sh --toggle-dynamic ;;
     *"Rounded Screen Dynamic Exclusive"*) spawn $HOME/.local/bin/rounded_screen_manager.sh --toggle-dynamic ;;
     *"Settings Folder"*) spawn xdg-open "$HOME/hakucfg" ;;
-    *"HakuMenu General Tab"*) spawn code $HOME/hakucfg/general-menu.sh ;;
+    *"HakuMenu General Config"*) spawn code "$HOME/hakucfg/config/hakumenu-general.json" ;;
     *"Wifi"*) spawn nm-connection-editor ;;
     *"Bluetooth"*) spawn blueman-manager ;;
     *"Disk Manager"*) spawn gparted ;;

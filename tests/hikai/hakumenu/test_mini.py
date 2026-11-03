@@ -27,8 +27,9 @@ class MiniTest(unittest.TestCase):
             shell = prepare(work, str(Path(__file__).with_name('harness') / harness_name))
             shutil.copytree(SOURCE / 'components/hakumenu', shell / 'components/hakumenu')
             shutil.copy2(SOURCE / 'components/HakuMenuPanel.qml', shell / 'components/HakuMenuPanel.qml')
-            for name in ('ScreenGeometry.qml', 'ScreenGeometry.js', 'Interaction.qml'):
+            for name in ('ScreenGeometry.qml', 'ScreenGeometry.js', 'Interaction.qml', 'GeneralMenuService.qml'):
                 shutil.copy2(SOURCE / 'services' / name, shell / 'services' / name)
+            shutil.copy2(SOURCE / 'components/settings/SettingsActionButton.qml', shell / 'components/settings/SettingsActionButton.qml')
             stubs = {
                 'ChromeLayout': '''property bool topBarMode: true
                     property bool taskbarMode: !topBarMode
@@ -51,13 +52,15 @@ class MiniTest(unittest.TestCase):
             for name, properties in stubs.items():
                 (shell / f'services/{name}.qml').write_text(f'pragma Singleton\nimport QtQuick\nQtObject {{ {properties} }}\n')
             with (shell / 'services/qmldir').open('a') as stream:
-                stream.write('singleton Interaction 1.0 Interaction.qml\nsingleton TooltipManager 1.0 TooltipManager.qml\n')
+                stream.write('singleton Interaction 1.0 Interaction.qml\nsingleton TooltipManager 1.0 TooltipManager.qml\nsingleton GeneralMenuService 1.0 GeneralMenuService.qml\n')
             (work / 'bin').mkdir()
             (work / 'backend').write_text('hikai\n')
             for name in ('task_manager_monitor.py', 'task_manager_ctl.py'):
                 (work / 'bin' / name).symlink_to(ROOT / 'src/core/backend/system' / name)
-            (work / 'bin/hm_general.sh').write_text('#!/bin/sh\nprintf "Fixture\\n"\n')
-            (work / 'bin/hm_general.sh').chmod(0o755)
+            # Supply the real General backend and seed instead of legacy stdout rows.
+            (work / 'bin/general_menu_ctl.py').symlink_to(ROOT / 'src/core/backend/user/general_menu_ctl.py')
+            (work / 'hakucfg/config').mkdir(parents=True)
+            shutil.copy2(ROOT / 'src/home/hakucfg/config/hakumenu-general.json', work / 'hakucfg/config/hakumenu-general.json')
             (work / 'runtime').mkdir(mode=0o700)
             (work / 'labwc').mkdir()
             (work / 'labwc/rc.xml').write_text('<labwc_config/>\n')

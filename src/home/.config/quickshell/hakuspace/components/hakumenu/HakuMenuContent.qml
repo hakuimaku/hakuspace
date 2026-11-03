@@ -15,9 +15,15 @@ Item {
     signal keyboardActivity()
     signal wallpaperRequested()
     readonly property bool searchFocused: searchInput.activeFocus
+    // Include search controls and both list insets in the editor's requested height.
+    readonly property real editorHeight: mode === "general" && generalList.editorHeight > 0
+        ? generalList.editorHeight + innerPad * 2 + topRowHeight + Theme.pad + Theme.gap * 2 : 0
 
     // Presentations request focus when their own geometry is ready.
-    function forceSearchFocus() { searchInput.forceActiveFocus() }
+    function forceSearchFocus() {
+        if (generalList.editorRequested && generalList.itemEditor) generalList.itemEditor.focusName()
+        else searchInput.forceActiveFocus()
+    }
     function clearSearchFocus() { searchInput.focus = false }
 
     readonly property real innerPad: Theme.pad * 2 + 4
@@ -214,6 +220,8 @@ Item {
             anchors.margins: Theme.gap
             visible: menu.mode === "general"
             query: menu.query
+            panelOpen: menu.panelOpen
+            onRestoreSearchFocus: if (menu.panelOpen && menu.mode === "general") menu.forceSearchFocus()
             rowHoverColor: menu.controlHoverBg
             rowSelectedColor: Theme.surfaceSubtle(1.18)
             onHighlightedLabelChanged: label => UiState.setHakuMenuSelectionLabel(label)

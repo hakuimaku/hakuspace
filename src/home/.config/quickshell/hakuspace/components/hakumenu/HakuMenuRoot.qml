@@ -24,6 +24,9 @@ FocusScope {
     // Include the root tabs and insets when sizing the embedded dashboard.
     readonly property real miniHeight: tabs.y + tabs.height + Theme.spaceSm + Theme.panelPadding
         + (mini ? mini.content.implicitHeight : 0)
+    // Carry the General editor's preferred size through the root tab header.
+    readonly property real editorHeight: menu.editorHeight > 0
+        ? tabs.y + tabs.height - Theme.pad + menu.editorHeight : 0
     signal keyboardActivity()
     signal wallpaperRequested()
     focus: panelOpen && interactionOwned

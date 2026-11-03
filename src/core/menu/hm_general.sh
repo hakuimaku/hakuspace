@@ -1,50 +1,12 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-CUSTOM_SCRIPT="$HOME/hakucfg/general-menu.sh"
-
-# Check if a custom script exists and is executable
-if [[ -f "$CUSTOM_SCRIPT" ]]; then
-    # Check syntax
-    if bash -n "$CUSTOM_SCRIPT" 2>/dev/null; then
-        
-        # Get the exit code of the custom script
-        bash "$CUSTOM_SCRIPT" "$@"
-        EXIT_CODE=$?
-        
-        # If the custom script runs successfully (returns 0), stop here (using user custom).
-        # If it fails (returns something other than 0), proceed to the fallback below.
-        if [[ $EXIT_CODE -eq 0 ]]; then
-            exit 0
-        fi
+# Preserve the public basename for Classic and source-tree callers.
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+for adapter in "$SCRIPT_DIR/hm_general_rofi.py" "$SCRIPT_DIR/../frontend/classic/hm_general_rofi.py" "$HOME/.local/bin/hm_general_rofi.py"; do
+    if [[ -f "$adapter" ]]; then
+        exec python3 "$adapter" "$@"
     fi
-fi
-
-# Base fallback, use my own default :)
-notify-send "Haku Menu" "Your custom Haku Menu failed or is not present. Using default menu instead."
-spawn() { ( "$@" & ) >/dev/null 2>&1; }
-
-if [[ $# -eq 0 ]]; then
-    cat <<'EOF'
-  App Menu
-  Code Editor
-  Browser
-  Screen Record
-  Local Send
-  File Manager
-  Quit
-EOF
-    exit 0
-fi
-
-chosen="$*"
-case "$chosen" in
-    *"App Menu"*) spawn "$HOME/.local/bin/launcher.sh" drun ;;
-    *"Code Editor"*) spawn code ;;
-    *"Browser"*) spawn "$HOME/.local/bin/open_browser.sh" ;;
-    *"Screen Record"*) spawn $HOME/.local/bin/record.sh ;;
-    *"Local Send"*) spawn localsend ;;
-    *"File Manager"*) spawn xdg-open "$HOME" ;;
-    *"Quit"*) spawn $HOME/.local/bin/shutdown.sh ;;
-esac
-
-exit 0
+done
+printf 'hm_general.sh: General menu adapter not found\n' >&2
+exit 1

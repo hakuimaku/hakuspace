@@ -348,7 +348,7 @@ config/hypridle.conf
 config/kitty.conf
 config/shell.fish
 config/hyprlock.conf
-general-menu.sh
+config/hakumenu-general.json
 EOF
 }
 

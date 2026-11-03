@@ -38,7 +38,12 @@ Item {
     readonly property real maxMenuWidth: taskManagerTab ? taskSize.width : root.screenWidth * 0.42
     readonly property real targetMenuWidth: Geometry.targetWidth(screenWidth, renderTab, UiState.hakuMenuMode,
         ScreenGeometry.leftInset, ScreenGeometry.rightInset)
-    readonly property real menuHeight: taskManagerTab ? taskSize.height : root.screenHeight * 0.40
+    // Grow General editing within the existing top/bottom output reservations.
+    readonly property real availableMenuHeight: Math.max(1, screenHeight
+        - (bottomAttached ? ScreenGeometry.bottomHostReservation() + controlHeight : Theme.topBarHeight)
+        - (bottomAttached ? ScreenGeometry.bottomHostOppositeInset : ScreenGeometry.bottomInset))
+    readonly property real menuHeight: taskManagerTab ? taskSize.height
+        : Math.min(Math.max(root.screenHeight * 0.40, menu.editorHeight), availableMenuHeight)
     readonly property real surfaceHeight: menuHeight + controlHeight
     readonly property real menuTop: bottomAttached ? ScreenGeometry.bottomHostTop(screenHeight) : Theme.topBarHeight
     readonly property real bounceHeadroom: surfaceHeight * HAnimation.hakuMenuBounceHeadroom

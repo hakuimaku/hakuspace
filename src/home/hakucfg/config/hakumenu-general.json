@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {"id": "app-menu", "icon": "", "label": "App Menu", "argv": ["launcher.sh", "drun"]},
+    {"id": "code-editor", "icon": "", "label": "Code Editor", "argv": ["code"]},
+    {"id": "browser", "icon": "", "label": "Browser", "argv": ["open_browser.sh"]},
+    {"id": "screen-record", "icon": "", "label": "Screen Record", "argv": ["record.sh"]},
+    {"id": "localsend", "icon": "", "label": "Local Send", "argv": ["localsend"]},
+    {"id": "file-manager", "icon": "", "label": "File Manager", "argv": ["xdg-open", "~"]},
+    {"id": "quit", "icon": "", "label": "Quit", "argv": ["shutdown.sh"]}
+  ]
+}

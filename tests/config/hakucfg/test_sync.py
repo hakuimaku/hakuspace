@@ -95,5 +95,69 @@ class HikaiConfigTests(unittest.TestCase):
         self.assertEqual(outside.read_text(), "preserve")
 
 
+class GeneralConfigTests(unittest.TestCase):
+    """Verify only General template migration, preservation and registry checks."""
+
+    def setUp(self):
+        """Isolate installer output and all configuration under a disposable HOME."""
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.home = Path(self.temp.name)
+        self.config = self.home / 'hakucfg'
+        self.env = {**os.environ, 'HOME': str(self.home), 'HAKU_DIR': str(ROOT),
+                    'BACKUP_DIR': str(self.home / 'backups'), 'PYTHONDONTWRITEBYTECODE': '1'}
+
+    def installer(self, action, success=True):
+        """Run the real sync or presence check and return its diagnostics."""
+        result = subprocess.run(['bash', str(ROOT / 'scripts/hakucfg.sh'), action, '--yes'],
+                                env=self.env, text=True, capture_output=True)
+        self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
+        return result.stdout + result.stderr
+
+    def test_seed_check_and_preserve_user_edits(self):
+        """Seed JSON once, stop requiring the old script and retain subsequent edits."""
+        self.installer('sync')
+        menu = self.config / 'config/hakumenu-general.json'
+        self.assertEqual(json.loads(menu.read_text())['items'][0]['id'], 'app-menu')
+        self.assertFalse((self.config / 'general-menu.sh').exists())
+        self.installer('check')
+        menu.write_text('{"schemaVersion":1,"items":[]}\n')
+        self.installer('sync')
+        self.assertEqual(menu.read_text(), '{"schemaVersion":1,"items":[]}\n')
+        menu.unlink()
+        self.assertIn('hakumenu-general.json', self.installer('check', success=False))
+
+    def test_legacy_script_is_untouched_and_warning_is_once(self):
+        """Keep legacy contents and permissions while reporting the inactive source once."""
+        self.config.mkdir()
+        legacy = self.config / 'general-menu.sh'
+        legacy.write_text('#!/bin/bash\necho custom\n')
+        legacy.chmod(0o640)
+        original = legacy.read_bytes()
+        self.assertIn('retained but inactive', self.installer('sync'))
+        self.assertNotIn('retained but inactive', self.installer('sync'))
+        self.assertEqual(legacy.read_bytes(), original)
+        self.assertEqual(stat.S_IMODE(legacy.stat().st_mode), 0o640)
+        self.installer('check')
+
+    def test_redirected_menu_is_never_replaced(self):
+        """Reject linked menu files and parents without following them."""
+        (self.config / 'config').mkdir(parents=True)
+        outside = self.home / 'outside'
+        outside.write_text('preserve')
+        menu = self.config / 'config/hakumenu-general.json'
+        menu.symlink_to(outside)
+        self.installer('sync', success=False)
+        self.installer('check', success=False)
+        self.assertTrue(menu.is_symlink())
+        self.assertEqual(outside.read_text(), 'preserve')
+        menu.unlink()
+        menu.parent.rmdir()
+        menu.parent.symlink_to(self.home, target_is_directory=True)
+        self.installer('sync', success=False)
+        self.assertTrue(menu.parent.is_symlink())
+        self.assertFalse((self.home / menu.name).exists())
+
+
 if __name__ == "__main__":
     unittest.main()
