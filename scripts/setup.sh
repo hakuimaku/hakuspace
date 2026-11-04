@@ -184,6 +184,7 @@ verify_component() {
         cursor) paths=(".icons/$HAKU_CURSOR_THEME") ;;
         gtk) paths=(.themes/Hikaide .themes/Hikaide-Light) ;;
         symbols) paths=(.icons/Hikaide-Symbols .icons/Hikaide-Symbols-Light) ;;
+        *) fail "Unknown component: $1"; return 2 ;;
     esac
     for relative in "${paths[@]}"; do
         [[ -f "$HOME/$relative/index.theme" ]] || { fail "${relative##*/} installation missing"; return 1; }
@@ -459,13 +460,15 @@ main() {
             [[ -n "$SOURCE_PATH" ]] || { fail "No persistent source configured for $2; set HAKU_*_SOURCE for development"; return 1; }
             printf '%s\n' "$SOURCE_PATH" ;;
         verify)
-            [[ $# == 1 ]] || return 2
+            [[ $# -le 2 ]] || return 2
+            # Component inspection is read-only and leaves activation recovery to the caller.
+            if [[ $# == 2 ]]; then verify_component "$2"; return $?; fi
             retry_reconcile || return 1
             local component
             for component in cursor gtk symbols; do verify_component "$component" || return 1; done
             "$SOURCE_CORE/backend/theme/appearance_ctl.sh" verify ;;
         workspace) [[ $# -le 2 && "${2:-}" != --* ]] || return 2; generate_workspace "${2:-$HOME/HakuSpace.code-workspace}" ;;
-        *) printf 'Usage: setup.sh {setup|update [cursor|gtk|symbols]|managed|pending|status|verify|workspace [FILE]|apply cursor|gtk|symbols|all|path cursor|gtk|symbols}\n' >&2; return 2 ;;
+        *) printf 'Usage: setup.sh {setup|update [cursor|gtk|symbols]|managed|pending|status|verify [cursor|gtk|symbols]|workspace [FILE]|apply cursor|gtk|symbols|all|path cursor|gtk|symbols}\n' >&2; return 2 ;;
     esac
 }
 

@@ -109,11 +109,9 @@ else
     record_failure 1
 fi
 
-# Reconcile only recognized installations unless the user opts in to new components.
+# Reuse installed visuals; source refreshes remain an explicit setup.sh update operation.
 step_title "VISUAL ECOSYSTEM"
 "$HAKU_DIR/scripts/setup.sh" status || record_failure $?
-VISUAL_COMPONENTS="$("$HAKU_DIR/scripts/setup.sh" managed)"
-VISUAL_COMPONENTS="${VISUAL_COMPONENTS//$'\n'/ }"
 # A failed activation resumes before any component starts another asset download.
 ACTIVATION_PENDING=0
 "$HAKU_DIR/scripts/setup.sh" pending || ACTIVATION_PENDING=$?
@@ -121,14 +119,14 @@ if [[ "$ACTIVATION_PENDING" == 0 ]]; then
     "$HAKU_DIR/scripts/setup.sh" update || record_failure $?
 elif [[ "$ACTIVATION_PENDING" == 1 ]]; then
     for component in cursor gtk symbols; do
-        if [[ " $VISUAL_COMPONENTS " == *" $component "* ]]; then
-            "$HAKU_DIR/scripts/setup.sh" update "$component" || record_failure $?
-        elif "$HAKU_DIR/scripts/setup.sh" path "$component" >/dev/null 2>&1; then
+        if "$HAKU_DIR/scripts/setup.sh" path "$component" >/dev/null 2>&1; then
             log_skip "VISUAL STATUS: $component override, skipped; use scripts/setup.sh apply $component explicitly."
-        elif ask_yes_no "Install visual component '$component' from its upstream source?"; then
+        elif "$HAKU_DIR/scripts/setup.sh" verify "$component" >/dev/null 2>&1; then
+            log_skip "VISUAL STATUS: $component already installed; use scripts/setup.sh update $component explicitly to refresh assets."
+        elif ask_yes_no "Install/repair visual component '$component' from its upstream source?"; then
             "$HAKU_DIR/scripts/setup.sh" apply "$component" || record_failure $?
         else
-            log_skip "VISUAL STATUS: $component skipped (not managed)."
+            log_skip "VISUAL STATUS: $component installation/repair skipped."
         fi
     done
 else

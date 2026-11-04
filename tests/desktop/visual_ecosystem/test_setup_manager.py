@@ -424,6 +424,47 @@ class WorkspaceTests(WorkspaceFixture):
         self.assertEqual(len(self.clones()), 1)
         self.assert_staging_removed()
 
+    def test_component_verification_is_read_only_and_requires_the_pair(self):
+        """Per-component inspection neither retries activation nor requires unrelated assets."""
+        self.run_manager('apply', 'gtk')
+        self.pending().write_text('gtk\n')
+        self.clear_logs()
+        self.run_manager('verify', 'gtk')
+        self.run_manager('verify', 'cursor', success=False)
+        self.run_manager('verify', 'unknown', success=False)
+        self.assertEqual(self.pending().read_text(), 'gtk\n')
+        self.assertEqual(self.lines('reconcile'), [])
+        self.assertEqual(self.clones(), [])
+        (self.home / '.themes/Hikaide-Light/index.theme').unlink()
+        self.run_manager('verify', 'gtk', success=False)
+
+    def test_dotfile_updates_reuse_installed_visuals_in_new_processes(self):
+        """Setup outputs survive source cleanup and repeated updater runs without rebuilding."""
+        self.run_manager('setup')
+        shutil.copy2(ROOT / 'update.sh', self.repo / 'update.sh')
+        for name in ('repo_update', 'packages', 'link', 'migrate', 'nixos',
+                     'state', 'hakucfg', 'reload', 'doctor'):
+            (self.repo / 'scripts' / (name + '.sh')).write_text('#!/bin/sh\nexit 0\n')
+        (self.repo / 'scripts/select_wm.sh').write_text('#!/bin/sh\necho niri\n')
+        (self.repo / 'scripts/deploy_mode.sh').write_text('#!/bin/sh\necho symlink\n')
+        before = {path: path.read_bytes() for root in (self.home / '.icons', self.home / '.themes')
+                  for path in root.rglob('*') if path.is_file()}
+        self.clear_logs()
+        self.env['TEST_CLONE_FAIL'] = 'haku-cursor'
+        for _ in range(2):
+            result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
+                                    cwd=self.home, text=True, input='n\ny\ny\ny\ny\n', capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn('cursor already installed', result.stdout)
+            self.assertIn('gtk already installed', result.stdout)
+            self.assertIn('symbols already installed', result.stdout)
+            self.assertNotIn('Install/repair visual component', result.stderr)
+        self.assertEqual(self.lines('builds'), [])
+        self.assertEqual(self.clones(), [])
+        self.assertEqual(self.lines('git-calls'), [])
+        self.assertEqual(self.lines('reconcile'), ['appearance_ctl.sh verify'] * 2)
+        self.assertEqual(before, {path: path.read_bytes() for path in before})
+
     def test_runtime_directory_is_preferred_for_temporary_sources(self):
         """A private runtime directory takes precedence over TMPDIR."""
         runtime = self.home / 'runtime'
@@ -729,6 +770,7 @@ case "$1" in
     managed) echo "${TEST_MANAGED_VISUALS:-}" ;;
     pending) exit "${TEST_ACTIVATION_PENDING:-1}" ;;
     path) exit "${TEST_HAS_OVERRIDE:-1}" ;;
+    verify) [[ " ${TEST_INSTALLED_VISUALS:-} " == *" $2 "* ]] ;;
     update|apply) exit "${TEST_VISUAL_FAIL:-0}" ;;
 esac
 ''')
@@ -770,16 +812,42 @@ echo updated >> "$TEST_FLOW"
         self.assertIn('setup apply gtk', flow)
         self.assertNotIn('assets ', flow)
 
-    def test_update_managed_visuals_skips_developer_override(self):
-        """Managed installs update while unmanaged developer sources stay explicit."""
+    def test_update_skips_developer_override(self):
+        """Dotfile updates never rebuild explicitly configured development sources."""
         (self.repo / 'scripts/repo_update.sh').write_text('#!/bin/sh\nexit 0\n')
         self.env.update(TEST_MANAGED_VISUALS='gtk', TEST_HAS_OVERRIDE='0')
         result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
                                 text=True, capture_output=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         flow = (self.home / 'flow').read_text().splitlines()
-        self.assertIn('setup update gtk', flow)
+        self.assertFalse(any(line.startswith('setup update') for line in flow))
         self.assertFalse(any(line.startswith('setup apply ') for line in flow))
+
+    def test_installed_visuals_are_skipped_on_repeated_updates(self):
+        """Installed files prevent downloads regardless of managed ownership metadata."""
+        (self.repo / 'scripts/repo_update.sh').write_text('#!/bin/sh\nexit 0\n')
+        self.env['TEST_INSTALLED_VISUALS'] = 'cursor gtk symbols'
+        for managed in ('cursor gtk symbols', ''):
+            with self.subTest(managed=managed):
+                self.env['TEST_MANAGED_VISUALS'] = managed
+                result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
+                                        text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        flow = (self.home / 'flow').read_text().splitlines()
+        self.assertFalse(any(line.startswith(('setup update', 'setup apply')) for line in flow))
+        self.assertEqual(flow.count('setup verify gtk'), 2)
+        self.assertEqual(flow.count('setup verify symbols'), 2)
+
+    def test_only_missing_component_is_installed(self):
+        """A missing appearance pair can be repaired without reinstalling other components."""
+        (self.repo / 'scripts/repo_update.sh').write_text('#!/bin/sh\nexit 0\n')
+        self.env['TEST_INSTALLED_VISUALS'] = 'cursor symbols'
+        result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
+                                text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        flow = (self.home / 'flow').read_text().splitlines()
+        self.assertEqual([line for line in flow if line.startswith('setup apply ')], ['setup apply gtk'])
+        self.assertFalse(any(line.startswith('setup update') for line in flow))
 
     def test_pending_activation_retry_skips_component_downloads(self):
         """A resumed update reconciles installed assets once instead of fetching each group."""
@@ -793,7 +861,7 @@ echo updated >> "$TEST_FLOW"
         self.assertFalse(any(line.startswith(('setup update ', 'setup apply ')) for line in flow))
 
     def test_visual_failure_blocks_completion(self):
-        """Failed managed visual updates cannot produce a completed migration receipt."""
+        """Failed visual installation cannot produce a completed migration receipt."""
         (self.repo / 'scripts/repo_update.sh').write_text('#!/bin/sh\nexit 0\n')
         self.env.update(TEST_MANAGED_VISUALS='gtk', TEST_VISUAL_FAIL='8')
         result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
