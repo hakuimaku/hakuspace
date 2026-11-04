@@ -3,7 +3,7 @@
 # Haku Space
 Wayland dotfiles and desktop shell for Hyprland / Niri / MangoWM / Labwc
 
-**Classic** (Waybar / Rofi / SwayNC) + **Hikai** (Quickshell)
+**Classic** (Waybar / Rofi / SwayNC) + **Hikai** (Quickshell-native desktop experience)
 
 *Haku (ハク) is the very highest Value, the manifestation of a wish. It means "the shape of a soul," "that which is irreplaceable."*
     <div align="right">
@@ -23,15 +23,15 @@ Wayland dotfiles and desktop shell for Hyprland / Niri / MangoWM / Labwc
     <a href="https://github.com/hakuimaku/hakuspace"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/hakuimaku/hakuspace?style=for-the-badge&label=Repo%20Size&labelColor=%23000000&color=%23212121&logo=github&logoColor=%23FFFFFF"></a>
 </p>
 
-| <img width="1920" height="1080" alt="screenshot_2026-10-16_20-13-32" src="https://github.com/user-attachments/assets/a5fa45ea-35fc-45fb-bc9c-26cb981a48d9" /> | <img width="1920" height="1080" alt="screenshot_2026-10-16_18-36-19" src="https://github.com/user-attachments/assets/636d0b55-b1ea-4de7-a241-e3053e545f20" /> |
+| <img width="1920" height="1080" alt="Hikai dashboard and taskbar" src="assets/screenshot/hikai-1.webp" /> | <img width="1920" height="1080" alt="Hikai Quick Actions, Temp Note and Task Manager" src="assets/screenshot/hikai-2.webp" /> |
 |--|--|
-| <img width="1920" height="1080" alt="screenshot_2026-09-29_16-13-28" src="https://github.com/user-attachments/assets/69ce3bf5-3dd0-43a9-aa7f-d12fd488dfb9" /> | <img width="1920" height="1080" alt="screenshot_2026-09-29_16-12-47" src="https://github.com/user-attachments/assets/f429c5b6-9694-4ed6-9aa6-a87d25f8247a" /> |
+| <img width="1920" height="1080" alt="Hikai light desktop with terminal and file manager" src="assets/screenshot/hikai-3.webp" /> | <img width="1920" height="1080" alt="Classic desktop and notification center" src="assets/screenshot/classic-1.webp" /> |
 
 ## Welcome to Haku Space
 
 <div align="center">
 
-[Installation](#installation-guide) - [Update](#update-haku-space) - [Packages](#programs) - [Keybinding](#keybinding) - [Troubleshooting](#troubleshooting) - [Docs](#documentation) - [Contributing](#contributing) - [Credits](#credits)
+[Hikai](#hikai-highlights) - [Installation](#installation-guide) - [Update](#update-haku-space) - [Packages](#programs) - [Keybinding](#keybinding) - [Troubleshooting](#troubleshooting) - [Docs](#documentation) - [Contributing](#contributing) - [Credits](#credits)
 
 *Need help or want to chat? Join our Discord server or follow us on TikTok for showcase videos!*
 
@@ -53,7 +53,10 @@ Wayland dotfiles and desktop shell for Hyprland / Niri / MangoWM / Labwc
 Haku Space provides two interchangeable desktop shells. Your chosen mode is saved automatically and restored on your next login.
 
 ### Hikai - Quickshell Native
-**Hikai** is HakuSpace's Quickshell-based shell mode. See [Hikai](docs/hikai.md) for its architecture and design contracts.
+**Hikai** is HakuSpace's Quickshell-based desktop shell, with a shared settings, state and service layer. It integrates the bar, menus, notifications and desktop surfaces into a coordinated UI. See [Hikai architecture](docs/hikai.md) for the technical contracts.
+
+> [!note]
+> Access Hikai: <img src="assets/screenshot/explore-the-abyss.webp" />
 
 ### Classic - Waybar / Rofi / SwayNC
 **Classic** keeps the original Haku Space experience: Waybar, Rofi menus, SwayNC, and the script-driven workflow. You can switch between Hikai and Classic anytime:
@@ -67,6 +70,18 @@ Haku Space provides two interchangeable desktop shells. Your chosen mode is save
 
 You can also press **`SUPER + ESCAPE`** at any time as an emergency shortcut to switch back to Classic.
 
+### Hikai highlights
+
+- **Shell controls:** Top bar, taskbar/dock, HakuMenu, launcher, dashboard, notifications and sidebar coordinated by Quickshell.
+- **Window navigation:** Quick switcher and overview, with compositor-dependent capabilities.
+- **System monitoring:** Full Task Manager and a compact HakuMenu view for CPU, memory, processes and other supported metrics.
+- **Wallpapers:** Image and video browsing, folder categories and video-quality preferences. Hikai uses `awww` for static images and a separate native QtMultimedia renderer for video; Classic uses `awww` / `mpvpaper`.
+- **Images and screenshots:** A shared image editor for crop, rotation, annotations and export, including avatar and screenshot workflows.
+- **Session controls:** Native Hikai lock screen and idle policy, with explicit recovery/fallback integration. Classic retains its existing external tools.
+- **Personalization:** Light/dark appearance, accent sync, settings search and configuration through `~/hakucfg`.
+
+Feature availability and keybindings can vary by compositor. Hikai does not replace the window manager, application dialogs or the XDG desktop portal for other applications.
+
 ---
 
 ## Key Features
@@ -75,19 +90,19 @@ You can also press **`SUPER + ESCAPE`** at any time as an emergency shortcut to 
 * **Accent Colors**: Synced across configured applications and icon themes.
 * **Smart Accent Color**: Automatically generates the accent color based on your current wallpaper.
 * **Flexible Waybar Layouts**: Supports 7 styles in Classic mode: `top`, `left`, `coredge`, `minimal`, `neon`, `island`, `legacy`.
-* **Wallpaper Automation**: Supports both static (`awww`) and lively video (`mpvpaper`) wallpapers, with optional auto-rotation every 5 minutes.
-* **Taskbar (Classic)**: A secondary Waybar with `wlr/taskbar` that lets you pin applications like a dock.
-* **Haku Space Built-in Mini-Apps**:
+* **Wallpaper Automation**: Classic uses `awww` / `mpvpaper`; Hikai has its own wallpaper browsing and native video-rendering path, with playback and quality settings.
+* **Taskbar**: Classic provides a secondary Waybar taskbar; Hikai integrates its taskbar and dock into the Quickshell UI.
+* **Haku Space Classic Mini-Apps**:
   * **Unique Cava Underbar**: *Built-in*, dynamic audio visualizer waves seamlessly layered beneath your bar.
   * **Desktop Icons**: *Built-in*, items in `~/Desktop` are rendered directly on your desktop with drag-and-drop support.
   * **Rounded Screen Corners**: *Built-in*, smooth rounded corners and frame around your screen.
   * **Edge Trigger**: *Built-in*, hover your mouse at the screen edges to quickly pop up menus or panels.
 
 > [!note]
-> HakuSpace is modular: features that aren't enabled don't stay running in the background, keeping resource usage light!
+> HakuSpace is modular, but background resource usage depends on which shell services, media decoders and features are active. Use measurements from your own session rather than assuming all inactive features cost nothing.
 
 > [!tip]
-> See the RAM breakdown in the [Performance](#performance) section below.
+> See the measurement guidance in the [Performance](#performance) section below.
 
 ---
 
@@ -108,9 +123,9 @@ Specific packages for each WM: [pkg-hyprland](src/packages/pkg-hyprland.txt) | [
 | Terminal | [Kitty](https://github.com/kovidgoyal/kitty) |
 | Shell | [Fish](https://fishshell.com/) + [Starship](https://starship.rs/) |
 | File Manager | [Thunar](https://docs.xfce.org/xfce/thunar/start) |
-| Wallpaper | [Awww](https://codeberg.org/LGFae/awww) + `mpvpaper` |
-| Idle Management | [Hypridle](https://github.com/hyprwm/Hypridle) |
-| Screen Lock | [Hyprlock](https://github.com/hyprwm/hyprlock) |
+| Wallpaper | Hikai: [Awww](https://codeberg.org/LGFae/awww) for images + native `QtMultimedia` video renderer; Classic: Awww + `mpvpaper` |
+| Idle Management | Hikai: native idle policy; Classic: [Hypridle](https://github.com/hyprwm/Hypridle) |
+| Screen Lock | Hikai: native Quickshell session lock with `hyprlock` fallback; Classic: [Hyprlock](https://github.com/hyprwm/hyprlock) |
 | Screen Recording | [wl-screenrec](https://github.com/russelltg/wl-screenrec) |
 | Editor | [VS Code](https://code.visualstudio.com/) (replaceable) |
 | Browser | [Firefox](https://www.firefox.com/en-US/) (replaceable) |
@@ -139,11 +154,11 @@ Stable release (recommended):
 
 ```bash
 cd ~
-git clone --depth 1 --branch v26.10-1 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
+git clone --depth 1 --branch v26.11 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 cd ~/hakuspace
 ```
 
-If you prefer the **latest changes**:
+If you prefer the **latest development changes**:
 
 ```bash
 cd ~
@@ -261,9 +276,10 @@ Haku Space's bundled Hyprland, Niri, MangoWM, and Labwc configs already call thi
 
 ### After Installation
 
-1. **Change the GTK theme**
-   - Open `GTK Settings` from the App Menu (`SUPER + Space`).
-   - Change the theme, icons, and mouse cursor to your preference.
+1. **Check your appearance**
+   - Install visual assets with `./scripts/setup.sh setup` if you skipped this during installation.
+   - Installation and activation are separate: a GTK/icon theme may be installed without becoming the selected theme.
+   - Inspect with `./scripts/setup.sh status` and [choose/activate a managed theme](docs/visual-setup.md#installation-selection-and-activation) when desired. Existing third-party selections are preserved unless you confirm a change.
 
 2. **Install `waybar-cava` if you use the Classic Waybar cava module**
 
@@ -303,11 +319,23 @@ See the full breakdown in: [Management & Deployment](docs/management.md)
 | `./rollback.sh` | Restore previous configuration backups safely |
 
 ### Update Haku Space
-Simply run the `update.sh` script in the hakuspace folder. This will safely update the core files while preserving your personal settings in `~/hakucfg`. Visual source repositories are managed separately and are not pulled, rebuilt or installed by this command.
+
+Run the updater to fetch dotfiles, deploy selected modules, apply versioned migrations, synchronize state, and run diagnostics. It preserves personal settings in `~/hakucfg` unless a documented migration requires a safe transformation. The updater checks visual assets and may offer to repair missing components; it does **not** routinely refresh already-installed GTK/icon/cursor sources. Explicit refreshes use `./scripts/setup.sh update`.
+
 ```bash
 cd ~/hakuspace
 ./update.sh
 ```
+
+For the v26.11 upgrade, check migration status after the update:
+
+```bash
+./scripts/migrate.sh --status
+./scripts/migrate.sh --audit
+./doctor.sh
+```
+
+A failed or partial update is **not** a successful migration. Review the reported backup path and logs under `log/` before retrying; do not delete your existing `~/hakucfg` data to force a retry.
 
 ### Rollback & Uninstall Haku Space
 If an update breaks something, or you want to restore your previous configs from `~/.backup/`:
@@ -496,7 +524,7 @@ Want to understand how HakuSpace works under the hood? We've written comprehensi
   ~/.local/bin/haku_backend.sh --verify
   ```
 - If Hikai fails to start, switch back to Classic with `~/.local/bin/haku_backend.sh set classic` or press **`SUPER + ESCAPE`**.
-- Quickshell runtime logs are saved in `${XDG_RUNTIME_DIR}/hakuspace/`.
+- Quickshell runtime logs are saved in `${XDG_RUNTIME_DIR}/hakuspace/` (when the session runtime directory is set). Install/update terminal transcripts are saved under `log/` in the repository.
 
 **Waybar / Classic issues**:
 - **Waybar clock**: Set your timezone and locale manually in the Waybar configuration to ensure the clock displays correctly.
