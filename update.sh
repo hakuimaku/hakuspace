@@ -6,6 +6,9 @@ set -e
 
 HAKU_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
+source "$HAKU_DIR/scripts/run_log.sh"
+start_run_log update "$@"
+
 # 1. Initialize Runtime Context & Helpers
 source "$HAKU_DIR/scripts/variables.sh"
 source "$HAKU_DIR/scripts/runtime.sh"

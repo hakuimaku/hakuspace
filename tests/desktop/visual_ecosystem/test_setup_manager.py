@@ -2,9 +2,12 @@
 import json
 import os
 from pathlib import Path
+import pty
+import select
 import shutil
 import subprocess
 import tempfile
+import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -776,6 +779,133 @@ esac
 ''')
         self.env = dict(os.environ, HOME=str(self.home), TEST_FLOW=str(self.home / 'flow'))
 
+    def test_each_run_logs_both_output_streams_in_a_private_file(self):
+        """Both entrypoints retain independent transcripts after their child processes exit."""
+        (self.repo / 'scripts/repo_update.sh').write_text('#!/bin/sh\nexit 0\n')
+        (self.repo / 'scripts/doctor.sh').write_text(
+            '#!/bin/sh\necho diagnostic-output\necho diagnostic-error >&2\n')
+        for operation in ('install', 'update'):
+            for _ in range(2):
+                result = subprocess.run(['bash', str(self.repo / (operation + '.sh'))], env=self.env,
+                                        cwd=self.home, text=True, capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn('Log file:', result.stdout)
+            logs = list((self.repo / 'log').glob(operation + '-*.log'))
+            self.assertEqual(len(logs), 2)
+            for path in logs:
+                self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+                self.assertIn('diagnostic-output', path.read_text())
+                self.assertIn('diagnostic-error', path.read_text())
+                self.assertIn('COMMAND_EXIT_CODE="0"', path.read_text())
+
+    def test_failed_runs_keep_logs_and_the_original_exit_status(self):
+        """Recording must not turn installer or updater failures into success."""
+        for operation, module, status in (('install', 'dependencies', 42), ('update', 'repo_update', 19)):
+            (self.repo / 'scripts' / (module + '.sh')).write_text(
+                f'#!/bin/sh\necho failure-output >&2\nexit {status}\n')
+            result = subprocess.run(['bash', str(self.repo / (operation + '.sh'))], env=self.env,
+                                    text=True, capture_output=True, timeout=10)
+            self.assertEqual(result.returncode, status, result.stdout + result.stderr)
+            logs = list((self.repo / 'log').glob(operation + '-*.log'))
+            self.assertEqual(len(logs), 1)
+            self.assertIn('failure-output', logs[0].read_text())
+            self.assertIn(f'COMMAND_EXIT_CODE="{status}"', logs[0].read_text())
+
+    def test_unavailable_log_directory_stops_before_system_changes(self):
+        """A failed log setup leaves the installation untouched."""
+        (self.repo / 'log').write_text('preserve')
+        for operation in ('install', 'update'):
+            result = subprocess.run(['bash', str(self.repo / (operation + '.sh'))], env=self.env,
+                                    text=True, capture_output=True, timeout=10)
+            self.assertNotEqual(result.returncode, 0)
+        self.assertEqual((self.repo / 'log').read_text(), 'preserve')
+        self.assertFalse((self.home / 'flow').exists())
+
+    def test_recorder_preserves_quoted_paths_arguments_and_shell(self):
+        """Recorder command construction treats paths and arguments as literal data."""
+        renamed = self.home / "haku space ' $untouched"
+        self.repo.rename(renamed)
+        self.repo = renamed
+        entry = self.repo / 'install.sh'
+        entry.write_text('''#!/bin/bash
+set -e
+HAKU_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$HAKU_DIR/scripts/run_log.sh"
+start_run_log install "$@"
+printf 'argument=<%s>\\n' "$@"
+printf 'shell=<%s>\\n' "$SHELL"
+''')
+        self.env['SHELL'] = "/custom shell ' unchanged"
+        argument = "spaces ' quotes $(touch $HOME/executed)"
+        result = subprocess.run(['bash', str(entry), argument], env=self.env,
+                                cwd=self.home, text=True, capture_output=True, timeout=10)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn(f'argument=<{argument}>', result.stdout)
+        self.assertIn(f'shell=<{self.env["SHELL"]}>', result.stdout)
+        self.assertFalse((self.home / 'executed').exists())
+        self.assertEqual(len(list((self.repo / 'log').glob('install-*.log'))), 1)
+
+    def test_terminal_prompts_are_logged_without_hidden_password_input(self):
+        """A real terminal retains command-substitution menus and non-echoed password reads."""
+        shutil.copy2(ROOT / 'scripts/functions.sh', self.repo / 'scripts/functions.sh')
+        entry = self.repo / 'install.sh'
+        entry.write_text('''#!/bin/bash
+set -e
+HAKU_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$HAKU_DIR/scripts/run_log.sh"
+start_run_log install "$@"
+source "$HAKU_DIR/scripts/functions.sh"
+choice="$(ui_prompt 'Choose a WM: ' answer; printf '%s' "$answer")"
+[[ "$choice" == niri ]]
+stty -echo
+ui_printf 'Password: '
+IFS= read -r password </dev/tty
+stty echo
+echo 'Prompt check passed'
+''')
+        master, slave = pty.openpty()
+        process = subprocess.Popen(['bash', str(entry)], env=self.env,
+                                   stdin=slave, stdout=slave, stderr=slave)
+        os.close(slave)
+        output = b''
+        sent_choice = sent_password = False
+        try:
+            deadline = time.monotonic() + 10
+            while time.monotonic() < deadline:
+                if not select.select([master], [], [], 0.1)[0]:
+                    continue
+                try:
+                    chunk = os.read(master, 65536)
+                except OSError:
+                    break
+                if not chunk:
+                    break
+                output += chunk
+                if b'Choose a WM: ' in output and not sent_choice:
+                    os.write(master, b'niri\n')
+                    sent_choice = True
+                if b'Password: ' in output and not sent_password:
+                    os.write(master, b'private-password-marker\n')
+                    sent_password = True
+            self.assertEqual(process.wait(timeout=2), 0, output.decode())
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+            os.close(master)
+        result = subprocess.run(['bash', str(entry)], env=self.env,
+                                input='niri\nprivate-password-marker\n',
+                                text=True, capture_output=True, timeout=10)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        logs = list((self.repo / 'log').glob('install-*.log'))
+        self.assertEqual(len(logs), 2)
+        for path in logs:
+            log = path.read_text()
+            self.assertIn('Choose a WM:', log)
+            self.assertIn('Password:', log)
+            self.assertIn('Prompt check passed', log)
+            self.assertNotIn('private-password-marker', log)
+
     def test_install_separates_visual_sources_and_wallpapers(self):
         """The full installer delegates software and wallpaper setup independently."""
         result = subprocess.run(['bash', str(self.repo / 'install.sh')], env=self.env,
@@ -794,8 +924,9 @@ esac
         repo_update.write_text('''#!/bin/bash
 if [[ ! -f "$HOME/reexecuted" ]]; then
     touch "$HOME/reexecuted"
+    echo 'Repository refreshed before re-exec'
     echo reexec >> "$TEST_FLOW"
-    echo 'registry_format_wm_list() { echo registry-new >> "$TEST_FLOW"; echo revised; }' >> "$HAKU_DIR/scripts/registry.sh"
+    echo 'registry_format_wm_list() { echo registry-new >> "$TEST_FLOW"; echo "Updated registry loaded" >&2; echo revised; }' >> "$HAKU_DIR/scripts/registry.sh"
     exit 10
 fi
 echo updated >> "$TEST_FLOW"
@@ -811,6 +942,11 @@ echo updated >> "$TEST_FLOW"
         self.assertLess(flow.index('reexec'), flow.index('link --all'))
         self.assertIn('setup apply gtk', flow)
         self.assertNotIn('assets ', flow)
+        logs = list((self.repo / 'log').glob('update-*.log'))
+        self.assertEqual(len(logs), 1)
+        transcript = logs[0].read_text()
+        self.assertEqual(transcript.count('Repository refreshed before re-exec'), 1)
+        self.assertIn('Updated registry loaded', transcript)
 
     def test_update_skips_developer_override(self):
         """Dotfile updates never rebuild explicitly configured development sources."""

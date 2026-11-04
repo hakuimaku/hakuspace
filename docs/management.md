@@ -27,6 +27,22 @@ install.sh / update.sh
 ### Shared Runtime Context
 Whenever `install.sh`, `update.sh`, or any standalone tool runs, a shared runtime context (`scripts/runtime.sh`) establishes a single `BACKUP_DIR` for that entire execution. Child processes automatically reuse this shared backup directory, preventing fragmented backup folders.
 
+### Install and update logs
+
+`./install.sh` and `./update.sh` automatically record terminal output in the
+repository's `log/` directory, regardless of the current working directory. The
+log path is printed at startup. Each run creates a separate private file named
+`install-YYYY-MM-DD_HH-MM-SS.<random>.log` or
+`update-YYYY-MM-DD_HH-MM-SS.<random>.log`; the directory is ignored by Git.
+
+Logging uses `script` from util-linux to preserve interactive menus and capture
+both output streams, including prompts written directly to the terminal. It
+records output only, so password input with terminal echo disabled is excluded.
+When input is piped, echo is disabled to avoid recording queued input. The
+recorder preserves the script's exit status and records it in the log footer.
+An updater re-exec after Git pull continues in the same log. Logs remain available
+after success or failure and are not automatically deleted.
+
 ---
 
 ## 2. Deployment Modes
