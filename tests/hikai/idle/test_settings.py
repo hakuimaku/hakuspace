@@ -19,6 +19,14 @@ SPEC.loader.exec_module(ctl)
 class IdleSettingsTests(unittest.TestCase):
     """Keep all preference writes in a temporary canonical path."""
 
+    def test_native_default_timeouts_preserve_existing_saved_policy(self):
+        """Match native reset defaults without replacing previously saved intervals."""
+        keys = ('lockTimeout', 'displayOffTimeout', 'suspendTimeout')
+        self.assertEqual([ctl.DEFAULTS['idle'][key] for key in keys], [30, 30, 300])
+        saved = copy.deepcopy(ctl.DEFAULTS)
+        saved['idle'].update(dict(zip(keys, (120, 120, 600))))
+        self.assertEqual(ctl.migrate(saved), (saved, False))
+
     def test_v7_migration_preserves_choices(self):
         """Inject independent native defaults without parsing the Classic config."""
         original = copy.deepcopy(ctl.DEFAULTS)

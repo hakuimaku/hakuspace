@@ -527,7 +527,7 @@ ShellRoot {
             panel.selectCategory("Power & Session")
             redesignStep = 13
         } else if (step === 14) {
-            check(find(panel.generalPage, item => item.text === "Total time to suspend: 19 min"), "idle timeline displays absolute total")
+            check(find(panel.generalPage, item => item.text === "Total time to suspend: 11 min"), "idle timeline displays absolute total")
             SettingsCoordinator.set("idle-keep-awake", true)
             pointer.running = true
             redesignStep = 139
@@ -567,7 +567,7 @@ ShellRoot {
         } else if (step === 145) {
             if (SettingsCoordinator.dirty) return false
             var timeline = find(panel.generalPage, item => item.stages !== undefined && item.dragLimit !== undefined)
-            check(timeline.total === 1140 && timeline.dragLimit === 0, "normal interval editing leaves no stale drag scale")
+            check(timeline.total === 660 && timeline.dragLimit === 0, "normal interval editing leaves no stale drag scale")
             checkIdlePreview(timeline)
             redesignStep = 14
         } else if (step === 15) {
@@ -584,7 +584,7 @@ ShellRoot {
             SettingsCoordinator.set("idle-lockEnabled", false)
         } else if (step === 16) {
             if (SettingsCoordinator.dirty) return false
-            check(ShellSettingsStore.savedValues.idle.lockTimeout === 120, "disabled idle stage retains its interval")
+            check(ShellSettingsStore.savedValues.idle.lockTimeout === 30, "disabled idle stage retains its interval")
             check(idleEditor && find(panel.generalPage, item => item.text === "5 min" && item.settingsNavRole === "input") === idleEditor, "idle stage changes preserve existing editor instances")
             SettingsCoordinator.reset("idle-lockEnabled")
             SettingsCoordinator.set("idle-keep-awake", false)

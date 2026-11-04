@@ -25,8 +25,20 @@ const forceSource = service.match(/function forceStage\(name\) \{([\s\S]*?)\n   
 const forceStage = new Function('Quickshell', 'enabled', 'stages', 'name', forceSource)
 assert.equal(forceStage({env: () => ''}, true, {}, 'suspend'), 'error:test-only')
 const catalog = vm.createContext({})
-vm.runInContext(fs.readFileSync(path.join(shell, 'config/SettingsCatalog.js'), 'utf8'), catalog)
-for (const query of ['sleep', 'lock', 'idle', 'screen off', 'caffeine', 'audio playback']) {
-    assert(catalog.search(query).some(item => item.category === 'Session' && item.store === 'shell'), query)
+vm.runInContext(fs.readFileSync(path.join(shell, 'config/SettingsCatalog.js'), 'utf8')
+    .replace(/^\.pragma library\r?\n/, ''), catalog)
+for (const [query, id, provider] of [
+    ['sleep', 'idle-suspendEnabled', 'shell'],
+    ['lock', 'idle-lockEnabled', 'shell'],
+    ['idle', 'idle-enabled', 'shell'],
+    ['screen off', 'idle-displayOffTimeout', 'shell'],
+    ['caffeine', 'idle-keep-awake', 'runtime-state'],
+    ['audio playback', 'idle-inhibitOnAudio', 'shell'],
+]) {
+    const result = catalog.search(query).find(item => item.id === id)
+    assert(result, query)
+    assert.equal(result.category, 'Power & Session', query)
+    assert.equal(result.provider, provider, query)
+    assert.equal(result.store, provider, query)
 }
-console.log('PASS: idle policy and Session search')
+console.log('PASS: idle policy and Power & Session search targets')

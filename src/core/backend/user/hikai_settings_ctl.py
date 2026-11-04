@@ -18,8 +18,8 @@ DEFAULTS = {
     "topbar": dict.fromkeys(("workspaces", "windowTitle", "center", "cava", "tray",
                              "quickControls", "powerProfile", "wallpaperWorkspace", "recorder", "clock", "notifications"), True),
     "idle": {"enabled": True, "dimEnabled": True, "dimTimeout": 300, "dimPercent": 10,
-             "lockEnabled": True, "lockTimeout": 120, "displayOffEnabled": True,
-             "displayOffTimeout": 120, "suspendEnabled": True, "suspendTimeout": 600,
+             "lockEnabled": True, "lockTimeout": 30, "displayOffEnabled": True,
+             "displayOffTimeout": 30, "suspendEnabled": True, "suspendTimeout": 300,
              "respectAppInhibitors": True, "inhibitOnAudio": False},
 }
 

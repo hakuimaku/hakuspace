@@ -54,7 +54,7 @@ ShellRoot {
                 stepper.minus30.clicked()
                 root.check(ShellSettingsStore.values.idle.dimTimeout === 300, "minus 30 edits by thirty seconds")
                 ShellSettingsStore.setValue("idle", "lockTimeout", 125)
-                root.check(ShellSettingsStore.values.idle.lockTimeout === 120 && ShellSettingsStore.error.length > 0, "odd number timeout rejected")
+                root.check(ShellSettingsStore.values.idle.lockTimeout === 30 && ShellSettingsStore.error.length > 0, "odd number timeout rejected")
                 ShellSettingsStore.setValue("idle", "dimTimeout", 10)
                 ShellSettingsStore.setValue("idle", "lockTimeout", 10)
                 root.check(ShellSettingsStore.values.idle.lockTimeout === 10, "equal round timeout allowed down to 10s")
