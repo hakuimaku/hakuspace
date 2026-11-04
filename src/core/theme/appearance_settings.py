@@ -12,8 +12,8 @@ import sys
 import tempfile
 
 
-def current_themes():
-    """Read user-selected names; unavailable settings remain unmanaged."""
+def current_themes(strict=False):
+    """Read selected names; strict verification forbids native-settings fallback."""
     config = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
     native = configparser.ConfigParser(interpolation=None)
     try:
@@ -28,10 +28,12 @@ def current_themes():
                                      "gtk-theme" if key == "gtk" else "icon-theme"],
                                     capture_output=True, text=True, timeout=5, check=True)
             selected = ast.literal_eval(output.stdout.strip())
-            if isinstance(selected, str):
-                name = selected
-        except (OSError, ValueError, SyntaxError, subprocess.SubprocessError):
-            pass
+            if not isinstance(selected, str) or '\n' in selected or '\r' in selected:
+                raise ValueError('invalid theme-name readback')
+            name = selected
+        except (OSError, ValueError, SyntaxError, subprocess.SubprocessError) as error:
+            if strict:
+                raise ValueError(f'gsettings readback unverified for {option}: {error}') from error
         result[key] = name if "\n" not in name and "\r" not in name else ""
     return result
 
@@ -112,11 +114,11 @@ def apply(gtk_theme, icon_theme, mode, gtk_directory):
 
 if __name__ == "__main__":
     try:
-        if sys.argv[1:] == ["current"]:
-            print(json.dumps(current_themes()))
+        if sys.argv[1:] in (["current"], ["current", "--strict"]):
+            print(json.dumps(current_themes(strict=sys.argv[1:] == ["current", "--strict"])))
         elif len(sys.argv) == 5:
             apply(*sys.argv[1:])
         else:
-            raise ValueError("usage: appearance_settings.py current | GTK_THEME ICON_THEME dark|light GTK_DIRECTORY")
+            raise ValueError("usage: appearance_settings.py current [--strict] | GTK_THEME ICON_THEME dark|light GTK_DIRECTORY")
     except (OSError, ValueError) as error:
         sys.exit(str(error))

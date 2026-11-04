@@ -127,7 +127,14 @@ run_doctor() {
             [[ -f "$dst" && -x "$dst" ]] || MISSING_LINKS+=("Missing core executable: $dst")
         done < <(registry_get_core_scripts)
     fi
-    "$HAKU_DIR/scripts/migrate.sh" --audit || MISSING_LINKS+=("Residual legacy artifacts; run migration --plan")
+    local migration_status=0 migration_note=''
+    "$HAKU_DIR/scripts/migrate.sh" --audit || migration_status=$?
+    case "$migration_status" in
+        0) ;;
+        2) migration_note='migration history unverified; receipt missing'; log_warn "$migration_note" ;;
+        3) migration_note='migration pending finalization'; log_info "$migration_note" ;;
+        *) MISSING_LINKS+=("Migration incomplete or destination invalid; run scripts/migrate.sh --plan") ;;
+    esac
     # The shared core manifest requires this runtime for both Classic and Hikai installations.
     "$HAKU_DIR/scripts/packages.sh" --audit-runtime || MISSING_LINKS+=("Missing shared Quickshell/QtMultimedia runtime dependencies")
 
@@ -194,7 +201,11 @@ run_doctor() {
 
     echo ""
     if [[ $total_issues -eq 0 && $state_ok -eq 1 && $hakucfg_ok -eq 1 ]]; then
-        log_ok "Doctor check completed: Everything is in order!"
+        if [[ -n "$migration_note" ]]; then
+            log_warn "Doctor deployment checks passed; $migration_note."
+        else
+            log_ok "Doctor check completed: Everything is in order!"
+        fi
         return 0
     else
         log_warn "Doctor check completed with warnings/issues."

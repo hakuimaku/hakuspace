@@ -218,6 +218,8 @@ case "$1" in
     list-schemas) echo org.gnome.desktop.interface ;;
     get)
         selected="$HOME/selected-$3"
+        if [[ -f "$selected" && "${TEST_READBACK_FAIL:-}" == "$3" ]]; then exit 9; fi
+        if [[ -f "$selected" && "${TEST_READBACK_INVALID:-}" == "$3" ]]; then echo '[]'; exit 0; fi
         if [[ -f "$selected" ]]; then printf "'%s'\\n" "$(cat "$selected")"; else echo "'Adwaita'"; fi ;;
     set)
         if [[ "${TEST_ACTIVATION_FAIL:-0}" == 1 && "$3" == *-theme && "$3" != cursor-theme ]]; then exit 9; fi
@@ -312,6 +314,47 @@ esac
         self.assertEqual(self.selection('icon-theme'), 'Hikaide-Symbols-Light')
         self.assertEqual(self.backend.read_text(), 'hikai\n')
         self.assertEqual(preferences.read_bytes(), before)
+
+    def test_managed_reconcile_requires_readback_after_mode_change(self):
+        """An ignored settings write cannot clear recovery or report the new mode as applied."""
+        self.run_manager('setup', answers='y\ny\n')
+        self.backend.write_text('hikai\n')
+        env = dict(self.env, HAKUSPACE_HIKAI_SETTINGS_JSON=json.dumps({'appearance': {'colorMode': 'light'}}))
+        subprocess.run(['python3', '-B', str(self.repo / 'src/core/backend/user/hikai_settings_ctl.py'), 'write'],
+                       env=env, check=True, capture_output=True)
+        self.pending().write_text('1\n')
+        self.env['TEST_ACTIVATION_IGNORE'] = '1'
+        result = self.run_manager('update', success=False)
+        self.assertNotIn('Appearance applied:', result.stdout)
+        self.assertTrue(self.pending().is_file())
+        self.assertEqual(self.selection('gtk-theme'), 'Hikaide')
+        self.clear_logs()
+        self.env.pop('TEST_ACTIVATION_IGNORE')
+        self.run_manager('update')
+        self.assertEqual(self.selection('gtk-theme'), 'Hikaide-Light')
+        self.assertEqual(self.selection('icon-theme'), 'Hikaide-Symbols-Light')
+        self.assertFalse(self.pending().exists())
+        self.assertEqual(self.lines('builds'), [])
+        self.assertEqual(self.lines('clones'), [])
+
+    def test_failed_readback_cannot_use_matching_native_settings_as_confirmation(self):
+        """Failed or malformed gsettings reads retain pending recovery despite matching INI files."""
+        for variable in ('TEST_READBACK_FAIL', 'TEST_READBACK_INVALID'):
+            for key in ('gtk-theme', 'icon-theme'):
+                with self.subTest(variable=variable, key=key):
+                    self.env[variable] = key
+                    result = self.run_manager('setup', success=False, answers='y\ny\n')
+                    self.assertNotIn('Appearance applied:', result.stdout)
+                    self.assertTrue(self.pending().is_file())
+                    expected = 'gtk-theme-name=Hikaide' if key == 'gtk-theme' else 'gtk-icon-theme-name=Hikaide-Symbols'
+                    self.assertIn(expected, self.configs[0].read_text())
+                    self.assertIn('gtk_theme_selected=Hikaide', self.run_manager('status').stdout)
+                    self.env.pop(variable)
+                    self.clear_logs()
+                    self.run_manager('update')
+                    self.assertFalse(self.pending().exists())
+                    self.assertEqual(self.lines('builds'), [])
+                    self.assertEqual(self.lines('clones'), [])
 
     def test_failed_activation_retries_without_downloading_assets(self):
         """Installed assets survive a gsettings failure and the saved intent resumes without clones."""
@@ -1074,6 +1117,47 @@ echo updated >> "$TEST_FLOW"
         self.assertFalse((self.home / 'flow').exists())
         self.assertIn('PARTIAL / BLOCKED', result.stdout)
         self.assertIn('Backup folder for this update:', result.stdout)
+
+    def test_preflight_failure_stops_before_deployment(self):
+        """Invalid migration data stops the updater before any configuration mutation."""
+        (self.repo / 'scripts/repo_update.sh').write_text('#!/bin/sh\nexit 0\n')
+        (self.repo / 'scripts/migrate.sh').write_text('#!/bin/sh\necho preflight-failed >&2\nexit 38\n')
+        result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
+                                text=True, capture_output=True)
+        self.assertEqual(result.returncode, 38)
+        self.assertFalse((self.home / 'flow').exists())
+        self.assertIn('PARTIAL / BLOCKED', result.stdout)
+
+    def test_migration_failure_retains_status_and_blocks_completion(self):
+        """Deployed files do not imply migration or the entire update completed successfully."""
+        (self.repo / 'scripts/repo_update.sh').write_text('#!/bin/sh\nexit 0\n')
+        (self.repo / 'scripts/migrate.sh').write_text('''#!/bin/bash
+echo "migrate $*" >> "$TEST_FLOW"
+if [[ "$1" == --apply ]]; then exit 47; fi
+''')
+        result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
+                                text=True, capture_output=True)
+        self.assertEqual(result.returncode, 47)
+        flow = (self.home / 'flow').read_text()
+        self.assertNotIn('migrate --complete', flow)
+        self.assertNotIn('reload ', flow)
+        self.assertIn('migration failed (exit=47)', result.stdout)
+        self.assertIn('PARTIAL / BLOCKED', result.stdout)
+
+    def test_failed_reexec_reports_backup_and_stops(self):
+        """A changed updater that cannot start retains failure status and recovery location."""
+        helpers = self.repo / 'scripts/functions.sh'
+        helpers.write_text(helpers.read_text().replace('log_info() { :; }', 'log_info() { echo "$*"; }'))
+        (self.repo / 'scripts/repo_update.sh').write_text('''#!/bin/bash
+printf '#!/bin/bash\\nexit 43\\n' > "$HAKU_DIR/update.sh"
+exit 10
+''')
+        result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
+                                text=True, capture_output=True)
+        self.assertEqual(result.returncode, 43)
+        self.assertFalse((self.home / 'flow').exists())
+        self.assertIn('Backup folder for this update:', result.stdout)
+        self.assertNotIn('Update complete!', result.stdout)
 
 
 

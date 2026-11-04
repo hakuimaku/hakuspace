@@ -43,6 +43,98 @@ recorder preserves the script's exit status and records it in the log footer.
 An updater re-exec after Git pull continues in the same log. Logs remain available
 after success or failure and are not automatically deleted.
 
+### Migration validity and recovery
+
+The v26.11 migration retains its receipt at
+`${XDG_STATE_HOME:-$HOME/.local/state}/hakuspace/migrations/v26.11.json`.
+The recorded menu step describes conversion history. A historical `applied` step
+does not prove that `~/hakucfg/config/hakumenu-general.json` still exists or is valid.
+`scripts/migrate.sh --status` reports that history alongside `menu_destination`
+and `completion_eligible`. Destination states distinguish `valid`, `missing`,
+`malformed`, `schema-invalid`, `invalid` (including duplicate keys or unsafe paths),
+and `not-required` when neither a prior conversion nor legacy input requires a menu.
+Status inspection exits successfully when it can report state; callers must inspect
+`completion_eligible` rather than treating status-command success as completion.
+
+`--plan` is read-only. A missing destination before the first conversion is expected;
+a missing destination after a recorded conversion, invalid JSON, or conflicting
+input blocks the plan. `--apply` preserves valid post-conversion edits, including
+their formatting and stable IDs. It never executes the legacy shell menu. JSON uses
+the same bounded parser and schema as the General Menu backend: duplicate object
+keys are rejected at every nesting level rather than merged or silently discarded.
+Invalid inputs remain untouched; validation failure does not require creating a new
+backup of those inputs, and existing backups remain available.
+
+`--complete` rechecks both migration steps, legacy cleanup and current destination
+validity. It refuses missing or invalid destinations and records a failed overall
+status while retaining successful conversion history. It never recreates a missing
+menu or overwrites a modified menu to match a stored checksum. `--audit`, also used
+by Doctor, checks the current menu, receipt history and residual legacy artifacts:
+
+| Exit | Audit result |
+| --- | --- |
+| `0` | Verified `applied`/`skipped`, or `not-required` when there is no legacy menu, destination or receipt. |
+| `1` | Failed/incomplete migration, invalid destination or residual owned artifacts. |
+| `2` | `unverified`: valid destination but missing receipt. |
+| `3` | `pending-finalization`: recorded steps and destination are valid, awaiting the final completion gate. |
+
+Audit is read-only. Status also exposes `receipt_present` separately from its
+default pending state. Doctor treats exits `2` and `3` as explicit migration notes
+while checking deployment health; it does not print “Everything is in order” for
+those states. A clean deployment can still return Doctor exit `0` with a migration
+note, allowing fresh installs without migration history and the updater's normal
+pre-finalization check. That exit code alone does not verify migration completion.
+These migration checks do not replace the updater's package, deployment and
+diagnostic gates.
+
+If the menu disappears, restore a known-good JSON backup when available, or manually
+reconstruct it from the retained legacy input. For malformed JSON or duplicate keys,
+review and repair the affected file explicitly; the migrator does not choose which
+user action to discard. If both a first-time legacy menu and an existing custom JSON
+conflict, reconcile them manually. Only after verifying the desired JSON, the user
+may rename the legacy script to a retained `.saved` file to retire conversion of that
+input. Do not delete the receipt to force conversion over user data.
+
+After repair, inspect the plan and rerun the updater:
+
+```bash
+./scripts/migrate.sh --status
+./scripts/migrate.sh --plan --to v26.11
+python3 -B src/core/backend/user/general_menu_ctl.py check
+./update.sh
+```
+
+Backups use the shared `BACKUP_DIR` printed by the updater, normally
+`~/.backup/Backup_<run-id>/`, with original paths relative to HOME. Existing backups
+are never replaced with different content. Interrupted copies are staged before
+publication so retry does not encounter a newly published partial backup. A collision
+with an older backup requires review; keep both copies rather than deleting either
+blindly. A conversion published before an interrupted receipt write is adopted on
+retry without rewriting its JSON or replacing the original pre-conversion backup.
+A fresh updater run normally allocates a new backup directory.
+Before removing a legacy original, migration flushes the backup file and its
+directory entry, including ancestor directories through HOME so newly created backup
+directories are durable too. Symlink backups flush their directory entries. Reused
+matching backups are synced again on retry. Any sync error stops cleanup and leaves
+the original in place.
+
+Migration receipts support an absolute external `XDG_STATE_HOME`. The root and
+HakuSpace migration directories must belong to the current user, must not be writable
+by other users, and must be writable/searchable for migration writes. Symlink traversal
+and `..` components are rejected. Inspection creates no directories; unrelated state
+files are preserved. This applies to migration receipts; other HakuSpace state retains
+its existing location. Legacy cleanup and backup destinations remain confined to HOME.
+
+Recovery proceeds forward through the existing stages; it does not automatically
+roll back packages or all deployed configs. A deployed configuration alone does not
+mean the update completed. Failures retain their exit status, backup location and run
+log; the updater records completion only after its required checks pass. A failed
+updater re-exec retains its exit status, with the backup path printed before re-exec.
+GTK/icon activation requires successful GSettings readback separately from
+installed-file checks. Native `settings.ini` fallback is available for inspection,
+but cannot confirm activation when GSettings reads fail or return invalid values;
+existing applications can still require a restart or a new session to refresh caches.
+
 ---
 
 ## 2. Deployment Modes

@@ -319,6 +319,18 @@ apply() {
             hyprctl setcursor "$HAKU_CURSOR_THEME" "$HAKU_CURSOR_SIZE" || { asset_warning 'Hyprland cursor activation failed' || failed=1; }
         fi
     fi
+    # Strict setup/recovery verifies managed selection rather than trusting successful writes.
+    if [[ "${HAKUSPACE_STRICT_ASSETS:-0}" == 1 && ( "$change_gtk" == 1 || "$change_icons" == 1 ) ]]; then
+        helper="$(resolve_settings_helper)" || return 1
+        local selected
+        selected="$(python3 "$helper" current --strict)" || return 1
+        if { [[ "$change_gtk" == 1 ]] && [[ "$(jq -r '.gtk' <<< "$selected")" != "$HAKU_GTK_THEME" ]]; } ||
+                { [[ "$change_icons" == 1 ]] && [[ "$(jq -r '.icons' <<< "$selected")" != "$HAKU_ICON_THEME" ]]; }; then
+            printf 'appearance: activation not confirmed: expected GTK=%s icons=%s; selected=%s\n' \
+                "$HAKU_GTK_THEME" "$HAKU_ICON_THEME" "$selected" >&2
+            failed=1
+        fi
+    fi
     return "$failed"
 }
 
@@ -333,7 +345,7 @@ activate() {
     mode="$(effective_mode)" || return 1
     HAKUSPACE_STRICT_ASSETS=1 apply "$mode" 1 || return 1
     helper="$(resolve_settings_helper)" || return 1
-    selected="$(python3 "$helper" current)" || return 1
+    selected="$(python3 "$helper" current --strict)" || return 1
     if [[ "$component" == gtk ]]; then
         expected="$(appearance_gtk_theme_for_mode "$mode")"
         actual="$(jq -r '.gtk' <<< "$selected")"

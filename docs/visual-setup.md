@@ -54,8 +54,13 @@ For assets already installed, these explicit commands activate without downloadi
 `setup.sh status` reports component `installed=yes|no`, `gtk_theme_selected`,
 `icon_theme_selected`, and `activation_pending` separately. Selection is read from
 GSettings, with native GTK settings as the fallback when GSettings is unavailable.
-A successful activation requires both settings application and readback of the
-requested selection. Failures retain the installed assets and pending activation
+`appearance_verified` checks assets/deployment and does not itself confirm activation.
+A successful activation requires both settings application and strict GSettings
+readback of the requested selection, including managed Light/Dark changes during strict setup or
+recovery. Failed, timed-out or invalid readback cannot be confirmed by matching
+`settings.ini` values. Inspection may still report those persisted names, while
+activation remains unverified and pending. A settings backend that ignores a
+successful write does not confirm activation. Failures retain the installed assets and pending activation
 intent; they do not report the batch as successfully applied.
 
 The result distinguishes **installed**, **selected**, **applied**, and **session

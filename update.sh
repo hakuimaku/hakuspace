@@ -46,6 +46,7 @@ if [[ "${HAKUSPACE_REPO_UPDATED:-0}" != 1 ]]; then
     "$HAKU_DIR/scripts/repo_update.sh" --target-script "$HAKU_DIR/update.sh" || REPO_UPDATE_STATUS=$?
     if [[ $REPO_UPDATE_STATUS -eq 10 ]]; then
         log_info "Re-executing updated logic..."
+        log_info "Backup folder for this update: $BACKUP_DIR"
         export HAKUSPACE_REPO_UPDATED=1
         exec "$HAKU_DIR/update.sh" "$@"
     elif [[ $REPO_UPDATE_STATUS -ne 0 ]]; then
@@ -105,8 +106,14 @@ if ask_yes_no "Apply the configuration update plan shown above?"; then
         log_info "Updating configurations using Legacy Copy mode..."
         "$HAKU_DIR/scripts/legacy_copy.sh" update "${SELECTED_WMS[@]}"
     fi
-    "$HAKU_DIR/scripts/migrate.sh" --apply --to v26.11 || record_failure $?
-    log_ok "Configuration deployment finished."
+    MIGRATION_STATUS=0
+    "$HAKU_DIR/scripts/migrate.sh" --apply --to v26.11 || MIGRATION_STATUS=$?
+    if [[ "$MIGRATION_STATUS" == 0 ]]; then
+        log_ok "Configuration deployment and migration steps applied; final checks pending."
+    else
+        record_failure "$MIGRATION_STATUS"
+        log_error "Configuration deployed, but migration failed (exit=$MIGRATION_STATUS); review the backup and rerun after repair."
+    fi
 else
     log_skip "Skipping config update; migration remains pending."
     record_failure 1
