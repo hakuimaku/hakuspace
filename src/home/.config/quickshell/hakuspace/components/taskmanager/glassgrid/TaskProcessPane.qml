@@ -206,6 +206,7 @@ Rectangle {
 
             TextField {
                 id: search
+                ContextMenu.menu: null
                 objectName: "taskManagerSearch"
                 Layout.fillWidth: true
                 Layout.minimumWidth: 70

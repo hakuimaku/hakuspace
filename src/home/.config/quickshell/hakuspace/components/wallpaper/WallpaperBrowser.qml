@@ -635,6 +635,7 @@ FocusScope {
             width: controls.width; height: implicitHeight
             TextField {
                 id: search
+                ContextMenu.menu: null
                 objectName: "wallpaperSearch"
                 anchors.fill: parent
                 text: root.query

@@ -106,6 +106,7 @@ Column {
             Component {
                 id: input
                 TextField {
+                    ContextMenu.menu: null
                     property bool settingsNavItem: true
                     property string settingsNavRole: "input"
                     verticalAlignment: TextInput.AlignVCenter

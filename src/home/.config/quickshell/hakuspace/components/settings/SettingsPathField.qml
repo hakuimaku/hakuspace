@@ -14,6 +14,7 @@ Row {
     spacing: Theme.spaceSm
     TextField {
         id: field
+        ContextMenu.menu: null
         property bool settingsNavItem: true
         property string settingsNavRole: "input"
         verticalAlignment: TextInput.AlignVCenter

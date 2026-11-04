@@ -66,6 +66,7 @@ Column {
                         Component {
                             id: freeText
                             TextField {
+                                ContextMenu.menu: null
                                 property bool settingsNavItem: true
                                 property string settingsNavRole: "input"
                                 verticalAlignment: TextInput.AlignVCenter
@@ -92,6 +93,7 @@ Column {
                 expandedHeight: extraField.height
                 TextField {
                     id: extraField
+                    ContextMenu.menu: null
                     property bool settingsNavItem: true
                     property string settingsNavRole: "input"
                     verticalAlignment: TextInput.AlignVCenter

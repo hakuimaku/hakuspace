@@ -216,6 +216,7 @@ FocusScope {
     // Share the existing Hikai field styling across the three draft values.
     component EditorField: TextField {
         id: field
+        ContextMenu.menu: null
         Layout.fillWidth: true
         Layout.preferredHeight: Theme.controlHeight
         color: Theme.fg

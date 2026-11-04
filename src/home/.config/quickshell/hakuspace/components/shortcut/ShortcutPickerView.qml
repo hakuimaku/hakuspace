@@ -63,6 +63,7 @@ FocusScope {
 
     TextField {
         id: search
+        ContextMenu.menu: null
         anchors { top: parent.top; left: parent.left; right: parent.right }
         placeholderText: "Search apps"
         color: Theme.fg

@@ -31,6 +31,7 @@ Column {
         width: parent.width; spacing: Theme.spaceSm
         TextField {
             id: entry
+            ContextMenu.menu: null
             property bool settingsNavItem: true
             property string settingsNavRole: "input"
             verticalAlignment: TextInput.AlignVCenter
