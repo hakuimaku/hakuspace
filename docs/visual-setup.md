@@ -19,10 +19,15 @@ existing local repositories are not adopted or deleted. GTK, icons and cursor
 files already installed under `~/.themes` and `~/.icons` remain available after
 source cleanup. `hakuspace-archive` and `scripts/assets.sh` supply wallpapers only.
 
-`update.sh` updates recognized managed visual installations after deploying dotfiles.
-It asks before installing an unmanaged component and preserves configured development
-source overrides. `./scripts/setup.sh update` fetches current disposable sources;
-there is no retained Git history or installed-revision manifest to compare.
+`update.sh` checks installed visual files after deploying dotfiles and skips complete
+installations, including after a reboot. It asks before installing or repairing a
+missing component and preserves configured development source overrides. GTK and
+icon installations require both dark and light variants. These checks use installed
+files rather than the deleted temporary sources or ownership metadata alone.
+`./scripts/setup.sh verify <component>` performs this read-only component check.
+To refresh installed assets explicitly, run `./scripts/setup.sh update [component]`;
+this fetches current disposable sources even when assets are already installed.
+There is no retained Git history or installed-revision manifest to compare.
 `./scripts/setup.sh apply <component>` installs one component, using temporary
 sources when no development source was configured.
 
@@ -104,7 +109,7 @@ appearance reconciliation clears it. If activation failed, a subsequent
 `update` retries activation and returns without downloading/rebuilding sources;
 `verify` also retries pending activation. The dotfile updater performs this
 recovery once before considering component downloads and skips new downloads in
-that recovery pass. Run `update` again to explicitly fetch
+that recovery pass. Run `scripts/setup.sh update` again to explicitly fetch
 new sources afterward. Light/Dark/Classic selection, XDG discovery and stateless
 icon accents remain independent of the disposable source lifetime.
 
