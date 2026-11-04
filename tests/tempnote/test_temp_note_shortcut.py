@@ -23,6 +23,8 @@ class TempNoteShortcutTest(unittest.TestCase):
         self.bin = self.home / "bin"
         self.bin.mkdir()
         self.env = dict(os.environ, HOME=str(self.home), XDG_RUNTIME_DIR=str(self.home / "runtime"),
+                        XDG_STATE_HOME=str(self.home / ".local/state"), XDG_CACHE_HOME=str(self.home / ".cache"),
+                        XDG_CONFIG_HOME=str(self.home / ".config"),
                         PATH=str(self.bin) + ":" + os.environ["PATH"])
         for name in ("qs", "notify-send"):
             stub = self.bin / name
@@ -32,7 +34,7 @@ class TempNoteShortcutTest(unittest.TestCase):
 
     def run_shortcut(self, backend):
         """Set the real backend selector before invoking the public command."""
-        (self.state / "shell_backend").write_text(backend + "\n")
+        (self.state / "[shell].backend").write_text(backend + "\n")
         return subprocess.run([str(SCRIPT)], env=self.env, capture_output=True, text=True)
 
     def test_hikai_only_toggles_temp_note(self):

@@ -47,7 +47,7 @@ class HikaiConfigTests(unittest.TestCase):
         self.assertFalse((self.hikai / "hikai-shell.json").exists())
 
     def test_migration_preserves_content_modes_and_subsequent_writes(self):
-        settings = {**self.defaults, "appearance": {"baseRadius": 18, "surfaceTone": "soft"}}
+        settings = {**self.defaults, "appearance": {**self.defaults["appearance"], "baseRadius": 18, "surfaceTone": "soft"}}
         old = self.config / "hikai-shell.json"
         old.write_text(json.dumps(settings, indent=3) + "\n")
         old.chmod(0o640)

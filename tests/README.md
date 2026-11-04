@@ -8,10 +8,13 @@ Run only the affected component during development. Component entrypoints resolv
 bash tests/hikai/dock/run.sh
 bash tests/hikai/settings/run.sh
 bash tests/hikai/wallpaper/run.sh
+bash tests/hikai/task_manager/run.sh
 bash tests/shell/transition/run.sh
 ```
 
-The Dock, Settings and Wallpaper runners accept `--runtime` to include their private headless Labwc checks. The transition runner accepts `--headless` to include its compositor and IPC checks. Existing nested Niri checks in the Wallpaper Python tests require Niri and a parent Wayland display. Runtime checks need their compositor, Quickshell and media/input dependencies; inspect the component test before running it.
+The Dock, Settings, Wallpaper and Task Manager runners accept `--runtime` to include their private Quickshell/headless Labwc checks. The transition runner accepts `--headless` to include its compositor and IPC checks. Existing nested Niri checks in the Wallpaper Python tests require Niri and a parent Wayland display. Runtime checks need their compositor, Quickshell and media/input dependencies; inspect the component test before running it. Task Manager's runner owns its component tests; shell/QML syntax remains part of changed-file validation and the final integration suite. Run `git diff --check` separately.
+
+Wallpaper's runtime runner includes five video-renderer reloads and a return to static wallpaper; run that case alone with `bash tests/hikai/wallpaper/test_runtime.sh --reload`. `python3 tests/hikai/wallpaper/test_maintenance.py` checks each worker/cache/frame gate using the production QML bindings. Quick Actions grid boundaries, including incomplete rows, can be checked with `node tests/hikai/quick_actions/test_navigation.js`; the shell runtime runner also includes it.
 
 Other components can be checked directly with `python3 tests/<component>/test_*.py`, `node tests/<component>/test_*.js` or `bash tests/<component>/test_*.sh`, using a specific test filename. Pixel tests consume captures from their component runtime harness rather than creating a desktop session themselves.
 

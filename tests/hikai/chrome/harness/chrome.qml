@@ -16,6 +16,8 @@ ShellRoot {
     property var screenModel: Quickshell.screens
     property string removedOutput: ""
     property int phase: 0
+    // Identify the stalled interaction when the bounded runtime probe times out.
+    onPhaseChanged: console.info("Chrome phase " + phase)
     property int ticks: 0
     // Run only the handoff path when unrelated integration guards are unavailable.
     readonly property bool handoffOnly: Quickshell.env("HAKUSPACE_TASKBAR_HANDOFF_TEST") === "1"
@@ -37,19 +39,6 @@ ShellRoot {
         property bool reloaded: false
     }
     Process { id: capture }
-    // Reopen during the morph to catch transient input masks over the rail button.
-    Timer {
-        id: noteClicks
-        interval: 80
-        repeat: true
-        property string command: ""
-        property int remaining: 0
-        onTriggered: {
-            pointer.write(command)
-            remaining--
-            if (remaining === 0) stop()
-        }
-    }
     property int noteFocusRequests: 0
     // Count arrow activation separately from Escape and ordinary close paths.
     property int menuReturns: 0
@@ -175,15 +164,18 @@ ShellRoot {
             check(output.taskbar.active === bottom && output.dock.enabledDock === (!bottom && dockbar), "independent owners")
             check(ChromeLayout.dockbarRequested === dockbar, "Dockbar request survives suppression")
             if (bottom) {
-                var frame = find(output.rounded, value => value.contentItem && value.anchors.top && value.anchors.bottom && value.anchors.left && value.anchors.right)
-                check(frame.exclusionMode === ExclusionMode.Ignore
-                    && Math.abs(frame.height - output.modelData.height + ScreenGeometry.taskbarHeight) <= 1,
+                // The Wayland window stays full-output; only its inner frame clears the Taskbar.
+                var frameWindow = find(output.rounded, value => value.contentItem && value.anchors.top && value.anchors.bottom && value.anchors.left && value.anchors.right)
+                check(frameWindow && frameWindow.exclusionMode === ExclusionMode.Ignore
+                    && Math.abs(frameWindow.height - output.modelData.height) <= 1, "frame uses a stable physical output plane")
+                var frame = find(frameWindow, value => typeof value.t === "number" && typeof value.topInset === "number" && typeof value.bottomInset === "number")
+                check(frame && Math.abs(frame.height - output.modelData.height + ScreenGeometry.taskbarHeight) <= 1,
                     "frame counts Taskbar height exactly once: " + frame.height)
                 check(host(output).anchors.top && Math.abs(host(output).height - output.modelData.height) <= 1,
                     "Taskbar drawable window uses a stable physical output plane")
             }
-            var trigger = module(output.menu, "HakuMenuTopFlare")
-            check(trigger && ChromeLayout.topEdgeHakuMenuEnabled === !bottom, "top edge follows topology")
+            var trigger = module(output.menu, "HakuMenuTrigger")
+            check(trigger && trigger.visible === !bottom && ChromeLayout.topEdgeHakuMenuEnabled === !bottom, "top edge follows topology")
             check(ScreenGeometry.taskbarReservation() === (bottom ? ScreenGeometry.taskbarHeight : 0)
                 && ScreenGeometry.dockbarReservation(output.modelData.name) === 0, "separate fixed and optional reservations")
         }
@@ -509,18 +501,24 @@ ShellRoot {
                 root.check(!UiState.activePanel && !UiState.hakuMenuAnchorRect && !TooltipManager.current, "style transfer clears transient anchors")
                 UiState.openHakuMenu(output.modelData.name, "drun")
             } else if (phase === 9) {
-                root.check(UiState.hakuMenuStyle === "topFlare" && !!UiState.hakuMenuAnchorRect, "TopBar default stays top-attached with Dockbar enabled")
-                root.checkTopology(false, true)
-                root.check(UiState.resolveHakuMenuPresentation("dockbar") === "bottomFlare"
-                    && UiState.resolveHakuMenuPresentation("edge") === "topFlare", "simultaneous TopBar source mapping")
-                AppState.taskbarManualState = true
+                if (!ChromeLayout.taskbarMode) {
+                    root.check(UiState.hakuMenuStyle === "topFlare" && !!UiState.hakuMenuAnchorRect, "TopBar default stays top-attached with Dockbar enabled")
+                    root.checkTopology(false, true)
+                    root.check(UiState.resolveHakuMenuPresentation("dockbar") === "bottomFlare"
+                        && UiState.resolveHakuMenuPresentation("edge") === "topFlare", "simultaneous TopBar source mapping")
+                    AppState.taskbarManualState = true
+                    return
+                }
+                // Open from the live status lane after topology has released old anchors.
+                root.checkTopology(true, true)
                 NotificationStore.records = [{key: 1, id: 1, summary: "Unified notification", body: "History fixture", appName: "fixture", actions: [], timestamp: Date.now(), screenName: output.modelData.name, popup: false}]
                 var bell = root.module(root.lane(output), "NotificationGroup")
                 UiState.toggleNotifications(output.modelData.name, ScreenGeometry.itemRect(bell))
             } else if (phase === 10) {
                 root.checkTopology(true, true)
                 var flare = root.module(output.center, "FlareHost")
-                root.check(output.center.panelOpen && flare.currentHeight > 0 && flare.attach === Flare.FlareHost.Bottom, "Notification Center opens upward")
+                root.check(output.center.panelOpen && flare.currentHeight > 0 && flare.attach === Flare.FlareHost.Bottom,
+                    "Notification Center opens upward: " + JSON.stringify({open: output.center.panelOpen, activePanel: UiState.activePanel, height: flare.currentHeight, attach: flare.attach}))
                 root.check(ScreenGeometry.attachedBodyY(output.modelData.height, flare.currentHeight) + flare.currentHeight <= ScreenGeometry.chromeAttachmentY(output.modelData.height), "center stays above bar")
                 root.check(output.center.safeZones[2].width < output.modelData.width, "center keeps panel-sized desktop input")
                 UiState.closeNotifications()
@@ -537,20 +535,23 @@ ShellRoot {
                 root.screenshot("unified-navigation")
             } else if (phase === 12) {
                 // Let the screenshot process finish before changing the captured surface.
+                root.check(output.navigation.panelOpen && UiState.activePanel === "navigation", "Navigation owns the Sidebar handoff")
                 if (!output.navigation.sidebarExpanded) {
-                    UiState.beginNavigationHandoff("sidebar")
+                    // Keep a stale mouse hover from competing with keyboard activation.
+                    root.moveMenuPointer(output.modelData.width - 8, 8, 0)
+                    output.navigation.activateIndex(output.navigation.regions.findIndex(item => item.key === "sidebar"), true)
                     return
                 }
                 root.check(output.navigation.sidebarExpanded, "Sidebar handoff")
                 var rail = root.module(output.navigation, "SidebarSurface")
                 if (Math.abs(rail.morphProgress - 1) > 0.0001) return
                 root.check(rail.listTopPadding === 30 && rail.listBottomPadding === 30
-                    && rail.preferredBodyHeight === 60 + 3 * rail.itemDiameter + 2 * rail.itemSpacing,
+                    && rail.preferredBodyHeight === 60 + rail.tools.length * rail.itemDiameter + (rail.tools.length - 1) * rail.itemSpacing,
                     "Sidebar keeps its extra 20 px with balanced padding")
                 var body = root.find(rail, value => value.color !== undefined && value.width === rail.bodyWidth
                     && value.height === rail.currentHeight + rail.joinOverlap)
                 var first = root.find(rail, value => value.tooltip === "Quick Actions")
-                var last = root.find(rail, value => value.tooltip === "Temp Note")
+                var last = root.find(rail, value => value.tooltip === "Task Manager")
                 var topPadding = first.mapToItem(rail, 0, 0).y - body.y
                 var bottomPadding = body.y + body.height - last.mapToItem(rail, 0, last.height).y
                 root.check(topPadding >= 30 && Math.abs(topPadding - bottomPadding) < 0.5,
@@ -614,14 +615,14 @@ ShellRoot {
                 var body = root.find(output.popup, value => value.clip && value.radius === Theme.largeRadius + 4 && value.width > 400)
                 root.check(body && body.y === ScreenGeometry.topBorderThickness && output.popup.topOffset === ScreenGeometry.topBorderThickness, "Taskbar popups reveal from the rounded frame")
                 var windows = output.popup.data.filter(value => value.contentItem)
-                var visual = windows.find(value => value.anchors.left && value.anchors.right)
                 var overlay = windows.find(value => !value.anchors.left && !value.anchors.right)
-                var flare = root.module(visual, "FlareSurface")
-                root.check(visual && overlay && overlay.anchors.top && overlay.anchors.bottom
+                root.check(windows.length === 1 && overlay && overlay.anchors.top && overlay.anchors.bottom
+                    && Math.abs(overlay.height - output.modelData.height) <= 1
                     && Math.abs(output.popup.popupStart + overlay.width / 2 - output.modelData.width / 2) < 0.5,
-                    "popup Overlay is physically centered with a separate Top visual owner")
-                root.check(flare && flare.attach === Flare.FlareHost.Top && flare.currentHeight === output.popup.revealHeight,
-                    "popup Top Flare paints the complete revealed stack")
+                    "popup uses one physically centered stable Overlay")
+                root.check(overlay.exclusionMode === ExclusionMode.Ignore && overlay.exclusiveZone === 0
+                    && overlay.mask.item === body && body.height === output.popup.revealHeight,
+                    "popup paint and input follow the complete clipped reveal")
                 root.check(output.popup.displayPopups.length === 2, "topology keeps notification lifecycle")
                 root.screenshot("unified-popups")
                 NotificationStore.toggleDnd()
@@ -659,7 +660,10 @@ ShellRoot {
                 root.check(!UiState.activePanel && !UiState.navigationAnchorRect && !UiState.navigationVisualScreenName,
                     "active Navigation transfer drops logical and visual ownership")
                 root.check(!output.navigation.closing && !output.navigation.keyboardLease, "Navigation leaves no closing keyboard envelope")
-                AppState.taskbarManualState = true
+                if (!ChromeLayout.taskbarMode) {
+                    AppState.taskbarManualState = true
+                    return
+                }
                 UiState.toggleNotifications(output.modelData.name,
                     ScreenGeometry.itemRect(root.module(root.lane(output), "NotificationGroup")))
             } else if (phase === 24) {
@@ -679,50 +683,60 @@ ShellRoot {
                 var rail = root.module(nav, "SidebarSurface")
                 var editor = root.find(output.note, value => typeof value.insert === "function" && value.preeditText !== undefined)
                 if (step === 0) {
-                    AppState.taskbarManualState = phase >= 38
+                    if (ChromeLayout.taskbarMode !== (phase >= 38)) {
+                        AppState.taskbarManualState = phase >= 38
+                        return
+                    }
+                    root.moveMenuPointer(output.modelData.width - 8, 8, 0)
                     UiState.openNavigation(output.modelData.name)
-                    UiState.beginNavigationHandoff("sidebar")
+                    nav.activateIndex(nav.regions.findIndex(item => item.key === "sidebar"), true)
                 } else if (step === 1) {
                     if (Math.abs(rail.morphProgress - 1) > 0.0001) return
                     var button = root.find(rail, value => value.text === rail.tools[2].icon && typeof value.clicked === "function")
                     root.check(button, mode + " Temp Note button is available")
                     var point = button.mapToItem(null, button.width / 2, button.height / 2)
-                    noteClicks.command = [Math.round(point.x), Math.round(point.y), output.modelData.width,
-                        output.modelData.height, 272].join(" ") + "\n"
-                    pointer.write(noteClicks.command)
-                    noteClicks.remaining = 2
-                    noteClicks.start()
+                    root.moveMenuPointer(point.x, point.y, 272)
                 } else if (step === 2) {
                     if (!output.note.interactionReady) return
-                    root.check(nav.panelOpen && nav.sidebarExpanded && nav.sidebarKeyboardMode
-                        && nav.sidebarSelectedIndex === 2 && editor && !editor.activeFocus
-                        && !output.note.contentItem.Window.active,
-                        mode + " clicking Temp Note keeps Sidebar focus without a second hover")
-                    keyboard.write("key 103\n")
+                    root.check(!nav.panelOpen && !nav.keyboardLease && editor && editor.activeFocus
+                        && output.note.contentItem.Window.active && output.note.WlrLayershell.keyboardFocus === WlrKeyboardFocus.OnDemand,
+                        mode + " clicking Temp Note transfers ownership to its floating editor: "
+                        + JSON.stringify({navigation: nav.panelOpen, lease: nav.keyboardLease, editor: editor && editor.activeFocus,
+                            window: output.note.contentItem.Window.active, requested: output.note.keyboardRequested, pending: output.note.focusPending}))
+                    keyboard.write("key 107\ntext x\n")
                 } else if (step === 3) {
-                    root.check(nav.panelOpen && nav.sidebarSelectedIndex === 1,
-                        mode + " Up works immediately after opening Temp Note")
-                    keyboard.write("key 108\n")
-                } else if (step === 4) {
-                    root.check(nav.sidebarSelectedIndex === 2, mode + " Down returns to Temp Note")
-                    keyboard.write("key 106\n")
-                } else if (step === 5) {
-                    root.check(editor.activeFocus && nav.panelOpen,
-                        mode + " Right transfers focus into the editor; requests=" + root.noteFocusRequests)
-                    UiState.closeTempNote()
-                    nav.focusSidebarRail(true)
-                } else if (step === 6) {
-                    keyboard.write("key 28\n")
-                } else if (step === 7) {
-                    if (!output.note.interactionReady) return
-                    root.check(nav.panelOpen && nav.sidebarSelectedIndex === 2 && !editor.activeFocus,
-                        mode + " Enter opens Temp Note while retaining Sidebar keyboard input")
+                    root.check(TextStore.scratchDraft.endsWith("x"), mode + " mouse-opened note receives typed input")
                     keyboard.write("key 1\n")
-                } else if (step === 8) {
-                    root.check(!nav.panelOpen && UiState.tempNoteOpen,
-                        mode + " Escape dismisses Sidebar while preserving the note")
+                } else if (step === 4) {
+                    if (!output.note.releaseReady) return
+                    root.check(!UiState.tempNoteOpen && !output.note.visible, mode + " Escape releases the floating note")
+                    root.moveMenuPointer(output.modelData.width - 8, 8, 0)
                     UiState.openNavigation(output.modelData.name)
-                    UiState.beginNavigationHandoff("sidebar")
+                    nav.activateIndex(nav.regions.findIndex(item => item.key === "sidebar"), true)
+                    nav.sidebarSelectedIndex = rail.tools.findIndex(item => item.key === "tempNote")
+                } else if (step === 5) {
+                    if (Math.abs(rail.morphProgress - 1) > 0.0001) return
+                    root.check(nav.sidebarKeyboardMode && nav.keyboardLease && rail.tools[nav.sidebarSelectedIndex].key === "tempNote",
+                        mode + " Sidebar keyboard selection targets Temp Note")
+                    keyboard.write("key 28\n")
+                } else if (step === 6) {
+                    if (!output.note.interactionReady) return
+                    root.check(!nav.panelOpen && editor.activeFocus && output.note.contentItem.Window.active
+                        && output.note.WlrLayershell.keyboardFocus === WlrKeyboardFocus.OnDemand,
+                        mode + " Enter transfers keyboard ownership to the floating note")
+                    keyboard.write("key 107\ntext y\n")
+                } else if (step === 7) {
+                    root.check(TextStore.scratchDraft.endsWith("y"), mode + " keyboard-opened note receives typed input")
+                    var previousRequests = root.noteFocusRequests
+                    UiState.openTempNote(output.modelData.name)
+                    root.check(root.noteFocusRequests === previousRequests + 1 && UiState.tempNoteOpen,
+                        mode + " reopening the same note requests focus without toggling it closed")
+                    root.moveMenuPointer(output.modelData.width - 8, 8, 0)
+                    UiState.openNavigation(output.modelData.name)
+                    nav.activateIndex(nav.regions.findIndex(item => item.key === "sidebar"), true)
+                } else if (step === 8) {
+                    if (Math.abs(rail.morphProgress - 1) > 0.0001) return
+                    root.check(nav.panelOpen && UiState.tempNoteOpen, mode + " Sidebar and floating note coexist")
                     root.module(nav, "SafeZoneController").releaseKeyboardLease()
                     pointer.write([Math.round(output.modelData.width / 2), Math.round(output.modelData.height / 2),
                         output.modelData.width, output.modelData.height, 0].join(" ") + "\n")
@@ -735,14 +749,17 @@ ShellRoot {
                 } else if (step === 10) {
                     root.check(editor.activeFocus && output.note.contentItem.Window.active,
                         mode + " clicking the passive note activates its editor")
-                    keyboard.write("key 107\ntext x\n")
+                    keyboard.write("key 107\ntext z\n")
                 } else {
-                    root.check(TextStore.scratchDraft.endsWith("x"), mode + " note receives typed input")
+                    root.check(TextStore.scratchDraft.endsWith("z"), mode + " reactivated note receives typed input")
                     UiState.closeTempNote()
                     AppState.taskbarManualState = false
                 }
             } else if (phase === 50) {
-                AppState.taskbarManualState = true
+                if (!ChromeLayout.taskbarMode) {
+                    AppState.taskbarManualState = true
+                    return
+                }
                 root.removedOutput = output.modelData.name
                 UiState.openHakuMenu(root.removedOutput, "drun")
                 root.screenModel = Quickshell.screens.filter(value => value.name !== root.removedOutput)

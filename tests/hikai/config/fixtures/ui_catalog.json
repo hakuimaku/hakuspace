@@ -75,6 +75,11 @@
       "key": "tempNote",
       "icon": "󰏫",
       "label": "Temp Note"
+    },
+    {
+      "key": "taskManager",
+      "icon": "",
+      "label": "Task Manager"
     }
   ],
   "sidebarQuickActions": [

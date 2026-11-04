@@ -61,7 +61,7 @@ class DockTerminationTests(unittest.TestCase):
                 self.assertEqual(run.call_args.args[0], command)
         with patch.dict(os.environ, clear=True), self.assertRaises(ValueError):
             ctl.window_pids(['org.App'])
-        with patch.dict(os.environ, NIRI_SOCKET='fixture'), \
+        with patch.dict(os.environ, {'NIRI_SOCKET': 'fixture'}, clear=True), \
                 patch.object(ctl.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, '[{"app_id":"org.App","pid":null}]')), \
                 self.assertRaises(ValueError):
             ctl.window_pids(['org.App'])

@@ -37,7 +37,12 @@ Item {
     // Exercise the actual page and slider types while using an isolated backend.
     Sidebar.SidebarQuickActions { id: quickActions; visible: false; width: 500; height: 300 }
     HakuMenu.ThemeList { id: themeRows; visible: false; width: 500; height: 300 }
-    Settings.ShellSettingsPage { id: page; width: 580; height: 580 }
+    property Item page: pageLoader.item
+    Loader {
+        id: pageLoader
+        width: 580; height: 580
+        sourceComponent: Component { Settings.ShellSettingsPage { width: 580; height: 580 } }
+    }
     Settings.SettingsSlider { id: slider; from: 4; to: 24; visible: false; value: ShellSettingsStore.baseRadius }
     // Locate actual controls without adding production test hooks.
     function find(item, predicate) {
@@ -90,20 +95,22 @@ Item {
             root.check(!ShellSettingsStore.error, ShellSettingsStore.error)
             if (root.phase === 0) {
                 if (!ShellSettingsStore.ready) return
+                if (!root.page) return
                 if (ShellSettingsStore.migrationPending) {
                     root.check(!ShellSettingsStore.dirty, "migration alone is not an unsaved user edit")
                     ShellSettingsStore.apply()
                     return
                 }
-                root.check(quickActions.actions.length === 11 && quickActions.rowCount === 3, "Quick Actions fits eleven actions")
-                quickActions.selectedIndex = 9
+                root.check(quickActions.actions.length === 8 && quickActions.columnCount === 4
+                    && quickActions.rowCount === 2, "Quick Actions fits eight actions in two complete rows")
+                quickActions.selectedIndex = 3
                 quickActions.moveSelection(0, 1)
-                root.check(quickActions.selectedIndex === 10, "Down clamps into the incomplete final row")
+                root.check(quickActions.selectedIndex === 7, "Down keeps the column in the final row")
                 quickActions.moveSelection(1, 0)
                 quickActions.moveSelection(0, 1)
-                root.check(quickActions.selectedIndex === 10, "Right and Down stop at the last action")
+                root.check(quickActions.selectedIndex === 7, "Right and Down stop at the last action")
                 quickActions.moveSelection(0, -1)
-                root.check(quickActions.selectedIndex === 5, "Up uses the grid column count")
+                root.check(quickActions.selectedIndex === 3, "Up uses the grid column count")
                 themeRows.query = "~task"
                 root.check(themeRows.visibleItems.length === 1 && themeRows.visibleItems[0].chromeKey === "taskbar", "Theme search finds Taskbar Mode independently")
                 themeRows.query = "~dock"
@@ -248,6 +255,8 @@ Item {
                 ShellSettingsStore.reload()
             } else {
                 root.check(Theme.radius === 12 && !ShellSettingsStore.dirty, "persisted reset")
+                // Release UI bindings while the offscreen engine can still evaluate them.
+                pageLoader.active = false
                 console.info("Hikai settings checks passed")
                 Qt.quit()
             }

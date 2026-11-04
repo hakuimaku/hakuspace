@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Exercise upgrade boundaries with private homes and package-manager doubles."""
+import io
 import json
 import os
 from pathlib import Path
 import py_compile
 import shutil
 import subprocess
+import tarfile
 import tempfile
 import unittest
 
@@ -55,6 +57,74 @@ class UpgradeTests(unittest.TestCase):
         path.write_bytes(subprocess.check_output(['git', '-C', str(ROOT), 'show',
                          'v26.10-1:src/home/hakucfg/general-menu.sh']))
         return path
+
+    def test_tagged_snapshot_upgrade_preserves_custom_menu_in_both_deploy_modes(self):
+        """Upgrade real v26.10-1 files without rewriting later customizations."""
+        archive = subprocess.check_output(['git', '-C', str(ROOT), 'archive', 'v26.10-1',
+                                           'src/core', 'src/home/hakucfg'])
+        for mode in ('symlink', 'copy'):
+            with self.subTest(mode=mode):
+                home = self.home / mode
+                repo = home / 'repo'
+                repo.mkdir(parents=True)
+                with tarfile.open(fileobj=io.BytesIO(archive)) as snapshot:
+                    snapshot.extractall(repo, filter='data')
+                binary = home / '.local/bin'
+                binary.mkdir(parents=True)
+                for source in (repo / 'src/core').rglob('*'):
+                    if not source.is_file() or source.name == 'README.md':
+                        continue
+                    destination = binary / source.name
+                    if mode == 'symlink':
+                        destination.symlink_to(source)
+                    else:
+                        shutil.copy2(source, destination)
+                shutil.copytree(repo / 'src/home/hakucfg', home / 'hakucfg')
+                legacy = home / 'hakucfg/general-menu.sh'
+                legacy.write_text(legacy.read_text().replace('\nEOF', '\nCustom Action\nEOF', 1)
+                                  .replace('\nesac', '\n    *"Custom Action"*) spawn code --new-window ;;\nesac', 1))
+                original = legacy.read_bytes()
+                custom = binary / 'personal-command'
+                custom.write_text('personal data')
+
+                # Replace only the disposable checkout to model the Git update.
+                shutil.rmtree(repo / 'src')
+                shutil.copytree(ROOT / 'src/core', repo / 'src/core', ignore=shutil.ignore_patterns('__pycache__'))
+                shutil.copytree(ROOT / 'src/home/hakucfg', repo / 'src/home/hakucfg')
+                shutil.copytree(ROOT / 'scripts', repo / 'scripts', ignore=shutil.ignore_patterns('__pycache__'))
+                environment = dict(self.env, HOME=str(home), HAKU_DIR=str(repo),
+                                   XDG_STATE_HOME=str(home / '.local/state'), BACKUP_DIR=str(home / 'backup'))
+
+                def run(name, *arguments):
+                    """Run real deployment modules against the archived private installation."""
+                    result = subprocess.run(['bash', str(repo / 'scripts' / name), *arguments],
+                                            env=environment, capture_output=True, text=True, timeout=30)
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    return result
+
+                run('migrate.sh', '--plan')
+                run('core.sh', '--mode', mode)
+                run('migrate.sh', '--apply')
+                run('migrate.sh', '--complete')
+                menu = home / 'hakucfg/config/hakumenu-general.json'
+                document = json.loads(menu.read_text())
+                rows = document['items']
+                self.assertEqual(len(rows), 8)
+                self.assertEqual(len({row['id'] for row in rows}), 8)
+                self.assertEqual(sum(row['id'] == 'app-menu' for row in rows), 1)
+                self.assertEqual(rows[-1]['argv'], ['code', '--new-window'])
+                rows[-1]['label'] = 'Edited after upgrade'
+                menu.write_text(json.dumps(document))
+                edited = menu.read_bytes()
+                run('core.sh', '--mode', mode)
+                run('migrate.sh', '--apply')
+                run('migrate.sh', '--complete')
+                run('migrate.sh', '--audit')
+                status = json.loads(run('migrate.sh', '--status').stdout)
+                self.assertTrue(status['completion_eligible'])
+                self.assertEqual(menu.read_bytes(), edited)
+                self.assertEqual(legacy.read_bytes(), original)
+                self.assertEqual(custom.read_text(), 'personal data')
 
     # Inject crashes inside the real migrator without adding production fault switches.
     def fault_migration(self, fault):

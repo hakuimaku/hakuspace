@@ -298,8 +298,10 @@ const qmlFiles = [
 for (const file of qmlFiles) {
     const src = fs.readFileSync(file, 'utf8')
     const base = path.basename(file)
+    // Core tooltips fade independently; the Task Manager surface must never fade.
+    const surfaceSource = src.replace(/^    Settings\.SettingsTooltip \{[\s\S]*?^    \}/gm, '')
     assert.ok(!/Behavior\s+on\s+opacity/.test(src), `${base} must not use Behavior on opacity`)
-    assert.ok(!/property\s*:\s*["']opacity["']/.test(src), `${base} must not animate opacity property`)
+    assert.ok(!/property\s*:\s*["']opacity["']/.test(surfaceSource), `${base} must not animate surface opacity`)
     assert.ok(!/property\s*:\s*["']reveal["']/.test(src), `${base} must not animate legacy reveal fade`)
     assert.ok(!/opacity\s*:\s*root\.reveal/.test(src), `${base} must not bind opacity to reveal`)
     assert.ok(!/Behavior\s+on\s+scale/.test(src), `${base} must not animate scale`)

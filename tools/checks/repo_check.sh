@@ -151,11 +151,8 @@ done < <(find "$CORE_DIR" -type f -print0)
 # C1 guard for future backend/domain extraction. Skip until the directory
 # exists; after C2+ it becomes a hard invariant.
 if [[ -d "$CORE_DIR/backend" ]]; then
-    if grep -RInE --include='*.sh' --include='*.py' \
-        '\brofi\b|haku_pick\.sh|picker open' "$CORE_DIR/backend"; then
-        echo "ERROR: UI/picker dependency found in src/core/backend."
-        exit 1
-    fi
+    python3 tests/support/test_backend_ui.py
+    python3 tools/checks/backend_ui.py
 fi
 
 echo "Core-script boundary checks passed."

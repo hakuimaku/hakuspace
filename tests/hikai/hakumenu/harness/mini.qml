@@ -241,7 +241,7 @@ ShellRoot {
                     && Math.abs(gauge.width - gauge.diameter) < 0.01 && Math.abs(gauge.height - gauge.diameter) < 0.01,
                     "large water gauge renders at its diameter inside standard card padding")
                 root.check(secondary.mapToItem(metric, 0, secondary.height).y <= metric.height
-                    && root.find(metric, item => item.objectName === "taskManagerMiniMetricSurface").color === metric.visuals.cardSurface
+                    && Qt.colorEqual(root.find(metric, item => item.objectName === "taskManagerMiniMetricSurface").color, Qt.tint(Theme.surface, metric.hovered ? metric.visuals.hoverSurface : metric.visuals.cardSurface))
                     && root.find(metric, item => item.objectName === "taskManagerMiniMetricSurface").radius === Theme.radius,
                     "Mini uses standalone card styling with contained telemetry")
                 for (var name of ["Cpu", "Memory", "Gpu"])
@@ -305,7 +305,7 @@ ShellRoot {
                 }
                 if (root.themePreviewStage === 1) {
                     var metric = root.control("taskManagerMiniMemory")
-                    root.check(root.find(metric, item => item.objectName === "taskManagerMiniMetricSurface").color === metric.visuals.cardSurface,
+                    root.check(Qt.colorEqual(root.find(metric, item => item.objectName === "taskManagerMiniMetricSurface").color, Qt.tint(Theme.surface, metric.hovered ? metric.visuals.hoverSurface : metric.visuals.cardSurface)),
                         "Mini card reaches its light surface after the color transition")
                     capture.command = ["grim", "-o", root.output.modelData.name,
                         Quickshell.env("HAKUSPACE_MINI_ARTIFACT").replace(".png", "-" + root.styleIndex + "-light.png")]
@@ -424,7 +424,11 @@ ShellRoot {
                 root.check(root.standalone.revealPosition === 2, "HakuMenu opens standalone from the top")
                 var bounds = root.standalone.placementBounds
                 var card = root.standalone.mask.item
-                root.check(card.y === bounds.y + Theme.panelPadding
+                // Compact outputs share the remaining vertical space instead of clipping the card.
+                var topGap = Math.min(Theme.panelPadding, (bounds.height - card.height) / 2)
+                var expectedTop = Math.max(0, Math.min(root.standalone.height - card.height, bounds.y + topGap))
+                root.check(Math.abs(card.y - expectedTop) < 0.5
+                    && card.y >= 0 && card.y + card.height <= root.standalone.height
                     && Math.abs(card.x + card.width / 2 - bounds.x - bounds.width / 2) < 0.5,
                     "HakuMenu entry places the default card at the top, horizontally centered")
                 root.fullPin = TaskManagerService.processes[0]

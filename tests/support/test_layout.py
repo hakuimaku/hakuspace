@@ -14,15 +14,29 @@ class TestLayout(unittest.TestCase):
     """Protect the runtime-only scripts directory and portable component entrypoints."""
 
     def test_runtime_scripts_only(self):
-        """Reject test assets, bytecode and developer tools in runtime modules."""
+        """Allow shipped runtime modules while ignoring local Python caches."""
         expected = {
             'assets.sh', 'core.sh', 'dependencies.sh', 'deploy_mode.sh', 'desktop_defaults.sh', 'setup.sh',
             'directories.sh', 'display_manager.sh', 'doctor.sh', 'filesystem.sh', 'functions.sh',
             'hakucfg.sh', 'legacy_copy.sh', 'link.sh', 'nixos.sh', 'once_configs.sh', 'packages.sh',
             'registry.sh', 'reload.sh', 'repo_update.sh', 'runtime.sh', 'select_wm.sh',
             'shell_setup.sh', 'state.sh', 'unlink.sh', 'variables.sh',
+            'build_logo_svg.py', 'migrate.sh', 'migrate.py', 'migrations', 'run_log.sh',
         }
-        self.assertEqual({path.name for path in (ROOT / 'scripts').iterdir()}, expected)
+        self.assertEqual({path.name for path in (ROOT / 'scripts').iterdir()
+                          if path.name != '__pycache__'}, expected)
+
+    def test_archive_sources_exclude_developer_artifacts(self):
+        """Keep Git source archives free of bytecode and local development state."""
+        paths = subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT, text=True)
+        for name in paths.split('\0'):
+            path = Path(name)
+            with self.subTest(path=name):
+                self.assertFalse(set(path.parts) & {
+                    '__pycache__', '.pytest_cache', '.mypy_cache', '.agents', '.aws',
+                    '.codex', '.vscode', 'node_modules',
+                })
+                self.assertNotIn(path.suffix, ('.pyc', '.pyo'))
 
     def test_component_runners(self):
         """Run entrypoints from outside the repo, checking command scope and failure returns."""
@@ -58,9 +72,17 @@ class TestLayout(unittest.TestCase):
                                             env={**environment, 'RUNNER_STATUS': '23'}, capture_output=True)
                     self.assertEqual(result.returncode, 23)
                 with self.subTest(runner=runner.relative_to(ROOT), invalid_argument=True):
+                    log.write_text('')
                     result = subprocess.run(['/bin/bash', str(runner), '--invalid'], cwd=temporary,
                                             env=environment, capture_output=True)
                     self.assertEqual(result.returncode, 2)
+                    self.assertEqual(log.read_text(), '')
+                if runner.parent.name == 'task_manager':
+                    with self.subTest(runner=runner.relative_to(ROOT), trailing_argument=True):
+                        result = subprocess.run(['/bin/bash', str(runner), '--runtime', '--invalid'],
+                                                cwd=temporary, env=environment, capture_output=True)
+                        self.assertEqual(result.returncode, 2)
+                        self.assertEqual(log.read_text(), '')
 
 
 if __name__ == '__main__':

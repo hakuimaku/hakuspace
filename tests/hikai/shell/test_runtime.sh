@@ -6,12 +6,13 @@ export PYTHONDONTWRITEBYTECODE=1
 TEST_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$TEST_DIR/../../.." && pwd)"
 cd -- "$REPO_ROOT"
+node tests/hikai/quick_actions/test_navigation.js
 
 # Preserve shell-relative paths while keeping preferences and runtime files disposable.
 test_root=$(mktemp -d)
 trap 'rm -rf "$test_root"' EXIT
 shell_root="$test_root/src/home/.config/quickshell/hakuspace"
-mkdir -p "$shell_root" "$test_root/src/core/backend/user" "$test_root/runtime"
+mkdir -p "$shell_root" "$test_root/src/core/backend/user" "$test_root/runtime" "$test_root/home"
 chmod 700 "$test_root/runtime"
 artifact_dir=${HAKUSPACE_TEST_ARTIFACT_DIR:-"$test_root/artifacts"}
 mkdir -p "$artifact_dir"
@@ -42,6 +43,7 @@ START
         -u HYPRLAND_INSTANCE_SIGNATURE -u NIRI_SOCKET -u MANGO_INSTANCE_SIGNATURE \
         -u GDK_BACKEND HOME="$test_root/home" XDG_CURRENT_DESKTOP=labwc \
         XDG_CONFIG_HOME="$test_root/home/.config" XDG_RUNTIME_DIR="$test_root/runtime" \
+        XDG_CACHE_HOME="$test_root/home/.cache" XDG_STATE_HOME="$test_root/home/.local/state" \
         WLR_BACKENDS=headless WLR_HEADLESS_OUTPUTS=2 WLR_RENDERER=pixman \
         QT_QPA_PLATFORM=wayland HAKUSPACE_GEOMETRY_ARTIFACT_DIR="$artifact_dir" HAKUSPACE_HIKAI_SETTINGS_FILE="$test_root/hakucfg/hikai/hikai-shell.json" \
         HAKUSPACE_TASKBAR_PINS_FILE="$test_root/taskbar-pin-apps" \
@@ -75,7 +77,10 @@ path.write_text(json.dumps(values))
 PY
         fi
         env -u DISPLAY -u WAYLAND_DISPLAY -u QT_QPA_PLATFORMTHEME -u QT_QPA_PLATFORMTHEME_QT6 \
-            -u GDK_BACKEND XDG_RUNTIME_DIR="$test_root/runtime" QT_QPA_PLATFORM=offscreen \
+            -u GDK_BACKEND HOME="$test_root/home" XDG_CONFIG_HOME="$test_root/home/.config" \
+            XDG_CACHE_HOME="$test_root/home/.cache" XDG_STATE_HOME="$test_root/home/.local/state" \
+            DBUS_SESSION_BUS_ADDRESS="unix:path=$test_root/no-session-bus" \
+            XDG_RUNTIME_DIR="$test_root/runtime" QT_QPA_PLATFORM=offscreen \
             HAKUSPACE_HIKAI_SETTINGS_FILE="$test_root/hakucfg/hikai/hikai-shell.json" \
             HAKUSPACE_TASKBAR_PINS_FILE="$test_root/taskbar-pin-apps" \
             timeout 10s quickshell -p "$shell_root/shell.qml" > "$test_root/$scenario.log" 2>&1 || status=$?
@@ -85,7 +90,7 @@ PY
 fi
 cat "$test_root/quickshell.log"
 if [[ ${status:-0} -ne 0 ]] || ! grep -Eq 'Hikai (settings|runtime|modules|frame) checks passed' "$test_root/quickshell.log" ||
-    grep -Eq 'TypeError|ReferenceError|is not a type|Binding loop|Hikai (settings|runtime|modules|frame) failed|Failed to load configuration' "$test_root/quickshell.log"; then
+    grep -Eq 'TypeError|ReferenceError|Unable to assign|is not a type|Binding loop|Hikai (settings|runtime|modules|frame) failed|Failed to load configuration' "$test_root/quickshell.log"; then
     exit 1
 fi
 if [[ ${1:-} == --frame ]]; then
