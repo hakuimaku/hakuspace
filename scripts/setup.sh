@@ -3,6 +3,7 @@
 set -euo pipefail
 HAKU_DIR="${HAKU_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
 source "$HAKU_DIR/scripts/variables.sh"
+source "$HAKU_DIR/scripts/functions.sh"
 
 # Shared defaults are read-only; legacy appearance.env is never executed.
 source "$SOURCE_CORE/lib/haku_appearance.sh"
@@ -191,25 +192,72 @@ verify_component() {
 
 # Pending activation is recovery state and survives a successful install followed by failure.
 mark_reconcile_pending() {
+    local activation="${1:-1}" pending=1 temporary
     mkdir -p "$HAKU_STATE_DIR" || return 1
     [[ ! -L "$RECONCILE_PENDING" && ( ! -e "$RECONCILE_PENDING" || -f "$RECONCILE_PENDING" ) ]] || {
         fail 'Unsafe visual reconcile state'; return 1;
     }
-    printf '1\n' > "$RECONCILE_PENDING"
+    if [[ -f "$RECONCILE_PENDING" ]]; then read -r pending < "$RECONCILE_PENDING" || return 1; fi
+    case "$pending" in 1|gtk|symbols|'gtk symbols'|'symbols gtk') ;; *) fail 'Invalid pending activation'; return 1 ;; esac
+    if [[ "$activation" != 1 && " $pending " != *" $activation "* ]]; then
+        if [[ "$pending" == 1 ]]; then pending="$activation"; else pending+=" $activation"; fi
+    fi
+    temporary="$(mktemp "$RECONCILE_PENDING.XXXXXX")" || return 1
+    if ! printf '%s\n' "$pending" > "$temporary" || ! mv -f -- "$temporary" "$RECONCILE_PENDING"; then
+        rm -f -- "$temporary"
+        return 1
+    fi
 }
 
-# Retry activation using installed assets without downloading sources again.
+# Retry the user's recorded activation intent using assets already installed.
 retry_reconcile() {
     [[ -e "$RECONCILE_PENDING" || -L "$RECONCILE_PENDING" ]] || return 0
     [[ -f "$RECONCILE_PENDING" && ! -L "$RECONCILE_PENDING" ]] || { fail 'Unsafe visual reconcile state'; return 1; }
-    reconcile_appearance && rm -f -- "$RECONCILE_PENDING"
+    local pending component failed=0
+    read -r pending < "$RECONCILE_PENDING" || return 1
+    case "$pending" in 1|gtk|symbols|'gtk symbols'|'symbols gtk') ;; *) fail 'Invalid pending activation'; return 1 ;; esac
+    for component in $pending; do
+        if [[ "$component" != 1 ]] && ! "$SOURCE_CORE/backend/theme/appearance_ctl.sh" activate "$component"; then
+            failed=1
+            break
+        fi
+    done
+    if [[ "$failed" == 0 ]] && reconcile_appearance && rm -f -- "$RECONCILE_PENDING"; then
+        return 0
+    fi
+    fail 'Appearance reconciliation incomplete; installed assets retained. Retry scripts/setup.sh update. Current selection:' || true
+    "$SOURCE_CORE/backend/theme/appearance_ctl.sh" selection || true
+    return 1
 }
 
-# Reconcile once per batch through current source core, including in copy deployment mode.
+# Reconcile current choices strictly and report selection separately from installed assets.
 reconcile_appearance() {
-    "$SOURCE_CORE/backend/theme/appearance_ctl.sh" verify &&
-        "$SOURCE_CORE/backend/theme/appearance_ctl.sh" apply &&
-        "$SOURCE_CORE/backend/theme/theme_ctl.sh" apply
+    HAKUSPACE_STRICT_ASSETS=1 "$SOURCE_CORE/backend/theme/appearance_ctl.sh" verify &&
+        HAKUSPACE_STRICT_ASSETS=1 "$SOURCE_CORE/backend/theme/appearance_ctl.sh" apply &&
+        "$SOURCE_CORE/backend/theme/theme_ctl.sh" apply || return 1
+    local selected
+    selected="$("$SOURCE_CORE/backend/theme/appearance_ctl.sh" selection)" || return 1
+    printf 'Appearance applied: GTK=%s; icons=%s\nSession pending: restart existing applications/session to refresh cached styles and cursors.\n' \
+        "$(jq -r '.gtk' <<< "$selected")" "$(jq -r '.icons' <<< "$selected")"
+}
+
+# Installation and activation are separate decisions when an external theme is selected.
+activation_choice() {
+    local component="$1" selected current family
+    [[ "$component" == gtk || "$component" == symbols ]] || return 0
+    if [[ "$component" == symbols && "$HAKU_ICON_THEME" == system ]]; then return 0; fi
+    selected="$("$SOURCE_CORE/backend/theme/appearance_ctl.sh" selection)" || return 1
+    if [[ "$component" == gtk ]]; then
+        current="$(jq -r '.gtk' <<< "$selected")"; family=Hikaide
+    else
+        current="$(jq -r '.icons' <<< "$selected")"; family=Hikaide-Symbols
+    fi
+    case "$current" in "$family"|"$family-Light"|system) return 0 ;; esac
+    if ask_yes_no "Activate $family for the current mode, replacing selected '$current'?"; then
+        ACTIVATION_CHOICE="$component"
+    else
+        printf 'Activation skipped: %s; selected %s preserved.\n' "$component" "$current"
+    fi
 }
 
 # Retain checksum-verified migration of the old archive-installed executables.
@@ -258,13 +306,15 @@ run_batch() (
             verify_component "$component" || failed=1
             continue
         fi
+        ACTIVATION_CHOICE=1
+        activation_choice "$component" || { failed=1; continue; }
         if ! prepare_component_source; then
             printf '  %-8s source preparation failed\n' "$component" >&2
             failed=1
             continue
         fi
         detail="$REPO_STATUS"
-        if install_component "$component" && mark_reconcile_pending && verify_component "$component" && remember_source "$component"; then
+        if install_component "$component" && mark_reconcile_pending "$ACTIVATION_CHOICE" && verify_component "$component" && remember_source "$component"; then
             installed=1
             printf '  %-8s %s + installed\n' "$component" "$detail"
         else
@@ -336,6 +386,10 @@ workspace_status() {
     else
         echo appearance_verified=no
     fi
+    local selected
+    selected="$("$SOURCE_CORE/backend/theme/appearance_ctl.sh" selection)" || return 1
+    printf 'gtk_theme_selected=%s\nicon_theme_selected=%s\n' "$(jq -r '.gtk' <<< "$selected")" "$(jq -r '.icons' <<< "$selected")"
+    if [[ -e "$RECONCILE_PENDING" || -L "$RECONCILE_PENDING" ]]; then echo activation_pending=yes; else echo activation_pending=no; fi
 }
 
 # Build a multi-root workspace from verified absolute paths, preserving custom files.
@@ -393,6 +447,10 @@ main() {
             [[ $# -le 2 && "${2:-all}" =~ ^(all|cursor|gtk|symbols)$ ]] || return 2
             run_batch update "${2:-all}" ;;
         managed) [[ $# == 1 ]] || return 2; managed_components ;;
+        pending)
+            [[ $# == 1 ]] || return 2
+            [[ -e "$RECONCILE_PENDING" || -L "$RECONCILE_PENDING" ]] || return 1
+            [[ -f "$RECONCILE_PENDING" && ! -L "$RECONCILE_PENDING" ]] || return 2 ;;
         apply) [[ $# == 2 ]] || return 2; run_batch apply "$2" ;;
         status) [[ $# == 1 ]] || return 2; workspace_status ;;
         path)
@@ -407,7 +465,7 @@ main() {
             for component in cursor gtk symbols; do verify_component "$component" || return 1; done
             "$SOURCE_CORE/backend/theme/appearance_ctl.sh" verify ;;
         workspace) [[ $# -le 2 && "${2:-}" != --* ]] || return 2; generate_workspace "${2:-$HOME/HakuSpace.code-workspace}" ;;
-        *) printf 'Usage: setup.sh {setup|update [cursor|gtk|symbols]|managed|status|verify|workspace [FILE]|apply cursor|gtk|symbols|all|path cursor|gtk|symbols}\n' >&2; return 2 ;;
+        *) printf 'Usage: setup.sh {setup|update [cursor|gtk|symbols]|managed|pending|status|verify|workspace [FILE]|apply cursor|gtk|symbols|all|path cursor|gtk|symbols}\n' >&2; return 2 ;;
     esac
 }
 

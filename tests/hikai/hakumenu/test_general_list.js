@@ -83,7 +83,7 @@ async function check() {
         assert.equal(list.visibleItems[6].id, 'static-wifi')
         list.GeneralMenuService.items[0].label = 'Whatever'
         assert.equal(list.customItems.some(row => row.id === 'app-menu'), false)
-        list.GeneralMenuService.items.push({...list.GeneralMenuService.items[0], id: 'visible-app-menu', label: 'App Menu'})
+        list.GeneralMenuService.items.push({...list.GeneralMenuService.items[0], id: 'visible-app-menu', label: 'App Menu', systemAction: ''})
         assert.equal(list.customItems.some(row => row.id === 'visible-app-menu'), true)
         list.rowClicked(1, 2)
         assert.equal(list.actionRowId, 'browser')
@@ -140,6 +140,79 @@ async function check() {
         editorContext.openIconCatalog()
         assert.deepEqual(urls, ['https://www.nerdfonts.com/cheat-sheet'])
         assert.match(editorSource, /onClicked: root\.openIconCatalog\(\)/)
+        // Migrate the actual old-tag shell source before checking both real frontends.
+        const run = promisify(execFile)
+        const {stdout: legacySource} = await run('git', ['-C', root, 'show', 'v26.10-1:src/home/hakucfg/general-menu.sh'])
+        async function migratedHome(name, legacy) {
+            const home = path.join(temporary, name)
+            fs.mkdirSync(path.join(home, 'hakucfg'), {recursive: true})
+            fs.writeFileSync(path.join(home, 'hakucfg/general-menu.sh'), legacy)
+            const menu = path.join(home, 'hakucfg/config/hakumenu-general.json')
+            const env = {...process.env, HOME: home, HAKU_DIR: root,
+                XDG_STATE_HOME: path.join(home, '.local/state'), BACKUP_DIR: path.join(home, 'backup'),
+                HAKUSPACE_GENERAL_MENU_FILE: menu}
+            const migrate = () => run('bash', [path.join(root, 'scripts/migrate.sh'), '--apply'], {env})
+            await migrate()
+            return {home, menu, env, migrate}
+        }
+        async function snapshot(fixture) {
+            const {stdout} = await run('python3', ['-B', path.join(root, 'src/core/backend/user/general_menu_ctl.py'), 'list'], {env: fixture.env})
+            list.GeneralMenuService.items = JSON.parse(stdout).items
+            list.query = ''
+            return list.customItems
+        }
+        async function classicRows(fixture) {
+            return (await run('python3', ['-B', path.join(root, 'src/core/frontend/classic/hm_general_rofi.py')],
+                {env: {...fixture.env, ROFI_RETV: '0'}})).stdout
+        }
+        const upgrade = await migratedHome('upgrade', legacySource)
+        const converted = JSON.parse(fs.readFileSync(upgrade.menu, 'utf8'))
+        assert.equal(converted.items[0].id, 'app-menu')
+        assert.equal(converted.items[0].label, 'App Menu')
+        let migratedRows = await snapshot(upgrade)
+        assert.equal(migratedRows.length, 6)
+        assert.deepEqual(plain(migratedRows.map(row => row.label)), ['Code Editor', 'Browser', 'Screen Record', 'Local Send', 'File Manager', 'Quit'])
+        assert(migratedRows.every(row => row.mutable))
+        assert((await classicRows(upgrade)).includes('App Menu\0info\x1fapp-menu'))
+
+        // Older RC identities stay readable without changing completed user JSON.
+        converted.items[0].id = 'legacy-9b0f63c1562e9155c5ca'
+        converted.items[1].label = 'My editor'
+        converted.items.push({id: 'custom-app-menu', label: 'App Menu', icon: 'X', argv: ['printf', 'custom']})
+        fs.writeFileSync(upgrade.menu, JSON.stringify(converted))
+        const edited = fs.readFileSync(upgrade.menu, 'utf8')
+        await upgrade.migrate()
+        assert.equal(fs.readFileSync(upgrade.menu, 'utf8'), edited)
+        migratedRows = await snapshot(upgrade)
+        assert.equal(migratedRows.some(row => row.id === 'legacy-9b0f63c1562e9155c5ca'), false)
+        assert.equal(migratedRows.some(row => row.id === 'custom-app-menu'), true)
+        assert.deepEqual(plain(migratedRows.map(row => row.id)), converted.items.slice(1).map(row => row.id))
+        const classic = await classicRows(upgrade)
+        assert(classic.includes('App Menu\0info\x1flegacy-9b0f63c1562e9155c5ca'))
+        assert(classic.includes('App Menu\0info\x1fcustom-app-menu'))
+        // Old RC IDs also identify the system row after pre-migration reordering.
+        converted.items[0].id = 'legacy-' + require('node:crypto').createHash('sha256').update('3:  App Menu').digest('hex').slice(0, 20)
+        fs.writeFileSync(upgrade.menu, JSON.stringify(converted))
+        const reorderedBytes = fs.readFileSync(upgrade.menu, 'utf8')
+        await upgrade.migrate()
+        assert.equal(fs.readFileSync(upgrade.menu, 'utf8'), reorderedBytes)
+        migratedRows = await snapshot(upgrade)
+        assert.equal(migratedRows.some(row => row.id === converted.items[0].id), false)
+        assert.equal(migratedRows.some(row => row.id === 'custom-app-menu'), true)
+
+
+        // A customized legacy action with the same name and hash is not a system launcher.
+        const customized = await migratedHome('customized-upgrade', legacySource
+            .replace('spawn rofi -show drun', 'spawn printf custom')
+            .replace('spawn code', 'spawn code --new-window'))
+        const customizedRows = await snapshot(customized)
+        assert.equal(customizedRows.length, 7)
+        assert.equal(customizedRows[0].id, 'legacy-9b0f63c1562e9155c5ca')
+        assert.deepEqual(plain(customizedRows[1].argv), ['code', '--new-window'])
+        const originalCustom = fs.readFileSync(customized.menu, 'utf8')
+        await customized.migrate()
+        assert.equal(fs.readFileSync(customized.menu, 'utf8'), originalCustom)
+
         console.log('General menu snapshot, service CRUD and ID activation tests passed.')
     } finally {
         fs.rmSync(temporary, {recursive: true, force: true})

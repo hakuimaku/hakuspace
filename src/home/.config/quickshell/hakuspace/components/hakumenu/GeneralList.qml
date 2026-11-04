@@ -27,7 +27,7 @@ Item {
     readonly property real editorHeight: itemEditor ? itemEditor.implicitHeight : 0
     readonly property alias currentIndex: generalList.currentIndex
     readonly property var customItems: GeneralMenuService.items.filter(function(item) {
-        return item.enabled && item.id !== "app-menu"
+        return item.enabled && item.id !== "app-menu" && item.systemAction !== "app-menu"
     }).map(function(item) { return Object.assign({}, item, {kind: "custom"}) })
     readonly property var staticItems: UiCatalog.hakuMenuGeneralItems.map(function(item) {
         return Object.assign({}, item, {kind: "static", mutable: false})

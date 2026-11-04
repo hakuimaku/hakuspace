@@ -19,12 +19,45 @@ existing local repositories are not adopted or deleted. GTK, icons and cursor
 files already installed under `~/.themes` and `~/.icons` remain available after
 source cleanup. `hakuspace-archive` and `scripts/assets.sh` supply wallpapers only.
 
-`update.sh` updates HakuSpace dotfiles without invoking visual installation or
-pulling/building/copying visual projects. A separate explicit
-`./scripts/setup.sh update` fetches and installs current disposable sources again;
+`update.sh` updates recognized managed visual installations after deploying dotfiles.
+It asks before installing an unmanaged component and preserves configured development
+source overrides. `./scripts/setup.sh update` fetches current disposable sources;
 there is no retained Git history or installed-revision manifest to compare.
-`./scripts/setup.sh apply <component>` installs just that component, using temporary
+`./scripts/setup.sh apply <component>` installs one component, using temporary
 sources when no development source was configured.
+
+## Installation, selection and activation
+
+Installed assets and selected themes are separate states. Installing GTK/icons does
+not silently replace Adwaita or a third-party choice. Setup asks separately whether
+to activate `Hikaide` and `Hikaide-Symbols` for the current mode. Declining, including
+noninteractive EOF, preserves that component's selected theme and native settings.
+Later updates also require confirmation before replacing an external theme.
+
+An already selected managed family follows the existing mode policy: Classic uses
+the dark variants; Hikai follows its saved Light/Dark preference. Activation never
+changes the shell backend or the saved Hikai preference. Unrelated GTK keys/comments
+and custom CSS are preserved; no global GTK4 CSS override is created.
+
+For assets already installed, these explicit commands activate without downloading:
+
+```bash
+./src/core/backend/theme/appearance_ctl.sh activate gtk
+./src/core/backend/theme/appearance_ctl.sh activate symbols
+```
+
+`setup.sh status` reports component `installed=yes|no`, `gtk_theme_selected`,
+`icon_theme_selected`, and `activation_pending` separately. Selection is read from
+GSettings, with native GTK settings as the fallback when GSettings is unavailable.
+A successful activation requires both settings application and readback of the
+requested selection. Failures retain the installed assets and pending activation
+intent; they do not report the batch as successfully applied.
+
+The result distinguishes **installed**, **selected**, **applied**, and **session
+pending**. Successful reconciliation prints the selected GTK/icon names and notes
+that already running applications/session may cache styles and cursors. Reboot is
+not the success criterion: settings synchronization and selection readback happen
+before that message.
 
 ## Local development sources
 
@@ -65,10 +98,13 @@ reports that none is configured. Legacy `appearance.env` is never executed.
 
 Git metadata and installed assets are inspected live. No `assets/installed.env`
 or other visual installation manifest is read or written. Installed assets are
-marked for activation through `[system].visual-reconcile.pending`; successful
-source-core appearance reconciliation clears it. If activation failed, a subsequent
+marked for reconciliation through `[system].visual-reconcile.pending`, which also
+retains explicitly confirmed GTK/icon activation intent. Successful source-core
+appearance reconciliation clears it. If activation failed, a subsequent
 `update` retries activation and returns without downloading/rebuilding sources;
-`verify` also retries pending activation. Run `update` again to explicitly fetch
+`verify` also retries pending activation. The dotfile updater performs this
+recovery once before considering component downloads and skips new downloads in
+that recovery pass. Run `update` again to explicitly fetch
 new sources afterward. Light/Dark/Classic selection, XDG discovery and stateless
 icon accents remain independent of the disposable source lifetime.
 

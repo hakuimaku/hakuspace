@@ -107,8 +107,11 @@ def convert_menu(raw):
             raise ValueError('manual migration required: ambiguous menu label')
         label = matched[0]
         icon = line[:-len(label)].strip()
-        rows.append({'id': 'legacy-' + hashlib.sha256(f'{index}:{line}'.encode()).hexdigest()[:20],
-                     'label': label, 'icon': icon, 'argv': actions.pop(label)})
+        argv = actions.pop(label)
+        # Only the original icon, label and launcher command identify the system action.
+        identity = 'app-menu' if line == '  App Menu' and argv == ['rofi', '-show', 'drun'] else (
+            'legacy-' + hashlib.sha256(f'{index}:{line}'.encode()).hexdigest()[:20])
+        rows.append({'id': identity, 'label': label, 'icon': icon, 'argv': argv})
     if actions:
         raise ValueError('manual migration required: actions absent from displayed menu')
     return validate({'schemaVersion': 1, 'items': rows})

@@ -21,6 +21,9 @@ from hikai_settings_ctl import open_parent
 
 # Bound editable custom menu documents.
 MAX_BYTES = 256 * 1024
+# Prior converters salted the exact system row with its index under the 128-row schema cap.
+LEGACY_APP_MENU_IDS = {'legacy-' + hashlib.sha256(f'{index}:  App Menu'.encode()).hexdigest()[:20]
+                       for index in range(128)}
 
 # Reject duplicate JSON keys instead of silently discarding user data.
 def unique_object(pairs):
@@ -91,6 +94,8 @@ def revision(raw):
 # Expose one structured snapshot to both frontends.
 def snapshot(document, raw):
     rows = [{**value, 'origin': 'user', 'mutable': True,
+             'systemAction': 'app-menu' if (value['id'] == 'app-menu' or (
+                 value['id'] in LEGACY_APP_MENU_IDS and value['argv'] == ['rofi', '-show', 'drun'])) else '',
              'enabled': value.get('enabled', True), 'commandText': shlex.join(value['argv'])}
             for value in document['items']]
     return {'ok': True, 'schemaVersion': 1, 'revision': revision(raw), 'items': rows}

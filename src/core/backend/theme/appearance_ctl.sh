@@ -48,6 +48,8 @@ load_selected_themes() {
     local helper selected
     helper="$(resolve_settings_helper)" || return 1
     selected="$(python3 "$helper" current)" || return 1
+    # Keep observed selection separate from the special system-icon policy.
+    SELECTED_THEMES="$selected"
     HAKU_GTK_THEME="$(jq -r '.gtk' <<< "$selected")" || return 1
     if [[ "$HAKU_ICON_THEME" != system ]]; then
         HAKU_ICON_THEME="$(jq -r '.icons' <<< "$selected")" || return 1
@@ -320,13 +322,40 @@ apply() {
     return "$failed"
 }
 
+# Explicit consent may select installed managed assets without changing the shell backend.
+activate() {
+    local component="$1" mode helper selected expected actual
+    case "$component" in
+        gtk) HAKU_GTK_THEME=Hikaide ;;
+        symbols) HAKU_ICON_THEME=Hikaide-Symbols ;;
+        *) echo 'appearance: activate expects gtk or symbols' >&2; return 2 ;;
+    esac
+    mode="$(effective_mode)" || return 1
+    HAKUSPACE_STRICT_ASSETS=1 apply "$mode" 1 || return 1
+    helper="$(resolve_settings_helper)" || return 1
+    selected="$(python3 "$helper" current)" || return 1
+    if [[ "$component" == gtk ]]; then
+        expected="$(appearance_gtk_theme_for_mode "$mode")"
+        actual="$(jq -r '.gtk' <<< "$selected")"
+    else
+        expected="$(appearance_icon_theme_for_mode "$mode")"
+        actual="$(jq -r '.icons' <<< "$selected")"
+    fi
+    if [[ "$actual" != "$expected" ]]; then
+        printf 'appearance: activation not confirmed: expected %s, selected %s\n' "$expected" "$actual" >&2
+        return 1
+    fi
+}
+
 load_selected_themes || exit 1
 
 case "${1:-}" in
     status) status ;;
+    selection) printf '%s\n' "$SELECTED_THEMES" ;;
+    activate) [[ $# == 2 ]] || exit 2; activate "$2" ;;
     verify) verify ;;
     apply) apply ;;
     apply-mode) [[ $# == 2 ]] || { echo "Usage: appearance_ctl.sh apply-mode dark|light" >&2; exit 2; }; apply "$2" 1 ;;
     sync-accent) sync_accent ;;
-    *) echo 'Usage: appearance_ctl.sh {status|verify|apply|apply-mode dark|light|sync-accent}' >&2; exit 2 ;;
+    *) echo 'Usage: appearance_ctl.sh {status|selection|verify|activate gtk|symbols|apply|apply-mode dark|light|sync-accent}' >&2; exit 2 ;;
 esac

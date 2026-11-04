@@ -71,8 +71,14 @@ class WorkspaceFixture(unittest.TestCase):
         (core / 'backend/theme').mkdir(parents=True)
         for name in ('appearance_ctl.sh', 'theme_ctl.sh'):
             path = core / 'backend/theme' / name
-            path.write_text('#!/bin/sh\nprintf "%s %s\\n" "$(basename "$0")" "$*" >> "$TEST_RECONCILE"\n'
-                            'if [ "${TEST_RECONCILE_FAIL:-0}" = 1 ]; then exit 8; fi\n')
+            path.write_text('''#!/bin/sh
+if [ "$1" = selection ]; then
+    echo '{"gtk":"Hikaide","icons":"Hikaide-Symbols"}'
+    exit 0
+fi
+printf '%s %s\\n' "$(basename "$0")" "$*" >> "$TEST_RECONCILE"
+if [ "${TEST_RECONCILE_FAIL:-0}" = 1 ]; then exit 8; fi
+''')
             path.chmod(0o755)
         self.env = {key: value for key, value in os.environ.items()
                     if not key.startswith(('HAKU_', 'HAKUSPACE_', 'GIT_'))}
@@ -151,10 +157,10 @@ os.execv(real, ['git', *args])
         return subprocess.run([self.env['TEST_REAL_GIT'], *map(str, args)], env=self.env,
                               check=True, text=True, capture_output=True).stdout.strip()
 
-    def run_manager(self, *args, success=True):
+    def run_manager(self, *args, success=True, answers=""):
         """Run the real CLI from outside its checkout."""
         result = subprocess.run(['bash', str(self.repo / 'scripts/setup.sh'), *args],
-                                env=self.env, cwd=self.home, text=True, capture_output=True)
+                                env=self.env, cwd=self.home, text=True, input=answers, capture_output=True)
         self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
         return result
 
@@ -190,6 +196,163 @@ os.execv(real, ['git', *args])
         self.git('-C', remote, 'commit', '-am', text)
         return self.git('-C', remote, 'rev-parse', 'HEAD')
 
+
+
+class ActivationTests(WorkspaceFixture):
+    def setUp(self):
+        """Use the real appearance controller with local installer fixtures and private settings."""
+        super().setUp()
+        for name in ('HYPRLAND_INSTANCE_SIGNATURE', 'NIRI_SOCKET', 'MANGO_INSTANCE_SIGNATURE',
+                     'WAYLAND_DISPLAY', 'DISPLAY', 'DBUS_SESSION_BUS_ADDRESS', 'XDG_RUNTIME_DIR'):
+            self.env.pop(name, None)
+        core = self.repo / 'src/core'
+        renderer = (core / 'backend/theme/theme_ctl.sh').read_text()
+        shutil.copytree(ROOT / 'src/core', core, dirs_exist_ok=True, ignore=shutil.ignore_patterns('__pycache__'))
+        (core / 'backend/theme/theme_ctl.sh').write_text(renderer)
+        settings = self.binary / 'gsettings'
+        settings.write_text('''#!/bin/bash
+case "$1" in
+    list-schemas) echo org.gnome.desktop.interface ;;
+    get)
+        selected="$HOME/selected-$3"
+        if [[ -f "$selected" ]]; then printf "'%s'\\n" "$(cat "$selected")"; else echo "'Adwaita'"; fi ;;
+    set)
+        if [[ "${TEST_ACTIVATION_FAIL:-0}" == 1 && "$3" == *-theme && "$3" != cursor-theme ]]; then exit 9; fi
+        if [[ "${TEST_ACTIVATION_IGNORE:-0}" != 1 || "$3" == cursor-* ]]; then
+            printf '%s\\n' "$4" > "$HOME/selected-$3"
+        fi ;;
+    *) exit 1 ;;
+esac
+''')
+        settings.chmod(0o755)
+        self.configs = []
+        for version in ('3.0', '4.0'):
+            path = self.home / f'config/gtk-{version}/settings.ini'
+            path.parent.mkdir(parents=True)
+            path.write_text('[Settings]\n# Personal settings.\ngtk-font-name=Custom Mono 17\n'
+                            'gtk-theme-name=Adwaita\ngtk-icon-theme-name=Adwaita\n'
+                            '[Unrelated]\ncustom=value\n')
+            self.configs.append(path)
+        self.backend = self.home / '.local/state/hakuspace/state/[shell].backend'
+        self.backend.parent.mkdir(parents=True)
+        self.backend.write_text('classic\n')
+
+    def selection(self, key):
+        """Read the actual mocked desktop selection independently of installed assets."""
+        path = self.home / ('selected-' + key)
+        return path.read_text().strip() if path.exists() else 'Adwaita'
+
+    def assert_preserved_settings(self):
+        """Native settings keep comments and unrelated preferences without creating CSS overrides."""
+        for path in self.configs:
+            self.assertIn('# Personal settings.\ngtk-font-name=Custom Mono 17', path.read_text())
+            self.assertIn('[Unrelated]\ncustom=value\n', path.read_text())
+        for name in ('gtk.css', 'gtk-dark.css'):
+            self.assertFalse((self.home / 'config/gtk-4.0' / name).exists())
+        self.assertEqual(self.backend.read_text(), 'classic\n')
+
+    def test_fresh_install_activates_only_with_separate_consent(self):
+        """Adwaita transitions to installed Hikaide through confirmed GTK and icon activation."""
+        result = self.run_manager('setup', answers='y\ny\n')
+        self.assertEqual(self.selection('gtk-theme'), 'Hikaide')
+        self.assertEqual(self.selection('icon-theme'), 'Hikaide-Symbols')
+        for path in self.configs:
+            self.assertIn('gtk-theme-name=Hikaide\n', path.read_text())
+            self.assertIn('gtk-icon-theme-name=Hikaide-Symbols\n', path.read_text())
+        self.assertIn('Appearance applied: GTK=Hikaide; icons=Hikaide-Symbols', result.stdout)
+        self.assertIn('Session pending:', result.stdout)
+        self.assert_preserved_settings()
+
+    def test_migration_install_uses_the_same_activation_policy(self):
+        """The updater's explicit apply entrypoint can install and activate missing families."""
+        self.run_manager('apply', 'cursor')
+        self.run_manager('apply', 'gtk', answers='y\n')
+        self.run_manager('apply', 'symbols', answers='y\n')
+        self.assertEqual(self.selection('gtk-theme'), 'Hikaide')
+        self.assertEqual(self.selection('icon-theme'), 'Hikaide-Symbols')
+        self.assert_preserved_settings()
+
+    def test_declined_activation_preserves_adwaita_and_custom_settings(self):
+        """Installing assets alone does not authorize replacing the selected GTK/icon themes."""
+        before = [path.read_bytes() for path in self.configs]
+        self.run_manager('setup', answers='n\nn\n')
+        self.assertEqual(self.selection('gtk-theme'), 'Adwaita')
+        self.assertEqual(self.selection('icon-theme'), 'Adwaita')
+        self.assertEqual([path.read_bytes() for path in self.configs], before)
+        self.assertFalse(self.pending().exists())
+        self.assert_preserved_settings()
+
+    def test_external_theme_update_does_not_override_without_consent(self):
+        """Later updates preserve deliberate third-party choices independently of managed assets."""
+        self.run_manager('setup', answers='y\ny\n')
+        (self.home / 'selected-gtk-theme').write_text('User GTK')
+        (self.home / 'selected-icon-theme').write_text('User Icons')
+        for path in self.configs:
+            path.write_text(path.read_text().replace('Hikaide-Symbols', 'User Icons').replace('Hikaide', 'User GTK'))
+        before = [path.read_bytes() for path in self.configs]
+        self.run_manager('update', answers='n\nn\n')
+        self.assertEqual(self.selection('gtk-theme'), 'User GTK')
+        self.assertEqual(self.selection('icon-theme'), 'User Icons')
+        self.assertEqual([path.read_bytes() for path in self.configs], before)
+        self.assert_preserved_settings()
+
+    def test_managed_update_keeps_saved_mode_and_backend(self):
+        """Managed Light follows Hikai preferences; activation never writes the backend or preferences."""
+        self.run_manager('setup', answers='y\ny\n')
+        self.backend.write_text('hikai\n')
+        preferences = self.home / 'hakucfg/hikai/hikai-shell.json'
+        env = dict(self.env, HAKUSPACE_HIKAI_SETTINGS_JSON=json.dumps({'appearance': {'colorMode': 'light'}}))
+        subprocess.run(['python3', '-B', str(self.repo / 'src/core/backend/user/hikai_settings_ctl.py'), 'write'], env=env, check=True, capture_output=True)
+        before = preferences.read_bytes()
+        self.run_manager('update')
+        self.assertEqual(self.selection('gtk-theme'), 'Hikaide-Light')
+        self.assertEqual(self.selection('icon-theme'), 'Hikaide-Symbols-Light')
+        self.assertEqual(self.backend.read_text(), 'hikai\n')
+        self.assertEqual(preferences.read_bytes(), before)
+
+    def test_failed_activation_retries_without_downloading_assets(self):
+        """Installed assets survive a gsettings failure and the saved intent resumes without clones."""
+        self.env['TEST_ACTIVATION_FAIL'] = '1'
+        self.run_manager('setup', success=False, answers='y\ny\n')
+        self.assertTrue(self.pending().is_file())
+        self.assertEqual(self.pending().read_text().strip(), 'gtk symbols')
+        self.assertTrue((self.home / '.themes/Hikaide/index.theme').is_file())
+        self.assertTrue((self.home / '.icons/Hikaide-Symbols/index.theme').is_file())
+        self.clear_logs()
+        self.env.pop('TEST_ACTIVATION_FAIL')
+        self.run_manager('update')
+        self.assertEqual(self.selection('gtk-theme'), 'Hikaide')
+        self.assertEqual(self.selection('icon-theme'), 'Hikaide-Symbols')
+        self.assertEqual(self.lines('clones'), [])
+        self.assertEqual(self.lines('builds'), [])
+        self.assertFalse(self.pending().exists())
+        self.assert_preserved_settings()
+
+    def test_system_icon_policy_keeps_observed_selection(self):
+        """Explicit system icons stay unmanaged while status reports the real selected name."""
+        self.env['HAKU_ICON_THEME'] = 'system'
+        result = self.run_manager('setup', answers='y\n')
+        self.assertEqual(self.selection('gtk-theme'), 'Hikaide')
+        self.assertEqual(self.selection('icon-theme'), 'Adwaita')
+        self.assertNotIn('Activate Hikaide-Symbols', result.stderr)
+        self.assertIn('icon_theme_selected=Adwaita', self.run_manager('status').stdout)
+
+    def test_invalid_pending_intent_is_rejected_before_download(self):
+        """Recovery state accepts only known activation tokens and never executes its contents."""
+        self.run_manager('setup', answers='n\nn\n')
+        self.pending().write_text('gtk; touch "$HOME/executed"\n')
+        self.clear_logs()
+        self.run_manager('update', success=False)
+        self.assertEqual(self.lines('clones'), [])
+        self.assertEqual(self.lines('builds'), [])
+        self.assertFalse((self.home / 'executed').exists())
+
+    def test_successful_command_without_selection_change_is_not_activation(self):
+        """A backend that ignores successful set calls must leave a failed, retryable activation."""
+        self.env['TEST_ACTIVATION_IGNORE'] = '1'
+        self.run_manager('setup', success=False, answers='y\ny\n')
+        self.assertTrue(self.pending().exists())
+        self.assertEqual(self.selection('gtk-theme'), 'Adwaita')
 
 
 class WorkspaceTests(WorkspaceFixture):
@@ -564,6 +727,7 @@ ask_yes_no() { [[ "$1" != *package* ]]; }
 echo "setup $*" >> "$TEST_FLOW"
 case "$1" in
     managed) echo "${TEST_MANAGED_VISUALS:-}" ;;
+    pending) exit "${TEST_ACTIVATION_PENDING:-1}" ;;
     path) exit "${TEST_HAS_OVERRIDE:-1}" ;;
     update|apply) exit "${TEST_VISUAL_FAIL:-0}" ;;
 esac
@@ -616,6 +780,17 @@ echo updated >> "$TEST_FLOW"
         flow = (self.home / 'flow').read_text().splitlines()
         self.assertIn('setup update gtk', flow)
         self.assertFalse(any(line.startswith('setup apply ') for line in flow))
+
+    def test_pending_activation_retry_skips_component_downloads(self):
+        """A resumed update reconciles installed assets once instead of fetching each group."""
+        (self.repo / 'scripts/repo_update.sh').write_text('#!/bin/sh\nexit 0\n')
+        self.env.update(TEST_ACTIVATION_PENDING='0', TEST_MANAGED_VISUALS='cursor gtk symbols')
+        result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
+                                text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        flow = (self.home / 'flow').read_text().splitlines()
+        self.assertEqual(flow.count('setup update'), 1)
+        self.assertFalse(any(line.startswith(('setup update ', 'setup apply ')) for line in flow))
 
     def test_visual_failure_blocks_completion(self):
         """Failed managed visual updates cannot produce a completed migration receipt."""

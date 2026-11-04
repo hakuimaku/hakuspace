@@ -114,17 +114,27 @@ step_title "VISUAL ECOSYSTEM"
 "$HAKU_DIR/scripts/setup.sh" status || record_failure $?
 VISUAL_COMPONENTS="$("$HAKU_DIR/scripts/setup.sh" managed)"
 VISUAL_COMPONENTS="${VISUAL_COMPONENTS//$'\n'/ }"
-for component in cursor gtk symbols; do
-    if [[ " $VISUAL_COMPONENTS " == *" $component "* ]]; then
-        "$HAKU_DIR/scripts/setup.sh" update "$component" || record_failure $?
-    elif "$HAKU_DIR/scripts/setup.sh" path "$component" >/dev/null 2>&1; then
-        log_skip "VISUAL STATUS: $component override, skipped; use scripts/setup.sh apply $component explicitly."
-    elif ask_yes_no "Install visual component '$component' from its upstream source?"; then
-        "$HAKU_DIR/scripts/setup.sh" apply "$component" || record_failure $?
-    else
-        log_skip "VISUAL STATUS: $component skipped (not managed)."
-    fi
-done
+# A failed activation resumes before any component starts another asset download.
+ACTIVATION_PENDING=0
+"$HAKU_DIR/scripts/setup.sh" pending || ACTIVATION_PENDING=$?
+if [[ "$ACTIVATION_PENDING" == 0 ]]; then
+    "$HAKU_DIR/scripts/setup.sh" update || record_failure $?
+elif [[ "$ACTIVATION_PENDING" == 1 ]]; then
+    for component in cursor gtk symbols; do
+        if [[ " $VISUAL_COMPONENTS " == *" $component "* ]]; then
+            "$HAKU_DIR/scripts/setup.sh" update "$component" || record_failure $?
+        elif "$HAKU_DIR/scripts/setup.sh" path "$component" >/dev/null 2>&1; then
+            log_skip "VISUAL STATUS: $component override, skipped; use scripts/setup.sh apply $component explicitly."
+        elif ask_yes_no "Install visual component '$component' from its upstream source?"; then
+            "$HAKU_DIR/scripts/setup.sh" apply "$component" || record_failure $?
+        else
+            log_skip "VISUAL STATUS: $component skipped (not managed)."
+        fi
+    done
+else
+    log_error "Unsafe visual activation state; asset updates skipped."
+    record_failure "$ACTIVATION_PENDING"
+fi
 
 # 6. NixOS Update (if on NixOS)
 if [[ -n "$(command -v nixos-rebuild 2>/dev/null)" ]]; then
