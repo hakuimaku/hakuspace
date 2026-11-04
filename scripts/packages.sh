@@ -2,7 +2,7 @@
 # HakuSpace Package Management Module
 # Installs package groups using yay. Supports manual targets and profiles.
 
-set -e
+set -eo pipefail
 
 if [[ -z "${HAKU_DIR:-}" ]]; then
     HAKU_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." &> /dev/null && pwd)"
@@ -14,6 +14,7 @@ source "$HAKU_DIR/scripts/registry.sh"
 
 DRY_RUN=0
 PLAN_MODE=0
+REPAIR_MISSING=0
 PROFILE=""
 INPUT_TARGETS=()
 RESOLVED_WMS=()
@@ -41,6 +42,7 @@ resolve_package_profile() {
     RESOLVED_GROUPS=()
 
     if [[ -n "$PROFILE" ]]; then
+        RESOLVED_GROUPS=(core service)
         local wm
         for wm in "${INPUT_TARGETS[@]}"; do
             if [[ "${wm,,}" == "all" || "$wm" == "5" ]]; then
@@ -174,18 +176,28 @@ install_pkg_file() {
         return 0
     fi
 
-    if ! command -v yay >/dev/null 2>&1; then
-        log_error "yay is not installed. Please install yay first."
+    if command -v nixos-rebuild >/dev/null 2>&1 || ! command -v pacman >/dev/null 2>&1; then
+        log_error "[$label] Unsupported package manager; use the system configuration, then --audit-runtime."
         return 1
     fi
-
-    log_info "[$label] Installing packages from $(shorten_path "$file")..."
-    if extract_packages_from_file "$file" | yay -S --needed --noconfirm -; then
-        log_ok "[$label] Installed successfully."
+    command -v yay >/dev/null 2>&1 || { log_error "yay is not installed."; return 1; }
+    local pkg status log
+    local -a packages=()
+    while IFS= read -r pkg; do
+        if [[ "$REPAIR_MISSING" == 1 ]] && pacman -Qq "$pkg" >/dev/null 2>&1; then continue; fi
+        packages+=("$pkg")
+    done < <(extract_packages_from_file "$file")
+    if [[ ${#packages[@]} == 0 ]]; then log_ok "[$label] No missing packages."; return 0; fi
+    mkdir -p "$BACKUP_DIR/packages" || return 1
+    log="$BACKUP_DIR/packages/$label.log"
+    printf '[%s] Packages: %s\n' "$label" "${packages[*]}" | tee "$log"
+    if printf '%s\n' "${packages[@]}" | yay -S --needed --noconfirm - 2>&1 | tee -a "$log"; then
+        log_ok "[$label] installed (exit=0)."
         return 0
     else
-        log_error "[$label] Installation failed."
-        return 1
+        status=$?
+        log_error "[$label] failed (exit=$status); output: $log; retry: scripts/packages.sh --repair-missing ${label,,}"
+        return "$status"
     fi
 }
 
@@ -213,9 +225,34 @@ list_groups() {
     echo "  labwc      (Labwc stacking compositor packages)"
 }
 
+# Verify the actual QML module in addition to Arch package declarations.
+audit_runtime() {
+    local failed=0 pkg
+    if ! command -v nixos-rebuild >/dev/null 2>&1 && command -v pacman >/dev/null 2>&1; then
+        for pkg in quickshell qt6-multimedia qt6-multimedia-ffmpeg; do
+            pacman -Q "$pkg" || { log_error "BLOCKED: missing $pkg; run scripts/packages.sh --repair-missing core"; failed=1; }
+        done
+    fi
+    if command -v quickshell >/dev/null 2>&1; then
+        QT_QPA_PLATFORM=offscreen timeout 15 quickshell -p "$HAKU_DIR/tools/probes/multimedia.qml" || failed=1
+    else
+        log_error "BLOCKED: quickshell is missing."
+        failed=1
+    fi
+    return "$failed"
+}
+
 # CLI Entrypoint
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --audit-runtime)
+            audit_runtime
+            exit $?
+            ;;
+        --repair-missing)
+            REPAIR_MISSING=1
+            shift
+            ;;
         --plan)
             PLAN_MODE=1
             shift
@@ -244,6 +281,7 @@ while [[ $# -gt 0 ]]; do
             echo "Usage: $0 [--plan | --dry-run] <group1> [group2...]"
             echo "       $0 [--plan | --dry-run] --profile install|update <wm1> [wm2...]"
             echo "       $0 [--plan | --dry-run] --all"
+            echo "       $0 --repair-missing <group...> | --audit-runtime"
             echo "       $0 --list"
             exit 0
             ;;
@@ -266,6 +304,15 @@ if [[ "$PLAN_MODE" -eq 1 ]]; then
     exit 0
 fi
 
+# Independent groups continue after failure; the caller receives the aggregate result.
+FAILED=0
 for grp in "${RESOLVED_GROUPS[@]}"; do
-    install_group "$grp"
+    if install_group "$grp"; then
+        log_ok "PACKAGE STATUS: $grp applied"
+    else
+        STATUS=$?
+        log_error "PACKAGE STATUS: $grp failed exit=$STATUS"
+        FAILED=1
+    fi
 done
+exit "$FAILED"

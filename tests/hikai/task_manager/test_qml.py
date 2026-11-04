@@ -56,7 +56,7 @@ def prepare(work, harness_name='task_manager.qml'):
 class QmlTest(unittest.TestCase):
     """Use real collectors and Qt events without taking over the user's desktop."""
 
-    def _run_harness(self, harness_name, expected_marker, log_path, reduced=False, size=None):
+    def _run_harness(self, harness_name, expected_marker, log_path, reduced=False, size=None, scale=1):
         with tempfile.TemporaryDirectory(prefix='hikai-task-manager-') as directory:
             work = Path(directory)
             shell = prepare(work, harness_name)
@@ -75,7 +75,7 @@ class QmlTest(unittest.TestCase):
             launch = ['quickshell', '-p', str(shell / 'shell.qml'), '--no-color']
             if size:
                 width, height = size
-                configure = ['wlr-randr', '--output', 'HEADLESS-1', '--custom-mode', f'{width}x{height}',
+                configure = ['wlr-randr', '--output', 'HEADLESS-1', '--custom-mode', f'{width}x{height}', '--scale', str(scale),
                     '--output', 'HEADLESS-2', '--custom-mode', '1024x768', '--pos', f'{width},0']
                 launch = ['sh', '-c', shlex.join(configure) + ' && exec ' + shlex.join(launch)]
             with subprocess.Popen(['labwc', '-C', str(work / 'labwc'), '-S', shlex.join(launch)],
@@ -103,6 +103,13 @@ class QmlTest(unittest.TestCase):
     def test_glass_grid_style(self):
         """Exercise Focus Card switching, reset semantics, responsive sizes and light/dark themes."""
         self._run_harness('glass_grid.qml', 'Glass Grid harness passed', '/tmp/hikai-task-manager-glass-grid.log')
+
+    @unittest.skipUnless(shutil.which('labwc') and shutil.which('quickshell'), 'Labwc and Quickshell required')
+    def test_metric_layout(self):
+        """Keep full Swap values at narrow card widths and enlarged fonts across guest scales."""
+        for size, scale in (((1280, 720), 1), ((1366, 768), 1), ((1920, 1080), 1), ((1920, 1080), 1.25)):
+            self._run_harness('metric_layout.qml', 'Metric layout sampled: 0/12 truncated',
+                f'/tmp/hikai-metric-{size[0]}-{scale}.log', size=size, scale=scale)
 
     @unittest.skipUnless(shutil.which('labwc') and shutil.which('quickshell'), 'Labwc and Quickshell required')
     def test_ui_polish(self):

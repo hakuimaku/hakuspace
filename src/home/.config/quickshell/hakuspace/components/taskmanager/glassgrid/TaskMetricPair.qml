@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import "../../../services"
 
-RowLayout {
+Item {
     id: root
     property string label: ""
     property string value: ""
@@ -18,16 +18,18 @@ RowLayout {
 
     Layout.fillWidth: true
     Layout.minimumWidth: 0
-    spacing: 4
+    property int spacing: 4
+    implicitHeight: Math.max(labelText.implicitHeight, valueLabel.implicitHeight)
 
     Label {
         id: labelText
         text: root.label
         color: root.labelColor
         font.pixelSize: root.fontSize
-        Layout.minimumWidth: 0
-        Layout.preferredWidth: root.ultraCompact ? 48 : (root.compact ? 54 : 62)
-        Layout.maximumWidth: root.ultraCompact ? 54 : (root.compact ? 60 : 70)
+        // Preserve complete values before allocating the remaining label space.
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        width: Math.min(implicitWidth, Math.max(0, root.width - valueLabel.implicitWidth - root.spacing))
         maximumLineCount: 1
         elide: Text.ElideRight
     }
@@ -40,8 +42,10 @@ RowLayout {
         font.bold: root.accentValue
         font.pixelSize: root.fontSize
         horizontalAlignment: Text.AlignRight
-        Layout.fillWidth: true
-        Layout.minimumWidth: 0
+        anchors.left: labelText.right
+        anchors.leftMargin: root.spacing
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
         maximumLineCount: 1
         elide: Text.ElideRight
     }

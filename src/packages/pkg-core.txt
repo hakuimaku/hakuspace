@@ -12,6 +12,10 @@ hyprpicker                    # Color picker
 fish                          # Shell
 quickshell                    # The Hikai, another appearance for hakuspace :)
 
+# === Native video wallpaper runtime ===
+qt6-multimedia                # QtMultimedia QML module
+qt6-multimedia-ffmpeg         # FFmpeg media backend
+
 # === Hakuspace scripts needed ===
 jq                            # Command-line JSON processor
 imagemagick                   # Image processing toolkit (For Niri, generating backdrop blur)

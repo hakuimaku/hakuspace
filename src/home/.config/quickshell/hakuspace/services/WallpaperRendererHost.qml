@@ -29,7 +29,13 @@ QtObject {
             if (message.name && !service.surfaces[message.name]) return
             if (message.type === "ready") service.surfaceReady(message.name, message.token)
             else if (message.type === "error" && (message.token === service.candidate.token
-                    || !service.busy && message.token === service.current.token)) service.fail(message.message)
+                    || !service.busy && message.token === service.current.token)) {
+                if (message.message.includes("QtMultimedia")) {
+                    root.faulted = true
+                    if (renderer.running) { root.stopping = true; renderer.running = false }
+                }
+                service.fail(message.message)
+            }
             else if (message.type === "ownership") service.takeOwnership()
             else if (message.type === "report") service.report(message.name, message.state)
             else if (message.type === "state") {

@@ -193,6 +193,23 @@ os.execv(real, ['git', *args])
 
 
 class WorkspaceTests(WorkspaceFixture):
+    def test_managed_detection_uses_installer_metadata(self):
+        """Recognize installed ownership without downloading or adopting custom themes."""
+        self.assertEqual(self.run_manager('managed').stdout.strip(), '')
+        for relative, name, raw in (
+            ('.icons/Haku-Dark', '.hakuspace-cursor', 'HakuSpace managed cursor v1\n'),
+            ('.themes/Hikaide', 'index.theme', '[Desktop Entry]\nGtkTheme=Hikaide\n'),
+            ('.icons/Hikaide-Symbols', '.hikaide-symbols.json',
+             json.dumps({'family': 'Hikaide-Symbols', 'version': 2, 'variant': 'dark'})),
+        ):
+            folder = self.home / relative
+            folder.mkdir(parents=True)
+            (folder / name).write_text(raw)
+        self.assertEqual(self.run_manager('managed').stdout.split(), ['cursor', 'gtk', 'symbols'])
+        (self.home / '.themes/Hikaide/index.theme').write_text('custom user theme')
+        self.assertEqual(self.run_manager('managed').stdout.split(), ['cursor', 'symbols'])
+        self.assertEqual(self.clones(), [])
+
     def clones(self):
         """Read actual clone revisions before their disposable directories disappear."""
         return [json.loads(line) for line in self.lines('clones')]
@@ -527,6 +544,7 @@ step_title() { :; }
 log_ok() { :; }
 log_info() { :; }
 log_warn() { echo "$*"; }
+log_error() { echo "$*"; }
 log_skip() { :; }
 shorten_path() { echo "$1"; }
 ask_yes_no() { [[ "$1" != *package* ]]; }
@@ -534,7 +552,7 @@ ask_yes_no() { [[ "$1" != *package* ]]; }
         modules = ('select_wm', 'deploy_mode', 'dependencies', 'packages', 'directories',
                    'once_configs', 'link', 'core', 'legacy_copy', 'setup', 'assets',
                    'state', 'hakucfg', 'shell_setup', 'nixos', 'display_manager', 'desktop_defaults',
-                   'reload', 'doctor')
+                   'reload', 'doctor', 'migrate')
         for name in modules:
             module = self.repo / 'scripts' / (name + '.sh')
             module.write_text('#!/bin/bash\n'
@@ -542,6 +560,14 @@ ask_yes_no() { [[ "$1" != *package* ]]; }
                               + ('echo niri\n' if name == 'select_wm' else '')
                               + ('echo symlink\n' if name == 'deploy_mode' else ''))
             module.chmod(0o755)
+        (self.repo / 'scripts/setup.sh').write_text('''#!/bin/bash
+echo "setup $*" >> "$TEST_FLOW"
+case "$1" in
+    managed) echo "${TEST_MANAGED_VISUALS:-}" ;;
+    path) exit "${TEST_HAS_OVERRIDE:-1}" ;;
+    update|apply) exit "${TEST_VISUAL_FAIL:-0}" ;;
+esac
+''')
         self.env = dict(os.environ, HOME=str(self.home), TEST_FLOW=str(self.home / 'flow'))
 
     def test_install_separates_visual_sources_and_wallpapers(self):
@@ -556,13 +582,14 @@ ask_yes_no() { [[ "$1" != *package* ]]; }
         self.assertLess(flow.index('setup setup'), flow.index('assets '))
         self.assertNotIn('setup workspace', flow)
 
-    def test_update_reexec_precedes_config_deployment_without_visual_setup(self):
-        """Dotfile update reexecutes before config deployment and never updates visual repos."""
+    def test_update_reexec_precedes_deployment_and_visual_opt_in(self):
+        """Updated orchestration fetches once and reconciles visuals after deployment."""
         repo_update = self.repo / 'scripts/repo_update.sh'
         repo_update.write_text('''#!/bin/bash
 if [[ ! -f "$HOME/reexecuted" ]]; then
     touch "$HOME/reexecuted"
     echo reexec >> "$TEST_FLOW"
+    echo 'registry_format_wm_list() { echo registry-new >> "$TEST_FLOW"; echo revised; }' >> "$HAKU_DIR/scripts/registry.sh"
     exit 10
 fi
 echo updated >> "$TEST_FLOW"
@@ -571,22 +598,104 @@ echo updated >> "$TEST_FLOW"
                                 text=True, capture_output=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         flow = (self.home / 'flow').read_text().splitlines()
-        self.assertEqual(flow[:3], ['reexec', 'updated', 'select_wm '])
-        self.assertLess(flow.index('updated'), flow.index('core --mode symlink'))
-        self.assertFalse(any(line.startswith(('setup ', 'assets ')) for line in flow))
+        self.assertEqual(flow[:2], ['reexec', 'migrate --plan --to v26.11'])
+        self.assertEqual(flow.count('reexec'), 1)
+        self.assertNotIn('updated', flow)
+        self.assertIn('registry-new', flow)
+        self.assertLess(flow.index('reexec'), flow.index('link --all'))
+        self.assertIn('setup apply gtk', flow)
+        self.assertNotIn('assets ', flow)
 
-    def test_update_does_not_require_visual_setup(self):
-        """Dotfile updates succeed with the visual manager absent and leave it unused."""
+    def test_update_managed_visuals_skips_developer_override(self):
+        """Managed installs update while unmanaged developer sources stay explicit."""
         (self.repo / 'scripts/repo_update.sh').write_text('#!/bin/sh\nexit 0\n')
-        (self.repo / 'scripts/setup.sh').unlink()
+        self.env.update(TEST_MANAGED_VISUALS='gtk', TEST_HAS_OVERRIDE='0')
         result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
                                 text=True, capture_output=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         flow = (self.home / 'flow').read_text().splitlines()
-        self.assertIn('core --mode symlink', flow)
-        self.assertIn('doctor ', flow)
-        self.assertFalse(any(line.startswith(('setup ', 'assets ')) for line in flow))
-        self.assertIn('Update complete!', result.stdout)
+        self.assertIn('setup update gtk', flow)
+        self.assertFalse(any(line.startswith('setup apply ') for line in flow))
+
+    def test_visual_failure_blocks_completion(self):
+        """Failed managed visual updates cannot produce a completed migration receipt."""
+        (self.repo / 'scripts/repo_update.sh').write_text('#!/bin/sh\nexit 0\n')
+        self.env.update(TEST_MANAGED_VISUALS='gtk', TEST_VISUAL_FAIL='8')
+        result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
+                                text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn('migrate --complete --to v26.11', (self.home / 'flow').read_text())
+
+    def test_update_failure_never_records_completion(self):
+        """A required final failure leaves a resumable migration without a success message."""
+        (self.repo / 'scripts/repo_update.sh').write_text('#!/bin/sh\nexit 0\n')
+        (self.repo / 'scripts/doctor.sh').write_text('#!/bin/sh\nexit 7\n')
+        result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
+                                text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        flow = (self.home / 'flow').read_text().splitlines()
+        self.assertNotIn('migrate --complete --to v26.11', flow)
+        self.assertNotIn('Update complete!', result.stdout)
+        self.assertIn('PARTIAL / BLOCKED', result.stdout)
+
+    def test_deployment_errors_stop_mutations_and_report_exact_status(self):
+        """Failed deployment stops before migration/state/reload but still reports its backup."""
+        (self.repo / 'scripts/repo_update.sh').write_text('#!/bin/sh\nexit 0\n')
+        for mode, module, status in (('symlink', 'link', 41), ('copy', 'legacy_copy', 44)):
+            with self.subTest(mode=mode):
+                flow_file = self.home / 'flow'
+                flow_file.unlink(missing_ok=True)
+                deployment = self.repo / f'scripts/{module}.sh'
+                original = deployment.read_text()
+                deployment.write_text(f'#!/bin/bash\necho "{module} $*" >> "$TEST_FLOW"\nexit {status}\n')
+                (self.repo / 'scripts/deploy_mode.sh').write_text(f'#!/bin/bash\necho {mode}\n')
+                result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
+                                        text=True, capture_output=True)
+                self.assertEqual(result.returncode, status, result.stdout + result.stderr)
+                flow = flow_file.read_text()
+                self.assertNotIn('migrate --apply', flow)
+                self.assertNotIn('migrate --complete', flow)
+                self.assertNotIn('state init', flow)
+                self.assertNotIn('reload ', flow)
+                self.assertIn('PARTIAL / BLOCKED', result.stdout)
+                self.assertIn('Backup folder for this update:', result.stdout)
+                self.assertNotIn('Update complete!', result.stdout)
+                deployment.write_text(original)
+
+    def test_sync_and_reload_errors_continue_diagnostics(self):
+        """Recoverable failures retain their status, skip completion and still run doctor."""
+        (self.repo / 'scripts/repo_update.sh').write_text('#!/bin/sh\nexit 0\n')
+        (self.repo / 'scripts/doctor.sh').write_text('#!/bin/bash\necho "doctor $*" >> "$TEST_FLOW"\nexit 7\n')
+        for module, status in (('state', 31), ('hakucfg', 32), ('reload', 33)):
+            with self.subTest(module=module):
+                flow_file = self.home / 'flow'
+                flow_file.unlink(missing_ok=True)
+                failing = self.repo / f'scripts/{module}.sh'
+                original = failing.read_text()
+                failing.write_text(f'#!/bin/bash\necho "{module} $*" >> "$TEST_FLOW"\nexit {status}\n')
+                result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
+                                        text=True, capture_output=True)
+                self.assertEqual(result.returncode, status, result.stdout + result.stderr)
+                flow = flow_file.read_text()
+                self.assertIn('doctor ', flow)
+                self.assertNotIn('migrate --complete', flow)
+                if module != 'reload':
+                    self.assertNotIn('reload ', flow)
+                self.assertIn('PARTIAL / BLOCKED', result.stdout)
+                self.assertIn('Backup folder for this update:', result.stdout)
+                self.assertNotIn('Update complete!', result.stdout)
+                failing.write_text(original)
+
+    def test_update_stops_on_repo_failure(self):
+        """Failed Git operations cannot fall through to package or destination changes."""
+        (self.repo / 'scripts/repo_update.sh').write_text('#!/bin/sh\nexit 19\n')
+        result = subprocess.run(['bash', str(self.repo / 'update.sh')], env=self.env,
+                                text=True, capture_output=True)
+        self.assertEqual(result.returncode, 19, result.stdout + result.stderr)
+        self.assertFalse((self.home / 'flow').exists())
+        self.assertIn('PARTIAL / BLOCKED', result.stdout)
+        self.assertIn('Backup folder for this update:', result.stdout)
+
 
 
 

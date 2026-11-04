@@ -40,7 +40,7 @@ check_symlink_recursive() {
             target="$(readlink "$dst")"
             local expected
             expected="$(realpath "$src" 2>/dev/null || echo "$src")"
-            if [[ ! -e "$target" ]]; then
+            if [[ ! -e "$dst" ]]; then
                 BROKEN_LINKS+=("Broken symlink: $(shorten_path "$dst") -> $target")
             elif [[ "$target" != "$expected" ]]; then
                 OVERWRITTEN_FILES+=("Modified symlink (not pointing to BASE): $(shorten_path "$dst") -> $target")
@@ -121,6 +121,16 @@ run_doctor() {
         fi
     fi
 
+    # Copies still require every managed executable to be present and executable.
+    if [[ "$deploy_mode" == copy ]]; then
+        while IFS='|' read -r src dst; do
+            [[ -f "$dst" && -x "$dst" ]] || MISSING_LINKS+=("Missing core executable: $dst")
+        done < <(registry_get_core_scripts)
+    fi
+    "$HAKU_DIR/scripts/migrate.sh" --audit || MISSING_LINKS+=("Residual legacy artifacts; run migration --plan")
+    # The shared core manifest requires this runtime for both Classic and Hikai installations.
+    "$HAKU_DIR/scripts/packages.sh" --audit-runtime || MISSING_LINKS+=("Missing shared Quickshell/QtMultimedia runtime dependencies")
+
     # Summary of symlink diagnostics
     local total_issues
     total_issues=$(( ${#BROKEN_LINKS[@]} + ${#OVERWRITTEN_FILES[@]} + ${#MISSING_LINKS[@]} ))
@@ -188,7 +198,7 @@ run_doctor() {
         return 0
     else
         log_warn "Doctor check completed with warnings/issues."
-        return 0
+        return 1
     fi
 }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # HakuSpace Repository Update Module
 # Updates HakuSpace dotfiles repository via Git (LATEST vs STABLE).
-# Exit code 10 signals to the caller (e.g. update.sh) that updater scripts changed and re-exec is needed.
+# Exit code 10 requests re-exec whenever the repository revision changes.
 
 set -e
 
@@ -16,7 +16,6 @@ STATUS_REEXEC=10
 
 update_repo() {
     local mode="${1:-}"
-    local target_script="${2:-$HAKU_DIR/update.sh}"
 
     if [[ -z "$mode" ]]; then
         ui_print "${C_DIM}${UI_LINE}${C_RESET}"
@@ -39,38 +38,35 @@ update_repo() {
         mode="${choice:-0}"
     fi
 
-    # Snapshot target script for change detection
-    local backup_target=""
-    if [[ -f "$target_script" ]]; then
-        backup_target="/tmp/hakuspace_target_script_$$.bak"
-        cp "$target_script" "$backup_target"
-    fi
-
-    local repo_changed=0
+    # Revision changes require reloading every module sourced by the parent updater.
+    local before_revision after_revision
+    case "$mode" in
+        1|latest|LATEST|2|stable|STABLE)
+            before_revision="$(git -C "$HAKU_DIR" rev-parse --verify HEAD)" || return $?
+            ;;
+    esac
 
     case "$mode" in
         1|latest|LATEST)
             log_info "Switching to main branch and pulling latest changes..."
-            git -C "$HAKU_DIR" checkout main
-            git -C "$HAKU_DIR" pull origin main
+            git -C "$HAKU_DIR" checkout main || return $?
+            git -C "$HAKU_DIR" pull --ff-only origin main || return $?
             log_ok "Repository updated to LATEST."
-            repo_changed=1
             ;;
         2|stable|STABLE)
             log_info "Fetching tags from remote..."
-            git -C "$HAKU_DIR" fetch --tags
+            git -C "$HAKU_DIR" fetch --tags || return $?
             local latest_tag
             latest_tag=$(git -C "$HAKU_DIR" describe --tags "$(git -C "$HAKU_DIR" rev-list --tags --max-count=1 2>/dev/null)" 2>/dev/null || true)
             if [[ -z "$latest_tag" ]]; then
                 log_warn "No tags found in repository. Falling back to main branch."
-                git -C "$HAKU_DIR" checkout main
-                git -C "$HAKU_DIR" pull origin main
+                git -C "$HAKU_DIR" checkout main || return $?
+                git -C "$HAKU_DIR" pull --ff-only origin main || return $?
             else
                 log_info "Latest stable tag found: $latest_tag"
-                git -C "$HAKU_DIR" checkout "$latest_tag"
+                git -C "$HAKU_DIR" checkout "$latest_tag" || return $?
                 log_ok "Repository updated to STABLE ($latest_tag)."
             fi
-            repo_changed=1
             ;;
         0|skip|SKIP)
             log_skip "Skipping repository update."
@@ -80,13 +76,12 @@ update_repo() {
             ;;
     esac
 
-    if [[ "$repo_changed" -eq 1 && -n "$backup_target" && -f "$backup_target" ]]; then
-        if ! cmp -s "$backup_target" "$target_script"; then
-            rm -f "$backup_target"
-            log_warn "Updater logic updated in repository! Re-exec required."
-            return $STATUS_REEXEC
+    if [[ -n "${before_revision:-}" ]]; then
+        after_revision="$(git -C "$HAKU_DIR" rev-parse --verify HEAD)" || return $?
+        if [[ "$before_revision" != "$after_revision" ]]; then
+            log_warn "Repository revision changed; re-exec required to reload updater modules."
+            return "$STATUS_REEXEC"
         fi
-        rm -f "$backup_target"
     fi
 
     return 0
@@ -94,7 +89,6 @@ update_repo() {
 
 # CLI Entrypoint
 MODE=""
-TARGET_SCRIPT="$HAKU_DIR/update.sh"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -103,7 +97,7 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --target-script)
-            TARGET_SCRIPT="$2"
+            # Accept the legacy argument for callers predating revision-based detection.
             shift 2
             ;;
         --help|-h)
@@ -117,4 +111,4 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-update_repo "$MODE" "$TARGET_SCRIPT"
+update_repo "$MODE"

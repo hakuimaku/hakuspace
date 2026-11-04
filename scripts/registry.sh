@@ -200,15 +200,31 @@ registry_get_wm_configs() {
     esac
 }
 
-# Core scripts in src/core (flattened by basename into ~/.local/bin)
+# Enumerate executable source files while excluding interpreter and tool caches.
+registry_core_files() {
+    local file
+    if [[ -e "$HAKU_DIR/.git" ]]; then
+        # Git's source catalog excludes ignored runtime artifacts, even executable-looking ones.
+        while IFS= read -r -d '' file; do
+            case "$file" in
+                */__pycache__/*|*/.pytest_cache/*|*/.mypy_cache/*) continue ;;
+                *.sh|*.py) [[ ! -f "$HAKU_DIR/$file" ]] || printf '%s\0' "$HAKU_DIR/$file" ;;
+            esac
+        done < <(git -C "$HAKU_DIR" ls-files -z --cached -- src/core)
+    else
+        # Source archives have no Git index but retain the same extension/cache policy.
+        find "$SOURCE_CORE" -type d \( -name __pycache__ -o -name .pytest_cache -o -name .mypy_cache \) -prune -o \
+            -type f \( -name '*.sh' -o -name '*.py' \) -print0
+    fi
+}
+
+# Map the same executable catalog for deployment, diagnostics and rollback.
 registry_get_core_scripts() {
     [[ -d "$SOURCE_CORE" ]] || return 0
+    local file
     while IFS= read -r -d '' file; do
-        local filename
-        filename="$(basename "$file")"
-        [[ "$filename" == "README.md" ]] && continue
-        echo "$file|$DEST_BIN/$filename"
-    done < <(find "$SOURCE_CORE" -type f -print0)
+        echo "$file|$DEST_BIN/${file##*/}"
+    done < <(registry_core_files)
 }
 
 # Managed destination paths (for rollback and doctor)
@@ -241,14 +257,10 @@ registry_get_managed_destinations() {
     echo "$DEST_CONFIG/labwc"
 
     # 4. Core scripts
-    if [[ -d "$SOURCE_CORE" ]]; then
-        while IFS= read -r -d '' file; do
-            local filename
-            filename="$(basename "$file")"
-            [[ "$filename" == "README.md" ]] && continue
-            echo "$DEST_BIN/$filename"
-        done < <(find "$SOURCE_CORE" -type f -print0)
-    fi
+    local src dst
+    while IFS='|' read -r src dst; do
+        echo "$dst"
+    done < <(registry_get_core_scripts)
 
     # 5. Home dotfiles
     echo "$HOME/.nanorc"

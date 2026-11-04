@@ -55,6 +55,18 @@ elif [[ ${1:-} == --categories ]]; then
 elif [[ ${1:-} == --navigation ]]; then
     cp tests/hikai/wallpaper/harness/navigation.qml "$shell_root/shell.qml"
     expected='Wallpaper held navigation checks passed'
+elif [[ ${1:-} == --missing-multimedia ]]; then
+    # Simulate an unavailable optional QML import without changing host packages.
+    sed -i 's/^import QtMultimedia$/import QtMultimedia.Unavailable/' "$shell_root/components/wallpaper/VideoWallpaperSurface.qml"
+    mkdir -p "$test_root/mock"
+    cat > "$test_root/mock/notify-send" <<'NOTIFY'
+#!/bin/sh
+printf '%s\n' "$*" >> "$HOME/notifications.log"
+NOTIFY
+    chmod +x "$test_root/mock/notify-send"
+    export PATH="$test_root/mock:$PATH"
+    cp tests/hikai/wallpaper/harness/missing_multimedia.qml "$shell_root/shell.qml"
+    expected='Missing multimedia checks passed'
 elif [[ ${1:-} == --flow ]]; then
     printf 'broken video fixture\n' > "$test_root/home/broken.mp4"
     cp tests/hikai/wallpaper/harness/flow.qml "$shell_root/shell.qml"

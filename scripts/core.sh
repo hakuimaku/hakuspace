@@ -22,21 +22,16 @@ deploy_core() {
         return 1
     fi
 
-    # Ensure executable permissions on source shell and python scripts
-    find "$SOURCE_CORE" -type f \( -name '*.sh' -o -name '*.py' \) -exec chmod +x {} +
-
+    [[ "$mode" == copy || "$mode" == symlink ]] || return 2
     log_info "Deploying core scripts to $DEST_BIN (mode: $mode)..."
 
-    if [[ "$mode" == "copy" ]]; then
-        if [[ -d "$DEST_BIN" && "$skip_backup" -ne 1 ]]; then
-            log_warn "Deployment mode is COPY. Backing up and refreshing $DEST_BIN..."
-            backup_item "$DEST_BIN"
-            rm -rf "$DEST_BIN"
-        fi
+    if [[ -L "$DEST_BIN" ]]; then
+        log_error "Refusing to replace redirected bin directory: $DEST_BIN"
+        return 1
     fi
-
     ensure_dir "$DEST_BIN" || return 1
 
+    # Validate the entire catalog before replacing any destination.
     local -A seen_scripts=()
     while IFS= read -r -d '' file; do
         local filename
@@ -49,24 +44,29 @@ deploy_core() {
         fi
         seen_scripts["$filename"]="$file"
 
-        local dst="$DEST_BIN/$filename"
-        if [[ "$mode" == "copy" ]]; then
-            copy_file "$file" "$dst" "$skip_backup" || return 1
-        else
-            # Symlink mode
-            if [[ -L "$dst" ]]; then
-                if [[ "$(readlink "$dst")" == "$(realpath "$file")" ]]; then
-                    continue
-                fi
-                rm -f "$dst"
-            elif [[ -e "$dst" && "$skip_backup" -ne 1 ]]; then
-                backup_item "$dst"
-                rm -rf "$dst"
+    done < <(registry_core_files)
+
+    local file dst
+    while IFS='|' read -r file dst; do
+        chmod +x "$file"
+        # Unchanged copies need neither replacement nor another backup.
+        if [[ "$mode" == copy && -f "$dst" && -x "$dst" && ! -L "$dst" ]] && cmp -s "$file" "$dst"; then
+            continue
+        fi
+        if [[ -e "$dst" || -L "$dst" ]]; then
+            if [[ -L "$dst" && "$(readlink "$dst")" == "$(realpath "$file")" && "$mode" == symlink ]]; then
+                continue
             fi
-            ln -sfn "$(realpath "$file")" "$dst"
+            # Preserve existing content at managed names before replacing it.
+            backup_item "$dst" || return 1
+        fi
+        if [[ "$mode" == "copy" ]]; then
+            copy_file "$file" "$dst" 1 || return 1
+        else
+            ln -s "$(realpath "$file")" "$dst" || return 1
             log_symlink "$file => $dst"
         fi
-    done < <(find "$SOURCE_CORE" -type f -print0)
+    done < <(registry_get_core_scripts)
 
     log_ok "Core scripts deployed successfully to $DEST_BIN"
 }

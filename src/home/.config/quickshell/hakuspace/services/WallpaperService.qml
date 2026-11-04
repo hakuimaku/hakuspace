@@ -25,6 +25,8 @@ QtObject {
     // Explicit pause is independent of transient fullscreen visibility.
     property bool manuallyPaused: false
     property string error: ""
+    // Dependency diagnostics are emitted once per shell lifetime, including explicit retries.
+    property bool multimediaWarningSent: false
     property string playbackState: "STOPPED"
     property string proxyState: "original"
     property var outputStates: ({})
@@ -33,7 +35,7 @@ QtObject {
     readonly property var rendererPid: renderer.processId
     property WallpaperRendererHost renderer: WallpaperRendererHost { service: root }
     readonly property bool busy: resolver.running || committer.running || imageClearer.running || rollback.running
-        || !!candidate.token || !!prepared.token || !!pendingRequest || !!waitingBuild
+        || thumbnailFallback.running || !!candidate.token || !!prepared.token || !!pendingRequest || !!waitingBuild
     // Process exit signals can run before their running property settles.
     onBusyChanged: if (!busy) { refreshPlaybackState(); statusDelay.restart() }
     readonly property var preferences: WallpaperSettingsStore.savedValues
@@ -95,7 +97,7 @@ QtObject {
     }
     // Short resolver and handoff steps are serialized; encoding never holds this lane.
     function advanceRequest() {
-        if (resolver.running || committer.running || imageClearer.running || rollback.running) return
+        if (resolver.running || committer.running || imageClearer.running || rollback.running || thumbnailFallback.running) return
         if (pendingRequest) {
             discard(candidate); candidate = ({})
             discard(prepared); prepared = ({})
@@ -178,11 +180,23 @@ QtObject {
     }
     // Failed preparation preserves every output's currently visible renderer.
     function fail(message) {
+        var missingMultimedia = message.includes("QtMultimedia")
+        if (missingMultimedia) {
+            message = "QtMultimedia is unavailable. On Arch, install qt6-multimedia and qt6-multimedia-ffmpeg, then retry."
+            var failedRecord = candidate.token ? candidate : current
+            // Preserve committed images; otherwise show the prepared video thumbnail without committing it.
+            if (current.kind !== "static" && failedRecord.thumbnail && !thumbnailFallback.running) {
+                thumbnailFallback.command = ["sh", "-c", 'script=$1; [ -f "$script" ] || script=$2; exec bash "$script" "$3"',
+                    "--", Env.binDir + "/wallpaper_set.sh", Quickshell.shellPath("../../../../core/theme/wallpaper_set.sh"), failedRecord.thumbnail]
+                thumbnailFallback.running = true
+            }
+        }
         if (candidate.token && !canceller.running) {
             canceller.command = command(["cancel", candidate.token])
             canceller.running = true
         }
-        if (error !== message) Quickshell.execDetached(["notify-send", "--app-name=Wallpaper", "Wallpaper could not be applied", message])
+        if (error !== message && (!missingMultimedia || !multimediaWarningSent)) Quickshell.execDetached(["notify-send", "--app-name=Wallpaper", "Wallpaper could not be applied", message])
+        if (missingMultimedia) multimediaWarningSent = true
         error = message
         proxyState = "error"
         playbackState = "ERROR"
@@ -297,6 +311,17 @@ QtObject {
     }
     property Timer prepareTimeout: Timer { interval: 20000; onTriggered: root.fail("Wallpaper did not produce a frame. Previous wallpaper kept.") }
     property Timer statusDelay: Timer { interval: 150; onTriggered: root.publishStatus() }
+    // Reuse static application without replacing the persisted video selection.
+    property Process thumbnailFallback: Process {
+        environment: ({HAKUSPACE_WALLPAPER_NATIVE_COMMIT: "1"})
+        stdout: StdioCollector {}
+        stderr: StdioCollector { id: fallbackErr }
+        onExited: code => {
+            if (code !== 0) root.error += " Thumbnail fallback failed: " + fallbackErr.text.trim()
+            root.publishStatus()
+            Qt.callLater(root.advanceRequest)
+        }
+    }
     property Process resolver: Process {
         stdout: StdioCollector { id: resolveOut }
         stderr: StdioCollector { id: resolveErr }

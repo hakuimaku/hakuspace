@@ -1,0 +1,65 @@
+{
+  "source_version": "v26.10-1",
+  "files": [
+    {
+      "source": "src/core/app/taskbar/taskbar_manager.sh",
+      "destination": ".local/bin/taskbar_manager.sh",
+      "sha256": "3f9a3e7104379d62e0da2909c005cf78938c1fe7a20a7f2dcef7032f9f951e80"
+    },
+    {
+      "source": "src/core/sys/exit.sh",
+      "destination": ".local/bin/exit.sh",
+      "sha256": "2a614b4147322fcad99c243702936d141da8060212b9a3ec7d38dcaa03d6a8ea"
+    },
+    {
+      "source": "src/core/sys/shutdown.sh",
+      "destination": ".local/bin/shutdown.sh",
+      "sha256": "c17ec423159b77354f2d64018fb784383ec17d26cc0a46ae85688fe52d345f75"
+    },
+    {
+      "source": "src/core/theme/accent_color_picker.sh",
+      "destination": ".local/bin/accent_color_picker.sh",
+      "sha256": "f57b6c84030eb5cb0edf74a3179bee547a4cc22f0364356ad23070dad21e285a"
+    },
+    {
+      "source": "src/core/theme/change_theme.sh",
+      "destination": ".local/bin/change_theme.sh",
+      "sha256": "d95116d9e59f91c93ec6e88062ef5e96c1415a3ce0a7fe72b201d11d27174ea1"
+    },
+    {
+      "source": "src/core/theme/rofi_theme_switcher.sh",
+      "destination": ".local/bin/rofi_theme_switcher.sh",
+      "sha256": "36c05283280efb47b454acd17c12363d9aec5da4f3a88c44f94b23b351575bd6"
+    },
+    {
+      "source": "src/core/theme/wallpaper_select.sh",
+      "destination": ".local/bin/wallpaper_select.sh",
+      "sha256": "a9bd49ea5d7f058d74066b8b2128b7c1da2378f58fa47d00c60b11b5b49d55bf"
+    },
+    {
+      "source": "src/core/util/clipboard_menu.sh",
+      "destination": ".local/bin/clipboard_menu.sh",
+      "sha256": "1056361cda3b00eca7cdf5a8405baf281d9554778f716ab31ef3e239851f4291"
+    },
+    {
+      "source": "src/core/util/gen_shortcut.sh",
+      "destination": ".local/bin/gen_shortcut.sh",
+      "sha256": "9e1b81904bf1a8696821e7c5e35cfba05dc1a23c1431602c241b36d818270f96"
+    },
+    {
+      "source": "src/core/util/record.sh",
+      "destination": ".local/bin/record.sh",
+      "sha256": "897b50678aea7ddef8b7be0106f60edf4c6d0a5a130b237671fa6d3e218ea442"
+    },
+    {
+      "source": "src/core/util/waybar_manager.sh",
+      "destination": ".local/bin/waybar_manager.sh",
+      "sha256": "fc09f29ed136978631e9a0cef4beae40e5dbd0d625cf7204164d3a2ffa7cd447"
+    },
+    {
+      "source": "src/home/.config/gtk-3.0/gtk.css",
+      "destination": ".config/gtk-3.0/gtk.css",
+      "sha256": "42b3551b5dae046639032bd26058378e3467d4751dde9801a96dae1f152da08b"
+    }
+  ]
+}

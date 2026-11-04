@@ -105,7 +105,18 @@ Item {
 
     readonly property real compactDiameter: root.ultraCompact ? 42 : (root.compact ? 46 : 52)
     readonly property real focusDiameter: root.ultraCompact ? 72 : (root.compact ? 78 : 84)
-    readonly property real currentDiameter: Math.round(Motion.lerp(compactDiameter, focusDiameter, clampedRole))
+    // Reserve a font-scaled detail column before assigning space to decoration.
+    FontMetrics { id: detailMetrics; font.pixelSize: visuals ? visuals.metaFontSize : 11 }
+    readonly property real detailGap: 8
+    readonly property real minimumDetailWidth: {
+        // FontMetrics method calls need an explicit font dependency for live font changes.
+        var fontSize = detailMetrics.font.pixelSize
+        return detailMetrics.advanceWidth("Available") + detailMetrics.advanceWidth("0.87 GiB / 12 GiB") + 4
+    }
+    readonly property real focusGaugeSpace: Math.max(0, width - 2 * pad - minimumDetailWidth - detailGap)
+    readonly property real fittedFocusDiameter: focusGaugeSpace >= 42 ? Math.min(focusDiameter, focusGaugeSpace) : 0
+    readonly property real currentDiameter: Math.max(0, Math.min(bodyZone.height,
+        Math.round(Motion.lerp(compactDiameter, fittedFocusDiameter, clampedRole))))
 
     anchors.fill: parent
     clip: true
@@ -175,6 +186,7 @@ Item {
                 id: gaugeWrap
                 x: bodyZone.gaugeX
                 anchors.verticalCenter: parent.verticalCenter
+                visible: root.currentDiameter >= 1
                 width: root.currentDiameter
                 height: root.currentDiameter
 
@@ -193,8 +205,8 @@ Item {
 
             ColumnLayout {
                 id: detailCol
-                anchors.left: gaugeWrap.right
-                anchors.leftMargin: Math.round(Motion.lerp(8, 14, root.clampedRole))
+                anchors.left: parent.left
+                anchors.leftMargin: gaugeWrap.x + gaugeWrap.width + (root.currentDiameter > 0 ? root.detailGap : 0)
                 anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom

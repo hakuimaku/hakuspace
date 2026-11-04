@@ -65,12 +65,10 @@ unlink_recursive() {
 unlink_core() {
     log_info "Unlinking core scripts from $DEST_BIN..."
     [[ -d "$SOURCE_CORE" ]] || return 0
-    while IFS= read -r -d '' file; do
-        local filename
-        filename="$(basename "$file")"
-        [[ "$filename" == "README.md" ]] && continue
-        unlink_file_target "$file" "$DEST_BIN/$filename"
-    done < <(find "$SOURCE_CORE" -type f -print0)
+    local src dst
+    while IFS='|' read -r src dst; do
+        unlink_file_target "$src" "$dst"
+    done < <(registry_get_core_scripts)
 }
 
 unlink_module() {

@@ -255,6 +255,7 @@ run_batch() (
         if [[ "$command" == update && "$SOURCE_OVERRIDE" == 1 ]]; then
             [[ -d "$SOURCE_PATH" ]] || { fail "Source override does not exist: $SOURCE_PATH"; failed=1; continue; }
             printf '  %-8s override, skipped; use ./scripts/setup.sh apply %s\n' "$component" "$component"
+            verify_component "$component" || failed=1
             continue
         fi
         if ! prepare_component_source; then
@@ -279,6 +280,37 @@ run_batch() (
     fi
     return "$failed"
 )
+
+# Recognize upstream ownership metadata before the updater opts into downloads.
+managed_components() {
+    python3 - "$HOME" "$HAKU_CURSOR_THEME" <<'PYTHON'
+import json
+from pathlib import Path
+import sys
+
+home = Path(sys.argv[1])
+# Ownership follows the same metadata used by each upstream installer.
+for component, path, marker, expected in (
+    ('cursor', home / '.icons' / sys.argv[2], '.hakuspace-cursor', 'HakuSpace managed cursor v1'),
+    ('gtk', home / '.themes/Hikaide', 'index.theme', 'GtkTheme=Hikaide'),
+    ('symbols', home / '.icons/Hikaide-Symbols', '.hikaide-symbols', 'Hikaide-Symbols managed theme v1'),
+):
+    metadata = path / marker
+    if not path.is_symlink() and not metadata.is_symlink() and metadata.is_file():
+        if expected in metadata.read_text().splitlines():
+            print(component)
+            continue
+    if component == 'symbols' and not path.is_symlink():
+        metadata = path / '.hikaide-symbols.json'
+        if metadata.is_file() and not metadata.is_symlink():
+            try:
+                value = json.loads(metadata.read_text())
+                if value == {'family': 'Hikaide-Symbols', 'version': 2, 'variant': 'dark'}:
+                    print(component)
+            except ValueError:
+                pass
+PYTHON
+}
 
 # Status derives repository and installed state without writing configuration.
 workspace_status() {
@@ -356,7 +388,11 @@ PYTHON
 main() {
     warn_legacy_nested || return 1
     case "${1:-}" in
-        setup|update) [[ $# == 1 ]] || return 2; run_batch "$1" ;;
+        setup) [[ $# == 1 ]] || return 2; run_batch setup ;;
+        update)
+            [[ $# -le 2 && "${2:-all}" =~ ^(all|cursor|gtk|symbols)$ ]] || return 2
+            run_batch update "${2:-all}" ;;
+        managed) [[ $# == 1 ]] || return 2; managed_components ;;
         apply) [[ $# == 2 ]] || return 2; run_batch apply "$2" ;;
         status) [[ $# == 1 ]] || return 2; workspace_status ;;
         path)
@@ -371,7 +407,7 @@ main() {
             for component in cursor gtk symbols; do verify_component "$component" || return 1; done
             "$SOURCE_CORE/backend/theme/appearance_ctl.sh" verify ;;
         workspace) [[ $# -le 2 && "${2:-}" != --* ]] || return 2; generate_workspace "${2:-$HOME/HakuSpace.code-workspace}" ;;
-        *) printf 'Usage: setup.sh {setup|update|status|verify|workspace [FILE]|apply cursor|gtk|symbols|all|path cursor|gtk|symbols}\n' >&2; return 2 ;;
+        *) printf 'Usage: setup.sh {setup|update [cursor|gtk|symbols]|managed|status|verify|workspace [FILE]|apply cursor|gtk|symbols|all|path cursor|gtk|symbols}\n' >&2; return 2 ;;
     esac
 }
 
