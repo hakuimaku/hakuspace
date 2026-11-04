@@ -192,9 +192,7 @@ local function zoom(offset)
 end
 
 hl.bind(mainMod .. " + U", zoom)
-hl.bind(mainMod .. " + equal", function()
-    zoom(0.5)
-end)
-hl.bind(mainMod .. " + minus", function()
-    zoom(-0.5)
-end)
+hl.bind(mainMod .. " + equal", function() zoom(0.5) end)
+hl.bind(mainMod .. " + minus", function() zoom(-0.5) end)
+hl.bind(mainMod .. " + mouse:274", function() zoom(-0.5) end)
+hl.bind(mainMod .. " + SHIFT + mouse:274", function() zoom(0.5) end)
