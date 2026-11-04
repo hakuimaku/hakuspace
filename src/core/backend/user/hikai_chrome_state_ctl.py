@@ -71,12 +71,13 @@ def migrate():
             if journal is None:
                 taskbar = (read_text(state_fd, state_path("desktop.taskbar.requested").name) or "").strip() == "1"
                 dockbar_text = read_text(state_fd, state_path("desktop.dockbar.requested").name)
-                if document.get("version") == 6:
-                    dockbar = (dockbar_text or "").strip() == "1"
-                else:
+                # Only a known pre-split schema proves the request still encodes Dock style.
+                if document.get("version") in (1, 2, 3, 4, 5):
                     full = document.get("dock", {}).get("style", "dock") == "bar"
                     dockbar = taskbar and not full
                     taskbar = taskbar and full
+                else:
+                    dockbar = (dockbar_text or "").strip() == "1"
                 journal = {"complete": False, "taskbar": taskbar, "dockbar": dockbar}
                 replace_file(state_fd, journal_path.name, journal, 0o600)
             replace_file(settings_fd, settings_path.name, values, mode)
