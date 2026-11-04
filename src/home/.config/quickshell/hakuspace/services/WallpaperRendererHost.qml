@@ -9,8 +9,10 @@ QtObject {
     property Socket connection: null
     property bool faulted: false
     property bool stopping: false
-    readonly property bool requested: !service.rendererSuspended && Object.keys(service.surfaces).length > 0
-        && (service.current.kind === "video" || service.candidate.kind === "video")
+    // Teardown must not restart the child or call a departing service.
+    property bool shuttingDown: false
+    readonly property bool requested: !shuttingDown && !!service && !service.rendererSuspended && Object.keys(service.surfaces || {}).length > 0
+        && (service.current?.kind === "video" || service.candidate?.kind === "video")
     readonly property var processId: renderer.processId
     readonly property bool stopped: !renderer.running && !stopping
     readonly property string socketPath: Quickshell.env("XDG_RUNTIME_DIR") + "/hakuspace-wallpaper-" + Quickshell.processId + ".sock"
@@ -47,7 +49,16 @@ QtObject {
     function start() {
         if (requested && !faulted && !stopping && server.active) renderer.running = true
     }
-    function resumeAfterExit() { stopping = false; start(); service.maybeCommit() }
+    function resumeAfterExit() {
+        if (shuttingDown || !service) return
+        stopping = false; start(); service.maybeCommit()
+    }
+    // End the renderer and its socket before the configuration's JavaScript is interrupted.
+    function shutdown() {
+        shuttingDown = true
+        renderer.running = false
+        connection = null
+    }
     onRequestedChanged: {
         if (requested) start()
         else {
@@ -93,6 +104,7 @@ QtObject {
         onExited: code => {
             root.connection = null
             root.states = ({})
+            if (root.shuttingDown) return
             if (root.requested && !root.stopping) {
                 root.faulted = true
                 root.service.fail("Native wallpaper renderer exited (" + code + ")")

@@ -6,6 +6,7 @@ import "components/wallpaper" as Wallpaper
 
 ShellRoot {
     id: root
+    Component.onDestruction: WallpaperService.shutdown()
     // Native key repeat must move the artwork as well as the selected filename.
     property int phase: 0
     property int ticks: 0

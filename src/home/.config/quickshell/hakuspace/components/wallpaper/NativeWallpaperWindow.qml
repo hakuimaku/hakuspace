@@ -28,6 +28,8 @@ PanelWindow {
     Image {
         id: frozenImage
         anchors.fill: parent
+        // Match the explicit target size used by the staged frame capture.
+        sourceSize: Qt.size(root.width, root.height)
         fillMode: Image.PreserveAspectCrop
         visible: false
         cache: false

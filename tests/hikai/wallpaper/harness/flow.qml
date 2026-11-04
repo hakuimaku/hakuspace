@@ -6,6 +6,7 @@ import "components/wallpaper" as Wallpaper
 
 ShellRoot {
     id: root
+    Component.onDestruction: WallpaperService.shutdown()
     // Hold the encoder independently of the foreground selection lane.
     property int phase: 0
     property int ticks: 0

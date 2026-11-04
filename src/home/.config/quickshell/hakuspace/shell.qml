@@ -11,6 +11,8 @@ import "modules/picker"
 
 ShellRoot {
     id: root
+    // Stop wallpaper workers before Quickshell interrupts the departing configuration.
+    Component.onDestruction: WallpaperService.shutdown()
     // Keep idle and logind hooks resident even before the first diagnostic IPC call.
     readonly property bool nativeIdleEnabled: IdleService.enabled
 

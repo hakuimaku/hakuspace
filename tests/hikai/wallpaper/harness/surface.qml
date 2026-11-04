@@ -8,6 +8,7 @@ import "components/wallpaper" as Wallpaper
 
 ShellRoot {
     id: root
+    Component.onDestruction: WallpaperService.shutdown()
     // Exercise real background surfaces, frame handoff and modal input on private outputs.
     property int phase: 0
     property int ticks: 0
@@ -208,7 +209,7 @@ ShellRoot {
                 if (++holdTicks < 8) return
                 for (var panel of settingsPanels.instances) {
                     if (panel.panelOpen) {
-                        root.check(panel.selectedGroup === "Wallpaper", "wallpaper settings domain")
+                        root.check(panel.selectedCategory === "Wallpaper", "wallpaper settings domain")
                         root.check(panel.wallpaperPage.sectionFilter === "" && ["Video playback", "Video cache", "Browser"].every(section => panel.wallpaperPage.sidebarSections.includes(section)), "full Wallpaper Settings retains all sections")
                     }
                 }

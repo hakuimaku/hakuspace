@@ -7,6 +7,7 @@ import "components/wallpaper" as Wallpaper
 
 ShellRoot {
     id: root
+    Component.onDestruction: WallpaperService.shutdown()
     // Exercise real component geometry without a compositor or the user's settings.
     property int phase: -2
     property int ticks: 0

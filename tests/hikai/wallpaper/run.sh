@@ -13,7 +13,9 @@ case "${1:-}" in
     *) echo "Usage: $0 [--runtime]" >&2; exit 2 ;;
 esac
 python3 "$TEST_DIR/test_settings.py"
+python3 "$TEST_DIR/test_maintenance.py"
 if [[ ${1:-} == --runtime ]]; then
+    bash "$TEST_DIR/test_runtime.sh" --reload
     bash "$TEST_DIR/test_runtime.sh" --categories
     bash "$TEST_DIR/test_runtime.sh" --presentation
     bash "$TEST_DIR/test_runtime.sh"

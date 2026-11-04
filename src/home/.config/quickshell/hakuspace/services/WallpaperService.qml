@@ -5,6 +5,19 @@ import Quickshell.Io
 
 QtObject {
     id: root
+    // Freeze worker-dependent bindings while the owning shell still has a live QML engine.
+    property QtObject activity: QtObject {
+        id: activity
+        property bool busy: !!(root.resolver?.running || root.committer?.running || root.imageClearer?.running
+            || root.rollback?.running || root.thumbnailFallback?.running || root.candidate?.token || root.prepared?.token
+            || root.pendingRequest || root.waitingBuild)
+        property bool cacheBusy: !!(root.activeBuild || root.preloader?.running || root.maintenance?.running
+            || root.cacheMaintenanceActive || root.cacheRefreshPending || (root.buildQueue || []).length)
+        property bool buildingVideos: !!(root.activeBuild || root.preloader?.running || (root.buildQueue || []).length)
+        property bool maintenanceBusy: !root.renderer || !!(busy || cacheBusy || root.handoff?.running
+            || root.canceller?.running || root.accent?.running || root.statusWriter?.running || root.renderer.stopping
+            || Object.values(root.rendererStates || {}).some(state => !!state?.incoming))
+    }
     // Renderer ownership outlives every browser instance.
     property var current: ({})
     property var candidate: ({})
@@ -31,11 +44,10 @@ QtObject {
     property string proxyState: "original"
     property var outputStates: ({})
     // Qt/FFmpeg heaps disappear with the video-only child when an image commits.
-    readonly property var rendererStates: renderer.states
-    readonly property var rendererPid: renderer.processId
+    readonly property var rendererStates: renderer?.states || ({})
+    readonly property var rendererPid: renderer?.processId ?? null
     property WallpaperRendererHost renderer: WallpaperRendererHost { service: root }
-    readonly property bool busy: resolver.running || committer.running || imageClearer.running || rollback.running
-        || thumbnailFallback.running || !!candidate.token || !!prepared.token || !!pendingRequest || !!waitingBuild
+    readonly property alias busy: activity.busy
     // Process exit signals can run before their running property settles.
     onBusyChanged: if (!busy) { refreshPlaybackState(); statusDelay.restart() }
     readonly property var preferences: WallpaperSettingsStore.savedValues
@@ -47,14 +59,22 @@ QtObject {
     // Coalesce status refreshes so opening Cache cannot interrupt a cache operation.
     property bool cacheMaintenanceActive: false
     property bool cacheRefreshPending: false
-    readonly property bool cacheBusy: !!(activeBuild || preloader.running || maintenance.running || cacheMaintenanceActive || cacheRefreshPending || (buildQueue || []).length)
-    readonly property bool buildingVideos: !!(activeBuild || preloader.running || (buildQueue || []).length)
+    readonly property alias cacheBusy: activity.cacheBusy
+    readonly property alias buildingVideos: activity.buildingVideos
     // Maintenance waits for commits, cache work and renderer handoffs to finish.
-    readonly property bool maintenanceBusy: busy || cacheBusy || handoff.running || canceller.running || accent.running || statusWriter.running || renderer.stopping
-        || Object.values(rendererStates).some(state => !!state.incoming)
+    readonly property alias maintenanceBusy: activity.maintenanceBusy
     property string cacheMessage: ""
     property string requestedPath: ""
     property string requestedProfile: "screen"
+
+    // Quickshell interrupts JavaScript after ShellRoot destruction, before worker notifications stop.
+    function shutdown() {
+        activity.busy = activity.busy
+        activity.cacheBusy = activity.cacheBusy
+        activity.buildingVideos = activity.buildingVideos
+        activity.maintenanceBusy = true
+        renderer.shutdown()
+    }
 
     // Pass paths as arguments so media filenames cannot become shell commands.
     function command(args) {

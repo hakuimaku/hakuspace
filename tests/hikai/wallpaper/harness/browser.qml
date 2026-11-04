@@ -7,11 +7,14 @@ import "components/settings" as Settings
 
 ShellRoot {
     id: root
+    Component.onDestruction: WallpaperService.shutdown()
     // Exercise picker, preparation and maintenance against private fixture media.
     property int phase: 0
     property int ticks: 0
     property string imageToken: ""
     property int captures: 0
+    // Cache deletion must wait for the current confirmation dialog.
+    property bool cacheClearConfirmed: false
     readonly property string fixture: Quickshell.env("HAKUSPACE_WALLPAPER_FIXTURE")
     PersistentProperties {
         id: reloadMemory
@@ -25,7 +28,7 @@ ShellRoot {
         implicitWidth: settings.visible ? 1000 : 520
         implicitHeight: 1080
         Wallpaper.WallpaperBrowser { id: browser; anchors.fill: parent; visible: !settings.visible }
-        Settings.WallpaperSettingsPage { id: settings; anchors.fill: parent; visible: false; advanced: true }
+        Settings.WallpaperSettingsPage { id: settings; anchors.fill: parent; visible: false; sectionFilter: "cache" }
     }
     // Fail the process with the current preparation error for actionable output.
     function check(ok, message) {
@@ -114,8 +117,18 @@ ShellRoot {
                 root.check(WallpaperService.current.token === root.imageToken, "maintenance never applies a different wallpaper")
                 root.findItem(settings, "wallpaper-clear-unused").clicked()
             } else if (phase === 6) {
-                if (WallpaperService.cacheBusy) return
-                root.check(WallpaperService.cacheMiB === 0, "Settings clears unused video copies")
+                var confirmation = root.findItem(settings, "wallpaper-clear-unused").parent.data.find(item => item.objectName === "wallpaper-clear-cache-dialog")
+                root.check(!!confirmation, "Settings exposes cache deletion confirmation")
+                if (!root.cacheClearConfirmed) {
+                    // Match the real confirmation button's enabled state before accepting.
+                    if (!confirmation.visible || confirmation.revealProgress !== 1 || WallpaperService.busy || WallpaperService.cacheBusy) return
+                    root.check(WallpaperService.cacheMiB > 0, "cache is preserved until deletion is confirmed")
+                    confirmation.accept()
+                    root.cacheClearConfirmed = true
+                    return
+                }
+                if (WallpaperService.cacheBusy || confirmation.visible || WallpaperService.cacheMessage !== "Unused video cache cleared") return
+                root.check(WallpaperService.cacheMiB === 0, "Settings clears unused video copies: " + JSON.stringify({bytes: WallpaperService.cacheBytes, message: WallpaperService.cacheMessage, entries: WallpaperService.cacheEntries}))
                 root.check(WallpaperService.current.token === root.imageToken, "cache maintenance preserves the selected image")
                 settings.visible = false
                 browser.filter = "static"

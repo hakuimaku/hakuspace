@@ -9,6 +9,7 @@ import "components/base" as Base
 
 ShellRoot {
     id: root
+    Component.onDestruction: WallpaperService.shutdown()
     // Exercise the real presentation owners on two private outputs.
     property int phase: -6
     property int ticks: 0
@@ -127,7 +128,7 @@ ShellRoot {
         throw new Error(message)
     }
     function find(item, name) {
-        if (item.objectName === name) return item
+        if (typeof name === "function" ? name(item) : item.objectName === name) return item
         for (var child of item.children || []) {
             var found = find(child, name)
             if (found) return found
@@ -212,9 +213,13 @@ ShellRoot {
                     root.sawZoomBeforeFade = true
                 }
                 if (panel.browserItem.scale < 0.08) root.sawFarZoom = true
+                // Inverse mapping into an almost-zero zoom amplifies floating-point error.
+                var target = reel.mapToItem(panel.contentItem, reel.width / 2, reel.height / 2)
                 for (var card of reel.currentItem.parent.children.filter(item => item.wallpaper !== undefined && item.visible)) {
-                    var center = card.mapToItem(reel, card.width / 2, card.height / 2)
-                    root.check(Math.abs(center.x - reel.width / 2) < 1, "both sides collapse to the center")
+                    var center = card.mapToItem(panel.contentItem, card.width / 2, card.height / 2)
+                    root.check(Math.abs(center.x - target.x) < 1, "both sides collapse to the center: "
+                        + JSON.stringify({center: center.x, target: target.x, cardX: card.x, cardWidth: card.width,
+                            spread: panel.stackSpread, scale: panel.browserItem.scale, expansion: panel.expansion}))
                 }
             }
             if (panel.closing && panel.quickOpacity > 0 && panel.quickOpacity < 1) {
@@ -287,8 +292,14 @@ ShellRoot {
             root.check(Math.abs(reel.y - (root.output.height - browser.bottomBarHeight - browser.bottomPanelHeight + browser.bottomSlide)) < 1, "wallpapers follow the bottom slide")
             if (details.visible) {
                 root.check(details.y === browser.topPanelHeight + browser.topSlide, "settings viewport follows the top slide")
-                root.check(details.panelHeight === Math.max(0, Math.min(details.displayedSection === "cache" ? 480 : 680, details.availableHeight)), "settings keeps its content height during slide")
+                // Section switches resize the retained card while the slide clips its full content.
+                var minimumHeight = Math.max(0, Math.min(480, details.availableHeight))
+                var maximumHeight = Math.max(0, Math.min(680, details.availableHeight))
+                root.check(details.panelHeight >= minimumHeight && details.panelHeight <= maximumHeight, "settings resize stays within section bounds")
+                if (!details.animating)
+                    root.check(details.panelHeight === (details.displayedSection === "cache" ? minimumHeight : maximumHeight), "settled settings reaches its section height")
                 var settingsCard = root.find(details, "wallpaper-settings-card")
+                root.check(settingsCard.height === details.panelHeight, "settings keeps its full content height during slide")
                 root.check(Math.abs(settingsCard.y - (details.gap - (settingsCard.height + details.gap) * (1 - details.progress))) < 1, "settings card slides inside its clipped viewport")
                 if (details.progress > 0 && details.progress < 1) {
                     root.check(details.editorLoaded, "settings retains its editor throughout slide")
@@ -525,19 +536,38 @@ ShellRoot {
                     WallpaperLibrary.selectIndex(WallpaperLibrary.filteredItems.findIndex(item => item.path === selectedPath))
                     find(workspace.item.browserItem, "wallpaper-playback").clicked()
                     root.check(workspace.item.browserItem.settingsSection === "playback", "Video Playback opens inline")
-                    var decoder = find(workspace.item.browserItem, "wallpaper-setting-hardwareDecode-software")
-                    root.check(!!decoder && decoder.visible, "shared playback controls are available")
-                    decoder.clicked()
-                    root.check(WallpaperSettingsStore.values.playback.hardwareDecode === "software", "inline playback edits the shared draft")
-                    WallpaperSettingsStore.discard()
-                    find(workspace.item.browserItem, "wallpaper-cache").clicked()
-                    root.check(workspace.item.browserItem.settingsSection === "cache", "Cache opens inline")
-                    root.check(find(workspace.item.browserItem, "wallpaper-clear-unused").visible, "existing cache actions are available")
-                    root.check(!find(workspace.item.browserItem, "wallpaper-setting-hardwareDecode-software").visible, "cache hides unrelated sections")
-                    hold = 1
+                    hold = -1
                     return
                 }
                 var popup = find(workspace.item.browserItem, "wallpaper-settings-popover")
+                if (hold === -1) {
+                    if (!popup.editorLoaded || popup.animating || popup.displayedSection !== "playback") return
+                    // Shared Settings rows expose stable descriptors instead of legacy button names.
+                    var decoderRow = find(popup, item => item.descriptor && item.descriptor.id === "wallpaper.playback.hardwareDecode")
+                    root.check(!!decoderRow && !!decoderRow.control.item, "shared playback row is loaded")
+                    var decoder = find(decoderRow.control.item, item => item.modelData && item.modelData.value === "software")
+                    root.check(!!decoder && decoder.visible, "shared playback controls are available")
+                    decoder.clicked()
+                    root.check(WallpaperSettingsStore.values.playback.hardwareDecode === "software", "inline playback uses the shared Settings control")
+                    hold = -2
+                    return
+                }
+                if (hold === -2) {
+                    if (SettingsCoordinator.busy || WallpaperSettingsStore.dirty) return
+                    root.check(WallpaperSettingsStore.savedValues.playback.hardwareDecode === "software", "inline playback saves through the shared coordinator")
+                    find(workspace.item.browserItem, "wallpaper-cache").clicked()
+                    root.check(workspace.item.browserItem.settingsSection === "cache", "Cache opens inline")
+                    hold = -3
+                    return
+                }
+                if (hold === -3) {
+                    if (popup.animating || popup.displayedSection !== "cache") return
+                    root.check(find(workspace.item.browserItem, "wallpaper-clear-unused").visible, "existing cache actions are available")
+                    var decoderRow = find(popup, item => item.descriptor && item.descriptor.id === "wallpaper.playback.hardwareDecode")
+                    root.check(!decoderRow || !decoderRow.visible, "cache hides unrelated sections")
+                    hold = 1
+                    return
+                }
                 if (hold === 1) {
                     if (popup.progress !== 1 || popup.animating) return
                     cacheDraftValue = WallpaperSettingsStore.values.proxy.maxCacheMiB + 64

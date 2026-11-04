@@ -6,6 +6,7 @@ import "components/wallpaper" as Wallpaper
 
 ShellRoot {
     id: root
+    Component.onDestruction: WallpaperService.shutdown()
     property int phase: 0
     property int ticks: 0
     property bool queueImageOnFallback: false

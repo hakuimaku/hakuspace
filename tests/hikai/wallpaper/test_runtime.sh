@@ -24,7 +24,10 @@ cp "$test_root/home/Videos/Wallpapers/clip.mp4" "$test_root/home/Videos/Wallpape
 ffmpeg -v error -f lavfi -i color=c=green:s=64x36 -frames:v 1 -threads 1 "$test_root/home/Pictures/Wallpapers/forest # one.png"
 cp "$test_root/home/Pictures/Wallpapers/forest # one.png" "$test_root/home/Pictures/Wallpapers/other.png"
 printf 'broken image fixture\n' > "$test_root/home/broken.png"
-if [[ ${1:-} == --presentation ]]; then
+if [[ ${1:-} == --reload ]]; then
+    cp tests/hikai/wallpaper/harness/reload.qml "$shell_root/shell.qml"
+    expected='Wallpaper reload checks passed'
+elif [[ ${1:-} == --presentation ]]; then
     # Five items of each kind exercise every carousel depth on the same path.
     for index in 1 2 3; do
         cp "$test_root/home/Pictures/Wallpapers/other.png" "$test_root/home/Pictures/Wallpapers/extra-$index.png"
@@ -97,6 +100,6 @@ env -u DISPLAY -u WAYLAND_DISPLAY -u HYPRLAND_INSTANCE_SIGNATURE -u NIRI_SOCKET 
         timeout 45s dbus-run-session -- labwc -C "$test_root/labwc" -S "bash $test_root/start.sh $shell_root/shell.qml" > "$test_root/test.log" 2>&1 || status=$?
 cat "$test_root/test.log"
 if [[ ${status:-0} -ne 0 ]] || ! rg -q "$expected" "$test_root/test.log" || \
-    rg -v 'broken.png' "$test_root/test.log" | rg -q 'TypeError|ReferenceError|Binding loop|Cannot assign|Unable to assign.*undefined|Failed to load configuration|Failed to open reload popup|Wallpaper .* failed|Error decoding|libpng error'; then
+    rg -v 'broken.png' "$test_root/test.log" | rg 'TypeError|ReferenceError|Binding loop|Cannot assign|Unable to assign.*undefined|Failed to load configuration|Failed to open reload popup|Wallpaper .* failed|Error decoding|libpng error' > /dev/null; then
     exit 1
 fi

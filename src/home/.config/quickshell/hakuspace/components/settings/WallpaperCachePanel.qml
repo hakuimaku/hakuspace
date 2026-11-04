@@ -130,6 +130,9 @@ Column {
         objectName: "wallpaper-clear-cache-dialog"
         parent: Overlay.overlay; anchors.centerIn: parent
         width: Math.min(480, parent ? parent.width - Theme.spaceXl * 2 : 480)
+        // Read item sizes directly to avoid Qt's implicit-content sizing feedback.
+        implicitHeight: confirmationHeader.implicitHeight + confirmationText.implicitHeight
+            + confirmationFooter.implicitHeight + topPadding + bottomPadding + spacing * 2
         padding: Theme.spaceXl; spacing: Theme.spaceSm
         title: "Clear unused cache?"
         modal: true; focus: true; closePolicy: Popup.CloseOnEscape
@@ -137,10 +140,11 @@ Column {
         opacity: revealProgress; scale: 0.96 + revealProgress * 0.04
         enter: Transition { NumberAnimation { target: clearDialog; property: "revealProgress"; to: 1; duration: HAnimation.normal; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.actionLayerOpenCurve } }
         exit: Transition { NumberAnimation { target: clearDialog; property: "revealProgress"; to: 0; duration: HAnimation.effects; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.actionLayerCloseCurve } }
-        header: Label { text: clearDialog.title; padding: Theme.spaceXl; bottomPadding: Theme.spaceSm; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 2; font.weight: Font.DemiBold; wrapMode: Text.Wrap }
-        contentItem: Text { text: "Delete unused prepared copies. The current wallpaper and original videos are kept."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize }
+        header: Label { id: confirmationHeader; text: clearDialog.title; padding: Theme.spaceXl; bottomPadding: Theme.spaceSm; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 2; font.weight: Font.DemiBold; wrapMode: Text.Wrap }
+        contentItem: Text { id: confirmationText; text: "Delete unused prepared copies. The current wallpaper and original videos are kept."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize }
         background: Rectangle { radius: Theme.largeRadius; color: Theme.surface; border.width: 1; border.color: Theme.hoverMuted }
         footer: Item {
+            id: confirmationFooter
             implicitHeight: 64
             Row {
                 anchors.right: parent.right; anchors.rightMargin: clearDialog.padding
