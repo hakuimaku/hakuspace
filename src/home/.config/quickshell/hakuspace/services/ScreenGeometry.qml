@@ -26,6 +26,18 @@ QtObject {
         return bottomInset + (ChromeLayout.taskbarMode ? taskbarHeight : 0)
     }
     function bottomHostTop(screenHeight) { return screenHeight - bottomHostReservation() }
+    // Taskbar owners publish and revoke physical center lanes independently per output.
+    property var taskbarCenterRects: ({})
+    function setTaskbarCenterRect(name, rect) {
+        if (!name) return
+        var previous = taskbarCenterRects[name]
+        if ((!previous && !rect) || (previous && rect && previous.x === rect.x && previous.y === rect.y
+            && previous.width === rect.width && previous.height === rect.height)) return
+        var next = Object.assign({}, taskbarCenterRects)
+        if (rect) next[name] = rect
+        else delete next[name]
+        taskbarCenterRects = next
+    }
     property var shownDockbars: ({})
     function setDockbarShown(name, shown) {
         if (!name || !!shownDockbars[name] === shown) return

@@ -33,3 +33,71 @@ for (const height of [240, 768, 720, 1080]) {
     state.bottomInset = 4
 }
 console.log('HakuMenu/Dock screen-edge host checks passed')
+
+// Evaluate production ownership for app clicks, default/IPC entry and output transfer.
+const taskbar = read('components/Taskbar.qml')
+const ownership = taskbar.match(/readonly property bool menuOwned: ([\s\S]*?)\n    readonly property real targetHeight:/)[1]
+for (const source of ['taskbar', 'default', '']) {
+    for (const active of [false, true]) {
+        for (const style of ['topFlare', 'bottomFlare']) {
+            for (const mode of ['closed', 'drun', 'general', 'theme']) {
+                for (const screenName of ['A', 'B']) {
+                    const context = {active, modelData: {name: 'A'}, UiState: {
+                        activePanel: 'hakumenu', hakuMenuSource: source, hakuMenuStyle: style,
+                        hakuMenuMode: mode, hakuMenuScreenName: screenName}}
+                    assert.equal(vm.runInNewContext(ownership, context),
+                        active && style === 'bottomFlare' && mode !== 'closed' && screenName === 'A')
+                    context.UiState.activePanel = ''
+                    assert.equal(vm.runInNewContext(ownership, context), false)
+                }
+            }
+        }
+    }
+}
+assert.match(taskbar, /active: root\.active\n\s+shown: root\.active && !root\.menuOwned/)
+assert.match(taskbar, /viewportLimit: statusModules\.centerViewportWidth/)
+assert.match(taskbar, /Component\.onDestruction: ScreenGeometry\.setTaskbarCenterRect\(registeredOutput, null\)/)
+
+// Keep one arrow implementation and preserve its accessibility and motion contracts.
+const control = read('components/hakumenu/HakuMenuReturnControl.qml')
+const host = read('components/hakumenu/HakuMenuAttachedFlare.qml')
+for (const pattern of [/objectName: "hakumenu-return-button"/, /Accessible\.name: "Close HakuMenu"/,
+    /Accessible\.onPressAction: UiState\.returnFromHakuMenu\(\)/, /onClicked: UiState\.returnFromHakuMenu\(\)/,
+    /duration: returnButton\.reducedMotion \? 0 : 650/, /duration: 2200/,
+    /&& !returnButton\.reducedMotion/, /model: 3/, /arrowPhase \+ index \/ 3/]) assert.match(control, pattern)
+assert.doesNotMatch(host, /NumberAnimation on arrowPhase|RadialGradient/)
+assert.equal((host.match(/HakuMenuReturnControl \{/g) || []).length, 2)
+assert.match(source, /bottomHostControlHeight: ChromeLayout\.dockbarActive && !ChromeLayout\.taskbarMode \? dockbarHeight : 0/)
+assert.match(host, /surfaceHeight: menuHeight \+ controlHeight/)
+assert.match(host, /menuTop: bottomAttached \? ScreenGeometry\.bottomHostTop\(screenHeight\) : Theme\.topBarHeight/)
+
+// Exercise live center-lane publication, unchanged updates and output revocation.
+const lanes = vm.createContext({taskbarCenterRects: {}})
+vm.runInContext(source.match(/^    function setTaskbarCenterRect\([^]*?^    }/m)[0], lanes)
+const rect = {x: 400, y: 655, width: 480, height: 65}
+lanes.setTaskbarCenterRect('A', rect)
+lanes.setTaskbarCenterRect('B', {...rect, width: 200})
+const unchanged = lanes.taskbarCenterRects
+lanes.setTaskbarCenterRect('A', {...rect})
+assert.equal(lanes.taskbarCenterRects, unchanged)
+lanes.setTaskbarCenterRect('A', null)
+assert.equal(lanes.taskbarCenterRects.A, undefined)
+assert.equal(lanes.taskbarCenterRects.B.width, 200)
+
+// Evaluate the actual Taskbar lane binding across output sizes and lane changes.
+const center = taskbar.match(/readonly property var centerRect: ([\s\S]*?)\n    property string registeredOutput:/)[1]
+for (const width of [320, 1024, 1920]) for (const laneWidth of [0, 48, width / 3, width + 100]) {
+    const context = {active: true, taskbarWindow: {width, height: 720}, targetHeight: 65,
+        statusModules: {centerViewportWidth: laneWidth}, Safe: {rect: (x, y, width, height) => ({x, y, width, height})}}
+    const result = vm.runInNewContext(center, context)
+    assert.ok(result.x >= 0 && result.x + result.width <= width)
+    assert.equal(result.y, 655)
+    assert.equal(result.height, 65)
+    assert.equal(result.width, Math.min(width, laneWidth))
+    context.active = false
+    assert.equal(vm.runInNewContext(center, context), null)
+}
+assert.match(host, /width: root\.taskbarReturnRect\.width; height: root\.taskbarReturnRect\.height/)
+assert.match(host, /SafeZoneGeometry\.contains\(root\.taskbarReturnRect, x, y\)/)
+assert.match(host, /Math\.min\(zone\.height, Math\.max\(0, menuTop - zone\.y\)\)/)
+console.log('Taskbar handoff, shared return control and center-lane contracts passed')

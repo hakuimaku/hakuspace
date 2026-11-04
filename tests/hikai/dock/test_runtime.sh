@@ -36,6 +36,8 @@ if [[ ${HAKUSPACE_DOCK_MENU_TEST:-0} == 1 ]]; then
     cp src/core/backend/system/task_manager_{monitor,ctl}.py "$test_root/src/core/backend/system/"
 elif [[ ${HAKUSPACE_CHROME_TEST:-0} == 1 ]]; then
     cp tests/hikai/chrome/harness/chrome.qml "$shell_root/shell.qml"
+    mkdir -p "$test_root/src/core/backend/system"
+    cp src/core/backend/system/task_manager_{monitor,ctl}.py "$test_root/src/core/backend/system/"
 elif [[ ${HAKUSPACE_HAKUMENU_TEST:-0} == 1 ]]; then
     cp tests/hikai/hakumenu/harness/hakumenu.qml "$shell_root/shell.qml"
 elif [[ ${HAKUSPACE_DOCK_INPUT:-0} == 1 ]]; then
@@ -136,6 +138,7 @@ exit \$status
 START
 # Every mode isolates preferences, manual state, pins and the D-Bus session.
 runtime_timeout=60
+if [[ ${HAKUSPACE_CHROME_TEST:-0} == 1 ]]; then runtime_timeout=120; fi
 if [[ ${HAKUSPACE_DOCK_MENU_TEST:-0} == 1 ]]; then runtime_timeout=150; fi
 env -u DISPLAY -u WAYLAND_DISPLAY -u QT_QPA_PLATFORMTHEME -u QT_QPA_PLATFORMTHEME_QT6 \
     -u HYPRLAND_INSTANCE_SIGNATURE -u NIRI_SOCKET -u MANGO_INSTANCE_SIGNATURE -u GDK_BACKEND \
@@ -160,5 +163,9 @@ if [[ ${status:-0} -ne 0 ]] || ! grep -Eq 'Hikai (Dock|HakuMenu|Chrome) checks p
     exit 1
 fi
 if [[ ${HAKUSPACE_CHROME_TEST:-0} == 1 ]]; then
-    python3 tests/hikai/dock/test_pixels.py "$HAKUSPACE_DOCK_ARTIFACT_DIR" "${HAKUSPACE_TEST_SCALE:-1}"
+    if [[ ${HAKUSPACE_TASKBAR_HANDOFF_TEST:-0} == 1 ]]; then
+        python3 tests/hikai/dock/test_pixels.py "$HAKUSPACE_DOCK_ARTIFACT_DIR" "${HAKUSPACE_TEST_SCALE:-1}" --handoff "$test_root/dock.log"
+    else
+        python3 tests/hikai/dock/test_pixels.py "$HAKUSPACE_DOCK_ARTIFACT_DIR" "${HAKUSPACE_TEST_SCALE:-1}"
+    fi
 fi

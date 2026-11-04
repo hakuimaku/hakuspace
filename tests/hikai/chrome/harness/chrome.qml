@@ -12,8 +12,13 @@ ShellRoot {
     id: root
     // Exercise both real output owners without changing installed preferences.
     property var outputs: []
+    // Allow the final handoff probe to remove and restore a real output owner.
+    property var screenModel: Quickshell.screens
+    property string removedOutput: ""
     property int phase: 0
     property int ticks: 0
+    // Run only the handoff path when unrelated integration guards are unavailable.
+    readonly property bool handoffOnly: Quickshell.env("HAKUSPACE_TASKBAR_HANDOFF_TEST") === "1"
     property real topClientHeight: 0
     property var originalPins: []
     property var taskbarGeometry: []
@@ -46,9 +51,17 @@ ShellRoot {
         }
     }
     property int noteFocusRequests: 0
+    // Count arrow activation separately from Escape and ordinary close paths.
+    property int menuReturns: 0
     Connections {
         target: UiState
         function onTempNoteFocusRequested(screenName) { root.noteFocusRequests++ }
+        function onHakuMenuReturnRequested(screenName) { root.menuReturns++ }
+    }
+    // Catch extra restore/hide pulses during menu close and immediate reopen.
+    Connections {
+        target: handoffProbe.appHosts.length ? handoffProbe.appHosts[0] : null
+        function onOpacityChanged() { if (target.opacity === 1) handoffProbe.restores++ }
     }
     Process {
         id: pointer
@@ -77,6 +90,10 @@ ShellRoot {
     function find(item, predicate) {
         if (!item) return null
         if (predicate(item)) return item
+        if (item.active === true && item.item) {
+            var loaded = find(item.item, predicate)
+            if (loaded) return loaded
+        }
         var children = item.contentItem ? item.contentItem.children : item.children || []
         if (!item.contentItem && item.data && typeof item.data.length === "number") children = item.data
         for (var index = 0; index < children.length; ++index) {
@@ -95,6 +112,51 @@ ShellRoot {
     }
     function host(output) { return find(output.taskbar, value => value.bottomChromeHost === true) }
     function lane(output) { return module(host(output), "StatusModules") }
+    // Send real input in the stable full-output coordinate plane.
+    function moveMenuPointer(x, y, button) {
+        var output = outputs[0]
+        pointer.write([Math.round(x), Math.round(y), output.modelData.width,
+            output.modelData.height, button || 0].join(" ") + "\n")
+    }
+    function clickMenuItem(item) {
+        var point = item.mapToItem(null, item.width / 2, item.height / 2)
+        moveMenuPointer(point.x, point.y, 272)
+    }
+    // Check real overlay masks, fixed popup geometry and both status lanes.
+    function checkTaskbarMenu(output, hidden) {
+        var apps = content(output.taskbar)
+        var status = lane(output)
+        check(output.taskbar.menuOwned === hidden && apps.enabled === !hidden
+            && apps.shown === !hidden && apps.opacity === (hidden ? 0 : 1), "Taskbar app ownership")
+        check(status.visible && status.enabled && host(output).visible
+            && host(output).mask.width === output.modelData.width, "status input remains live")
+        if (!hidden) return
+        var attached = find(output.menu, value => typeof value.taskbarReturnRect === "object")
+        var button = find(output.menu, value => value.objectName === "hakumenu-return-button")
+        var rect = attached.taskbarReturnRect
+        check(button && button.enabled && button.Accessible.name === "Close HakuMenu", "accessible return control")
+        check(rect.x >= status.leftStatusEnd && rect.x + rect.width <= status.rightStatusStart
+            && rect.width === status.centerViewportWidth, "return stays inside live center lane")
+        var point = button.mapToItem(null, 0, 0)
+        check(point.x === rect.x && point.y === rect.y && button.height === ScreenGeometry.taskbarHeight
+            && rect.y + rect.height === output.modelData.height, "return occupies physical Taskbar")
+        check(ScreenGeometry.bottomHostControlHeight === 0 && attached.controlHeight === 0
+            && attached.surfaceHeight === attached.menuHeight
+            && attached.menuTop === output.modelData.height - ScreenGeometry.taskbarHeight, "popup geometry unchanged")
+        var overlay = find(output.menu, value => value.contentItem && value.mask && value.mask.regions.length === 5)
+        check(overlay, "explicit fifth return input region")
+        var input = overlay.mask.regions[4]
+        check(input.x === rect.x && input.y === rect.y && input.width === rect.width
+            && input.height === rect.height, "return paint matches live input")
+        for (var index = 0; index < 4; ++index) {
+            var zone = overlay.mask.regions[index]
+            check(zone.height === 0 || zone.y + zone.height <= attached.menuTop,
+                "popup input cannot cover status modules")
+        }
+        check(!apps.tooltipsEnabled && !apps.pendingPin && !apps.pinMessage && !apps.terminationKey
+            && !apps.reorderKey && !apps.inputLifetime.externallyLeased
+            && !apps.inputLifetime.keyboardLease, "transient app input released")
+    }
     function screenshot(name) {
         var directory = Quickshell.env("HAKUSPACE_DOCK_ARTIFACT_DIR")
         if (!directory) return
@@ -129,7 +191,7 @@ ShellRoot {
         check(Math.abs(client.height - expected) <= 1, "maximized client: " + client.height + " expected=" + expected)
     }
     Variants {
-        model: Quickshell.screens
+        model: root.screenModel
         Item {
             id: output
             required property var modelData
@@ -164,6 +226,174 @@ ShellRoot {
             TempNoteOverlay { id: note; modelData: output.modelData }
             TrayMenuPanel { modelData: output.modelData }
             Component.onCompleted: root.outputs.push(output)
+            Component.onDestruction: root.outputs = root.outputs.filter(value => value !== output)
+        }
+    }
+    // Exercise Taskbar handoff with real pointer/keyboard events and retained app hosts.
+    Timer {
+        id: handoffProbe
+        interval: 50
+        repeat: true
+        property bool finished: false
+        property int step: 0
+        property int stepTicks: 0
+        property int cycles: 0
+        property int initialSubscribers: 0
+        property int restores: 0
+        property int restoresBeforeClose: 0
+        property var appHosts: []
+        property string appOrder: ""
+        property var returnWindow: null
+        property real hoverPhase: 0
+        property real originalFont: 0
+        // Let screenshots finish before input changes the frame being captured.
+        property bool appClickSent: false
+        property bool returnClickSent: false
+        readonly property bool reduced: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
+        onStepChanged: stepTicks = 0
+        onTriggered: {
+            root.check(++stepTicks < 160, "Taskbar handoff timeout at step " + step)
+            if (capture.running) return
+            var output = root.outputs[0]
+            var other = root.outputs[1]
+            var apps = root.content(output.taskbar)
+            var button = root.find(output.menu, value => value.objectName === "hakumenu-return-button")
+            if (step === 0) {
+                root.checkTaskbarMenu(output, true)
+                root.checkTaskbarMenu(other, false)
+                appHosts = root.outputs.map(value => root.content(value.taskbar))
+                initialSubscribers = SysStats._extendedSubscribers
+                appOrder = DockApps.renderedApps.map(value => value.key).join("|")
+                UiState.closeHakuMenu()
+                root.moveMenuPointer(output.modelData.width / 2, output.modelData.height / 2)
+            } else if (step === 1) {
+                if (output.menu.loadedCount) return
+                root.checkTaskbarMenu(output, false)
+                root.screenshot("taskbar-handoff-baseline")
+            } else if (step === 2) {
+                if (!appClickSent) {
+                    apps.pendingPin = {action: "add", id: "handoff-fixture", name: "Fixture"}
+                    apps.pinMessage = "Pending feedback"
+                    apps.terminationKey = "handoff-fixture"
+                    apps.reorderKey = "handoff-fixture"
+                    apps.inputLifetime.acquireExternalLease("dock-reorder")
+                    apps.inputLifetime.beginKeyboardLease()
+                    root.clickMenuItem(root.find(apps, value => value.label === "Applications"))
+                    appClickSent = true
+                    return
+                }
+                if (!output.menu.panelOpen || stepTicks < 10) return
+                root.check(UiState.hakuMenuSource === "taskbar", "real App Menu click opens Taskbar HakuMenu")
+                root.checkTaskbarMenu(output, true)
+                root.checkTaskbarMenu(other, false)
+                TaskbarPins.mutationFinished("add", "handoff-fixture", true)
+                root.check(!apps.pinMessage, "late pin feedback stays cancelled")
+                var attached = root.find(output.menu, value => typeof value.menuTop === "number")
+                root.moveMenuPointer(output.modelData.width / 2, attached.menuTop - 16)
+            } else if (step === 3) {
+                if (stepTicks < 3) return
+                hoverPhase = button.arrowPhase
+                var edge = button.mapToItem(null, 4, button.height / 2)
+                root.moveMenuPointer(edge.x, edge.y)
+            } else if (step === 4) {
+                if (stepTicks < 9) return
+                root.check(output.menu.panelOpen && button.hovered && button.hoverReveal > 0,
+                    "popup-to-return bridge retains menu and reveals glow")
+                root.check(reduced ? button.arrowPhase === hoverPhase : Math.abs(button.arrowPhase - hoverPhase) > 0.01,
+                    "shared arrows animate only without reduced motion")
+                var glow = root.find(button, value => value.objectName === "hakumenu-return-glow")
+                root.check(glow.visible && glow.opacity > 0, "shared hover glow")
+                returnWindow = root.find(output.menu, value => value.contentItem && value.mask && value.mask.regions.length === 5)
+                restoresBeforeClose = restores
+                console.info("Taskbar handoff return rect " + JSON.stringify(
+                    root.find(output.menu, value => typeof value.taskbarReturnRect === "object").taskbarReturnRect))
+                root.screenshot("taskbar-handoff-hover")
+            } else if (step === 5) {
+                if (!returnClickSent) {
+                    root.clickMenuItem(button)
+                    returnClickSent = true
+                    return
+                }
+                if (UiState.activePanel === "hakumenu") return
+                root.check(root.menuReturns === 1, "real arrow click invokes return signal once")
+                root.check(restores === restoresBeforeClose + 1, "arrow restores app icons exactly once")
+                root.checkTaskbarMenu(output, false)
+                root.check(returnWindow ? returnWindow.mask.regions[4].width === 0 && returnWindow.mask.regions[4].height === 0
+                    : output.menu.loadedCount === 0,
+                    "return releases its input immediately during closing paint")
+                UiState.openHakuMenu(output.modelData.name, "general")
+            } else if (step === 6) {
+                if (!output.menu.panelOpen || stepTicks < 10) return
+                root.checkTaskbarMenu(output, true)
+                restoresBeforeClose = restores
+                keyboard.write("key 1\n")
+            } else if (step === 7) {
+                if (UiState.activePanel === "hakumenu") return
+                root.checkTaskbarMenu(output, false)
+                root.check(root.menuReturns === 1, "Escape restores apps without return signal")
+                root.check(restores === restoresBeforeClose + 1, "Escape restores app icons exactly once")
+            } else if (step === 8) {
+                restoresBeforeClose = restores
+                UiState.openHakuMenu(output.modelData.name, ["drun", "general", "theme"][cycles % 3],
+                    cycles % 2 ? "default" : "taskbar")
+                UiState.setHakuPanelTab(cycles % 3 === 1 ? "taskManager" : "hakumenu")
+            } else if (step === 9) {
+                if (!output.menu.panelOpen || stepTicks < 10) return
+                root.checkTaskbarMenu(output, true)
+                root.checkTaskbarMenu(other, false)
+                root.check(apps === appHosts[0] && root.content(other.taskbar) === appHosts[1]
+                    && SysStats._extendedSubscribers === initialSubscribers
+                    && DockApps.renderedApps.map(value => value.key).join("|") === appOrder,
+                    "repeated handoff preserves hosts, model order and subscriptions")
+                UiState.setHakuPanelTab("hakumenu")
+                UiState.hakuMenuMode = ["theme", "drun", "general"][cycles % 3]
+                if (cycles % 2) UiState.returnFromHakuMenu()
+                else UiState.closeHakuMenu()
+                UiState.openHakuMenu(output.modelData.name, "drun")
+                UiState.closeHakuMenu()
+            } else if (step === 10) {
+                root.checkTaskbarMenu(output, false)
+                root.check(restores === restoresBeforeClose + 2, "each requested close restores once without extra pulses")
+                if (++cycles < 12) { step = 8; return }
+                UiState.openHakuMenu(other.modelData.name, "theme")
+            } else if (step === 11) {
+                if (!other.menu.panelOpen) return
+                root.checkTaskbarMenu(output, false)
+                root.checkTaskbarMenu(other, true)
+                UiState.openHakuMenu(output.modelData.name, "general")
+                originalFont = Theme.fontSize
+                Theme.fontSize += 6
+            } else if (step === 12) {
+                if (!output.menu.panelOpen || stepTicks < 10) return
+                root.checkTaskbarMenu(output, true)
+                root.checkTaskbarMenu(other, false)
+                Theme.fontSize = originalFont
+                var right = root.find(root.lane(output), value => value.objectName === "rightStatusModules")
+                right.contentX = Math.max(0, right.contentWidth - right.width)
+            } else if (step === 13) {
+                if (stepTicks < 3) return
+                var bell = root.find(root.module(root.lane(output), "NotificationGroup"),
+                    value => typeof value.tooltip === "string" && value.tooltip.indexOf("Notifications") === 0)
+                root.clickMenuItem(bell)
+            } else if (step === 14) {
+                if (!output.center.panelOpen) return
+                root.checkTaskbarMenu(output, false)
+                UiState.closeNotifications()
+                UiState.openHakuMenu(output.modelData.name, "drun")
+            } else if (step === 15) {
+                if (!output.menu.panelOpen || stepTicks < 10) return
+                root.clickMenuItem(root.module(root.lane(output), "Logo"))
+            } else {
+                if (!output.navigation.panelOpen) return
+                root.checkTaskbarMenu(output, false)
+                UiState.closeNavigation()
+                UiState.openHakuMenu(output.modelData.name, "drun")
+                console.info("Taskbar handoff passed: pointer return/glow, Escape, 12 cycles, tabs, two outputs, live lanes and status clicks")
+                finished = true
+                stop()
+                return
+            }
+            step++
         }
     }
     Timer {
@@ -171,8 +401,8 @@ ShellRoot {
         repeat: true
         running: true
         onTriggered: {
-            root.check(++root.ticks < 90, "timeout")
-            if (!ShellSettingsStore.ready || TaskbarPins.busy || capture.running || outputs.length !== 2) return
+            root.check(++root.ticks < 180, "timeout")
+            if (!ShellSettingsStore.ready || TaskbarPins.busy || capture.running || (outputs.length !== 2 && phase !== 51)) return
             var output = outputs[0]
             if (reloadMemory.reloaded) {
                 root.check(output.bar.visible && !output.dock.shown && !UiState.activePanel, "shell reload restores clean topology")
@@ -184,6 +414,11 @@ ShellRoot {
                 root.topClientHeight = client.height
                 root.originalPins = TaskbarPins.pins.slice()
                 NotificationStore.start(root.memory)
+                if (root.handoffOnly) {
+                    AppState.taskbarManualState = true
+                    phase = 4
+                    return
+                }
                 root.checkTopology(false, false)
                 AppState.waybarManualState = false
             } else if (phase === 1) {
@@ -203,7 +438,7 @@ ShellRoot {
                 ShellSettingsStore.setValue("dock", "exclusiveSpace", false)
                 AppState.taskbarManualState = true
             } else if (phase === 4) {
-                root.checkTopology(true, false)
+                if (!root.handoffOnly) root.checkTopology(true, false)
                 for (var surface of outputs) {
                     var window = root.host(surface)
                     var background = root.find(surface.taskbar, value => value.objectName === "taskbar-surface")
@@ -260,12 +495,14 @@ ShellRoot {
                 root.screenshot("taskbar-calendar")
                 UiState.openHakuMenu(output.modelData.name, "drun")
             } else if (phase === 7) {
+                if (!handoffProbe.finished) { handoffProbe.start(); return }
                 root.check(UiState.hakuMenuStyle === "bottomFlare" && output.menu.panelOpen && !output.dock.menuOwned, "Full default HakuMenu is attached")
                 root.check(root.find(output.menu, value => value.controlsAtBottom === false), "Taskbar menu controls stay at the top")
                 var attachedMenu = root.find(output.menu, value => value.bottomAttached === true && typeof value.menuHeight === "number")
                 root.check(attachedMenu && attachedMenu.menuHeight === output.modelData.height * 0.4,
                     "Taskbar HakuMenu uses forty percent of the output height")
                 root.screenshot("unified-hakumenu")
+                if (root.handoffOnly) { phase = 50; return }
                 AppState.dockbarManualState = true
                 AppState.taskbarManualState = false
             } else if (phase === 8) {
@@ -504,8 +741,18 @@ ShellRoot {
                     UiState.closeTempNote()
                     AppState.taskbarManualState = false
                 }
+            } else if (phase === 50) {
+                AppState.taskbarManualState = true
+                root.removedOutput = output.modelData.name
+                UiState.openHakuMenu(root.removedOutput, "drun")
+                root.screenModel = Quickshell.screens.filter(value => value.name !== root.removedOutput)
+            } else if (phase === 51) {
+                root.check(!UiState.activePanel && !ScreenGeometry.taskbarCenterRects[root.removedOutput],
+                    "removed output releases menu and center lane")
+                root.screenModel = Quickshell.screens
             } else {
-                root.checkTopology(false, false)
+                AppState.taskbarManualState = false
+                if (!root.handoffOnly) root.checkTopology(false, false)
                 reloadMemory.reloaded = true
                 Quickshell.reload(false)
             }

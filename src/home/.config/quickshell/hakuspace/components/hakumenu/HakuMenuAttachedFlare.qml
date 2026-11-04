@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import "../../services"
@@ -31,6 +30,10 @@ Item {
     readonly property bool taskManagerTab: renderTab === "taskManager"
     readonly property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
     readonly property real controlHeight: bottomAttached ? ScreenGeometry.bottomHostControlHeight : 0
+    // Taskbar return input lives below the popup, inside the published center lane.
+    readonly property var taskbarReturnRect: panelOpen && bottomAttached && ChromeLayout.taskbarMode
+        ? ScreenGeometry.taskbarCenterRects[modelData.name] || SafeZoneGeometry.rect(0, 0, 0, 0)
+        : SafeZoneGeometry.rect(0, 0, 0, 0)
     readonly property var taskSize: Geometry.attachedTaskSize(screenWidth, screenHeight,
         ScreenGeometry.leftInset, ScreenGeometry.rightInset,
         bottomAttached ? ScreenGeometry.bottomHostReservation() + controlHeight : Theme.topBarHeight,
@@ -65,7 +68,12 @@ Item {
         return {x: x, y: bottomAttached ? menuTop - height : menuTop, width: width, height: height}
     }
     // Closing paint keeps its geometry while pointer input returns to the host immediately.
-    function safeZone(index) { return (panelOpen ? safeZones[index] : null) || SafeZoneGeometry.rect(0, 0, 0, 0) }
+    function safeZone(index) {
+        var zone = (panelOpen ? safeZones[index] : null) || SafeZoneGeometry.rect(0, 0, 0, 0)
+        // Only the explicit center-lane region may intercept the physical Taskbar.
+        return bottomAttached && ChromeLayout.taskbarMode
+            ? SafeZoneGeometry.rect(zone.x, zone.y, zone.width, Math.min(zone.height, Math.max(0, menuTop - zone.y))) : zone
+    }
     // The top trigger keeps its own input so presentation transfers cannot synthesize re-entry.
     function trackTrigger(x, y) { lifetime.pointerMoved(x, y) }
     function leaveTrigger() { lifetime.pointerExited() }
@@ -73,7 +81,8 @@ Item {
     Base.SafeZoneController {
         id: lifetime
         active: root.panelOpen
-        containsPoint: function(x, y) { return SafeZoneGeometry.containsAny(root.safeZones, x, y) }
+        containsPoint: function(x, y) { return SafeZoneGeometry.containsAny(root.safeZones, x, y)
+            || SafeZoneGeometry.contains(root.taskbarReturnRect, x, y) }
         onCloseRequested: UiState.closeHakuMenu()
     }
 
@@ -165,6 +174,10 @@ Item {
             Region {
                 x: root.safeZone(3).x; y: root.safeZone(3).y
                 width: root.safeZone(3).width; height: root.safeZone(3).height
+            }
+            Region {
+                x: root.taskbarReturnRect.x; y: root.taskbarReturnRect.y
+                width: root.taskbarReturnRect.width; height: root.taskbarReturnRect.height
             }
         }
 
@@ -289,7 +302,21 @@ Item {
             }
         }
 
-        // Reveal the host return control inside the same clipped surface and input window.
+        // Keep Taskbar return visuals and input in the same overlay window.
+        Loader {
+            active: root.taskbarReturnRect.width > 0 && root.taskbarReturnRect.height > 0
+            x: root.taskbarReturnRect.x
+            y: root.taskbarReturnRect.y
+            width: root.taskbarReturnRect.width
+            height: root.taskbarReturnRect.height
+            sourceComponent: HakuMenuReturnControl {
+                panelOpen: root.panelOpen
+                reducedMotion: root.reducedMotion
+                enabled: root.panelOpen && UiState.ownsInteraction("hakumenu", root.modelData.name)
+            }
+        }
+
+        // Reveal the Dock return control inside the same clipped surface and input window.
         Loader {
             active: root.controlHeight > 0
             visible: root.panelOpen
@@ -299,105 +326,14 @@ Item {
             height: Math.max(0, morph.mHeight)
             clip: true
             sourceComponent: Item {
-                Base.HButton {
-                    id: returnButton
-                    objectName: "hakumenu-return-button"
+                HakuMenuReturnControl {
                     width: parent.width
                     height: root.controlHeight
                     y: parent.height - height
+                    panelOpen: root.panelOpen
+                    reducedMotion: root.reducedMotion
                     enabled: root.panelOpen && morph.mHeight >= root.controlHeight
                         && UiState.ownsInteraction("hakumenu", root.modelData.name)
-                    disabledOpacity: 1
-                    idleColor: "transparent"
-                    hoverColor: "transparent"
-                    pressedColor: "transparent"
-                    hoverForegroundColor: Theme.fg
-                    pressedForegroundColor: Theme.fg
-                    hoverScaleDelta: 0
-                    pressScaleDelta: 0
-                    clip: true
-                    // Share the cadence while easing each column along its own path.
-                    property real arrowPhase: 1 / 6
-                    // Expand the hover glow without changing the button's input geometry.
-                    property real hoverReveal: hovered && enabled && root.panelOpen ? 1 : 0
-                    Behavior on hoverReveal {
-                        NumberAnimation {
-                            duration: root.reducedMotion ? 0 : 650
-                            easing.type: Easing.OutCubic
-                        }
-                    }
-                    NumberAnimation on arrowPhase {
-                        from: 1 / 6
-                        to: 7 / 6
-                        duration: 2200
-                        loops: Animation.Infinite
-                        running: (returnButton.hovered || returnButton.hoverReveal > 0)
-                            && returnButton.enabled && root.panelOpen && !root.reducedMotion
-                        onRunningChanged: if (!running) returnButton.arrowPhase = 1 / 6
-                    }
-                    Accessible.role: Accessible.Button
-                    Accessible.name: "Close HakuMenu"
-                    Accessible.onPressAction: UiState.returnFromHakuMenu()
-                    onClicked: UiState.returnFromHakuMenu()
-                    // Scale a fixed radial path into a soft elliptical glow behind the arrows.
-                    Shape {
-                        objectName: "hakumenu-return-glow"
-                        width: 100
-                        height: 100
-                        anchors.centerIn: parent
-                        opacity: returnButton.hoverReveal
-                        visible: opacity > 0
-                        transform: Scale {
-                            origin.x: 50; origin.y: 50
-                            xScale: returnButton.width / 100 * returnButton.hoverReveal
-                            yScale: returnButton.height / 100 * returnButton.hoverReveal
-                        }
-                        ShapePath {
-                            strokeWidth: -1
-                            fillGradient: RadialGradient {
-                                centerX: 50; centerY: 50
-                                focalX: 50; focalY: 50
-                                centerRadius: 50
-                                GradientStop { position: 0; color: "#b3242424" }
-                                GradientStop { position: 0.5; color: "#66141414" }
-                                GradientStop { position: 1; color: "transparent" }
-                            }
-                            startX: 0; startY: 0
-                            PathLine { x: 100; y: 0 }
-                            PathLine { x: 100; y: 100 }
-                            PathLine { x: 0; y: 100 }
-                            PathLine { x: 0; y: 0 }
-                        }
-                    }
-                    Repeater {
-                        model: 3
-                        delegate: Shape {
-                            required property int index
-                            // A sine ease slows the entry and exit of each column independently.
-                            readonly property real cycle: (returnButton.arrowPhase + index / 3) % 1
-                            readonly property real progress: (1 - Math.cos(cycle * Math.PI)) / 2
-                            width: 28
-                            height: 14
-                            x: returnButton.width * (index + 0.5) / 3 - width / 2
-                            y: (returnButton.height - height) / 2
-                                + (root.reducedMotion ? 0 : (progress - 0.5) * returnButton.height * returnButton.hoverReveal)
-                            // Blend back to the resting center arrow while the moving hint fades out.
-                            opacity: (index === 1 ? 1 - returnButton.hoverReveal : 0)
-                                + returnButton.hoverReveal * (root.reducedMotion ? (index === 1 ? 1 : 0.55)
-                                    : Math.sin(progress * Math.PI))
-                            Accessible.ignored: true
-                            ShapePath {
-                                strokeColor: returnButton.foreground
-                                strokeWidth: 2.5
-                                fillColor: "transparent"
-                                capStyle: ShapePath.RoundCap
-                                joinStyle: ShapePath.RoundJoin
-                                startX: 1.5; startY: 1.5
-                                PathLine { x: 14; y: 12.5 }
-                                PathLine { x: 26.5; y: 1.5 }
-                            }
-                        }
-                    }
                 }
             }
         }
