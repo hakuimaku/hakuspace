@@ -31,7 +31,7 @@ USER_WAYBAR_DIR="$HOME/hakucfg/config/waybar"
 SETTING_FILE="$HOME/hakucfg/setting.sh"
 STATE_FILE="$(haku_state_path desktop.waybar.mode)"
 STATUS_FILE="$(haku_state_path desktop.waybar.requested)"
-DEFAULT_MODES=("top" "left" "island" "neon" "coredge" "minimal" "legacy")
+DEFAULT_MODES=("top" "left" "island" "neon" "coredge" "minimal" "legacy" "tokyo")
 WAYBAR_MODE_USER=()
 
 if [[ -f "$SETTING_FILE" ]]; then
