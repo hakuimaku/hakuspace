@@ -25,7 +25,7 @@ Wayland dotfiles and desktop shell for Hyprland / Niri / MangoWM / Labwc
 
 | <img width="1920" height="1080" alt="Hikai dashboard and taskbar" src="assets/screenshot/hikai-1.webp" /> | <img width="1920" height="1080" alt="Hikai Quick Actions, Temp Note and Task Manager" src="assets/screenshot/hikai-2.webp" /> |
 |--|--|
-| <img width="1920" height="1080" alt="Hikai light desktop with terminal and file manager" src="assets/screenshot/hikai-3.webp" /> | <img width="1920" height="1080" alt="Classic desktop and notification center" src="assets/screenshot/classic-1.webp" /> |
+| <img width="1920" height="1080" alt="Hikai light desktop with terminal and file manager" src="assets/screenshot/hikai-3.webp" /> | <img width="1920" height="1080" alt="Classic with new Tokyo waybar layout" src="assets/screenshot/classic-tokyo.webp" /> |
 
 ## Welcome to Haku Space
 
