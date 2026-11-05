@@ -13,6 +13,10 @@ if not ok then
     style = { font_family = "monospace", font_size = 16, border_color = "rgba(ffffffff)" }
 end
 
+-- Remove these 2 lines and the new Tokyo layout doesn't work correctly!
+hl.layer_rule({ match = { namespace = "waybar" }, blur = true })
+hl.layer_rule({ match = { namespace = "waybar" }, ignore_alpha = 0 })
+
 local font_family = style.font_family
 local font_size = style.font_size
 local border_color = style.border_color
