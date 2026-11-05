@@ -545,10 +545,10 @@ Want to understand how HakuSpace works under the hood? We've written comprehensi
 - Tiktok / See more showcase: [@hakuimaku2372](https://www.tiktok.com/@hakuimaku2372)
 - Discord: [haku-shell](https://discord.gg/Juuun8sXsN)
 
-| Contributor | Role |
-|-------------|-------------|
-| [hakuimaku](https://github.com/hakuimaku) | The Author |
-| You | ... |
+| Contributor | Work |
+|-------------|------|
+| [hakuimaku](https://github.com/hakuimaku) | maintan |
+| [tspillow](https://github.com/tspillow) | add waybar style - tokyo |
 
 ---
 
