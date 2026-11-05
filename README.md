@@ -89,7 +89,7 @@ Feature availability and keybindings can vary by compositor. Hikai does not repl
 * **User Configuration (`~/hakucfg`)**: Stores your personal configs separately from the base files.
 * **Accent Colors**: Synced across configured applications and icon themes.
 * **Smart Accent Color**: Automatically generates the accent color based on your current wallpaper.
-* **Flexible Waybar Layouts**: Supports 7 styles in Classic mode: `top`, `left`, `coredge`, `minimal`, `neon`, `island`, `legacy`.
+* **Flexible Waybar Layouts**: Supports 8 styles in Classic mode: `top`, `left`, `coredge`, `minimal`, `neon`, `island`, `legacy`, `tokyo`.
 * **Wallpaper Automation**: Classic uses `awww` / `mpvpaper`; Hikai has its own wallpaper browsing and native video-rendering path, with playback and quality settings.
 * **Taskbar**: Classic provides a secondary Waybar taskbar; Hikai integrates its taskbar and dock into the Quickshell UI.
 * **Haku Space Classic Mini-Apps**:
