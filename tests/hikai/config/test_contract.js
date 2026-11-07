@@ -65,7 +65,7 @@ for (const [file, property, catalog] of [
     ['sidebar/SidebarQuickActions.qml', 'actions', 'sidebarQuickActions'],
     ['dashboard/DashboardWidgetHost.qml', 'widgets', 'dashboardWidgets'],
     ['wallpaper/WallpaperBrowser.qml', 'kinds', 'wallpaperKinds'],
-    ['wallpaper/WallpaperBrowser.qml', 'options', 'wallpaperVideoProfiles']
+    ['wallpaper/WorkspaceToolbar.qml', 'options', 'wallpaperVideoProfiles']
 ]) {
     assert.match(read(`components/${file}`), new RegExp(`property var ${property}: UiCatalog\\.${catalog}\\b`), file)
     assert.doesNotMatch(read(`components/${file}`), new RegExp(`property var ${property}:\\s*\\[`), file)

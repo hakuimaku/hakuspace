@@ -13,7 +13,13 @@ PanelWindow {
         && UiState.wallpaperPresentation === presentation && UiState.wallpaperScreenName === modelData.name
     readonly property bool closing: panelOpen && UiState.wallpaperCloseRequested
     readonly property bool releaseReady: !panelOpen && expansion === 0 && !motion.running && !fold.running && !quickExit.running && !quickRestore.running
-    readonly property Item browserItem: browser
+    readonly property Item browserItem: browserLoader.item
+    readonly property var browser: browserLoader.item
+    readonly property bool leftWorkspace: presentation === "workspace" && ChromeLayout.leftBarMode
+    // Side-card masks are clipped to the gallery instead of capturing hidden PathView tails.
+    function cardInputRect(index) {
+        return leftWorkspace && browser && browser.cardInputRects.length > index ? browser.cardInputRects[index] : {x: 0, y: 0, width: 0, height: 0}
+    }
     property real expansion: 0
     property real stackSpread: 1
     // Quick closing keeps the pulse, zoom and final fade independently reversible.
@@ -34,29 +40,45 @@ PanelWindow {
     WlrLayershell.namespace: "hakuspace-wallpaper-" + presentation
     WlrLayershell.keyboardFocus: panelOpen && !closing && UiState.ownsInteraction("wallpaper", modelData.name)
         ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    readonly property bool inputActive: panelOpen && !closing && !!browser
     mask: Region {
-        item: root.presentation === "quick" ? browser.quickInputItem : browser.topInputItem
-        width: root.panelOpen && !root.closing ? item.width : 0
-        height: root.panelOpen && !root.closing ? item.height : 0
+        item: root.inputActive ? (root.presentation === "quick" ? browser.quickInputItem : browser.topInputItem) : null
         Region {
-            item: browser.bottomInputItem
-            width: root.presentation === "workspace" && root.panelOpen && !root.closing ? item.width : 0
-            height: root.presentation === "workspace" && root.panelOpen && !root.closing ? item.height : 0
+            item: root.inputActive && root.presentation === "workspace" && !root.leftWorkspace ? browser.bottomInputItem : null
         }
         Region {
-            item: browser.settingsInputItem
-            width: root.panelOpen && !root.closing && item.visible ? item.width : 0
-            height: root.panelOpen && !root.closing && item.visible ? item.height : 0
+            item: root.inputActive && root.leftWorkspace ? browser.mediaInputItem : null
         }
         Region {
-            item: browser.selectedInputItem
-            width: root.panelOpen && !root.closing && item ? item.width : 0
-            height: root.panelOpen && !root.closing && item ? item.height : 0
+            item: root.inputActive && root.leftWorkspace ? browser.categoryInputItem : null
         }
+        Region {
+            item: root.inputActive && browser.settingsInputItem.visible ? browser.settingsInputItem : null
+        }
+        Region {
+            item: root.inputActive && !root.leftWorkspace ? browser.selectedInputItem : null
+        }
+        Region {
+            x: root.cardInputRect(0).x; y: root.cardInputRect(0).y
+            width: root.inputActive ? root.cardInputRect(0).width : 0
+            height: root.inputActive ? root.cardInputRect(0).height : 0
+        }
+        Region {
+            x: root.cardInputRect(1).x; y: root.cardInputRect(1).y
+            width: root.inputActive ? root.cardInputRect(1).width : 0
+            height: root.inputActive ? root.cardInputRect(1).height : 0
+        }
+        Region {
+            x: root.cardInputRect(2).x; y: root.cardInputRect(2).y
+            width: root.inputActive ? root.cardInputRect(2).width : 0
+            height: root.inputActive ? root.cardInputRect(2).height : 0
+        }
+
     }
 
     // Pulse immediately alongside the fold and connect their shared finish to zoom.
     function animate() {
+        if (!browser) return
         var opening = panelOpen && !closing
         if (!opening && quickExit.running) return
         motion.stop()
@@ -83,9 +105,9 @@ PanelWindow {
     }
     // Cold presentations wait for geometry, the initial frame and thumbnail decodes.
     function tryOpen() {
-        if (!panelOpen || closing || expansion !== 0 || motion.running
+        if (!browser || !panelOpen || closing || expansion !== 0 || motion.running
                 || !surfacePresented || !modelData || width !== modelData.width || height !== modelData.height
-                || !browser.openingReady) return
+                || !browser || !browser.openingReady) return
         motion.to = 1
         motion.start()
         if (presentation === "quick") quickRestore.start()
@@ -105,7 +127,7 @@ PanelWindow {
         if (!modelData || presentation !== "quick" || introStarted || !panelOpen || closing || expansion <= 0
                 || width !== modelData.width || height !== modelData.height) return
         introStarted = true
-        browser.playIntro()
+        if (browser) browser.playIntro()
     }
     onWidthChanged: tryIntro()
     onHeightChanged: tryIntro()
@@ -230,25 +252,53 @@ PanelWindow {
             mouse.accepted = false
         }
     }
-    Wallpaper.WallpaperBrowser {
-        id: browser
+    // Only one renderer owns carousel delegates and thumbnail demand at a time.
+    Loader {
+        id: browserLoader
+        focus: true
         anchors.fill: parent
-        presentation: root.presentation
-        refreshOnShow: false
-        reveal: root.expansion
-        contentOpacity: root.presentation === "quick" ? root.quickOpacity : root.expansion
-        spread: root.stackSpread
-        selectedPulse: root.selectedPulse
-        scale: root.presentation === "quick" ? root.quickScale : 1
-        enabled: root.panelOpen && !root.closing
-        focus: enabled
-        onEnabledChanged: if (enabled) forceActiveFocus()
-        Component.onCompleted: if (enabled) forceActiveFocus()
-        onOpeningReadyChanged: root.tryOpen()
-        onCloseRequested: UiState.closeWallpaper()
-        onSettingsRequested: {
-            UiState.settingsGroup = "Wallpaper"
-            UiState.openSettings(root.modelData.name)
+        sourceComponent: root.leftWorkspace ? leftWorkspaceComponent : standardComponent
+        onLoaded: root.animate()
+    }
+    Component {
+        id: standardComponent
+        Wallpaper.WallpaperBrowser {
+            id: standardBrowser
+            anchors.fill: parent
+            presentation: root.presentation
+            refreshOnShow: false
+            reveal: root.expansion
+            contentOpacity: root.presentation === "quick" ? root.quickOpacity : root.expansion
+            spread: root.stackSpread
+            selectedPulse: root.selectedPulse
+            scale: root.presentation === "quick" ? root.quickScale : 1
+            enabled: root.panelOpen && !root.closing
+            focus: enabled
+            onEnabledChanged: if (enabled) forceActiveFocus()
+            Component.onCompleted: if (enabled) forceActiveFocus()
+            onOpeningReadyChanged: root.tryOpen()
+            onCloseRequested: UiState.closeWallpaper()
+            onSettingsRequested: {
+                UiState.settingsGroup = "Wallpaper"
+                UiState.openSettings(root.modelData.name)
+            }
+        }
+    }
+    Component {
+        id: leftWorkspaceComponent
+        Wallpaper.WorkspaceLeftLayout {
+            reveal: root.expansion
+            contentOpacity: root.expansion
+            spread: root.stackSpread
+            screenName: root.modelData.name
+            enabled: root.panelOpen && !root.closing
+            focus: enabled
+            onOpeningReadyChanged: root.tryOpen()
+            onCloseRequested: UiState.closeWallpaper()
+            onSettingsRequested: {
+                UiState.settingsGroup = "Wallpaper"
+                UiState.openSettings(root.modelData.name)
+            }
         }
     }
 }

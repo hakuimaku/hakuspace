@@ -6,6 +6,8 @@ import ".."
 TopModule {
     id: root
     required property string screenName
+    // Leftbar can hand off its painted circle while keeping a larger pointer wrapper.
+    property Item navigationAnchorItem: root
     icon: "󰮯"
     isAccent: true
     color: Theme.accent
@@ -34,7 +36,11 @@ TopModule {
     property bool reopenHoverGuard: false
     Connections {
         target: UiState
+        function onNavigationLogoReturning(screenName, pointerInside) {
+            if (root.verticalPresentation && screenName === root.screenName) root.reopenHoverGuard = pointerInside
+        }
         function onNavigationVisualScreenNameChanged() {
+            if (root.verticalPresentation) return
             if (UiState.navigationVisualScreenName !== "") {
                 root.reopenHoverGuard = false
                 return
@@ -54,7 +60,7 @@ TopModule {
     // Calculates top bar anchor coordinates and dispatches request to open navigation surface.
     function triggerOpenNavigation() {
         TooltipManager.dismiss()
-        UiState.openNavigation(root.screenName, ScreenGeometry.itemRect(root))
+        UiState.openNavigation(root.screenName, ScreenGeometry.itemRect(navigationAnchorItem))
     }
 
     onHoveredChanged: {

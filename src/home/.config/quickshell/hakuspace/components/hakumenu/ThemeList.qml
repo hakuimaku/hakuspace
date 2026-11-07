@@ -4,6 +4,7 @@ import Quickshell.Io
 import "../../services"
 import "../../config/UiCatalog.js" as UiCatalog
 import "../motion" as Motion
+import "../settings" as Settings
 
 Item {
     id: root
@@ -28,6 +29,8 @@ Item {
     readonly property var items: UiCatalog.hakuMenuThemeItems
 
     function labelFor(item) {
+        if (item && (item.statusEdgeSwitch || item.chromeKey === "taskbar") && SettingsCoordinator.runtimeError)
+            return item.label + " · " + SettingsCoordinator.runtimeError
         if (item && item.stateKind === "colorMode" && ShellSettingsStore.error)
             return item.label + " · " + ShellSettingsStore.error
         if (item && item.backendSwitch)
@@ -37,8 +40,9 @@ Item {
 
     // Gate actions on settings IO and native chrome availability.
     function available(item) {
+        if (item.statusEdgeSwitch || item.chromeKey === "taskbar" && hikaiBackend) return ShellSettingsStore.ready && !SettingsCoordinator.busy
         if (item.stateKind === "colorMode") return ShellSettingsStore.ready && !ShellSettingsStore.loading && !ShellSettingsStore.saving
-        return item.chromeKey !== "dockbar" || ChromeLayout.topBarMode
+        return item.chromeKey !== "dockbar" || ChromeLayout.statusBarMode
     }
     function chromeEnabled(item) {
         return item.chromeKey === "taskbar" ? AppState.taskbarManualState : AppState.dockbarManualState
@@ -62,12 +66,19 @@ Item {
     }
 
     function rebuildModel() {
+        var previous = visibleItems[themeList.currentIndex]
         var rows = []
-        for (var i = 0; i < items.length; ++i) {
-            if (matches(items[i])) rows.push(items[i])
+        for (var item of items) {
+            if (item.statusEdgeSwitch && (!hikaiBackend || ChromeLayout.taskbarMode)) continue
+            if (matches(item)) rows.push(item)
         }
         visibleItems = rows
-        Qt.callLater(resetSelection)
+        Qt.callLater(function() {
+            if (!root) return
+            themeList.currentIndex = rows.length ? Math.max(0, rows.indexOf(previous)) : -1
+            if (themeList.currentIndex >= 0) themeList.positionViewAtIndex(themeList.currentIndex, ListView.Contain)
+            syncSelectionLabel()
+        })
     }
 
     function resetSelection() {
@@ -102,6 +113,13 @@ Item {
         if (index < 0 || index >= visibleItems.length) return
         var item = visibleItems[index]
         if (!item || !available(item)) return
+        if (item.statusEdgeSwitch || item.chromeKey === "taskbar" && hikaiBackend) {
+            var target = item.statusEdgeSwitch ? (ChromeLayout.leftBarMode ? "topbar" : "leftbar")
+                : ChromeLayout.taskbarMode ? (ShellSettingsStore.statusEdge === "left" ? "leftbar" : "topbar") : "taskbar"
+            SettingsCoordinator.set("layout", target)
+            root.launched(false)
+            return
+        }
         // Persist mode changes through the shared store and keep the menu open.
         if (item.stateKind === "colorMode") {
             ShellSettingsStore.applyColorMode(Theme.isLight ? "dark" : "light")
@@ -147,6 +165,10 @@ Item {
         }
     }
 
+    Connections {
+        target: ChromeLayout
+        function onStatusEdgeChanged() { root.rebuildModel() }
+    }
     Component.onCompleted: rebuildModel()
 
     FileView {
@@ -202,7 +224,7 @@ Item {
             required property var modelData
             required property int index
             width: themeList.width
-            height: root.rowHeight
+            height: modelData.statusEdgeSwitch ? Math.max(root.rowHeight, edgeControl.implicitHeight) : root.rowHeight
 
             readonly property bool hasState: modelData.showState === true && modelData.toggle && (modelData.stateKind === "colorMode" || !!modelData.chromeKey || root.statePathFor(modelData).length > 0)
             readonly property bool stateOn: modelData.stateKind === "colorMode" ? Theme.isLight
@@ -228,7 +250,7 @@ Item {
                 opacity: enabled ? 1 : 0.45
                 z: 1
                 x: 0
-                width: root.leftColumnWidth
+                width: rowWrap.modelData.statusEdgeSwitch ? Math.max(0, root.width - Math.max(190, root.stateColumnWidth) - root.columnGap) : root.leftColumnWidth
                 height: parent.height
                 radius: Theme.radius
                 selected: themeList.currentIndex === rowWrap.index
@@ -267,13 +289,21 @@ Item {
                     anchors.rightMargin: Theme.pad * 1.5
                     anchors.verticalCenter: parent.verticalCenter
                     text: rowWrap.modelData.icon + "  " + root.labelFor(rowWrap.modelData)
-                        + (root.available(rowWrap.modelData) ? "" : " · Requires TopBar mode")
+                        + (root.available(rowWrap.modelData) ? "" : " · Requires status bar mode")
                     color: rowButton.foreground
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize + 1
                     font.weight: (rowButton.selected || rowButton.focused) ? Font.Medium : Font.Normal
                     elide: Text.ElideRight
                 }
+            }
+
+            Settings.StatusEdgeControl {
+                id: edgeControl
+                visible: rowWrap.modelData.statusEdgeSwitch === true && available
+                x: root.width - width - vbar.reservedGutter
+                width: Math.min(root.width, Math.max(190, root.stateColumnWidth - vbar.reservedGutter))
+                anchors.verticalCenter: parent.verticalCenter
             }
 
             Motion.MorphButton {

@@ -8,6 +8,8 @@ Item {
     // The carousel owns positioning, scaling and selection.
     required property var wallpaper
     property bool chosen: false
+    // A theme outline keeps white Leftbar artwork distinct from its cradle.
+    property bool outlineSelection: false
     // Presentations choose clipping and a fixed decode budget before navigation.
     property real cornerRadius: Theme.radius + 6
     property real decodeScale: 1
@@ -59,6 +61,35 @@ Item {
             x: 12; y: 8
             visible: root.activeWallpaper
             text: "✓"; color: Theme.accent; font.pixelSize: 20
+        }
+    }
+    Rectangle {
+        anchors.fill: parent
+        visible: root.outlineSelection
+        radius: root.cornerRadius
+        color: "transparent"
+        border.width: 1 / root.decodeScale
+        border.color: root.chosen ? Theme.fgMuted : Qt.alpha(Theme.fgMuted, 0.45)
+    }
+    // A small badge marks the raised selection without another effect layer.
+    Rectangle {
+        anchors { right: parent.right; bottom: parent.bottom; margins: Theme.gap }
+        visible: root.outlineSelection && root.chosen
+        width: Math.max(1, Math.min(parent.width - Theme.gap * 2, selectionLabel.implicitWidth + Theme.gap * 2))
+        height: selectionLabel.implicitHeight + Theme.gap
+        radius: height / 2
+        color: Qt.alpha(Theme.surface, 0.9)
+        Text {
+            id: selectionLabel
+            anchors.centerIn: parent
+            width: Math.max(1, parent.width - Theme.gap * 2)
+            text: "SELECTED"
+            elide: Text.ElideRight
+            horizontalAlignment: Text.AlignHCenter
+            color: Theme.fg
+            font.family: Theme.fontFamily
+            font.pixelSize: Math.max(8, Theme.fontSize - 5)
+            font.weight: Font.DemiBold
         }
     }
     // Capture only the opening selection and release both mask textures after reveal.

@@ -38,7 +38,7 @@ PanelWindow {
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
         color: "transparent"
-        visible: ChromeLayout.taskbarMode
+        visible: !ChromeLayout.topBarMode
         mask: Region {}
         Bar.LevelOsdBridge { y: root.attachmentY }
     }

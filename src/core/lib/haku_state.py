@@ -27,6 +27,7 @@ STATE_FILES = {
     'cava.dynamic-position': '[cava].dynamic-position',
     'cava.color-mode': '[cava].color-mode',
     'cava.height': '[cava].height',
+    'migration.hikai-layout-v11.json': '[migration].hikai-layout-v11.json',
     'migration.hikai-chrome-v6.json': '[migration].hikai-chrome-v6.json',
 }
 

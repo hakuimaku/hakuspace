@@ -47,7 +47,7 @@ QtObject {
             return (saved ? store.savedValues : store.values)[d.section][d.key]
         }
         if (!saved && Object.prototype.hasOwnProperty.call(runtimePending, id)) return runtimePending[id]
-        return ({layout: AppState.taskbarManualState ? "taskbar" : "topbar", dockbar: AppState.dockbarManualState,
+        return ({layout: AppState.taskbarManualState ? "taskbar" : ShellSettingsStore.statusEdge === "left" ? "leftbar" : "topbar", dockbar: AppState.dockbarManualState,
             cava: AppState.cavaLayerState, "cava-color": AppState.cavaColorMode, "cava-dynamic": AppState.cavaDynamicPosition,
             "cava-position": AppState.cavaTopState ? "top" : "bottom", "cava-height": AppState.cavaHeight,
             "idle-keep-awake": AppState.idleInhibited})[id]
@@ -89,9 +89,11 @@ QtObject {
     }
     // Merge nearby edits into a single undo transaction with the original value.
     function set(id, value, deferred, undoing) {
+        if (id === "layout" && busy) return false
         var d = Catalog.descriptor(id)
         if (!d || !validValue(d, value) || Catalog.equal(d, read(id), value, Quickshell.env("HOME"))) return false
         if (["general", "theme"].includes(d.provider) && SettingsStore.loading || d.provider === "shell" && (!ShellSettingsStore.ready || ShellSettingsStore.loading) || d.provider === "wallpaper" && (!WallpaperSettingsStore.ready || WallpaperSettingsStore.loading)) return false
+        if (id === "layout") runtimeError = ""
         var before = read(id)
         if (!undoing) {
             var now = Date.now()
@@ -105,7 +107,8 @@ QtObject {
         else if (d.provider === "wallpaper") WallpaperSettingsStore.setValue(d.section, d.key, value)
         else { var pending = Object.assign({}, runtimePending); pending[id] = value; runtimePending = pending }
         if (d.provider !== "runtime-state") { var pendingPreferences = Object.assign({}, pendingIds); pendingPreferences[id] = value; pendingIds = pendingPreferences }
-        if (deferred) debounce.restart()
+        if (id === "layout") flushRuntime()
+        else if (deferred) debounce.restart()
         else flush()
         return true
     }
@@ -119,8 +122,12 @@ QtObject {
         if (selected.general.length && !SettingsStore.error) SettingsStore.apply(selected.general)
         if (selected.shell.length && !ShellSettingsStore.error) ShellSettingsStore.apply(selected.shell)
         if (selected.wallpaper.length && !WallpaperSettingsStore.error) WallpaperSettingsStore.apply(selected.wallpaper)
+        flushRuntime()
+    }
+    // Layout entry points dispatch only runtime state, preserving unrelated Settings drafts.
+    function flushRuntime() {
         if (!runtimeWriter.running && !runtimeError && Object.keys(runtimePending).length) {
-            runtimeWritingId = Object.keys(runtimePending)[0]
+            runtimeWritingId = Object.prototype.hasOwnProperty.call(runtimePending, "layout") ? "layout" : Object.keys(runtimePending)[0]
             runtimeWritingValue = runtimePending[runtimeWritingId]
             runtimeWriter.command = runtimeCommand(runtimeWritingId, runtimeWritingValue)
             runtimeWriter.running = true
@@ -143,7 +150,10 @@ QtObject {
     }
     // Update shared state immediately after success while FileViews catch up.
     function acceptRuntime(id, value) {
-        if (id === "layout") AppState.taskbarManualState = value === "taskbar"
+        if (id === "layout") {
+            if (value !== "taskbar") ShellSettingsStore.confirmStatusEdge(value === "leftbar" ? "left" : "top")
+            AppState.taskbarManualState = value === "taskbar"
+        }
         else if (id === "dockbar") AppState.dockbarManualState = value
         else if (id === "cava") AppState.cavaLayerState = value
         else if (id === "cava-color") AppState.cavaColorMode = value
@@ -174,12 +184,21 @@ QtObject {
         onExited: code => {
             var id = root.runtimeWritingId, value = root.runtimeWritingValue
             root.runtimeWritingId = ""
-            if (code !== 0) { root.runtimeError = runtimeErr.text.trim() || "Runtime controller failed"; return }
+            if (code !== 0) {
+                root.runtimeError = runtimeErr.text.trim() || "Runtime controller failed"
+                if (id === "layout") {
+                    var failed = Object.assign({}, root.runtimePending)
+                    delete failed.layout
+                    root.runtimePending = failed
+                }
+                return
+            }
             root.acceptRuntime(id, value)
             var pending = Object.assign({}, root.runtimePending)
             if (pending[id] === value) delete pending[id]
             root.runtimePending = pending
-            root.debounce.restart()
+            if (id === "layout") root.flushRuntime()
+            else root.debounce.restart()
         }
     }
 }

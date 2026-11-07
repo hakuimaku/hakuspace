@@ -7,6 +7,8 @@ Item {
 
     required property real controlDiameter
     required property real bodyWidth
+    // Horizontal rails unfold along X while preserving upright tool buttons.
+    property bool horizontal: false
     property bool bottomAttached: false
     property real bodyHeight: 500
     property Item tooltipHost: null
@@ -23,7 +25,7 @@ Item {
     property bool keyboardSelected: false
 
     readonly property real itemDiameter: root.controlDiameter
-    readonly property real itemSpacing: 10
+    readonly property real itemSpacing: horizontal ? Math.min(10, Math.max(0, (bodyWidth - listTopPadding - listBottomPadding - tools.length * itemDiameter) / Math.max(1, tools.length - 1))) : 10
     // Keep equal insets around the utility stack.
     readonly property real listTopPadding: 30
     readonly property real listBottomPadding: 30
@@ -31,7 +33,7 @@ Item {
 
     readonly property var tools: UiCatalog.sidebarTools
     readonly property real preferredBodyHeight: listTopPadding + tools.length * itemDiameter
-        + (tools.length - 1) * itemSpacing + listBottomPadding
+        + (tools.length - 1) * 10 + listBottomPadding
 
     signal pointerMoved(real x, real y)
     signal toolRequested(string key)
@@ -61,16 +63,16 @@ Item {
     }
 
     // Height of the lobe grows dynamically with morphProgress:
-    readonly property real currentHeight: bodyHeight * morphProgress
+    readonly property real currentHeight: (horizontal ? bodyWidth : bodyHeight) * morphProgress
 
     visible: morphProgress > 0.001 || expanded
 
     // The Overlay owns only the rounded rail and its controls.
     Rectangle {
-        x: 0
-        y: root.bottomAttached ? root.bodyHeight - root.currentHeight : -root.joinOverlap
-        width: root.bodyWidth
-        height: root.currentHeight + root.joinOverlap
+        x: root.horizontal ? -root.joinOverlap : 0
+        y: root.horizontal ? 0 : root.bottomAttached ? root.bodyHeight - root.currentHeight : -root.joinOverlap
+        width: root.horizontal ? root.currentHeight + root.joinOverlap : root.bodyWidth
+        height: root.horizontal ? root.bodyHeight : root.currentHeight + root.joinOverlap
         color: root.surfaceColor
         topRightRadius: root.cornerRadius
         bottomRightRadius: root.cornerRadius
@@ -80,14 +82,15 @@ Item {
     Item {
         id: controlsGroup
         z: 1
-        x: 0
+        x: root.horizontal ? -root.joinOverlap / 2 : 0
         // Center the stack across the painted rail, including its attachment overlap.
-        y: (root.bottomAttached ? 1 : -1) * root.joinOverlap / 2
+        y: root.horizontal ? 0 : (root.bottomAttached ? 1 : -1) * root.joinOverlap / 2
         width: root.bodyWidth
         height: root.bodyHeight
         opacity: Math.max(0, Math.min(1, (root.morphProgress - 0.15) / 0.70))
         transform: Translate {
-            y: (root.bottomAttached ? 24 : -24) * (1.0 - root.morphProgress)
+            x: root.horizontal ? -24 * (1.0 - root.morphProgress) : 0
+            y: root.horizontal ? 0 : (root.bottomAttached ? 24 : -24) * (1.0 - root.morphProgress)
         }
         visible: opacity > 0.001
 
@@ -101,8 +104,8 @@ Item {
                 required property int index
                 required property var modelData
 
-                x: controlsGroup.controlX
-                y: root.listTopPadding + index * (root.itemDiameter + root.itemSpacing)
+                x: root.horizontal ? root.listTopPadding + index * (root.itemDiameter + root.itemSpacing) : controlsGroup.controlX
+                y: root.horizontal ? (root.bodyHeight - root.controlDiameter) / 2 : root.listTopPadding + index * (root.itemDiameter + root.itemSpacing)
                 width: root.itemDiameter
                 height: root.itemDiameter
                 z: 20

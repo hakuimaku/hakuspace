@@ -14,6 +14,9 @@ Item {
     readonly property color frameColor: Theme.surface
     // Place the lower corners above each output's visible full bar.
     readonly property real taskbarInset: ScreenGeometry.taskbarReservation()
+    readonly property Item frameItem: frame
+    property alias horizontalReservationWindow: horizontalReservation
+    property alias leftReservationWindow: leftReservation
 
     // Render corner masks and rails opposite the status bar without intercepting input.
     PanelWindow {
@@ -31,10 +34,12 @@ Item {
         // Draw only the small corner masks and rails instead of repainting an output-sized image.
         Item {
             id: frame
-            width: parent.width
+            x: ScreenGeometry.leftChromeWidth
+            width: parent.width - x
             y: ChromeLayout.topBarMode ? Math.round(Theme.topBarHeight) : 0
             height: Math.max(0, parent.height - y - rootItem.taskbarInset)
             readonly property real t: rootItem.sideInset
+            readonly property real leftRail: ChromeLayout.leftBarMode ? 0 : t
             readonly property real topInset: ScreenGeometry.topBorderThickness
             readonly property real bottomInset: ScreenGeometry.bottomInset
             readonly property real r: ScreenGeometry.maskRadius(width, height)
@@ -43,7 +48,7 @@ Item {
                 delegate: Shape {
                     required property int index
                     width: frame.r; height: frame.r
-                    x: index === 1 || index === 2 ? frame.width - frame.t - width : frame.t
+                    x: index === 1 || index === 2 ? frame.width - frame.t - width : frame.leftRail
                     y: index >= 2 ? frame.height - frame.bottomInset - height : frame.topInset
                     rotation: index * 90
                     transformOrigin: Item.Center
@@ -58,7 +63,7 @@ Item {
                     }
                 }
             }
-            Rectangle { width: frame.t; height: parent.height; color: rootItem.frameColor }
+            Rectangle { width: frame.leftRail; height: parent.height; color: rootItem.frameColor }
             Rectangle { x: parent.width - width; width: frame.t; height: parent.height; color: rootItem.frameColor }
             Rectangle { width: parent.width; height: frame.topInset; color: rootItem.frameColor }
             Rectangle { y: parent.height - height; width: parent.width; height: frame.bottomInset; color: rootItem.frameColor }
@@ -72,11 +77,11 @@ Item {
         color: "transparent"
         WlrLayershell.layer: WlrLayer.Top
         exclusionMode: ExclusionMode.Normal
-        anchors { top: ChromeLayout.taskbarMode; bottom: !ChromeLayout.taskbarMode; left: true; right: true }
+        anchors { top: !ChromeLayout.topBarMode; bottom: ChromeLayout.topBarMode; left: true; right: true }
         exclusiveZone: rootItem.sideInset
         implicitHeight: rootItem.sideInset
         mask: Region {}
-        visible: rootItem.sideInset > 0
+        visible: rootItem.sideInset > 0 && (!ChromeLayout.topBarMode || ScreenGeometry.dockbarReservation(rootItem.modelData.name) === 0)
     }
 
     PanelWindow {
@@ -86,10 +91,10 @@ Item {
         WlrLayershell.layer: WlrLayer.Top
         exclusionMode: ExclusionMode.Normal
         anchors { top: true; bottom: true; left: true }
-        exclusiveZone: ScreenGeometry.leftInset
-        implicitWidth: ScreenGeometry.leftInset
+        exclusiveZone: ScreenGeometry.reservedLeft
+        implicitWidth: ScreenGeometry.reservedLeft
         mask: Region {}
-        visible: rootItem.sideInset > 0
+        visible: ScreenGeometry.reservedLeft > 0
     }
 
     PanelWindow {

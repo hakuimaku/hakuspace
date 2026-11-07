@@ -34,6 +34,7 @@ haku_state_path() {
         cava.dynamic-position) name='[cava].dynamic-position' ;;
         cava.color-mode) name='[cava].color-mode' ;;
         cava.height) name='[cava].height' ;;
+        migration.hikai-layout-v11.json) name='[migration].hikai-layout-v11.json' ;;
         migration.hikai-chrome-v6.json) name='[migration].hikai-chrome-v6.json' ;;
         *) printf 'Unknown HakuSpace state key: %s\n' "${1:-}" >&2; return 1 ;;
     esac

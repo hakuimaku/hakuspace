@@ -7,6 +7,8 @@ ToolTip {
     property Item target: null
     property bool active: false
     property bool immediate: false
+    // Allow a caller with its own hover timer to retain opacity transitions.
+    property int fadeDuration: immediate ? 0 : HAnimation.slow
 
     parent: target
     x: target ? (target.width - width) / 2 : 0
@@ -16,10 +18,10 @@ ToolTip {
     padding: 10
     closePolicy: Popup.NoAutoClose
     enter: Transition {
-        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: root.immediate ? 0 : HAnimation.slow; easing.bezierCurve: HAnimation.tooltipCurve }
+        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: root.fadeDuration; easing.bezierCurve: HAnimation.tooltipCurve }
     }
     exit: Transition {
-        NumberAnimation { property: "opacity"; from: 1; to: 0; duration: root.immediate ? 0 : HAnimation.slow; easing.bezierCurve: HAnimation.tooltipCurve }
+        NumberAnimation { property: "opacity"; from: 1; to: 0; duration: root.fadeDuration; easing.bezierCurve: HAnimation.tooltipCurve }
     }
 
     onActiveChanged: {

@@ -69,7 +69,7 @@ assert.doesNotMatch(host, /NumberAnimation on arrowPhase|RadialGradient/)
 assert.equal((host.match(/HakuMenuReturnControl \{/g) || []).length, 2)
 assert.match(source, /bottomHostControlHeight: ChromeLayout\.dockbarActive && !ChromeLayout\.taskbarMode \? dockbarHeight : 0/)
 assert.match(host, /surfaceHeight: menuHeight \+ controlHeight/)
-assert.match(host, /menuTop: bottomAttached \? ScreenGeometry\.bottomHostTop\(screenHeight\) : Theme\.topBarHeight/)
+assert.match(host, /menuTop: bottomAttached \? ScreenGeometry\.bottomHostTop\(screenHeight\) : ScreenGeometry\.topChromeHeight/)
 
 // Exercise live center-lane publication, unchanged updates and output revocation.
 const lanes = vm.createContext({taskbarCenterRects: {}})

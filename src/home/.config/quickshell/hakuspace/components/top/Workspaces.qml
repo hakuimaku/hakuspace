@@ -8,6 +8,8 @@ import Quickshell
 TopModule {
     id: root
 
+    // Use the same workspace model and activation for either bar axis.
+    property bool vertical: false
     property string screenName: ""
     property var items: WM.workspacesFor(screenName)
     property int dot: 20
@@ -55,9 +57,22 @@ TopModule {
         return x;
     }
 
+    // Keep the original markers while assigning transparent vertical gaps to a hit slot.
+    function indexAt(position) {
+        for (var index = 0; index < items.length; index++) {
+            var start = slotX(index)
+            var end = vertical && index < items.length - 1 ? slotX(index + 1)
+                : start + (index === activeIdx ? activeW : dot)
+            if (position >= start && (vertical ? position < end : position <= end)) return index
+        }
+        return -1
+    }
+
     color: Theme.surface
     tooltip: ""
-    implicitWidth: visible ? totalWidth + Theme.pad * 2 : 0
+    implicitWidth: visible ? (vertical ? dot : totalWidth) + Theme.pad * 2 : 0
+    implicitHeight: vertical ? totalWidth + Theme.pad * 2 : Theme.fontSize * 1.8
+    onVerticalChanged: retargetTimer.restart()
     onActiveIdxChanged: retargetTimer.restart()
     onItemsChanged: retargetTimer.restart()
     onScreenNameChanged: retargetTimer.restart()
@@ -77,8 +92,8 @@ TopModule {
     Item {
         id: container
 
-        width: parent.width - Theme.pad * 2
-        height: root.dot
+        width: root.vertical ? root.width : root.totalWidth
+        height: root.vertical ? root.totalWidth : root.dot
         anchors.centerIn: parent
 
         Repeater {
@@ -91,12 +106,14 @@ TopModule {
                 property bool isActive: index === root.activeIdx
                 property bool isHovered: containerMouseArea.hoveredIdx === index
 
-                width: root.dot
+                width: root.vertical ? container.width : root.dot
                 height: root.dot
-                x: root.slotX(index)
+                x: root.vertical ? 0 : root.slotX(index)
+                y: root.vertical ? root.slotX(index) : 0
 
                 // Background workspace dot indicating slot presence and occupancy.
                 Rectangle {
+                    objectName: "workspace-dot-" + index
                     anchors.centerIn: parent
                     width: root.dot
                     height: root.dot
@@ -148,6 +165,7 @@ TopModule {
                 HTooltip {
                     target: cell
                     enabled: cell.isHovered && ws !== undefined
+                    active: root.vertical && enabled
                     text: {
                         if (!ws)
                             return "";
@@ -179,6 +197,9 @@ TopModule {
                     }
                 }
 
+                Behavior on y {
+                    NumberAnimation { duration: HAnimation.spatial; easing.bezierCurve: HAnimation.spatialCurve }
+                }
                 // Animates slot horizontal position when adjacent slots expand or collapse.
                 Behavior on x {
                     NumberAnimation {
@@ -204,19 +225,11 @@ TopModule {
             acceptedButtons: Qt.LeftButton | Qt.RightButton
             cursorShape: Qt.PointingHandCursor
             onPositionChanged: (mouse) => {
-                var hIdx = -1;
-                for (var i = 0; i < root.items.length; i++) {
-                    var sx = root.slotX(i);
-                    var w = (i === root.activeIdx) ? root.activeW : root.dot;
-                    if (mouse.x >= sx && mouse.x <= sx + w) {
-                        hIdx = i;
-                        break;
-                    }
-                }
-                hoveredIdx = hIdx;
+                hoveredIdx = root.indexAt(root.vertical ? mouse.y : mouse.x);
             }
             onExited: hoveredIdx = -1
             onClicked: (mouse) => {
+                hoveredIdx = root.indexAt(root.vertical ? mouse.y : mouse.x);
                 if (hoveredIdx !== -1) {
                     var ws = root.items[hoveredIdx];
                     if (!ws)
@@ -242,6 +255,7 @@ TopModule {
         // Active workspace indicator pill morphing across workspace slots.
         Rectangle {
             id: indicator
+            objectName: "workspace-active-indicator"
 
             property real start: 0
             property real end: 0
@@ -271,11 +285,12 @@ TopModule {
                 endAnim.restart();
             }
 
-            height: root.dot
+            height: root.vertical ? Math.max(root.dot, end - start) : root.dot
             radius: root.dot / 2
             color: Theme.accent
-            x: start
-            width: Math.max(root.dot, end - start)
+            x: root.vertical ? (container.width - root.dot) / 2 : start
+            y: root.vertical ? start : 0
+            width: root.vertical ? root.dot : Math.max(root.dot, end - start)
             visible: root.activeIdx !== -1
             Component.onCompleted: {
                 if (root.activeIdx !== -1) {

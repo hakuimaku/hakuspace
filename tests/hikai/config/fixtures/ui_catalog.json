@@ -171,5 +171,15 @@
       "description": "Original video quality",
       "value": "original"
     }
+  ],
+  "statusBarLayouts": [
+    {
+      "value": "topbar",
+      "label": "Topbar"
+    },
+    {
+      "value": "leftbar",
+      "label": "Leftbar"
+    }
   ]
 }

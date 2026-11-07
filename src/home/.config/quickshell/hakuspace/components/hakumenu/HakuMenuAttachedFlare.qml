@@ -15,7 +15,7 @@ Item {
     required property var modelData
 
     property bool bottomAttached: false
-    readonly property bool available: bottomAttached ? ScreenGeometry.bottomHostAvailable : ChromeLayout.topBarMode
+    readonly property bool available: bottomAttached ? ScreenGeometry.bottomHostAvailable : ChromeLayout.statusBarMode
     readonly property string presentation: bottomAttached ? "bottomFlare" : "topFlare"
     readonly property real screenWidth: modelData ? modelData.width : 0
     readonly property real screenHeight: modelData ? modelData.height : 0
@@ -36,19 +36,19 @@ Item {
         : SafeZoneGeometry.rect(0, 0, 0, 0)
     readonly property var taskSize: Geometry.attachedTaskSize(screenWidth, screenHeight,
         ScreenGeometry.leftInset, ScreenGeometry.rightInset,
-        bottomAttached ? ScreenGeometry.bottomHostReservation() + controlHeight : Theme.topBarHeight,
+        bottomAttached ? ScreenGeometry.bottomHostReservation() + controlHeight : ScreenGeometry.topChromeHeight,
         bottomAttached ? ScreenGeometry.bottomHostOppositeInset : ScreenGeometry.bottomInset, menu.miniHeight)
     readonly property real maxMenuWidth: taskManagerTab ? taskSize.width : root.screenWidth * 0.42
     readonly property real targetMenuWidth: Geometry.targetWidth(screenWidth, renderTab, UiState.hakuMenuMode,
         ScreenGeometry.leftInset, ScreenGeometry.rightInset)
     // Grow General editing within the existing top/bottom output reservations.
     readonly property real availableMenuHeight: Math.max(1, screenHeight
-        - (bottomAttached ? ScreenGeometry.bottomHostReservation() + controlHeight : Theme.topBarHeight)
+        - (bottomAttached ? ScreenGeometry.bottomHostReservation() + controlHeight : ScreenGeometry.topChromeHeight)
         - (bottomAttached ? ScreenGeometry.bottomHostOppositeInset : ScreenGeometry.bottomInset))
     readonly property real menuHeight: taskManagerTab ? taskSize.height
         : Math.min(Math.max(root.screenHeight * 0.40, menu.editorHeight), availableMenuHeight)
     readonly property real surfaceHeight: menuHeight + controlHeight
-    readonly property real menuTop: bottomAttached ? ScreenGeometry.bottomHostTop(screenHeight) : Theme.topBarHeight
+    readonly property real menuTop: bottomAttached ? ScreenGeometry.bottomHostTop(screenHeight) : ScreenGeometry.topChromeHeight
     readonly property real bounceHeadroom: surfaceHeight * HAnimation.hakuMenuBounceHeadroom
     readonly property bool contentReady: isFinite(menu.width) && menu.width > 0
                                          && isFinite(menu.height) && menu.height > 0

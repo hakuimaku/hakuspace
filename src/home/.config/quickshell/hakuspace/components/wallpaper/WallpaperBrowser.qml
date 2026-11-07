@@ -6,14 +6,44 @@ import "../../services"
 import "../../config/UiCatalog.js" as UiCatalog
 import "../base" as Base
 import "../motion" as Motion
+import "../settings" as Settings
 import "../flare" as Flare
+import "WorkspaceGeometry.js" as WorkspaceGeometry
 
 FocusScope {
     id: root
     // Keep the existing browser API backed by the shared lightweight session.
     property string presentation: "quick"
     readonly property bool workspace: presentation === "workspace"
+    property bool workspaceVertical: false
+    property string screenName: UiState.wallpaperScreenName
+    FontMetrics { id: categoryFontMetrics; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 1 }
+    FontMetrics { id: mediaFontMetrics; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 1 }
+    // Width measurement stays independent of the toolbar's wrapped height.
+    readonly property var leftMetrics: ({width: width, height: height, left: ScreenGeometry.contentLeftEdge,
+        right: ScreenGeometry.rightInset, top: ScreenGeometry.topBorderThickness,
+        bottom: ScreenGeometry.bottomReservation(screenName), padding: Theme.pad, gap: Theme.gap, radius: Theme.giantRadius,
+        toolbarWidth: toolbar.implicitWidth, toolbarHeight: toolbar.implicitHeight,
+        mediaHeight: mediaTabHeight, categoryHeight: categoryTabHeight, categoryCount: WallpaperLibrary.categories.length,
+        labelWidth: WallpaperLibrary.categories.reduce((value, name) => Math.max(value,
+            categoryFontMetrics.advanceWidth(name || "All")), mediaFontMetrics.advanceWidth("Images") * 2 + Theme.gap)})
+    readonly property real leftInfoWidth: WorkspaceGeometry.infoWidth({width: width, left: ScreenGeometry.contentLeftEdge,
+        right: ScreenGeometry.rightInset, gap: Theme.gap, radius: Theme.giantRadius, toolbarWidth: toolbar.implicitWidth})
+    readonly property var sideGeometry: WorkspaceGeometry.leftLayout(leftMetrics)
+    readonly property real rightRailWidth: sideGeometry.railRect.width
+    readonly property real infoSlide: -(sideGeometry.infoSurfaceRect.width + ScreenGeometry.roundedRadius) * (1 - reveal)
+    readonly property real gallerySlide: (sideGeometry.galleryRect.width + ScreenGeometry.rightInset) * (1 - reveal)
+    readonly property var cardInputItems: {
+        var offset = carousel.offset
+        return workspaceVertical && carousel.currentItem ? carousel.currentItem.parent.children.filter(item => item.wallpaper !== undefined && item.visible && !item.chosen) : []
+    }
     property real reveal: 1
+    // Resolve tooltip ownership against this native workspace host.
+    readonly property var tooltipHost: {
+        var host = root
+        while (host.parent) host = host.parent
+        return host
+    }
     // Closing opacity can lag behind the geometric zoom progress.
     property real contentOpacity: reveal
     property real spread: 1
@@ -45,60 +75,24 @@ FocusScope {
         var characters = Array.from(selected ? selected.label : "Choose a wallpaper")
         return characters.length > 48 ? characters.slice(0, 47).join("") + "…" : characters.join("")
     }
-    // Probe only the hovered source; the backend reuses fingerprinted metadata.
-    readonly property string tooltipSourceKey: selected ? selected.path + ":" + (selected.previewVersion || "") : ""
-    property string inspectedKey: ""
-    property var inspectedMetadata: ({})
-    readonly property var selectedMetadata: selected && selected.metadata ? selected.metadata
-        : tooltipSourceKey === inspectedKey ? inspectedMetadata : ({})
-    readonly property string selectedTooltip: {
-        if (!selected) return ""
-        var metadata = selectedMetadata
-        var lines = [selected.kind === "video" ? "Lively Wallpaper" : "Image Wallpaper"]
-        if (metadata.width > 0 && metadata.height > 0)
-            lines.push("Original: " + metadata.width + " × " + metadata.height + (selected.kind === "video" && metadata.fps > 0 ? " · " + Number(metadata.fps.toFixed(2)) + " FPS" : ""))
-        var bytes = metadata.fileSize || selected.fileSize
-        if (bytes > 0) {
-            var unit = bytes >= 1073741824 ? "GiB" : bytes >= 1048576 ? "MiB" : bytes >= 1024 ? "KiB" : "B"
-            var divisor = unit === "GiB" ? 1073741824 : unit === "MiB" ? 1048576 : unit === "KiB" ? 1024 : 1
-            lines.push("Size: " + Number((bytes / divisor).toFixed(2)) + " " + unit)
-        }
-        if (metadata.codec) lines.push("Format: " + metadata.codec.toUpperCase())
-        if (metadata.durationMs > 0 && selected.kind === "video") {
-            var seconds = Math.round(metadata.durationMs / 1000)
-            lines.push("Duration: " + Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0"))
-        }
-        if (selected.kind === "video") lines.push("Playback quality: " + (profile === "low-memory" ? "720p / 24 FPS" : profile === "screen" ? "Screen" : "Original"))
-        if (!metadata.width) lines.push(tooltipSourceKey === inspectedKey && !metadataProbe.running ? "Metadata unavailable" : "Reading metadata…")
-        return lines.join("\n")
+    readonly property var selectedMetadata: metadata.selectedMetadata
+    readonly property string selectedTooltip: metadata.tooltip
+    WallpaperMetadata {
+        id: metadata
+        selected: root.selected
+        profile: root.profile
+        active: root.workspace && toolbar.metadataActive
     }
-    onTooltipSourceKeyChanged: requestMetadata()
-
-    // Keep a late result associated with its source while coalescing hover changes.
-    function requestMetadata() {
-        if (!workspace || !titleTooltip || !titleTooltip.active || !selected || selected.metadata || inspectedKey === tooltipSourceKey || metadataProbe.running) return
-        inspectedKey = tooltipSourceKey
-        inspectedMetadata = ({})
-        metadataProbe.command = WallpaperService.command(["inspect", selected.path])
-        metadataProbe.running = true
-    }
-    Process {
-        id: metadataProbe
-        stdout: StdioCollector { id: metadataOutput }
-        onExited: code => {
-            try { root.inspectedMetadata = code === 0 ? JSON.parse(metadataOutput.text) : ({}) }
-            catch (error) { root.inspectedMetadata = ({}) }
-            metadataFollowup.restart()
-        }
-    }
-    Timer { id: metadataFollowup; interval: 0; onTriggered: root.requestMetadata() }
     readonly property var kinds: UiCatalog.wallpaperKinds
     // The quick input region surrounds controls without painting a container.
     readonly property Item quickInputItem: quickBounds
     readonly property Item topInputItem: workspaceControls
-    readonly property Item bottomInputItem: bottomBounds
+    readonly property Item bottomInputItem: workspaceVertical ? emptyInput : bottomBounds
+    readonly property Item mediaInputItem: typeSlot
+    readonly property Item categoryInputItem: categoryLane
     readonly property Item settingsInputItem: details
     readonly property Item selectedInputItem: workspace ? carousel.currentItem : null
+    Item { id: emptyInput; width: 0; height: 0 }
     readonly property real topPanelHeight: Theme.topBarHeight
     readonly property real toolbarControlHeight: Math.max(24, Math.floor(topPanelHeight - 12))
     readonly property real bottomPanelHeight: height * 0.15
@@ -113,6 +107,17 @@ FocusScope {
     // Every visual in a panel shares one translation, including open settings.
     readonly property real topSlide: -(topPanelHeight + Math.max(ScreenGeometry.roundedRadius + topPanel.seamOverlap, details.travelHeight)) * (1 - reveal)
     readonly property real bottomSlide: (bottomPanel.height + bottomBarHeight) * (1 - reveal)
+    readonly property var cardInputRects: {
+        var offset = carousel.offset
+        var viewport = {x: carousel.x, y: carousel.y, width: carousel.width, height: carousel.height}
+        if (!workspaceVertical || !carousel.currentItem) return []
+        return carousel.currentItem.parent.children.filter(item => item.wallpaper !== undefined && item.visible).map(function(item) {
+            var scale = item.scale, x = item.x, y = item.y
+            var start = item.mapToItem(root, 0, 0), end = item.mapToItem(root, item.width, item.height)
+            return WorkspaceGeometry.intersection(WorkspaceGeometry.intersection(
+                {x: start.x, y: start.y, width: end.x - start.x, height: end.y - start.y}, viewport), root.sideGeometry.safeRect)
+        })
+    }
     signal closeRequested()
     signal settingsRequested()
 
@@ -161,6 +166,10 @@ FocusScope {
         else if (settingsSection) return false
         else if (control && [Qt.Key_Return, Qt.Key_Enter].includes(event.key)) UiState.enterWallpaperWorkspace()
         else if (plain && [Qt.Key_Return, Qt.Key_Enter].includes(event.key) && !categoryLane.activeFocus) applySelected()
+        else if (workspace && plain && event.key === Qt.Key_Tab) {
+            if (search.activeFocus) carousel.forceActiveFocus()
+            else search.forceActiveFocus()
+        }
         else if ((control && event.key === Qt.Key_F) || (plain && event.key === Qt.Key_Slash && !search.activeFocus)) search.forceActiveFocus()
         else if ((control || alt) && [Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down].includes(event.key)) {
             var step = [Qt.Key_Left, Qt.Key_Up].includes(event.key) ? -1 : 1
@@ -173,13 +182,23 @@ FocusScope {
                     if (button) button.forceActiveFocus()
                 }
             }
-        } else if (plain && [Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down].includes(event.key) && (!search.activeFocus || [Qt.Key_Up, Qt.Key_Down].includes(event.key))) {
-            search.focus = false
-            carousel.forceActiveFocus()
+        } else if (plain && [Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down].includes(event.key)
+                && (workspace || !search.activeFocus || [Qt.Key_Up, Qt.Key_Down].includes(event.key))) {
+            // Workspace arrows browse without changing the focus toggled by Tab.
+            if (!workspace) {
+                search.focus = false
+                carousel.forceActiveFocus()
+            }
             move([Qt.Key_Left, Qt.Key_Up].includes(event.key) ? -1 : 1)
         } else return false
         event.accepted = true
         return true
+    }
+    // Capture Tab before a focused toolbar button starts its default focus traversal.
+    Shortcut {
+        sequence: "Tab"
+        enabled: root.workspace && root.enabled && root.visible && !root.settingsSection
+        onActivated: root.handleShortcut({key: Qt.Key_Tab, modifiers: Qt.NoModifier, accepted: false})
     }
     Keys.onPressed: event => handleShortcut(event)
     onVisibleChanged: if (visible && refreshOnShow) refresh()
@@ -189,403 +208,172 @@ FocusScope {
     Flare.FlareSurface {
         id: topPanel
         objectName: "wallpaperTopPanel"
-        y: root.topSlide
-        visible: root.workspace
+        x: root.workspaceVertical ? root.sideGeometry.infoRect.x + root.infoSlide : 0
+        y: root.workspaceVertical ? 0 : root.topSlide
+        visible: root.workspace && !root.workspaceVertical
         width: root.width
         attach: Flare.FlareHost.Top
-        start: ScreenGeometry.leftInset
-        end: root.width - ScreenGeometry.rightInset
-        currentHeight: root.topPanelHeight
-        bounds: ScreenGeometry.horizontalBounds(root.width)
+        start: root.workspaceVertical ? ScreenGeometry.topBorderThickness : ScreenGeometry.leftInset
+        end: root.workspaceVertical ? root.height - ScreenGeometry.bottomReservation(root.screenName) : root.width - ScreenGeometry.rightInset
+        currentHeight: root.workspaceVertical ? root.sideGeometry.infoRect.width : root.topPanelHeight
+        bounds: root.workspaceVertical ? ({start: 0, end: root.height}) : ScreenGeometry.horizontalBounds(root.width)
+        transform: Matrix4x4 { matrix: root.workspaceVertical
+            ? Qt.matrix4x4(0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+            : Qt.matrix4x4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1) }
         r: ScreenGeometry.roundedRadius
         rf: ScreenGeometry.roundedRadius
         surfaceColor: Theme.surface
+    }
+    // Short corner ears join the toolbar to the top and Leftbar without a long diagonal edge.
+    Shape {
+        id: informationSurface
+        objectName: "wallpaper-information-surface"
+        visible: root.workspace && root.workspaceVertical
+        x: root.sideGeometry.infoSurfaceRect.x + root.infoSlide
+        y: root.sideGeometry.infoSurfaceRect.y
+        width: root.sideGeometry.infoSurfaceRect.width
+        height: root.sideGeometry.infoSurfaceRect.height
+        readonly property real corner: root.sideGeometry.infoRadius
+        readonly property real bodyWidth: width - corner
+        readonly property real bodyHeight: height - corner
+        preferredRendererType: Shape.CurveRenderer
+        ShapePath {
+            fillColor: Theme.surface
+            strokeColor: "transparent"
+            startX: 0; startY: 0
+            PathLine { x: informationSurface.width; y: 0 }
+            PathQuad {
+                controlX: informationSurface.bodyWidth; controlY: 0
+                x: informationSurface.bodyWidth; y: informationSurface.corner
+            }
+            PathLine { x: informationSurface.bodyWidth; y: informationSurface.bodyHeight - informationSurface.corner }
+            PathQuad {
+                controlX: informationSurface.bodyWidth; controlY: informationSurface.bodyHeight
+                x: informationSurface.bodyWidth - informationSurface.corner; y: informationSurface.bodyHeight
+            }
+            PathLine { x: informationSurface.corner; y: informationSurface.bodyHeight }
+            PathQuad {
+                controlX: 0; controlY: informationSurface.bodyHeight
+                x: 0; y: informationSurface.height
+            }
+            PathLine { x: 0; y: 0 }
+        }
     }
     Rectangle {
         id: bottomBar
         objectName: "wallpaperBottomBar"
         z: 10
         visible: root.workspace
-        y: root.height - height + root.bottomSlide
-        width: root.width
-        height: root.bottomBarHeight
+        x: root.workspaceVertical ? root.width - ScreenGeometry.rightInset + root.gallerySlide : 0
+        y: root.workspaceVertical ? root.sideGeometry.galleryRect.y : root.height - height + root.bottomSlide
+        width: root.workspaceVertical ? ScreenGeometry.rightInset : root.width
+        height: root.workspaceVertical ? root.sideGeometry.galleryRect.height : root.bottomBarHeight
         color: Theme.surface
     }
-    // Rounded shoulders and upward flares join the gallery to the screen rails.
-    Shape {
+    // The gallery cradle and its upright cards consume the same bounded layout.
+    WorkspaceGallerySurface {
         id: bottomPanel
         objectName: "wallpaperBottomPanel"
         visible: root.workspace
-        x: ScreenGeometry.leftInset
-        y: root.height - root.bottomBarHeight - height + root.bottomSlide
-        width: root.width - ScreenGeometry.leftInset - ScreenGeometry.rightInset
-        // Keep the raised selection and its padding inside the chassis shoulders.
-        height: Math.max(1, carousel.cardWidth * 9 / 16 * carousel.selectedScale + carousel.selectedLift
+        vertical: root.workspaceVertical
+        backingCurve: root.sideGeometry.backingCurve
+        x: root.workspaceVertical ? root.sideGeometry.rightSurfaceRect.x + root.gallerySlide : ScreenGeometry.leftInset
+        y: root.workspaceVertical ? root.sideGeometry.rightSurfaceRect.y : root.height - root.bottomBarHeight - height + root.bottomSlide
+        width: root.workspaceVertical ? root.sideGeometry.rightSurfaceRect.width : root.width - ScreenGeometry.leftInset - ScreenGeometry.rightInset
+        height: root.workspaceVertical ? root.sideGeometry.rightSurfaceRect.height : Math.max(1, carousel.cardWidth * 9 / 16 * carousel.selectedScale + carousel.selectedLift
             + carousel.contentPadding - root.bottomBarHeight + root.panelTopPadding)
-        readonly property real topWidth: Math.max(carousel.cardWidth * carousel.selectedScale, root.mediaTabWidth) + root.panelPadding * 4
-        readonly property real upperLeft: (width - topWidth) / 2
-        readonly property real upperRight: (width + topWidth) / 2
-        readonly property real upperCornerRadius: Math.min(Math.max(Theme.giantRadius + root.panelTopPadding, ScreenGeometry.roundedRadius), topWidth / 4, height / 3)
-        readonly property real flareRadius: Math.min(ScreenGeometry.edgeHugRadius, height / 3)
-        readonly property real sideRun: (width - topWidth) / 2
-        readonly property real sideRise: height
-        readonly property real flareTop: height - flareRadius
-        readonly property real sideLength: Math.max(1, Math.sqrt(sideRun * sideRun + sideRise * sideRise))
-        readonly property real slopeX: sideRun / sideLength
-        readonly property real slopeY: sideRise / sideLength
-        preferredRendererType: Shape.CurveRenderer
-        ShapePath {
-            fillColor: Theme.surface
-            strokeColor: "transparent"
-            startX: bottomPanel.upperLeft + bottomPanel.upperCornerRadius; startY: 0
-            PathLine { x: bottomPanel.upperRight - bottomPanel.upperCornerRadius; y: 0 }
-            PathQuad {
-                controlX: bottomPanel.upperRight; controlY: 0
-                x: bottomPanel.upperRight + bottomPanel.slopeX * bottomPanel.upperCornerRadius
-                y: bottomPanel.slopeY * bottomPanel.upperCornerRadius
-            }
-            PathLine {
-                x: bottomPanel.width - bottomPanel.slopeX * bottomPanel.flareRadius
-                y: bottomPanel.sideRise - bottomPanel.slopeY * bottomPanel.flareRadius
-            }
-            PathQuad {
-                controlX: bottomPanel.width; controlY: bottomPanel.height
-                x: bottomPanel.width; y: bottomPanel.flareTop
-            }
-            PathLine { x: bottomPanel.width; y: bottomPanel.height }
-            PathLine { x: 0; y: bottomPanel.height }
-            PathLine { x: 0; y: bottomPanel.flareTop }
-            PathQuad {
-                controlX: 0; controlY: bottomPanel.height
-                x: bottomPanel.slopeX * bottomPanel.flareRadius
-                y: bottomPanel.sideRise - bottomPanel.slopeY * bottomPanel.flareRadius
-            }
-            PathLine {
-                x: bottomPanel.upperLeft - bottomPanel.slopeX * bottomPanel.upperCornerRadius
-                y: bottomPanel.slopeY * bottomPanel.upperCornerRadius
-            }
-            PathQuad {
-                controlX: bottomPanel.upperLeft; controlY: 0
-                x: bottomPanel.upperLeft + bottomPanel.upperCornerRadius; y: 0
-            }
-        }
+        topWidth: root.workspaceVertical ? carousel.cardWidth * 9 / 16 * carousel.selectedScale + root.panelPadding * 4
+            : Math.max(carousel.cardWidth * carousel.selectedScale, root.mediaTabWidth) + root.panelPadding * 4
+        headerPadding: root.workspaceVertical ? root.panelPadding : root.panelTopPadding
     }
-    // Balanced side groups leave the selected wallpaper name at the screen center.
+    // Both workspace axes reuse the same toolbar and its original controls.
     Item {
         id: workspaceControls
         objectName: "wallpaper-toolbar"
-        y: root.topSlide
+        x: root.workspaceVertical ? root.sideGeometry.infoRect.x + root.infoSlide : 0
+        y: root.workspaceVertical ? root.sideGeometry.infoRect.y : root.topSlide
         visible: root.workspace
-        width: root.width
-        height: root.topPanelHeight
-        Item {
-            id: toolbar
+        width: root.workspaceVertical ? root.leftInfoWidth : root.width
+        height: root.workspaceVertical ? root.sideGeometry.infoRect.height : root.topPanelHeight
+        clip: root.workspaceVertical
+        Flickable {
+            id: informationScroll
             anchors.fill: parent
-            readonly property bool compact: root.width < 1600 || Theme.fontSize > 16
-            readonly property bool dense: root.width < 1200
-            readonly property int libraryFontSize: dense ? Math.min(13, Theme.fontSize - 1) : Theme.fontSize - 1
-            readonly property real edgePadding: compact ? 16 : 24
-            Text {
-                id: longestModeLabel
-                visible: false
-                text: "Lively Wallpaper"
-                font.family: Theme.fontFamily; font.pixelSize: toolbar.libraryFontSize
-            }
-            Row {
-                id: leftTools
-                x: toolbar.edgePadding
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: toolbar.compact ? 8 : 12
-                Row {
-                    id: modeBadge
-                    objectName: "wallpaper-mode-badge"
-                    readonly property bool wallpaperTooltipTarget: true
-                    spacing: 8
-                    height: root.toolbarControlHeight
-                    HoverHandler { id: modeHover }
-                    Text {
-                        objectName: "wallpaper-mode-icon"
-                        text: "\uf03e"
-                        height: root.toolbarControlHeight
-                        verticalAlignment: Text.AlignVCenter
-                        color: Theme.fg
-                        font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24
-                        Accessible.name: "Wallpaper"
-                    }
-                    Text {
-                        objectName: "wallpaper-mode-label"
-                        // Reserve the longer caption for both media modes.
-                        width: Math.ceil(Math.max(implicitWidth, longestModeLabel.implicitWidth))
-                        height: root.toolbarControlHeight
-                        text: root.filter === "video" ? "Lively Wallpaper" : "Image Wallpaper"
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignLeft
-                        color: Theme.fg
-                        font.family: Theme.fontFamily; font.pixelSize: toolbar.libraryFontSize
-                    }
-                }
-                Item {
-                    id: searchSlot
-                    // Leave space for the centered name without hiding the library labels.
-                    width: Math.max(80, Math.min(256, root.width / 2 - modeBadge.width - libraryGroup.width
-                        - leftTools.spacing * 2 - toolbar.edgePadding - 76))
-                    height: root.toolbarControlHeight
-                }
-                Rectangle {
-                    id: libraryGroup
-                    width: libraryButtons.implicitWidth + 4; height: root.toolbarControlHeight
-                    radius: 8; color: Theme.hoverMuted
-                    Row {
-                        id: libraryButtons
-                        anchors.centerIn: parent
-                        spacing: 2
-                        WallpaperToolbarButton {
-                            objectName: "wallpaper-shuffle"
-                            width: implicitWidth; height: root.toolbarControlHeight - 4
-                            caption: "Shuffle"; icon: "\uf074"; description: "Shuffle selection"
-                            fontSize: toolbar.libraryFontSize
-                            iconSize: toolbar.dense ? 14 : 18
-                            horizontalPadding: toolbar.dense ? 8 : 12
-                            enabled: root.filteredItems.length > 1
-                            onClicked: root.shuffle()
-                        }
-                        WallpaperToolbarButton {
-                            objectName: "wallpaper-refresh"
-                            width: implicitWidth; height: root.toolbarControlHeight - 4
-                            caption: "Refresh"; icon: "\uf021"; description: "Refresh wallpaper library"
-                            fontSize: toolbar.libraryFontSize
-                            iconSize: toolbar.dense ? 14 : 18
-                            horizontalPadding: toolbar.dense ? 8 : 12
-                            enabled: !root.loading
-                            onClicked: root.refresh()
-                        }
-                    }
-                }
-            }
-            Base.HTooltip {
-                objectName: "wallpaper-mode-tooltip"
-                target: modeBadge
-                text: root.filter === "video" ? "Lively wallpaper library" : "Image wallpaper library"
-                active: modeHover.hovered && root.workspace
-            }
-            Rectangle {
-                objectName: "wallpaper-title-left-separator"
-                x: selectedTitle.x - 16 - width
-                anchors.verticalCenter: parent.verticalCenter
-                width: 1; height: root.toolbarControlHeight - 8
-                color: Theme.fgMuted; opacity: 0.5
-            }
-            Rectangle {
-                objectName: "wallpaper-title-right-separator"
-                x: selectedTitle.x + selectedTitle.width + 16
-                anchors.verticalCenter: parent.verticalCenter
-                width: 1; height: root.toolbarControlHeight - 8
-                color: Theme.fgMuted; opacity: 0.5
-            }
-            Text {
-                id: selectedTitle
-                objectName: "wallpaper-selected-title"
-                anchors.centerIn: parent
-                anchors.alignWhenCentered: false
-                width: Math.max(0, Math.min(520, root.width - 2 * (Math.max(leftTools.width, rightTools.width) + toolbar.edgePadding + 16)))
-                text: root.selectedTitle
-                height: root.toolbarControlHeight
-                textFormat: Text.PlainText
-                maximumLineCount: 1
-                verticalAlignment: Text.AlignVCenter
-                horizontalAlignment: Text.AlignHCenter
-                elide: Text.ElideRight
-                color: Theme.fg
-                font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize; font.weight: Font.DemiBold
-                Accessible.name: root.selected ? root.selected.label : text
-                readonly property bool wallpaperTooltipTarget: true
-                // Flare must anchor to the bounded title box, not the text's natural width.
-                Item {
-                    id: titleTooltipAnchor
-                    anchors.fill: parent
-                    readonly property bool wallpaperTooltipTarget: true
-                }
-                Base.HTooltip {
-                    id: titleTooltip
-                    objectName: "wallpaper-title-tooltip"
-                    target: titleTooltipAnchor
-                    text: root.selectedTooltip
-                    component: titleMetadataContent
-                    active: titleHover.hovered && root.enabled && !!root.selected
-                    onActiveChanged: if (active) root.requestMetadata()
-                }
-                HoverHandler { id: titleHover }
-            }
-            Component {
-                id: titleMetadataContent
-                Item {
-                    id: metadataContent
-                    property var payload: null
-                    property real maxWidth: 0
-                    // The flare's 22 px side padding completes the separator span.
-                    implicitWidth: Math.max(1, Math.min(maxWidth, selectedTitle.width + 32 - 44))
-                    implicitHeight: metadataText.implicitHeight
-                    width: implicitWidth
-                    Text {
-                        id: metadataText
-                        width: parent.width
-                        text: metadataContent.payload && metadataContent.payload.text ? metadataContent.payload.text : ""
-                        textFormat: Text.PlainText
-                        color: Theme.accent
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize
-                        horizontalAlignment: Text.AlignHCenter
-                        wrapMode: Text.Wrap
-                    }
-                }
-            }
-            Row {
-                id: rightTools
-                x: parent.width - width - toolbar.edgePadding
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: toolbar.compact ? 8 : 12
-                Rectangle {
-                    id: quality
-                    objectName: "wallpaper-video-quality"
-                    // Compact layouts keep direct quality choices in the Playback menu.
-                    visible: root.width >= 1440
-                    enabled: root.filter === "video"
-                    opacity: root.filter === "video" ? 1 : 0.45
-                    Behavior on opacity { NumberAnimation { duration: HAnimation.effects; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.effectsCurve } }
-                    width: implicitWidth
-                    height: root.toolbarControlHeight
-                    readonly property var options: UiCatalog.wallpaperVideoProfiles
-                    implicitWidth: qualityButtons.implicitWidth + 4
-                    radius: 8
-                    color: Theme.hoverMuted
-                    Motion.SelectionPill {
-                        objectName: "wallpaper-quality-indicator"
-                        coordinateSpace: quality
-                        color: Theme.accent
-                        targetItem: quality.visible && qualityRepeater.count > 0 ? qualityRepeater.itemAt(quality.options.findIndex(option => option.value === WallpaperSettingsStore.values.playback.profile)) : null
-                    }
-                    Row {
-                        id: qualityButtons
-                        z: 1
-                        anchors.centerIn: parent
-                        spacing: 2
-                        Repeater {
-                            id: qualityRepeater
-                            model: quality.options
-                            delegate: WallpaperToolbarButton {
-                                required property var modelData
-                                objectName: "wallpaper-quality-" + modelData.value
-                                width: implicitWidth; height: root.toolbarControlHeight - 4
-                                caption: toolbar.compact ? modelData.shortLabel : modelData.label
-                                description: modelData.description
-                                fontSize: Math.max(11, Theme.fontSize - 2)
-                                disabledOpacity: root.filter === "video" ? 0.45 : 1
-                                selectedColor: "transparent"
-                                hoverColor: "transparent"
-                                pressedColor: "transparent"
-                                focusColor: "transparent"
-                                hoverScaleDelta: 0.02
-                                pressScaleDelta: 0.04
-                                disabledColor: "transparent"
-                                disabledForegroundColor: selected ? selectedForegroundColor : foregroundColor
-                                selected: WallpaperSettingsStore.values.playback.profile === modelData.value
-                                enabled: WallpaperSettingsStore.ready && !WallpaperSettingsStore.loading && !WallpaperSettingsStore.saving
-                                onClicked: if (root.filter === "video") WallpaperSettingsStore.setValue("playback", "profile", modelData.value)
-                            }
-                        }
-                    }
-                }
-                WallpaperToolbarButton {
-                    objectName: "wallpaper-save-preferences"
-                    visible: quality.visible
-                    width: implicitWidth
-                    caption: "Save"; description: "Save video quality preferences"
-                    enabled: root.filter === "video" && WallpaperSettingsStore.ready && WallpaperSettingsStore.dirty && WallpaperSettingsStore.valid
-                        && !WallpaperSettingsStore.loading && !WallpaperSettingsStore.saving
-                    onClicked: if (root.filter === "video") WallpaperSettingsStore.apply()
-                }
-                Rectangle {
-                    objectName: "wallpaper-lively-controls"
-                    enabled: root.filter === "video"
-                    opacity: root.filter === "video" ? 1 : 0.45
-                    Behavior on opacity { NumberAnimation { duration: HAnimation.effects; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.effectsCurve } }
-                    width: preferenceButtons.implicitWidth + 4; height: root.toolbarControlHeight
-                    radius: 8; color: Theme.hoverMuted
-                    Row {
-                        id: preferenceButtons
-                        anchors.centerIn: parent
-                        spacing: 2
-                        WallpaperToolbarButton {
-                            objectName: "wallpaper-playback"
-                            width: implicitWidth; height: root.toolbarControlHeight - 4
-                            caption: toolbar.compact ? "" : "Playback"
-                            icon: toolbar.compact ? "\uf144" : ""
-                            description: "Video playback settings"
-                            disabledOpacity: 1
-                            selected: root.settingsSection === "playback"
-                            onClicked: if (root.filter === "video") root.settingsSection = root.settingsSection === "playback" ? "" : "playback"
-                        }
-                        WallpaperToolbarButton {
-                            objectName: "wallpaper-cache"
-                            width: implicitWidth; height: root.toolbarControlHeight - 4
-                            caption: toolbar.compact ? "" : "Cache"
-                            icon: toolbar.compact ? "\uf1c0" : ""
-                            description: "Video cache settings"
-                            disabledOpacity: 1
-                            selected: root.settingsSection === "cache"
-                            onClicked: if (root.filter === "video") root.settingsSection = root.settingsSection === "cache" ? "" : "cache"
-                        }
-                    }
-                }
-                WallpaperToolbarButton {
-                    objectName: "wallpaper-settings"
-                    width: implicitWidth
-                    icon: "\uf013"; description: "All wallpaper settings"
-                    fontSize: Theme.fontSize + 2
-                    onClicked: root.settingsRequested()
-                }
-                WallpaperToolbarButton {
-                    objectName: "wallpaper-close"
-                    width: implicitWidth
-                    icon: "\uf00d"; description: "Close wallpaper workspace"
-                    fontSize: Theme.fontSize + 4
-                    onClicked: root.dismiss()
-                }
-
-                WallpaperToolbarButton {
-                    objectName: "wallpaper-apply"
-                    width: Math.max(toolbar.dense ? 40 : 88, implicitWidth)
-                    readonly property bool preparingSelection: WallpaperService.busy && !!root.selected && WallpaperService.requestedPath === root.selected.path
-                    caption: toolbar.dense ? "" : preparingSelection ? "Preparing…" : WallpaperService.error ? "Retry apply" : "Apply"
-                    icon: toolbar.dense ? (preparingSelection ? "\uf110" : WallpaperService.error ? "\uf071" : "\uf00c") : ""
-                    description: WallpaperService.error || "Apply selected wallpaper"
-                    selected: true
-                    enabled: !!root.selected
-                    onClicked: root.applySelected()
+            contentWidth: width
+            contentHeight: root.workspaceVertical ? informationComposition.height : height
+            interactive: root.workspaceVertical && contentHeight > height
+            clip: root.workspaceVertical
+            boundsBehavior: Flickable.StopAtBounds
+            ScrollBar.vertical: Motion.HScrollBar { visible: root.workspaceVertical && informationScroll.contentHeight > informationScroll.height }
+            Item {
+                id: informationComposition
+                objectName: "wallpaper-information-composition"
+                // The corner toolbar wraps in physical screen coordinates.
+                width: informationScroll.width
+                height: root.workspaceVertical ? toolbar.implicitHeight : informationScroll.height
+                WorkspaceToolbar {
+                    id: toolbar
+                    browser: root
+                    width: parent.width
+                    height: root.workspaceVertical ? implicitHeight : root.topPanelHeight
                 }
             }
         }
     }
-    // Media tabs belong to the trapezoid header and follow the entire bottom slide.
+
+    // Media choices follow the right rail or the horizontal gallery header.
     Item {
         id: typeSlot
         objectName: "wallpaper-media-tabs"
         z: 30
         visible: root.workspace
-        x: (root.width - width) / 2
-        y: bottomPanel.y + root.panelPadding
-        width: root.mediaTabWidth
-        height: root.mediaTabHeight
+        parent: root
+        x: root.workspaceVertical ? root.sideGeometry.mediaRect.x + root.gallerySlide : (root.width - width) / 2
+        y: root.workspaceVertical ? root.sideGeometry.mediaRect.y : bottomPanel.y + root.panelPadding
+        width: root.workspaceVertical ? root.sideGeometry.mediaRect.width : root.mediaTabWidth
+        height: root.workspaceVertical ? root.sideGeometry.mediaRect.height : root.mediaTabHeight
     }
     Loader {
-        active: root.workspace
+        active: root.workspace && !root.workspaceVertical
         z: 3000
-        y: root.topPanelHeight + root.topSlide
+        y: root.workspaceVertical ? workspaceControls.y + workspaceControls.height : root.topPanelHeight + root.topSlide
         width: root.width
+        height: root.workspaceVertical ? root.height : 180
         sourceComponent: Base.TooltipLayer {
             objectName: "wallpaper-tooltip-layer"
             tipAreaHeight: 180
-            minimumTooltipWidth: selectedTitle.width + 32
+            minimumTooltipWidth: toolbar.titleWidth + 32
+            screenName: root.screenName
+            leftAttached: false
+            sideAttachmentX: root.sideGeometry.infoRect.x + root.sideGeometry.infoRect.width
+            height: root.workspaceVertical ? root.height : tipAreaHeight
+        }
+    }
+    // Leftbar workspace tooltips float beside their targets without flare geometry or morphs.
+    Settings.SettingsTooltip {
+        id: floatingTooltip
+        objectName: "wallpaper-floating-tooltip"
+        target: root.workspaceVertical && TooltipManager.current ? TooltipManager.current.target : null
+        text: TooltipManager.current ? TooltipManager.current.text : ""
+        active: root.workspace && root.workspaceVertical && root.visible && root.enabled
+            && TooltipManager.shown && TooltipManager.activeBar === root.tooltipHost && !!target
+        immediate: true
+        fadeDuration: HAnimation.effects
+        popupType: Popup.Item
+        // Display filesystem category names literally in the shared floating bubble.
+        Component.onCompleted: contentItem.textFormat = Text.PlainText
+        x: {
+            if (!target) return 0
+            var point = target.mapToItem(root, 0, 0)
+            return Math.max(ScreenGeometry.contentLeftEdge + 8,
+                Math.min(root.width - ScreenGeometry.rightInset - width - 8, point.x + (target.width - width) / 2)) - point.x
+        }
+        y: {
+            if (!target) return 0
+            var point = target.mapToItem(root, 0, 0)
+            var bottom = root.height - ScreenGeometry.bottomReservation(root.screenName) - 8
+            return point.y + target.height + height + 6 <= bottom ? target.height + 6
+                : Math.max(ScreenGeometry.topBorderThickness + 8 - point.y, -height - 6)
         }
     }
     WallpaperSettingsPopover {
@@ -595,10 +383,11 @@ FocusScope {
         visible: root.workspace && displayedSection.length > 0
         section: root.settingsSection
         hostReveal: root.reveal
-        x: root.width - width - ScreenGeometry.rightInset - 24
-        y: root.topPanelHeight + root.topSlide
-        width: Math.min(620, root.width - 64 - ScreenGeometry.leftInset - ScreenGeometry.rightInset)
-        availableHeight: root.height - root.topPanelHeight - gap - root.bottomPanelHeight - 24
+        x: root.workspaceVertical ? root.sideGeometry.infoRect.x + root.infoSlide : root.width - width - ScreenGeometry.rightInset - 24
+        y: root.workspaceVertical ? workspaceControls.y + workspaceControls.height + root.panelPadding : root.topPanelHeight + root.topSlide
+        width: root.workspaceVertical ? Math.min(root.sideGeometry.infoRect.width,
+            root.sideGeometry.galleryRect.x - x - Theme.gap) : Math.min(620, root.width - 64 - ScreenGeometry.leftInset - ScreenGeometry.rightInset)
+        availableHeight: root.workspaceVertical ? root.height - y - ScreenGeometry.bottomReservation(root.screenName) - root.panelPadding : root.height - root.topPanelHeight - gap - root.bottomPanelHeight - 24
         onCloseRequested: { root.settingsSection = ""; root.forceActiveFocus() }
     }
     Item {
@@ -629,10 +418,11 @@ FocusScope {
         scale: (0.96 + 0.04 * root.reveal) * navigationScale
         Item {
             id: searchControl
-            parent: root.workspace ? searchSlot : controls
+            parent: root.workspace ? toolbar.searchSlotItem : controls
             anchors.fill: root.workspace ? parent : undefined
             implicitHeight: 42
-            width: controls.width; height: implicitHeight
+            width: root.workspace ? parent.width : controls.width
+            height: root.workspace ? parent.height : implicitHeight
             TextField {
                 id: search
                 ContextMenu.menu: null
@@ -651,10 +441,10 @@ FocusScope {
                 Base.HTooltip {
                     objectName: "wallpaper-search-tooltip"
                     target: search
-                    text: "Search wallpapers (Ctrl+F)"
+                    text: root.workspace ? "Search wallpapers (Tab)" : "Search wallpapers (Ctrl+F)"
                     active: root.workspace && search.hovered
                 }
-                background: Rectangle { color: root.workspace ? Theme.hoverMuted : Theme.surface; radius: height / 2; border.width: root.workspace ? 1 : 0; border.color: search.activeFocus ? Theme.accent : Theme.hoverMuted }
+                background: Rectangle { color: root.workspace ? Theme.hoverMuted : Theme.surface; radius: root.workspaceVertical ? toolbar.controlRadius : height / 2; border.width: root.workspace ? 1 : 0; border.color: search.activeFocus ? Theme.accent : Theme.hoverMuted }
                 onTextEdited: root.query = text
                 Accessible.name: "Search wallpapers"
                 Keys.priority: Keys.BeforeItem
@@ -667,56 +457,89 @@ FocusScope {
             anchors.fill: root.workspace ? parent : undefined
             y: root.workspace ? 0 : searchControl.implicitHeight + 12
             width: root.workspace ? parent.width : Math.min(parent.width, 248)
-            implicitHeight: root.workspace ? root.mediaTabHeight : 40
+            implicitHeight: root.workspaceVertical ? typeSlot.height : root.workspace ? root.mediaTabHeight : 40
             height: implicitHeight
-            radius: root.workspace ? 0 : height / 2
-            color: root.workspace ? "transparent" : Theme.surface
+            radius: root.workspaceVertical ? Math.min(Theme.largeRadius, root.mediaTabHeight / 2) : root.workspace ? 0 : height / 2
+            color: root.workspaceVertical ? Theme.hoverMuted : root.workspace ? "transparent" : Theme.surface
             border.width: 0
             anchors.horizontalCenter: root.workspace ? undefined : parent.horizontalCenter
-            readonly property real slotWidth: root.workspace ? width / 2 : (width - 12) / 2
+            readonly property real slotWidth: root.workspaceVertical && root.sideGeometry.mediaStacked ? mediaChoices.width : root.workspace && !root.workspaceVertical ? width / 2 : (mediaChoices.width - 4) / 2
             Rectangle {
-                visible: root.workspace
+                visible: root.workspace && !root.workspaceVertical
                 width: parent.width; height: 1
                 color: Theme.hoverMuted
             }
             Rectangle {
                 objectName: "wallpaper-type-top-border"
-                visible: root.workspace
+                visible: root.workspace && !root.workspaceVertical
                 x: root.kinds.findIndex(choice => choice.id === root.filter) * typeLane.slotWidth
-                width: typeLane.slotWidth; height: 2
+                y: 0
+                width: typeLane.slotWidth
+                height: 2
                 color: Theme.accent
                 Behavior on x {
                     NumberAnimation { duration: HAnimation.effects; easing.type: Easing.BezierSpline; easing.bezierCurve: HAnimation.moduleCurve }
                 }
             }
             Item {
-                visible: !root.workspace
-                x: 4; y: 4; width: parent.width - 8; height: parent.height - 8
+                id: mediaChoices
+                // Selection and labels share one inset origin, including their first layout.
+                x: root.workspace && !root.workspaceVertical ? 0 : 4
+                y: x
+                width: parent.width - x * 2
+                height: parent.height - y * 2
                 Motion.SelectionPill {
                     objectName: "wallpaper-type-indicator"
-                    targetIndex: root.kinds.findIndex(choice => choice.id === root.filter)
-                    slotCount: root.kinds.length; slotSpacing: 4
-                    radius: height / 2
+                    visible: !root.workspace || root.workspaceVertical
+                    targetIndex: root.workspaceVertical ? -1 : root.kinds.findIndex(choice => choice.id === root.filter)
+                    slotCount: root.workspaceVertical ? 0 : root.kinds.length
+                    slotSpacing: 4
+                    targetItem: root.workspaceVertical && mediaRepeater.count > 0 ? mediaRepeater.itemAt(root.kinds.findIndex(choice => choice.id === root.filter)) : null
+                    radius: root.workspaceVertical ? Math.max(0, typeLane.radius - mediaChoices.x) : height / 2
                 }
             }
             Repeater {
+                id: mediaRepeater
+                parent: root.workspaceVertical ? mediaChoices : typeLane
                 model: root.kinds
                 delegate: WallpaperActionButton {
+                    id: mediaButton
                     required property var modelData
                     required property int index
                     objectName: "wallpaper-kind-" + modelData.id
-                    x: root.workspace ? index * typeLane.slotWidth : 4 + index * (typeLane.slotWidth + 4)
-                    y: root.workspace ? 0 : 4
-                    width: typeLane.slotWidth; height: root.workspace ? typeLane.height : typeLane.height - 8
+                    x: root.workspaceVertical ? (root.sideGeometry.mediaStacked ? 0 : index * (typeLane.slotWidth + 4)) : root.workspace ? index * typeLane.slotWidth : 4 + index * (typeLane.slotWidth + 4)
+                    y: root.workspaceVertical ? (root.sideGeometry.mediaStacked ? index * (height + 4) : 0) : root.workspace ? 0 : 4
+                    width: typeLane.slotWidth
+                    height: root.workspaceVertical && root.sideGeometry.mediaStacked ? (mediaChoices.height - 4) / 2 : mediaChoices.height
+                    radius: root.workspaceVertical ? Math.max(0, typeLane.radius - mediaChoices.x) : 0
                     expandedVisual: !root.workspace
                     hoverXScaleDelta: root.workspace ? 0 : 0.08
                     hoverScaleDelta: root.workspace ? 0 : 0.012
-                    fontSize: root.workspace ? Theme.fontSize + 1 : Theme.fontSize - 1
+                    pressXScaleDelta: root.workspaceVertical ? 0 : 0.13
+                    pressScaleDelta: root.workspaceVertical ? 0 : 0.045
+                    fontSize: root.workspaceVertical ? Theme.fontSize : root.workspace ? Theme.fontSize + 1 : Theme.fontSize - 1
                     idleColor: "transparent"; selectedColor: "transparent"
                     foregroundColor: root.workspace ? Theme.fgMuted : Theme.fg
                     hoverForegroundColor: Theme.fg
-                    selectedForegroundColor: root.workspace ? Theme.accent : Theme.onAccentColor
-                    text: modelData.name
+                    selectedForegroundColor: root.workspace && !root.workspaceVertical ? Theme.accent : Theme.onAccentColor
+                    text: root.workspaceVertical ? "" : modelData.name
+                    Text {
+                        id: mediaLabel
+                        anchors.centerIn: parent
+                        width: parent.width
+                        visible: root.workspaceVertical
+                        text: mediaButton.modelData.name
+                        horizontalAlignment: Text.AlignHCenter
+                        elide: Text.ElideRight
+                        color: mediaButton.foreground
+                        font.family: Theme.fontFamily
+                        font.pixelSize: mediaButton.fontSize
+                    }
+                    Base.HTooltip {
+                        target: mediaButton
+                        text: mediaButton.modelData.name
+                        active: root.workspaceVertical && mediaButton.hovered && mediaLabel.truncated
+                    }
                     Accessible.name: modelData.id === "video" ? "Lively wallpapers" : modelData.name
                     selected: root.filter === modelData.id
                     onClicked: { root.filter = modelData.id; root.forceActiveFocus() }
@@ -730,25 +553,31 @@ FocusScope {
     FocusScope {
         id: categoryLane
         objectName: "wallpaper-category-lane"
+        readonly property real contentInset: root.workspaceVertical ? root.sideGeometry.categoryInset : 0
         parent: root.workspace ? root : controls
         z: 30
-        x: root.workspace ? (root.width - width) / 2 : 0
-        y: root.workspace ? typeSlot.y + typeSlot.height + Theme.gap : typeLane.y + typeLane.height + Theme.gap
-        width: root.workspace ? root.mediaTabWidth : controls.width
-        height: root.categoryTabHeight
+        x: root.workspaceVertical ? root.sideGeometry.categoryRect.x + root.gallerySlide : root.workspace ? (root.width - width) / 2 : 0
+        y: root.workspaceVertical ? root.sideGeometry.categoryRect.y : root.workspace ? typeSlot.y + typeSlot.height + Theme.gap : typeLane.y + typeLane.height + Theme.gap
+        width: root.workspaceVertical ? root.sideGeometry.categoryRect.width : root.workspace ? root.mediaTabWidth : controls.width
+        height: root.workspaceVertical ? root.sideGeometry.categoryRect.height : root.categoryTabHeight
 
-        // Keep focused and selected chips within the horizontal viewport.
+        // Keep focused and selected categories inside the padded viewport.
         function ensureVisible(item) {
             if (!item) return
-            categoryScroll.contentX = Math.max(0, Math.min(categoryScroll.contentWidth - categoryScroll.width,
-                Math.max(item.x + item.width - categoryScroll.width, Math.min(categoryScroll.contentX, item.x))))
+            var point = item.mapToItem(categoryScroll.contentItem, 0, 0)
+            if (root.workspaceVertical) categoryScroll.contentY = Math.max(0, Math.min(categoryScroll.contentHeight - categoryScroll.height,
+                Math.max(point.y + item.height + contentInset - categoryScroll.height, Math.min(categoryScroll.contentY, point.y - contentInset))))
+            else categoryScroll.contentX = Math.max(0, Math.min(categoryScroll.contentWidth - categoryScroll.width,
+                Math.max(point.x + item.width - categoryScroll.width, Math.min(categoryScroll.contentX, point.x))))
         }
         WallpaperToolbarButton {
             id: categoryPrevious
             objectName: "wallpaper-prev-category"
-            width: root.categoryTabHeight; height: root.categoryTabHeight
+            visible: !root.workspaceVertical || root.sideGeometry.categoryArrows
+            width: root.workspaceVertical ? parent.width : root.categoryTabHeight
+            height: visible ? root.categoryTabHeight : 0
             horizontalPadding: 6
-            icon: "\uf104"; description: "Previous category (Alt+Left)"
+            icon: root.workspaceVertical ? "\uf106" : "\uf104"; description: "Previous category (Alt+Left)"
             showTooltip: root.workspace
             foregroundColor: Theme.fgMuted
             hoverForegroundColor: Theme.fgDescription
@@ -759,17 +588,24 @@ FocusScope {
             id: categoryScroll
             objectName: "wallpaper-category-scroll"
             anchors {
-                left: categoryPrevious.right; right: categoryNext.left
-                top: parent.top; bottom: parent.bottom
-                leftMargin: Theme.gap; rightMargin: Theme.gap
+                left: root.workspaceVertical ? parent.left : categoryPrevious.right
+                right: root.workspaceVertical ? parent.right : categoryNext.left
+                top: root.workspaceVertical ? categoryPrevious.bottom : parent.top
+                bottom: root.workspaceVertical ? categoryNext.top : parent.bottom
+                leftMargin: root.workspaceVertical ? 0 : Theme.gap
+                rightMargin: root.workspaceVertical ? 0 : Theme.gap
+                topMargin: root.workspaceVertical && categoryPrevious.visible ? Theme.gap : 0
+                bottomMargin: root.workspaceVertical && categoryNext.visible ? Theme.gap : 0
             }
-            contentWidth: Math.max(width, categoryButtons.width)
-            contentHeight: height
-            flickableDirection: Flickable.HorizontalFlick
+            contentWidth: root.workspaceVertical ? width : Math.max(width, categoryButtons.width)
+            contentHeight: root.workspaceVertical ? Math.max(height, categoryButtons.y + categoryButtons.height + categoryLane.contentInset) : height
+            flickableDirection: root.workspaceVertical ? Flickable.VerticalFlick : Flickable.HorizontalFlick
             boundsBehavior: Flickable.StopAtBounds
             clip: true
             onContentWidthChanged: categoryPosition.restart()
             onWidthChanged: categoryPosition.restart()
+            onContentHeightChanged: categoryPosition.restart()
+            onHeightChanged: categoryPosition.restart()
             // One shared surface morphs between variable-width category buttons.
             Motion.SelectionPill {
                 id: categoryPill
@@ -777,24 +613,32 @@ FocusScope {
                 coordinateSpace: categoryScroll.contentItem
                 color: Theme.accent
             }
-            Row {
+            Grid {
                 id: categoryButtons
+                columns: root.workspaceVertical ? 1 : Math.max(1, categoryRepeater.count)
                 z: 1
-                // Center short category groups while allowing long groups to overflow.
-                x: Math.max(0, (categoryScroll.width - width) / 2)
-                spacing: Theme.gap
+                // Center short lists between the arrows; long lists retain padded scroll edges.
+                x: root.workspaceVertical ? 0 : Math.max(0, (categoryScroll.width - width) / 2)
+                y: root.workspaceVertical ? Math.max(categoryLane.contentInset, (categoryScroll.height - height) / 2) : 0
+                spacing: root.workspaceVertical ? root.sideGeometry.categorySpacing : Theme.gap
                 onXChanged: categoryPill.syncTarget(true)
+                onYChanged: categoryPill.syncTarget(true)
                 onPositioningComplete: categoryPill.syncTarget(true)
                 Repeater {
+                    id: categoryRepeater
                     model: WallpaperLibrary.categories
                     delegate: WallpaperActionButton {
                         id: categoryButton
+                        readonly property bool wallpaperTooltipTarget: root.workspaceVertical
                         // Folder names are kept intact for selection and accessibility.
                         required property string modelData
                         objectName: "wallpaper-category-" + modelData
-                        width: Math.min(220, Math.max(64, categoryLabel.implicitWidth + 24))
-                        height: root.categoryTabHeight
-                        radius: height / 2
+                        width: root.workspaceVertical ? categoryScroll.width : Math.min(220, Math.max(64, categoryLabel.implicitWidth + 24))
+                        height: root.workspaceVertical ? root.sideGeometry.categoryRowHeight : root.categoryTabHeight
+                        radius: Math.min(height, root.categoryTabHeight) / 2
+                        border.width: root.workspaceVertical && activeFocus ? 1 : 0
+                        border.color: Theme.accent
+                        selectedForegroundColor: Theme.onAccentColor
                         // The moving pill owns selection; buttons retain text, focus and input.
                         idleColor: "transparent"
                         selectedColor: "transparent"
@@ -811,15 +655,28 @@ FocusScope {
                         Accessible.name: modelData || "All"
                         Accessible.selected: selected
                         onClicked: WallpaperLibrary.setCategory(modelData)
-                        Component.onCompleted: if (selected) categoryPill.targetItem = this
+                        Component.onCompleted: if (selected) categoryPill.targetItem = root.workspaceVertical ? categoryTarget : this
                         onSelectedChanged: if (selected) {
-                            categoryPill.targetItem = this
+                            categoryPill.targetItem = root.workspaceVertical ? categoryTarget : this
                             categoryPosition.restart()
                         }
                         onActiveFocusChanged: if (activeFocus) categoryLane.ensureVisible(this)
                         Keys.onReturnPressed: event => event.modifiers === Qt.NoModifier ? clicked() : root.handleShortcut(event)
                         Keys.onEnterPressed: event => event.modifiers === Qt.NoModifier ? clicked() : root.handleShortcut(event)
                         Keys.onSpacePressed: event => event.modifiers === Qt.NoModifier ? clicked() : root.handleShortcut(event)
+                        Base.HTooltip {
+                            target: categoryButton
+                            text: categoryButton.modelData || "All"
+                            active: root.workspace && root.workspaceVertical && categoryButton.hovered && categoryLabel.truncated
+                        }
+                        // Stretch the hit area while keeping the selection surface a compact pill.
+                        Item {
+                            id: categoryTarget
+                            anchors.centerIn: parent
+                            width: parent.width
+                            height: Math.min(parent.height, root.categoryTabHeight)
+                            readonly property real radius: height / 2
+                        }
                         Text {
                             id: categoryLabel
                             objectName: "wallpaper-category-label"
@@ -841,10 +698,13 @@ FocusScope {
         WallpaperToolbarButton {
             id: categoryNext
             objectName: "wallpaper-next-category"
-            anchors.right: parent.right
-            width: root.categoryTabHeight; height: root.categoryTabHeight
+            visible: !root.workspaceVertical || root.sideGeometry.categoryArrows
+            anchors.right: root.workspaceVertical ? undefined : parent.right
+            anchors.bottom: root.workspaceVertical ? parent.bottom : undefined
+            width: root.workspaceVertical ? parent.width : root.categoryTabHeight
+            height: visible ? root.categoryTabHeight : 0
             horizontalPadding: 6
-            icon: "\uf105"; description: "Next category (Alt+Right)"
+            icon: root.workspaceVertical ? "\uf107" : "\uf105"; description: "Next category (Alt+Right)"
             showTooltip: root.workspace
             foregroundColor: Theme.fgMuted
             hoverForegroundColor: Theme.fgDescription
@@ -877,11 +737,13 @@ FocusScope {
     WallpaperCarousel {
         id: carousel
         z: root.workspace ? 20 : 0
-        x: (root.width - width) / 2
-        y: root.workspace ? root.height - root.bottomBarHeight - root.bottomPanelHeight + root.bottomSlide : controls.y + controls.height + root.panelPadding
-        width: root.workspace ? Math.min(root.width - ScreenGeometry.leftInset - ScreenGeometry.rightInset - 24, 1900) : Math.min(root.width * 0.88, 1600)
-        height: root.workspace ? root.bottomPanelHeight + root.bottomBarHeight : Math.min(root.height * 0.5, 560)
+        x: root.workspaceVertical ? root.sideGeometry.cardViewport.x + root.gallerySlide : (root.width - width) / 2
+        y: root.workspaceVertical ? root.sideGeometry.cardViewport.y : root.workspace ? root.height - root.bottomBarHeight - root.bottomPanelHeight + root.bottomSlide : controls.y + controls.height + root.panelPadding
+        width: root.workspaceVertical ? root.sideGeometry.cardViewport.width : root.workspace ? Math.min(root.width - ScreenGeometry.leftInset - ScreenGeometry.rightInset - 24, 1900) : Math.min(root.width * 0.88, 1600)
+        height: root.workspaceVertical ? root.sideGeometry.cardViewport.height : root.workspace ? root.bottomPanelHeight + root.bottomBarHeight : Math.min(root.height * 0.5, 560)
         presentation: root.presentation
+        vertical: root.workspaceVertical
+        leftLayout: root.sideGeometry
         spread: root.spread
         selectedPulse: root.selectedPulse
         onApplyRequested: root.applySelected()

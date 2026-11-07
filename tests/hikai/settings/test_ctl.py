@@ -71,6 +71,7 @@ class ShellSettingsTests(unittest.TestCase):
         for version in (3, 4, 5):
             document = json.loads(json.dumps(ctl.DEFAULTS))
             document["version"] = version
+            document.pop("chrome", None)
             document.pop("idle", None)
             document["appearance"].pop("colorMode")
             document["dock"]["iconSize"] = 48
@@ -90,6 +91,7 @@ class ShellSettingsTests(unittest.TestCase):
         """Legacy appearance migrates safely; both modes preserve other preferences."""
         legacy = json.loads(json.dumps(ctl.DEFAULTS))
         legacy["version"] = 6
+        legacy.pop("chrome", None)
         legacy.pop("idle", None)
         legacy["appearance"] = {"baseRadius": 18, "surfaceTone": "soft"}
         self.path.parent.mkdir(parents=True)
@@ -113,6 +115,7 @@ class ShellSettingsTests(unittest.TestCase):
         for quick_controls in (False, True):
             legacy = copy.deepcopy(ctl.DEFAULTS)
             legacy["version"] = 9
+            legacy.pop("chrome", None)
             legacy["topbar"].pop("powerProfile")
             legacy["topbar"].pop("wallpaperWorkspace")
             legacy["topbar"].update(quickControls=quick_controls, recorder=False)
@@ -149,7 +152,7 @@ class ShellSettingsTests(unittest.TestCase):
         patches += [{"dock": {key: value}} for key in ("showTrash", "showDevices") for value in (0, "false", None)]
         patches += [{"dock": {"style": value}} for value in ("full", True, 1, None)]
         patches += [{"dock": {"enabled": True}}]
-        patches += [{"appearance": {"surfaceTone": "black"}}, {"version": True}, {"version": 11}, {"version": 1},
+        patches += [{"appearance": {"surfaceTone": "black"}}, {"version": True}, {"version": 12}, {"version": 1},
                     {"appearance": []}, {"topbar": {"logo": False}}, {"unknown": 1}, []]
         for payload in patches:
             with self.subTest(payload=payload), self.assertRaises(ValueError):
@@ -159,7 +162,7 @@ class ShellSettingsTests(unittest.TestCase):
     def test_invalid_document_and_payload(self):
         """Malformed or incomplete documents report failure without replacement."""
         self.path.parent.mkdir(parents=True)
-        for content in ("{broken", "[]", '{"version": 1}', json.dumps(dict(ctl.DEFAULTS, version=11))):
+        for content in ("{broken", "[]", '{"version": 1}', json.dumps(dict(ctl.DEFAULTS, version=12))):
             self.path.write_text(content)
             for action in ("read", "check", "reset"):
                 with self.subTest(action=action, content=content), self.assertRaises(ValueError):
@@ -223,7 +226,7 @@ class ShellSettingsTests(unittest.TestCase):
         for action in ("read", "check"):
             data = ctl.run(action)
             self.assertTrue(data["needsMigration"])
-            self.assertEqual(data["values"]["version"], 10)
+            self.assertEqual(data["values"]["version"], ctl.DEFAULTS["version"])
             self.assertEqual(data["values"]["dock"]["iconSize"], 36)
             self.assertEqual(data["values"]["roundedScreen"], {"radius": 20, "borderThickness": 4})
             self.assertEqual(data["values"]["appearance"], legacy["appearance"] | {"colorMode": "dark"})
@@ -231,7 +234,7 @@ class ShellSettingsTests(unittest.TestCase):
             self.assertTrue(data["values"]["topbar"]["clock"])
             self.assertEqual(self.path.read_bytes(), original)
         self.write({})
-        self.assertEqual(json.loads(self.path.read_text())["version"], 10)
+        self.assertEqual(json.loads(self.path.read_text())["version"], ctl.DEFAULTS["version"])
         self.assertFalse(ctl.run("read")["needsMigration"])
 
     def test_v2_migration_and_dock_persistence(self):
@@ -240,6 +243,7 @@ class ShellSettingsTests(unittest.TestCase):
         legacy = json.loads(json.dumps(ctl.DEFAULTS))
         legacy.pop("dock")
         legacy["version"] = 2
+        legacy.pop("chrome", None)
         legacy.pop("idle", None)
         legacy["appearance"].pop("colorMode")
         legacy["roundedScreen"] = {"radius": 9, "borderThickness": 2}
@@ -270,6 +274,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.path.parent.mkdir(parents=True)
         legacy = json.loads(json.dumps(ctl.DEFAULTS))
         legacy["version"] = 3
+        legacy.pop("chrome", None)
         legacy.pop("idle", None)
         legacy["appearance"].pop("colorMode")
         legacy["dock"] = {"visibilityMode": "always", "exclusiveSpace": True, "iconSize": 72}
@@ -323,6 +328,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.path.parent.mkdir(parents=True)
         legacy = json.loads(json.dumps(ctl.DEFAULTS))
         legacy["version"] = 4
+        legacy.pop("chrome", None)
         legacy.pop("idle", None)
         legacy["appearance"].pop("colorMode")
         for key in ("style", "showTrash", "showDevices"):
@@ -343,6 +349,7 @@ class ShellSettingsTests(unittest.TestCase):
         for style in ("bar", "dock"):
             document = json.loads(json.dumps(ctl.DEFAULTS))
             document["version"] = 5
+            document.pop("chrome", None)
             document.pop("idle", None)
             document["appearance"].pop("colorMode")
             document["dock"].update(style=style, iconSize=60, hoverLift=28, hoverScale=40,
@@ -351,7 +358,7 @@ class ShellSettingsTests(unittest.TestCase):
             del expected["style"]
             migrated, changed = ctl.migrate(document)
             self.assertTrue(changed)
-            self.assertEqual(migrated["version"], 10)
+            self.assertEqual(migrated["version"], ctl.DEFAULTS["version"])
             self.assertEqual(migrated["dock"], expected)
             self.assertEqual(ctl.migrate(migrated), (migrated, False))
 
@@ -368,7 +375,7 @@ class ShellSettingsTests(unittest.TestCase):
     def test_fresh_and_reset_idle_audio_defaults(self):
         """Fresh configurations and resets default audio inhibition to false in the current schema."""
         data = ctl.run("read")
-        self.assertEqual(data["values"]["version"], 10)
+        self.assertEqual(data["values"]["version"], ctl.DEFAULTS["version"])
         self.assertFalse(data["values"]["idle"]["inhibitOnAudio"])
         self.assertFalse(data["needsMigration"])
 
@@ -376,7 +383,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.write({"idle": {"inhibitOnAudio": True}})
         self.assertTrue(ctl.run("read")["values"]["idle"]["inhibitOnAudio"])
         reset_data = ctl.run("reset")
-        self.assertEqual(reset_data["values"]["version"], 10)
+        self.assertEqual(reset_data["values"]["version"], ctl.DEFAULTS["version"])
         self.assertFalse(reset_data["values"]["idle"]["inhibitOnAudio"])
 
     def test_v7_to_v9_migration(self):
@@ -384,6 +391,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.path.parent.mkdir(parents=True)
         legacy = json.loads(json.dumps(ctl.DEFAULTS))
         legacy["version"] = 7
+        legacy.pop("chrome", None)
         legacy.pop("idle")
         self.path.write_text(json.dumps(legacy))
         original = self.path.read_bytes()
@@ -391,13 +399,13 @@ class ShellSettingsTests(unittest.TestCase):
         for action in ("read", "check"):
             res = ctl.run(action)
             self.assertTrue(res["needsMigration"])
-            self.assertEqual(res["values"]["version"], 10)
+            self.assertEqual(res["values"]["version"], ctl.DEFAULTS["version"])
             self.assertFalse(res["values"]["idle"]["inhibitOnAudio"])
             self.assertEqual(self.path.read_bytes(), original)
 
         self.write({})
         saved = json.loads(self.path.read_text())
-        self.assertEqual(saved["version"], 10)
+        self.assertEqual(saved["version"], ctl.DEFAULTS["version"])
         self.assertFalse(saved["idle"]["inhibitOnAudio"])
         self.assertFalse(ctl.run("read")["needsMigration"])
 
@@ -406,6 +414,7 @@ class ShellSettingsTests(unittest.TestCase):
         self.path.parent.mkdir(parents=True)
         v8_doc = json.loads(json.dumps(ctl.DEFAULTS))
         v8_doc["version"] = 8
+        v8_doc.pop("chrome", None)
         v8_doc["idle"]["inhibitOnAudio"] = True
         self.path.write_text(json.dumps(v8_doc))
         original = self.path.read_bytes()
@@ -413,13 +422,13 @@ class ShellSettingsTests(unittest.TestCase):
         for action in ("read", "check"):
             res = ctl.run(action)
             self.assertTrue(res["needsMigration"])
-            self.assertEqual(res["values"]["version"], 10)
+            self.assertEqual(res["values"]["version"], ctl.DEFAULTS["version"])
             self.assertFalse(res["values"]["idle"]["inhibitOnAudio"])
             self.assertEqual(self.path.read_bytes(), original)
 
         self.write({})
         saved = json.loads(self.path.read_text())
-        self.assertEqual(saved["version"], 10)
+        self.assertEqual(saved["version"], ctl.DEFAULTS["version"])
         self.assertFalse(saved["idle"]["inhibitOnAudio"])
         self.assertFalse(ctl.run("read")["needsMigration"])
 
@@ -428,13 +437,13 @@ class ShellSettingsTests(unittest.TestCase):
         self.write({"idle": {"inhibitOnAudio": True}})
         res = ctl.run("read")
         self.assertFalse(res["needsMigration"])
-        self.assertEqual(res["values"]["version"], 10)
+        self.assertEqual(res["values"]["version"], ctl.DEFAULTS["version"])
         self.assertTrue(res["values"]["idle"]["inhibitOnAudio"])
 
         self.write({"idle": {"inhibitOnAudio": False}})
         res2 = ctl.run("read")
         self.assertFalse(res2["needsMigration"])
-        self.assertEqual(res2["values"]["version"], 10)
+        self.assertEqual(res2["values"]["version"], ctl.DEFAULTS["version"])
         self.assertFalse(res2["values"]["idle"]["inhibitOnAudio"])
 
 

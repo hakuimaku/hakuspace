@@ -6,15 +6,21 @@ import ".."
 TopModule {
     id: root
 
+    // Stack hours above minutes; calendar interaction stays separate.
+    property bool vertical: false
+    hoverAxis: vertical ? "vertical" : "horizontal"
+    property bool compact: false
     property int monthOffset: 0
     
     text: ""
-    icon: ""
+    icon: compact && !vertical ? "" : ""
     
-    implicitWidth: Math.max(implicitHeight, contentRow.implicitWidth + Theme.pad * 2 + (hovered ? 20 : 0))
+    implicitHeight: vertical ? Math.max(ScreenGeometry.leftModuleTouchSize, verticalClock.implicitHeight + ScreenGeometry.leftModuleInset * 2) : Theme.fontSize * 1.8
+    implicitWidth: vertical ? ScreenGeometry.leftTouchSize : compact ? implicitHeight : Math.max(implicitHeight, contentRow.implicitWidth + Theme.pad * 2 + (hovered ? 20 : 0))
     
     Row {
         id: contentRow
+        visible: !root.compact && !root.vertical
         anchors.centerIn: parent
         spacing: 16
         
@@ -57,6 +63,22 @@ TopModule {
         }
     }
     
+    Text {
+        id: verticalClock
+        objectName: "leftbar-clock-time"
+        anchors.centerIn: parent
+        visible: root.vertical
+        text: Clock.date ? Clock.date.toLocaleString(Qt.locale(), "HH\nmm") : "00\n00"
+        width: Math.max(0, root.visualItem.width - 2)
+        horizontalAlignment: Text.AlignHCenter
+        font.family: Theme.fontFamily
+        font.pixelSize: Theme.fontSize
+        minimumPixelSize: Math.min(10, font.pixelSize)
+        fontSizeMode: Text.HorizontalFit
+        font.bold: true
+        color: root.hovered ? Theme.onAccentColor : Theme.fg
+    }
+
     onClicked: requestTooltip()
     onRightClicked: monthOffset = 0
     onScrolled: (delta) => {

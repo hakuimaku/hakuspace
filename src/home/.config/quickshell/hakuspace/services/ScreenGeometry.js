@@ -3,6 +3,17 @@
 // Keep malformed runtime coordinates from producing invalid masks or panel bounds.
 function finite(value) { return Number.isFinite(value) ? value : 0; }
 
+// Keep paint, pointer slots and accessibility growth independent from Topbar metrics.
+function leftMetrics(fontSize) {
+    var icon = Math.ceil(Math.max(14, fontSize * 1.1));
+    var visual = Math.max(30, icon + 14);
+    var touch = Math.max(36, visual + 6);
+    var gutter = 8;
+    return {visual: visual, touch: touch, gutter: gutter, icon: icon,
+        rail: Math.max(46, visual + gutter * 2), slot: touch, controlGap: 0,
+        gap: Math.max(6, Math.ceil(fontSize / 3)), hover: (touch - visual) / 2};
+}
+
 // Return finite screen-local coordinates with nonnegative dimensions.
 function rect(value) {
     value = value || {};
@@ -43,4 +54,4 @@ function centerSpan(width, leftEdge, rightEdge, gap) {
 }
 
 // Expose the pure functions to the repository's Node geometry tests.
-if (typeof module !== "undefined") module.exports = {rect, horizontalBounds, localizeRect, maskRadius, attachedY, centerSpan};
+if (typeof module !== "undefined") module.exports = {rect, horizontalBounds, localizeRect, maskRadius, attachedY, centerSpan, leftMetrics};

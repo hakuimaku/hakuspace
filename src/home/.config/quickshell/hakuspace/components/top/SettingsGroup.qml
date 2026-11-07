@@ -8,7 +8,13 @@ import "../../services"
 
 Row {
     id: root
+    // Compact controls remain individually reachable in a vertical bar.
+    property bool vertical: false
     spacing: Theme.gap
+    // Tighten icon spacing while adding room at both ends of the capsule.
+    readonly property real verticalControlHeight: ScreenGeometry.leftTouchSize - 12
+    // A single control needs the extra pixel retained by its rounded minimum height.
+    readonly property real verticalEdgePadding: sysRow.visibleChildren.length === 1 ? 7 : 6
     // Balance service demand across visibility changes and output removal.
     property bool subscribed: false
     function syncSubscriptions() {
@@ -47,25 +53,39 @@ Row {
     }
 
     // Quick settings pill grouping backlight, volume, and battery status icons.
-    Rectangle {
-        color: Theme.accent
-        radius: Theme.radius
-        implicitHeight: Theme.fontSize * 1.8
-        implicitWidth: sysRow.implicitWidth + Theme.pad * 2
-        
-        // Animates quick settings pill width when status icons become visible or hidden.
-        Behavior on implicitWidth { NumberAnimation { duration: HAnimation.normal } }
-        
-        Row {
-            id: sysRow
+    Item {
+        id: controlHost
+        objectName: "quick-controls-hit"
+        visible: !root.vertical || root.backlight >= 0 || root.volume >= 0 || batItem.isPresent
+        property real hoverExpansion: root.vertical && groupHover.hovered ? ScreenGeometry.leftModuleHoverExtent : 0
+        implicitHeight: root.vertical ? sysRow.implicitHeight + root.verticalEdgePadding * 2 + ScreenGeometry.leftModuleHoverExtent * 2 : Theme.fontSize * 1.8
+        implicitWidth: root.vertical ? ScreenGeometry.leftTouchSize : sysRow.implicitWidth + Theme.pad * 2
+        HoverHandler { id: groupHover; enabled: root.vertical }
+        // A centered narrow chassis never determines the children's transparent hit width.
+        Rectangle {
+            id: capsule
+            objectName: "quick-controls-capsule"
+            readonly property real hoverExpansion: controlHost.hoverExpansion
             anchors.centerIn: parent
-            spacing: 0
+            width: root.vertical ? ScreenGeometry.leftVisualSize : parent.width
+            height: root.vertical ? Math.max(ScreenGeometry.leftVisualSize, sysRow.implicitHeight + root.verticalEdgePadding * 2) + controlHost.hoverExpansion * 2 : parent.height
+            color: Theme.accent
+            radius: root.vertical ? width / 2 : Theme.radius
+        }
+        Behavior on hoverExpansion { NumberAnimation { duration: HAnimation.slow; easing.bezierCurve: HAnimation.moduleCurve } }
+        Behavior on implicitWidth { NumberAnimation { duration: HAnimation.normal } }
+
+        Grid {
+            id: sysRow
+            columns: root.vertical ? 1 : 3
+            anchors.centerIn: parent
+            spacing: root.vertical ? ScreenGeometry.leftControlGap : 0
             
             Item {
                 id: blItem
-                width: Theme.fontSize * 1.8
-                height: Theme.fontSize * 1.8
-                anchors.verticalCenter: parent.verticalCenter
+                objectName: "quick-brightness"
+                width: root.vertical ? ScreenGeometry.leftTouchSize : Theme.fontSize * 1.8
+                height: root.vertical ? root.verticalControlHeight : Theme.fontSize * 1.8
                 visible: root.backlight >= 0
 
                 Text {
@@ -73,7 +93,7 @@ Row {
                     property var icons: ["", "", "", "", "", "", "", "", ""]
                     property int idx: Math.max(0, Math.min(8, Math.floor((root.backlight / 100) * 9)))
                     text: icons[idx]
-                    font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 2; font.weight: Font.Bold
+                    font.family: Theme.fontFamily; font.pixelSize: root.vertical ? ScreenGeometry.leftIconSize : Theme.fontSize + 2; font.weight: Font.Bold
                     color: Theme.onAccentColor
                     anchors.centerIn: parent
                     scale: blMA.containsMouse ? 1.2 : 1.0
@@ -95,9 +115,9 @@ Row {
             
             Item {
                 id: volItem
-                width: Theme.fontSize * 1.8
-                height: Theme.fontSize * 1.8
-                anchors.verticalCenter: parent.verticalCenter
+                objectName: "quick-volume"
+                width: root.vertical ? ScreenGeometry.leftTouchSize : Theme.fontSize * 1.8
+                height: root.vertical ? root.verticalControlHeight : Theme.fontSize * 1.8
                 visible: root.volume >= 0
 
                 Text {
@@ -105,7 +125,7 @@ Row {
                     property var icons: ["", "", ""]
                     property int idx: root.volume > 60 ? 2 : (root.volume > 30 ? 1 : 0)
                     text: root.muted ? "󰝟" : icons[idx]
-                    font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 2; font.weight: Font.Bold
+                    font.family: Theme.fontFamily; font.pixelSize: root.vertical ? ScreenGeometry.leftIconSize : Theme.fontSize + 2; font.weight: Font.Bold
                     color: Theme.onAccentColor
                     anchors.centerIn: parent
                     scale: volMA.containsMouse ? 1.2 : 1.0
@@ -133,13 +153,13 @@ Row {
             
             Item {
                 id: batItem
-                width: Theme.fontSize * 1.8
-                height: Theme.fontSize * 1.8
-                anchors.verticalCenter: parent.verticalCenter
+                objectName: "quick-battery"
+                width: root.vertical ? ScreenGeometry.leftTouchSize : Theme.fontSize * 1.8
+                height: root.vertical ? root.verticalControlHeight : Theme.fontSize * 1.8
                 
                 property var bat: UPower.displayDevice
-                property bool isPresent: bat && bat.isPresent
-                property bool isCharging: bat && bat.state === 1
+                property bool isPresent: !!bat && bat.isPresent
+                property bool isCharging: !!bat && bat.state === 1
                 property int capacity: bat ? Math.round(bat.percentage * 100) : 0
                 
                 visible: isPresent
@@ -150,7 +170,7 @@ Row {
                     property var chgIcons: ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"]
                     property int idx: Math.max(0, Math.min(10, Math.round(batItem.capacity / 10)))
                     text: batItem.isCharging ? chgIcons[idx] : defIcons[idx]
-                    font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 2; font.weight: Font.Bold
+                    font.family: Theme.fontFamily; font.pixelSize: root.vertical ? ScreenGeometry.leftIconSize : Theme.fontSize + 2; font.weight: Font.Bold
                     color: Theme.onAccentColor
                     anchors.centerIn: parent
                     scale: batMA.containsMouse ? 1.2 : 1.0

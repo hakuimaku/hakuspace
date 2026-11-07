@@ -248,7 +248,7 @@ PanelWindow {
         }
     }
     // Keep fixed dimensions with 32 px of clearance on smaller outputs.
-    readonly property real targetBodyWidth: Math.min(1180, Math.max(0, modelData.width - 64))
+    readonly property real targetBodyWidth: Math.min(1180, Math.max(0, modelData.width - (ChromeLayout.leftBarMode ? ScreenGeometry.contentLeftEdge * 2 + 32 : 64)))
     readonly property real targetBodyHeight: Math.min(750, Math.max(0, modelData.height - 64))
     // One reversible value widens the diagonal neck and its centered chassis.
     property real morphProgress: 0
@@ -259,9 +259,9 @@ PanelWindow {
     // Use the Navigation corner, numbered clockwise from the top-left corner.
     property int revealPosition: ScreenGeometry.bottomAttached ? 7 : 1
     // Keep attachment geometry inside the active status bar and screen rails.
-    readonly property rect revealBounds: Qt.rect(ScreenGeometry.leftInset,
+    readonly property rect revealBounds: Qt.rect(ScreenGeometry.contentLeftEdge,
         ScreenGeometry.bottomAttached ? ScreenGeometry.topBorderThickness : ScreenGeometry.chromeAttachmentY(height),
-        Math.max(0, width - ScreenGeometry.leftInset - ScreenGeometry.rightInset),
+        Math.max(0, width - ScreenGeometry.contentLeftEdge - ScreenGeometry.rightInset),
         Math.max(0, ScreenGeometry.bottomAttached ? ScreenGeometry.chromeAttachmentY(height) - ScreenGeometry.topBorderThickness
             : height - ScreenGeometry.bottomInset - ScreenGeometry.chromeAttachmentY(height)))
     // Share the fixed-endpoint neck geometry with any other anchored panel.

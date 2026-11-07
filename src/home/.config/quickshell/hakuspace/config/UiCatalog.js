@@ -23,10 +23,14 @@ var hakuMenuGeneralItems = [
     { id: "static-settings", label: "Settings", icon: "", action: "settings" }
 ]
 
+// Shared explicit status-edge targets use the existing layout transaction.
+var statusBarLayouts = [{value: "topbar", label: "Topbar"}, {value: "leftbar", label: "Leftbar"}]
+
 // Static hakuMenuThemeItems presentation entries.
 var hakuMenuThemeItems = [
     { label: "Change Theme", icon: "", action: "Change Theme", toggle: false, showState: false, statePath: "", stateKind: "bool" },
     { label: "Change Wallpaper", icon: "󰏜", action: "Change Wallpaper", toggle: false, showState: false, statePath: "", stateKind: "bool" },
+    { label: "Status Bar Position", icon: "󰍜", action: "Status Bar Position", statusEdgeSwitch: true },
     { label: "Taskbar Mode", icon: "󰐃", action: "Taskbar Mode", toggle: true, showState: true, chromeKey: "taskbar" },
     { label: "Cava Underbar", icon: "󰝚", action: "Cava Underbar", toggle: true, showState: true, stateKey: "stateCavaEnabled", stateKind: "bool" },
     { label: "Cava Dynamic Position", icon: "󰝚", action: "Cava Dynamic Position", toggle: true, showState: true, stateKey: "stateCavaDynamicPosition", stateKind: "bool" },

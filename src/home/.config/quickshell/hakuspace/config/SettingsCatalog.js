@@ -71,8 +71,8 @@ var preferences = [
     {"id": "shell.dock.hoverScale", "provider": "shell", "section": "dock", "key": "hoverScale", "category": "Shell", "group": "App Bar", "label": "Hover scale", "summary": "Enlarge app icons by this percentage when hovered.", "defaultValue": 0, "control": "number", "min": 0, "max": 100, "step": 1, "unit": "%"},
     {"id": "shell.dock.showTrash", "provider": "shell", "section": "dock", "key": "showTrash", "category": "Shell", "group": "App Bar", "label": "Show Trash", "summary": "Show the Trash shortcut beside app icons.", "defaultValue": true, "control": "switch"},
     {"id": "shell.dock.showDevices", "provider": "shell", "section": "dock", "key": "showDevices", "category": "Shell", "group": "App Bar", "label": "Show mounted devices", "summary": "Show shortcuts to mounted storage devices beside app icons.", "defaultValue": true, "control": "switch"},
-    {"id": "shell.dock.visibilityMode", "provider": "shell", "section": "dock", "key": "visibilityMode", "category": "Shell", "group": "Dockbar", "label": "Dockbar visibility", "summary": "Keep Dockbar visible or reveal it when the pointer approaches.", "defaultValue": "autohide", "control": "choice", "options": [{"value": "autohide", "label": "Auto hide"}, {"value": "always", "label": "Always visible"}], "dependsOn": [{"id": "layout", "equals": "topbar", "behavior": "disable", "action": "layout"}]},
-    {"id": "shell.dock.exclusiveSpace", "provider": "shell", "section": "dock", "key": "exclusiveSpace", "category": "Shell", "group": "Dockbar", "label": "Reserve screen space", "summary": "Reserve space for Dockbar so windows do not cover it.", "defaultValue": false, "control": "switch", "dependsOn": [{"id": "layout", "equals": "topbar", "behavior": "disable", "action": "layout"}]},
+    {"id": "shell.dock.visibilityMode", "provider": "shell", "section": "dock", "key": "visibilityMode", "category": "Shell", "group": "Dockbar", "label": "Dockbar visibility", "summary": "Keep Dockbar visible or reveal it when the pointer approaches.", "defaultValue": "autohide", "control": "choice", "options": [{"value": "autohide", "label": "Auto hide"}, {"value": "always", "label": "Always visible"}], "dependsOn": [{"id": "layout", "oneOf": ["topbar", "leftbar"], "behavior": "disable", "action": "layout"}]},
+    {"id": "shell.dock.exclusiveSpace", "provider": "shell", "section": "dock", "key": "exclusiveSpace", "category": "Shell", "group": "Dockbar", "label": "Reserve screen space", "summary": "Reserve space for Dockbar so windows do not cover it.", "defaultValue": false, "control": "switch", "dependsOn": [{"id": "layout", "oneOf": ["topbar", "leftbar"], "behavior": "disable", "action": "layout"}]},
     {"id": "idle-enabled", "provider": "shell", "section": "idle", "key": "enabled", "category": "Power & Session", "group": "Idle policy", "label": "Idle management", "summary": "Run the dim, lock, screen-off and suspend sequence after inactivity.", "defaultValue": true, "control": "switch"},
     {"id": "idle-dimEnabled", "provider": "shell", "section": "idle", "key": "dimEnabled", "category": "Power & Session", "group": "Idle policy", "label": "Screen dim", "summary": "Lower screen brightness after the dim interval.", "defaultValue": true, "control": "switch"},
     {"id": "idle-dimTimeout", "provider": "shell", "section": "idle", "key": "dimTimeout", "category": "Power & Session", "group": "Idle policy", "label": "Dim after", "summary": "Wait this long after activity stops before dimming the screen.", "defaultValue": 300, "control": "duration", "min": 10, "max": 86400, "step": 10, "unit": "s", "dependsOn": [{"id": "idle-dimEnabled", "equals": true, "behavior": "disable"}]},
@@ -102,8 +102,8 @@ var preferences = [
 })
 // Runtime requests retain their state files and use explicit controller targets.
 var runtime = [
-    {id: "layout", key: "layout", label: "Shell layout", summary: "Choose a top status bar with optional Dockbar or a combined bottom Taskbar.", group: "Layout", control: "choice", defaultValue: "topbar", options: [{value: "topbar", label: "Top Bar"}, {value: "taskbar", label: "Taskbar"}]},
-    {id: "dockbar", key: "dockbar", label: "Enable Dockbar", summary: "Show a separate app dock when using the Top Bar layout.", group: "Dockbar", control: "switch", defaultValue: false, dependsOn: [{id: "layout", equals: "topbar", behavior: "disable", action: "layout"}]},
+    {id: "layout", key: "layout", label: "Shell layout", summary: "Choose a top or left status bar with optional Dockbar, or a bottom Taskbar.", group: "Layout", control: "choice", defaultValue: "topbar", options: [{value: "topbar", label: "Top Bar"}, {value: "leftbar", label: "Left Bar"}, {value: "taskbar", label: "Taskbar"}]},
+    {id: "dockbar", key: "dockbar", label: "Enable Dockbar", summary: "Show a separate app dock with a top or left status bar.", group: "Dockbar", control: "switch", defaultValue: false, dependsOn: [{id: "layout", oneOf: ["topbar", "leftbar"], behavior: "disable", action: "layout"}]},
     {id: "cava", key: "cava", label: "Cava Underbar", summary: "Show an audio visualizer along the desktop edge.", group: "Cava Underbar", control: "switch", defaultValue: false},
     {id: "cava-color", key: "cavaColor", label: "Color mode", summary: "Draw the visualizer with the surface color or the accent color.", group: "Cava Underbar", control: "choice", defaultValue: "accent", options: [{value: "surface", label: "Surface"}, {value: "accent", label: "Accent"}]},
     {id: "cava-dynamic", key: "cavaDynamic", label: "Dynamic position", summary: "Follow the active bar when choosing the visualizer edge.", group: "Cava Underbar", control: "switch", defaultValue: false},
@@ -135,9 +135,9 @@ function search(query) {
 function dependencyState(item, read) {
     var state = {visible: true, enabled: true, reason: "", action: ""}
     for (var rule of item.dependsOn) {
-        if (read(rule.id) === rule.equals) continue
+        if (rule.oneOf ? rule.oneOf.includes(read(rule.id)) : read(rule.id) === rule.equals) continue
         if (rule.behavior === "hide" || rule.behavior === "collapse") state.visible = false
-        else { state.enabled = false; state.reason = rule.action === "layout" ? "Available with Top Bar layout" : "Enable " + (descriptor(rule.id) || {label: rule.id}).label + " first"; state.action = rule.action || "" }
+        else { state.enabled = false; state.reason = rule.reason || (rule.action === "layout" ? "Available with Top Bar or Left Bar layout" : "Enable " + (descriptor(rule.id) || {label: rule.id}).label + " first"); state.action = rule.action || "" }
     }
     return state
 }
@@ -194,3 +194,9 @@ function groups(category) {
     var preferred = ({Look: ["Theme", "Shape", "Rounded Screen", "Typography"], Shell: ["Layout", "Top Bar", "App Bar", "Dockbar", "Cava Underbar", "Startup"], Wallpaper: ["Folders & rotation", "Video playback", "Video preparation", "Browser"], "Power & Session": ["Keep Awake", "Night Light", "Idle timeline", "Idle policy", "Session Exit"], Capture: ["Folders", "Recorder"]})[category] || names
     return preferred.filter(function(name) { return names.includes(name) }).concat(names.filter(function(name) { return !preferred.includes(name) }))
 }
+
+// Leftbar omits the center cluster while preserving its saved preferences.
+preferences.forEach(function(item) {
+    if (item.id === "shell.topbar.center" || item.id === "shell.topbar.cava")
+        item.dependsOn.push({id: "layout", oneOf: ["topbar", "taskbar"], behavior: "disable", reason: "Available with Top Bar or Taskbar layout"})
+})

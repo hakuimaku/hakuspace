@@ -15,6 +15,7 @@ PanelWindow {
     property bool panelOpen: false
     property bool closing: false
     property bool forceBottomAttached: false
+    property bool openedAtLeft: !forceBottomAttached && ChromeLayout.leftBarMode
     property bool openedAtBottom: forceBottomAttached || ScreenGeometry.bottomAttached
     readonly property real attachmentY: openedAtBottom
         ? (ChromeLayout.taskbarMode ? height - ScreenGeometry.taskbarHeight : height - ScreenGeometry.dockbarHeight - ScreenGeometry.bottomInset)
@@ -37,6 +38,20 @@ PanelWindow {
     readonly property var liveSafeZones: {
         var empty = SafeZoneGeometry.rect(0, 0, 0, 0)
         var anchorVisual = localAnchorRect
+        if (root.openedAtLeft) {
+            // Keep hover corridors and the retained close mask above an exclusive Dock.
+            var usableHeight = Math.min(height, root.modelData.height - ScreenGeometry.bottomReservation(root.modelData.name))
+            var sideBody = {x: ScreenGeometry.contentLeftEdge, y: flare.start,
+                width: Math.max(flare.currentHeight, flare.naturalContentWidth + flare.horizontalPadding * 2),
+                height: Math.max(0, flare.end - flare.start)}
+            var retainedSide = flare.interactionEnvelope
+            if (retainedSide.end > retainedSide.start)
+                sideBody = SafeZoneGeometry.unionBounds(sideBody, {x: sideBody.x, y: retainedSide.start,
+                    width: retainedSide.height, height: retainedSide.end - retainedSide.start})
+            return [SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(anchorVisual, Interaction.safeZoneAnchorMargin), width, usableHeight),
+                SafeZoneGeometry.clampRect(SafeZoneGeometry.horizontalBridge(anchorVisual, sideBody, Interaction.safeZoneCorridorWidth), width, usableHeight),
+                SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(sideBody, Interaction.safeZoneMargin), width, usableHeight)]
+        }
         var target = FlareGeometry.resolveSpan({ anchorStart: anchorVisual.x,
             anchorEnd: anchorVisual.x + anchorVisual.width, contentW: flare.naturalContentWidth,
             padX: flare.horizontalPadding * 2, minW: 80, maxW: flare.maxWidth,
@@ -62,7 +77,7 @@ PanelWindow {
     // A topology transfer invalidates every retained anchor and close envelope.
     Connections {
         target: ChromeLayout
-        function onTaskbarModeChanged() {
+        function onStatusEdgeChanged() {
             root.closing = false
             root.frozenSafeZones = []
         }
@@ -87,7 +102,7 @@ PanelWindow {
     WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
-    visible: (root.forceBottomAttached || root.openedAtBottom === ScreenGeometry.bottomAttached) && (panelOpen || closing)
+    visible: (root.forceBottomAttached || root.openedAtBottom === ScreenGeometry.bottomAttached && root.openedAtLeft === ChromeLayout.leftBarMode) && (panelOpen || closing)
     mask: Region {
         Region {
             x: root.safeZone(0).x; y: root.safeZone(0).y
@@ -108,6 +123,7 @@ PanelWindow {
 
     onPanelOpenChanged: {
         if (panelOpen) {
+            openedAtLeft = !forceBottomAttached && ChromeLayout.leftBarMode
             openedAtBottom = forceBottomAttached || ScreenGeometry.bottomAttached
             closing = false
             Qt.callLater(function() { if (root && root.panelOpen) keyHandler.forceActiveFocus() })
@@ -163,27 +179,37 @@ PanelWindow {
     }
 
     MouseArea {
-        x: flare.start
-        y: root.attachedBodyY(root.modelData.height, height)
-        width: Math.max(0, flare.end - flare.start)
-        height: Math.min(root.height, flare.currentHeight + Theme.hugRadius)
+        x: root.openedAtLeft ? ScreenGeometry.contentLeftEdge : flare.start
+        y: root.openedAtLeft ? flare.start : root.attachedBodyY(root.modelData.height, height)
+        width: root.openedAtLeft ? flare.currentHeight : Math.max(0, flare.end - flare.start)
+        height: root.openedAtLeft ? Math.max(0, flare.end - flare.start) : Math.min(root.height, flare.currentHeight + Theme.hugRadius)
         onClicked: (mouse) => { mouse.accepted = true }
     }
 
     FlareHost {
         id: flare
-        attach: root.openedAtBottom ? FlareHost.Bottom : FlareHost.Top
-        y: root.attachmentY
-        width: root.width
-        height: ScreenGeometry.availableAttachedHeight(root.height)
+        attach: root.openedAtLeft ? FlareHost.Left : root.openedAtBottom ? FlareHost.Bottom : FlareHost.Top
+        x: root.openedAtLeft ? ScreenGeometry.contentLeftEdge : 0
+        y: root.openedAtLeft ? 0 : root.attachmentY
+        width: root.width - x
+        height: root.openedAtLeft ? root.height : ScreenGeometry.availableAttachedHeight(root.height)
         anchorRect: root.anchorRect
         hostRect: root.hostRect
-        shown: root.panelOpen
+        // Cold side panels measure content only after their native output plane is configured.
+        shown: root.panelOpen && (!root.openedAtLeft || (root.width === root.modelData.width && root.height === root.modelData.height))
         content: root.panelComponent
-        contentProps: root.panelProps
+        contentProps: root.openedAtLeft ? Object.assign({}, root.panelProps, {
+            maxWidth: Math.max(1, Math.min(root.panelProps.maxWidth || root.width,
+                root.width - ScreenGeometry.contentLeftEdge - horizontalPadding * 2 - ScreenGeometry.rightInset)),
+            maxHeight: Math.max(1, Math.min(root.panelProps.maxHeight || root.height,
+                root.height - ScreenGeometry.topBorderThickness - ScreenGeometry.bottomReservation(root.modelData.name) - verticalPadding * 2))
+        }) : root.panelProps
         contentKey: root.panelKey
         maxWidth: Math.min(400, Math.max(0, root.horizontalBounds.end - root.horizontalBounds.start))
         horizontalPadding: 22
+        wBounds: root.openedAtLeft ? ({start: ScreenGeometry.topBorderThickness,
+            end: Math.max(ScreenGeometry.topBorderThickness, root.height - ScreenGeometry.bottomReservation(root.modelData.name))})
+            : ScreenGeometry.horizontalBounds(root.width)
         onSettled: (isShown) => {
             if (!isShown && !root.panelOpen) root.closing = false
         }

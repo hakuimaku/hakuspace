@@ -22,6 +22,8 @@ QtObject {
     property var writingSnapshot: defaults()
     readonly property bool dirty: JSON.stringify(values) !== JSON.stringify(savedValues)
     readonly property bool valid: validate(values)
+    // Status edge remains independent from the legacy Taskbar request.
+    readonly property string statusEdge: values.chrome.statusEdge
     readonly property int baseRadius: values.appearance.baseRadius
     // Hikai mode previews with the appearance draft.
     readonly property string colorMode: values.appearance.colorMode
@@ -57,8 +59,8 @@ QtObject {
     // Mirror the backend contract before applying or accepting a response.
     function validate(draft) {
         var schema = defaults()
-        if (!draft || draft.version !== Defaults.shellSchemaVersion || Object.keys(draft).length !== 6) return false
-        for (var section of ["appearance", "roundedScreen", "topbar", "dock", "idle"]) {
+        if (!draft || draft.version !== Defaults.shellSchemaVersion || Object.keys(draft).length !== 7) return false
+        for (var section of ["appearance", "roundedScreen", "topbar", "dock", "idle", "chrome"]) {
             if (!draft[section] || Object.keys(draft[section]).length !== Object.keys(schema[section]).length) return false
             for (var key in schema[section]) {
                 var value = draft[section][key]
@@ -66,6 +68,7 @@ QtObject {
                     if (typeof schema.idle[key] === "boolean") { if (typeof value !== "boolean") return false }
                     else if (!Number.isInteger(value) || value < (key === "dimPercent" ? 1 : 10) || value > (key === "dimPercent" ? 100 : 86400) || (key.endsWith("Timeout") && value % 10 !== 0)) return false
                 }
+                if (section === "chrome" && ["top", "left"].indexOf(value) < 0) return false
                 if (section === "topbar" && typeof value !== "boolean") return false
                 if (key === "visibilityMode" && ["autohide", "always"].indexOf(value) < 0) return false
                 if (["exclusiveSpace", "showTrash", "showDevices"].indexOf(key) >= 0 && typeof value !== "boolean") return false
@@ -124,7 +127,7 @@ QtObject {
     function apply(keys) {
         if (!ready || (!dirty && !migrationPending && !(keys && keys.length)) || !valid || loading || saving) return
         var patch = {}
-        for (var section of ["appearance", "roundedScreen", "topbar", "dock", "idle"]) {
+        for (var section of ["appearance", "roundedScreen", "topbar", "dock", "idle", "chrome"]) {
             for (var key in values[section]) {
                 if (keys ? !keys.includes(section + "." + key) : values[section][key] === savedValues[section][key]) continue
                 if (!patch[section]) patch[section] = {}
@@ -158,7 +161,7 @@ QtObject {
         // Merge pending edits onto the confirmed disk snapshot.
         var draft = JSON.parse(JSON.stringify(data.values))
         if (preserveDraft) {
-            for (var section of ["appearance", "roundedScreen", "topbar", "dock", "idle"]) {
+            for (var section of ["appearance", "roundedScreen", "topbar", "dock", "idle", "chrome"]) {
                 for (var key in values[section]) {
                     if (section === "appearance" && key === "colorMode") continue
                     if (values[section][key] !== savedValues[section][key]) draft[section][key] = values[section][key]
@@ -190,6 +193,37 @@ QtObject {
         values = next
         error = ""
     }
+    // External layout commands update the edge without discarding unrelated drafts.
+    property FileView preferenceWatch: FileView {
+        path: Quickshell.env("HAKUSPACE_HIKAI_SETTINGS_FILE") || (Quickshell.env("HOME") + "/hakucfg/hikai/hikai-shell.json")
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onTextChanged: {
+            if (root.loading || root.saving) return
+            try {
+                var document = JSON.parse(text())
+                if (!root.validate(document)) return
+                root.confirmStatusEdge(document.chrome.statusEdge)
+            } catch (error) {}
+        }
+    }
+    // A missing parent directory cannot be watched until the first preference write.
+    property Timer firstPreferenceWatch: Timer {
+        interval: 1000
+        repeat: true
+        running: root.ready && !preferenceWatch.loaded
+        onTriggered: preferenceWatch.reload()
+    }
+    // Confirm only the topology preference after a successful controller transaction.
+    function confirmStatusEdge(edge) {
+        if (["top", "left"].indexOf(edge) < 0 || values.chrome.statusEdge === edge && savedValues.chrome.statusEdge === edge) return
+        var draft = JSON.parse(JSON.stringify(values)), saved = JSON.parse(JSON.stringify(savedValues))
+        draft.chrome.statusEdge = edge
+        saved.chrome.statusEdge = edge
+        savedValues = saved
+        values = draft
+    }
     Component.onCompleted: reload()
 
     property Process readProc: Process {
@@ -210,7 +244,7 @@ QtObject {
         onExited: (code, status) => {
             root.saving = false
             if (code !== 0) { root.error = writeErr.text.trim() || "Could not save shell settings"; return }
-            try { root.acceptWrite(writeOut.text, modeOnly); root.statusMessage = "Shell preferences saved." }
+            try { root.acceptWrite(writeOut.text, modeOnly); root.statusMessage = "Shell preferences saved."; preferenceWatch.reload() }
             catch (e) { root.error = "Invalid shell save response" }
         }
     }

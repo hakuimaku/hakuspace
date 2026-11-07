@@ -7,19 +7,39 @@ QtObject {
     // Physical display geometry is independent from component styling radii.
     readonly property real roundedRadius: ShellSettingsStore.roundedScreenRadius
     readonly property real borderThickness: ShellSettingsStore.roundedScreenBorderThickness
-    readonly property real topBorderThickness: ChromeLayout.taskbarMode ? borderThickness : 0
+    readonly property real topBorderThickness: ChromeLayout.taskbarMode || ChromeLayout.leftBarMode ? borderThickness : 0
+    // Top-only overlays keep their physical edge in every status layout.
+    readonly property real topChromeHeight: ChromeLayout.topBarMode ? Theme.topBarHeight : topBorderThickness
     readonly property real leftInset: borderThickness
+    // Work-area chrome never changes the physical frame inset contract.
+    // Vertical paint sits inside transparent touch slots with symmetric exterior gutters.
+    readonly property var leftMetrics: Geometry.leftMetrics(Theme.fontSize)
+    readonly property real leftVisualSize: leftMetrics.visual
+    readonly property real leftVisualGutter: leftMetrics.gutter
+    readonly property real leftTouchSize: leftMetrics.touch
+    readonly property real leftControlSlotHeight: leftMetrics.slot
+    readonly property real leftControlGap: leftMetrics.controlGap
+    readonly property real leftIconSize: leftMetrics.icon
+    readonly property real leftModuleTouchSize: leftTouchSize
+    readonly property real leftModuleHorizontalInset: 4
+    readonly property real leftModuleGap: leftMetrics.gap
+    readonly property real leftModuleInset: Math.max(6, Theme.gap - 2)
+    readonly property real leftModuleHoverExtent: leftMetrics.hover
+    readonly property real leftBarWidth: leftMetrics.rail
+    readonly property real leftChromeWidth: ChromeLayout.leftBarMode ? leftBarWidth : 0
+    readonly property real reservedLeft: Math.max(leftInset, leftChromeWidth)
+    readonly property real contentLeftEdge: reservedLeft
     readonly property real rightInset: borderThickness
     readonly property real bottomInset: ChromeLayout.taskbarMode ? 0 : borderThickness
     // Reserve the rail opposite the active status bar.
-    readonly property real frameBottomReservation: bottomInset
+    readonly property real frameBottomReservation: ChromeLayout.topBarMode ? bottomInset : 0
     // App artwork shares a baseline; status modules may require a taller Taskbar.
     readonly property real appBarHeight: Math.ceil(ShellSettingsStore.dockIconSize + 17)
     readonly property real taskbarHeight: Math.ceil(Math.max(appBarHeight, Theme.fontSize * 1.8))
     readonly property real dockbarHeight: appBarHeight
     // A hidden Dock leaves bottom panels attached directly to the screen rail.
     readonly property bool bottomHostAvailable: ChromeLayout.taskbarMode || ChromeLayout.dockbarActive
-    readonly property real bottomHostOppositeInset: ChromeLayout.taskbarMode ? topBorderThickness : Theme.topBarHeight
+    readonly property real bottomHostOppositeInset: ChromeLayout.topBarMode ? Theme.topBarHeight : topBorderThickness
     // The return control occupies the panel's footer while its Dock is hidden.
     readonly property real bottomHostControlHeight: ChromeLayout.dockbarActive && !ChromeLayout.taskbarMode ? dockbarHeight : 0
     function bottomHostReservation() {
@@ -48,13 +68,18 @@ QtObject {
     }
     // Compact reservations never stand in for the fixed Taskbar zone.
     function dockbarReservation(name) {
-        return ChromeLayout.dockbarActive && shownDockbars[name] && ShellSettingsStore.dockExclusiveSpace ? dockbarHeight : 0
+        return ChromeLayout.dockbarActive && shownDockbars[name] && ShellSettingsStore.dockExclusiveSpace ? dockbarHeight + bottomInset : 0
     }
+    // Overlay clearance includes the painted bottom frame; native zones are owned separately.
+    function bottomReservation(name) { return Math.max(bottomInset, dockbarReservation(name)) }
+    function leftbarUsableBottom(name) { return screenHeight(name) - bottomReservation(name) }
+    // Keep the Dock centered while applying equal clearance on both sides.
+    function dockWidthLimit(screenWidth) { return Math.max(0, screenWidth - 2 * (Math.max(reservedLeft, rightInset) + Theme.hugRadius)) }
     function taskbarReservation() { return ChromeLayout.taskbarMode ? taskbarHeight : 0 }
     // Measure attachment distances from the active status edge.
     readonly property bool bottomAttached: ChromeLayout.taskbarMode
-    readonly property real chromeBarHeight: bottomAttached ? taskbarHeight : Theme.topBarHeight
-    function chromeAttachmentY(screenHeight) { return bottomAttached ? screenHeight - taskbarHeight : Theme.topBarHeight }
+    readonly property real chromeBarHeight: bottomAttached ? taskbarHeight : topChromeHeight
+    function chromeAttachmentY(screenHeight) { return bottomAttached ? screenHeight - taskbarHeight : topChromeHeight }
     function attachedBodyY(screenHeight, contentHeight, distance) {
         return Geometry.attachedY(chromeAttachmentY(screenHeight), contentHeight, distance || 0, bottomAttached)
     }
@@ -62,7 +87,7 @@ QtObject {
     function attachedBodyRect(screenHeight, x, width, contentHeight, distance) {
         return {x: x, y: attachedBodyY(screenHeight, contentHeight, distance), width: width, height: contentHeight}
     }
-    function availableAttachedHeight(screenHeight) { return Math.max(0, screenHeight - chromeBarHeight - bottomInset - topBorderThickness) }
+    function availableAttachedHeight(screenHeight) { return Math.max(0, screenHeight - chromeBarHeight - bottomInset - (bottomAttached ? topBorderThickness : 0)) }
     // Resolve keyboard callers against the requested output rather than a primary-screen guess.
     function screenHeight(name) {
         for (var output of Quickshell.screens) if (output.name === name) return output.height
@@ -70,6 +95,9 @@ QtObject {
     }
     function barAnchor(screenHeight, x, width) {
         var height = Theme.fontSize * 1.8
+        if (ChromeLayout.leftBarMode) return {x: (leftBarWidth - height) / 2,
+            y: x > leftBarWidth ? Math.max(height, screenHeight - height * 2 - bottomInset) : Theme.pad,
+            width: height, height: height}
         return {x: x, y: bottomAttached ? screenHeight - taskbarHeight + (taskbarHeight - height) / 2
             : (Theme.topBarContentHeight - height) / 2 + Theme.topBarTopPadding / 2, width: width, height: height}
     }

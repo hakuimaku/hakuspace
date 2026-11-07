@@ -6,6 +6,7 @@ import "base" as Base
 import "base/SafeZoneGeometry.js" as SafeZoneGeometry
 import "flare" as Flare
 import "sidebar" as Sidebar
+import "sidebar/NavigationGeometry.js" as NavigationGeometry
 import "dashboard" as Dashboard
 
 Item {
@@ -58,7 +59,7 @@ Item {
         property: "dashboardMorphProgress"
         onFinished: {
             if (root.closingFromDashboard) {
-                UiState.finishNavigationVisual(root.modelData.name)
+                root.finishVisual()
                 Qt.callLater(function() {
                     if (!root) return
                     root.closing = false
@@ -81,6 +82,17 @@ Item {
     }
     property bool closing: false
     property bool closingFromDashboard: false
+    property real dashboardCloseStart: 1
+    // Normalize both close phases; an interrupted Dashboard close starts at its current size.
+    readonly property real closeProgress: closingFromDashboard
+        ? Math.max(0, Math.min(1, 1 - dashboardMorphProgress / dashboardCloseStart))
+        : (closeCollapseProgress * HAnimation.navigationCollapseDuration + closeReturnProgress * HAnimation.navigationCloseDuration)
+            / Math.max(1, HAnimation.navigationCollapseDuration + HAnimation.navigationCloseDuration)
+    readonly property bool workspaceReturnReady: closing && !panelOpen && closeProgress >= 0.5
+    onWorkspaceReturnReadyChanged: {
+        if (workspaceReturnReady && leftAttached && UiState.navigationVisualScreenName === modelData.name)
+            UiState.navigationWorkspaceReturnReady = true
+    }
     property int selectedIndex: 0
     property int hoveredIndex: -1
 
@@ -129,6 +141,8 @@ Item {
     // Navigation lives in one Overlay so exclusive zones cannot move it, while
     // the backing contour aligns to the shared RoundedScreen frame geometry.
     readonly property real sideInset: ScreenGeometry.leftInset
+    readonly property bool leftAttached: ChromeLayout.leftBarMode
+    readonly property real leftSeam: ScreenGeometry.leftChromeWidth
     readonly property real attachmentY: ScreenGeometry.chromeAttachmentY(modelData.height)
     // Map corner-relative Navigation coordinates around the active chrome seam.
     readonly property real logicalAttachmentY: ScreenGeometry.chromeBarHeight
@@ -147,11 +161,12 @@ Item {
     readonly property real circularShellDiameter: circleDiameter + shellPadding * 2
     readonly property real shellX: 0
     readonly property real shellY: 0
-    readonly property real surfaceStart: sideInset
+    readonly property real surfaceStart: leftAttached ? ScreenGeometry.topBorderThickness : sideInset
     readonly property real surfaceWidth: Math.max(0, surfaceEnd - surfaceStart)
     readonly property real surfaceHeight: circularShellDiameter + flareExtraBottom
-    readonly property real surfaceEnd: Math.min(horizontalBounds.end, circularShellDiameter + flareExtraBottom)
-    readonly property real flareTargetHeight: Math.max(1, surfaceHeight - logicalAttachmentY)
+    readonly property real surfaceEnd: leftAttached ? Math.min(modelData.height - ScreenGeometry.bottomReservation(modelData.name), surfaceHeight)
+        : Math.min(horizontalBounds.end, circularShellDiameter + flareExtraBottom)
+    readonly property real flareTargetHeight: leftAttached ? Math.max(0, surfaceHeight - leftSeam) : Math.max(1, surfaceHeight - logicalAttachmentY)
     readonly property real flareReach: ScreenGeometry.edgeHugRadius
     readonly property real hoverOverflow: Math.ceil(circleDiameter * 0.12)
     readonly property real controllerX: shellX + shellPadding
@@ -165,12 +180,15 @@ Item {
     readonly property bool sidebarExpanded: UiState.navigationMode === "handoff-sidebar"
     readonly property real sidebarControlDiameter: Math.max(50, Math.round(Theme.fontSize * 3.1))
     readonly property real sidebarBodyPadding: Math.max(10, Theme.pad)
-    readonly property real sidebarBodyWidth: Math.max(70, sidebarControlDiameter + sidebarBodyPadding * 2)
-    readonly property real sidebarBodyHeight: Math.max(1, Math.min(sidebarSurface.preferredBodyHeight,
-        520, ScreenGeometry.availableAttachedHeight(modelData.height) + logicalAttachmentY - sidebarBodyY - flareReach - 16))
+    readonly property bool horizontalSidebar: ChromeLayout.leftBarMode
+    readonly property var sidebarRail: NavigationGeometry.rail(horizontalSidebar, circularShellDiameter,
+        Math.max(70, sidebarControlDiameter + sidebarBodyPadding * 2), sidebarSurface.preferredBodyHeight,
+        modelData.width, ScreenGeometry.availableAttachedHeight(modelData.height))
+    readonly property real sidebarBodyWidth: sidebarRail.width
+    readonly property real sidebarBodyHeight: sidebarRail.height
     readonly property real railHoverOverflow: 6
-    readonly property real sidebarBodyX: 0
-    readonly property real sidebarBodyY: Math.round(circularShellDiameter * 0.94)
+    readonly property real sidebarBodyX: sidebarRail.x
+    readonly property real sidebarBodyY: sidebarRail.y
     readonly property real sidebarEarWidth: Math.max(32, Math.round(flareReach * 1.5))
     readonly property real sidebarEarRadius: sidebarEarWidth + Theme.giantRadius * 2
 
@@ -183,10 +201,11 @@ Item {
         + Math.sqrt(Math.max(0, sidebarJoinRadius * sidebarJoinRadius - sidebarJoinInset * sidebarJoinInset)))
 
     // Bridge connects the lower-left radial sector to the sidebar body:
-    readonly property real bridgeX: 0
-    readonly property real bridgeY: Math.round(controllerY + circleRadius)
-    readonly property real bridgeWidth: Math.max(sidebarBodyWidth, Math.round(circleRadius + shellPadding))
-    readonly property real bridgeHeight: Math.max(1, (sidebarBodyY + Math.min(24, sidebarBodyHeight * 0.1)) - bridgeY)
+    readonly property var sidebarBridge: NavigationGeometry.bridge(horizontalSidebar, circularShellDiameter, sidebarRail)
+    readonly property real bridgeX: sidebarBridge.x
+    readonly property real bridgeY: sidebarBridge.y
+    readonly property real bridgeWidth: sidebarBridge.width
+    readonly property real bridgeHeight: sidebarBridge.height
 
     // One tool key owns the attached shell; rail selection remains independent.
     property string activeSidebarTool: ""
@@ -197,8 +216,8 @@ Item {
     readonly property bool sidebarToolOpen: activeSidebarTool.length > 0
     readonly property bool sidebarToolVisible: sidebarToolOpen || (sidebarToolLayer && sidebarToolLayer.activeProgress > 0.001)
     readonly property bool sidebarInteractionVisible: sidebarExpanded || sidebarToolVisible
-    readonly property real sidebarToolX: sidebarBodyWidth + 30
-    readonly property real sidebarToolY: Math.max(0, Math.min(sidebarBodyY + 40,
+    readonly property real sidebarToolX: horizontalSidebar ? sidebarBodyX : sidebarBodyWidth + 30
+    readonly property real sidebarToolY: Math.max(0, Math.min(horizontalSidebar ? sidebarBodyHeight + 30 : sidebarBodyY + 40,
         modelData.height - sidebarToolPreferredHeight - 12))
     readonly property real sidebarToolPreferredWidth: renderedSidebarTool === "quickActions" ? 540 : 460
     readonly property real sidebarToolPreferredHeight: renderedSidebarTool === "quickActions" ? 240 : 360
@@ -224,7 +243,7 @@ Item {
         var rail = sidebarInteractionVisible ? SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
             railVisual, margin),
             modelData.width, modelData.height) : empty
-        var ear = sidebarInteractionVisible ? SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
+        var ear = sidebarInteractionVisible && !horizontalSidebar ? SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
             SafeZoneGeometry.rect(sidebarBodyWidth, sidebarBodyY + sidebarTopFlareY,
                                   sidebarEarWidth, sidebarEarRadius), margin / 2),
             modelData.width, modelData.height) : empty
@@ -234,7 +253,7 @@ Item {
             SafeZoneGeometry.inflate(toolVisual, margin),
             modelData.width, modelData.height) : empty
         var toolBridge = tool.width ? SafeZoneGeometry.clampRect(
-            SafeZoneGeometry.horizontalBridge(railVisual, toolVisual, Interaction.safeZoneCorridorWidth),
+            (horizontalSidebar ? SafeZoneGeometry.verticalBridge : SafeZoneGeometry.horizontalBridge)(railVisual, toolVisual, Interaction.safeZoneCorridorWidth),
             modelData.width, modelData.height) : empty
         var dashboard = dashboardVisuallyActive ? SafeZoneGeometry.clampRect(
             SafeZoneGeometry.inflate(SafeZoneGeometry.rect(0,
@@ -419,7 +438,7 @@ Item {
     // closing must return to the stable circle size (the Logo height), never
     // to the hover-expanded pill width.
     readonly property real returnAnchorSize: Math.max(1, capturedAnchorRect.height)
-    readonly property real anchorBodyHeight: Math.max(1, Math.min(surfaceHeight, capturedAnchorRect.height))
+    readonly property real anchorBodyHeight: leftAttached ? 0 : Math.max(1, Math.min(surfaceHeight, capturedAnchorRect.height))
 
     property real flareStart: anchorStart
     property real flareEnd: anchorEnd
@@ -471,23 +490,9 @@ Item {
     }
     // Sector angles use canvas coordinates: 0° right, 90° down.
     // Top layout uses three equal 120° sectors, reflected below for Full bar:
-    // Sidebar: lower-left (90° -> 210°, center 150°);
-    // Dashboard: top (210° -> 330°, center 270°);
-    // Settings: lower-right (330° -> 450°, center 30°).
-    readonly property var regions: [
-        { key: "dashboard", icon: "", startDeg: 210, endDeg: 330,
-          labelAngle: 270, labelRadius: 0.46, offsetX: -5, offsetY: 0 },
-        { key: "sidebar", icon: "", startDeg: 90, endDeg: 210,
-          labelAngle: 150, labelRadius: 0.50, offsetX: -4, offsetY: 0 },
-        { key: "settings", icon: "", startDeg: 330, endDeg: 450,
-          labelAngle: 30, labelRadius: 0.50, offsetX: 0, offsetY: 0 }
-    ].map(function(region) {
-        // Reflect sectors, labels and hit targets together without flipping glyphs.
-        if (!ScreenGeometry.bottomAttached) return region
-        var start = normalizeAngle(-region.endDeg)
-        return Object.assign({}, region, {startDeg: start, endDeg: start + 120,
-            labelAngle: normalizeAngle(-region.labelAngle), offsetY: -region.offsetY})
-    })
+    // Rendering, pointer hit tests, labels and keyboard morph targets share one angle table.
+    readonly property var regions: NavigationGeometry.regions(ChromeLayout.statusEdge)
+    onRegionsChanged: updateMorphTarget()
 
     function normalizeAngle(deg) {
         var a = deg % 360
@@ -615,8 +620,9 @@ Item {
     }
 
     function seedLogoGeometry() {
-        flareStart = anchorStart
-        flareEnd = anchorEnd
+        // Left opens from a zero-depth seam with a stable vertical span.
+        flareStart = leftAttached ? surfaceStart : anchorStart
+        flareEnd = leftAttached ? surfaceEnd : anchorEnd
         flareHeight = Math.min(anchorBodyHeight, flareTargetHeight)
     }
 
@@ -637,7 +643,7 @@ Item {
     Connections {
         target: ChromeLayout
         // Drop an in-flight envelope instead of replaying it at the opposite edge.
-        function onTaskbarModeChanged() {
+        function onStatusEdgeChanged() {
             Qt.callLater(function() {
                 if (!root) return
                 if (root.panelOpen) return
@@ -652,13 +658,30 @@ Item {
                 root.closeReturnProgress = 0
                 root.closeFlareProgress = 0
                 root.capturedAnchorRect = ScreenGeometry.barAnchor(root.modelData.height, Theme.pad, Theme.fontSize * 1.8)
-                UiState.finishNavigationVisual(root.modelData.name)
+                root.finishVisual()
             })
         }
     }
 
     Component.onDestruction: {
         UiState.closeNavigationIfScreen(modelData.name)
+        root.finishVisual()
+    }
+
+    // Suppress synthetic logo entry only when the proxy still owns that pointer.
+    function prepareLogoReturn() {
+        if (!leftAttached) return
+        var point = safeZoneHover.point.position
+        var anchor = capturedAnchorRect
+        var inset = Math.max(0, ScreenGeometry.leftModuleTouchSize - anchor.width) / 2
+        UiState.navigationLogoReturning(modelData.name, safeZoneHover.hovered
+            && point.x >= anchor.x - inset && point.x <= anchor.x + anchor.width + inset
+            && point.y >= anchor.y - inset && point.y <= anchor.y + anchor.height + inset)
+    }
+
+    // Release the visual owner after publishing its final pointer handoff.
+    function finishVisual() {
+        if (UiState.navigationVisualScreenName === modelData.name && !panelOpen) prepareLogoReturn()
         UiState.finishNavigationVisual(modelData.name)
     }
 
@@ -696,6 +719,7 @@ Item {
 
         // Ownership moving to another monitor does not animate the stale output.
         if (UiState.activePanel === "navigation") {
+            prepareLogoReturn()
             closing = false
             closingFromDashboard = false
             closeCollapseProgress = 0.0
@@ -709,6 +733,7 @@ Item {
 
         var wasInDashboard = root.dashboardVisuallyActive || root.dashboardMorphProgress > 0.05
         if (wasInDashboard) {
+            root.dashboardCloseStart = Math.max(0.001, root.dashboardMorphProgress)
             root.closingFromDashboard = true
             root.closing = true
             root.hoveredIndex = -1
@@ -732,7 +757,7 @@ Item {
             dashboardMorphAnim.stop()
             dashboardMorphProgress = 0.0
             seedLogoGeometry()
-            UiState.finishNavigationVisual(modelData.name)
+            root.finishVisual()
         }
     }
 
@@ -794,7 +819,7 @@ Item {
         }
 
         onFinished: {
-            UiState.finishNavigationVisual(root.modelData.name)
+            root.finishVisual()
             Qt.callLater(function() {
                 if (!root) return
                 root.closing = false
@@ -826,16 +851,23 @@ Item {
 
         Flare.FlareSurface {
             id: navigationFlare
-            attach: ScreenGeometry.bottomAttached ? Flare.FlareHost.Bottom : Flare.FlareHost.Top
-            x: 0
+            objectName: "navigation-main-flare"
+            attach: root.leftAttached ? Flare.FlareHost.Left : ScreenGeometry.bottomAttached ? Flare.FlareHost.Bottom : Flare.FlareHost.Top
+            x: root.leftAttached ? root.leftSeam : 0
             // Align the top-right attachment to RoundedScreen content.
-            y: root.attachmentY
-            width: navigationVisualLayer.width
+            y: root.leftAttached ? 0 : root.attachmentY
+            width: root.leftAttached ? root.modelData.height : navigationVisualLayer.width
             height: root.flareTargetHeight + root.flareReach
             start: root.flareStart
             end: root.flareEnd
             currentHeight: root.flareHeight
-            bounds: root.horizontalBounds
+            bounds: root.leftAttached ? ({start: ScreenGeometry.topBorderThickness,
+                end: root.modelData.height - ScreenGeometry.bottomReservation(root.modelData.name)}) : root.horizontalBounds
+            // Transpose only the backing silhouette; controller, text and input stay upright.
+            transform: Matrix4x4 {
+                matrix: root.leftAttached ? Qt.matrix4x4(0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+                    : Qt.matrix4x4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+            }
             // Match the shared RoundedScreen corner language.
             r: Math.max(Theme.largeRadius + 8, ScreenGeometry.roundedRadius + 8)
             rf: root.flareReach
@@ -848,11 +880,22 @@ Item {
                      : Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35))
             visible: (root.panelOpen || root.closing) && opacity > 0.001
         }
+        Flare.FlareSurface {
+            visible: root.horizontalSidebar && sidebarSurface.visible && (root.panelOpen || root.closing)
+            x: root.sidebarBodyX
+            y: root.sidebarBodyY
+            start: 0
+            end: root.sidebarBodyHeight
+            currentHeight: sidebarSurface.currentHeight
+            bounds: ({start: 0, end: root.modelData.height})
+            transform: Matrix4x4 { matrix: Qt.matrix4x4(0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1) }
+            surfaceColor: Theme.surface
+        }
         Sidebar.SidebarFlareSurface {
             x: root.sidebarBodyX
             y: root.mapY(root.sidebarBodyY, 0)
             transform: Scale { yScale: ScreenGeometry.bottomAttached ? -1 : 1 }
-            visible: sidebarSurface.visible && (root.panelOpen || root.closing)
+            visible: !root.horizontalSidebar && sidebarSurface.visible && (root.panelOpen || root.closing)
             bodyWidth: sidebarSurface.bodyWidth
             currentHeight: sidebarSurface.currentHeight
             morphProgress: sidebarSurface.morphProgress
@@ -981,11 +1024,12 @@ Item {
         // morph opening/closing animation, and circular option controls.
         Sidebar.SidebarSurface {
             id: sidebarSurface
+            horizontal: root.horizontalSidebar
             bottomAttached: ScreenGeometry.bottomAttached
             x: root.sidebarBodyX
             y: root.mapY(root.sidebarBodyY, root.sidebarBodyHeight)
-            width: root.sidebarBodyWidth + root.sidebarEarWidth + 4
-            height: root.sidebarBodyHeight + root.flareReach
+            width: root.sidebarBodyWidth + (root.horizontalSidebar ? root.flareReach : root.sidebarEarWidth + 4)
+            height: root.sidebarBodyHeight + (root.horizontalSidebar ? root.sidebarEarWidth + 4 : root.flareReach)
             bodyWidth: root.sidebarBodyWidth
             bodyHeight: root.sidebarBodyHeight
             controlDiameter: root.sidebarControlDiameter
@@ -1179,7 +1223,8 @@ Item {
                 if (root.dashboardVisuallyActive || (root.sidebarToolOpen && !root.sidebarKeyboardMode)) return
                 root.keyboardLease = true
                 if (root.sidebarKeyboardMode) {
-                    if (root.sidebarToolOpen) root.closeSidebarTool(true)
+                    if (root.horizontalSidebar) root.moveSidebarSelection(-1)
+                    else if (root.sidebarToolOpen) root.closeSidebarTool(true)
                     else root.requestClose()
                 }
                 else root.moveSelection(-1)
@@ -1195,7 +1240,10 @@ Item {
             Keys.onRightPressed: event => {
                 if (root.dashboardVisuallyActive || (root.sidebarToolOpen && !root.sidebarKeyboardMode)) return
                 root.keyboardLease = true
-                if (root.sidebarKeyboardMode) root.activateSidebarSelection()
+                if (root.sidebarKeyboardMode) {
+                    if (root.horizontalSidebar) root.moveSidebarSelection(1)
+                    else root.activateSidebarSelection()
+                }
                 else root.moveSelection(1)
                 event.accepted = true
             }

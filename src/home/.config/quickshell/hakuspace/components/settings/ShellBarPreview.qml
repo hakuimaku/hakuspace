@@ -9,6 +9,7 @@ Column {
     property Item shortcutTarget: null
     property bool showLayoutControl: true
     readonly property string settingsNavSection: "Top Bar"
+    readonly property bool leftbar: ChromeLayout.leftBarMode
     // Search targets the preview chip instead of a duplicate preference row.
     function reveal(id) {
         var target = Navigation.collect(root).find(item => item.descriptorId === id)
@@ -17,24 +18,21 @@ Column {
         return target
     }
     spacing: Theme.spaceSm
-    SettingsSegmentedControl {
+    ShellLayoutControl {
         width: parent.width
         visible: root.showLayoutControl
-        options: Catalog.descriptor("layout").options
-        value: SettingsCoordinator.read("layout")
         shortcutTarget: root.shortcutTarget
-        enabled: !SettingsCoordinator.busy
-        onChosen: value => SettingsCoordinator.set("layout", value)
     }
     // Match the live bar order without starting its media or system services.
     Rectangle {
         id: bar
-        width: parent.width; height: 52
+        width: parent.width; height: root.leftbar ? 310 : 52
         radius: ShellSettingsStore.baseRadius
         color: Theme.hoverMuted
         readonly property real unit: Math.min(32, (modules.width - Theme.gap * 11) / 20)
         RowLayout {
             id: modules
+            visible: !root.leftbar
             anchors.fill: parent
             anchors.margins: Theme.spaceSm
             spacing: Theme.gap
@@ -96,5 +94,42 @@ Column {
                 }
             }
         }
+        Flickable {
+            visible: root.leftbar
+            anchors.centerIn: parent
+            width: 58; height: parent.height - 16
+            contentWidth: width
+            contentHeight: verticalModules.height
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+            Column {
+                id: verticalModules
+                width: parent.width
+                spacing: 8
+                Repeater {
+                    model: ["", "workspaces", "windowTitle", "tray", "quickControls", "powerProfile", "wallpaperWorkspace", "recorder", "clock", "notifications"]
+                    delegate: SettingsActionButton {
+                        required property string modelData
+                        readonly property string descriptorId: modelData ? "shell.topbar." + modelData : ""
+                        readonly property var descriptor: descriptorId ? Catalog.descriptor(descriptorId) : null
+                        width: parent.width
+                        height: modelData === "windowTitle" ? 70 : modelData === "clock" ? 72 : 36
+                        text: modelData === "clock" ? "07\n10" : ({"": "󰮯", workspaces: "●", windowTitle: "", tray: "", quickControls: "", powerProfile: "", wallpaperWorkspace: "", recorder: "", clock: "", notifications: ""})[modelData]
+                        fontSize: modelData === "clock" ? Theme.fontSize + 6 : Theme.fontSize
+                        selected: !descriptorId || SettingsCoordinator.read(descriptorId)
+                        activeFocusOnTab: true
+                        focused: activeFocus
+                        Accessible.name: descriptor ? descriptor.label : "Logo / Navigation"
+                        Accessible.role: descriptorId ? Accessible.CheckBox : Accessible.StaticText
+                        Accessible.checked: selected
+                        onClicked: if (descriptorId) SettingsCoordinator.set(descriptorId, !selected)
+                        Keys.onReturnPressed: clicked()
+                        Keys.onSpacePressed: clicked()
+                        SettingsTooltip { target: parent; active: parent.hovered || parent.activeFocus; text: parent.Accessible.name }
+                    }
+                }
+            }
+        }
+
     }
 }

@@ -23,7 +23,7 @@ Item {
     readonly property real horizontalPadding: 24
     // A removed output becomes null before its Variants delegate is destroyed.
     readonly property real targetWidth: modelData
-        ? Math.min(Math.max(0, modelData.width - ScreenGeometry.leftInset - ScreenGeometry.rightInset - Theme.hugRadius * 2),
+        ? Math.min(Math.max(0, ScreenGeometry.dockWidthLimit(modelData.width)),
             appContent.contentWidth + horizontalPadding * 2) : 0
     // Only the owning output hides its Dock while the bottom menu is open.
     readonly property bool menuOwned: enabledDock && UiState.activePanel === "hakumenu"
@@ -125,8 +125,8 @@ Item {
         WlrLayershell.namespace: "hakuspace-dock-reservation"
         visible: root.shown && ShellSettingsStore.dockExclusiveSpace
         color: "transparent"
-        implicitHeight: root.targetHeight
-        exclusiveZone: root.targetHeight
+        implicitHeight: root.targetHeight + root.bottomInset
+        exclusiveZone: root.targetHeight + root.bottomInset
         mask: Region {}
     }
     PanelWindow {
@@ -141,7 +141,7 @@ Item {
         exclusionMode: ExclusionMode.Ignore
         margins.left: root.sideInset
         margins.right: root.sideInset
-        visible: ChromeLayout.topBarMode && (root.enabledDock || morph.height > 0)
+        visible: ChromeLayout.statusBarMode && (root.enabledDock || morph.height > 0)
         color: "transparent"
         implicitHeight: root.targetHeight + 180
         // Keyboard navigation ends when an application or another panel takes focus.

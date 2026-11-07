@@ -29,7 +29,7 @@ Item {
         lastTrayFallbackReason = reason
         if (!item || !anchor) return
         if (item.hasMenu) {
-            var point = anchor.mapToItem(null, 0, ScreenGeometry.bottomAttached ? 0 : anchor.height)
+            var point = anchor.mapToItem(null, ChromeLayout.leftBarMode ? anchor.width : 0, ChromeLayout.leftBarMode || ScreenGeometry.bottomAttached ? 0 : anchor.height)
             item.display(root.ownerWindow, point.x, point.y)
         } else {
             item.secondaryActivate()
@@ -134,7 +134,7 @@ Item {
 
     Connections {
         target: ChromeLayout
-        function onTaskbarModeChanged() { root.closeTrayMenu() }
+        function onStatusEdgeChanged() { root.closeTrayMenu() }
     }
     Component.onDestruction: {
         closeTrayMenu()

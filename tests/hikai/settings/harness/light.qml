@@ -119,7 +119,7 @@ ShellRoot {
             root.check(!ShellSettingsStore.error, ShellSettingsStore.error)
             if (root.phase === 0) {
                 root.checkScheme("prefer-dark")
-                root.check(!Theme.isLight && ShellSettingsStore.values.version === 10, "default dark schema v10")
+                root.check(!Theme.isLight && ShellSettingsStore.values.version === 11, "default dark schema v11")
                 root.check(String(Theme.accent) === "#a2cb8b", "generated dark accent")
                 for (var tone of root.tones) {
                     ShellSettingsStore.setValue("appearance", "surfaceTone", tone)

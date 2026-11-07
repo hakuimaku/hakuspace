@@ -36,14 +36,14 @@ PanelWindow {
             Math.max(0, placementBounds.height - cardHeight - Theme.panelPadding * 2)))
         return Qt.point(anchor.x, anchor.y)
     }
-    readonly property real cardWidth: Math.max(1, Math.min(cardSize.width, width))
+    readonly property real cardWidth: Math.max(1, Math.min(cardSize.width, width - (ChromeLayout.leftBarMode ? ScreenGeometry.reservedLeft + ScreenGeometry.rightInset : 0)))
     readonly property real cardHeight: Math.max(1, Math.min(cardSize.height, height))
-    readonly property real targetX: Math.max(0, Math.min(width - cardWidth, position.x))
+    readonly property real targetX: Math.max(ScreenGeometry.leftChromeWidth, Math.min(width - cardWidth, position.x))
     readonly property real targetY: Math.max(0, Math.min(height - cardHeight, position.y))
     // Place the chassis inside the active status bar and screen rails.
-    readonly property rect placementBounds: Qt.rect(ScreenGeometry.leftInset,
+    readonly property rect placementBounds: Qt.rect(ScreenGeometry.contentLeftEdge,
         ScreenGeometry.bottomAttached ? ScreenGeometry.topBorderThickness : ScreenGeometry.chromeAttachmentY(height),
-        Math.max(0, width - ScreenGeometry.leftInset - ScreenGeometry.rightInset),
+        Math.max(0, width - ScreenGeometry.contentLeftEdge - ScreenGeometry.rightInset),
         Math.max(0, ScreenGeometry.bottomAttached ? ScreenGeometry.chromeAttachmentY(height) - ScreenGeometry.topBorderThickness
             : height - ScreenGeometry.bottomInset - ScreenGeometry.chromeAttachmentY(height)))
     // Extend the transition foot to the physical screen edge.

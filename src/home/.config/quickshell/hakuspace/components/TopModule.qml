@@ -4,8 +4,21 @@ import Quickshell.Wayland
 import "../services"
 import "base"
 
-Rectangle {
+Item {
     id: root
+    // Preserve the Rectangle API while painting independently of the pointer wrapper.
+    property alias color: chassis.color
+    property alias radius: chassis.radius
+    property alias border: chassis.border
+    // Shared modules opt into Y hover explicitly; horizontal bars keep their original sizing.
+    property string hoverAxis: "horizontal"
+    readonly property bool verticalPresentation: hoverAxis === "vertical"
+    property bool compactVisual: verticalPresentation
+    property real hoverExpansion: compactVisual && hovered ? ScreenGeometry.leftModuleHoverExtent : 0
+    readonly property real normalVisualHeight: compactVisual ? Math.max(ScreenGeometry.leftVisualSize, height - (ScreenGeometry.leftControlSlotHeight - ScreenGeometry.leftVisualSize)) : height
+    readonly property real visualHeight: Math.min(height, normalVisualHeight + hoverExpansion * 2)
+    readonly property Item visualItem: chassis
+    readonly property Item interactionItem: hitRegion
     property string text: ""
     property string icon: ""
     property bool isAccent: false
@@ -15,7 +28,7 @@ Rectangle {
     property bool blink: false
     property string tooltip: ""
     property Component tooltipComponent: null
-    property real iconFontSize: Theme.fontSize
+    property real iconFontSize: compactVisual ? ScreenGeometry.leftIconSize : Theme.fontSize
     property color foregroundColor: hovered ? Theme.onAccentColor
                                             : (urgent ? "#ff3333" : (isAccent ? Theme.accent : Theme.fg))
     property int borderWidth: 0
@@ -30,7 +43,7 @@ Rectangle {
     function requestTooltip() {
         if (root.tooltip === "" && !root.tooltipComponent) return;
         if (!tooltipObj.active) tooltipObj.active = true;
-        else TooltipManager.show(root, root.tooltip, root.tooltipComponent);
+        else TooltipManager.show(hitRegion, root.tooltip, root.tooltipComponent);
     }
 
     color: hovered ? Theme.surfaceHi : Theme.surface
@@ -39,8 +52,8 @@ Rectangle {
     border.width: borderWidth
     border.color: borderColor
     
-    implicitHeight: Theme.fontSize * 1.8
-    implicitWidth: Math.max(implicitHeight, row.implicitWidth + Theme.pad * 2 + (hovered ? 20 : 0))
+    implicitHeight: verticalPresentation ? ScreenGeometry.leftControlSlotHeight : Theme.fontSize * 1.8
+    implicitWidth: verticalPresentation ? ScreenGeometry.leftModuleTouchSize : Math.max(implicitHeight, row.implicitWidth + Theme.pad * 2 + (hovered ? 20 : 0))
     readonly property real hoverSafeWidth: Math.max(implicitHeight, row.implicitWidth + Theme.pad * 2 + 20)
     onVisibleChanged: {
         if (!visible) {
@@ -49,6 +62,17 @@ Rectangle {
         }
     }
 
+    // Hover fills the reserved slot instead of overpainting a clipped Flickable.
+    Rectangle {
+        id: chassis
+        z: -1
+        anchors.centerIn: parent
+        width: root.compactVisual ? ScreenGeometry.leftVisualSize : root.width
+        height: root.visualHeight
+    }
+    Behavior on hoverExpansion {
+        NumberAnimation { duration: HAnimation.slow; easing.bezierCurve: HAnimation.moduleCurve }
+    }
     // Repeatedly pulses module opacity when urgent alert blinking is enabled.
     SequentialAnimation on opacity {
         running: root.blink
@@ -103,6 +127,7 @@ Rectangle {
     }
 
     MouseArea {
+        id: hitRegion
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
@@ -125,7 +150,7 @@ Rectangle {
     
     HTooltip {
         id: tooltipObj
-        target: root
+        target: hitRegion
         text: root.tooltip
         component: root.tooltipComponent
     }

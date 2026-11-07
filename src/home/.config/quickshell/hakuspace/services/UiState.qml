@@ -69,6 +69,7 @@ QtObject {
     // the close morph finishes, so TopBar left modules do not reappear under
     // an in-flight Navigation surface.
     property string navigationVisualScreenName: ""
+    property bool navigationWorkspaceReturnReady: false
     property bool dashboardVisuallyActive: false
     // Captured module anchors use target-screen coordinates.
     property var navigationAnchorRect: null
@@ -133,7 +134,7 @@ QtObject {
         function onDockbarActiveChanged() {
             if (!ChromeLayout.dockbarActive && root.hakuMenuSource === "dockbar") root.closeHakuMenu()
         }
-        function onTaskbarModeChanged() {
+        function onStatusEdgeChanged() {
             TooltipManager.dismiss()
             root.closeTrayMenu()
             root.closeNotifications()
@@ -217,13 +218,17 @@ QtObject {
         if (taskManagerScreenName === screenName) closeTaskManager()
     }
 
+    // Preserve pointer ownership when the Leftbar logo returns from its proxy.
+    signal navigationLogoReturning(string screenName, bool pointerInside)
+
     // Opens navigation surface with anchor coordinates and updates active panel.
     function openNavigation(screenName, anchorRect) {
         if (activePanel === "navigation" && navigationScreenName === screenName && navigationMode !== "closed")
             return
+        navigationWorkspaceReturnReady = false
+        navigationAnchorRect = anchorRect || ScreenGeometry.fallbackModuleAnchor(screenName, Theme.pad, Theme.fontSize * 1.8)
         navigationScreenName = screenName
         navigationVisualScreenName = screenName
-        navigationAnchorRect = anchorRect || ScreenGeometry.fallbackModuleAnchor(screenName, Theme.pad, Theme.fontSize * 1.8)
         navigationMode = "open"
         claimInteraction("navigation", screenName)
         activePanel = "navigation"
@@ -268,6 +273,7 @@ QtObject {
         // A reopen on the same screen wins over a stale close-animation finish.
         if (activePanel === "navigation" && navigationScreenName === screenName) return
         navigationVisualScreenName = ""
+        navigationWorkspaceReturnReady = false
         dashboardVisuallyActive = false
     }
 

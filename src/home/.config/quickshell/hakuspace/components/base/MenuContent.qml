@@ -6,7 +6,9 @@ Item {
     property var menuHandle: null
     property var lastHandle: null
     property real maxHeight: 144
-    implicitWidth: Math.min(300, Math.max(220, Theme.fontSize * 19))
+    // Side menus honor the host width budget while keeping the original default width.
+    property real maxWidth: 300
+    implicitWidth: Math.min(maxWidth, Math.max(220, Theme.fontSize * 19))
     implicitHeight: Math.min(maxHeight, page.implicitHeight)
     clip: true
 

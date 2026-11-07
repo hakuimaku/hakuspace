@@ -49,6 +49,7 @@ def write_state(parent_fd, name, enabled):
 
 def migrate():
     """Journal target states so interrupted upgrades resume without reinterpretation."""
+    set_layout("recover")
     journal_path = state_path("migration.hikai-chrome-v6.json")
     settings_path = Path(os.path.abspath(os.environ.get("HAKUSPACE_HIKAI_SETTINGS_FILE")
                                         or Path.home() / "hakucfg/hikai/hikai-shell.json"))
@@ -65,6 +66,7 @@ def migrate():
                 return
         settings_fd = open_parent(settings_path, True)
         try:
+            fcntl.flock(settings_fd, fcntl.LOCK_EX)
             raw = read_text(settings_fd, settings_path.name)
             document = json.loads(raw) if raw is not None else {}
             values, mode, _ = read_file(settings_fd, settings_path.name)
@@ -90,11 +92,68 @@ def migrate():
         os.close(state_fd)
 
 
+def set_layout(layout):
+    """Switch Hikai topology with a recoverable rollback of both persisted fields."""
+    if layout not in ("topbar", "leftbar", "taskbar", "enabled", "disabled", "toggle", "recover"):
+        raise ValueError("invalid layout target")
+    journal_path = state_path("migration.hikai-layout-v11.json")
+    settings_path = Path(os.path.abspath(os.environ.get("HAKUSPACE_HIKAI_SETTINGS_FILE")
+                                        or Path.home() / "hakucfg/hikai/hikai-shell.json"))
+    if layout == "recover" and not os.path.lexists(journal_path):
+        return
+    state_fd = open_parent(journal_path, True)
+    try:
+        fcntl.flock(state_fd, fcntl.LOCK_EX)
+        settings_fd = open_parent(settings_path, True)
+        try:
+            fcntl.flock(settings_fd, fcntl.LOCK_EX)
+            values, mode, _ = read_file(settings_fd, settings_path.name)
+            taskbar_name = state_path("desktop.taskbar.requested").name
+            saved = read_text(state_fd, journal_path.name)
+            journal = json.loads(saved) if saved is not None else None
+            if journal is not None:
+                if (type(journal) is not dict or set(journal) != {"complete", "edge", "taskbar"}
+                        or type(journal["complete"]) is not bool or type(journal["taskbar"]) is not bool
+                        or journal["edge"] not in ("top", "left")):
+                    raise ValueError("invalid layout recovery journal")
+                if not journal["complete"]:
+                    values["chrome"]["statusEdge"] = journal["edge"]
+                    replace_file(settings_fd, settings_path.name, values, mode)
+                    write_state(state_fd, taskbar_name, journal["taskbar"])
+                    replace_file(state_fd, journal_path.name, dict(journal, complete=True), 0o600)
+            if layout == "recover":
+                return
+            previous = (read_text(state_fd, taskbar_name) or "").strip() == "1"
+            target = not previous if layout == "toggle" else layout in ("taskbar", "enabled")
+            journal = {"complete": False, "edge": values["chrome"]["statusEdge"], "taskbar": previous}
+            replace_file(state_fd, journal_path.name, journal, 0o600)
+            try:
+                if layout in ("topbar", "leftbar"):
+                    values["chrome"]["statusEdge"] = "left" if layout == "leftbar" else "top"
+                replace_file(settings_fd, settings_path.name, values, mode)
+                write_state(state_fd, taskbar_name, target)
+                replace_file(state_fd, journal_path.name, dict(journal, complete=True), 0o600)
+            except (OSError, ValueError):
+                values["chrome"]["statusEdge"] = journal["edge"]
+                replace_file(settings_fd, settings_path.name, values, mode)
+                write_state(state_fd, taskbar_name, previous)
+                replace_file(state_fd, journal_path.name, dict(journal, complete=True), 0o600)
+                raise
+            return {"ok": True, "taskbar": target, "statusEdge": values["chrome"]["statusEdge"]}
+        finally:
+            os.close(settings_fd)
+    finally:
+        os.close(state_fd)
+
+
 if __name__ == "__main__":
     try:
-        if sys.argv[1:] != ["migrate"]:
-            raise ValueError("usage: hikai_chrome_state_ctl.py migrate")
-        migrate()
+        if sys.argv[1:] == ["migrate"]:
+            migrate()
+        elif len(sys.argv) == 3 and sys.argv[1] == "layout":
+            print(json.dumps(set_layout(sys.argv[2])))
+        else:
+            raise ValueError("usage: hikai_chrome_state_ctl.py migrate|layout TARGET")
     except (OSError, ValueError, UnicodeError) as error:
         print(str(error), file=sys.stderr)
         sys.exit(1)

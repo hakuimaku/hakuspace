@@ -67,6 +67,7 @@ path = Path(sys.argv[1])
 values = json.loads(path.read_text())
 values["version"] = int(sys.argv[2][1:])
 values.pop("idle", None)
+values.pop("chrome", None)
 values["appearance"].pop("colorMode")
 for key in ("style", "showTrash", "showDevices"):
     values["dock"].pop(key, None)
@@ -105,7 +106,7 @@ from pathlib import Path
 import re
 
 values = json.loads(Path(sys.argv[1]).read_text())
-assert values["version"] == 10
+assert values["version"] == 11
 assert values["roundedScreen"] == {"radius": 20, "borderThickness": 4}
 assert values["appearance"] == {"baseRadius": 12, "surfaceTone": "dark", "colorMode": "dark"}
 assert all(values["topbar"].values())

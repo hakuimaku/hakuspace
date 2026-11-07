@@ -7,13 +7,22 @@ Item {
     id: root
     readonly property var horizontalBounds: ScreenGeometry.horizontalBounds(width)
     width: parent.width
+    // Side tooltips share the same content and calendar components.
+    property bool leftAttached: false
+    property string screenName: ""
+    property real sideAttachmentX: ScreenGeometry.contentLeftEdge
     property bool bottomAttached: false
     property real tipAreaHeight: 180
     height: tipAreaHeight
     property real minimumTooltipWidth: 0
-    readonly property real maxTooltipWidth: Math.min(Math.max(500, minimumTooltipWidth), Math.max(0, horizontalBounds.end - horizontalBounds.start))
+    readonly property real maxTooltipWidth: Math.min(Math.max(500, minimumTooltipWidth), Math.max(0, horizontalBounds.end - horizontalBounds.start - (leftAttached ? sideAttachmentX : 0)))
     readonly property real horizontalPadding: 22
     readonly property real maxTextWidth: Math.max(0, maxTooltipWidth - horizontalPadding * 2)
+    // Hug the physical content edges instead of creating a detached inset shelf.
+    readonly property var sideBounds: ({start: ScreenGeometry.topBorderThickness,
+        end: Math.max(ScreenGeometry.topBorderThickness, height - ScreenGeometry.bottomReservation(screenName))})
+    readonly property real maxSideContentHeight: Math.max(1, sideBounds.end - sideBounds.start - 24)
+    readonly property Item anchorTarget: menuShown ? menuAnchor : TooltipManager.current ? TooltipManager.current.target : null
     property bool menuShown: false
     property Item menuAnchor: null
     property var menuHandle: null
@@ -34,14 +43,21 @@ Item {
     
     FlareHost {
         id: flare
-        attach: root.bottomAttached ? FlareHost.Bottom : FlareHost.Top
-        anchors.fill: parent
-        anchorItem: root.menuShown ? root.menuAnchor : (TooltipManager.current ? TooltipManager.current.target : null)
+        attach: root.leftAttached ? FlareHost.Left : root.bottomAttached ? FlareHost.Bottom : FlareHost.Top
+        x: root.leftAttached ? root.sideAttachmentX : 0
+        width: root.width - x
+        height: root.height
+        anchorItem: root.leftAttached ? null : root.anchorTarget
+        // Mapping the rectangle also handles a rotated wallpaper toolbar exactly once.
+        anchorRect: root.leftAttached && root.anchorTarget ? root.anchorTarget.mapToItem(root, 0, 0, root.anchorTarget.width, root.anchorTarget.height) : null
+        hostRect: ({x: 0, y: 0, width: root.width, height: root.height})
+        wBounds: root.leftAttached ? root.sideBounds : ScreenGeometry.horizontalBounds(width)
         shown: root.menuShown || (TooltipManager.shown && root.visible)
         content: root.menuShown ? menuComp : (TooltipManager.current ? (TooltipManager.current.component || textComp) : null)
         contentProps: root.menuShown
             ? ({ menuHandle: root.menuHandle, maxHeight: root.menuMaxHeight })
-            : ({ payload: TooltipManager.current, maxWidth: root.maxTextWidth })
+            : root.leftAttached ? ({payload: TooltipManager.current, maxWidth: root.maxTextWidth, maxHeight: root.maxSideContentHeight})
+                : ({ payload: TooltipManager.current, maxWidth: root.maxTextWidth })
         contentKey: root.menuShown ? root.menuHandle : (TooltipManager.current ? TooltipManager.current.target : null)
         maxWidth: root.menuShown ? 320 : root.maxTooltipWidth
         horizontalPadding: root.horizontalPadding
@@ -56,16 +72,29 @@ Item {
     
     Component {
         id: textComp
-        Text {
+        Item {
             property var payload: null
             property real maxWidth: root.maxTextWidth
-            width: implicitWidth > maxWidth ? maxWidth : implicitWidth
-            text: payload && payload.text ? payload.text : ""
-            color: Theme.accent
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
-            horizontalAlignment: Text.AlignHCenter
-            wrapMode: Text.Wrap
+            property real maxHeight: Number.MAX_VALUE
+            implicitWidth: Math.min(label.implicitWidth, maxWidth)
+            implicitHeight: Math.min(label.implicitHeight, maxHeight)
+            Flickable {
+                anchors.fill: parent
+                contentWidth: width; contentHeight: label.implicitHeight
+                interactive: contentHeight > height
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                Text {
+                    id: label
+                    width: parent.width
+                    text: payload && payload.text ? payload.text : ""
+                    color: Theme.accent
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.Wrap
+                }
+            }
         }
     }
 }

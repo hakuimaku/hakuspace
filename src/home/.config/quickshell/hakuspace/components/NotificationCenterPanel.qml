@@ -11,7 +11,7 @@ import "notification"
 Item {
     id: root
     // Release only after the surface has finished its visual close.
-    readonly property bool releaseReady: !panelOpen && !closing
+    readonly property bool releaseReady: !panelOpen && !closing && leftPanel.releaseReady
     readonly property var horizontalBounds: ScreenGeometry.horizontalBounds(modelData.width, hostRect)
     required property var modelData
     width: Math.max(0, Math.min(520, modelData.width - Theme.pad * 2))
@@ -83,6 +83,16 @@ Item {
     }
     Component.onDestruction: UiState.closeNotificationsIfScreen(modelData.name)
 
+    Base.FlarePanelWindow {
+        id: leftPanel
+        modelData: root.modelData
+        panelOpen: ChromeLayout.leftBarMode && root.panelOpen
+        anchorRect: root.panelState ? root.panelState.anchorRect : null
+        panelComponent: centerComponent
+        panelProps: ({maxHeight: Math.max(1, root.height - 80), maxWidth: Math.min(460, root.modelData.width - ScreenGeometry.contentLeftEdge - 64)})
+        onDismissed: UiState.closeNotifications()
+    }
+
     PanelWindow {
         id: visualLayer
         screen: root.modelData
@@ -99,7 +109,7 @@ Item {
 
         FlareSurface {
             attach: ScreenGeometry.bottomAttached ? FlareHost.Bottom : FlareHost.Top
-            visible: root.openedAtBottom === ScreenGeometry.bottomAttached && (root.panelOpen || root.closing)
+            visible: !ChromeLayout.leftBarMode && root.openedAtBottom === ScreenGeometry.bottomAttached && (root.panelOpen || root.closing)
             y: ScreenGeometry.chromeAttachmentY(root.modelData.height)
             width: visualLayer.width
             height: visualLayer.height - y
@@ -127,7 +137,7 @@ Item {
         exclusiveZone: 0
         color: "transparent"
         implicitWidth: root.width
-        visible: root.openedAtBottom === ScreenGeometry.bottomAttached && (root.panelOpen || root.closing)
+        visible: !ChromeLayout.leftBarMode && root.openedAtBottom === ScreenGeometry.bottomAttached && (root.panelOpen || root.closing)
         mask: Region {
             Region {
                 x: root.safeZone(0).x; y: root.safeZone(0).y
@@ -215,7 +225,7 @@ Item {
             surfaceColor: "transparent"
             anchorRect: root.panelState ? root.panelState.anchorRect : null
             hostRect: root.hostRect
-            shown: root.panelOpen
+            shown: root.panelOpen && !ChromeLayout.leftBarMode
             content: centerComponent
             contentProps: ({ maxHeight: Math.max(0, ScreenGeometry.availableAttachedHeight(root.modelData.height)
                                                   - 48 - Theme.hugRadius),

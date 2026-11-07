@@ -42,6 +42,8 @@ class ChromeStateTests(unittest.TestCase):
         """Reconstruct each source schema without fields introduced by later versions."""
         values = copy.deepcopy(settings.DEFAULTS)
         values["version"] = version
+        if version < 11:
+            values.pop("chrome")
         if version < 10:
             for key in ("powerProfile", "wallpaperWorkspace"):
                 values["topbar"].pop(key)

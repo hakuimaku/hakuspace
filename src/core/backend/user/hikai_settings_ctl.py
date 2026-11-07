@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Validate and atomically persist native Hikai shell preferences."""
 import copy
+import fcntl
 import json
 import os
 import stat
@@ -10,7 +11,8 @@ from pathlib import Path
 
 # Keep runtime state outside this versioned preference schema.
 DEFAULTS = {
-    "version": 10,
+    "version": 11,
+    "chrome": {"statusEdge": "top"},
     "appearance": {"baseRadius": 12, "surfaceTone": "dark", "colorMode": "dark"},
     "roundedScreen": {"radius": 20, "borderThickness": 4},
     "dock": {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 36,
@@ -30,9 +32,9 @@ def validate(values, partial=False):
         raise ValueError("expected a shell settings object with known fields")
     if not partial and set(values) != set(DEFAULTS):
         raise ValueError("missing shell settings fields")
-    if "version" in values and (type(values["version"]) is not int or values["version"] != 10):
+    if "version" in values and (type(values["version"]) is not int or values["version"] != 11):
         raise ValueError("unsupported schema version")
-    for section in ("appearance", "roundedScreen", "topbar", "dock", "idle"):
+    for section in ("appearance", "roundedScreen", "topbar", "dock", "idle", "chrome"):
         if section not in values:
             continue
         # Validate sections before merging so an invalid patch cannot erase data.
@@ -42,7 +44,9 @@ def validate(values, partial=False):
         if not partial and set(fields) != set(DEFAULTS[section]):
             raise ValueError(f"{section}: missing fields")
         for key, value in fields.items():
-            if section == "idle":
+            if section == "chrome":
+                valid = type(value) is str and value in ("top", "left")
+            elif section == "idle":
                 if type(DEFAULTS[section][key]) is bool:
                     valid = type(value) is bool
                 else:
@@ -116,13 +120,13 @@ def migrate(values):
         values["appearance"]["colorMode"] = "dark"
         return migrate(values)[0], True
     if type(original_version) is int and original_version == 7:
-        if set(values) != set(DEFAULTS) - {"idle"}:
+        if set(values) != set(DEFAULTS) - {"idle", "chrome"}:
             raise ValueError("invalid version 7 shell settings")
         values = copy.deepcopy(values)
         values.update(version=9, idle=copy.deepcopy(DEFAULTS["idle"]))
         return migrate(values)[0], True
     if type(original_version) is int and original_version == 8:
-        if set(values) != set(DEFAULTS):
+        if set(values) != set(DEFAULTS) - {"chrome"}:
             raise ValueError("invalid version 8 shell settings")
         values = copy.deepcopy(values)
         values["version"] = 9
@@ -147,6 +151,12 @@ def migrate(values):
         if type(values.get("topbar")) is dict:
             values["topbar"].setdefault("powerProfile", values["topbar"].get("quickControls", True))
             values["topbar"].setdefault("wallpaperWorkspace", True)
+        return migrate(values)[0], True
+    if type(original_version) is int and original_version == 10:
+        if set(values) != set(DEFAULTS) - {"chrome"}:
+            raise ValueError("invalid version 10 shell settings")
+        values = copy.deepcopy(values)
+        values.update(version=11, chrome=copy.deepcopy(DEFAULTS["chrome"]))
         return validate(values), True
     return validate(values), False
 
@@ -225,10 +235,11 @@ def run(action):
     except FileNotFoundError:
         return {"ok": True, "path": str(path), "values": copy.deepcopy(DEFAULTS), "needsMigration": False}
     try:
+        fcntl.flock(parent_fd, fcntl.LOCK_EX)
         values, mode, migrated = read_file(parent_fd, path.name)
         if action == "write":
             patch = validate(json.loads(os.environ.get("HAKUSPACE_HIKAI_SETTINGS_JSON", "")), partial=True)
-            for section in ("appearance", "roundedScreen", "topbar", "dock", "idle"):
+            for section in ("appearance", "roundedScreen", "topbar", "dock", "idle", "chrome"):
                 values[section].update(patch.get(section, {}))
             validate(values)
         elif action == "reset":

@@ -40,6 +40,8 @@ source_core_lib() {
     return 1
 }
 
+# Preserve controller location across sourced library initialization.
+TASKBAR_CTL_DIR="$SCRIPT_DIR"
 source_core_lib haku_theme.sh || exit 1
 source_core_lib haku_backend_lib.sh || exit 1
 
@@ -135,16 +137,24 @@ startup_taskbar() {
 set_layout() {
     local target
     case "${1:-}" in
-        topbar|disabled) target=0 ;;
+        topbar|leftbar|disabled) target=0 ;;
         taskbar|enabled) target=1 ;;
         *) printf 'Invalid layout target\n' >&2; return 2 ;;
     esac
     if haku_qs_mode; then
-        printf '%s\n' "$target" > "$MANUAL_STATE"
+        local controller
+        for controller in "$TASKBAR_CTL_DIR/hikai_chrome_state_ctl.py" "$TASKBAR_CTL_DIR/../user/hikai_chrome_state_ctl.py" "$HOME/.local/bin/hikai_chrome_state_ctl.py"; do
+            [[ -f "$controller" ]] && break
+        done
+        python3 "$controller" layout "$1" || return $?
         if [[ "$(cat "$(haku_state_path cava.dynamic-position)" 2>/dev/null)" == 1 ]]; then
             printf '%s\n' "$((1 - target))" > "$(haku_state_path cava.position)"
         fi
         return 0
+    fi
+    if [[ "$1" == leftbar ]]; then
+        printf 'Leftbar is available in Hikai only\n' >&2
+        return 2
     fi
     ensure_runtime || return 1
     [[ "$(cat "$MANUAL_STATE")" == "$target" ]] && return 0
@@ -155,7 +165,7 @@ set_layout() {
 
 # Retain the public toggle API for existing keybindings.
 toggle_taskbar() {
-    if [[ "$(cat "$MANUAL_STATE")" == 1 ]]; then set_layout topbar; else set_layout taskbar; fi
+    if [[ "$(cat "$MANUAL_STATE")" == 1 ]]; then set_layout disabled; else set_layout taskbar; fi
 }
 
 get_app_name() {
@@ -225,7 +235,7 @@ Headless Taskbar control API.
 Commands:
     --startup               Restore previous state at boot
     --reload                Reload the taskbar
-    --layout topbar|taskbar  Set the layout explicitly
+    --layout topbar|leftbar|taskbar  Set the layout explicitly
     --set enabled|disabled  Set Taskbar explicitly
     --toggle                Toggle the taskbar on/off
     --status                Print enabled or disabled

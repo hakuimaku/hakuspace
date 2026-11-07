@@ -442,6 +442,11 @@ ShellRoot {
         TopBar {}
     }
 
+    Variants {
+        model: ChromeLayout.leftBarMode ? root.hikaiScreenModel : []
+        LeftBar {}
+    }
+
     // Separate hosts reuse the same app content without sharing enable policy.
     Variants {
         model: root.hikaiScreenModel

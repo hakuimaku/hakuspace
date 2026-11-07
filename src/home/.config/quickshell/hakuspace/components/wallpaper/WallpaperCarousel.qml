@@ -3,30 +3,34 @@ import "../../services"
 
 PathView {
     id: root
-    // Both presentations use five bounded still-image delegates.
+    // Leftbar uses three still-image delegates; horizontal presentations keep five.
     property string presentation: "quick"
     readonly property bool workspace: presentation === "workspace"
     // Wait for the bounded visible delegates before revealing a cold workspace.
     readonly property bool thumbnailsSettled: !count || !!currentItem && currentItem.parent.children
         .filter(item => item.wallpaper !== undefined && item.visible).every(item => item.thumbnailSettled)
+    // Vertical workspace paths keep card artwork and hit targets upright.
+    property bool vertical: false
+    // The Leftbar adapter owns static card bounds and curve anchors.
+    property var leftLayout: null
     property real spread: 1
     property real selectedPulse: 1
     signal applyRequested()
-    readonly property real contentPadding: workspace ? 8 : 0
+    readonly property real contentPadding: vertical && leftLayout ? leftLayout.padding : workspace ? 8 : 0
     // Workspace cards use the bottom rail and rise gradually toward the selection.
-    readonly property real selectedScale: workspace ? 1.32 : 1
-    readonly property real cardWidth: workspace
+    readonly property real selectedScale: vertical && leftLayout ? leftLayout.selectedScale : workspace ? 1.32 : 1
+    readonly property real cardWidth: vertical ? (leftLayout ? leftLayout.cardWidth : 1) : workspace
         ? Math.max(80, Math.min(width / 5.2, height * 16 / 9 * 0.95, 360))
         : Math.max(80, Math.min(width * 0.56, (height - 32) * 16 / 9, 920))
     readonly property real selectedLift: workspace ? contentPadding : 0
     readonly property real cardBottom: height - contentPadding
-    readonly property real cardGap: 8
+    readonly property real cardGap: vertical && leftLayout ? leftLayout.gap : 8
     readonly property real cardStep: workspace ? cardWidth * (nearScale + selectedScale) / 2 + cardGap : cardWidth * 0.24
     readonly property real farOffset: workspace ? cardStep + cardWidth * (nearScale + farScale) / 2 + cardGap : cardStep * 2
     // Workspace tails curl below the screen instead of fading at horizontal edges.
     readonly property real edgeOffset: workspace ? farOffset + cardWidth * 0.6 : width / 2 + cardWidth
     readonly property real edgeY: workspace ? height + cardWidth * 9 / 32 * farScale + contentPadding : pathCenterY(farScale)
-    readonly property real nearScale: workspace ? 0.8 : 0.78
+    readonly property real nearScale: vertical && leftLayout ? leftLayout.nearScale : workspace ? 0.8 : 0.78
     readonly property real farScale: 0.58
     // Larger cards float slightly higher instead of sharing one bottom baseline.
     function pathCenterY(scale) {
@@ -93,18 +97,53 @@ PathView {
         highlightMoveDuration = HAnimation.effects
     }
     currentIndex: WallpaperLibrary.selectedIndex
-    pathItemCount: 5
+    pathItemCount: vertical ? 3 : 5
     cacheItemCount: 0
     preferredHighlightBegin: 0.5
     preferredHighlightEnd: 0.5
     highlightRangeMode: PathView.StrictlyEnforceRange
     highlightMoveDuration: HAnimation.effects
-    dragMargin: height / 2
+    dragMargin: vertical ? width / 2 : height / 2
     snapMode: PathView.SnapToItem
-    clip: !workspace
+    clip: vertical || !workspace
 
     // The quick path stays horizontal; workspace entry and exit use mirrored curves.
-    path: Path {
+    path: vertical ? verticalPath : horizontalPath
+    // Static anchors are shared with the gallery surface, independent of PathView offset.
+    readonly property var cornerCurve: leftLayout ? leftLayout.anchors : ({upper: Qt.point(0, 0), selected: Qt.point(0, 0),
+        left: Qt.point(0, 0), incoming1: Qt.point(0, 0), incoming2: Qt.point(0, 0), outgoing1: Qt.point(0, 0), outgoing2: Qt.point(0, 0)})
+    property Path verticalPath: Path {
+        startX: root.width + root.cardWidth / 2; startY: -root.cardWidth * 9 / 16
+        PathAttribute { name: "cardScale"; value: root.nearScale }
+        PathAttribute { name: "cardDepth"; value: 1 }
+        PathLine { x: root.cornerCurve.upper.x; y: root.cornerCurve.upper.y }
+        PathPercent { value: 1 / 6 }
+        PathAttribute { name: "cardScale"; value: root.nearScale }
+        PathAttribute { name: "cardDepth"; value: 1 }
+        PathCubic {
+            control1X: root.cornerCurve.incoming1.x
+            control1Y: root.cornerCurve.incoming1.y
+            control2X: root.cornerCurve.incoming2.x
+            control2Y: root.cornerCurve.incoming2.y
+            x: root.cornerCurve.selected.x; y: root.cornerCurve.selected.y
+        }
+        PathPercent { value: 0.5 }
+        PathAttribute { name: "cardScale"; value: root.selectedScale }
+        PathAttribute { name: "cardDepth"; value: 2 }
+        PathCubic {
+            control1X: root.cornerCurve.outgoing1.x
+            control1Y: root.cornerCurve.outgoing1.y
+            control2X: root.cornerCurve.outgoing2.x
+            control2Y: root.cornerCurve.outgoing2.y
+            x: root.cornerCurve.left.x; y: root.cornerCurve.left.y
+        }
+        PathPercent { value: 5 / 6 }
+        PathAttribute { name: "cardScale"; value: root.nearScale }
+        PathAttribute { name: "cardDepth"; value: 1 }
+        PathLine { x: -root.cardWidth / 2; y: root.height + root.cardWidth * 9 / 16 }
+        PathPercent { value: 1 }
+    }
+    property Path horizontalPath: Path {
         startX: root.width / 2 - root.edgeOffset; startY: root.edgeY
         PathAttribute { name: "cardScale"; value: root.farScale }
         PathAttribute { name: "cardDepth"; value: 0 }
@@ -156,17 +195,20 @@ PathView {
         wallpaper: modelData
         width: root.cardWidth
         chosen: PathView.isCurrentItem
+        outlineSelection: root.vertical
         cornerRadius: Theme.radius + 6
         revealProgress: !root.workspace && chosen ? root.introProgress : 1
         decodeScale: root.selectedScale
         pulse: !root.workspace && chosen ? root.selectedPulse : 1
         transform: Translate {
-            x: card.chosen ? 0 : (root.spread - 1) * card.slotX + root.spread * card.orbitOffset
+            x: root.vertical || card.chosen ? 0 : (root.spread - 1) * card.slotX + root.spread * card.orbitOffset
+            y: root.vertical && !card.chosen ? (root.spread - 1) * (card.y + card.height / 2 - root.height / 2) : 0
         }
         visible: PathView.onPath
         scale: targetScale * pulse
         opacity: 1
-        z: PathView.cardDepth ?? 0
+        // Selection stays above moving neighbors throughout a vertical snap.
+        z: root.vertical ? (chosen ? 2 : 1) : (PathView.cardDepth ?? 0)
         onSelected: { root.stopIntro(); WallpaperLibrary.selectIndex(index); root.forceActiveFocus() }
         onApplied: root.applyRequested()
     }
