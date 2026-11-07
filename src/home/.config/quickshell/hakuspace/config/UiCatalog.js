@@ -30,8 +30,6 @@ var statusBarLayouts = [{value: "topbar", label: "Topbar"}, {value: "leftbar", l
 var hakuMenuThemeItems = [
     { label: "Change Theme", icon: "", action: "Change Theme", toggle: false, showState: false, statePath: "", stateKind: "bool" },
     { label: "Change Wallpaper", icon: "󰏜", action: "Change Wallpaper", toggle: false, showState: false, statePath: "", stateKind: "bool" },
-    { label: "Status Bar Position", icon: "󰍜", action: "Status Bar Position", statusEdgeSwitch: true },
-    { label: "Taskbar Mode", icon: "󰐃", action: "Taskbar Mode", toggle: true, showState: true, chromeKey: "taskbar" },
     { label: "Cava Underbar", icon: "󰝚", action: "Cava Underbar", toggle: true, showState: true, stateKey: "stateCavaEnabled", stateKind: "bool" },
     { label: "Cava Dynamic Position", icon: "󰝚", action: "Cava Dynamic Position", toggle: true, showState: true, stateKey: "stateCavaDynamicPosition", stateKind: "bool" },
     { label: "Cava Color Mode", icon: "󰝚", action: "Cava Color Mode", toggle: true, showState: true, stateKey: "stateCavaColorMode", stateKind: "cavaColor" },
@@ -39,6 +37,8 @@ var hakuMenuThemeItems = [
     { label: "Dockbar", icon: "󰧨", action: "Dockbar", toggle: true, showState: true, chromeKey: "dockbar" },
     { label: "Auto Random Wallpaper", icon: "", action: "Auto Random Wallpaper", toggle: true, showState: true, stateKey: "randomWallpaper", stateKind: "bool" },
     { label: "Dark / Light Mode", icon: "󰔎", action: "colorMode", toggle: true, showState: true, stateKind: "colorMode" },
+    { label: "Status Bar Position", icon: "󰍜", action: "Status Bar Position", statusEdgeSwitch: true },
+    { label: "Taskbar Mode", icon: "󰐃", action: "Taskbar Mode", toggle: true, showState: true, chromeKey: "taskbar" },
     { label: "", icon: "󰆧", action: "", toggle: true, showState: false, stateKey: "stateShellBackend", stateKind: "backend", backendSwitch: true }
 ]
 

@@ -132,13 +132,13 @@ QtObject {
     property Connections chromeConnections: Connections {
         target: ChromeLayout
         function onDockbarActiveChanged() {
-            if (!ChromeLayout.dockbarActive && root.hakuMenuSource === "dockbar") root.closeHakuMenu()
+            if (!ChromeLayout.dockbarActive && root.hakuMenuSource === "dockbar" && root.hakuMenuMode !== "theme") root.closeHakuMenu()
         }
         function onStatusEdgeChanged() {
             TooltipManager.dismiss()
             root.closeTrayMenu()
             root.closeNotifications()
-            root.closeHakuMenu()
+            if (root.hakuMenuMode !== "theme") root.closeHakuMenu()
             root.closeNavigation()
         }
     }

@@ -255,10 +255,10 @@ Item {
 
     ThemeList {
         id: themeList
-        x: mainList.x + Theme.gap
-        y: mainList.y + Theme.gap
-        width: mainList.width + Theme.gap * 2 + stateRegion.width - Theme.gap * 2
-        height: Math.max(0, mainList.height - Theme.gap * 2)
+        x: mainList.x
+        y: mainList.y
+        width: mainList.width + Theme.gap * 2 + stateRegion.width
+        height: mainList.height
         visible: menu.mode === "theme"
         query: menu.query
         leftColumnWidth: Math.max(0, mainList.width - Theme.gap * 2)
