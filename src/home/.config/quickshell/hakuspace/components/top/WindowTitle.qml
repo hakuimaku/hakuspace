@@ -44,7 +44,7 @@ Item {
     TextMetrics {
         id: naturalTitleMetrics
         font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSize - 2
+        font.pixelSize: Theme.fontSize
         font.weight: Font.Bold
         text: TitleFormatting.shorten(TitleFormatting.title(root.activeTitle, root.activeClass).replace(/[\r\n]+/g, " "), root.maxTitleCharacters)
     }
