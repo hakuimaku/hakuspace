@@ -2,7 +2,7 @@
 
 | Need to change | Edit |
 | --- | --- |
-| Spacing, padding, radius offsets, palette, typography fallbacks, TopBar/Dock/OSD layout bounds | `Design.qml` |
+| Spacing, padding, radius offsets, palette, typography fallbacks, TopBar/Dock/OSD/HakuMenu layout bounds | `Design.qml` |
 | Animation durations, factors and easing curves | `Motion.qml` |
 | HakuMenu tabs and fixed General/Theme items | `UiCatalog.js` → HakuMenu |
 | Theme options, accent/font-size presets, Power actions, Record modes | `UiCatalog.js` → Action Menu |

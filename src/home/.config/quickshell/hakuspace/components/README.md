@@ -39,7 +39,7 @@ shell.qml (ShellRoot)
 
 | What you want to change | Where to edit | Notes |
 | --- | --- | --- |
-| Colors, surface tones, border thickness, base radius, fonts, TopBar height, Taskbar font factor, Dock baseline offset, Level OSD bounds | `../config/Design.qml` | Read dynamically by `Theme.qml`, `ScreenGeometry.qml`, and quickshell.json overrides |
+| Colors, surface tones, border thickness, base radius, fonts, TopBar height, Taskbar font factor, Dock baseline offset, Level OSD bounds, HakuMenu padding | `../config/Design.qml` | Read dynamically by `Theme.qml`, `ScreenGeometry.qml`, and quickshell.json overrides |
 | Animation speeds, easing bezier curves, fade timings | `../config/Motion.qml` | Sourced by `HAnimation.qml` |
 | Menu lists, action menu items, sidebar tools, icons | `../config/UiCatalog.js` | Static catalog used by HakuMenu, ActionMenu, Sidebar |
 | Default settings preferences (dock, idle, topbar modules) | `../config/Defaults.js` | Schema & defaults synced with backend python CLI |

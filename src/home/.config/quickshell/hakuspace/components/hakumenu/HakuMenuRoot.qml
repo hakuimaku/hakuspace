@@ -22,7 +22,7 @@ FocusScope {
     property bool miniLoaded: false
     readonly property alias mini: miniLoader.item
     // Include the root tabs and insets when sizing the embedded dashboard.
-    readonly property real miniHeight: tabs.y + tabs.height + Theme.spaceSm + Theme.panelPadding
+    readonly property real miniHeight: tabs.y + tabs.height + Theme.spaceSm + Theme.hakuMenuBottomPadding
         + (mini ? mini.content.implicitHeight : 0)
     // Carry the General editor's preferred size through the root tab header.
     readonly property real editorHeight: menu.editorHeight > 0
@@ -91,9 +91,9 @@ FocusScope {
     Item {
         id: tabs
         objectName: "hakumenu-root-tabs"
-        x: Theme.pad * 2 + 4
-        y: (Theme.pad + 4) + (root.bottomAttached ? 8 : 0)
-        width: Math.max(0, parent.width - x * 2)
+        x: Theme.hakuMenuLeftPadding
+        y: Theme.hakuMenuTopPadding + (root.bottomAttached ? 8 : 0)
+        width: Math.max(0, parent.width - Theme.hakuMenuLeftPadding - Theme.hakuMenuRightPadding)
         height: Theme.fontSize * 2.4 + Theme.gap * 2
 
         Item {
@@ -193,7 +193,16 @@ FocusScope {
 
     Loader {
         id: miniLoader
-        anchors { top: tabs.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; margins: Theme.panelPadding; topMargin: Theme.spaceSm }
+        anchors {
+            top: tabs.bottom
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+            leftMargin: Theme.hakuMenuLeftPadding
+            rightMargin: Theme.hakuMenuRightPadding
+            bottomMargin: Theme.hakuMenuBottomPadding
+            topMargin: Theme.spaceSm
+        }
         active: root.miniLoaded
         enabled: root.panelOpen && root.taskManagerTab
         opacity: root.taskManagerTab ? 1 : 0

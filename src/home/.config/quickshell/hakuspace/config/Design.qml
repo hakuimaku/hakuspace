@@ -210,4 +210,10 @@ QtObject {
     // Dock & Taskbar layout geometry.
     readonly property int dockIconBaselineOffset: 17
     readonly property real taskbarFontHeightFactor: 1.8
+
+    // HakuMenu layout geometry (top, bottom, left, right padding).
+    readonly property int hakuMenuTopPadding: 30
+    readonly property int hakuMenuBottomPadding: 30
+    readonly property int hakuMenuLeftPadding: 30
+    readonly property int hakuMenuRightPadding: 30
 }

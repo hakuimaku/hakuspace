@@ -89,6 +89,11 @@ QtObject {
     readonly property real levelOsdWidth: Math.max(Design.levelOsdMinWidth, fontSize * Design.levelOsdFontWidthFactor)
     readonly property int levelOsdPadding: Design.levelOsdPadding
     readonly property real levelOsdHeight: Math.max(Design.levelOsdMinHeight, fontSize * Design.levelOsdFontHeightFactor + 2 * (levelOsdPadding + gap))
+    readonly property int hakuMenuTopPadding: Design.hakuMenuTopPadding
+    readonly property int hakuMenuBottomPadding: Design.hakuMenuBottomPadding
+    readonly property int hakuMenuLeftPadding: Design.hakuMenuLeftPadding
+    readonly property int hakuMenuRightPadding: Design.hakuMenuRightPadding
+    readonly property int hakuMenuPadding: Design.hakuMenuBottomPadding
     
     // Convert rgba() to Qt-compatible #AARRGGBB before applying theme data.
     function parseColor(c) {

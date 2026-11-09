@@ -17,7 +17,7 @@ Item {
     readonly property bool searchFocused: searchInput.activeFocus
     // Include search controls and both list insets in the editor's requested height.
     readonly property real editorHeight: mode === "general" && generalList.editorHeight > 0
-        ? generalList.editorHeight + innerPad * 2 + topRowHeight + Theme.pad + Theme.gap * 2 : 0
+        ? generalList.editorHeight + innerTopPad + innerBottomPad + topRowHeight + Theme.pad + Theme.gap * 2 : 0
 
     // Presentations request focus when their own geometry is ready.
     function forceSearchFocus() {
@@ -26,22 +26,26 @@ Item {
     }
     function clearSearchFocus() { searchInput.focus = false }
 
-    readonly property real innerPad: Theme.pad * 2 + 4
-    readonly property real innerWidth: Math.max(0, width - innerPad * 2)
+    readonly property real innerTopPad: Theme.hakuMenuTopPadding + Theme.pad
+    readonly property real innerBottomPad: Theme.hakuMenuBottomPadding
+    readonly property real innerLeftPad: Theme.hakuMenuLeftPadding
+    readonly property real innerRightPad: Theme.hakuMenuRightPadding
+    readonly property real innerPad: innerBottomPad
+    readonly property real innerWidth: Math.max(0, width - innerLeftPad - innerRightPad)
     readonly property real stateWidth: Math.max(124, Theme.fontSize * 8.2 + 8)
     readonly property bool showStateRegion: menu.mode === "theme"
     readonly property color controlBg: Theme.surfaceSubtle(1.75)
     readonly property color controlHoverBg: Theme.surfaceSubtle(1.35)
     readonly property color listBg: Theme.surfaceSubtle(2.05)
     readonly property real topRowHeight: Theme.fontSize * 4
-    readonly property real controlsY: controlsAtBottom ? height - innerPad - topRowHeight : innerPad
+    readonly property real controlsY: controlsAtBottom ? height - innerBottomPad - topRowHeight : innerTopPad
     readonly property real switcherWidth: innerWidth * 0.40
     readonly property real searchWidth: innerWidth - switcherWidth - Theme.gap * 2
 
     Rectangle {
         id: modeSwitcher
         objectName: "hakumenu-modeSwitcher"
-        x: menu.innerPad
+        x: menu.innerLeftPad
         y: menu.controlsY
         width: menu.switcherWidth
         height: menu.topRowHeight
@@ -206,10 +210,10 @@ Item {
     Rectangle {
         id: mainList
         objectName: "hakumenu-mainList"
-        x: menu.innerPad
-        y: menu.controlsAtBottom ? menu.innerPad : menu.innerPad + modeSwitcher.height + Theme.pad
+        x: menu.innerLeftPad
+        y: menu.controlsAtBottom ? menu.innerTopPad : menu.innerTopPad + modeSwitcher.height + Theme.pad
         width: menu.innerWidth - (menu.showStateRegion ? stateRegion.width + Theme.gap * 2 : 0)
-        height: Math.max(0, (menu.controlsAtBottom ? menu.controlsY - Theme.pad : menu.height - menu.innerPad) - y)
+        height: Math.max(0, (menu.controlsAtBottom ? menu.controlsY - Theme.pad : menu.height - menu.innerBottomPad) - y)
         radius: Theme.largeRadius
         color: menu.listBg
         clip: true
