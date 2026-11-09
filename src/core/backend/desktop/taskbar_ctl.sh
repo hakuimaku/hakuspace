@@ -139,6 +139,7 @@ set_layout() {
     case "${1:-}" in
         topbar|leftbar|disabled) target=0 ;;
         taskbar|enabled) target=1 ;;
+        cycle) target=0 ;;
         *) printf 'Invalid layout target\n' >&2; return 2 ;;
     esac
     if haku_qs_mode; then
@@ -146,14 +147,28 @@ set_layout() {
         for controller in "$TASKBAR_CTL_DIR/hikai_chrome_state_ctl.py" "$TASKBAR_CTL_DIR/../user/hikai_chrome_state_ctl.py" "$HOME/.local/bin/hikai_chrome_state_ctl.py"; do
             [[ -f "$controller" ]] && break
         done
-        python3 "$controller" layout "$1" || return $?
+        local result
+        result="$(python3 "$controller" layout "$1")" || return $?
         if [[ "$(cat "$(haku_state_path cava.dynamic-position)" 2>/dev/null)" == 1 ]]; then
-            printf '%s\n' "$((1 - target))" > "$(haku_state_path cava.position)"
+            local edge is_tb
+            edge="$(grep -oP '"statusEdge":\s*"\K[^"]+' <<< "$result" 2>/dev/null || true)"
+            is_tb="$(grep -oP '"taskbar":\s*\K(true|false)' <<< "$result" 2>/dev/null || true)"
+            if [[ "$is_tb" == "true" ]]; then
+                printf 'bottom\n' > "$(haku_state_path cava.position)"
+            elif [[ "$edge" == "left" ]]; then
+                printf 'left\n' > "$(haku_state_path cava.position)"
+            else
+                printf 'top\n' > "$(haku_state_path cava.position)"
+            fi
         fi
         return 0
     fi
     if [[ "$1" == leftbar ]]; then
         printf 'Leftbar is available in Hikai only\n' >&2
+        return 2
+    fi
+    if [[ "$1" == cycle ]]; then
+        printf 'Layout cycling is available in Hikai only\n' >&2
         return 2
     fi
     ensure_runtime || return 1
@@ -235,7 +250,7 @@ Headless Taskbar control API.
 Commands:
     --startup               Restore previous state at boot
     --reload                Reload the taskbar
-    --layout topbar|leftbar|taskbar  Set the layout explicitly
+    --layout topbar|leftbar|taskbar|cycle  Set the layout explicitly or cycle status bars
     --set enabled|disabled  Set Taskbar explicitly
     --toggle                Toggle the taskbar on/off
     --status                Print enabled or disabled

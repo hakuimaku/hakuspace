@@ -63,8 +63,12 @@ if haku_qs_mode; then
         --toggle)
             exec "$WAYBAR_CTL" toggle
             ;;
-        --cycle|--select)
-            notify-send -a "HakuSpace" -i "info" "Quickshell Mode" "Only 'top' variant is supported in quickshell right now."
+        --cycle)
+            TASKBAR_CTL="$(resolve_script taskbar_ctl.sh ../backend/desktop/taskbar_ctl.sh)" || exit 1
+            exec "$TASKBAR_CTL" --layout cycle
+            ;;
+        --select)
+            notify-send -a "HakuSpace" -i "info" "Quickshell Mode" "Status bar selection is managed via Settings / HakuMenu in Hikai mode."
             exit 0
             ;;
         --reload|'')

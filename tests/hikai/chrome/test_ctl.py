@@ -75,6 +75,49 @@ class ChromeToggleTests(unittest.TestCase):
         self.assertEqual(self.preference.read_text(), "1\n")
         self.assertEqual((self.state / "[desktop].taskbar.requested").read_text(), "1\n")
 
+    def test_hikai_cycle_toggles_status_edge_via_waybar_manager(self):
+        """In Hikai mode, waybar_manager --cycle cycles between topbar and leftbar."""
+        import copy
+        import json
+        import sys
+        sys.path.insert(0, str(ROOT / "src/core/backend/user"))
+        import hikai_settings_ctl as settings
+
+        (self.state / "[shell].backend").write_text("hikai\n")
+        taskbar = self.state / "[desktop].taskbar.requested"
+        taskbar.write_text("0\n")
+        hikai_cfg = self.home / "hakucfg/hikai"
+        hikai_cfg.mkdir(parents=True, exist_ok=True)
+        settings_file = hikai_cfg / "hikai-shell.json"
+        defaults = copy.deepcopy(settings.DEFAULTS)
+        defaults["chrome"]["statusEdge"] = "top"
+        settings_file.write_text(json.dumps(defaults))
+
+        # First cycle: top -> left
+        res = subprocess.run(["bash", str(FACADE), "--cycle"], env=self.env,
+                             capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        data = json.loads(settings_file.read_text())
+        self.assertEqual(data["chrome"]["statusEdge"], "left")
+        self.assertEqual(taskbar.read_text().strip(), "0")
+
+        # Second cycle: left -> top
+        res = subprocess.run(["bash", str(FACADE), "--cycle"], env=self.env,
+                             capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        data = json.loads(settings_file.read_text())
+        self.assertEqual(data["chrome"]["statusEdge"], "top")
+        self.assertEqual(taskbar.read_text().strip(), "0")
+
+        # With Taskbar active, cycle disables taskbar and moves to leftbar
+        taskbar.write_text("1\n")
+        res = subprocess.run(["bash", str(FACADE), "--cycle"], env=self.env,
+                             capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        data = json.loads(settings_file.read_text())
+        self.assertEqual(data["chrome"]["statusEdge"], "left")
+        self.assertEqual(taskbar.read_text().strip(), "0")
+
 
 if __name__ == "__main__":
     unittest.main()

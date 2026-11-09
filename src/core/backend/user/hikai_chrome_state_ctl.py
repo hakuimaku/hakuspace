@@ -92,9 +92,13 @@ def migrate():
         os.close(state_fd)
 
 
+BAR_EDGES = ("top", "left")
+EDGE_TO_LAYOUT = {"top": "topbar", "left": "leftbar"}
+
+
 def set_layout(layout):
     """Switch Hikai topology with a recoverable rollback of both persisted fields."""
-    if layout not in ("topbar", "leftbar", "taskbar", "enabled", "disabled", "toggle", "recover"):
+    if layout not in ("topbar", "leftbar", "taskbar", "enabled", "disabled", "toggle", "cycle", "recover"):
         raise ValueError("invalid layout target")
     journal_path = state_path("migration.hikai-layout-v11.json")
     settings_path = Path(os.path.abspath(os.environ.get("HAKUSPACE_HIKAI_SETTINGS_FILE")
@@ -124,6 +128,13 @@ def set_layout(layout):
             if layout == "recover":
                 return
             previous = (read_text(state_fd, taskbar_name) or "").strip() == "1"
+            if layout == "cycle":
+                current_edge = values["chrome"].get("statusEdge", "top")
+                if current_edge in BAR_EDGES:
+                    next_edge = BAR_EDGES[(BAR_EDGES.index(current_edge) + 1) % len(BAR_EDGES)]
+                else:
+                    next_edge = BAR_EDGES[0]
+                layout = EDGE_TO_LAYOUT.get(next_edge, "topbar")
             target = not previous if layout == "toggle" else layout in ("taskbar", "enabled")
             journal = {"complete": False, "edge": values["chrome"]["statusEdge"], "taskbar": previous}
             replace_file(state_fd, journal_path.name, journal, 0o600)

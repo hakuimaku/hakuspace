@@ -33,7 +33,7 @@ Manage the taskbar behavior.
 Options:
     --startup           Restore previous state at boot
     --reload            Reload the taskbar
-    --layout TARGET     Set topbar, leftbar or taskbar explicitly
+    --layout TARGET     Set topbar, leftbar, taskbar or cycle explicitly
     --set STATE         Set enabled or disabled explicitly
     --toggle            Toggle the taskbar on/off
     --status            Print enabled or disabled

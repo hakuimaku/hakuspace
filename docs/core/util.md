@@ -61,7 +61,7 @@ A quick VPN switch.
 ### Waybar management
 Waybar management separates the public command, mode selection frontend and headless controller.
 
-- **`waybar_manager.sh` (compatibility facade):** preserves the startup/keybind CLI (`--cycle`, `--select`, `--reload`, `--toggle`). In Hikai, `--toggle` returns success without changing Classic Waybar/Taskbar preferences or starting or stopping Waybar. In Classic, it toggles Waybar.
+- **`waybar_manager.sh` (compatibility facade):** preserves the startup/keybind CLI (`--cycle`, `--select`, `--reload`, `--toggle`). In Hikai, `--cycle` cycles between status bar layouts (Topbar <-> Leftbar), while `--toggle` returns success without changing Classic Waybar/Taskbar preferences or starting or stopping Waybar. In Classic, it cycles or toggles Waybar.
 - **`waybar_ctl.sh` (headless backend):** owns mode discovery, current-mode state, symlink changes, Waybar lifecycle, explicit `list/current/set/cycle/toggle/reload/startup` operations, and contains no picker UI.
 - **`waybar_rofi.sh` (Classic frontend):** displays the Classic mode selector and passes the selected mode id to `waybar_ctl.sh set`.
 

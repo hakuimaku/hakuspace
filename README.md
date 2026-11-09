@@ -443,9 +443,9 @@ See [NixOS Integration](docs/nixos.md) for the retained legacy design.
 | SUPER + SHIFT + Y | Change Theme |
 | SUPER + SHIFT + E | Exit Session |
 | SUPER + SHIFT + Q | Power Menu / Shutdown |
-| SUPER + Z | Toggle Taskbar (Classic) |
-| SUPER + SHIFT + Z | Cycle Waybar Mode |
-| SUPER + CTRL + Z | Toggle Waybar |
+| SUPER + Z | Toggle Taskbar |
+| SUPER + SHIFT + Z | Cycle Bar Mode (Topbar / Leftbar in Hikai, Waybar in Classic) |
+| SUPER + CTRL + Z | Toggle Waybar (Classic) |
 | SUPER + W | Toggle Floating Window (Hyprland, Niri, MangoWM) |
 | SUPER + F | Maximize / Fullscreen Window |
 | SUPER + SHIFT + F | Fullscreen Window (Hyprland, Niri, MangoWM) |

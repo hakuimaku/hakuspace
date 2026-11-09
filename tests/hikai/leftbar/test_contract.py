@@ -70,6 +70,38 @@ class LayoutContract(unittest.TestCase):
                 self.assertEqual(settings.run("read")["values"]["chrome"]["statusEdge"], "left")
             self.assertEqual(settings.run("read")["values"]["topbar"], self.values["topbar"])
 
+    def test_layout_cycle_switches_between_top_and_left_excluding_taskbar(self):
+        """Layout cycling toggles status edges without including Taskbar in the cycle."""
+        self.assertEqual(settings.run("read")["values"]["chrome"]["statusEdge"], "top")
+        self.assertEqual(self.taskbar.read_text().strip(), "0")
+
+        # Topbar -> Leftbar
+        result = self.command("--layout", "cycle")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(settings.run("read")["values"]["chrome"]["statusEdge"], "left")
+        self.assertEqual(self.taskbar.read_text().strip(), "0")
+
+        # Leftbar -> Topbar
+        result = self.command("--layout", "cycle")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(settings.run("read")["values"]["chrome"]["statusEdge"], "top")
+        self.assertEqual(self.taskbar.read_text().strip(), "0")
+
+        # If Taskbar is enabled, cycling exits taskbar to the next status bar (left)
+        self.command("--layout", "taskbar")
+        self.assertEqual(self.taskbar.read_text().strip(), "1")
+        result = self.command("--layout", "cycle")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(settings.run("read")["values"]["chrome"]["statusEdge"], "left")
+        self.assertEqual(self.taskbar.read_text().strip(), "0")
+
+        # In Classic mode, layout cycling is rejected
+        (self.state / "[shell].backend").write_text("classic\n")
+        result = self.command("--layout", "cycle")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("Layout cycling is available in Hikai only", result.stderr)
+        (self.state / "[shell].backend").write_text("hikai\n")
+
     def test_second_write_failure_rolls_back(self):
         """A failed boolean publication restores both fields before reporting failure."""
         with patch.object(chrome, "write_state", side_effect=[OSError("write failed"), None]):
