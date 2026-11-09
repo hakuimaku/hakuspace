@@ -12,6 +12,9 @@ Item {
     // Retain the presentation until its closing morph settles.
     readonly property bool releaseReady: !panelOpen && visuallyClosed
     property bool visuallyClosed: true
+    readonly property bool hasFullscreen: ToplevelManager.toplevels.values.some(w =>
+        w.fullscreen && (w.activated || ToplevelManager.activeToplevel === w)
+        && (!root.modelData || w.screens.length === 0 || w.screens.includes(root.modelData) || w.screens.some(s => s.name === root.modelData.name)))
     required property var modelData
 
     property bool bottomAttached: false
@@ -111,12 +114,11 @@ Item {
     }
 
     // Top-layer visual shell. This remains a pure visual surface: it owns the
-    // Flare/body silhouette but no content, focus or pointer input. Fullscreen
-    // clients may cover this layer while the Overlay content layer below in
-    // this component still remains visible and usable.
+    // Flare/body silhouette but no content, focus or pointer input.
+    // Keep Top mapped so opening the panel does not raise it over fullscreen.
     PanelWindow {
         id: topVisualLayer
-        visible: !!root.modelData && (root.panelOpen || root.safeExpanded)
+        visible: true
         screen: root.modelData
         anchors { top: true; bottom: true; left: true; right: true }
         WlrLayershell.layer: WlrLayer.Top
@@ -129,6 +131,7 @@ Item {
         mask: Region {}
 
         Flare.FlareSurface {
+            visible: !root.hasFullscreen && !!root.modelData && (root.panelOpen || root.safeExpanded)
             attach: root.bottomAttached ? Flare.FlareHost.Bottom : Flare.FlareHost.Top
             y: root.menuTop
             start: morph.mStart

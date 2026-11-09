@@ -6,12 +6,17 @@ import "../flare"
 import "../flare/FlareGeometry.js" as FlareGeometry
 import "SafeZoneGeometry.js" as SafeZoneGeometry
 
-PanelWindow {
+Item {
     id: root
     // The Flare settled callback releases the retained close envelope.
     readonly property bool releaseReady: !panelOpen && !closing
-    readonly property var horizontalBounds: ScreenGeometry.horizontalBounds(width)
+    readonly property bool hasFullscreen: ToplevelManager.toplevels.values.some(w =>
+        w.fullscreen && (w.activated || ToplevelManager.activeToplevel === w)
+        && (!root.modelData || w.screens.length === 0 || w.screens.includes(root.modelData) || w.screens.some(s => s.name === root.modelData.name)))
     required property var modelData
+    width: modelData ? modelData.width : 0
+    height: modelData ? modelData.height : 0
+    readonly property var horizontalBounds: ScreenGeometry.horizontalBounds(width)
     property bool panelOpen: false
     property bool closing: false
     property bool forceBottomAttached: false
@@ -95,32 +100,6 @@ PanelWindow {
         onCloseRequested: root.dismissed()
     }
 
-    screen: modelData
-    anchors { top: true; bottom: true; left: true; right: true }
-    WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
-    WlrLayershell.namespace: "hakuspace-flare-panel"
-    WlrLayershell.keyboardFocus: panelOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-    exclusionMode: ExclusionMode.Ignore
-    color: "transparent"
-    visible: (root.forceBottomAttached || root.openedAtBottom === ScreenGeometry.bottomAttached && root.openedAtLeft === ChromeLayout.leftBarMode) && (panelOpen || closing)
-    mask: Region {
-        Region {
-            x: root.safeZone(0).x; y: root.safeZone(0).y
-            width: root.panelOpen || root.closing ? root.safeZone(0).width : 0
-            height: root.panelOpen || root.closing ? root.safeZone(0).height : 0
-        }
-        Region {
-            x: root.safeZone(1).x; y: root.safeZone(1).y
-            width: root.panelOpen || root.closing ? root.safeZone(1).width : 0
-            height: root.panelOpen || root.closing ? root.safeZone(1).height : 0
-        }
-        Region {
-            x: root.safeZone(2).x; y: root.safeZone(2).y
-            width: root.panelOpen || root.closing ? root.safeZone(2).width : 0
-            height: root.panelOpen || root.closing ? root.safeZone(2).height : 0
-        }
-    }
-
     onPanelOpenChanged: {
         if (panelOpen) {
             openedAtLeft = !forceBottomAttached && ChromeLayout.leftBarMode
@@ -132,86 +111,172 @@ PanelWindow {
         }
     }
 
-    HoverHandler {
-        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-        onHoveredChanged: {
-            if (!hovered) lifetime.pointerExited()
-            else {
-                lifetime.pointerEntered(point.position.x, point.position.y)
-                keyHandler.forceActiveFocus()
+    // 1. Top-layer visual shell.
+    // Pure visual surface: owns the FlareSurface with hugging ears that connect to RoundedScreen.
+    // Keep Top mapped so opening the panel does not raise it over fullscreen.
+    PanelWindow {
+        id: visualLayer
+        screen: root.modelData
+        anchors { top: true; bottom: true; left: true; right: true }
+        WlrLayershell.layer: WlrLayer.Top
+        WlrLayershell.namespace: "hakuspace-flare-panel-flare"
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+        exclusionMode: ExclusionMode.Ignore
+        exclusiveZone: 0
+        color: "transparent"
+        visible: true
+        mask: Region {}
+
+        FlareSurface {
+            id: visualSurface
+            visible: !root.hasFullscreen && !!root.modelData
+                && (root.forceBottomAttached || root.openedAtBottom === ScreenGeometry.bottomAttached && root.openedAtLeft === ChromeLayout.leftBarMode)
+                && (root.panelOpen || root.closing)
+            attach: root.openedAtLeft ? FlareHost.Left : root.openedAtBottom ? FlareHost.Bottom : FlareHost.Top
+            x: root.openedAtLeft ? ScreenGeometry.contentLeftEdge : 0
+            y: root.openedAtLeft ? 0 : root.attachmentY
+            width: visualLayer.width - x
+            height: root.openedAtLeft ? visualLayer.height : ScreenGeometry.availableAttachedHeight(visualLayer.height)
+            transform: Matrix4x4 {
+                matrix: root.openedAtLeft ? Qt.matrix4x4(0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+                    : Qt.matrix4x4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+            }
+            start: flare.start
+            end: flare.end
+            currentHeight: flare.currentHeight
+            bounds: flare.wBounds
+            r: Theme.largeRadius + 8
+            rf: Theme.hugRadius
+            bottomRadius: Theme.hugRadius
+            surfaceColor: Theme.surface
+        }
+    }
+
+    // 2. Overlay content shell.
+    // Interactive window: owns content, rounded body (WITHOUT flare ears), focus, and pointer input.
+    // Floats cleanly over fullscreen clients without displaying any orphaned flare ears.
+    PanelWindow {
+        id: contentLayer
+        screen: root.modelData
+        anchors { top: true; bottom: true; left: true; right: true }
+        WlrLayershell.layer: ShellTransitionState.chromeOverlayLayer
+        WlrLayershell.namespace: "hakuspace-flare-panel"
+        WlrLayershell.keyboardFocus: root.panelOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+        exclusionMode: ExclusionMode.Ignore
+        exclusiveZone: 0
+        color: "transparent"
+        visible: !!root.modelData && (root.forceBottomAttached || root.openedAtBottom === ScreenGeometry.bottomAttached && root.openedAtLeft === ChromeLayout.leftBarMode)
+            && (root.panelOpen || root.closing)
+        mask: Region {
+            Region {
+                x: root.safeZone(0).x; y: root.safeZone(0).y
+                width: root.panelOpen || root.closing ? root.safeZone(0).width : 0
+                height: root.panelOpen || root.closing ? root.safeZone(0).height : 0
+            }
+            Region {
+                x: root.safeZone(1).x; y: root.safeZone(1).y
+                width: root.panelOpen || root.closing ? root.safeZone(1).width : 0
+                height: root.panelOpen || root.closing ? root.safeZone(1).height : 0
+            }
+            Region {
+                x: root.safeZone(2).x; y: root.safeZone(2).y
+                width: root.panelOpen || root.closing ? root.safeZone(2).width : 0
+                height: root.panelOpen || root.closing ? root.safeZone(2).height : 0
             }
         }
-        onPointChanged: lifetime.pointerMoved(point.position.x, point.position.y)
-    }
 
-    MouseArea {
-        x: root.safeZone(0).x
-        y: root.safeZone(0).y
-        width: root.panelOpen ? root.safeZone(0).width : 0
-        height: root.panelOpen ? root.safeZone(0).height : 0
-        onClicked: root.dismissed()
-    }
+        // Clean rounded body without flare ears.
+        // Overlays visualLayer seamlessly in tiled mode; floats cleanly over fullscreen clients.
+        Rectangle {
+            id: contentSurface
+            x: root.openedAtLeft ? ScreenGeometry.contentLeftEdge : flare.start
+            y: root.openedAtLeft ? flare.start : root.openedAtBottom ? root.attachmentY - flare.currentHeight : root.attachmentY
+            width: root.openedAtLeft ? flare.currentHeight : Math.max(0, flare.end - flare.start)
+            height: root.openedAtLeft ? Math.max(0, flare.end - flare.start) : flare.currentHeight
+            radius: Theme.hugRadius
+            color: Theme.surface
+            visible: width > 0.01 && height > 0.01
 
-    SafeZoneDebugOverlay {
-        anchors.fill: parent
-        screenWidth: root.modelData.width
-        screenHeight: root.modelData.height
-        hostRect: root.hostRect
-        anchorRect: root.anchorRect
-        localizedAnchorRect: root.localAnchorRect
-        flareStart: flare.start
-        flareEnd: flare.end
-        z: 999
-        closePending: lifetime.closePending
-        zones: root.safeZones.map(function(zone, index) {
-            return { rect: zone, kind: index === 0 ? "anchor"
-                : index === 1 ? "corridor"
-                : flare.interactionEnvelope.height > flare.currentHeight + 1
-                    ? "animation" : "surface" }
-        })
-    }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: (mouse) => { mouse.accepted = true }
+            }
+        }
 
-    Item {
-        id: keyHandler
-        anchors.fill: parent
-        focus: root.panelOpen
-        Keys.onEscapePressed: root.dismissed()
-    }
+        HoverHandler {
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            onHoveredChanged: {
+                if (!hovered) lifetime.pointerExited()
+                else {
+                    lifetime.pointerEntered(point.position.x, point.position.y)
+                    keyHandler.forceActiveFocus()
+                }
+            }
+            onPointChanged: lifetime.pointerMoved(point.position.x, point.position.y)
+        }
 
-    MouseArea {
-        x: root.openedAtLeft ? ScreenGeometry.contentLeftEdge : flare.start
-        y: root.openedAtLeft ? flare.start : root.attachedBodyY(root.modelData.height, height)
-        width: root.openedAtLeft ? flare.currentHeight : Math.max(0, flare.end - flare.start)
-        height: root.openedAtLeft ? Math.max(0, flare.end - flare.start) : Math.min(root.height, flare.currentHeight + Theme.hugRadius)
-        onClicked: (mouse) => { mouse.accepted = true }
-    }
+        MouseArea {
+            x: root.safeZone(0).x
+            y: root.safeZone(0).y
+            width: root.panelOpen ? root.safeZone(0).width : 0
+            height: root.panelOpen ? root.safeZone(0).height : 0
+            onClicked: root.dismissed()
+        }
 
-    FlareHost {
-        id: flare
-        attach: root.openedAtLeft ? FlareHost.Left : root.openedAtBottom ? FlareHost.Bottom : FlareHost.Top
-        x: root.openedAtLeft ? ScreenGeometry.contentLeftEdge : 0
-        y: root.openedAtLeft ? 0 : root.attachmentY
-        width: root.width - x
-        height: root.openedAtLeft ? root.height : ScreenGeometry.availableAttachedHeight(root.height)
-        anchorRect: root.anchorRect
-        hostRect: root.hostRect
-        // Cold side panels measure content only after their native output plane is configured.
-        shown: root.panelOpen && (!root.openedAtLeft || (root.width === root.modelData.width && root.height === root.modelData.height))
-        content: root.panelComponent
-        contentProps: root.openedAtLeft ? Object.assign({}, root.panelProps, {
-            maxWidth: Math.max(1, Math.min(root.panelProps.maxWidth || root.width,
-                root.width - ScreenGeometry.contentLeftEdge - horizontalPadding * 2 - ScreenGeometry.rightInset)),
-            maxHeight: Math.max(1, Math.min(root.panelProps.maxHeight || root.height,
-                root.height - ScreenGeometry.topBorderThickness - ScreenGeometry.bottomReservation(root.modelData.name) - verticalPadding * 2))
-        }) : root.panelProps
-        contentKey: root.panelKey
-        maxWidth: Math.min(400, Math.max(0, root.horizontalBounds.end - root.horizontalBounds.start))
-        horizontalPadding: 22
-        wBounds: root.openedAtLeft ? ({start: ScreenGeometry.topBorderThickness,
-            end: Math.max(ScreenGeometry.topBorderThickness, root.height - ScreenGeometry.bottomReservation(root.modelData.name))})
-            : ScreenGeometry.horizontalBounds(root.width)
-        onSettled: (isShown) => {
-            if (!isShown && !root.panelOpen) root.closing = false
+        SafeZoneDebugOverlay {
+            anchors.fill: parent
+            screenWidth: root.modelData ? root.modelData.width : 0
+            screenHeight: root.modelData ? root.modelData.height : 0
+            hostRect: root.hostRect
+            anchorRect: root.anchorRect
+            localizedAnchorRect: root.localAnchorRect
+            flareStart: flare.start
+            flareEnd: flare.end
+            z: 999
+            closePending: lifetime.closePending
+            zones: root.safeZones.map(function(zone, index) {
+                return { rect: zone, kind: index === 0 ? "anchor"
+                    : index === 1 ? "corridor"
+                    : flare.interactionEnvelope.height > flare.currentHeight + 1
+                        ? "animation" : "surface" }
+            })
+        }
+
+        Item {
+            id: keyHandler
+            anchors.fill: parent
+            focus: root.panelOpen
+            Keys.onEscapePressed: root.dismissed()
+        }
+
+        FlareHost {
+            id: flare
+            surfaceColor: "transparent"
+            attach: root.openedAtLeft ? FlareHost.Left : root.openedAtBottom ? FlareHost.Bottom : FlareHost.Top
+            x: root.openedAtLeft ? ScreenGeometry.contentLeftEdge : 0
+            y: root.openedAtLeft ? 0 : root.attachmentY
+            width: contentLayer.width - x
+            height: root.openedAtLeft ? contentLayer.height : ScreenGeometry.availableAttachedHeight(contentLayer.height)
+            anchorRect: root.anchorRect
+            hostRect: root.hostRect
+            // Cold side panels measure content only after their native output plane is configured.
+            shown: root.panelOpen && (!root.openedAtLeft || (contentLayer.width === (root.modelData ? root.modelData.width : 0) && contentLayer.height === (root.modelData ? root.modelData.height : 0)))
+            content: root.panelComponent
+            contentProps: root.openedAtLeft ? Object.assign({}, root.panelProps, {
+                maxWidth: Math.max(1, Math.min(root.panelProps.maxWidth || contentLayer.width,
+                    contentLayer.width - ScreenGeometry.contentLeftEdge - horizontalPadding * 2 - ScreenGeometry.rightInset)),
+                maxHeight: Math.max(1, Math.min(root.panelProps.maxHeight || contentLayer.height,
+                    contentLayer.height - ScreenGeometry.topBorderThickness - ScreenGeometry.bottomReservation(root.modelData ? root.modelData.name : "") - verticalPadding * 2))
+            }) : root.panelProps
+            contentKey: root.panelKey
+            maxWidth: Math.min(400, Math.max(0, root.horizontalBounds.end - root.horizontalBounds.start))
+            horizontalPadding: 22
+            wBounds: root.openedAtLeft ? ({start: ScreenGeometry.topBorderThickness,
+                end: Math.max(ScreenGeometry.topBorderThickness, contentLayer.height - ScreenGeometry.bottomReservation(root.modelData ? root.modelData.name : ""))})
+                : ScreenGeometry.horizontalBounds(contentLayer.width)
+            onSettled: (isShown) => {
+                if (!isShown && !root.panelOpen) root.closing = false
+            }
         }
     }
 }

@@ -107,6 +107,12 @@ Keep window placement, drawn shape, interactive bounds and reserved desktop spac
 When separate windows render and handle input for one surface, derive both from the same geometry and transition state.
 Reserve space once for each intended layout contribution; do not infer it from an animation's current shape.
 
+### Two-Layer Flare Policy for Workarea Surfaces
+Any panel, popup, or menu attached to the workarea with a Flare effect (curved ears connecting to `RoundedScreen` or bar edges) must use the decoupled 2-layer pattern:
+- **Layer 1 - Visual Flare Bed (`WlrLayer.Top`)**: Draws only the `FlareSurface` silhouette and ears. No input (`mask: Region {}`), no focus. The `PanelWindow` remains permanently mapped (`visible: true; mask: Region {}`) to prevent compositors from raising newly mapped Top surfaces over an active fullscreen client, while `FlareSurface` visibility is strictly gated on `!hasFullscreen` via `ToplevelManager`.
+- **Layer 2 - Interactive Content Core (`WlrLayer.Overlay`)**: Draws a self-contained rounded body (`Rectangle` with `Theme.hugRadius`), strictly without flare ears. Owns content, keyboard focus, and pointer input. Floats above fullscreen clients cleanly as an independent rounded popup.
+Reusable base references for this contract are `components/base/FlarePanelWindow.qml` and `components/hakumenu/HakuMenuAttachedFlare.qml`.
+
 ## Window Manager Integration
 
 UI components should ask for a shared model or action instead of interpreting compositor protocols themselves.

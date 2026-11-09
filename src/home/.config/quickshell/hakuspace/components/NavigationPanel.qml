@@ -13,6 +13,9 @@ Item {
     id: root
     // Release only after the surface has finished its visual close.
     readonly property bool releaseReady: !panelOpen && !closing && !openMorph.running && !closeMorph.running && !dashboardMorphAnim.running
+    readonly property bool hasFullscreen: ToplevelManager.toplevels.values.some(w =>
+        w.fullscreen && (w.activated || ToplevelManager.activeToplevel === w)
+        && (!root.modelData || w.screens.length === 0 || w.screens.includes(root.modelData) || w.screens.some(s => s.name === root.modelData.name)))
     required property var modelData
     // The screen host can preserve widget selection without retaining Dashboard UI.
     property QtObject dashboardState: QtObject {
@@ -878,10 +881,10 @@ Item {
             opacity: root.closingFromDashboard ? 0.0 : (root.closing
                      ? Math.max(0.0, 1.0 - Math.max(0.0, root.closeFlareProgress - 0.72) / 0.28)
                      : Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35))
-            visible: (root.panelOpen || root.closing) && opacity > 0.001
+            visible: !root.hasFullscreen && (root.panelOpen || root.closing) && opacity > 0.001
         }
         Flare.FlareSurface {
-            visible: root.horizontalSidebar && sidebarSurface.visible && (root.panelOpen || root.closing)
+            visible: !root.hasFullscreen && root.horizontalSidebar && sidebarSurface.visible && (root.panelOpen || root.closing)
             x: root.sidebarBodyX
             y: root.sidebarBodyY
             start: 0
@@ -895,7 +898,7 @@ Item {
             x: root.sidebarBodyX
             y: root.mapY(root.sidebarBodyY, 0)
             transform: Scale { yScale: ScreenGeometry.bottomAttached ? -1 : 1 }
-            visible: !root.horizontalSidebar && sidebarSurface.visible && (root.panelOpen || root.closing)
+            visible: !root.hasFullscreen && !root.horizontalSidebar && sidebarSurface.visible && (root.panelOpen || root.closing)
             bodyWidth: sidebarSurface.bodyWidth
             currentHeight: sidebarSurface.currentHeight
             morphProgress: sidebarSurface.morphProgress

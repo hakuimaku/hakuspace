@@ -8,6 +8,9 @@ import "flare" as Flare
 PanelWindow {
     id: root
     required property var modelData
+    readonly property bool hasFullscreen: ToplevelManager.toplevels.values.some(w =>
+        w.fullscreen && (w.activated || ToplevelManager.activeToplevel === w)
+        && (!root.modelData || w.screens.length === 0 || w.screens.includes(root.modelData) || w.screens.some(s => s.name === root.modelData.name)))
     property var popup: null
     screen: modelData
     anchors { top: true; bottom: true; left: true; right: true }
@@ -22,7 +25,7 @@ PanelWindow {
 
     Loader {
         anchors.fill: parent
-        active: !!root.popup
+        active: !root.hasFullscreen && !!root.popup
         sourceComponent: Flare.FlareSurface {
             y: root.popup ? root.popup.topOffset : 0
             attach: Flare.FlareHost.Top

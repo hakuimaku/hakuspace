@@ -49,7 +49,7 @@ shell.qml (ShellRoot)
 
 ## 3. Directory Layout by Feature Domain
 
-- `base/`: Reusable primitives (`LifecycleLoader`, `SafeZoneController`, `SafeZoneGeometry.js`).
+- `base/`: Reusable primitives (`LifecycleLoader`, `SafeZoneController`, `SafeZoneGeometry.js`, `FlarePanelWindow.qml`).
 - `flare/`: SVG/Canvas dynamic morphing flare surfaces (`FlareSurface.qml`, `FlareGeometry.js`).
 - `top/`: Top bar modules, clock, workspace indicators, system monitors, tray.
 - `dock/`: Bottom dockbar, dynamic app icon zooming, autohide trigger.
@@ -66,3 +66,30 @@ shell.qml (ShellRoot)
 - `motion/`: Selection pill, reveal animations, shell transition overlays.
 - `editor/`: Plain text editor, scratchpad note.
 - `cava/`: Audio visualizer bar renderers.
+
+## 4. Workarea Flare Policy: 2-Layer Decoupled Architecture
+
+Any panel, popup, or overlay attached to the workarea that renders a Flare effect (hugging ear curves connecting to `RoundedScreen` or bar edges) **MUST** implement the decoupled 2-layer pattern:
+
+### Why Decouple?
+Under Wayland Layer Shell (`zwlr_layer_shell_v1`), the z-order hierarchy is:
+`Background (0) < Bottom (1) < Top (2) < [Fullscreen Window] < Overlay (3)`.
+* System chrome (`RoundedScreen`, `TopBar`, `LeftBar`, `Taskbar`) resides on `WlrLayer.Top`.
+* When any application enters **Fullscreen**, the compositor occludes all `Top` layer surfaces beneath the fullscreen window.
+* If a popup renders Flare ears directly on `WlrLayer.Overlay`, those ears stick out into the fullscreen window without any connecting border ("flaring into thin air").
+
+### The 2-Layer Contract
+1. **Layer 1: Visual Flare Bed (`WlrLayer.Top`)**:
+   - Contains ONLY the `FlareSurface` silhouette with hugging ears.
+   - `mask: Region {}` (no input), `WlrKeyboardFocus.None`.
+   - The `PanelWindow` is kept permanently mapped (`visible: true; mask: Region {}`) so dynamically opening a panel does not re-map and raise `Top` over an active fullscreen window in compositors like Hyprland.
+   - The inner `FlareSurface` is gated with `visible: !root.hasFullscreen && ...` (queried via `ToplevelManager.toplevels`), guaranteeing that flare ears are never rendered into empty screen space when a window is fullscreen.
+   - In tiled mode: Visually blends with `RoundedScreen` and screen rails.
+   - In fullscreen mode: Naturally covered beneath the fullscreen window and suppressed by `hasFullscreen`.
+2. **Layer 2: Interactive Content Core (`WlrLayer.Overlay` / `ShellTransitionState.chromeOverlayLayer`)**:
+   - Contains a standalone self-contained rounded body (`Rectangle { radius: Theme.hugRadius; color: Theme.surface }`) with **NO flare ears**.
+   - Contains all interactive content, `FlareHost` with `surfaceColor: "transparent"`, safe zones, pointer handlers, and keyboard focus.
+   - In tiled mode: Sits directly over Layer 1, appearing as a single seamless flared panel.
+   - In fullscreen mode: Floats cleanly over the fullscreen window as a clean rounded card without orphaned flare ears.
+
+All new workarea flare surfaces should inherit from or model their window layout after `base/FlarePanelWindow.qml` or `hakumenu/HakuMenuAttachedFlare.qml`.

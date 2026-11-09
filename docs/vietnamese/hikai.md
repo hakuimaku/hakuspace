@@ -107,6 +107,12 @@ Phân biệt vị trí cửa sổ, hình vẽ, vùng tương tác và phần des
 Nếu dùng các cửa sổ riêng để vẽ và nhận input cho cùng một surface, cả hai phải lấy từ cùng geometry và state chuyển tiếp.
 Chỉ dành không gian một lần cho mỗi phần đóng góp vào bố cục; đừng suy ra nó từ hình dạng animation ở thời điểm hiện tại.
 
+### Quy tắc 2 layer cho Flare Surface gắn workarea
+Mọi panel/popup có hiệu ứng Flare (tai thỏ cong kết nối viền `RoundedScreen` hoặc thanh Bar) bắt buộc áp dụng mô hình 2 layer tách biệt:
+- **Layer 1 - Nền giả Flare (`WlrLayer.Top`)**: Chỉ vẽ hình thể `FlareSurface` và tai thỏ. Không nhận input (`mask: Region {}`), không nhận focus. `PanelWindow` được giữ map liên tục (`visible: true; mask: Region {}`) để tránh compositor (như Hyprland) raise window mới map đè lên fullscreen. Đồng thời `FlareSurface` được kiểm soát qua thuộc tính `!hasFullscreen` (từ `ToplevelManager`), đảm bảo tai thỏ flare lập tức ẩn khi có window fullscreen.
+- **Layer 2 - Thân thẻ Content (`WlrLayer.Overlay`)**: Vẽ thân thẻ bo góc tự thân (`Rectangle` bo `Theme.hugRadius`), tuyệt đối không vẽ tai thỏ flare. Chứa toàn bộ nội dung, focus và input mask. Khi fullscreen, thân thẻ nổi lên trên window fullscreen như một popup bo góc độc lập, không bị flare lơ lửng ở không khí.
+Component cơ sở dùng chung cho mẫu này là `components/base/FlarePanelWindow.qml` hoặc `components/hakumenu/HakuMenuAttachedFlare.qml`.
+
 ## Tích hợp window manager
 
 Component UI nên đọc model chung hoặc gọi action chung, thay vì tự hiểu protocol của từng compositor.

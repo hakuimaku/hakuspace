@@ -653,7 +653,7 @@ Item {
                 hoverScaleDelta: rowWrap.isBackendSwitch ? 0 : 0.003
                 pressScaleDelta: rowWrap.isBackendSwitch ? 0 : 0.012
 
-                scale: rowWrap.isBackendSwitch ? (hovered ? 1.1 : 1.0) : motion.scale
+                scale: rowWrap.isBackendSwitch ? (hovered ? 1.1 : 1.0) : 1.0
                 transformOrigin: Item.Center
 
                 Behavior on scale {

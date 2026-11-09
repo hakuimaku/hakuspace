@@ -12,6 +12,9 @@ Item {
     id: root
     // Release only after the surface has finished its visual close.
     readonly property bool releaseReady: !panelOpen && !closing && leftPanel.releaseReady
+    readonly property bool hasFullscreen: ToplevelManager.toplevels.values.some(w =>
+        w.fullscreen && (w.activated || ToplevelManager.activeToplevel === w)
+        && (!root.modelData || w.screens.length === 0 || w.screens.includes(root.modelData) || w.screens.some(s => s.name === root.modelData.name)))
     readonly property var horizontalBounds: ScreenGeometry.horizontalBounds(modelData.width, hostRect)
     required property var modelData
     width: Math.max(0, Math.min(520, modelData.width - Theme.pad * 2))
@@ -109,7 +112,7 @@ Item {
 
         FlareSurface {
             attach: ScreenGeometry.bottomAttached ? FlareHost.Bottom : FlareHost.Top
-            visible: !ChromeLayout.leftBarMode && root.openedAtBottom === ScreenGeometry.bottomAttached && (root.panelOpen || root.closing)
+            visible: !root.hasFullscreen && !ChromeLayout.leftBarMode && root.openedAtBottom === ScreenGeometry.bottomAttached && (root.panelOpen || root.closing)
             y: ScreenGeometry.chromeAttachmentY(root.modelData.height)
             width: visualLayer.width
             height: visualLayer.height - y
