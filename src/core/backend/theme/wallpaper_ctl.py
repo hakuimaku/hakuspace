@@ -443,7 +443,7 @@ def discover(kind="all"):
                 continue
             seen.add(canonical)
             record = {"id": path.relative_to(directory).as_posix(), "path": canonical, "label": path.stem, "kind": media_kind,
-                      "category": "" if path.parent == directory else path.parent.name,
+                      "category": "[Root]" if path.parent == directory else path.parent.name,
                       "selected": canonical == current, "thumbnail": "", "fileSize": info.st_size,
                       "previewVersion": str(info.st_mtime_ns)}
             try:

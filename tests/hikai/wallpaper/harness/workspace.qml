@@ -116,9 +116,13 @@ ShellRoot {
         WallpaperLibrary.items = records
         WallpaperLibrary.initialized = true
         browser.filter = "static"
-        check(WallpaperLibrary.categories[0] === "" && WallpaperLibrary.categories.length === 6
-            && !WallpaperLibrary.categories.includes("Space"), "Images categories come only from static records, All first")
+        check(WallpaperLibrary.categories[0] === "" && WallpaperLibrary.categories[1] === "[Root]"
+            && WallpaperLibrary.categories.length === 7
+            && !WallpaperLibrary.categories.includes("Space"), "Images categories come only from static records, All first and [Root] for root wallpapers")
         check(browser.filteredItems.length === 7, "All includes root and categorized Images")
+        WallpaperLibrary.selectedPath = "root"
+        WallpaperLibrary.setCategory("[Root]")
+        check(WallpaperLibrary.selectedPath === "root" && browser.filteredItems.length === 1, "[Root] category isolates root wallpapers")
         WallpaperLibrary.selectedPath = "anime-b"
         WallpaperLibrary.setCategory("Anime")
         check(WallpaperLibrary.selectedPath === "anime-b" && browser.filteredItems.length === 2, "category preserves a surviving selection")
@@ -144,7 +148,10 @@ ShellRoot {
         check(WallpaperLibrary.selectedPath === "anime-b", "active wallpaper wins over the first category item")
         WallpaperLibrary.setCategory("Nature")
         browser.filter = "video"
-        check(JSON.stringify(WallpaperLibrary.categories) === JSON.stringify(["", "Anime", "Space"]), "Lively categories exclude Images folders")
+        check(JSON.stringify(WallpaperLibrary.categories) === JSON.stringify(["", "[Root]", "Anime", "Space"]), "Lively categories exclude Images folders and include [Root]")
+        WallpaperLibrary.setCategory("[Root]")
+        check(WallpaperLibrary.activeCategory === "[Root]" && browser.filteredItems.length === 1
+            && browser.selected.path === "video-root", "[Root] category isolates lively root wallpapers")
         WallpaperLibrary.setCategory("Space")
         browser.filter = "static"
         check(WallpaperLibrary.activeCategory === "Nature", "Images remembers its category")
@@ -422,7 +429,7 @@ ShellRoot {
                 browser.presentation = "workspace"
                 phase = 0
             } else if (phase === -3) {
-                if (WallpaperLibrary.activeCategory !== "Anime") return
+                if (WallpaperLibrary.activeCategory !== "[Root]") return
                 root.check(!WallpaperService.busy && browser.selected.kind === "video", "Tab and Enter select category without applying")
                 find(browser, "wallpaper-category-").forceActiveFocus()
                 categoryKeyboard.write("key 57\n")
@@ -439,8 +446,8 @@ ShellRoot {
                 categoryKeyboard.write("key 106 8\n")
                 phase = -10
             } else if (phase === -10) {
-                if (WallpaperLibrary.activeCategory !== "Anime") return
-                root.check(find(browser, "wallpaper-category-Anime").activeFocus, "Alt category navigation moves focused chip with selection")
+                if (WallpaperLibrary.activeCategory !== "[Root]") return
+                root.check(find(browser, "wallpaper-category-[Root]").activeFocus, "Alt category navigation moves focused chip with selection")
                 find(browser, "wallpaperSearch").forceActiveFocus()
                 browser.query = "mountain"
                 categoryKeyboard.write("key 106 8\n".repeat(WallpaperLibrary.categories.length + 1))

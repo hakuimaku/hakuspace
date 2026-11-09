@@ -27,7 +27,8 @@ QtObject {
     readonly property var filteredItems: {
         var order = WallpaperSettingsStore.savedValues.browser.sort
         return items.filter(item => item.kind === filter
-            && (activeCategory === "" || item.category === activeCategory)
+            && (activeCategory === ""
+                || (activeCategory === "[Root]" ? (!item.category || item.category === "[Root]") : item.category === activeCategory))
             && item.label.toLowerCase().includes(query.trim().toLowerCase())).sort(function(a, b) {
             var byName = a.label.toLowerCase().localeCompare(b.label.toLowerCase()) || a.path.localeCompare(b.path)
             if (order === "newest") return Number(b.previewVersion || 0) - Number(a.previewVersion || 0) || byName
@@ -39,8 +40,11 @@ QtObject {
 
     // Derive named categories from media records without rescanning the filesystem.
     function categoriesFor(kind) {
-        return [""].concat(Array.from(new Set(items.filter(item => item.kind === kind && item.category)
-            .map(item => item.category))).sort((a, b) => a.localeCompare(b)))
+        var kindItems = items.filter(item => item.kind === kind)
+        var hasRoot = kindItems.some(item => !item.category || item.category === "[Root]")
+        var named = Array.from(new Set(kindItems.filter(item => item.category && item.category !== "[Root]")
+            .map(item => item.category))).sort((a, b) => a.localeCompare(b))
+        return [""].concat(hasRoot ? ["[Root]"] : []).concat(named)
     }
     // Apply category navigation to the current media type without persisting it.
     function setCategory(category) {

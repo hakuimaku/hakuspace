@@ -42,7 +42,9 @@ PanelWindow {
         ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     readonly property bool inputActive: panelOpen && !closing && !!browser
     mask: Region {
-        item: root.inputActive ? (root.presentation === "quick" ? browser.quickInputItem : browser.topInputItem) : null
+        width: root.presentation === "quick" && root.panelOpen && !root.closing ? root.modelData.width : 0
+        height: root.presentation === "quick" && root.panelOpen && !root.closing ? root.modelData.height : 0
+        item: root.inputActive && root.presentation === "workspace" ? browser.topInputItem : null
         Region {
             item: root.inputActive && root.presentation === "workspace" && !root.leftWorkspace ? browser.bottomInputItem : null
         }

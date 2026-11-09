@@ -153,14 +153,14 @@ class WallpaperTests(unittest.TestCase):
     def test_category_discovery_depth_hidden_and_root_roles(self):
         """Discover visible categories only in their media root, retaining root hidden files."""
         # Map root-relative files to their expected category and media kind.
-        fixtures = [(self.static, "root.png", "", "static"),
-                    (self.static, ".root.png", "", "static"),
+        fixtures = [(self.static, "root.png", "[Root]", "static"),
+                    (self.static, ".root.png", "[Root]", "static"),
                     (self.static, "Anime/a.png", "Anime", "static"),
                     (self.static, "Nature/a.png", "Nature", "static"),
                     (self.static, "Ảnh chill để code lúc 3 giờ sáng/a.jpg", "Ảnh chill để code lúc 3 giờ sáng", "static"),
                     (self.static, "日本/a.avif", "日本", "static"),
-                    (self.video, "root.mp4", "", "video"),
-                    (self.video, ".root.mp4", "", "video"),
+                    (self.video, "root.mp4", "[Root]", "video"),
+                    (self.video, ".root.mp4", "[Root]", "video"),
                     (self.video, "Anime/v.mp4", "Anime", "video"),
                     (self.video, "Space/v.webm", "Space", "video")]
         for directory, relative, category, kind in fixtures:

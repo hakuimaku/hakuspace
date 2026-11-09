@@ -14,6 +14,7 @@ case "${1:-}" in
 esac
 python3 "$TEST_DIR/test_settings.py"
 python3 "$TEST_DIR/test_maintenance.py"
+node "$TEST_DIR/test_wallpaper_library.js"
 if [[ ${1:-} == --runtime ]]; then
     bash "$TEST_DIR/test_runtime.sh" --reload
     bash "$TEST_DIR/test_runtime.sh" --categories
