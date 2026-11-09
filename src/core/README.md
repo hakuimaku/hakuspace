@@ -39,7 +39,7 @@ Current domains include:
 
 ```text
 backend/clipboard/   clipboard history operations
-backend/desktop/     taskbar, Waybar and desktop shortcut operations
+backend/desktop/     taskbar, Waybar, desktop shortcut and emoji operations
 backend/media/       recording lifecycle
 backend/system/      power, session-exit, login-shell and system statistics snapshot operations
 backend/theme/       theme, Rofi-theme and wallpaper operations
@@ -70,6 +70,7 @@ shutdown.sh
 exit.sh
 record.sh
 clipboard_menu.sh
+emoji_menu.sh
 shell_switcher.sh
 gen_shortcut.sh
 ```

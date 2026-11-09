@@ -127,6 +127,10 @@ Item {
             w = Math.min(Math.max(screenWidth * 0.40, 440), 720);
             h = Math.min(Math.max(screenHeight * 0.40, 360), 540);
             break;
+        case "emoji":
+            w = Math.min(Math.max(screenWidth * 0.44, 580), 700);
+            h = Math.min(Math.max(screenHeight * 0.58, 540), 650);
+            break;
         case "exitReport":
             w = Math.min(Math.max(screenWidth * 0.50, 540), 880);
             h = Math.min(Math.max(screenHeight * 0.60, 440), 760);
@@ -160,6 +164,7 @@ Item {
         case "niri_animation": return "pages/NiriAnimationPage.qml";
         case "shell":
         case "shellSwitcher": return "pages/ShellPage.qml";
+        case "emoji": return "pages/EmojiPage.qml";
         default: return "pages/RecordPage.qml";
         }
     }
@@ -176,6 +181,7 @@ Item {
         case "niri_animation": return "option";
         case "shell":
         case "shellSwitcher": return "option";
+        case "emoji": return "emoji";
         default: return "option";
         }
     }
@@ -271,6 +277,7 @@ Item {
             }
         } else if (comp.status === Component.Error) {
             console.error("ActionMenuSurface: failed to load " + initialUrl + ": " + comp.errorString());
+            root.requestClose();
         }
 
         morphCarrier.active = false;

@@ -131,6 +131,7 @@ PanelWindow {
         screenHeight: root.modelData.height
         flow: UiState.actionMenuFlow
         visible: root.panelOpen
+        focus: root.panelOpen
         onRequestClose: UiState.closeActionMenu()
         onCloseAnimationFinished: UiState.finishCloseActionMenu(root.modelData.name)
     }

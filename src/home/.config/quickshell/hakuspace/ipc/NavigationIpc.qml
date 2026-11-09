@@ -129,8 +129,12 @@ Scope {
         target: "launcher"
         enabled: true
         function open(mode: string) {
-            if (mode !== "drun" || Quickshell.screens.length === 0) return
-            UiState.openHakuMenu(Quickshell.screens[0].name, "drun")
+            if (Quickshell.screens.length === 0) return
+            if (mode === "drun") {
+                UiState.openHakuMenu(Quickshell.screens[0].name, "drun")
+            } else if (mode === "emoji") {
+                UiState.openActionMenu(Quickshell.screens[0].name, "emoji")
+            }
         }
     }
 }
