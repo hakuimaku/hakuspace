@@ -1,6 +1,7 @@
 pragma Singleton
 import QtQuick
 import Quickshell
+import "../config"
 import "ScreenGeometry.js" as Geometry
 
 QtObject {
@@ -34,8 +35,8 @@ QtObject {
     // Reserve the rail opposite the active status bar.
     readonly property real frameBottomReservation: ChromeLayout.topBarMode ? bottomInset : 0
     // App artwork shares a baseline; status modules may require a taller Taskbar.
-    readonly property real appBarHeight: Math.ceil(ShellSettingsStore.dockIconSize + 17)
-    readonly property real taskbarHeight: Math.ceil(Math.max(appBarHeight, Theme.fontSize * 1.8))
+    readonly property real appBarHeight: Math.ceil(ShellSettingsStore.dockIconSize + Design.dockIconBaselineOffset)
+    readonly property real taskbarHeight: Math.ceil(Math.max(appBarHeight, Theme.fontSize * Design.taskbarFontHeightFactor))
     readonly property real dockbarHeight: appBarHeight
     // A hidden Dock leaves bottom panels attached directly to the screen rail.
     readonly property bool bottomHostAvailable: ChromeLayout.taskbarMode || ChromeLayout.dockbarActive

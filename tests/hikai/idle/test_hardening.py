@@ -82,7 +82,7 @@ class IdleHardeningTests(unittest.TestCase):
         (services/'LockState.qml').write_text('pragma Singleton\nimport QtQuick\nQtObject { property bool locked: false; property bool secure: false; property bool failRequests: false; function requestLock() { if (failRequests) return "error"; locked = true; return "ok" } }\n')
         (services/'ShellSettingsStore.qml').write_text('pragma Singleton\nimport QtQuick\nQtObject { property bool ready: true; property var values: ('+json.dumps(settings.DEFAULTS)+'); property var savedValues: ('+json.dumps(settings.DEFAULTS)+') }\n')
         harness=(ROOT/'tests/hikai/idle/harness/hardening.qml').read_text()
-        production=(ROOT/'src/home/.config/quickshell/hakuspace/shell.qml').read_text()
+        production=(ROOT/'src/home/.config/quickshell/hakuspace/ipc/SystemIpc.qml').read_text()
         idle_ipc=re.search(r'    IpcHandler \{\n        target: "idle".*?\n    \}',production,re.S).group()
         (self.shell/'shell.qml').write_text(harness.rsplit('}',1)[0]+idle_ipc+'\n}\n')
         for source in ('sys/idle_actions.sh','sys/idle_inhibit.sh','lib/haku_state.sh'):

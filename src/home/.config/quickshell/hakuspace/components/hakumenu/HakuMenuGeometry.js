@@ -1,3 +1,7 @@
+// PURE MATHEMATICAL GEOMETRY ENGINE:
+// Must remain independent from QML runtime to ensure sub-second Node.js unit testing.
+// Do NOT import QML singletons or extract algorithmic ratios into QML.
+
 // Resolve the final span for each HakuMenu profile.
 function targetWidth(width, tab, mode, leftInset, rightInset) {
     if (tab === "taskManager") return Math.min(width * 0.45, Math.max(1, width - leftInset - rightInset))

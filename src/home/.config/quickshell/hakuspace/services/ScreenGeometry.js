@@ -1,5 +1,9 @@
 .pragma library
 
+// PURE MATHEMATICAL GEOMETRY ENGINE:
+// Must remain independent from QML runtime to ensure sub-second Node.js unit testing.
+// Do NOT import QML singletons or extract algorithmic ratios into QML.
+
 // Keep malformed runtime coordinates from producing invalid masks or panel bounds.
 function finite(value) { return Number.isFinite(value) ? value : 0; }
 

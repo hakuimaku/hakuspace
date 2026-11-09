@@ -194,30 +194,20 @@ QtObject {
     // Shared sectionGap token.
     readonly property int sectionGap: 24
 
-    // Shared topBarTopPadding token.
+    // TopBar layout geometry.
     readonly property int topBarTopPadding: 4
-
-    // Shared topBarBottomPadding token.
     readonly property int topBarBottomPadding: 4
-
-    // Shared levelOsdPadding token.
-    readonly property int levelOsdPadding: 8
-
-    // Sizing constant for topBarMinContentHeight.
     readonly property real topBarMinContentHeight: 30
-
-    // Sizing constant for topBarFontHeightFactor.
     readonly property real topBarFontHeightFactor: 2.3
 
-    // Sizing constant for levelOsdMinWidth.
+    // Level OSD layout geometry.
+    readonly property int levelOsdPadding: 8
     readonly property real levelOsdMinWidth: 240
-
-    // Sizing constant for levelOsdFontWidthFactor.
     readonly property real levelOsdFontWidthFactor: 22
-
-    // Sizing constant for levelOsdMinHeight.
     readonly property real levelOsdMinHeight: 36
-
-    // Sizing constant for levelOsdFontHeightFactor.
     readonly property real levelOsdFontHeightFactor: 2.4
+
+    // Dock & Taskbar layout geometry.
+    readonly property int dockIconBaselineOffset: 17
+    readonly property real taskbarFontHeightFactor: 1.8
 }

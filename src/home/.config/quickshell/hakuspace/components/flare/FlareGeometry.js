@@ -1,5 +1,9 @@
 .pragma library
 
+// PURE MATHEMATICAL GEOMETRY ENGINE:
+// Must remain independent from QML runtime to ensure sub-second Node.js unit testing.
+// Do NOT import QML singletons or extract algorithmic ratios into QML.
+
 function finite(value, fallback) {
     if (value === null || value === undefined || value === "") return fallback;
     var n = Number(value);

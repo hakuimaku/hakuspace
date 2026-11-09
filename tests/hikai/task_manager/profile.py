@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import shlex
 import signal
 import subprocess
@@ -25,8 +26,8 @@ def run(args):
         work = Path(temporary)
         shell = prepare(work)
         profile = (Path(__file__).with_name('harness') / 'profile.qml').read_text()
-        production = (SOURCE / 'shell.qml').read_text()
-        ipc = production[production.index('    // Task Manager remains'):production.index('    // Toggle only the floating note')]
+        production = (SOURCE / 'ipc/UtilityIpc.qml').read_text()
+        ipc = re.search(r'    IpcHandler \{\n        target: "taskManager".*?\n    \}', production, re.S).group()
         surfaces = (SOURCE / 'components/EphemeralSurfaces.qml').read_text()
         loader_start = surfaces.index('    Base.LifecycleLoader {\n        id: taskManager')
         loader_end = surfaces.index('    Base.LifecycleLoader {', loader_start + 8)
