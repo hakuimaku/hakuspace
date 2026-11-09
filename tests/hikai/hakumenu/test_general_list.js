@@ -65,6 +65,7 @@ async function check() {
             actionRowId: '', deleteRowId: '', actionError: '', pendingDeleteId: '', selectionHint: -1,
             GeneralMenuService: {items: JSON.parse(output).items, busy: false, run: id => { calls.push(id); return true }},
             UiState: {hakuMenuScreenName: 'fixture-output'},
+            Env: {binDir: '/fixture/bin'},
             UiCatalog: catalog, Qt: {LeftButton: 1, RightButton: 2},
             Quickshell: {execDetached: command => calls.push(plain(command))},
             generalList: {currentIndex: -1}, launched: () => calls.push('launched')})
@@ -76,8 +77,8 @@ async function check() {
         Object.defineProperty(list, 'staticItems', {get: () => vm.runInContext(staticExpression, list)})
         list.visibleItems = list.filteredItems()
         assert.equal(list.customItems.length, 6)
-        assert.equal(list.staticItems.length, 7)
-        assert.equal(list.visibleItems.length, 13)
+        assert.equal(list.staticItems.length, 8)
+        assert.equal(list.visibleItems.length, 14)
         assert.equal(list.visibleItems[6].sectionStart, true)
         assert.equal(list.visibleItems[0].id, 'code-editor')
         assert.equal(list.visibleItems[6].id, 'static-wifi')
@@ -116,18 +117,20 @@ async function check() {
         assert(catalog.hakuMenuGeneralItems.every(row => row.id.startsWith('static-')))
         list.UiState.openTaskManagerFromHakuMenu = () => calls.push(['taskManager', list.UiState.hakuMenuScreenName])
         list.UiState.openSettings = screen => calls.push(['settings', screen])
+        list.UiState.openActionMenu = (screen, flow) => calls.push(['actionMenu', screen, flow])
         list.launched = () => { calls.push('launched'); list.UiState.hakuMenuScreenName = '' }
-        list.query = 'Task Manager'
-        list.visibleItems = list.filteredItems()
-        assert.equal(list.visibleItems[0].id, 'static-task-manager')
-        assert.equal(list.visibleItems[0].mutable, false)
-        list.activateIndex(0)
-        assert.deepEqual(calls.at(-1), ['taskManager', 'fixture-output'])
         list.query = 'Settings'
         list.visibleItems = list.filteredItems()
         assert.equal(list.visibleItems[0].id, 'static-settings')
         list.activateIndex(0)
         assert.deepEqual(calls.slice(-2), ['launched', ['settings', 'fixture-output']])
+        list.query = 'Shell Switcher'
+        list.visibleItems = list.filteredItems()
+        assert.equal(list.visibleItems[0].id, 'static-shell-switcher')
+        assert.equal(list.visibleItems[0].mutable, false)
+        list.UiState.hakuMenuScreenName = 'fixture-output'
+        list.activateIndex(0)
+        assert.deepEqual(calls.slice(-2), ['launched', ['actionMenu', 'fixture-output', 'shell']])
 
         // Check the browser shortcut without opening the user's real browser.
         const editorSource = fs.readFileSync(path.join(shell, 'components/hakumenu/GeneralItemEditor.qml'), 'utf8')

@@ -19,6 +19,7 @@ var hakuMenuGeneralItems = [
     { id: "static-disk-manager", label: "Disk Manager", icon: "󰋊", command: ["gparted"] },
     { id: "static-storage-manager", label: "Storage Manager", icon: "󰃢", command: ["kitty", "--class", "ncdu", "-e", "sudo", "ncdu", "/"] },
     { id: "static-audio-control", label: "Audio Control", icon: "", command: ["pavucontrol"] },
+    { id: "static-shell-switcher", label: "Change Shell", icon: "", action: "shellSwitcher", command: ["shell_switcher.sh", "--global"] },
     { id: "static-task-manager", label: "Task Manager", icon: "", action: "taskManager" },
     { id: "static-settings", label: "Settings", icon: "", action: "settings" }
 ]

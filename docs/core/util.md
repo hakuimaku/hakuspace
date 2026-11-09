@@ -68,11 +68,12 @@ Waybar management separates the public command, mode selection frontend and head
 Default and user modes still come from the existing Waybar directories plus `WAYBAR_MODE_USER` in `~/hakucfg/setting.sh`; source-tree organization does not change the flat `~/.local/bin` deployment contract.
 
 ### Login shell switching
-Login-shell switching keeps the existing `shell_switcher.sh` public command while separating Classic picker/authentication UX from the mutation backend.
+Login-shell switching provides two primary interaction modes via `shell_switcher.sh`:
 
-- **`shell_switcher.sh` (compatibility facade):** no arguments preserve the Classic picker and `--print` preserves the wrapper-friendly behavior. Headless callers can use `--list [--json]`, `--current`, and `--set <shell-id/path>`.
+- **Terminal Mode:** When executed directly in an interactive terminal, `shell_switcher.sh` toggles between the two supported login shells (`fish` <-> `zsh`) or switches to an explicitly supplied shell (`shell_switcher.sh <shell>`). If administrative authorization is required, `sudo` credentials are prompted directly in the terminal, and the shell process enters the selected shell upon completion.
+- **Global Switcher (Layer Mode):** When invoked outside a terminal (such as from HakuMenu, application launchers, or with `--global`/`-g`), `shell_switcher.sh` opens an interactive layer picker (Quickshell picker under Hikai, Rofi under Classic). If authorization is needed, the password prompt is requested at the layer, and once successfully changed, a layer confirmation prompt asks whether to restart the session (Log out, Reboot, or Later) to apply changes.
 - **`shell_ctl.sh` (headless backend):** discovers supported `fish`/`zsh` installs, reports the passwd login shell, registers a selected binary in `/etc/shells` when required, and performs `chsh`. It never opens Rofi or asks for credentials. Non-interactive authorization that cannot proceed returns exit status `77`.
-- **`shell_rofi.sh` (Classic frontend):** owns the Rofi shell picker and the existing Rofi sudo-password flow, then retries the explicit backend mutation. Terminal launches still start the selected shell after a successful change, while `--print` only returns its resolved path.
+- **`shell_rofi.sh` (layer frontend):** owns the layer picker presentation (Quickshell / Rofi), layer sudo password input, and session restart confirmation flow. Headless `--print` returns the resolved path.
 
 The NixOS guard remains in the backend: login shells on NixOS must still be configured declaratively.
 

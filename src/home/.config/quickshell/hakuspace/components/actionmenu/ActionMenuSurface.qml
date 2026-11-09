@@ -158,6 +158,8 @@ Item {
         case "shortcut": return "pages/ShortcutPage.qml";
         case "niriAnimation":
         case "niri_animation": return "pages/NiriAnimationPage.qml";
+        case "shell":
+        case "shellSwitcher": return "pages/ShellPage.qml";
         default: return "pages/RecordPage.qml";
         }
     }
@@ -172,6 +174,8 @@ Item {
         case "clipboard": return "option";
         case "niriAnimation":
         case "niri_animation": return "option";
+        case "shell":
+        case "shellSwitcher": return "option";
         default: return "option";
         }
     }

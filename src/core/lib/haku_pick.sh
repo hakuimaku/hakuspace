@@ -31,7 +31,7 @@ done
 # Read items from stdin
 readarray -t ITEMS
 
-if haku_backend_is "classic"; then
+if haku_backend_is "classic" || ! haku_qs_alive; then
     ROFI_ARGS=("-dmenu" "-i" "-p" "$PROMPT" "-theme" "option-menu.rasi")
     [[ "$PASSWORD" == "true" ]] && ROFI_ARGS+=("-password")
     [[ "$NO_CUSTOM" == "true" ]] && ROFI_ARGS+=("-no-custom")
@@ -44,7 +44,11 @@ if haku_backend_is "classic"; then
     [[ -n "$SELECTED" ]] && ROFI_ARGS+=("-selected-row" "$SELECTED")
     [[ -n "$LINES" ]] && ROFI_ARGS+=("-l" "$LINES")
 
-    printf "%s\n" "${ITEMS[@]}" | rofi "${ROFI_ARGS[@]}"
+    if (( ${#ITEMS[@]} > 0 )); then
+        printf "%s\n" "${ITEMS[@]}" | rofi "${ROFI_ARGS[@]}"
+    else
+        rofi "${ROFI_ARGS[@]}" </dev/null
+    fi
     exit $?
 else
     RUNTIME_DIR="$(haku_runtime_dir)"

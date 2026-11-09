@@ -218,7 +218,7 @@ set_shell() {
     # - non-interactive/Rofi call: never prompt here, return 77 so the Classic
     #   frontend can own its Rofi password dialog and retry through stdin.
     if [[ $EUID -ne 0 && ( $needs_registration -eq 1 || $needs_change -eq 1 ) ]]; then
-        if [[ -t 0 && -t 1 ]]; then
+        if [[ -t 0 ]]; then
             authorize_interactive_root || return $?
         else
             authorize_noninteractive_root || return $?

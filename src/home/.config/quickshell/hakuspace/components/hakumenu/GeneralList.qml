@@ -171,6 +171,12 @@ Item {
                 UiState.openSettings(screenName)
                 return
             }
+            if (item.action === "shellSwitcher") {
+                var screenName = UiState.hakuMenuScreenName
+                root.launched()
+                UiState.openActionMenu(screenName, "shell")
+                return
+            }
             Quickshell.execDetached(item.command)
             root.launched()
         } else if (GeneralMenuService.run(item.id)) root.launched()
