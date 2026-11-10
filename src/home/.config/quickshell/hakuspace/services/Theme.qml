@@ -10,6 +10,35 @@ QtObject {
     // Hikai preferences select a palette without regenerating shared theme files.
     readonly property string colorMode: ShellSettingsStore.colorMode
     readonly property bool isLight: colorMode === "light"
+
+    // Tray reload signaling across theme mode switches
+    signal trayReloadRequested()
+    property int trayGeneration: 0
+    property string lastAppliedTrayMode: ""
+
+    function reloadTray(force) {
+        if (!force && lastAppliedTrayMode === colorMode) return
+        trayModeTimer.stop()
+        lastAppliedTrayMode = colorMode
+        trayGeneration++
+        trayReloadRequested()
+    }
+
+    property Timer trayModeTimer: Timer {
+        interval: 650
+        repeat: false
+        onTriggered: root.reloadTray(true)
+    }
+
+    onColorModeChanged: {
+        if (colorMode !== lastAppliedTrayMode) {
+            trayModeTimer.restart()
+        }
+    }
+
+    Component.onCompleted: {
+        lastAppliedTrayMode = colorMode
+    }
     property string accentSeed: Design.defaultAccentSeed
     property color accentDark: Design.defaultAccentDark
     property color accentLight: Design.defaultAccentLight

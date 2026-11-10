@@ -17,6 +17,27 @@ Grid {
     property var menuOpenItem: null
     signal menuRequested(var item, var anchor)
 
+    function reload() {
+        trayRepeater.model = null
+        reloadTimer.restart()
+    }
+
+    Timer {
+        id: reloadTimer
+        interval: 30
+        repeat: false
+        onTriggered: {
+            trayRepeater.model = SystemTray.items
+        }
+    }
+
+    Connections {
+        target: Theme
+        function onTrayReloadRequested() {
+            root.reload()
+        }
+    }
+
     Item { width: 4; height: 1; visible: !root.vertical && trayRepeater.count > 0 }
 
     Repeater {
@@ -38,7 +59,9 @@ Grid {
                 anchors.centerIn: parent
                 width: root.vertical ? ScreenGeometry.leftIconSize : Theme.fontSize + 4
                 height: width
+                backer.cache: false
                 source: {
+                    var _seed = Theme.trayGeneration;
                     var iconName = modelData.icon;
                     if (!iconName) return "";
                     if (iconName.startsWith("file://") || iconName.startsWith("image://")) {

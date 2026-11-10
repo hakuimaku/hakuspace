@@ -152,6 +152,7 @@ Item {
             y: ScreenGeometry.leftModuleInset + Math.max(0, bottomLane.height - bottomLane.contentHeight)
             spacing: ScreenGeometry.leftModuleGap
             TopModules.TrayGroup {
+                objectName: "tray-module"
                 vertical: true
                 anchors.horizontalCenter: parent.horizontalCenter
                 visible: ShellSettingsStore.showTray

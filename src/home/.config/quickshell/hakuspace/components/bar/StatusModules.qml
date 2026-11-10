@@ -209,6 +209,7 @@ Item {
             spacing: Theme.gap
 
             TopModules.TrayGroup {
+                objectName: "tray-module"
                 visible: ShellSettingsStore.showTray
                 menuOpenItem: UiState.trayMenu ? UiState.trayMenu.item : trayController.trayMenuItem
                 onMenuRequested: (item, anchor) => {

@@ -53,6 +53,7 @@ QtObject {
         onExited: (code, status) => {
             if (code !== 0) console.warn("Could not synchronize desktop color scheme: " + errorOutput.text.trim())
             if (requestedScheme !== root.scheme) root.sync()
+            else Theme.reloadTray()
         }
     }
 }
