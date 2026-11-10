@@ -1,7 +1,6 @@
 import "../"
 import "../../services"
 import "../../services/WM"
-import "../base"
 import QtQuick
 import Quickshell
 
@@ -160,41 +159,6 @@ TopModule {
 
                     }
 
-                }
-
-                HTooltip {
-                    target: cell
-                    enabled: cell.isHovered && ws !== undefined
-                    active: root.vertical && enabled
-                    text: {
-                        if (!ws)
-                            return "";
-
-                        var lines = [ws.name];
-                        if (WM.caps.windowCount && ws.windows > 0) {
-                            var title = ws.focusedTitle || "";
-                            if (title.length > 40)
-                                title = title.substring(0, 39) + "…";
-
-                            lines.push(ws.windows + " windows" + (title ? " · " + title : ""));
-                        }
-                        var uniqueOutputs = {
-                        };
-                        var c = 0;
-                        for (var i = 0; i < WM.workspaces.length; i++) {
-                            if (WM.workspaces[i].output && !uniqueOutputs[WM.workspaces[i].output]) {
-                                uniqueOutputs[WM.workspaces[i].output] = true;
-                                c++;
-                            }
-                        }
-                        if (c > 1 && ws.output)
-                            lines.push("Output: " + ws.output);
-
-                        if (ws.urgent)
-                            lines.push("Urgent");
-
-                        return lines.join("\n");
-                    }
                 }
 
                 Behavior on y {
