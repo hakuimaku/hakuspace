@@ -38,8 +38,8 @@ var hakuMenuThemeItems = [
     { label: "Dockbar", icon: "󰧨", action: "Dockbar", toggle: true, showState: true, chromeKey: "dockbar" },
     { label: "Auto Random Wallpaper", icon: "", action: "Auto Random Wallpaper", toggle: true, showState: true, stateKey: "randomWallpaper", stateKind: "bool" },
     { label: "Dark / Light Mode", icon: "󰔎", action: "colorMode", toggle: true, showState: true, stateKind: "colorMode" },
-    { label: "Status Bar Position", icon: "󰍜", action: "Status Bar Position", statusEdgeSwitch: true },
-    { label: "Taskbar Mode", icon: "󰐃", action: "Taskbar Mode", toggle: true, showState: true, chromeKey: "taskbar" },
+    { label: "Shell Layout", icon: "󰍜", action: "layout", shellLayoutSwitch: true },
+    { label: "Cava Position", icon: "󰝚", action: "cavaPosition", cavaPositionSwitch: true },
     { label: "", icon: "󰆧", action: "", toggle: true, showState: false, stateKey: "stateShellBackend", stateKind: "backend", backendSwitch: true }
 ]
 

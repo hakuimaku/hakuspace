@@ -77,7 +77,20 @@ QtObject {
         onLoadFailed: root.cavaLayerState = false
     }
 
+    property string cavaPosition: "top"
     property bool cavaTopState: true
+    onCavaTopStateChanged: {
+        var target = cavaTopState ? "top" : "bottom"
+        if (cavaPosition !== target && (cavaPosition === "top" || cavaPosition === "bottom")) {
+            cavaPosition = target
+        }
+    }
+    onCavaPositionChanged: {
+        var wantTop = (cavaPosition === "top")
+        if (cavaTopState !== wantTop) {
+            cavaTopState = wantTop
+        }
+    }
     property FileView cavaTopStateFile: FileView {
         path: Env.stateCavaPosition
         watchChanges: true
@@ -85,9 +98,12 @@ QtObject {
         onFileChanged: reload()
         onTextChanged: {
             var val = text().trim().toLowerCase()
-            root.cavaTopState = (val === "0" || val === "bottom") ? false : true
+            if (val === "0" || val === "bottom") root.cavaPosition = "bottom"
+            else if (val === "left") root.cavaPosition = "left"
+            else if (val === "right") root.cavaPosition = "right"
+            else root.cavaPosition = "top"
         }
-        onLoadFailed: root.cavaTopState = true
+        onLoadFailed: root.cavaPosition = "top"
     }
 
     property bool cavaDynamicPosition: false
@@ -112,10 +128,27 @@ QtObject {
         }
     }
 
+    property Connections statusEdgeConn: Connections {
+        target: typeof ShellSettingsStore !== "undefined" ? ShellSettingsStore : null
+        ignoreUnknownSignals: true
+        function onStatusEdgeChanged() {
+            if (root.cavaDynamicPosition) {
+                root.syncCavaDynamicPosition()
+            }
+        }
+    }
+
     function syncCavaDynamicPosition() {
-        var wantTop = !taskbarManualState
-        if (cavaTopState !== wantTop) {
-            cavaTopState = wantTop
+        var wantPos = "top"
+        if (taskbarManualState) {
+            wantPos = "bottom"
+        } else if (typeof ShellSettingsStore !== "undefined" && ShellSettingsStore.statusEdge === "left") {
+            wantPos = "left"
+        } else {
+            wantPos = "top"
+        }
+        if (cavaPosition !== wantPos) {
+            cavaPosition = wantPos
         }
     }
 

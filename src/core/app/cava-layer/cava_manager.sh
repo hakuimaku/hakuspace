@@ -162,9 +162,31 @@ start() {
 
     check_dependencies
  
+    # Classic mode is locked to top position and does not inherit Hikai positions/dynamic flags
     local dynamic_flag=""
-    if haku_qs_mode || [[ "$(cat "$DYNAMIC_STATE_FILE" 2>/dev/null || echo "0")" == "1" ]]; then
-        dynamic_flag="--dynamic"
+
+    local cava_conf="$HOME/hakucfg/config/cava-layer"
+    if [[ -f "$cava_conf" ]]; then
+        # Ensure Classic Cava orientation is always top
+        if grep -qE '^orientation\s*=' "$cava_conf"; then
+            sed -i -E 's/^orientation\s*=.*/orientation = top/' "$cava_conf"
+        elif grep -qE '^\[output\]' "$cava_conf"; then
+            sed -i -E '/^\[output\]/a orientation = top' "$cava_conf"
+        fi
+
+        # Sync color mode from state (0 = surface/black, 1 = accent/white)
+        local color_mode="$(cat "$(haku_state_path cava.color-mode)" 2>/dev/null || echo "1")"
+        local target_color="white"
+        if [[ "$color_mode" == "0" || "$color_mode" == "surface" || "$color_mode" == "black" ]]; then
+            target_color="black"
+        fi
+        if grep -qE '^foreground\s*=' "$cava_conf"; then
+            sed -i -E "s/^foreground\s*=.*/foreground = $target_color/" "$cava_conf"
+        elif grep -qE '^\[color\]' "$cava_conf"; then
+            sed -i -E "/^\[color\]/a foreground = $target_color" "$cava_conf"
+        else
+            printf '\n[color]\nforeground = %s\n' "$target_color" >> "$cava_conf"
+        fi
     fi
 
     local height_flag=""
@@ -250,7 +272,16 @@ sync_dynamic_position() {
         if [[ "$is_taskbar" == "1" ]]; then
             set_position "bottom" "--sync"
         else
-            set_position "top" "--sync"
+            local settings_file="${HAKUSPACE_HIKAI_SETTINGS_FILE:-$HOME/hakucfg/hikai/hikai-shell.json}"
+            local is_leftbar=0
+            if [[ -f "$settings_file" ]] && grep -q '"statusEdge"[[:space:]]*:[[:space:]]*"left"' "$settings_file" 2>/dev/null; then
+                is_leftbar=1
+            fi
+            if [[ "$is_leftbar" == "1" ]]; then
+                set_position "left" "--sync"
+            else
+                set_position "top" "--sync"
+            fi
         fi
     fi
 }
@@ -271,6 +302,14 @@ set_position() {
         echo "0" > "$POSITION_STATE_FILE"
         [[ "$from_sync" != "--sync" ]] && echo "0" > "$DYNAMIC_STATE_FILE"
         log "Position set to bottom."
+    elif [[ "$pos" == "left" ]]; then
+        echo "left" > "$POSITION_STATE_FILE"
+        [[ "$from_sync" != "--sync" ]] && echo "0" > "$DYNAMIC_STATE_FILE"
+        log "Position set to left."
+    elif [[ "$pos" == "right" ]]; then
+        echo "right" > "$POSITION_STATE_FILE"
+        [[ "$from_sync" != "--sync" ]] && echo "0" > "$DYNAMIC_STATE_FILE"
+        log "Position set to right."
     else
         toggle_position
         return $?

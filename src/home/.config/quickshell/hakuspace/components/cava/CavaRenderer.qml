@@ -22,7 +22,7 @@ ShellRoot {
     function report() {
         send({type: "state", state: {running: CavaService.running, sleeping: CavaService.sleeping,
             errorString: CavaService.errorString, energies: CavaService._energies,
-            enabled: CavaService.enabled, top: CavaService.top, height: CavaService.height,
+            enabled: CavaService.enabled, position: CavaService.position, top: CavaService.top, height: CavaService.height,
             colorMode: CavaService.colorMode, color: CavaService.underbarColor.toString(),
             audioPid: CavaService.process.processId,
             malformedFrames: CavaService.malformedFrames, totalFrames: CavaService.totalFrames,
@@ -47,10 +47,11 @@ ShellRoot {
         for (var key of booleans) if (typeof state[key] !== "boolean") throw new Error("invalid " + key)
         for (var key of numbers) if (typeof state[key] !== "number" || !Number.isFinite(state[key]) || state[key] < 0) throw new Error("invalid " + key)
         if (state.barCount < 2 || state.barCount > 512 || state.height > 300
+            || !["top", "bottom", "left", "right"].includes(state.position)
             || !["surface", "accent"].includes(state.colorMode) || !["liquid", "capsule"].includes(state.style)
             || typeof state.surfaceColor !== "string" || typeof state.accentColor !== "string") throw new Error("invalid visual configuration")
         CavaService.process.command = state.audioCommand
-        for (var key of booleans.concat(numbers, ["colorMode", "style", "surfaceColor", "accentColor"])) {
+        for (var key of booleans.concat(numbers, ["position", "colorMode", "style", "surfaceColor", "accentColor"])) {
             if (key !== "enabled") CavaService[key] = state[key]
         }
         screens = state.screens

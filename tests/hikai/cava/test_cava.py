@@ -353,12 +353,22 @@ class CavaManagerTest(unittest.TestCase):
             self.assertEqual(res.returncode, 0)
             self.assertEqual((state_dir / "[cava].position").read_text().strip(), "1")
 
-            # 5. In Classic mode, position switching is blocked
+            # 5. Explicit set to left
+            res = subprocess.run(["bash", str(CAVA_MANAGER), "--position", "left"], env=env, capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual((state_dir / "[cava].position").read_text().strip(), "left")
+
+            # 6. Explicit set to right
+            res = subprocess.run(["bash", str(CAVA_MANAGER), "--position", "right"], env=env, capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual((state_dir / "[cava].position").read_text().strip(), "right")
+
+            # 7. In Classic mode, position switching is blocked
             (state_dir / "[shell].backend").write_text("classic\n", encoding="utf-8")
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--position"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
             self.assertIn("Position switching is only available in Hikai mode", res.stdout)
-            self.assertEqual((state_dir / "[cava].position").read_text().strip(), "1")
+            self.assertEqual((state_dir / "[cava].position").read_text().strip(), "right")
 
     def test_cava_manager_dynamic_position(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -381,6 +391,16 @@ class CavaManagerTest(unittest.TestCase):
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--sync-dynamic"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
             self.assertEqual((state_dir / "[cava].position").read_text().strip(), "0")
+
+            # 2b. In leftbar mode (statusEdge = left), syncing dynamic sets position to left
+            (state_dir / "[desktop].taskbar.requested").write_text("0\n", encoding="utf-8")
+            (state_dir / "[cava].dynamic-position").write_text("1\n", encoding="utf-8")
+            hikai_cfg = home / "hakucfg/hikai"
+            hikai_cfg.mkdir(parents=True, exist_ok=True)
+            (hikai_cfg / "hikai-shell.json").write_text('{"statusEdge": "left"}\n', encoding="utf-8")
+            res = subprocess.run(["bash", str(CAVA_MANAGER), "--sync-dynamic"], env=env, capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            self.assertEqual((state_dir / "[cava].position").read_text().strip(), "left")
 
             # 3. Manually setting position disables dynamic position
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--position", "top"], env=env, capture_output=True, text=True)
@@ -447,6 +467,56 @@ class CavaManagerTest(unittest.TestCase):
             res = subprocess.run(["bash", str(CAVA_MANAGER), "--startup"], env=env, capture_output=True, text=True)
             self.assertEqual(res.returncode, 0)
             self.assertEqual((state_dir / "[cava].enabled").read_text().strip(), "1")
+
+    def test_cava_manager_classic_mode_top_only_and_syncs_config(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            state_dir = home / ".local/state/hakuspace/state"
+            state_dir.mkdir(parents=True)
+            cfg_dir = home / "hakucfg/config"
+            cfg_dir.mkdir(parents=True)
+            source_conf = cfg_dir / "cava-layer"
+            source_conf.write_text("[general]\nbar_width = 4\n\n[output]\nmethod = ncurses\norientation = bottom\n\n[color]\nforeground = white\n", encoding="utf-8")
+            env = self._make_env(home)
+
+            # Classic mode backend
+            (state_dir / "[shell].backend").write_text("classic\n", encoding="utf-8")
+            # Hikai had left position and dynamic position enabled
+            (state_dir / "[cava].position").write_text("left\n", encoding="utf-8")
+            (state_dir / "[cava].dynamic-position").write_text("1\n", encoding="utf-8")
+            # Color mode is surface / black (0)
+            (state_dir / "[cava].color-mode").write_text("0\n", encoding="utf-8")
+
+            # In Classic mode, position switching is blocked and does not change
+            res = subprocess.run(["bash", str(CAVA_MANAGER), "--position", "bottom"], env=env, capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            self.assertIn("Position switching is only available in Hikai mode", res.stdout)
+
+            # Dynamic position toggling is also blocked in Classic mode
+            res = subprocess.run(["bash", str(CAVA_MANAGER), "--toggle-dynamic"], env=env, capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0)
+            self.assertIn("Dynamic position is only available in Hikai mode", res.stdout)
+
+            # Stub cava_layer.py so start command succeeds without launching GUI
+            bin_dir = home / ".local/bin"
+            bin_dir.mkdir(parents=True, exist_ok=True)
+            mock_layer = bin_dir / "cava_layer.py"
+            mock_layer.write_text("#!/usr/bin/env python3\nimport time\ntime.sleep(10)\n", encoding="utf-8")
+            mock_layer.chmod(0o755)
+
+            cava_env = {**env, "CAVA_LAYER_PATH": str(mock_layer)}
+            res = subprocess.run(["bash", str(CAVA_MANAGER), "start"], env=cava_env, capture_output=True, text=True)
+            try:
+                self.assertEqual(res.returncode, 0)
+                # Config must be synced to orientation = top and foreground = black
+                conf_content = source_conf.read_text(encoding="utf-8")
+                self.assertIn("orientation = top", conf_content)
+                self.assertNotIn("orientation = bottom", conf_content)
+                self.assertIn("foreground = black", conf_content)
+                self.assertNotIn("foreground = white", conf_content)
+                self.assertNotIn("--dynamic", res.stdout, "Classic mode must not pass --dynamic")
+            finally:
+                subprocess.run(["bash", str(CAVA_MANAGER), "stop"], env=cava_env, capture_output=True, text=True)
 
 
 if __name__ == "__main__":

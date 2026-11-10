@@ -97,8 +97,8 @@ Item {
                 var centerDist = Math.abs((i / (count - 1)) - 0.5) * 2.0 // 0 at center, 1 at edge
                 var centerBassBoost = (1.0 - centerDist) * bassMod
 
-                // Small micro-ripple driven by treble towards edges
-                var edgeRipple = centerDist * trebleMod * ((i % 2 === 0) ? 0.5 : -0.5)
+                // Smooth swell driven by treble towards edges without jagged zigzag
+                var edgeRipple = 0.0
 
                 var val = Math.max(0.0, Math.min(1.0, rawVal + centerBassBoost + edgeRipple))
                 var audioH = val * targetMaxH * amp

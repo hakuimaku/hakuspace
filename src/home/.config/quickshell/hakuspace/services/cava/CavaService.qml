@@ -27,16 +27,26 @@ QtObject {
     property color accentColor: rendererProcess ? "transparent" : Theme.accent
     readonly property color underbarColor: colorMode === "surface" ? surfaceColor : accentColor
     // The parent publishes screen geometry and live settings previews as one snapshot.
-    property bool top: rendererProcess ? true : AppState.cavaTopState
-    property bool needsSurface: !rendererProcess && WM.backendName === "niri"
+    property string position: rendererProcess ? "top" : AppState.cavaPosition
+    property bool top: rendererProcess ? true : (position !== "bottom")
+    readonly property bool isNiri: !rendererProcess && WM.backendName === "niri"
+    property bool needsSurface: rendererProcess ? false : (isNiri && (
+        position === "left" ? ChromeLayout.leftBarMode :
+        position === "right" ? false :
+        position === "top" ? !ChromeLayout.leftBarMode :
+        true
+    ))
     property real leftInset: rendererProcess ? 0 : ScreenGeometry.leftInset
     property real rightInset: rendererProcess ? 0 : ScreenGeometry.rightInset
-    property int edgeInset: rendererProcess ? 0 : (top
-        ? (ChromeLayout.taskbarMode ? ScreenGeometry.topBorderThickness : Theme.topBarHeight)
-        : (ChromeLayout.taskbarMode ? ScreenGeometry.taskbarReservation() : ScreenGeometry.bottomInset))
+    property int edgeInset: rendererProcess ? 0 : (
+        position === "top" ? (ChromeLayout.leftBarMode ? 0 : (ChromeLayout.taskbarMode ? ScreenGeometry.topBorderThickness : Theme.topBarHeight))
+        : position === "bottom" ? (ChromeLayout.taskbarMode ? ScreenGeometry.taskbarReservation() : ScreenGeometry.bottomInset)
+        : position === "left" ? (ChromeLayout.leftBarMode ? Math.round(ScreenGeometry.leftBarWidth) : ScreenGeometry.leftInset)
+        : 0
+    )
     property int barCount: 64
     property real sensitivity: 1.0
-    property real smoothing: 0.5
+    property real smoothing: 0.55
     property string style: "liquid" // "liquid" or "capsule"
     property real height: rendererProcess ? 72 : AppState.cavaHeight
     readonly property real ceilingHeadroom: Math.max(20, Math.round(height * 0.35))

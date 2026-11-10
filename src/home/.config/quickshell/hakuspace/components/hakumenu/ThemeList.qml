@@ -34,7 +34,7 @@ Item {
     readonly property var items: UiCatalog.hakuMenuThemeItems
 
     function labelFor(item) {
-        if (item && (item.statusEdgeSwitch || item.chromeKey === "taskbar") && typeof SettingsCoordinator !== "undefined" && SettingsCoordinator.runtimeError)
+        if (item && (item.shellLayoutSwitch || item.cavaPositionSwitch) && typeof SettingsCoordinator !== "undefined" && SettingsCoordinator.runtimeError)
             return item.label + " · " + SettingsCoordinator.runtimeError
         if (item && item.stateKind === "colorMode" && ShellSettingsStore.error)
             return item.label + " · " + ShellSettingsStore.error
@@ -45,13 +45,15 @@ Item {
 
     // Gate actions on settings IO and native chrome availability.
     function available(item) {
-        if (item.statusEdgeSwitch || item.chromeKey === "taskbar" && hikaiBackend)
+        if (item.shellLayoutSwitch)
             return ShellSettingsStore.ready && (typeof SettingsCoordinator !== "undefined" ? !SettingsCoordinator.busy : true)
+        if (item.cavaPositionSwitch)
+            return !AppState.cavaDynamicPosition && (typeof SettingsCoordinator !== "undefined" ? !SettingsCoordinator.busy : true)
         if (item.stateKind === "colorMode") return ShellSettingsStore.ready && !ShellSettingsStore.loading && !ShellSettingsStore.saving
         return item.chromeKey !== "dockbar" || (typeof ChromeLayout.statusBarMode !== "undefined" ? ChromeLayout.statusBarMode : true)
     }
     function chromeEnabled(item) {
-        return item.chromeKey === "taskbar" ? AppState.taskbarManualState : AppState.dockbarManualState
+        return AppState.dockbarManualState
     }
 
     function actionFor(item) {
@@ -75,7 +77,7 @@ Item {
         var previous = visibleItems[themeList.currentIndex]
         var rows = []
         for (var item of items) {
-            if (item.statusEdgeSwitch && (!hikaiBackend || ChromeLayout.taskbarMode)) continue
+            if ((item.shellLayoutSwitch || item.cavaPositionSwitch) && !hikaiBackend) continue
             if (matches(item)) rows.push(item)
         }
         visibleItems = rows
@@ -115,7 +117,7 @@ Item {
         themeList.positionViewAtIndex(next, ListView.Contain)
         syncSelectionLabel()
         var item = visibleItems[next]
-        if (item && (item.statusEdgeSwitch || item.chromeKey === "taskbar" || item.backendSwitch)) {
+        if (item && (item.shellLayoutSwitch || item.cavaPositionSwitch || item.backendSwitch)) {
             root.isLowerSectionActive = true
         } else {
             root.isLowerSectionActive = false
@@ -127,11 +129,22 @@ Item {
         if (index < 0 || index >= visibleItems.length) return
         var item = visibleItems[index]
         if (!item || !available(item)) return
-        if (item.statusEdgeSwitch || item.chromeKey === "taskbar" && hikaiBackend) {
-            var target = item.statusEdgeSwitch ? (ChromeLayout.leftBarMode ? "topbar" : "leftbar")
-                : ChromeLayout.taskbarMode ? (ShellSettingsStore.statusEdge === "left" ? "leftbar" : "topbar") : "taskbar"
+        if (item.shellLayoutSwitch && hikaiBackend) {
+            var currentLayout = ChromeLayout.taskbarMode ? "taskbar" : ChromeLayout.leftBarMode ? "leftbar" : "topbar"
+            var nextLayout = currentLayout === "topbar" ? "leftbar" : currentLayout === "leftbar" ? "taskbar" : "topbar"
             if (typeof SettingsCoordinator !== "undefined") {
-                SettingsCoordinator.set("layout", target)
+                SettingsCoordinator.set("layout", nextLayout)
+            }
+            root.launched(false)
+            return
+        }
+        if (item.cavaPositionSwitch && hikaiBackend) {
+            if (!AppState.cavaDynamicPosition) {
+                var currentPos = AppState.cavaPosition
+                var nextPos = currentPos === "top" ? "bottom" : currentPos === "bottom" ? "left" : currentPos === "left" ? "right" : "top"
+                if (typeof SettingsCoordinator !== "undefined") {
+                    SettingsCoordinator.set("cava-position", nextPos)
+                }
             }
             root.launched(false)
             return
@@ -256,7 +269,7 @@ Item {
             required property var modelData
             required property int index
             width: themeList.width
-            readonly property bool isSpecialOption: !!modelData && (modelData.statusEdgeSwitch === true || modelData.chromeKey === "taskbar")
+            readonly property bool isSpecialOption: !!modelData && (modelData.shellLayoutSwitch === true || modelData.cavaPositionSwitch === true)
             readonly property bool isBackendSwitch: !!modelData && modelData.backendSwitch === true
             readonly property bool isFullWidth: isSpecialOption || isBackendSwitch
             readonly property bool isBottomOption: isFullWidth
@@ -340,25 +353,25 @@ Item {
                 }
 
                 Item {
-                    id: statusEdgeTrack
-                    visible: rowWrap.modelData.statusEdgeSwitch === true
+                    id: shellLayoutTrack
+                    visible: rowWrap.modelData.shellLayoutSwitch === true
                     width: parent.width
                     height: Theme.comfortableControlHeight
 
                     readonly property real slotSpacing: Theme.spaceXs
-                    readonly property real slotWidth: Math.max(0, (width - slotSpacing) / 2)
-                    readonly property int activeIndex: ChromeLayout.leftBarMode ? 1 : 0
+                    readonly property real slotWidth: Math.max(0, (width - slotSpacing * 2) / 3)
+                    readonly property int activeIndex: ChromeLayout.taskbarMode ? 2 : ChromeLayout.leftBarMode ? 1 : 0
                     property int previewIndex: activeIndex
                     onActiveIndexChanged: {
-                        statusReturnTimer.stop()
+                        layoutReturnTimer.stop()
                         previewIndex = activeIndex
                     }
 
                     Timer {
-                        id: statusReturnTimer
+                        id: layoutReturnTimer
                         interval: 1000
                         repeat: false
-                        onTriggered: statusEdgeTrack.previewIndex = statusEdgeTrack.activeIndex
+                        onTriggered: shellLayoutTrack.previewIndex = shellLayoutTrack.activeIndex
                     }
 
                     HoverHandler {
@@ -372,15 +385,15 @@ Item {
                     }
 
                     Rectangle {
-                        id: statusPill
+                        id: layoutPill
                         z: 1
-                        x: statusEdgeTrack.previewIndex * (statusEdgeTrack.slotWidth + statusEdgeTrack.slotSpacing)
+                        x: shellLayoutTrack.previewIndex * (shellLayoutTrack.slotWidth + shellLayoutTrack.slotSpacing)
                         y: 0
-                        width: statusEdgeTrack.slotWidth
+                        width: shellLayoutTrack.slotWidth
                         height: parent.height
                         radius: 8
                         color: Theme.accent
-                        readonly property bool isPreviewing: statusEdgeTrack.previewIndex !== statusEdgeTrack.activeIndex
+                        readonly property bool isPreviewing: shellLayoutTrack.previewIndex !== shellLayoutTrack.activeIndex
                         opacity: isPreviewing ? 0.5 : 1.0
 
                         Behavior on x {
@@ -405,17 +418,17 @@ Item {
                         z: 2
                         x: 0
                         y: 0
-                        width: statusEdgeTrack.slotWidth
+                        width: shellLayoutTrack.slotWidth
                         height: parent.height
                         radius: 8
                         enabled: root.available(rowWrap.modelData)
-                        opacity: enabled ? 1 : 0.45
                         text: "Topbar"
                         idleColor: "transparent"
                         hoverColor: "transparent"
                         pressedColor: "transparent"
                         selectedColor: "transparent"
-                        foregroundColor: statusEdgeTrack.previewIndex === 0 ? Theme.onAccentColor : Theme.fgMuted
+                        foregroundColor: shellLayoutTrack.previewIndex === 0 ? Theme.onAccentColor : Theme.fgMuted
+                        disabledForegroundColor: shellLayoutTrack.previewIndex === 0 ? Theme.onAccentColor : Theme.fgMuted
                         hoverForegroundColor: Theme.onAccentColor
                         selectedForegroundColor: Theme.onAccentColor
                         onHoveredChanged: {
@@ -423,19 +436,19 @@ Item {
                                 root.isLowerSectionActive = true
                                 themeList.currentIndex = rowWrap.index
                                 root.syncSelectionLabel()
-                                statusReturnTimer.stop()
-                                statusEdgeTrack.previewIndex = 0
-                            } else if (!leftbarBtn.hovered) {
-                                if (statusEdgeTrack.previewIndex !== statusEdgeTrack.activeIndex) {
-                                    statusReturnTimer.restart()
+                                layoutReturnTimer.stop()
+                                shellLayoutTrack.previewIndex = 0
+                            } else if (!leftbarBtn.hovered && !taskbarBtn.hovered) {
+                                if (shellLayoutTrack.previewIndex !== shellLayoutTrack.activeIndex) {
+                                    layoutReturnTimer.restart()
                                 }
                             }
                         }
                         onClicked: {
-                            statusReturnTimer.stop()
+                            layoutReturnTimer.stop()
                             themeList.currentIndex = rowWrap.index
                             root.syncSelectionLabel()
-                            if (ChromeLayout.leftBarMode && typeof SettingsCoordinator !== "undefined") {
+                            if (typeof SettingsCoordinator !== "undefined") {
                                 SettingsCoordinator.set("layout", "topbar")
                             }
                             root.launched(false)
@@ -445,19 +458,19 @@ Item {
                     Motion.MorphButton {
                         id: leftbarBtn
                         z: 2
-                        x: statusEdgeTrack.slotWidth + statusEdgeTrack.slotSpacing
+                        x: shellLayoutTrack.slotWidth + shellLayoutTrack.slotSpacing
                         y: 0
-                        width: statusEdgeTrack.slotWidth
+                        width: shellLayoutTrack.slotWidth
                         height: parent.height
                         radius: 8
                         enabled: root.available(rowWrap.modelData)
-                        opacity: enabled ? 1 : 0.45
                         text: "Leftbar"
                         idleColor: "transparent"
                         hoverColor: "transparent"
                         pressedColor: "transparent"
                         selectedColor: "transparent"
-                        foregroundColor: statusEdgeTrack.previewIndex === 1 ? Theme.onAccentColor : Theme.fgMuted
+                        foregroundColor: shellLayoutTrack.previewIndex === 1 ? Theme.onAccentColor : Theme.fgMuted
+                        disabledForegroundColor: shellLayoutTrack.previewIndex === 1 ? Theme.onAccentColor : Theme.fgMuted
                         hoverForegroundColor: Theme.onAccentColor
                         selectedForegroundColor: Theme.onAccentColor
                         onHoveredChanged: {
@@ -465,20 +478,62 @@ Item {
                                 root.isLowerSectionActive = true
                                 themeList.currentIndex = rowWrap.index
                                 root.syncSelectionLabel()
-                                statusReturnTimer.stop()
-                                statusEdgeTrack.previewIndex = 1
-                            } else if (!topbarBtn.hovered) {
-                                if (statusEdgeTrack.previewIndex !== statusEdgeTrack.activeIndex) {
-                                    statusReturnTimer.restart()
+                                layoutReturnTimer.stop()
+                                shellLayoutTrack.previewIndex = 1
+                            } else if (!topbarBtn.hovered && !taskbarBtn.hovered) {
+                                if (shellLayoutTrack.previewIndex !== shellLayoutTrack.activeIndex) {
+                                    layoutReturnTimer.restart()
                                 }
                             }
                         }
                         onClicked: {
-                            statusReturnTimer.stop()
+                            layoutReturnTimer.stop()
                             themeList.currentIndex = rowWrap.index
                             root.syncSelectionLabel()
-                            if (!ChromeLayout.leftBarMode && typeof SettingsCoordinator !== "undefined") {
+                            if (typeof SettingsCoordinator !== "undefined") {
                                 SettingsCoordinator.set("layout", "leftbar")
+                            }
+                            root.launched(false)
+                        }
+                    }
+
+                    Motion.MorphButton {
+                        id: taskbarBtn
+                        z: 2
+                        x: (shellLayoutTrack.slotWidth + shellLayoutTrack.slotSpacing) * 2
+                        y: 0
+                        width: shellLayoutTrack.slotWidth
+                        height: parent.height
+                        radius: 8
+                        enabled: root.available(rowWrap.modelData)
+                        text: "Taskbar"
+                        idleColor: "transparent"
+                        hoverColor: "transparent"
+                        pressedColor: "transparent"
+                        selectedColor: "transparent"
+                        foregroundColor: shellLayoutTrack.previewIndex === 2 ? Theme.onAccentColor : Theme.fgMuted
+                        disabledForegroundColor: shellLayoutTrack.previewIndex === 2 ? Theme.onAccentColor : Theme.fgMuted
+                        hoverForegroundColor: Theme.onAccentColor
+                        selectedForegroundColor: Theme.onAccentColor
+                        onHoveredChanged: {
+                            if (hovered) {
+                                root.isLowerSectionActive = true
+                                themeList.currentIndex = rowWrap.index
+                                root.syncSelectionLabel()
+                                layoutReturnTimer.stop()
+                                shellLayoutTrack.previewIndex = 2
+                            } else if (!topbarBtn.hovered && !leftbarBtn.hovered) {
+                                if (shellLayoutTrack.previewIndex !== shellLayoutTrack.activeIndex) {
+                                    layoutReturnTimer.restart()
+                                }
+                            }
+                        }
+                        onClicked: {
+                            layoutReturnTimer.stop()
+                            themeList.currentIndex = rowWrap.index
+                            root.syncSelectionLabel()
+                            if (typeof SettingsCoordinator !== "undefined") {
+                                SettingsCoordinator.set("layout", "taskbar")
                             }
                             root.launched(false)
                         }
@@ -486,28 +541,39 @@ Item {
                 }
 
                 Item {
-                    id: taskbarTrack
-                    visible: rowWrap.modelData.chromeKey === "taskbar"
+                    id: cavaPositionTrack
+                    visible: rowWrap.modelData.cavaPositionSwitch === true
                     width: parent.width
                     height: Theme.comfortableControlHeight
 
+                    readonly property bool isLocked: AppState.cavaDynamicPosition
+                    opacity: isLocked ? 0.5 : 1.0
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: root.bottomMorphDuration
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: root.bounceCurve
+                        }
+                    }
+
                     readonly property real slotSpacing: Theme.spaceXs
-                    readonly property real slotWidth: Math.max(0, (width - slotSpacing) / 2)
-                    readonly property int activeIndex: ChromeLayout.taskbarMode ? 1 : 0
+                    readonly property real slotWidth: Math.max(0, (width - slotSpacing * 3) / 4)
+                    readonly property int activeIndex: AppState.cavaPosition === "bottom" ? 1 : AppState.cavaPosition === "left" ? 2 : AppState.cavaPosition === "right" ? 3 : 0
                     property int previewIndex: activeIndex
                     onActiveIndexChanged: {
-                        taskbarReturnTimer.stop()
+                        cavaPosReturnTimer.stop()
                         previewIndex = activeIndex
                     }
 
                     Timer {
-                        id: taskbarReturnTimer
+                        id: cavaPosReturnTimer
                         interval: 1000
                         repeat: false
-                        onTriggered: taskbarTrack.previewIndex = taskbarTrack.activeIndex
+                        onTriggered: cavaPositionTrack.previewIndex = cavaPositionTrack.activeIndex
                     }
 
                     HoverHandler {
+                        enabled: !cavaPositionTrack.isLocked
                         onHoveredChanged: {
                             if (hovered) {
                                 root.isLowerSectionActive = true
@@ -518,15 +584,15 @@ Item {
                     }
 
                     Rectangle {
-                        id: taskbarPill
+                        id: cavaPosPill
                         z: 1
-                        x: taskbarTrack.previewIndex * (taskbarTrack.slotWidth + taskbarTrack.slotSpacing)
+                        x: cavaPositionTrack.previewIndex * (cavaPositionTrack.slotWidth + cavaPositionTrack.slotSpacing)
                         y: 0
-                        width: taskbarTrack.slotWidth
+                        width: cavaPositionTrack.slotWidth
                         height: parent.height
                         radius: 8
                         color: Theme.accent
-                        readonly property bool isPreviewing: taskbarTrack.previewIndex !== taskbarTrack.activeIndex
+                        readonly property bool isPreviewing: cavaPositionTrack.previewIndex !== cavaPositionTrack.activeIndex
                         opacity: isPreviewing ? 0.5 : 1.0
 
                         Behavior on x {
@@ -547,84 +613,174 @@ Item {
                     }
 
                     Motion.MorphButton {
-                        id: offBtn
+                        id: topPosBtn
                         z: 2
                         x: 0
                         y: 0
-                        width: taskbarTrack.slotWidth
+                        width: cavaPositionTrack.slotWidth
                         height: parent.height
                         radius: 8
-                        enabled: root.available(rowWrap.modelData)
-                        opacity: enabled ? 1 : 0.45
-                        text: "Off"
+                        enabled: !cavaPositionTrack.isLocked && root.available(rowWrap.modelData)
+                        disabledOpacity: 1.0
+                        text: "Top"
                         idleColor: "transparent"
                         hoverColor: "transparent"
                         pressedColor: "transparent"
                         selectedColor: "transparent"
-                        foregroundColor: taskbarTrack.previewIndex === 0 ? Theme.onAccentColor : Theme.fgMuted
+                        foregroundColor: cavaPositionTrack.previewIndex === 0 ? Theme.onAccentColor : Theme.fgMuted
+                        disabledForegroundColor: cavaPositionTrack.previewIndex === 0 ? Theme.onAccentColor : Theme.fgMuted
                         hoverForegroundColor: Theme.onAccentColor
                         selectedForegroundColor: Theme.onAccentColor
                         onHoveredChanged: {
-                            if (hovered) {
+                            if (hovered && enabled) {
                                 root.isLowerSectionActive = true
                                 themeList.currentIndex = rowWrap.index
                                 root.syncSelectionLabel()
-                                taskbarReturnTimer.stop()
-                                taskbarTrack.previewIndex = 0
-                            } else if (!onBtn.hovered) {
-                                if (taskbarTrack.previewIndex !== taskbarTrack.activeIndex) {
-                                    taskbarReturnTimer.restart()
+                                cavaPosReturnTimer.stop()
+                                cavaPositionTrack.previewIndex = 0
+                            } else if (!bottomPosBtn.hovered && !leftPosBtn.hovered && !rightPosBtn.hovered) {
+                                if (cavaPositionTrack.previewIndex !== cavaPositionTrack.activeIndex) {
+                                    cavaPosReturnTimer.restart()
                                 }
                             }
                         }
                         onClicked: {
-                            taskbarReturnTimer.stop()
+                            cavaPosReturnTimer.stop()
                             themeList.currentIndex = rowWrap.index
                             root.syncSelectionLabel()
-                            if (ChromeLayout.taskbarMode) {
-                                root.activateIndex(rowWrap.index)
+                            if (typeof SettingsCoordinator !== "undefined") {
+                                SettingsCoordinator.set("cava-position", "top")
                             }
+                            root.launched(false)
                         }
                     }
 
                     Motion.MorphButton {
-                        id: onBtn
+                        id: bottomPosBtn
                         z: 2
-                        x: taskbarTrack.slotWidth + taskbarTrack.slotSpacing
+                        x: cavaPositionTrack.slotWidth + cavaPositionTrack.slotSpacing
                         y: 0
-                        width: taskbarTrack.slotWidth
+                        width: cavaPositionTrack.slotWidth
                         height: parent.height
                         radius: 8
-                        enabled: root.available(rowWrap.modelData)
-                        opacity: enabled ? 1 : 0.45
-                        text: "On"
+                        enabled: !cavaPositionTrack.isLocked && root.available(rowWrap.modelData)
+                        disabledOpacity: 1.0
+                        text: "Bottom"
                         idleColor: "transparent"
                         hoverColor: "transparent"
                         pressedColor: "transparent"
                         selectedColor: "transparent"
-                        foregroundColor: taskbarTrack.previewIndex === 1 ? Theme.onAccentColor : Theme.fgMuted
+                        foregroundColor: cavaPositionTrack.previewIndex === 1 ? Theme.onAccentColor : Theme.fgMuted
+                        disabledForegroundColor: cavaPositionTrack.previewIndex === 1 ? Theme.onAccentColor : Theme.fgMuted
                         hoverForegroundColor: Theme.onAccentColor
                         selectedForegroundColor: Theme.onAccentColor
                         onHoveredChanged: {
-                            if (hovered) {
+                            if (hovered && enabled) {
                                 root.isLowerSectionActive = true
                                 themeList.currentIndex = rowWrap.index
                                 root.syncSelectionLabel()
-                                taskbarReturnTimer.stop()
-                                taskbarTrack.previewIndex = 1
-                            } else if (!offBtn.hovered) {
-                                if (taskbarTrack.previewIndex !== taskbarTrack.activeIndex) {
-                                    taskbarReturnTimer.restart()
+                                cavaPosReturnTimer.stop()
+                                cavaPositionTrack.previewIndex = 1
+                            } else if (!topPosBtn.hovered && !leftPosBtn.hovered && !rightPosBtn.hovered) {
+                                if (cavaPositionTrack.previewIndex !== cavaPositionTrack.activeIndex) {
+                                    cavaPosReturnTimer.restart()
                                 }
                             }
                         }
                         onClicked: {
-                            taskbarReturnTimer.stop()
+                            cavaPosReturnTimer.stop()
                             themeList.currentIndex = rowWrap.index
                             root.syncSelectionLabel()
-                            if (!ChromeLayout.taskbarMode) {
-                                root.activateIndex(rowWrap.index)
+                            if (typeof SettingsCoordinator !== "undefined") {
+                                SettingsCoordinator.set("cava-position", "bottom")
                             }
+                            root.launched(false)
+                        }
+                    }
+
+                    Motion.MorphButton {
+                        id: leftPosBtn
+                        z: 2
+                        x: (cavaPositionTrack.slotWidth + cavaPositionTrack.slotSpacing) * 2
+                        y: 0
+                        width: cavaPositionTrack.slotWidth
+                        height: parent.height
+                        radius: 8
+                        enabled: !cavaPositionTrack.isLocked && root.available(rowWrap.modelData)
+                        disabledOpacity: 1.0
+                        text: "Left"
+                        idleColor: "transparent"
+                        hoverColor: "transparent"
+                        pressedColor: "transparent"
+                        selectedColor: "transparent"
+                        foregroundColor: cavaPositionTrack.previewIndex === 2 ? Theme.onAccentColor : Theme.fgMuted
+                        disabledForegroundColor: cavaPositionTrack.previewIndex === 2 ? Theme.onAccentColor : Theme.fgMuted
+                        hoverForegroundColor: Theme.onAccentColor
+                        selectedForegroundColor: Theme.onAccentColor
+                        onHoveredChanged: {
+                            if (hovered && enabled) {
+                                root.isLowerSectionActive = true
+                                themeList.currentIndex = rowWrap.index
+                                root.syncSelectionLabel()
+                                cavaPosReturnTimer.stop()
+                                cavaPositionTrack.previewIndex = 2
+                            } else if (!topPosBtn.hovered && !bottomPosBtn.hovered && !rightPosBtn.hovered) {
+                                if (cavaPositionTrack.previewIndex !== cavaPositionTrack.activeIndex) {
+                                    cavaPosReturnTimer.restart()
+                                }
+                            }
+                        }
+                        onClicked: {
+                            cavaPosReturnTimer.stop()
+                            themeList.currentIndex = rowWrap.index
+                            root.syncSelectionLabel()
+                            if (typeof SettingsCoordinator !== "undefined") {
+                                SettingsCoordinator.set("cava-position", "left")
+                            }
+                            root.launched(false)
+                        }
+                    }
+
+                    Motion.MorphButton {
+                        id: rightPosBtn
+                        z: 2
+                        x: (cavaPositionTrack.slotWidth + cavaPositionTrack.slotSpacing) * 3
+                        y: 0
+                        width: cavaPositionTrack.slotWidth
+                        height: parent.height
+                        radius: 8
+                        enabled: !cavaPositionTrack.isLocked && root.available(rowWrap.modelData)
+                        disabledOpacity: 1.0
+                        text: "Right"
+                        idleColor: "transparent"
+                        hoverColor: "transparent"
+                        pressedColor: "transparent"
+                        selectedColor: "transparent"
+                        foregroundColor: cavaPositionTrack.previewIndex === 3 ? Theme.onAccentColor : Theme.fgMuted
+                        disabledForegroundColor: cavaPositionTrack.previewIndex === 3 ? Theme.onAccentColor : Theme.fgMuted
+                        hoverForegroundColor: Theme.onAccentColor
+                        selectedForegroundColor: Theme.onAccentColor
+                        onHoveredChanged: {
+                            if (hovered && enabled) {
+                                root.isLowerSectionActive = true
+                                themeList.currentIndex = rowWrap.index
+                                root.syncSelectionLabel()
+                                cavaPosReturnTimer.stop()
+                                cavaPositionTrack.previewIndex = 3
+                            } else if (!topPosBtn.hovered && !bottomPosBtn.hovered && !leftPosBtn.hovered) {
+                                if (cavaPositionTrack.previewIndex !== cavaPositionTrack.activeIndex) {
+                                    cavaPosReturnTimer.restart()
+                                }
+                            }
+                        }
+                        onClicked: {
+                            cavaPosReturnTimer.stop()
+                            themeList.currentIndex = rowWrap.index
+                            root.syncSelectionLabel()
+                            if (typeof SettingsCoordinator !== "undefined") {
+                                SettingsCoordinator.set("cava-position", "right")
+                            }
+                            root.launched(false)
                         }
                     }
                 }

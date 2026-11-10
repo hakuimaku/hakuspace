@@ -49,7 +49,7 @@ QtObject {
         if (!saved && Object.prototype.hasOwnProperty.call(runtimePending, id)) return runtimePending[id]
         return ({layout: AppState.taskbarManualState ? "taskbar" : ShellSettingsStore.statusEdge === "left" ? "leftbar" : "topbar", dockbar: AppState.dockbarManualState,
             cava: AppState.cavaLayerState, "cava-color": AppState.cavaColorMode, "cava-dynamic": AppState.cavaDynamicPosition,
-            "cava-position": AppState.cavaTopState ? "top" : "bottom", "cava-height": AppState.cavaHeight,
+            "cava-position": AppState.cavaPosition, "cava-height": AppState.cavaHeight,
             "idle-keep-awake": AppState.idleInhibited})[id]
     }
     // Compare presentation paths without changing their stored spelling.
@@ -158,7 +158,7 @@ QtObject {
         else if (id === "cava") AppState.cavaLayerState = value
         else if (id === "cava-color") AppState.cavaColorMode = value
         else if (id === "cava-dynamic") AppState.cavaDynamicPosition = value
-        else if (id === "cava-position") AppState.cavaTopState = value === "top"
+        else if (id === "cava-position") AppState.cavaPosition = value
         else if (id === "cava-height") AppState.cavaHeight = value
         else if (id === "idle-keep-awake") { AppState.idleInhibited = value; IdleService.refreshInhibit() }
     }

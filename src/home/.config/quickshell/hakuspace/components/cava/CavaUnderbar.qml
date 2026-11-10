@@ -6,10 +6,16 @@ Item {
 
     property string style: CavaService.style
     property var screen: null
+    readonly property string position: CavaService.position
+    readonly property bool isVertical: position === "left" || position === "right"
 
     Loader {
         id: loader
-        anchors.fill: parent
+        anchors.centerIn: root.isVertical ? parent : undefined
+        anchors.fill: root.isVertical ? undefined : parent
+        width: root.isVertical ? parent.height : undefined
+        height: root.isVertical ? parent.width : undefined
+        rotation: root.position === "left" ? -90 : root.position === "right" ? 90 : 0
         sourceComponent: root.style === "capsule" ? capsuleComponent : liquidComponent
     }
 
