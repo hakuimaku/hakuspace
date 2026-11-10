@@ -58,10 +58,10 @@ QtObject {
     readonly property color workspaceDot: isLight ? Design.workspaceDotLight : Design.workspaceDotDark
     
     // Preserve the generated baseline with one shell-owned radius family.
-    readonly property int radius: ShellSettingsStore.baseRadius
-    readonly property int largeRadius: radius + Design.largeRadiusOffset
-    readonly property int hugRadius: radius + Design.hugRadiusOffset
-    readonly property int giantRadius: radius + Design.giantRadiusOffset
+    readonly property int radius: Math.round(ShellSettingsStore.baseRadius * Design.radiusFactor)
+    readonly property int largeRadius: Math.round(radius * Design.largeRadiusFactor)
+    readonly property int hugRadius: Math.round(radius * Design.hugRadiusFactor)
+    readonly property int giantRadius: Math.round(radius * Design.giantRadiusFactor)
     property int borderWidth: Design.defaultBorderWidth
     property int gap: Design.defaultGap
     property int pad: Design.defaultPad

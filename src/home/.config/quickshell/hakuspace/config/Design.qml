@@ -152,14 +152,22 @@ QtObject {
     // Opacity for scrollbarHover.
     readonly property real scrollbarHoverOpacity: 0.7
 
-    // Offset from the runtime base radius.
-    readonly property int largeRadiusOffset: 4
+    // Scale factor from the runtime base radius.
+    readonly property real radiusFactor: 1.0
 
-    // Offset from the runtime base radius.
-    readonly property int hugRadiusOffset: 16
+    // Scale factor from the runtime base radius.
+    readonly property real largeRadiusFactor: 4 / 3
 
-    // Offset from the runtime base radius.
-    readonly property int giantRadiusOffset: 36
+    // Scale factor from the runtime base radius.
+    readonly property real hugRadiusFactor: 7 / 3
+
+    // Scale factor from the runtime base radius.
+    readonly property real giantRadiusFactor: 4.0
+
+    // Backward-compatible aliases for radius factors.
+    readonly property real largeRadiusOffset: largeRadiusFactor
+    readonly property real hugRadiusOffset: hugRadiusFactor
+    readonly property real giantRadiusOffset: giantRadiusFactor
 
     // Shared shellTransitionBlack token.
     readonly property color shellTransitionBlack: "#000000"
