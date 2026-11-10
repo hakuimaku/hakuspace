@@ -15,6 +15,8 @@ Item {
     property real r: Theme.largeRadius + 8
     property real rf: Theme.hugRadius
     property real bottomRadius: r
+    property real bottomStartRadiusOverride: -1
+    property real bottomEndRadiusOverride: -1
     property color surfaceColor: Theme.surface
     // Cover the antialiased join at fractional body coordinates without moving the outer curve.
     readonly property real seamOverlap: 2
@@ -31,8 +33,12 @@ Item {
         return t * t * (3 - 2 * t); // smoothstep
     }
     // Keep each ear above the body's rounded bottom, including short tooltip bodies.
-    readonly property real bottomStartRadius: Math.max(0, Math.min(bottomRadius * factors.kS, currentHeight / 2, (end - start) / 2))
-    readonly property real bottomEndRadius: Math.max(0, Math.min(bottomRadius * factors.kE, currentHeight / 2, (end - start) / 2))
+    readonly property real bottomStartRadius: bottomStartRadiusOverride >= 0
+        ? bottomStartRadiusOverride
+        : Math.max(0, Math.min(bottomRadius * factors.kS, currentHeight / 2, (end - start) / 2))
+    readonly property real bottomEndRadius: bottomEndRadiusOverride >= 0
+        ? bottomEndRadiusOverride
+        : Math.max(0, Math.min(bottomRadius * factors.kE, currentHeight / 2, (end - start) / 2))
     readonly property real earStartRadius: Math.max(0, Math.min(r * factors.kS * earMorphProgress, currentHeight - bottomStartRadius))
     readonly property real earEndRadius: Math.max(0, Math.min(r * factors.kE * earMorphProgress, currentHeight - bottomEndRadius))
 

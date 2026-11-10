@@ -194,13 +194,15 @@ Item {
     readonly property real sidebarBodyY: sidebarRail.y
     readonly property real sidebarEarWidth: Math.max(32, Math.round(flareReach * 1.5))
     readonly property real sidebarEarRadius: sidebarEarWidth + Theme.giantRadius * 2
+    readonly property real sidebarRailThickness: horizontalSidebar ? sidebarBodyHeight : sidebarBodyWidth
+    readonly property real sidebarRailOrigin: horizontalSidebar ? sidebarBodyX : sidebarBodyY
 
     // Keep the ear tip inside Navigation's rounded contour as its width grows.
     readonly property real sidebarJoinRadius: Math.max(0, Math.min(backingCurveRadius,
         (surfaceEnd - surfaceStart) / 2, flareTargetHeight / 2))
     readonly property real sidebarJoinInset: Math.min(sidebarJoinRadius,
-        Math.max(0, sidebarBodyWidth + sidebarEarWidth - surfaceEnd + sidebarJoinRadius))
-    readonly property real sidebarTopFlareY: Math.max(0, surfaceHeight - sidebarBodyY - sidebarJoinRadius
+        Math.max(0, sidebarRailThickness + sidebarEarWidth - surfaceEnd + sidebarJoinRadius))
+    readonly property real sidebarTopFlareY: Math.max(0, surfaceHeight - sidebarRailOrigin - sidebarJoinRadius
         + Math.sqrt(Math.max(0, sidebarJoinRadius * sidebarJoinRadius - sidebarJoinInset * sidebarJoinInset)))
 
     // Bridge connects the lower-left radial sector to the sidebar body:
@@ -246,9 +248,11 @@ Item {
         var rail = sidebarInteractionVisible ? SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
             railVisual, margin),
             modelData.width, modelData.height) : empty
-        var ear = sidebarInteractionVisible && !horizontalSidebar ? SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
-            SafeZoneGeometry.rect(sidebarBodyWidth, sidebarBodyY + sidebarTopFlareY,
-                                  sidebarEarWidth, sidebarEarRadius), margin / 2),
+        var ear = sidebarInteractionVisible ? SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
+            horizontalSidebar
+                ? SafeZoneGeometry.rect(sidebarBodyX + sidebarTopFlareY, sidebarBodyHeight, sidebarEarRadius, sidebarEarWidth)
+                : SafeZoneGeometry.rect(sidebarBodyWidth, sidebarBodyY + sidebarTopFlareY, sidebarEarWidth, sidebarEarRadius),
+            margin / 2),
             modelData.width, modelData.height) : empty
         var toolVisual = sidebarToolVisible ? SafeZoneGeometry.rect(sidebarToolX, sidebarToolY,
             sidebarToolLayer.interactionWidth, sidebarToolLayer.interactionHeight) : empty
@@ -883,27 +887,18 @@ Item {
                      : Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35))
             visible: !root.hasFullscreen && (root.panelOpen || root.closing) && opacity > 0.001
         }
-        Flare.FlareSurface {
-            visible: !root.hasFullscreen && root.horizontalSidebar && sidebarSurface.visible && (root.panelOpen || root.closing)
-            x: root.sidebarBodyX
-            y: root.sidebarBodyY
-            start: 0
-            end: root.sidebarBodyHeight
-            currentHeight: sidebarSurface.currentHeight
-            bounds: ({start: 0, end: root.modelData.height})
-            transform: Matrix4x4 { matrix: Qt.matrix4x4(0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1) }
-            surfaceColor: Theme.surface
-        }
         Sidebar.SidebarFlareSurface {
             x: root.sidebarBodyX
-            y: root.mapY(root.sidebarBodyY, 0)
-            transform: Scale { yScale: ScreenGeometry.bottomAttached ? -1 : 1 }
-            visible: !root.hasFullscreen && !root.horizontalSidebar && sidebarSurface.visible && (root.panelOpen || root.closing)
+            y: root.horizontalSidebar ? root.sidebarBodyY : root.mapY(root.sidebarBodyY, 0)
+            transform: Scale { yScale: (!root.horizontalSidebar && ScreenGeometry.bottomAttached) ? -1 : 1 }
+            visible: !root.hasFullscreen && sidebarSurface.visible && (root.panelOpen || root.closing)
+            horizontal: root.horizontalSidebar
             bodyWidth: sidebarSurface.bodyWidth
+            bodyHeight: sidebarSurface.bodyHeight
             currentHeight: sidebarSurface.currentHeight
             morphProgress: sidebarSurface.morphProgress
             rf: sidebarSurface.rf
-            sideInset: sidebarSurface.sideInset
+            sideInset: root.leftAttached ? ScreenGeometry.topBorderThickness : sidebarSurface.sideInset
             topFlareY: sidebarSurface.topFlareY
             earWidth: sidebarSurface.earWidth
             earRadius: sidebarSurface.earRadius
@@ -1137,6 +1132,9 @@ Item {
                 circleRadius: root.circleRadius
                 circleDiameter: root.circleDiameter
                 sideInset: root.sideInset
+                leftAttached: root.leftAttached
+                leftSeam: root.leftSeam
+                screenName: root.modelData.name
                 attachmentY: root.logicalAttachmentY
                 bottomAttached: ScreenGeometry.bottomAttached
                 attachmentSeam: root.attachmentY

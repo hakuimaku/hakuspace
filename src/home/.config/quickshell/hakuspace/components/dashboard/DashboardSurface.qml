@@ -17,6 +17,9 @@ Item {
     property real sideInset: ScreenGeometry.leftInset
     property real attachmentY: Theme.topBarHeight
     property bool bottomAttached: false
+    property bool leftAttached: false
+    property real leftSeam: ScreenGeometry.leftChromeWidth
+    property string screenName: ""
     property real attachmentSeam: ScreenGeometry.chromeAttachmentY(screenHeight)
     // Keep every Dashboard child in one upright plane inside the Flare body.
     readonly property real contentOriginY: bottomAttached
@@ -191,6 +194,9 @@ Item {
     DashboardFlareSurface {
         id: flareShell
         y: root.bottomAttached ? root.attachmentSeam : 0
+        leftAttached: root.leftAttached
+        leftSeam: root.leftSeam
+        screenName: root.screenName
         bottomAttached: root.bottomAttached
         bodyWidth: root.currentEnvelopeWidth
         bodyHeight: root.currentEnvelopeHeight
@@ -202,6 +208,7 @@ Item {
         screenHeight: root.screenHeight
         surfaceColor: Theme.surface
         cornerRadius: root.cornerRadius + 8
+        morphProgress: root.morphProgress
         z: 1
     }
 
