@@ -71,29 +71,18 @@ TopModule {
     tooltip: ""
     implicitWidth: visible ? (vertical ? dot : totalWidth) + Theme.pad * 2 : 0
     implicitHeight: vertical ? totalWidth + Theme.pad * 2 : Theme.fontSize * 1.8
-    onVerticalChanged: retargetTimer.restart()
-    onActiveIdxChanged: retargetTimer.restart()
-    onItemsChanged: retargetTimer.restart()
-    onScreenNameChanged: retargetTimer.restart()
-
-    Timer {
-        id: retargetTimer
-
-        interval: 10
-        running: false
-        onTriggered: {
-            if (indicator)
-                indicator.retarget();
-
-        }
-    }
+    onVerticalChanged: Qt.callLater(indicator.retarget)
+    onActiveIdxChanged: Qt.callLater(indicator.retarget)
+    onItemsChanged: Qt.callLater(indicator.retarget)
+    onScreenNameChanged: Qt.callLater(indicator.retarget)
 
     Item {
         id: container
 
+        x: root.vertical ? (root.width - width) / 2 : Theme.pad
+        y: root.vertical ? (root.height - height) / 2 : (root.height - height) / 2
         width: root.vertical ? root.width : root.totalWidth
         height: root.vertical ? root.totalWidth : root.dot
-        anchors.centerIn: parent
 
         Repeater {
             model: root.items.length
@@ -284,16 +273,6 @@ TopModule {
                 easing.bezierCurve: HAnimation.spatialCurve
             }
 
-        }
-
-    }
-
-    // Animates Workspaces module width when workspace list changes.
-    Behavior on implicitWidth {
-        NumberAnimation {
-            duration: HAnimation.spatial
-            easing.type: Easing.BezierSpline
-            easing.bezierCurve: HAnimation.spatialCurve
         }
 
     }
