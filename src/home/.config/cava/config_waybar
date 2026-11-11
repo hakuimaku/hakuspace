@@ -2,6 +2,7 @@
 bars = 12
 autosens = 1
 sensitivity = 100
+framerate = 30
 
 [input]
 method = pipewire

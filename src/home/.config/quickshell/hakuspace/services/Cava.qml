@@ -30,8 +30,9 @@ QtObject {
         }
     }
 
-    // Run cava while a player is active in either the media center mode OR requested by Dashboard.
-    readonly property bool shouldRun: Media.playing && available && (CenterState.baseMode === "media" || dashboardRequested)
+    // Run cava while a player is active in either the media center mode (if TopBar Cava is enabled) OR requested by Dashboard.
+    readonly property bool topbarRequested: ShellSettingsStore.showCava && CenterState.baseMode === "media"
+    readonly property bool shouldRun: Media.playing && Media.title !== "" && available && (topbarRequested || dashboardRequested)
     property bool stoppingForPolicy: false
 
     // Resets active sound detection flags and pending silence timers.
@@ -61,12 +62,8 @@ QtObject {
             bars = ""
             levels = []
             resetSoundDetection()
-            if (audioVisible && Media.available && CenterState.centerMode === "media" && !Media.playing)
-                hideTimer.restart()
-            else {
-                hideTimer.stop()
-                audioVisible = false
-            }
+            hideTimer.stop()
+            audioVisible = false
             if (process.running) {
                 stoppingForPolicy = true
                 process.running = false
@@ -83,9 +80,9 @@ QtObject {
         syncProcess()
     }
 
-    // Require sustained sound (3 seconds) before revealing TopBar visualizer
+    // Sustained sound (700ms) before revealing TopBar visualizer to ensure musical start
     property Timer showTimer: Timer {
-        interval: 3000
+        interval: 700
         repeat: false
         onTriggered: {
             if (root.shouldRun && root.soundPresent)
@@ -93,16 +90,19 @@ QtObject {
         }
     }
 
-    // Only consider silence real if it persists for 1.5 seconds continuously
+    // Retract visualizer if silence persists for 1.2 seconds continuously
     property Timer silenceTimer: Timer {
-        interval: 1500
+        interval: 1200
         repeat: false
-        onTriggered: root.resetSoundDetection()
+        onTriggered: {
+            root.soundPresent = false
+            root.audioVisible = false
+        }
     }
 
-    // Keep visualizer visible across 5 seconds of pause to prevent abrupt toggling
+    // Keep visualizer visible across pause transition to prevent abrupt toggling
     property Timer hideTimer: Timer {
-        interval: 5000
+        interval: 300
         repeat: false
         onTriggered: {
             if (!root.shouldRun) root.audioVisible = false
@@ -133,7 +133,9 @@ QtObject {
         stdout: SplitParser {
             onRead: data => {
                 if (!root.shouldRun) return
-                var values = data.trim().split(";").filter(value => value !== "")
+                var trimmed = data.trim()
+                if (trimmed.length === 0) return
+                var values = trimmed.split(";")
                 if (values.length < root.barCount) return
                 var glyphLevels = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
                 var output = ""
@@ -151,6 +153,9 @@ QtObject {
                     numericLevels.push(norm)
                     var index = Math.max(0, Math.min(7, Math.floor(norm * 7)))
                     output += glyphLevels[index]
+                }
+                if (peak === 0 && !root.soundPresent && root.bars === "") {
+                    return
                 }
                 root.bars = output
                 root.levels = numericLevels

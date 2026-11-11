@@ -17,8 +17,9 @@ DEFAULTS = {
     "roundedScreen": {"radius": 20, "borderThickness": 4},
     "dock": {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 36,
              "hoverLift": 14, "hoverScale": 0, "showTrash": True, "showDevices": True},
-    "topbar": dict.fromkeys(("workspaces", "windowTitle", "center", "cava", "tray",
-                             "quickControls", "powerProfile", "wallpaperWorkspace", "recorder", "clock", "notifications"), True),
+    "topbar": {**dict.fromkeys(("workspaces", "windowTitle", "center", "cava", "tray",
+                               "quickControls", "powerProfile", "wallpaperWorkspace", "recorder", "clock", "notifications"), True),
+               "cavaStyle": "box"},
     "idle": {"enabled": True, "dimEnabled": True, "dimTimeout": 300, "dimPercent": 10,
              "lockEnabled": True, "lockTimeout": 30, "displayOffEnabled": True,
              "displayOffTimeout": 30, "suspendEnabled": True, "suspendTimeout": 300,
@@ -62,7 +63,10 @@ def validate(values, partial=False):
                 else:
                     valid = type(value) is int and 0 <= value <= (48 if key == "hoverLift" else 100)
             elif section == "topbar":
-                valid = type(value) is bool
+                if key == "cavaStyle":
+                    valid = type(value) is str and value in ("box", "pill", "fluid")
+                else:
+                    valid = type(value) is bool
             elif section == "roundedScreen":
                 valid = type(value) is int and 0 <= value <= (24 if key == "radius" else 6)
             elif key == "baseRadius":
@@ -86,7 +90,8 @@ def migrate(values):
         validate({"topbar": values["topbar"]}, partial=True)
         upgraded = copy.deepcopy(values)
         upgraded.update(version=2, roundedScreen=copy.deepcopy(DEFAULTS["roundedScreen"]))
-        upgraded["topbar"] = {k: v for k, v in DEFAULTS["topbar"].items() if k not in ("powerProfile", "wallpaperWorkspace")} | values["topbar"]
+        upgraded["topbar"] = {k: v for k, v in DEFAULTS["topbar"].items() if k not in ("powerProfile", "wallpaperWorkspace", "cavaStyle")} | values["topbar"]
+        upgraded["topbar"].setdefault("cavaStyle", "box")
         values = upgraded
     if type(original_version) is int and original_version in (1, 2):
         if set(values) != {"version", "appearance", "roundedScreen", "topbar"}:
@@ -151,17 +156,29 @@ def migrate(values):
         if type(values.get("topbar")) is dict:
             values["topbar"].setdefault("powerProfile", values["topbar"].get("quickControls", True))
             values["topbar"].setdefault("wallpaperWorkspace", True)
+            values["topbar"].setdefault("cavaStyle", "box")
         return migrate(values)[0], True
     if type(original_version) is int and original_version == 10:
         if set(values) != set(DEFAULTS) - {"chrome"}:
             raise ValueError("invalid version 10 shell settings")
         values = copy.deepcopy(values)
         values.update(version=11, chrome=copy.deepcopy(DEFAULTS["chrome"]))
+        if type(values.get("topbar")) is dict:
+            values["topbar"].setdefault("cavaStyle", "box")
         return validate(values), True
-    if type(original_version) is int and original_version == 11 and type(values.get("chrome")) is dict and set(values["chrome"]) == {"statusEdge"}:
-        values = copy.deepcopy(values)
-        values["chrome"]["notificationPopupPosition"] = DEFAULTS["chrome"]["notificationPopupPosition"]
-        return validate(values), True
+    if type(original_version) is int and original_version == 11:
+        migrated = False
+        if type(values.get("chrome")) is dict and set(values["chrome"]) == {"statusEdge"}:
+            values = copy.deepcopy(values)
+            values["chrome"]["notificationPopupPosition"] = DEFAULTS["chrome"]["notificationPopupPosition"]
+            migrated = True
+        if type(values.get("topbar")) is dict and "cavaStyle" not in values["topbar"]:
+            if not migrated:
+                values = copy.deepcopy(values)
+            values["topbar"]["cavaStyle"] = "box"
+            migrated = True
+        if migrated:
+            return validate(values), True
     return validate(values), False
 
 

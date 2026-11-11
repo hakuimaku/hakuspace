@@ -12,6 +12,6 @@ function shellDefaults() {
         roundedScreen: {radius: 20, borderThickness: 4},
         dock: {visibilityMode: "autohide", exclusiveSpace: false, iconSize: 36, hoverLift: 14, hoverScale: 0,
             showTrash: true, showDevices: true},
-        topbar: {workspaces: true, windowTitle: true, center: true, cava: true, tray: true,
+        topbar: {workspaces: true, windowTitle: true, center: true, cava: true, cavaStyle: "box", tray: true,
             quickControls: true, powerProfile: true, wallpaperWorkspace: true, recorder: true, clock: true, notifications: true}}
 }

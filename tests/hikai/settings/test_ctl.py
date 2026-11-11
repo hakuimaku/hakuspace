@@ -142,6 +142,7 @@ class ShellSettingsTests(unittest.TestCase):
         original = self.path.read_bytes()
         patches = [{"appearance": {"baseRadius": value}} for value in (3, 25, True, 12.0, "12", None)]
         patches += [{"topbar": {"tray": value}} for value in (0, 1, "false", None)]
+        patches += [{"topbar": {"cavaStyle": value}} for value in ("unknown", True, 12, None)]
         patches += [{"roundedScreen": {"radius": value}} for value in (-1, 25, True, 20.0, "20", None)]
         patches += [{"roundedScreen": {"borderThickness": value}} for value in (-1, 7, True, 4.0, "4", None)]
         patches += [{"dock": {"iconSize": value}} for value in (20, 23, 25, 31, 73, 33, True, 48.0, "48", None)]

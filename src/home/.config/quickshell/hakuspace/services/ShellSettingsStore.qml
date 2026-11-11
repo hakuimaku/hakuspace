@@ -35,6 +35,7 @@ QtObject {
     readonly property bool showWindowTitle: values.topbar.windowTitle
     readonly property bool showCenter: values.topbar.center
     readonly property bool showCava: values.topbar.cava
+    readonly property string cavaStyle: (values.topbar && values.topbar.cavaStyle) ? values.topbar.cavaStyle : "box"
     readonly property bool showTray: values.topbar.tray
     readonly property bool showQuickControls: values.topbar.quickControls
     readonly property bool showPowerProfile: values.topbar.powerProfile
@@ -70,7 +71,7 @@ QtObject {
                     else if (!Number.isInteger(value) || value < (key === "dimPercent" ? 1 : 10) || value > (key === "dimPercent" ? 100 : 86400) || (key.endsWith("Timeout") && value % 10 !== 0)) return false
                 }
                 if (section === "chrome" && (key === "statusEdge" ? ["top", "left"] : ["center", "anchor"]).indexOf(value) < 0) return false
-                if (section === "topbar" && typeof value !== "boolean") return false
+                if (section === "topbar" && (key === "cavaStyle" ? ["box", "pill", "fluid"].indexOf(value) < 0 : typeof value !== "boolean")) return false
                 if (key === "visibilityMode" && ["autohide", "always"].indexOf(value) < 0) return false
                 if (["exclusiveSpace", "showTrash", "showDevices"].indexOf(key) >= 0 && typeof value !== "boolean") return false
                 if (key === "iconSize" && (!Number.isInteger(value) || value < 24 || value > 72 || value % 4 !== 0)) return false
