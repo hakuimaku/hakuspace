@@ -8,15 +8,17 @@ Item {
     signal keyboardInteraction()
     property real maxHeight: 500
     property real maxWidth: 450
+    readonly property real topPadding: ChromeLayout.leftBarMode ? Theme.spaceSm : 0
     readonly property var entries: NotificationStore.records.filter(function(record) {
         return !record.transient && !record.dismissed
     }).reverse()
     implicitWidth: Math.min(450, maxWidth)
     implicitHeight: Math.min(maxHeight, Math.max(180,
-        header.height + Theme.spaceMd + Math.min(entries.length, 3) * Theme.fontSize * 10))
+        topPadding + header.height + Theme.spaceMd + Math.min(entries.length, 3) * Theme.fontSize * 10))
 
     Row {
         id: header
+        y: root.topPadding
         width: root.width
         height: Math.max(Theme.fontSize * 2.2, dndButton.height)
         spacing: Theme.spaceSm
@@ -103,7 +105,7 @@ Item {
 
     ListView {
         id: list
-        y: header.height + Theme.spaceMd
+        y: header.y + header.height + Theme.spaceMd
         width: root.width
         height: Math.max(0, root.height - y)
         clip: true

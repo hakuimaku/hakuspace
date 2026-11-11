@@ -5,7 +5,7 @@ var shellSchemaVersion = 11
 
 // Return independent nested defaults for each store snapshot.
 function shellDefaults() {
-    return {version: shellSchemaVersion, chrome: {statusEdge: "top"}, appearance: {baseRadius: 12, surfaceTone: "dark", colorMode: "dark"},
+    return {version: shellSchemaVersion, chrome: {statusEdge: "top", notificationPopupPosition: "center"}, appearance: {baseRadius: 12, surfaceTone: "dark", colorMode: "dark"},
         idle: {enabled: true, dimEnabled: true, dimTimeout: 300, dimPercent: 10,
             lockEnabled: true, lockTimeout: 30, displayOffEnabled: true, displayOffTimeout: 30,
             suspendEnabled: true, suspendTimeout: 300, respectAppInhibitors: true, inhibitOnAudio: false},

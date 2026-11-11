@@ -6,8 +6,32 @@ Row {
     id: root
     // Compact bells keep count in the tooltip and mark pending notifications.
     property bool compact: false
+    property string statusEdge: compact ? "left" : "top"
     required property string screenName
     readonly property bool hasNotifications: NotificationStore._started && NotificationStore.count > 0
+    property string registeredKey: ""
+
+    function syncBellItem() {
+        var nextKey = screenName && statusEdge ? screenName + ":" + statusEdge : ""
+        if (registeredKey && registeredKey !== nextKey) {
+            var parts = registeredKey.split(":")
+            NotificationStore.setBellItem(parts[0], parts[1], null)
+        }
+        registeredKey = nextKey
+        if (screenName && statusEdge)
+            NotificationStore.setBellItem(screenName, statusEdge, visible ? bell.interactionItem : null)
+    }
+
+    onScreenNameChanged: syncBellItem()
+    onStatusEdgeChanged: syncBellItem()
+    onVisibleChanged: syncBellItem()
+    Component.onCompleted: syncBellItem()
+    Component.onDestruction: {
+        if (registeredKey) {
+            var parts = registeredKey.split(":")
+            NotificationStore.setBellItem(parts[0], parts[1], null)
+        }
+    }
 
     TopModule {
         id: bell

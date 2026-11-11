@@ -27,12 +27,18 @@ PanelWindow {
         anchors.fill: parent
         active: !root.hasFullscreen && !!root.popup
         sourceComponent: Flare.FlareSurface {
-            y: root.popup ? root.popup.topOffset : 0
-            attach: Flare.FlareHost.Top
+            x: root.popup && root.popup.leftAttached ? ScreenGeometry.contentLeftEdge : 0
+            y: root.popup ? root.popup.attachmentY : 0
+            attach: root.popup ? root.popup.attachMode : Flare.FlareHost.Top
+            transform: Matrix4x4 {
+                matrix: root.popup && root.popup.leftAttached
+                    ? Qt.matrix4x4(0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+                    : Qt.matrix4x4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+            }
             start: root.popup ? root.popup.popupStart : 0
             end: root.popup ? root.popup.popupEnd : 0
             currentHeight: root.popup ? root.popup.revealHeight : 0
-            bounds: ScreenGeometry.horizontalBounds(root.modelData ? root.modelData.width : 0)
+            bounds: root.popup ? root.popup.spanBounds : ScreenGeometry.horizontalBounds(root.modelData ? root.modelData.width : 0)
             r: Theme.largeRadius + 4
             rf: Theme.hugRadius
             bottomRadius: Theme.largeRadius + 4

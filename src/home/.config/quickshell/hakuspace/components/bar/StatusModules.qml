@@ -245,6 +245,7 @@ Item {
             TopModules.NotificationGroup {
                 visible: ShellSettingsStore.showNotifications
                 screenName: root.screenName
+                statusEdge: root.presentation === "fullBottom" ? "bottom" : "top"
             }
 
         }

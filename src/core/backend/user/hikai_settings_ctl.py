@@ -12,7 +12,7 @@ from pathlib import Path
 # Keep runtime state outside this versioned preference schema.
 DEFAULTS = {
     "version": 11,
-    "chrome": {"statusEdge": "top"},
+    "chrome": {"statusEdge": "top", "notificationPopupPosition": "center"},
     "appearance": {"baseRadius": 12, "surfaceTone": "dark", "colorMode": "dark"},
     "roundedScreen": {"radius": 20, "borderThickness": 4},
     "dock": {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 36,
@@ -45,7 +45,7 @@ def validate(values, partial=False):
             raise ValueError(f"{section}: missing fields")
         for key, value in fields.items():
             if section == "chrome":
-                valid = type(value) is str and value in ("top", "left")
+                valid = type(value) is str and value in (("top", "left") if key == "statusEdge" else ("center", "anchor"))
             elif section == "idle":
                 if type(DEFAULTS[section][key]) is bool:
                     valid = type(value) is bool
@@ -157,6 +157,10 @@ def migrate(values):
             raise ValueError("invalid version 10 shell settings")
         values = copy.deepcopy(values)
         values.update(version=11, chrome=copy.deepcopy(DEFAULTS["chrome"]))
+        return validate(values), True
+    if type(original_version) is int and original_version == 11 and type(values.get("chrome")) is dict and set(values["chrome"]) == {"statusEdge"}:
+        values = copy.deepcopy(values)
+        values["chrome"]["notificationPopupPosition"] = DEFAULTS["chrome"]["notificationPopupPosition"]
         return validate(values), True
     return validate(values), False
 

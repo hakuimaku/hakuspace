@@ -16,10 +16,36 @@ QtObject {
     }).length
     property var _handles: ({})
     property var _deadlines: ({})
+    property var _bellItems: ({})
     property int _nextKey: 1
     property var _memory: null
     property bool _started: false
     property bool dnd: false
+
+    // Track live notification bell controls per screen and status edge.
+    function setBellItem(screenName, edge, item) {
+        if (!screenName || !edge) return
+        var key = screenName + ":" + edge
+        if ((_bellItems[key] || null) === (item || null)) return
+        var next = Object.assign({}, _bellItems)
+        if (item) next[key] = item
+        else delete next[key]
+        _bellItems = next
+    }
+
+    function bellItemForScreen(screenName, edge) {
+        return _bellItems[(screenName || "") + ":" + (edge || ChromeLayout.statusEdge)] || null
+    }
+
+    function anchorRectForScreen(screen) {
+        if (!screen) return {x: 0, y: 0, width: 0, height: 0}
+        var item = bellItemForScreen(screen.name, ChromeLayout.statusEdge)
+        if (item && item.visible && item.width > 0 && item.height > 0) {
+            var rect = ScreenGeometry.itemRect(item)
+            if (isFinite(rect.x) && isFinite(rect.y)) return rect
+        }
+        return ScreenGeometry.barAnchor(screen.height, screen.width - Theme.pad - Theme.fontSize * 2, Theme.fontSize * 2)
+    }
 
     onDndChanged: {
         if (dnd) hidePopups()
