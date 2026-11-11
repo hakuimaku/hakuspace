@@ -123,6 +123,13 @@ QtObject {
     readonly property int hakuMenuLeftPadding: Design.hakuMenuLeftPadding
     readonly property int hakuMenuRightPadding: Design.hakuMenuRightPadding
     readonly property int hakuMenuPadding: Design.hakuMenuBottomPadding
+    readonly property real hakuMenuWidthRatio: Design.hakuMenuWidthRatio
+    readonly property real hakuMenuGeneralWidthRatio: Design.hakuMenuGeneralWidthRatio
+    readonly property real hakuMenuThemeWidthRatio: Design.hakuMenuThemeWidthRatio
+    readonly property real hakuMenuMaxWidthRatio: Design.hakuMenuMaxWidthRatio
+    readonly property real hakuMenuHeightRatio: Design.hakuMenuHeightRatio
+    readonly property real taskManagerMiniWidthRatio: Design.taskManagerMiniWidthRatio
+    readonly property real taskManagerMiniHeightRatio: Design.taskManagerMiniHeightRatio
     
     // Convert rgba() to Qt-compatible #AARRGGBB before applying theme data.
     function parseColor(c) {

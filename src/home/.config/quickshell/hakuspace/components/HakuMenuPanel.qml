@@ -13,7 +13,7 @@ Item {
     // Route each presentation through one edge-specific owner.
     readonly property bool panelOpen: !!((top.active && top.item && top.item.panelOpen) || (bottom.active && bottom.item && bottom.item.panelOpen))
     readonly property real targetMenuWidth: bottom.active && bottom.item ? bottom.item.targetMenuWidth
-        : top.active && top.item ? top.item.targetMenuWidth : modelData ? modelData.width * 0.4 : 0
+        : top.active && top.item ? top.item.targetMenuWidth : modelData ? modelData.width * Theme.hakuMenuWidthRatio : 0
     readonly property int loadedCount: Number(top.active) + Number(bottom.active)
     // Resident trigger preserves hover activation while all menu content is unloaded.
     HakuMenu.HakuMenuTrigger { modelData: root.modelData; owner: top.active ? top.item : null }

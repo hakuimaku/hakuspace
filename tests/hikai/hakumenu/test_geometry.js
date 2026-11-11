@@ -48,12 +48,12 @@ for (const screenHeight of [240, 720, 1080]) {
             const bar = bottomAttached ? 69 : edge === "left" ? 0 : 40
             const state = vm.createContext({screenHeight, bottomAttached, controlHeight: bottomAttached ? 32 : 0,
                 taskManagerTab: false, taskSize: {}, menu: {editorHeight}, root: {screenHeight},
-                Theme: {topBarHeight: 40}, ScreenGeometry: {topChromeHeight: edge === "left" ? 0 : 40, bottomHostReservation: () => 37,
+                Theme: {topBarHeight: 40, hakuMenuHeightRatio: 0.42}, ScreenGeometry: {topChromeHeight: edge === "left" ? 0 : 40, bottomHostReservation: () => 37,
                     bottomHostOppositeInset: 40, bottomInset: 4}})
             state.availableMenuHeight = vm.runInContext(availableExpression, state)
             assert.equal(state.availableMenuHeight, screenHeight - bar - (bottomAttached ? 40 : 4))
             assert.equal(vm.runInContext(heightExpression, state),
-                Math.min(Math.max(screenHeight * 0.4, editorHeight), state.availableMenuHeight))
+                Math.min(Math.max(screenHeight * 0.42, editorHeight), state.availableMenuHeight))
         }
     }
 }
