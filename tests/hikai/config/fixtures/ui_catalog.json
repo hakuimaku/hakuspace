@@ -180,6 +180,10 @@
     {
       "value": "leftbar",
       "label": "Leftbar"
+    },
+    {
+      "value": "taskbar",
+      "label": "Taskbar"
     }
   ]
 }

@@ -6,13 +6,13 @@ Column {
     id: root
     // Both surfaces show confirmed topology; failed writes never move the selected segment.
     property Item shortcutTarget: null
-    readonly property bool available: AppState.shellBackend === "hikai" && ChromeLayout.statusBarMode
+    readonly property bool available: AppState.shellBackend === "hikai"
     visible: available
     spacing: Theme.spaceXs
     SettingsSegmentedControl {
         width: parent.width
         options: UiCatalog.statusBarLayouts
-        value: ChromeLayout.leftBarMode ? "leftbar" : "topbar"
+        value: ChromeLayout.taskbarMode ? "taskbar" : ChromeLayout.leftBarMode ? "leftbar" : "topbar"
         shortcutTarget: root.shortcutTarget
         enabled: ShellSettingsStore.ready && !SettingsCoordinator.busy
         onChosen: value => SettingsCoordinator.set("layout", value)

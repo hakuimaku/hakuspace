@@ -25,7 +25,7 @@ var hakuMenuGeneralItems = [
 ]
 
 // Shared explicit status-edge targets use the existing layout transaction.
-var statusBarLayouts = [{value: "topbar", label: "Topbar"}, {value: "leftbar", label: "Leftbar"}]
+var statusBarLayouts = [{value: "topbar", label: "Topbar"}, {value: "leftbar", label: "Leftbar"}, {value: "taskbar", label: "Taskbar"}]
 
 // Static hakuMenuThemeItems presentation entries.
 var hakuMenuThemeItems = [

@@ -196,8 +196,37 @@ function groups(category) {
     return preferred.filter(function(name) { return names.includes(name) }).concat(names.filter(function(name) { return !preferred.includes(name) }))
 }
 
-// Leftbar omits the center cluster while preserving its saved preferences.
-preferences.forEach(function(item) {
-    if (item.id === "shell.topbar.center" || item.id === "shell.topbar.cava")
-        item.dependsOn.push({id: "layout", oneOf: ["topbar", "taskbar"], behavior: "disable", reason: "Available with Top Bar or Taskbar layout"})
+// Map each status bar module to its preview zone and supported shell layouts.
+var statusBarModules = [
+    {key: "", label: "Logo / Navigation", icon: "󰮯", weight: 1, zone: "leading", layouts: ["topbar", "leftbar", "taskbar"]},
+    {key: "workspaces", icon: "● ● ▰", weight: 2, zone: "leading", layouts: ["topbar", "leftbar", "taskbar"]},
+    {key: "windowTitle", icon: " …", weight: 2, zone: "leading", layouts: ["topbar", "leftbar", "taskbar"]},
+    {key: "cava", icon: "▁▃▆▂", weight: 2, zone: "center", layouts: ["topbar"]},
+    {key: "center", icon: " …", weight: 2, zone: "center", layouts: ["topbar"]},
+    {key: "tray", icon: "󰤨  󰂯", weight: 2, zone: "trailing", layouts: ["topbar", "leftbar", "taskbar"]},
+    {key: "quickControls", icon: "     󰁹", weight: 3, zone: "trailing", layouts: ["topbar", "leftbar", "taskbar"]},
+    {key: "powerProfile", icon: "", weight: 1, zone: "trailing", layouts: ["topbar", "taskbar"]},
+    {key: "wallpaperWorkspace", icon: "", weight: 1, zone: "trailing", layouts: ["topbar", "taskbar"]},
+    {key: "recorder", icon: "", weight: 1, zone: "trailing", layouts: ["topbar", "taskbar"]},
+    {key: "clock", icon: "07:10", weight: 2, zone: "trailing", layouts: ["topbar", "leftbar", "taskbar"]},
+    {key: "notifications", icon: "", weight: 1, zone: "trailing", layouts: ["topbar", "leftbar", "taskbar"]}
+]
+
+function barPreviewZones(layout) {
+    var active = layout || "topbar"
+    return ["leading", "center", "trailing"].map(function(zone) {
+        return statusBarModules.filter(function(m) {
+            return m.zone === zone && m.layouts.includes(active)
+        })
+    }).filter(function(group) { return group.length > 0 })
+}
+
+// Derive layout availability directly from the shared module table.
+var layoutLabels = {topbar: "Top Bar", leftbar: "Left Bar", taskbar: "Taskbar"}
+statusBarModules.forEach(function(mod) {
+    if (!mod.key || mod.layouts.length >= 3) return
+    var item = descriptor("shell.topbar." + mod.key)
+    if (!item) return
+    var names = mod.layouts.map(function(l) { return layoutLabels[l] || l }).join(" or ")
+    item.dependsOn.push({id: "layout", oneOf: mod.layouts.slice(), behavior: "disable", reason: "Available with " + names + " layout"})
 })

@@ -1522,7 +1522,7 @@ ShellRoot {
                 } else root.phase = 14
                 return
             } else if (root.phase === 14) {
-                root.check(preview.leftbar, "Settings selects the vertical preview")
+                root.check(preview.leftbar, "Settings selects the Leftbar preview")
                 root.capture("leftbar-settings-preview")
                 if (root.expectV3) { root.phase = 141; return }
             } else if (root.phase === 141) {
@@ -1531,7 +1531,8 @@ ShellRoot {
                 return
             } else if (root.phase === 142) {
                 var edge = root.find(previewWindow.contentItem, "StatusEdgeControl")
-                root.check(!!edge && !edge.visible, "Taskbar removes the status-edge focus row")
+                var seg = edge ? root.find(edge, "SettingsSegmentedControl") : null
+                root.check(!!edge && edge.visible && !!seg && seg.value === "taskbar", "Taskbar selects the Taskbar option in the layout control")
                 AppState.taskbarManualState = false
                 root.phase = 15
                 return
