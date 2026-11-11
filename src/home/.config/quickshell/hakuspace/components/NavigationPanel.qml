@@ -174,10 +174,8 @@ Item {
     readonly property real hoverOverflow: Math.ceil(circleDiameter * 0.12)
     readonly property real controllerX: shellX + shellPadding
     readonly property real controllerY: shellY + shellPadding
-    readonly property real dashboardWidthRatio: 0.50
-    readonly property real dashboardHeightRatio: 0.50
-    readonly property real dashboardVisualWidth: Math.round(modelData.width * dashboardWidthRatio)
-    readonly property real dashboardVisualHeight: Math.round(modelData.height * dashboardHeightRatio)
+    readonly property real dashboardVisualWidth: Theme.dashboardWidth
+    readonly property real dashboardVisualHeight: Theme.dashboardHeight
 
     // Sidebar interaction geometry:
     readonly property bool sidebarExpanded: UiState.navigationMode === "handoff-sidebar"

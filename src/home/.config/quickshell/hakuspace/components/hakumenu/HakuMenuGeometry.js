@@ -8,10 +8,11 @@ function targetWidth(width, tab, mode, leftInset, rightInset, ratios) {
     var generalRatio = ratios && ratios.hakuMenuGeneralWidthRatio !== undefined ? ratios.hakuMenuGeneralWidthRatio : 0.38
     var themeRatio = ratios && ratios.hakuMenuThemeWidthRatio !== undefined ? ratios.hakuMenuThemeWidthRatio : 0.36
     var menuRatio = ratios && ratios.hakuMenuWidthRatio !== undefined ? ratios.hakuMenuWidthRatio : 0.40
-    if (tab === "taskManager") return Math.min(width * taskRatio, Math.max(1, width - leftInset - rightInset))
-    if (mode === "general") return width * generalRatio
-    if (mode === "theme") return width * themeRatio
-    return width * menuRatio
+    var minWidth = ratios && ratios.hakuMenuMinWidth !== undefined ? ratios.hakuMenuMinWidth : 0
+    var available = Math.max(1, width - (leftInset || 0) - (rightInset || 0))
+    if (tab === "taskManager") return Math.min(minWidth > 0 ? Math.max(width * taskRatio, minWidth) : width * taskRatio, available)
+    var span = mode === "general" ? width * generalRatio : mode === "theme" ? width * themeRatio : width * menuRatio
+    return minWidth > 0 ? Math.min(Math.max(span, minWidth), available) : span
 }
 
 // Fit the embedded profile inside the attached surface's usable output bounds.

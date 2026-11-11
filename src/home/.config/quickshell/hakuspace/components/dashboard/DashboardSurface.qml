@@ -33,8 +33,8 @@ Item {
     signal requestReturnToNavigation()
     signal focusRequested()
 
-    property real targetWidth: Math.round(screenWidth * 0.50)
-    property real targetHeight: Math.round(screenHeight * 0.50)
+    property real targetWidth: Theme.dashboardWidth
+    property real targetHeight: Theme.dashboardHeight
 
     readonly property bool isFullyOpen: morphProgress >= 0.98
 
@@ -45,7 +45,7 @@ Item {
     readonly property real cornerRadius: Theme.largeRadius
     readonly property real flareRadius: Theme.giantRadius
 
-    // Canonical 50x50 Dashboard shell dimensions
+    // Dashboard shell dimensions
     readonly property real dashboardWidth: targetWidth
     readonly property real dashboardHeight: targetHeight
 

@@ -185,6 +185,13 @@ hl.layer_rule({
     no_anim = true,
 })
 
+-- HakuMenu geometry is animated by QML rather than the compositor.
+hl.layer_rule({
+    name = "haku-menu",
+    match = { namespace = "hakuspace-hakumenu.*" },
+    no_anim = true,
+})
+
 -- Desktop icons disable animations.
 hl.layer_rule({
     name = "haku-desktop-icons",

@@ -130,6 +130,10 @@ QtObject {
     readonly property real hakuMenuHeightRatio: Design.hakuMenuHeightRatio
     readonly property real taskManagerMiniWidthRatio: Design.taskManagerMiniWidthRatio
     readonly property real taskManagerMiniHeightRatio: Design.taskManagerMiniHeightRatio
+    readonly property real hakuMenuMinWidth: Design.hakuMenuMinWidth
+    readonly property real hakuMenuMinHeight: Design.hakuMenuMinHeight
+    readonly property real dashboardWidth: Design.dashboardWidth
+    readonly property real dashboardHeight: Design.dashboardHeight
     
     // Convert rgba() to Qt-compatible #AARRGGBB before applying theme data.
     function parseColor(c) {

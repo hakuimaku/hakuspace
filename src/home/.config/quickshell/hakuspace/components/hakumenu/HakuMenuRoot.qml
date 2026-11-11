@@ -18,6 +18,7 @@ FocusScope {
     readonly property bool taskManagerTab: tab === "taskManager"
     readonly property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
     readonly property int switchDuration: reducedMotion ? 0 : HAnimation.hakuMenuResizeDuration
+    readonly property real slideOffset: reducedMotion ? 0 : 72
     // Load on first visit and retain UI state until the host finishes closing.
     property bool miniLoaded: false
     readonly property alias mini: miniLoader.item
@@ -215,6 +216,10 @@ FocusScope {
         enabled: panelOpen
         opacity: root.taskManagerTab ? 0 : 1
         visible: opacity > 0
+        transform: Translate {
+            x: root.taskManagerTab ? -root.slideOffset : 0
+            Behavior on x { NumberAnimation { duration: root.switchDuration; easing.bezierCurve: HAnimation.hakuMenuResizeCurve } }
+        }
         onKeyboardActivity: root.keyboardActivity()
         onWallpaperRequested: root.wallpaperRequested()
         Behavior on opacity { NumberAnimation { duration: root.switchDuration; easing.bezierCurve: HAnimation.hakuMenuResizeCurve } }
@@ -236,6 +241,10 @@ FocusScope {
         enabled: root.panelOpen && root.taskManagerTab
         opacity: root.taskManagerTab ? 1 : 0
         visible: opacity > 0
+        transform: Translate {
+            x: root.taskManagerTab ? 0 : root.slideOffset
+            Behavior on x { NumberAnimation { duration: root.switchDuration; easing.bezierCurve: HAnimation.hakuMenuResizeCurve } }
+        }
         onLoaded: if (root.focusOnOpen) root.forcePrimaryFocus()
         Behavior on opacity { NumberAnimation { duration: root.switchDuration; easing.bezierCurve: HAnimation.hakuMenuResizeCurve } }
         sourceComponent: TaskManager.TaskManagerMini {

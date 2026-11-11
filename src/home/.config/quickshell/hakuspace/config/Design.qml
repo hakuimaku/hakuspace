@@ -231,4 +231,10 @@ QtObject {
     readonly property real hakuMenuHeightRatio: 0.42
     readonly property real taskManagerMiniWidthRatio: 0.45
     readonly property real taskManagerMiniHeightRatio: 0.48
+    readonly property real hakuMenuMinWidth: 680
+    readonly property real hakuMenuMinHeight: 450
+
+    // Dashboard layout geometry.
+    readonly property real dashboardWidth: 960
+    readonly property real dashboardHeight: 540
 }

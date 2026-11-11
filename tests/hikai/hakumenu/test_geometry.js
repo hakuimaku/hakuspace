@@ -58,3 +58,27 @@ for (const screenHeight of [240, 720, 1080]) {
     }
 }
 console.log('General editor host height and output bounds passed')
+
+// Minimum clamp bounds for small screens (e.g. 720p).
+const ratios720 = {
+    hakuMenuWidthRatio: 0.40,
+    hakuMenuGeneralWidthRatio: 0.38,
+    hakuMenuThemeWidthRatio: 0.36,
+    hakuMenuMinWidth: 680,
+    hakuMenuMinHeight: 450
+}
+// Width clamp: 1280 * 0.38 = 486.4, clamped to minWidth = 680.
+assert.equal(geometry.targetWidth(1280, 'hakumenu', 'general', 0, 0, ratios720), 680)
+// Width unclamped on large screen: 1920 * 0.38 = 729.6 > 680.
+assert.equal(geometry.targetWidth(1920, 'hakumenu', 'general', 0, 0, ratios720), 729.6)
+
+// Height clamp in host expression on 720p: 720 * 0.42 = 302.4, clamped to minHeight = 450.
+const host720 = vm.createContext({
+    screenHeight: 720, bottomAttached: false, controlHeight: 0,
+    taskManagerTab: false, taskSize: {}, menu: {editorHeight: 0}, root: {screenHeight: 720},
+    Theme: {topBarHeight: 40, hakuMenuHeightRatio: 0.42, hakuMenuMinHeight: 450},
+    ScreenGeometry: {topChromeHeight: 40, bottomHostReservation: () => 37, bottomHostOppositeInset: 40, bottomInset: 4}
+})
+host720.availableMenuHeight = vm.runInContext(availableExpression, host720)
+assert.equal(vm.runInContext(heightExpression, host720), 450)
+console.log('HakuMenu 720p min-clamp checks passed')
