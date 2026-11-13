@@ -215,7 +215,7 @@ Item {
         width: menu.innerWidth - (menu.showStateRegion ? stateRegion.width + Theme.gap * 2 : 0)
         height: Math.max(0, (menu.controlsAtBottom ? menu.controlsY - Theme.pad : menu.height - menu.innerBottomPad) - y)
         radius: Theme.largeRadius
-        color: menu.listBg
+        color: menu.mode === "theme" ? "transparent" : menu.listBg
         clip: true
 
         GeneralList {
@@ -253,7 +253,7 @@ Item {
         width: menu.stateWidth
         height: mainList.height
         radius: Theme.largeRadius
-        color: menu.listBg
+        color: menu.mode === "theme" ? "transparent" : menu.listBg
         visible: menu.showStateRegion
     }
 

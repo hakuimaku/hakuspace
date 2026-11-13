@@ -31,6 +31,43 @@ Item {
 
     readonly property bool hikaiBackend: (backendStateView.text() || "").trim().toLowerCase() === "hikai"
 
+    readonly property int upperCount: {
+        var count = 0
+        for (var i = 0; i < visibleItems.length; ++i) {
+            var item = visibleItems[i]
+            if (!item.shellLayoutSwitch && !item.cavaPositionSwitch && !item.backendSwitch)
+                count++
+        }
+        return count
+    }
+    readonly property real upperCardHeight: upperCount > 0
+        ? Theme.gap * 2 + upperCount * rowHeight + (upperCount - 1) * itemGap
+        : 0
+
+    Rectangle {
+        id: upperLeftCard
+        visible: root.upperCount > 0
+        z: 0
+        x: 0
+        y: Math.max(0, -(themeList.contentY + Theme.gap))
+        width: root.leftColumnWidth + Theme.gap * 2
+        height: Math.max(0, Math.min(themeList.height - y, root.upperCardHeight + Math.min(0, -(themeList.contentY + Theme.gap))))
+        radius: Theme.largeRadius
+        color: Theme.surfaceSubtle(2.05)
+    }
+
+    Rectangle {
+        id: upperStateCard
+        visible: root.upperCount > 0 && root.stateColumnWidth > 0
+        z: 0
+        x: root.leftColumnWidth + root.columnGap
+        y: upperLeftCard.y
+        width: root.stateColumnWidth + Theme.gap * 2
+        height: upperLeftCard.height
+        radius: Theme.largeRadius
+        color: Theme.surfaceSubtle(2.05)
+    }
+
     readonly property var items: UiCatalog.hakuMenuThemeItems
 
     function labelFor(item) {
@@ -273,7 +310,8 @@ Item {
             readonly property bool isBackendSwitch: !!modelData && modelData.backendSwitch === true
             readonly property bool isFullWidth: isSpecialOption || isBackendSwitch
             readonly property bool isBottomOption: isFullWidth
-            height: isSpecialOption ? Math.round(specialColumn.implicitHeight + Theme.spaceXs * 2) : root.rowHeight
+            readonly property real sectionGap: (isBottomOption && index === root.upperCount && root.upperCount > 0) ? Theme.pad : 0
+            height: (isSpecialOption ? Math.round(specialColumn.implicitHeight + Theme.spaceXs * 2) : root.rowHeight) + sectionGap
 
             readonly property bool hasState: !isSpecialOption && modelData.showState === true && modelData.toggle && (modelData.stateKind === "colorMode" || !!modelData.chromeKey || root.statePathFor(modelData).length > 0)
             readonly property bool stateOn: modelData.stateKind === "colorMode" ? Theme.isLight
@@ -293,17 +331,6 @@ Item {
                 onFileChanged: this.reload()
             }
 
-            Rectangle {
-                id: columnMask
-                visible: rowWrap.isBottomOption
-                z: 0
-                x: 0
-                y: rowWrap.index === 0 ? 0 : -root.itemGap / 2
-                width: parent.width
-                height: parent.height + (rowWrap.index === themeList.count - 1 ? 500 : (rowWrap.index === 0 ? 0 : root.itemGap / 2))
-                color: Theme.surface
-            }
-
             Column {
                 id: specialColumn
                 visible: rowWrap.isSpecialOption
@@ -311,6 +338,7 @@ Item {
                 x: Theme.gap
                 width: Math.max(0, parent.width - Theme.gap * 2 - vbar.reservedGutter)
                 anchors.verticalCenter: parent.verticalCenter
+                anchors.verticalCenterOffset: rowWrap.sectionGap / 2
                 spacing: Theme.spaceXs
 
                 Item {
@@ -382,6 +410,15 @@ Item {
                                 root.syncSelectionLabel()
                             }
                         }
+                    }
+
+                    Rectangle {
+                        z: 0
+                        anchors.fill: parent
+                        radius: 10
+                        color: Theme.isLight ? Theme.panel : Theme.surfaceSubtle(1.15)
+                        border.width: Theme.isLight ? 1 : 0
+                        border.color: Theme.border
                     }
 
                     Rectangle {
@@ -581,6 +618,15 @@ Item {
                                 root.syncSelectionLabel()
                             }
                         }
+                    }
+
+                    Rectangle {
+                        z: 0
+                        anchors.fill: parent
+                        radius: 10
+                        color: Theme.isLight ? Theme.panel : Theme.surfaceSubtle(1.15)
+                        border.width: Theme.isLight ? 1 : 0
+                        border.color: Theme.border
                     }
 
                     Rectangle {
@@ -793,8 +839,9 @@ Item {
                 opacity: enabled ? 1 : 0.45
                 z: 2
                 x: Theme.gap
+                y: rowWrap.sectionGap
                 width: rowWrap.isFullWidth ? Math.max(0, parent.width - Theme.gap * 2 - vbar.reservedGutter) : root.leftColumnWidth
-                height: parent.height
+                height: parent.height - rowWrap.sectionGap
                 radius: Theme.radius
                 selected: !rowWrap.isBottomOption && themeList.currentIndex === rowWrap.index && !root.isLowerSectionActive
                 selectedOverridesHover: !rowWrap.isBottomOption
@@ -884,10 +931,10 @@ Item {
                 selected: themeList.currentIndex === rowWrap.index && !rowWrap.isBottomOption && !root.isLowerSectionActive
                 selectedOverridesHover: false
                 idleColor: "transparent"
-                hoverColor: root.rowHoverColor
-                pressedColor: root.rowHoverColor
+                hoverColor: "transparent"
+                pressedColor: "transparent"
                 selectedColor: "transparent"
-                hoverScaleDelta: 0.003
+                hoverScaleDelta: 0.05
                 pressScaleDelta: 0.012
                 onHoveredChanged: {
                     if (hovered) {
