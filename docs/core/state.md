@@ -38,7 +38,6 @@ The current Haku Space preference takes priority over its two older aliases. The
 
 Generated `taskbar-theme`, `rofi-theme.rasi`, `niri-animation.kdl`, and `theme/` outputs stay outside the runtime `state/` namespace. `/tmp/random_wallpaper_status` also keeps its existing path.
 
-Run `python3 tools/checks/state_schema.py` to verify production path naming and Bash/Python registry parity. `python3 tests/config/state/test_naming.py` checks safe upgrades with temporary homes. Both checks are included in the repository check script.
 
 Theme appearance state uses `THEME_STATE_VERSION=2` with `ACCENT_SEED`, `ACCENT_DARK`,
 `ACCENT_LIGHT`, `FONT_FAMILY`, and `FONT_SIZE`. `haku_theme.sh` atomically upgrades

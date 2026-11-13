@@ -12,7 +12,6 @@ hakuspace (root)
 ├── docs/                      # Tài liệu hướng dẫn
 ├── nix/                       # Cấu hình NixOS
 ├── scripts/                   # Các module hỗ trợ cho bộ cài / cập nhật
-├── tests/                     # Bộ test tự động
 │
 ├── install.sh                 # Script cài đặt lần đầu
 ├── update.sh                  # Script cập nhật

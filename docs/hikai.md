@@ -202,14 +202,6 @@ A second open request returns false while a draft/export is active. Reopening th
 same image during its closing animation reverses dismissal. Specs and staged
 avatar files use a private runtime directory and are removed after export.
 
-Scoped checks: `node tests/hikai/image_editor/test_geometry.js`,
-`node tests/hikai/image_editor/test_ops.js`,
-`python3 tests/hikai/image_editor/test_backend.py`,
-`python3 tests/hikai/image_editor/test_screenshot.py` and
-`bash tests/hikai/image_editor/test_runtime.sh`. The runtime check uses a private
-two-output software-rendered compositor and never drives the desktop session.
-Set `HAKUSPACE_IMAGE_EDITOR_ARTIFACT_DIR=/tmp/editor-artifacts` to retain its preview
-and runtime log. Hardware GPU/FPS and long memory soaks remain separate checks.
 
 ### Hikai color mode
 
@@ -290,8 +282,6 @@ Add documentation only when the feature introduces a lasting architectural conce
 Test at the boundary being changed. Use pure tests for geometry and model rules, backend tests for validation and persistence, and runtime tests for real QML lifecycles and input.
 Syntax checks do not prove behavior. Cold startup does not prove live reload, and direct state assignment does not prove keyboard or pointer routing.
 
-Find component runners and fixtures in [tests](../tests/); developer checks, probes and profiling live in [tools](../tools/).
-The [repository check script](../tools/checks/repo_check.sh) defines the combined checks; inspect runner requirements and side effects before running compositor tests.
 Use disposable data, isolated sessions and harmless action fixtures so verification does not edit real preferences or act on user applications.
 
 Exercise cancellation, rapid reversal, stale responses, failed writes, disappearing sources and ownership transfer.

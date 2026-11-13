@@ -139,15 +139,6 @@ exactly that custom ID and selects the nearest surviving row; errors retain the
 rail/confirmation. Add and action controls are outside the keyboard row model.
 Static rows have no CRUD controls.
 
-Targeted regression checks:
-
-```bash
-python3 -B tests/menu/general/test_ctl.py
-python3 -B tests/config/hakucfg/test_sync.py GeneralConfigTests
-node tests/hikai/hakumenu/test_general_list.js
-python3 -B tests/hikai/hakumenu/test_general_qml.py
-```
-
 The QML integration probe uses an isolated HOME and offscreen software renderer;
 it exercises real mouse clicks, the service/editor/backend and Classic output after
 Add/Edit/Delete. It does not measure hardware rendering performance.

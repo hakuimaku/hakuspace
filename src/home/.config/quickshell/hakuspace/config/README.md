@@ -30,8 +30,5 @@ adding a new widget descriptor. Power/Record/Sidebar action execution and visibi
 rules stay in their existing QML handlers and services.
 
 `Defaults.shellDefaults()` returns a fresh nested snapshot on every call.
-Python retains its standalone defaults; `tests/hikai/config/test_contract.js`
-checks exact parity with the backend and Settings reset metadata.
-It also checks migrated catalog ownership and pre-refactor presentation fixtures.
-When intentionally changing labels, order or presets, update the corresponding
-expectations in `tests/hikai/config/fixtures/ui_catalog.json`.
+Python retains its standalone defaults, which must stay in parity with the backend
+and Settings reset metadata.

@@ -234,7 +234,7 @@ audit_runtime() {
         done
     fi
     if command -v quickshell >/dev/null 2>&1; then
-        QT_QPA_PLATFORM=offscreen timeout 15 quickshell -p "$HAKU_DIR/tools/probes/multimedia.qml" || failed=1
+        QT_QPA_PLATFORM=offscreen timeout 15 quickshell -p "$HAKU_DIR/scripts/probes/multimedia.qml" || failed=1
     else
         log_error "BLOCKED: quickshell is missing."
         failed=1

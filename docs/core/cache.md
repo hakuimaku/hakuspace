@@ -42,7 +42,6 @@ the canonical cache root unless stated otherwise.
 | `.cache/` and `*.cache` in `.gitignore` | Repository ignore patterns | Unchanged; no runtime path is created |
 | `icon-theme.cache` | External GTK icon-theme metadata | Unchanged; this is an application data filename, not the user cache root |
 | Temporary `PYCACHE_DIR` in repository validation | Runtime/transient tooling | Remains a private `mktemp` directory, removed after compilation |
-| `XDG_CACHE_HOME` and temporary `.cache` homes in tests/profiling | Isolated fixtures | Retained as test inputs; expectations for generated assets use the namespace |
 | Old paths mentioned in assertions/migration tests and this audit | Documentation/test fixtures | Retained to detect regressions and exercise upgrades |
 | Wallpaper option comments and wallpaper documentation | Documentation | Updated to the XDG-aware rule and persistent state terminology |
 
@@ -61,26 +60,3 @@ Classic/Hikai access. Publication is atomic and does not overwrite existing
 canonical state. Conflicting legacy bytes are retained in the existing private
 state migration archive. New code never writes a legacy pointer. Disposable old
 assets are left unused; the refactor does not sweep unrelated cache contents.
-
-## Regression checks
-
-`python3 tools/checks/cache_paths.py` scans production source and scripts,
-including new files. Exact exceptions cover only the shared fallback helpers,
-read-only legacy state import, shared desktop thumbnail reads and generic cache
-cleanup. Documentation, tests and isolated profiling homes are not production
-cache writers. The check runs in `tools/checks/repo_check.sh`.
-
-`python3 tests/config/cache/test_paths.py` checks default/empty/custom XDG roots,
-state preservation, conflict handling, unsafe legacy symlinks, Classic generation
-and resume, taskbar extraction/cache hits, Classic video thumbnails, real Rofi
-theme parsing and Hikai cache opening. Fixtures cover spaces and quotes in paths.
-Wallpaper component tests additionally exercise real ImageMagick/FFmpeg output
-and native commit failure preservation.
-
-After changes, repeat the tracked-file audit and enforce its classifications:
-
-```bash
-git grep -n -I -E '(\.cache|XDG_CACHE_HOME|CACHE_DIR|current_wallpaper|taskbar_icons|taskbar_icon_cache|wall?paper_.*_gen)'
-python3 tools/checks/cache_paths.py
-python3 tools/checks/state_schema.py
-```

@@ -12,7 +12,6 @@ hakuspace (root)
 ├── docs/                      # Docs and guides
 ├── nix/                       # NixOS config and flake templates
 ├── scripts/                   # Helper modules for the installer/updater
-├── tests/                     # Automated test suites
 │
 ├── install.sh                 # First-time install script
 ├── update.sh                  # Update script

@@ -14,7 +14,7 @@ build/
 *.iso
 
 # Ignore temporary files
-temp/
+/temp/
 
 # Ignore IDE and editor specific files
 .agents/
@@ -23,6 +23,9 @@ temp/
 .vscode/
 
 # Ignore agents skill files
-AGENTS.md
-GEMINI.md
+/AGENTS.md
+/GEMINI.md
 
+# Agent-local test/tooling (kept outside the repo)
+/tools/
+/tests/
