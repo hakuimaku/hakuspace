@@ -7,11 +7,22 @@ __pycache__/
 node_modules/
 dist/
 build/
+
+# Ignore the large files
 *.tar
 *.zip
 *.iso
+
+# Ignore temporary files
 temp/
+
+# Ignore IDE and editor specific files
 .agents/
 .aws/
 .codex/
 .vscode/
+
+# Ignore agents skill files
+AGENTS.md
+GEMINI.md
+
