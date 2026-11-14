@@ -6,10 +6,8 @@ import "../config/SettingsCatalog.js" as Catalog
 
 QtObject {
     id: root
-    // All outputs share one persistence queue and undo transaction.
-    property var transaction: null
+    // All outputs share one persistence queue.
     property var pendingIds: ({})
-    property string message: ""
     property var runtimePending: ({})
     property string runtimeError: ""
     property string runtimeWritingId: ""
@@ -21,11 +19,10 @@ QtObject {
     readonly property bool restartRequired: initialDecoder.length > 0 && WallpaperSettingsStore.savedValues.playback.hardwareDecode !== initialDecoder
     readonly property bool closeBlocked: ConfigEditorStore.dirty || (!!error && dirty)
     readonly property string footerStatus: error ? "Could not save changes: " + error : restartRequired ? "Saved decoder change requires Hikai restart" : ""
-    readonly property var actionLabels: error ? ["Retry", "Revert"] : restartRequired ? ["Undo", "Restart Hikai"] : []
+    readonly property var actionLabels: error ? ["Retry", "Revert"] : restartRequired ? ["Restart Hikai"] : []
     readonly property bool footerDirty: dirty
     readonly property bool footerError: !!error
     property Timer debounce: Timer { interval: 400; onTriggered: root.flush() }
-    property Timer toast: Timer { interval: 6000; onTriggered: root.message = "" }
     property Connections wallpaperState: Connections {
         target: WallpaperSettingsStore
         function onReadyChanged() { if (WallpaperSettingsStore.ready && !root.initialDecoder) root.initialDecoder = WallpaperSettingsStore.savedValues.playback.hardwareDecode }
@@ -87,20 +84,12 @@ QtObject {
         }
         return true
     }
-    // Merge nearby edits into a single undo transaction with the original value.
-    function set(id, value, deferred, undoing) {
+    function set(id, value, deferred) {
         if (id === "layout" && busy) return false
         var d = Catalog.descriptor(id)
         if (!d || !validValue(d, value) || Catalog.equal(d, read(id), value, Quickshell.env("HOME"))) return false
         if (["general", "theme"].includes(d.provider) && SettingsStore.loading || d.provider === "shell" && (!ShellSettingsStore.ready || ShellSettingsStore.loading) || d.provider === "wallpaper" && (!WallpaperSettingsStore.ready || WallpaperSettingsStore.loading)) return false
         if (id === "layout") runtimeError = ""
-        var before = read(id)
-        if (!undoing) {
-            var now = Date.now()
-            transaction = {descriptorId: id, provider: d.provider, before: transaction && transaction.descriptorId === id && now - transaction.timestamp < 1500 ? transaction.before : before, after: value, timestamp: now}
-            message = "Changed “" + d.label + "”"
-            toast.restart()
-        }
         if (d.provider === "general") SettingsStore.setValue(d.key, value)
         else if (d.provider === "theme") SettingsStore.setFontValue(d.key, value)
         else if (d.provider === "shell") ShellSettingsStore.setValue(d.section, d.key, value)
@@ -162,15 +151,11 @@ QtObject {
         else if (id === "cava-height") AppState.cavaHeight = value
         else if (id === "idle-keep-awake") { AppState.idleInhibited = value; IdleService.refreshInhibit() }
     }
-    // Undo restores the draft and submits the old value through the same provider.
-    function undo() { if (!transaction || busy) return; var t = transaction; transaction = null; set(t.descriptorId, t.before, false, true); message = "Change undone"; toast.restart() }
     function reset(id) { var d = Catalog.descriptor(id); if (d && d.resettable) set(id, d.defaultValue, false) }
-    function canActivate(label) { return !busy && (label !== "Restart Hikai" || (!ConfigEditorStore.dirty && !dirty && !LockState.locked)) && (label !== "Undo" || !!transaction || restartRequired) }
+    function canActivate(label) { return !busy && (label !== "Restart Hikai" || (!ConfigEditorStore.dirty && !dirty && !LockState.locked)) }
     function activateAction(label) {
         if (label === "Retry") { SettingsStore.error = ""; ShellSettingsStore.error = ""; WallpaperSettingsStore.error = ""; runtimeError = ""; flush() }
         else if (label === "Revert") { SettingsStore.discard(); ShellSettingsStore.discard(); WallpaperSettingsStore.discard(); pendingIds = ({}); runtimePending = ({}); runtimeError = "" }
-        else if (label === "Undo" && restartRequired) { set("wallpaper.playback.hardwareDecode", initialDecoder, false, true); message = "Decoder change undone"; toast.restart() }
-        else if (label === "Undo") undo()
         else if (label === "Restart Hikai") Quickshell.reload(false)
     }
     // Sidebar dots report action state rather than differences from defaults.

@@ -13,7 +13,7 @@ import "../config/SettingsCatalog.js" as Catalog
 PanelWindow {
     id: root
     // Release only after the surface has finished its visual close.
-    readonly property bool releaseReady: !panelOpen && !morphAnim.running && morphProgress === 0 && undoPopup.releaseReady
+    readonly property bool releaseReady: !panelOpen && !morphAnim.running && morphProgress === 0
     required property var modelData
     property string selectedCategory: "Look"
     property string highlightedId: ""
@@ -91,7 +91,7 @@ PanelWindow {
     readonly property bool pageConfirmation: selectedCategory === "Advanced" && configPage && configPage.confirmation.length > 0
     readonly property bool pageShortcutsEnabled: navigationEnabled && !pageConfirmation
     // Keep keyboard region order aligned across entry, cycling and arrow navigation.
-    readonly property var focusZones: [topbar, sidebar, interior.currentPage, footer, undoPopup]
+    readonly property var focusZones: [topbar, sidebar, interior.currentPage, footer]
 
     // Expose explicit arrow targets without consulting Tab focus metadata.
     function navItems(item, role) { return Navigation.collect(item, role) }
@@ -372,7 +372,7 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     color: "transparent"
-    visible: panelOpen || morphAnim.running || morphProgress > 0 || !undoPopup.releaseReady
+    visible: panelOpen || morphAnim.running || morphProgress > 0
     mask: Region {
         width: root.visible ? root.modelData.width : 0
         height: root.visible ? root.modelData.height : 0
@@ -749,13 +749,5 @@ PanelWindow {
                 page: SettingsCoordinator
             }
         }
-    }
-    SettingsPages.SettingsUndoPopup {
-        id: undoPopup
-        objectName: "settings-undo-popup"
-        anchors.fill: parent
-        panelRect: Qt.rect((root.width - root.targetBodyWidth) / 2, (root.height - root.targetBodyHeight) / 2, root.targetBodyWidth, root.targetBodyHeight)
-        requested: root.interactionReady && !!SettingsCoordinator.message
-        shortcutTarget: shortcutKeys
     }
 }
