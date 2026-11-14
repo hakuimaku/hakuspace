@@ -124,14 +124,13 @@ ActionMenu.ActionMenuPage {
                 selectedOverridesHover: true
 
                 idleColor: modelData.danger ? Qt.rgba(1.0, 0.3, 0.3, 0.10) : "transparent"
-                hoverColor: (selected || focused) ? "transparent"
-                                                  : (modelData.danger ? Qt.rgba(1.0, 0.3, 0.3, 0.28)
-                                                                      : Theme.surfaceSubtle(1.18))
+                hoverColor: "transparent"
                 pressedColor: (selected || focused) ? "transparent"
                                                     : (modelData.danger ? Qt.rgba(1.0, 0.3, 0.3, 0.42)
                                                                         : Theme.surfaceSubtle(1.35))
                 selectedColor: "transparent"
                 focusColor: "transparent"
+                hoverScaleDelta: 0.1
 
                 foregroundColor: (selected || focused) ? (modelData.danger ? "#ffffff" : Theme.onAccentColor)
                                                        : (modelData.danger ? Theme.danger : Theme.fg)
