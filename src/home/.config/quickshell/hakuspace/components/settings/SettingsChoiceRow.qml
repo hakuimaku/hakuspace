@@ -16,6 +16,9 @@ SettingsActionButton {
     readonly property var visibleOptions: searchable ? options.filter(option => option.label.toLowerCase().includes(search.text.trim().toLowerCase())) : options
     readonly property int selectedIndex: options.findIndex(option => option.value === value)
     readonly property string currentLabel: selectedIndex >= 0 ? options[selectedIndex].label : searchable && value ? String(value) : "Choose…"
+    readonly property string previewValue: menu.opened && choices.currentIndex >= 0 && choices.currentIndex < visibleOptions.length
+        ? String(visibleOptions[choices.currentIndex].value)
+        : String(value !== undefined && value !== null ? value : "")
     readonly property bool settingsNavOwnsVertical: menu.visible
     readonly property bool settingsNavOwnsHorizontal: menu.visible
     readonly property bool popupOpen: menu.visible
@@ -198,6 +201,7 @@ SettingsActionButton {
     // Commit a listed value once, then return focus to the selector.
     function choose(index) {
         if (loading || statusMessage.length || index < 0 || index >= visibleOptions.length) return
+        choices.currentIndex = index
         chosen(visibleOptions[index].value)
         menu.close()
     }

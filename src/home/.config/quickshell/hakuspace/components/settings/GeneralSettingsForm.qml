@@ -47,10 +47,11 @@ Column {
             readonly property var state: SettingsCoordinator.state(descriptor.id)
             readonly property var value: SettingsCoordinator.read(descriptor.id)
             readonly property string settingsNavSection: descriptor.group
+            readonly property bool hasSidePreview: descriptor.id === "shell.chrome.actionLayerAnimation"
             property alias control: control
             expanded: state.visible
             width: root.width
-            expandedHeight: body.implicitHeight + Theme.spaceMd * 2
+            expandedHeight: Math.max(body.implicitHeight, previewLoader.active ? previewLoader.height : 0) + Theme.spaceMd * 2
             radius: Theme.radius
             color: root.highlightedId === descriptor.id ? Theme.hoverMuted : "transparent"
             border.width: root.highlightedId === descriptor.id ? 1 : 0
@@ -59,8 +60,9 @@ Column {
             function set(value, deferred) { SettingsCoordinator.set(descriptor.id, value, deferred) }
             Column {
                 id: body
-                x: Theme.spaceMd; y: Theme.spaceMd
-                width: Math.max(0, parent.width - x * 2)
+                x: Theme.spaceMd
+                y: row.hasSidePreview ? Math.max(Theme.spaceMd, Math.round((row.expandedHeight - implicitHeight) / 2)) : Theme.spaceMd
+                width: Math.max(0, parent.width - x * 2 - (row.hasSidePreview ? previewLoader.width + Theme.spaceLg : 0))
                 spacing: Theme.spaceSm
                 Text { width: parent.width; text: row.descriptor.label; color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 1; font.weight: Font.DemiBold; wrapMode: Text.Wrap }
                 Text { visible: !!text; width: parent.width; text: row.descriptor.summary || ""; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 1; wrapMode: Text.Wrap }
@@ -77,6 +79,23 @@ Column {
                 SettingsActionButton { visible: row.state.action === "layout"; width: 190; height: 32; text: "Switch to Top Bar"; activeFocusOnTab: true; focused: activeFocus; onClicked: SettingsCoordinator.set("layout", "topbar"); Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
                 Text { visible: row.descriptor.key === "SCREENSHOT_DIR" && WM.backendName === "niri"; width: parent.width; text: "Niri built-in screenshot keys do not use this folder by default. Bind the HakuSpace screenshot script or edit Niri’s screenshot-path."; wrapMode: Text.Wrap; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2 }
                 SettingsActionButton { visible: row.descriptor.key === "SCREENSHOT_DIR" && WM.backendName === "niri"; width: 180; height: 32; text: "Open Niri config"; activeFocusOnTab: true; focused: activeFocus; onClicked: { ConfigEditorStore.selectFile("wm/niri-custom.kdl"); UiState.settingsGroup = "Advanced" } Keys.onReturnPressed: clicked(); Keys.onSpacePressed: clicked() }
+            }
+            Loader {
+                id: previewLoader
+                active: row.hasSidePreview && row.expanded
+                visible: active
+                anchors.right: parent.right
+                anchors.rightMargin: Theme.spaceMd
+                anchors.verticalCenter: parent.verticalCenter
+                width: Math.min(240, Math.max(176, Math.round(parent.width * 0.36)))
+                height: 124
+                sourceComponent: Component {
+                    ActionLayerAnimationPreview {
+                        style: row.control.item && row.control.item.previewValue
+                            ? row.control.item.previewValue
+                            : String(row.value || "scale")
+                    }
+                }
             }
             Component { id: toggle; SettingsSwitch { checked: row.value === true; shortcutTarget: root.shortcutTarget; Accessible.name: row.descriptor.label; onToggled: value => row.set(value, false) } }
             Component {
