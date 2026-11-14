@@ -78,7 +78,7 @@ QtObject {
                 if (key === "hoverLift" && (!Number.isInteger(value) || value < 0 || value > 48)) return false
                 if (key === "hoverScale" && (!Number.isInteger(value) || value < 0 || value > 100)) return false
                 if (section === "roundedScreen" && (!Number.isInteger(value) || value < 0 || value > (key === "radius" ? 24 : 6))) return false
-                if (key === "baseRadius" && (!Number.isInteger(value) || value < 4 || value > 24)) return false
+                if (key === "baseRadius" && (!Number.isInteger(value) || value < 0 || value > 24)) return false
                 if (key === "colorMode" && ["dark", "light"].indexOf(value) < 0) return false
                 if (key === "surfaceTone" && ["ink", "dark", "soft"].indexOf(value) < 0) return false
             }

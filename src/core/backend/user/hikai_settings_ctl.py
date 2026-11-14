@@ -70,7 +70,7 @@ def validate(values, partial=False):
             elif section == "roundedScreen":
                 valid = type(value) is int and 0 <= value <= (24 if key == "radius" else 6)
             elif key == "baseRadius":
-                valid = type(value) is int and 4 <= value <= 24
+                valid = type(value) is int and 0 <= value <= 24
             elif key == "colorMode":
                 valid = type(value) is str and value in ("dark", "light")
             else:
