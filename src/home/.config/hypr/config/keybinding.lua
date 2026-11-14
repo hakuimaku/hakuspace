@@ -23,7 +23,7 @@ hl.bind(mainMod .. " + SLASH", hl.dsp.exec_cmd("$HOME/.local/bin/launcher.sh emo
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd("$HOME/.local/bin/temp_note.sh"))
 hl.bind(mainMod .. " + I", hl.dsp.exec_cmd("$HOME/.local/bin/settings_manager.sh"))
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("$HOME/.local/bin/notif.sh toggle"))
-hl.bind(mainMod .. " + ESCAPE", hl.dsp.exec_cmd("$HOME/.local/bin/haku_backend.sh set classic"))
+-- hl.bind(mainMod .. " + ESCAPE", hl.dsp.exec_cmd("$HOME/.local/bin/haku_backend.sh set classic"))
 
 hl.bind(mainMod .. " + V",    hl.dsp.exec_cmd("$HOME/.local/bin/clipboard_menu.sh"))
 hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("$HOME/.local/bin/clipboard_menu.sh --wipe"))
