@@ -150,10 +150,60 @@ function equal(item, left, right, home) {
     return JSON.stringify(left) === JSON.stringify(right)
 }
 
-// Keep every configuration file available, with the active compositor first.
+// Classic-only desktop configs and internal receipts are omitted from Hikai's editor list.
+var hikaiExcludedConfigFiles = ["config/hypridle.conf", "config/hyprlock.conf", "config/rounded-screen.conf"]
+var hikaiExcludedConfigPrefixes = ["config/waybar/", "config/rofi/"]
+var configMetaById = {
+    "wm/hyprland-custom.lua": {title: "Hyprland", icon: ""},
+    "wm/niri-custom.kdl": {title: "Niri", icon: ""},
+    "wm/mango-custom.conf": {title: "MangoWM", icon: ""},
+    "config/cava-layer": {title: "Cava Underbar", icon: "󰝚"},
+    "config/desktop-icons.conf": {title: "Desktop Icons", icon: ""},
+    "config/hakumenu-general.json": {title: "HakuMenu General", icon: ""},
+    "config/kitty.conf": {title: "Kitty", icon: ""},
+    "config/shell.fish": {title: "Fish Shell", icon: "󰆍"},
+    "config/taskbar-pin-apps": {title: "Pinned Apps", icon: "󰐃"}
+}
+
+function isHikaiConfigFile(file) {
+    var id = file && file.id ? String(file.id) : ""
+    if (!id) return false
+    if (id.split("/").some(function(part) { return part.indexOf(".") === 0 })) return false
+    if (hikaiExcludedConfigFiles.indexOf(id) >= 0) return false
+    return !hikaiExcludedConfigPrefixes.some(function(prefix) { return id.indexOf(prefix) === 0 })
+}
+
+function configFileTitle(fileId) {
+    var parts = String(fileId || "").split("/")
+    var name = (parts.pop() || "").replace(/(.+)\.[^.]+$/, "$1").replace(/-custom$/, "")
+    var aliases = {"cava-layer": "Cava Underbar", "cava-underbar": "Cava Underbar", "mango": "MangoWM", "taskbar-pin-apps": "Pinned Apps", "hakumenu-general": "HakuMenu General"}
+    var label = name === "config" && parts.length > 1 ? parts.pop() : name
+    return aliases[label] || label.split(/[-_]+/).map(function(word) { return word.charAt(0).toUpperCase() + word.slice(1) }).join(" ")
+}
+
+function configFileOption(file) {
+    var id = file && file.id ? String(file.id) : ""
+    var meta = configMetaById[id]
+    var isWm = id.indexOf("wm/") === 0
+    return {
+        value: id,
+        label: meta ? meta.title : configFileTitle(id),
+        subtitle: id,
+        icon: meta ? meta.icon : (isWm ? "" : "󰏫"),
+        group: isWm ? "WM" : "Config"
+    }
+}
+
+// Keep Hikai-relevant configuration files grouped by WM first (active compositor at top), then config.
 function configFiles(files, wm) {
     var active = "wm/" + ({hyprland: "hyprland-custom.lua", niri: "niri-custom.kdl", mango: "mango-custom.conf"}[wm] || "")
-    return files.slice().sort(function(a, b) { return a.id === active ? -1 : b.id === active ? 1 : a.id.localeCompare(b.id) })
+    var groupRank = function(file) { return String(file && file.id || "").indexOf("wm/") === 0 ? 0 : 1 }
+    return files.filter(isHikaiConfigFile).sort(function(a, b) {
+        if (a.id === active) return -1
+        if (b.id === active) return 1
+        var rankDiff = groupRank(a) - groupRank(b)
+        return rankDiff !== 0 ? rankDiff : a.id.localeCompare(b.id)
+    })
 }
 
 // Expand the supported home prefixes without evaluating arbitrary shell text.

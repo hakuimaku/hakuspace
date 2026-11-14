@@ -137,7 +137,7 @@ Item {
         Text { width: parent.width; visible: !!ConfigEditorStore.error; text: ConfigEditorStore.error; color: Theme.fgDescription; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 2; wrapMode: Text.Wrap }
         SettingsChoiceRow {
             width: parent.width
-            options: root.visibleFiles.map(file => ({label: file.id, value: file.id}))
+            options: root.visibleFiles.map(file => Catalog.configFileOption(file))
             value: ConfigEditorStore.selectedFileId
             shortcutTarget: root.shortcutTarget
             Accessible.name: "Configuration file"
