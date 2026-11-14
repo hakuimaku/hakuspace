@@ -131,14 +131,14 @@ var actionMenuRecordModes = [
 
 // Utility rail tools in their display order.
 var sidebarTools = [
-    { key: "quickActions", icon: "󰀻", label: "Quick Actions" },
+    { key: "controlCenter", icon: "󰀻", label: "Control Center" },
     { key: "clipboard", icon: "󰅌", label: "Clipboard" },
     { key: "tempNote", icon: "󰏫", label: "Temp Note" },
     { key: "taskManager", icon: "", label: "Task Manager" }
 ]
 
-// Quick action metadata; availability and state remain runtime-owned.
-var sidebarQuickActions = [
+// Control Center top-grid actions; availability and state remain runtime-owned.
+var sidebarControlCenterActions = [
     { key: "wifi", icon: "󰤨", label: "Wi-Fi", toggle: true },
     { key: "bluetooth", icon: "󰂯", label: "Bluetooth", toggle: true },
     { key: "idleInhibit", icon: "󰈈", label: "Keep Awake", toggle: true },
@@ -146,7 +146,7 @@ var sidebarQuickActions = [
     { key: "dockbar", icon: "󰐃", label: "Dockbar", toggle: true },
     { key: "desktopIcons", icon: "󰀻", label: "Desktop Icons", toggle: true },
     { key: "cava", icon: "󰝚", label: "Cava Underbar", toggle: true },
-    { key: "settings", icon: "󰒓", label: "Settings", toggle: false }
+    { key: "wallpaper", icon: "", label: "Wallpaper", toggle: false }
 ]
 
 // Dashboard

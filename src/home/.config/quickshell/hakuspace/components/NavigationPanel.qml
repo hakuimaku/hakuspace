@@ -222,8 +222,8 @@ Item {
     readonly property real sidebarToolX: horizontalSidebar ? sidebarBodyX : sidebarBodyWidth + 30
     readonly property real sidebarToolY: Math.max(0, Math.min(horizontalSidebar ? sidebarBodyHeight + 30 : sidebarBodyY + 40,
         modelData.height - sidebarToolPreferredHeight - 12))
-    readonly property real sidebarToolPreferredWidth: renderedSidebarTool === "quickActions" ? 540 : 460
-    readonly property real sidebarToolPreferredHeight: renderedSidebarTool === "quickActions" ? 240 : 360
+    readonly property real sidebarToolPreferredWidth: renderedSidebarTool === "controlCenter" ? 540 : 460
+    readonly property real sidebarToolPreferredHeight: renderedSidebarTool === "controlCenter" ? 540 : 360
     readonly property real sidebarToolWidth: Math.max(1, Math.min(sidebarToolPreferredWidth,
         modelData.width - sidebarToolX - 12))
     readonly property real sidebarToolHeight: Math.max(1, Math.min(sidebarToolPreferredHeight,
@@ -362,20 +362,30 @@ Item {
     }
 
     // Keep dispatch in the parent so closing the tool cannot cancel its command.
-    function runQuickAction(key) {
+    function runControlCenterAction(key) {
         if (key === "settings") {
             if (sidebarToolOpen) closeSidebarTool()
             if (sidebarExpanded) UiState.cancelNavigationHandoff()
             UiState.openSettings(modelData.name)
             return
         }
-        if (key !== "screenshot" && key !== "lock" && key !== "wallpaper") return
-        var script = key === "screenshot" ? "screenshot.sh"
-                   : key === "lock" ? "lock.sh" : "wallpaper_select.sh"
-        if (key === "screenshot") Quickshell.execDetached([Env.binDir + "/" + script])
+        if (key === "wallpaper") {
+            if (sidebarToolOpen) closeSidebarTool()
+            if (sidebarExpanded) UiState.cancelNavigationHandoff()
+            UiState.openWallpaperWorkspace(modelData.name)
+        }
+    }
+
+    function runPowerAction(id) {
+        if (id === "logout") {
+            if (sidebarToolOpen) closeSidebarTool()
+            if (sidebarExpanded) UiState.cancelNavigationHandoff()
+            UiState.openActionMenu(modelData.name, "exit")
+            return
+        }
+        if (["suspend", "reboot", "poweroff", "hibernate", "lock"].indexOf(id) < 0) return
         UiState.closeNavigation()
-        if (key !== "screenshot")
-            Qt.callLater(function() { Quickshell.execDetached([Env.binDir + "/" + script]) })
+        Qt.callLater(function() { Quickshell.execDetached([Env.binDir + "/power_ctl.sh", id]) })
     }
 
     function requestClose() {
@@ -1060,12 +1070,12 @@ Item {
             y: root.mapY(root.sidebarToolY, sidebarToolLayer.height)
             targetWidth: root.sidebarToolWidth
             targetHeight: root.sidebarToolHeight
-            title: root.renderedSidebarTool === "quickActions" ? "Quick Actions"
+            title: root.renderedSidebarTool === "controlCenter" ? "Control Center"
                 : root.renderedSidebarTool === "clipboard" ? "Clipboard" : ""
             showHeader: root.renderedSidebarTool === "clipboard"
-            icon: root.renderedSidebarTool === "quickActions" ? "󰀻"
+            icon: root.renderedSidebarTool === "controlCenter" ? "󰀻"
                 : root.renderedSidebarTool === "clipboard" ? "󰅌" : ""
-            toolContent: root.renderedSidebarTool === "quickActions" ? quickActionsContent
+            toolContent: root.renderedSidebarTool === "controlCenter" ? controlCenterContent
                 : root.renderedSidebarTool === "clipboard" ? clipboardContent : null
             focusContent: !root.sidebarKeyboardMode && UiState.ownsInteraction("navigation", root.modelData.name)
             open: root.panelOpen && root.sidebarExpanded && root.sidebarToolOpen && !root.closing && !root.dashboardVisuallyActive
@@ -1093,12 +1103,13 @@ Item {
         }
 
         Component {
-            id: quickActionsContent
-            Sidebar.SidebarQuickActions {
+            id: controlCenterContent
+            Sidebar.SidebarControlCenter {
                 keyboardCursor: root.keyboardLease
                 onRailFocusRequested: root.closeSidebarTool(true)
-                onCloseRequested: keyboard => root.closeSidebarTool(keyboard)
-                onActionRequested: key => root.runQuickAction(key)
+                onCloseRequested: keyboard => root.requestClose()
+                onActionRequested: key => root.runControlCenterAction(key)
+                onPowerActionRequested: id => root.runPowerAction(id)
             }
         }
         Component {
@@ -1282,7 +1293,7 @@ Item {
                 }
             }
             Keys.onEscapePressed: event => {
-                if (root.sidebarToolOpen) root.closeSidebarTool(true)
+                if (root.sidebarToolOpen && root.activeSidebarTool !== "controlCenter") root.closeSidebarTool(true)
                 else root.requestClose()
                 event.accepted = true
             }
