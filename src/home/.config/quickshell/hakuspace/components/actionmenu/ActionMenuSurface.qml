@@ -13,18 +13,32 @@ Item {
     property string phase: "closed"
 
     // Motion parameters for open / close
+    readonly property string configuredAnimationStyle: ShellSettingsStore.actionLayerAnimation
+    property string transitionStyle: configuredAnimationStyle
+    readonly property real transitionProgress: Math.max(0.0, Math.min(1.0, openProgress * (1.0 - closeProgress)))
+    readonly property bool transitionEffectActive: (phase === "opening" || phase === "closing")
+        && (transitionStyle === "unfold" || transitionStyle === "blur")
+    readonly property real _openStartScale: transitionStyle === "scale" ? 0.90
+        : (transitionStyle === "unfold" || transitionStyle === "blur") ? 0.96 : 1.0
+    readonly property real _openStartTranslateY: transitionStyle === "scale" ? 16.0
+        : transitionStyle === "slide" ? -44.0 : 0.0
+    readonly property real _closeEndScale: transitionStyle === "scale" ? 0.90
+        : (transitionStyle === "unfold" || transitionStyle === "blur") ? 0.96 : 1.0
+    readonly property real _closeEndTranslateY: transitionStyle === "scale" ? 16.0
+        : transitionStyle === "slide" ? -44.0 : 0.0
     property real openProgress: 0.0
     property real openOpacity: 0.0
-    property real openScale: 0.94
+    property real openScale: 0.90
+    property real openTranslateY: 0.0
     property real closeProgress: 0.0
     property real closeOpacity: 1.0
     property real closeScale: 1.0
-    property real contentEntranceOpacity: 1.0
+    property real closeTranslateY: 0.0
 
     // Geometry profiles
     property string currentProfile: "option"
-    property real surfaceWidth: 540
-    property real surfaceHeight: 420
+    property real surfaceWidth: Theme.actionLayerOptionMinWidth
+    property real surfaceHeight: Theme.actionLayerOptionMinHeight
 
     // Navigation Stack
     // Array of objects: { pageUrl: string, pageItem: Item, seedGeom: var, profile: string }
@@ -33,9 +47,6 @@ Item {
 
     signal requestClose()
     signal closeAnimationFinished()
-
-    readonly property bool revealActive: phase === "opening" && openProgress < 0.999
-    readonly property real revealDiameter: Math.sqrt(surfaceWidth * surfaceWidth + surfaceHeight * surfaceHeight) * openProgress
 
     // Stable screen-centered coordinate anchor
     readonly property real centerX: screenWidth / 2
@@ -120,35 +131,37 @@ Item {
 
     // Resolves width and height boundaries for a geometry profile name.
     function getProfileSize(profile) {
-        var w = 540;
-        var h = 420;
+        var w = Theme.actionLayerOptionMinWidth;
+        var h = Theme.actionLayerOptionMinHeight;
         switch (profile) {
         case "option":
-            w = Math.min(Math.max(screenWidth * 0.40, 440), 720);
-            h = Math.min(Math.max(screenHeight * 0.40, 360), 540);
+            w = Math.min(Math.max(screenWidth * Theme.actionLayerOptionWidthRatio, Theme.actionLayerOptionMinWidth), Theme.actionLayerOptionMaxWidth);
+            h = Math.min(Math.max(screenHeight * Theme.actionLayerOptionHeightRatio, Theme.actionLayerOptionMinHeight), Theme.actionLayerOptionMaxHeight);
             break;
         case "emoji":
-            w = Math.min(Math.max(screenWidth * 0.44, 580), 700);
-            h = Math.min(Math.max(screenHeight * 0.58, 540), 650);
+            w = Math.min(Math.max(screenWidth * Theme.actionLayerEmojiWidthRatio, Theme.actionLayerEmojiMinWidth), Theme.actionLayerEmojiMaxWidth);
+            h = Math.min(Math.max(screenHeight * Theme.actionLayerEmojiHeightRatio, Theme.actionLayerEmojiMinHeight), Theme.actionLayerEmojiMaxHeight);
             break;
         case "exitReport":
-            w = Math.min(Math.max(screenWidth * 0.50, 540), 880);
-            h = Math.min(Math.max(screenHeight * 0.60, 440), 760);
+            w = Math.min(Math.max(screenWidth * Theme.actionLayerExitWidthRatio, Theme.actionLayerExitMinWidth), Theme.actionLayerExitMaxWidth);
+            h = Math.min(Math.max(screenHeight * Theme.actionLayerExitHeightRatio, Theme.actionLayerExitMinHeight), Theme.actionLayerExitMaxHeight);
             break;
         case "powerHorizontal":
-            w = Math.min(Math.max(screenWidth * 0.70, 680), 1040);
-            h = 148;
+            w = Math.min(Math.max(screenWidth * Theme.actionLayerPowerWidthRatio, Theme.actionLayerPowerMinWidth), Theme.actionLayerPowerMaxWidth);
+            h = Theme.actionLayerPowerHeight;
             break;
         case "powerVertical":
-            w = 140;
-            h = 440;
+            w = Theme.actionLayerPowerVerticalWidth;
+            h = Theme.actionLayerPowerVerticalHeight;
             break;
         default:
-            w = Math.min(Math.max(screenWidth * 0.40, 440), 720);
-            h = Math.min(Math.max(screenHeight * 0.40, 360), 540);
+            w = Math.min(Math.max(screenWidth * Theme.actionLayerOptionWidthRatio, Theme.actionLayerOptionMinWidth), Theme.actionLayerOptionMaxWidth);
+            h = Math.min(Math.max(screenHeight * Theme.actionLayerOptionHeightRatio, Theme.actionLayerOptionMinHeight), Theme.actionLayerOptionMaxHeight);
             break;
         }
-        return { width: Math.round(w), height: Math.round(h) };
+        var maxFitW = Math.max(240, screenWidth - 48);
+        var maxFitH = Math.max(160, screenHeight - 48);
+        return { width: Math.round(Math.min(w, maxFitW)), height: Math.round(Math.min(h, maxFitH)) };
     }
 
     // Maps flow ID string to QML component page path.
@@ -201,7 +214,9 @@ Item {
     // Connects back, close, and pushSubmenu signals on dynamic page instances.
     function connectPageSignals(item) {
         if (!item) return;
-        item.selectionPillShown = Qt.binding(function() { return root.phase === "ready"; });
+        item.selectionPillShown = Qt.binding(function() {
+            return root.phase === "opening" || root.phase === "ready" || root.phase === "closing";
+        });
         if (item.requestBack !== undefined) {
             item.requestBack.connect(root.popPage);
         }
@@ -240,12 +255,13 @@ Item {
         }
     }
 
-    // Initializes initial flow page and starts circular reveal opening animation.
+    // Initializes initial flow page and starts configured opening animation.
     function beginOpenAnimation() {
         if (closeAnim.running) closeAnim.stop();
         openAnim.stop();
         morphForwardAnim.stop();
         morphBackAnim.stop();
+        root.transitionStyle = root.configuredAnimationStyle;
         root.phase = "opening";
 
         clearStack();
@@ -261,7 +277,8 @@ Item {
         var comp = Qt.createComponent(initialUrl);
         if (comp.status === Component.Ready) {
             var page = comp.createObject(pageStackHost, {
-                canGoBack: false
+                canGoBack: false,
+                selectionPillShown: true
             });
             if (page) {
                 page.anchors.fill = pageStackHost;
@@ -286,11 +303,12 @@ Item {
         root.phase = "opening";
         root.openProgress = 0.0;
         root.openOpacity = 0.0;
-        root.openScale = 0.94;
+        root.openScale = root._openStartScale;
+        root.openTranslateY = root._openStartTranslateY;
         root.closeProgress = 0.0;
         root.closeOpacity = 1.0;
         root.closeScale = 1.0;
-        root.contentEntranceOpacity = 0.0;
+        root.closeTranslateY = 0.0;
 
         openAnim.restart();
     }
@@ -298,12 +316,17 @@ Item {
     // Starts action layer closing animation and resets morph states.
     function beginCloseAnimation() {
         if (root.phase === "closed" || root.phase === "closing") return;
+        if (root.phase === "ready") root.transitionStyle = root.configuredAnimationStyle;
         if (openAnim.running) openAnim.stop();
         if (morphForwardAnim.running) { morphForwardAnim.stop(); finishForwardMorph(); }
         if (morphBackAnim.running) { morphBackAnim.stop(); finishBackMorph(); }
 
         morphCarrier.active = false;
         childRevealEffect.visible = false;
+        root.closeProgress = 0.0;
+        root.closeOpacity = 1.0;
+        root.closeScale = 1.0;
+        root.closeTranslateY = 0.0;
         root.phase = "closing";
         closeAnim.restart();
     }
@@ -315,10 +338,11 @@ Item {
         root.closeProgress = 0.0;
         root.closeOpacity = 1.0;
         root.closeScale = 1.0;
+        root.closeTranslateY = 0.0;
         root.openProgress = 1.0;
         root.openOpacity = 1.0;
         root.openScale = 1.0;
-        root.contentEntranceOpacity = 1.0;
+        root.openTranslateY = 0.0;
         root.phase = "ready";
     }
 
@@ -340,7 +364,8 @@ Item {
         }
 
         var childProps = Object.assign({}, pageProps || {}, {
-            canGoBack: true
+            canGoBack: true,
+            selectionPillShown: false
         });
         var childItem = comp.createObject(morphChildHost, childProps);
         if (!childItem) {
@@ -638,6 +663,7 @@ Item {
     height: surfaceHeight
     scale: openScale * closeScale
     opacity: openOpacity * closeOpacity
+    transform: Translate { y: root.openTranslateY + root.closeTranslateY }
 
     // Universal Escape key routing across all pages
     Keys.onEscapePressed: event => {
@@ -780,50 +806,54 @@ Item {
         }
     }
 
-    // Offscreen texture capture source for initial open reveal with hideSource semantics.
-    // Keeps surfaceRect visible: true so all layouts (ColumnLayout, RowLayout)
-    // polish immediately on creation rather than freezing for the 560ms duration of openAnim.
-    ShaderEffectSource {
-        id: openCaptureSource
-        anchors.fill: surfaceRect
-        sourceItem: surfaceRect
-        hideSource: root.revealActive
-        live: root.revealActive
-        visible: false
-    }
-
-    // Mask for circular initial open reveal
+    // Offscreen rounded mask used when Rounded Clip Unfold opens or closes.
     Item {
-        id: circleMask
-        anchors.fill: surfaceRect
+        id: transitionMaskItem
+        anchors.fill: parent
         visible: false
         layer.enabled: true
 
         Rectangle {
             anchors.centerIn: parent
-            width: Math.max(1, root.revealDiameter)
-            height: width
-            radius: width / 2
+            readonly property real progress: root.transitionProgress
+            readonly property real minWidth: Math.max(Theme.largeRadius * 2, root.surfaceWidth * 0.24)
+            readonly property real minHeight: Math.max(Theme.largeRadius * 2, root.surfaceHeight * 0.14)
+            width: Math.max(1, minWidth + (root.surfaceWidth - minWidth) * progress)
+            height: Math.max(1, minHeight + (root.surfaceHeight - minHeight) * progress)
+            radius: Math.min(width / 2, height / 2, Theme.largeRadius)
             color: "white"
         }
     }
 
-    // Hardware-accelerated MultiEffect reveal applied only during initial opening phase
+    // Transition shader source active for Unfold or Blur.
+    ShaderEffectSource {
+        id: transitionCaptureSource
+        anchors.fill: parent
+        sourceItem: surfaceRect
+        hideSource: root.transitionEffectActive
+        live: true
+        visible: false
+    }
+
     MultiEffect {
-        id: openRevealEffect
-        anchors.fill: surfaceRect
-        source: openCaptureSource
-        visible: root.revealActive
-        z: 100
-        maskEnabled: true
-        maskSource: circleMask
+        id: transitionEffect
+        anchors.fill: parent
+        source: transitionCaptureSource
+        visible: root.transitionEffectActive
+        z: 10
+        maskEnabled: root.transitionStyle === "unfold"
+        maskSource: root.transitionStyle === "unfold" ? transitionMaskItem : null
         maskThresholdMin: 0.5
         maskSpreadAtMin: 0.025
         maskThresholdMax: 1.0
         maskSpreadAtMax: 0.0
+        blurEnabled: root.transitionStyle === "blur"
+        blurMax: 36
+        blur: root.transitionStyle === "blur" ? Math.max(0.0, Math.min(1.0, 1.0 - root.transitionProgress)) : 0.0
+        autoPaddingEnabled: root.transitionStyle === "blur"
     }
 
-    // Opening animation
+    // Opening animation driven by the configured Shell action-layer transition style.
     ParallelAnimation {
         id: openAnim
         NumberAnimation {
@@ -831,42 +861,50 @@ Item {
             property: "openProgress"
             from: 0.0
             to: 1.0
-            duration: HAnimation.actionLayerOpenDuration
+            duration: HAnimation.actionLayerEntranceDuration
             easing.type: Easing.BezierSpline
-            easing.bezierCurve: HAnimation.actionLayerOpenCurve
+            easing.bezierCurve: root.transitionStyle === "unfold"
+                ? [0.22, 0.68, 0.22, 1.0, 1, 1]
+                : HAnimation.actionLayerOpenCurve
         }
         NumberAnimation {
             target: root
             property: "openOpacity"
             from: 0.0
             to: 1.0
-            duration: HAnimation.actionLayerOpenDuration
+            duration: root.transitionStyle === "fade" || root.transitionStyle === "blur"
+                ? HAnimation.actionLayerEntranceDuration
+                : root.transitionStyle === "unfold"
+                    ? Math.round(HAnimation.actionLayerEntranceDuration * 0.35)
+                    : Math.round(HAnimation.actionLayerEntranceDuration * 0.72)
             easing.type: Easing.BezierSpline
-            easing.bezierCurve: HAnimation.actionLayerOpenCurve
+            easing.bezierCurve: HAnimation.actionLayerContentCurve
         }
         NumberAnimation {
             target: root
             property: "openScale"
-            from: 0.94
+            from: root._openStartScale
             to: 1.0
-            duration: HAnimation.actionLayerOpenDuration
+            duration: HAnimation.actionLayerEntranceDuration
             easing.type: Easing.BezierSpline
-            easing.bezierCurve: HAnimation.actionLayerOpenCurve
+            easing.bezierCurve: root.transitionStyle === "unfold"
+                ? [0.22, 0.68, 0.22, 1.0, 1, 1]
+                : HAnimation.actionLayerOpenCurve
         }
         NumberAnimation {
             target: root
-            property: "contentEntranceOpacity"
-            from: 0.0
-            to: 1.0
-            duration: HAnimation.actionLayerMorphContentDuration
+            property: "openTranslateY"
+            from: root._openStartTranslateY
+            to: 0.0
+            duration: HAnimation.actionLayerEntranceDuration
             easing.type: Easing.BezierSpline
-            easing.bezierCurve: HAnimation.actionLayerContentCurve
+            easing.bezierCurve: HAnimation.actionLayerOpenCurve
         }
         onFinished: {
             root.openProgress = 1.0;
             root.openOpacity = 1.0;
             root.openScale = 1.0;
-            root.contentEntranceOpacity = 1.0;
+            root.openTranslateY = 0.0;
             root.phase = "ready";
             var topEntry = root.navStack[root.navStack.length - 1];
             if (topEntry && topEntry.pageItem && topEntry.pageItem.forceActiveFocus) {
@@ -875,7 +913,7 @@ Item {
         }
     }
 
-    // Closing animation
+    // Closing animation symmetric to the active transition style.
     ParallelAnimation {
         id: closeAnim
         NumberAnimation {
@@ -883,29 +921,45 @@ Item {
             property: "closeProgress"
             from: 0.0
             to: 1.0
-            duration: HAnimation.actionLayerCloseDuration
+            duration: root.transitionStyle === "unfold" ? HAnimation.actionLayerEntranceDuration : HAnimation.actionLayerCloseDuration
             easing.type: Easing.BezierSpline
-            easing.bezierCurve: HAnimation.actionLayerCloseCurve
+            easing.bezierCurve: root.transitionStyle === "unfold"
+                ? [0.35, 0.0, 0.25, 1.0, 1, 1]
+                : HAnimation.actionLayerCloseCurve
         }
         NumberAnimation {
             target: root
             property: "closeOpacity"
             from: 1.0
             to: 0.0
-            duration: HAnimation.actionLayerCloseDuration
+            duration: root.transitionStyle === "unfold" ? HAnimation.actionLayerEntranceDuration : HAnimation.actionLayerCloseDuration
             easing.type: Easing.BezierSpline
-            easing.bezierCurve: HAnimation.actionLayerCloseCurve
+            easing.bezierCurve: root.transitionStyle === "unfold"
+                ? [0.55, 0.0, 0.85, 0.35, 1, 1]
+                : HAnimation.actionLayerCloseCurve
         }
         NumberAnimation {
             target: root
             property: "closeScale"
             from: 1.0
-            to: 0.90
+            to: root._closeEndScale
+            duration: root.transitionStyle === "unfold" ? HAnimation.actionLayerEntranceDuration : HAnimation.actionLayerCloseDuration
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: root.transitionStyle === "unfold"
+                ? [0.35, 0.0, 0.25, 1.0, 1, 1]
+                : HAnimation.actionLayerCloseCurve
+        }
+        NumberAnimation {
+            target: root
+            property: "closeTranslateY"
+            from: 0.0
+            to: root._closeEndTranslateY
             duration: HAnimation.actionLayerCloseDuration
             easing.type: Easing.BezierSpline
             easing.bezierCurve: HAnimation.actionLayerCloseCurve
         }
         onFinished: {
+            root.closeTranslateY = 0.0;
             root.phase = "closed";
             clearStack();
             root.closeAnimationFinished();

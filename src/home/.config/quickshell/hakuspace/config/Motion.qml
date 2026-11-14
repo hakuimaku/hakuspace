@@ -121,8 +121,10 @@ QtObject {
     // Button focus curve.
     readonly property list<real> buttonFocusCurve: [0.20, 0.80, 0.20, 1.0, 1, 1]
 
-    // Shared Action Layer Motion (centered reveal, smooth morphing, fade-zoom close)
+    // Shared Action Layer Motion (scale-fade entrance, smooth morphing, fade-zoom close)
     readonly property int actionLayerOpenDuration: 560
+    // Action layer entrance duration for centered scale-fade open.
+    readonly property int actionLayerEntranceDuration: 360
     // Action layer close duration.
     readonly property int actionLayerCloseDuration: 460
     // Action layer morph duration.

@@ -94,8 +94,9 @@ QtObject {
     property list<real> buttonSelectCurve: selectionMorphCurve
     property list<real> buttonFocusCurve: Motion.buttonFocusCurve
 
-    // Shared Action Layer Motion (centered reveal, smooth morphing, fade-zoom close)
+    // Shared Action Layer Motion (scale-fade entrance, smooth morphing, fade-zoom close)
     property int actionLayerOpenDuration: Motion.actionLayerOpenDuration
+    property int actionLayerEntranceDuration: Motion.actionLayerEntranceDuration
     property int actionLayerCloseDuration: Motion.actionLayerCloseDuration
     property int actionLayerMorphDuration: Motion.actionLayerMorphDuration
     property int actionLayerMorphContentDuration: Motion.actionLayerMorphContentDuration

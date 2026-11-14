@@ -25,6 +25,7 @@ QtObject {
     // Status edge remains independent from the legacy Taskbar request.
     readonly property string statusEdge: values.chrome.statusEdge
     readonly property string notificationPopupPosition: values.chrome.notificationPopupPosition
+    readonly property string actionLayerAnimation: (values.chrome && values.chrome.actionLayerAnimation) ? values.chrome.actionLayerAnimation : "scale"
     readonly property int baseRadius: values.appearance.baseRadius
     // Hikai mode previews with the appearance draft.
     readonly property string colorMode: values.appearance.colorMode
@@ -70,7 +71,12 @@ QtObject {
                     if (typeof schema.idle[key] === "boolean") { if (typeof value !== "boolean") return false }
                     else if (!Number.isInteger(value) || value < (key === "dimPercent" ? 1 : 10) || value > (key === "dimPercent" ? 100 : 86400) || (key.endsWith("Timeout") && value % 10 !== 0)) return false
                 }
-                if (section === "chrome" && (key === "statusEdge" ? ["top", "left"] : ["center", "anchor"]).indexOf(value) < 0) return false
+                if (section === "chrome") {
+                    var chromeAllowed = key === "statusEdge" ? ["top", "left"]
+                        : key === "notificationPopupPosition" ? ["center", "anchor"]
+                        : ["scale", "fade", "unfold", "blur", "slide"]
+                    if (chromeAllowed.indexOf(value) < 0) return false
+                }
                 if (section === "topbar" && (key === "cavaStyle" ? ["box", "pill", "fluid"].indexOf(value) < 0 : typeof value !== "boolean")) return false
                 if (key === "visibilityMode" && ["autohide", "always"].indexOf(value) < 0) return false
                 if (["exclusiveSpace", "showTrash", "showDevices"].indexOf(key) >= 0 && typeof value !== "boolean") return false
