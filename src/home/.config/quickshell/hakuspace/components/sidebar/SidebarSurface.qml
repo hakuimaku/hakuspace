@@ -10,6 +10,7 @@ Item {
     // Horizontal rails unfold along X while preserving upright tool buttons.
     property bool horizontal: false
     property bool bottomAttached: false
+    property bool hasFullscreen: false
     property real bodyHeight: 500
     property Item tooltipHost: null
     property real rf: ScreenGeometry.edgeHugRadius
@@ -64,18 +65,39 @@ Item {
 
     // Height of the lobe grows dynamically with morphProgress:
     readonly property real currentHeight: (horizontal ? bodyWidth : bodyHeight) * morphProgress
+    readonly property real lateralPadding: Math.max(0, ((horizontal ? bodyHeight : bodyWidth) - itemDiameter) / 2)
+    readonly property real stackSpan: tools.length * itemDiameter + Math.max(0, tools.length - 1) * itemSpacing
+    readonly property real stackStart: listTopPadding + (!horizontal && bottomAttached ? joinOverlap / 2 : -joinOverlap / 2)
+    readonly property real fullscreenRailSpan: Math.min(horizontal ? bodyWidth : bodyHeight, stackSpan + lateralPadding * 2)
+    readonly property real fullscreenRailStart: Math.max(0, Math.min((horizontal ? bodyWidth : bodyHeight) - fullscreenRailSpan, stackStart - lateralPadding))
+    readonly property real fullscreenCurrentSpan: fullscreenRailSpan * morphProgress
 
     visible: morphProgress > 0.001 || expanded
 
     // The Overlay owns only the rounded rail and its controls.
     Rectangle {
-        x: root.horizontal ? -root.joinOverlap : 0
-        y: root.horizontal ? 0 : root.bottomAttached ? root.bodyHeight - root.currentHeight : -root.joinOverlap
-        width: root.horizontal ? root.currentHeight + root.joinOverlap : root.bodyWidth
-        height: root.horizontal ? root.bodyHeight : root.currentHeight + root.joinOverlap
+        x: root.hasFullscreen
+            ? (root.horizontal ? root.fullscreenRailStart : 0)
+            : (root.horizontal ? -root.joinOverlap : 0)
+        y: root.hasFullscreen
+            ? (root.horizontal ? 0 : (root.bottomAttached ? root.fullscreenRailStart + root.fullscreenRailSpan - root.fullscreenCurrentSpan : root.fullscreenRailStart))
+            : (root.horizontal ? 0 : root.bottomAttached ? root.bodyHeight - root.currentHeight : -root.joinOverlap)
+        width: root.hasFullscreen
+            ? (root.horizontal ? root.fullscreenCurrentSpan : root.bodyWidth)
+            : (root.horizontal ? root.currentHeight + root.joinOverlap : root.bodyWidth)
+        height: root.hasFullscreen
+            ? (root.horizontal ? root.bodyHeight : root.fullscreenCurrentSpan)
+            : (root.horizontal ? root.bodyHeight : root.currentHeight + root.joinOverlap)
         color: root.surfaceColor
-        topRightRadius: root.cornerRadius
-        bottomRightRadius: root.cornerRadius
+        readonly property real fullCornerRadius: Math.min(root.cornerRadius, width, height)
+        topLeftRadius: 0
+        topRightRadius: root.hasFullscreen
+            ? ((!root.horizontal && root.bottomAttached) ? fullCornerRadius : 0)
+            : root.cornerRadius
+        bottomLeftRadius: 0
+        bottomRightRadius: root.hasFullscreen
+            ? ((!root.horizontal && root.bottomAttached) ? 0 : fullCornerRadius)
+            : root.cornerRadius
     }
 
     // Place the three utility controls inside the attached rail.
@@ -105,7 +127,11 @@ Item {
                 required property var modelData
 
                 x: root.horizontal ? root.listTopPadding + index * (root.itemDiameter + root.itemSpacing) : controlsGroup.controlX
-                y: root.horizontal ? (root.bodyHeight - root.controlDiameter) / 2 : root.listTopPadding + index * (root.itemDiameter + root.itemSpacing)
+                y: root.horizontal
+                    ? (root.bodyHeight - root.controlDiameter) / 2
+                    : (root.bottomAttached
+                        ? root.bodyHeight - root.listBottomPadding - root.itemDiameter - index * (root.itemDiameter + root.itemSpacing)
+                        : root.listTopPadding + index * (root.itemDiameter + root.itemSpacing))
                 width: root.itemDiameter
                 height: root.itemDiameter
                 z: 20

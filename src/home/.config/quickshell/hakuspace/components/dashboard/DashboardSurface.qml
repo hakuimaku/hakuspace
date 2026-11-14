@@ -29,6 +29,7 @@ Item {
     property QtObject viewState: null
     property bool expanded: false
     property real morphProgress: 0.0
+    property bool hasFullscreen: false
 
     signal requestReturnToNavigation()
     signal focusRequested()
@@ -171,8 +172,8 @@ Item {
     readonly property real maskBodyWidth: currentBodyWidth
     readonly property real maskBodyHeight: usableBodyBottom
     readonly property real maskEarX: currentBodyEnd
-    readonly property real maskEarWidth: flareShell.earRadius
-    readonly property real maskEarHeight: attachmentY + flareShell.earRadius
+    readonly property real maskEarWidth: flareRadius
+    readonly property real maskEarHeight: attachmentY + flareRadius
     readonly property real maskFootY: usableBodyBottom
     readonly property real maskFootWidth: bottomFlareReach + sideInset
     readonly property real maskFootHeight: bottomFlareReach
@@ -190,25 +191,20 @@ Item {
 
     visible: morphProgress > 0.001 || expanded
 
-    // 1. Dashboard Flare Surface (HakuSpace Flare visual language)
-    DashboardFlareSurface {
-        id: flareShell
-        y: root.bottomAttached ? root.attachmentSeam : 0
-        leftAttached: root.leftAttached
-        leftSeam: root.leftSeam
-        screenName: root.screenName
-        bottomAttached: root.bottomAttached
-        bodyWidth: root.currentEnvelopeWidth
-        bodyHeight: root.currentEnvelopeHeight
-        sideInset: root.sideInset
-        attachmentY: root.attachmentY
-        bottomFlareReach: root.bottomFlareReach
-        flareRadius: root.flareRadius
-        screenWidth: root.screenWidth
-        screenHeight: root.screenHeight
-        surfaceColor: Theme.surface
-        cornerRadius: root.cornerRadius + 8
-        morphProgress: root.morphProgress
+    // 1. Surrogate rounded background on Overlay (no flare ears; Layer 1 Top owns flare ears).
+    Rectangle {
+        id: bodySurface
+        x: 0
+        y: root.bottomAttached ? root.contentOriginY : 0
+        width: root.currentBodyWidth
+        height: root.currentBodyHeight
+        color: Theme.surface
+        visible: width > 0.01 && height > 0.01
+        readonly property real bodyCornerRadius: Math.min(root.cornerRadius + 8, width / 2, height / 2)
+        topLeftRadius: 0
+        topRightRadius: root.bottomAttached ? bodyCornerRadius : 0
+        bottomLeftRadius: 0
+        bottomRightRadius: !root.bottomAttached ? bodyCornerRadius : 0
         z: 1
     }
 
@@ -269,8 +265,8 @@ Item {
         id: cardsClipper
         x: 0
         y: root.mapY(0)
-        width: root.currentEnvelopeWidth
-        height: root.bottomAttached ? root.currentBodyHeight : root.currentEnvelopeHeight
+        width: root.currentBodyWidth
+        height: root.currentBodyHeight
         clip: true
         visible: root.morphProgress > 0.02
         z: 5

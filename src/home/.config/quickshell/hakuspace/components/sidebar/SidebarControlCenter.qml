@@ -15,6 +15,7 @@ FocusScope {
     property int selectedIndex: 0
     property int preferredColumn: 0
     property bool keyboardCursor: false
+    property bool horizontal: false
     property var toggleStates: ({})
     property string errorMessage: ""
     property string statusOutput: ""
@@ -256,13 +257,14 @@ FocusScope {
         if (selectedIndex < 8) {
             var row = Math.floor(selectedIndex / columnCount)
             var col = selectedIndex % columnCount
-            if (dx < 0 && col === 0) { railFocusRequested(); return }
+            if (!horizontal && dx < 0 && col === 0) { railFocusRequested(); return }
             if (dx !== 0) {
                 var nextCol = Math.max(0, Math.min(columnCount - 1, col + dx))
                 selectedIndex = row * columnCount + nextCol
                 preferredColumn = nextCol
-            } else if (dy < 0 && row > 0) {
-                selectedIndex -= columnCount
+            } else if (dy < 0) {
+                if (row > 0) selectedIndex -= columnCount
+                else if (horizontal) { railFocusRequested(); return }
             } else if (dy > 0) {
                 if (row === 0) selectedIndex += columnCount
                 else selectedIndex = 8
@@ -282,7 +284,10 @@ FocusScope {
             return
         }
         if (dx < 0) {
-            if (selectedIndex === 10) { railFocusRequested(); return }
+            if (selectedIndex === 10) {
+                if (!horizontal) railFocusRequested()
+                return
+            }
             selectedIndex -= 1
             preferredColumn = selectedIndex === 10 ? 0 : 2
         } else if (dx > 0 && selectedIndex < 12) {

@@ -12,6 +12,7 @@ FocusScope {
     property var pendingEntries: []
     property int selectedIndex: 0
     property bool fullMenuSelected: false
+    property bool horizontal: false
     property bool loading: true
     property string errorMessage: ""
 
@@ -50,12 +51,24 @@ FocusScope {
     Component.onCompleted: reload()
     Keys.onLeftPressed: event => {
         if (event.modifiers !== Qt.NoModifier) { event.accepted = false; return }
-        railFocusRequested()
+        if (!horizontal) railFocusRequested()
         event.accepted = true
     }
     Keys.onUpPressed: event => {
-        if (fullMenuSelected) fullMenuSelected = false
-        else selectedIndex = Math.max(0, selectedIndex - 1)
+        if (fullMenuSelected) {
+            fullMenuSelected = false
+            if (horizontal && entries.length === 0) {
+                railFocusRequested()
+                event.accepted = true
+                return
+            }
+        } else if (horizontal && (entries.length === 0 || selectedIndex === 0)) {
+            railFocusRequested()
+            event.accepted = true
+            return
+        } else {
+            selectedIndex = Math.max(0, selectedIndex - 1)
+        }
         if (entries.length > 0) clipList.positionViewAtIndex(selectedIndex, ListView.Contain)
         event.accepted = true
     }

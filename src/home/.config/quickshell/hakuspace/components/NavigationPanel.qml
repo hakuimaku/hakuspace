@@ -13,9 +13,28 @@ Item {
     id: root
     // Release only after the surface has finished its visual close.
     readonly property bool releaseReady: !panelOpen && !closing && !openMorph.running && !closeMorph.running && !dashboardMorphAnim.running
-    readonly property bool hasFullscreen: ToplevelManager.toplevels.values.some(w =>
+    // Empty Niri workspaces leave Top surfaces visible even if an off-workspace toplevel still reports activated/fullscreen.
+    readonly property bool niriActiveWorkspaceEmpty: WM.backendName === "niri" && !!root.modelData
+        && WM.workspaces.some(ws => ws.output === root.modelData.name && ws.active && ws.windows === 0)
+    readonly property bool rawHasFullscreen: !niriActiveWorkspaceEmpty && ToplevelManager.toplevels.values.some(w =>
         w.fullscreen && (w.activated || ToplevelManager.activeToplevel === w)
         && (!root.modelData || w.screens.length === 0 || w.screens.includes(root.modelData) || w.screens.some(s => s.name === root.modelData.name)))
+    readonly property bool anyToplevelActive: !!ToplevelManager.activeToplevel
+        || ToplevelManager.toplevels.values.some(w => w.activated)
+    readonly property bool hasFullscreenToplevelOnScreen: !niriActiveWorkspaceEmpty && ToplevelManager.toplevels.values.some(w =>
+        w.fullscreen && (!root.modelData || w.screens.length === 0 || w.screens.includes(root.modelData) || w.screens.some(s => s.name === root.modelData.name)))
+    // Preserve fullscreen state only while our OnDemand/Exclusive Overlay holds keyboard focus.
+    property bool latchedFullscreen: false
+    function syncFullscreenLatch() {
+        if (rawHasFullscreen) latchedFullscreen = true
+        else if (!hasFullscreenToplevelOnScreen || (!panelOpen && !closing) || anyToplevelActive) latchedFullscreen = false
+    }
+    onRawHasFullscreenChanged: syncFullscreenLatch()
+    onAnyToplevelActiveChanged: syncFullscreenLatch()
+    onHasFullscreenToplevelOnScreenChanged: syncFullscreenLatch()
+    onClosingChanged: syncFullscreenLatch()
+    Component.onCompleted: syncFullscreenLatch()
+    readonly property bool hasFullscreen: rawHasFullscreen || (latchedFullscreen && hasFullscreenToplevelOnScreen)
     required property var modelData
     // The screen host can preserve widget selection without retaining Dashboard UI.
     property QtObject dashboardState: QtObject {
@@ -190,14 +209,24 @@ Item {
     readonly property real railHoverOverflow: 6
     readonly property real sidebarBodyX: sidebarRail.x
     readonly property real sidebarBodyY: sidebarRail.y
-    readonly property real sidebarEarWidth: Math.max(32, Math.round(flareReach * 1.5))
-    readonly property real sidebarEarRadius: sidebarEarWidth + Theme.giantRadius * 2
     readonly property real sidebarRailThickness: horizontalSidebar ? sidebarBodyHeight : sidebarBodyWidth
+    readonly property real sidebarRailLength: horizontalSidebar ? sidebarBodyWidth : sidebarBodyHeight
     readonly property real sidebarRailOrigin: horizontalSidebar ? sidebarBodyX : sidebarBodyY
-
-    // Keep the ear tip inside Navigation's rounded contour as its width grows.
+    readonly property real sidebarFootInset: horizontalSidebar ? ScreenGeometry.topBorderThickness : sideInset
+    // Cap sidebar corner and flare reach relative to rail thickness so flareFoot stays tangent inside the rail.
+    readonly property real sidebarCornerRadius: Math.min(Theme.largeRadius + 8, Math.round(sidebarRailThickness * 0.40))
+    readonly property real sidebarFlareReach: Math.min(flareReach,
+        Math.max(0, sidebarRailThickness - sidebarFootInset - sidebarCornerRadius - 4))
     readonly property real sidebarJoinRadius: Math.max(0, Math.min(backingCurveRadius,
         (surfaceEnd - surfaceStart) / 2, flareTargetHeight / 2))
+    readonly property real sidebarMaxEarWidth: Math.max(32,
+        Math.floor(surfaceEnd - sidebarJoinRadius * 0.65 - sidebarRailThickness))
+    readonly property real sidebarEarWidth: Math.max(32,
+        Math.min(48, sidebarMaxEarWidth, Math.round(sidebarFlareReach * 1.5)))
+    readonly property real sidebarEarRadius: Math.min(sidebarEarWidth + Math.min(Theme.giantRadius * 2, 96),
+        Math.max(sidebarEarWidth, sidebarRailLength - sidebarTopFlareY - sidebarCornerRadius))
+
+    // Keep the ear tip inside Navigation's rounded contour as its width grows.
     readonly property real sidebarJoinInset: Math.min(sidebarJoinRadius,
         Math.max(0, sidebarRailThickness + sidebarEarWidth - surfaceEnd + sidebarJoinRadius))
     readonly property real sidebarTopFlareY: Math.max(0, surfaceHeight - sidebarRailOrigin - sidebarJoinRadius
@@ -242,7 +271,7 @@ Item {
             SafeZoneGeometry.rect(bridgeX, bridgeY, bridgeWidth, bridgeHeight), margin / 2),
             modelData.width, modelData.height) : empty
         var railVisual = SafeZoneGeometry.rect(sidebarBodyX, sidebarBodyY,
-            sidebarBodyWidth + railHoverOverflow, sidebarBodyHeight + flareReach)
+            sidebarBodyWidth + railHoverOverflow, sidebarBodyHeight + sidebarFlareReach)
         var rail = sidebarInteractionVisible ? SafeZoneGeometry.clampRect(SafeZoneGeometry.inflate(
             railVisual, margin),
             modelData.width, modelData.height) : empty
@@ -354,6 +383,16 @@ Item {
     // Keep the rail cursor within the available utilities.
     function moveSidebarSelection(delta) {
         sidebarSelectedIndex = Math.max(0, Math.min(sidebarSurface.tools.length - 1, sidebarSelectedIndex + delta))
+    }
+
+    function returnFromSidebarToNavigation(index) {
+        if (sidebarToolOpen) activeSidebarTool = ""
+        sidebarKeyboardMode = false
+        hoveredIndex = -1
+        if (index !== undefined && index >= 0 && index < regions.length)
+            selectedIndex = index
+        if (sidebarExpanded) UiState.cancelNavigationHandoff()
+        keyHandler.forceActiveFocus()
     }
 
     // Activate the rail cursor without changing hover state.
@@ -701,6 +740,7 @@ Item {
     }
 
     onPanelOpenChanged: {
+        syncFullscreenLatch()
         openMorph.stop()
         closeMorph.stop()
 
@@ -913,6 +953,28 @@ Item {
             cornerRadius: sidebarSurface.cornerRadius
             surfaceColor: sidebarSurface.surfaceColor
         }
+        Dashboard.DashboardFlareSurface {
+            id: dashboardFlare
+            readonly property var surface: dashboardLoader.item
+            y: surface && surface.bottomAttached ? surface.attachmentSeam : 0
+            visible: !root.hasFullscreen && !!surface && surface.visible && opacity > 0.001
+            opacity: surface ? surface.opacity : 0.0
+            leftAttached: surface ? surface.leftAttached : root.leftAttached
+            leftSeam: surface ? surface.leftSeam : root.leftSeam
+            screenName: root.modelData.name
+            bottomAttached: surface ? surface.bottomAttached : ScreenGeometry.bottomAttached
+            bodyWidth: surface ? surface.currentEnvelopeWidth : 0
+            bodyHeight: surface ? surface.currentEnvelopeHeight : 0
+            sideInset: surface ? surface.sideInset : root.sideInset
+            attachmentY: surface ? surface.attachmentY : root.logicalAttachmentY
+            bottomFlareReach: surface ? surface.bottomFlareReach : Theme.hugRadius
+            flareRadius: surface ? surface.flareRadius : Theme.giantRadius
+            screenWidth: navigationVisualLayer.width
+            screenHeight: navigationVisualLayer.height
+            surfaceColor: Theme.surface
+            cornerRadius: surface ? surface.cornerRadius + 8 : Theme.largeRadius + 8
+            morphProgress: surface ? surface.morphProgress : 0.0
+        }
     }
 
     PanelWindow {
@@ -1032,10 +1094,11 @@ Item {
             id: sidebarSurface
             horizontal: root.horizontalSidebar
             bottomAttached: ScreenGeometry.bottomAttached
+            hasFullscreen: root.hasFullscreen
             x: root.sidebarBodyX
             y: root.mapY(root.sidebarBodyY, root.sidebarBodyHeight)
-            width: root.sidebarBodyWidth + (root.horizontalSidebar ? root.flareReach : root.sidebarEarWidth + 4)
-            height: root.sidebarBodyHeight + (root.horizontalSidebar ? root.sidebarEarWidth + 4 : root.flareReach)
+            width: root.sidebarBodyWidth + (root.horizontalSidebar ? root.sidebarFlareReach : root.sidebarEarWidth + 4)
+            height: root.sidebarBodyHeight + (root.horizontalSidebar ? root.sidebarEarWidth + 4 : root.sidebarFlareReach)
             bodyWidth: root.sidebarBodyWidth
             bodyHeight: root.sidebarBodyHeight
             controlDiameter: root.sidebarControlDiameter
@@ -1044,12 +1107,12 @@ Item {
             activeToolKey: root.activeSidebarTool
             selectedToolIndex: root.sidebarSelectedIndex
             keyboardSelected: root.sidebarKeyboardMode
-            rf: root.flareReach
+            rf: root.sidebarFlareReach
             sideInset: root.sideInset
             topFlareY: root.sidebarTopFlareY
             earWidth: root.sidebarEarWidth
             earRadius: root.sidebarEarRadius
-            cornerRadius: Theme.largeRadius + 8
+            cornerRadius: root.sidebarCornerRadius
             surfaceColor: Theme.surface
             z: 5
             onToolRequested: key => {
@@ -1105,6 +1168,7 @@ Item {
         Component {
             id: controlCenterContent
             Sidebar.SidebarControlCenter {
+                horizontal: root.horizontalSidebar
                 keyboardCursor: root.keyboardLease
                 onRailFocusRequested: root.closeSidebarTool(true)
                 onCloseRequested: keyboard => root.requestClose()
@@ -1115,6 +1179,7 @@ Item {
         Component {
             id: clipboardContent
             Sidebar.SidebarClipboard {
+                horizontal: root.horizontalSidebar
                 onRailFocusRequested: root.closeSidebarTool(true)
                 onOpenFullRequested: {
                     UiState.closeNavigation()
@@ -1149,6 +1214,7 @@ Item {
                 attachmentSeam: root.attachmentY
                 expanded: root.panelOpen && root.dashboardExpanded && !root.closing
                 morphProgress: root.dashboardMorphProgress
+                hasFullscreen: root.hasFullscreen
                 // A full Dashboard -> closed transition reuses the Dashboard ->
                 // Navigation morph path, whose zero-progress geometry is the
                 // Navigation start envelope rather than 0x0. Fade only the tail
@@ -1167,6 +1233,31 @@ Item {
                     }
                 }
             }
+        }
+
+        // Surrogate screen-flush backing for radial Navigation over fullscreen
+        // where Top-layer FlareSurface is occluded.
+        Rectangle {
+            id: navigationOverlayBacking
+            objectName: "navigation-overlay-backing"
+            readonly property real revealFactor: root.closing
+                ? Math.max(0.0, 1.0 - root.closeFlareProgress)
+                : root.logoMorphProgress
+            readonly property real targetW: root.leftAttached ? root.surfaceHeight : root.surfaceEnd
+            readonly property real targetH: root.leftAttached ? root.surfaceEnd : root.surfaceHeight
+            x: 0
+            y: (!root.leftAttached && ScreenGeometry.bottomAttached) ? navigationLayer.height - height : 0
+            width: targetW * revealFactor
+            height: targetH * revealFactor
+            color: Theme.surface
+            readonly property real curveRadius: Math.min(width, height, root.circularShellDiameter / 2 + root.flareExtraBottom)
+            topLeftRadius: 0
+            topRightRadius: (!root.leftAttached && ScreenGeometry.bottomAttached) ? curveRadius : 0
+            bottomLeftRadius: 0
+            bottomRightRadius: (!root.leftAttached && ScreenGeometry.bottomAttached) ? 0 : curveRadius
+            opacity: navigationFlare.opacity
+            visible: root.hasFullscreen && (root.panelOpen || root.closing) && width > 0.01 && height > 0.01 && opacity > 0.001
+            z: 3
         }
 
         // One background follows the Logo morph into the circular controller.
@@ -1233,7 +1324,10 @@ Item {
                 if (root.dashboardVisuallyActive || (root.sidebarToolOpen && !root.sidebarKeyboardMode)) return
                 root.keyboardLease = true
                 if (root.sidebarKeyboardMode) {
-                    if (root.horizontalSidebar) root.moveSidebarSelection(-1)
+                    if (root.horizontalSidebar) {
+                        if (root.sidebarSelectedIndex === 0) root.returnFromSidebarToNavigation(0)
+                        else root.moveSidebarSelection(-1)
+                    }
                     else if (root.sidebarToolOpen) root.closeSidebarTool(true)
                     else root.requestClose()
                 }
@@ -1243,8 +1337,16 @@ Item {
             Keys.onUpPressed: event => {
                 if (root.dashboardVisuallyActive || (root.sidebarToolOpen && !root.sidebarKeyboardMode)) return
                 root.keyboardLease = true
-                if (root.sidebarKeyboardMode) root.moveSidebarSelection(-1)
-                else root.moveSelection(-1)
+                if (root.sidebarKeyboardMode) {
+                    if (root.horizontalSidebar) {
+                        if (root.sidebarToolOpen) root.closeSidebarTool(true)
+                        else root.requestClose()
+                    }
+                    else if (ScreenGeometry.bottomAttached) root.moveSidebarSelection(1)
+                    else if (root.sidebarSelectedIndex === 0) root.returnFromSidebarToNavigation(0)
+                    else root.moveSidebarSelection(-1)
+                }
+                else root.moveSelection(ScreenGeometry.bottomAttached ? 1 : -1)
                 event.accepted = true
             }
             Keys.onRightPressed: event => {
@@ -1260,8 +1362,15 @@ Item {
             Keys.onDownPressed: event => {
                 if (root.dashboardVisuallyActive || (root.sidebarToolOpen && !root.sidebarKeyboardMode)) return
                 root.keyboardLease = true
-                if (root.sidebarKeyboardMode) root.moveSidebarSelection(1)
-                else root.moveSelection(1)
+                if (root.sidebarKeyboardMode) {
+                    if (root.horizontalSidebar) root.activateSidebarSelection()
+                    else if (ScreenGeometry.bottomAttached) {
+                        if (root.sidebarSelectedIndex === 0) root.returnFromSidebarToNavigation(0)
+                        else root.moveSidebarSelection(-1)
+                    }
+                    else root.moveSidebarSelection(1)
+                }
+                else root.moveSelection(ScreenGeometry.bottomAttached ? -1 : 1)
                 event.accepted = true
             }
             Keys.onPressed: event => {
