@@ -12,7 +12,7 @@ from pathlib import Path
 # Keep runtime state outside this versioned preference schema.
 DEFAULTS = {
     "version": 11,
-    "chrome": {"statusEdge": "top", "notificationPopupPosition": "center"},
+    "chrome": {"statusEdge": "top", "notificationPopupPosition": "center", "actionLayerAnimation": "scale"},
     "appearance": {"baseRadius": 12, "surfaceTone": "dark", "colorMode": "dark"},
     "roundedScreen": {"radius": 20, "borderThickness": 4},
     "dock": {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 36,
@@ -46,7 +46,12 @@ def validate(values, partial=False):
             raise ValueError(f"{section}: missing fields")
         for key, value in fields.items():
             if section == "chrome":
-                valid = type(value) is str and value in (("top", "left") if key == "statusEdge" else ("center", "anchor"))
+                allowed = {
+                    "statusEdge": ("top", "left"),
+                    "notificationPopupPosition": ("center", "anchor"),
+                    "actionLayerAnimation": ("scale", "fade", "unfold", "blur", "slide"),
+                }[key]
+                valid = type(value) is str and value in allowed
             elif section == "idle":
                 if type(DEFAULTS[section][key]) is bool:
                     valid = type(value) is bool
@@ -168,10 +173,13 @@ def migrate(values):
         return validate(values), True
     if type(original_version) is int and original_version == 11:
         migrated = False
-        if type(values.get("chrome")) is dict and set(values["chrome"]) == {"statusEdge"}:
-            values = copy.deepcopy(values)
-            values["chrome"]["notificationPopupPosition"] = DEFAULTS["chrome"]["notificationPopupPosition"]
-            migrated = True
+        if type(values.get("chrome")) is dict:
+            for key in ("notificationPopupPosition", "actionLayerAnimation"):
+                if key not in values["chrome"]:
+                    if not migrated:
+                        values = copy.deepcopy(values)
+                    values["chrome"][key] = DEFAULTS["chrome"][key]
+                    migrated = True
         if type(values.get("topbar")) is dict and "cavaStyle" not in values["topbar"]:
             if not migrated:
                 values = copy.deepcopy(values)
