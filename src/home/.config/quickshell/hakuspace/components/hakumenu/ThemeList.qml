@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import Quickshell.Io
 import "../../services"
 import "../../config/UiCatalog.js" as UiCatalog
@@ -263,746 +264,461 @@ Item {
         onExited: stateRefreshTimer.restart()
     }
 
-    ListView {
-        id: themeList
+    Item {
         anchors.fill: parent
+        anchors.leftMargin: -Theme.hakuMenuLeftPadding
+        anchors.rightMargin: -Theme.hakuMenuRightPadding
         clip: true
-        spacing: root.itemGap
-        topMargin: Theme.gap
-        bottomMargin: Theme.gap
-        boundsBehavior: Flickable.StopAtBounds
-        currentIndex: count > 0 ? 0 : -1
-        model: root.visibleItems
-        onCurrentIndexChanged: {
-            root.syncSelectionLabel()
-            if (currentIndex < 0) selectionPill.targetItem = null
-        }
 
-        Motion.SelectionPill {
-            id: selectionPill
-            parent: themeList.contentItem
-            z: 1
-            normalColor: root.isLowerSectionActive ? Theme.hoverMuted : Theme.accent
-            onNormalColorChanged: syncTarget(false)
-            opacity: shown ? (root.isLowerSectionActive ? 0.5 : 1.0) : 0
-            shown: targetItem !== null
-            duration: HAnimation.spatial
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: HAnimation.spatial
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: HAnimation.spatialCurve
-                }
-            }
-        }
-
-        ScrollBar.vertical: Motion.HScrollBar {
-            id: vbar
-        }
-
-        delegate: Item {
-            id: rowWrap
-            required property var modelData
-            required property int index
-            width: themeList.width
-            readonly property bool isSpecialOption: !!modelData && (modelData.shellLayoutSwitch === true || modelData.cavaPositionSwitch === true)
-            readonly property bool isBackendSwitch: !!modelData && modelData.backendSwitch === true
-            readonly property bool isFullWidth: isSpecialOption || isBackendSwitch
-            readonly property bool isBottomOption: isFullWidth
-            readonly property real sectionGap: (isBottomOption && index === root.upperCount && root.upperCount > 0) ? Theme.pad : 0
-            height: (isSpecialOption ? Math.round(specialColumn.implicitHeight + Theme.spaceXs * 2) : root.rowHeight) + sectionGap
-
-            readonly property bool hasState: !isSpecialOption && modelData.showState === true && modelData.toggle && (modelData.stateKind === "colorMode" || !!modelData.chromeKey || root.statePathFor(modelData).length > 0)
-            readonly property bool stateOn: modelData.stateKind === "colorMode" ? Theme.isLight
-                : modelData.chromeKey ? root.chromeEnabled(modelData)
-                : hasState ? root.parseState(stateView.text(), modelData.stateKind) : false
-            readonly property int observedRefreshGeneration: root.refreshGeneration
-
-            onObservedRefreshGenerationChanged: {
-                if (hasState && root.statePathFor(modelData)) stateView.reload()
+        ListView {
+            id: themeList
+            anchors.fill: parent
+            anchors.leftMargin: Theme.hakuMenuLeftPadding
+            anchors.rightMargin: Theme.hakuMenuRightPadding
+            clip: false
+            spacing: root.itemGap
+            topMargin: Theme.gap
+            bottomMargin: Theme.gap
+            boundsBehavior: Flickable.StopAtBounds
+            currentIndex: count > 0 ? 0 : -1
+            model: root.visibleItems
+            onCurrentIndexChanged: {
+                root.syncSelectionLabel()
+                if (currentIndex < 0) selectionPill.targetItem = null
             }
 
-            FileView {
-                id: stateView
-                path: rowWrap.hasState ? root.statePathFor(rowWrap.modelData) : ""
-                watchChanges: path.length > 0
-                printErrors: false
-                onFileChanged: this.reload()
-            }
-
-            Column {
-                id: specialColumn
-                visible: rowWrap.isSpecialOption
-                z: 2
-                x: Theme.gap
-                width: Math.max(0, parent.width - Theme.gap * 2 - vbar.reservedGutter)
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.verticalCenterOffset: rowWrap.sectionGap / 2
-                spacing: Theme.spaceXs
-
-                Item {
-                    id: specialTitleItem
-                    width: parent.width
-                    height: Math.max(24, specialTitleText.implicitHeight + 4)
-
-                    Text {
-                        id: specialTitleText
-                        anchors.left: parent.left
-                        anchors.leftMargin: Theme.pad * 1.5
-                        anchors.right: parent.right
-                        anchors.rightMargin: Theme.pad * 1.5
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: rowWrap.modelData.icon + "  " + root.labelFor(rowWrap.modelData)
-                        color: root.available(rowWrap.modelData) ? Theme.fg : Theme.fgMuted
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize + 1
-                        font.weight: Font.DemiBold
-                        elide: Text.ElideRight
-                    }
-
-                    HoverHandler {
-                        onHoveredChanged: {
-                            if (hovered) {
-                                root.isLowerSectionActive = true
-                                themeList.currentIndex = rowWrap.index
-                                root.syncSelectionLabel()
-                            }
-                        }
-                    }
-
-                    TapHandler {
-                        onTapped: {
-                            themeList.currentIndex = rowWrap.index
-                            root.syncSelectionLabel()
-                            root.activateIndex(rowWrap.index)
-                        }
-                    }
-                }
-
-                Item {
-                    id: shellLayoutTrack
-                    visible: rowWrap.modelData.shellLayoutSwitch === true
-                    width: parent.width
-                    height: Theme.comfortableControlHeight
-
-                    readonly property real slotSpacing: Theme.spaceXs
-                    readonly property real slotWidth: Math.max(0, (width - slotSpacing * 2) / 3)
-                    readonly property int activeIndex: ChromeLayout.taskbarMode ? 2 : ChromeLayout.leftBarMode ? 1 : 0
-                    property int previewIndex: activeIndex
-                    onActiveIndexChanged: {
-                        layoutReturnTimer.stop()
-                        previewIndex = activeIndex
-                    }
-
-                    Timer {
-                        id: layoutReturnTimer
-                        interval: 1000
-                        repeat: false
-                        onTriggered: shellLayoutTrack.previewIndex = shellLayoutTrack.activeIndex
-                    }
-
-                    HoverHandler {
-                        onHoveredChanged: {
-                            if (hovered) {
-                                root.isLowerSectionActive = true
-                                themeList.currentIndex = rowWrap.index
-                                root.syncSelectionLabel()
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        z: 0
-                        anchors.fill: parent
-                        radius: 10
-                        color: Theme.isLight ? Theme.panel : Theme.surfaceSubtle(1.15)
-                        border.width: Theme.isLight ? 1 : 0
-                        border.color: Theme.border
-                    }
-
-                    Rectangle {
-                        id: layoutPill
-                        z: 1
-                        x: shellLayoutTrack.previewIndex * (shellLayoutTrack.slotWidth + shellLayoutTrack.slotSpacing)
-                        y: 0
-                        width: shellLayoutTrack.slotWidth
-                        height: parent.height
-                        radius: 8
-                        color: Theme.accent
-                        readonly property bool isPreviewing: shellLayoutTrack.previewIndex !== shellLayoutTrack.activeIndex
-                        opacity: isPreviewing ? 0.5 : 1.0
-
-                        Behavior on x {
-                            NumberAnimation {
-                                duration: root.bottomMorphDuration
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: root.bounceCurve
-                            }
-                        }
-
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: root.bottomMorphDuration
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: root.bounceCurve
-                            }
-                        }
-                    }
-
-                    Motion.MorphButton {
-                        id: topbarBtn
-                        z: 2
-                        x: 0
-                        y: 0
-                        width: shellLayoutTrack.slotWidth
-                        height: parent.height
-                        radius: 8
-                        enabled: root.available(rowWrap.modelData)
-                        text: "Topbar"
-                        idleColor: "transparent"
-                        hoverColor: "transparent"
-                        pressedColor: "transparent"
-                        selectedColor: "transparent"
-                        foregroundColor: shellLayoutTrack.previewIndex === 0 ? Theme.onAccentColor : Theme.fgMuted
-                        disabledForegroundColor: shellLayoutTrack.previewIndex === 0 ? Theme.onAccentColor : Theme.fgMuted
-                        hoverForegroundColor: Theme.onAccentColor
-                        selectedForegroundColor: Theme.onAccentColor
-                        onHoveredChanged: {
-                            if (hovered) {
-                                root.isLowerSectionActive = true
-                                themeList.currentIndex = rowWrap.index
-                                root.syncSelectionLabel()
-                                layoutReturnTimer.stop()
-                                shellLayoutTrack.previewIndex = 0
-                            } else if (!leftbarBtn.hovered && !taskbarBtn.hovered) {
-                                if (shellLayoutTrack.previewIndex !== shellLayoutTrack.activeIndex) {
-                                    layoutReturnTimer.restart()
-                                }
-                            }
-                        }
-                        onClicked: {
-                            layoutReturnTimer.stop()
-                            themeList.currentIndex = rowWrap.index
-                            root.syncSelectionLabel()
-                            if (typeof SettingsCoordinator !== "undefined") {
-                                SettingsCoordinator.set("layout", "topbar")
-                            }
-                            root.launched(false)
-                        }
-                    }
-
-                    Motion.MorphButton {
-                        id: leftbarBtn
-                        z: 2
-                        x: shellLayoutTrack.slotWidth + shellLayoutTrack.slotSpacing
-                        y: 0
-                        width: shellLayoutTrack.slotWidth
-                        height: parent.height
-                        radius: 8
-                        enabled: root.available(rowWrap.modelData)
-                        text: "Leftbar"
-                        idleColor: "transparent"
-                        hoverColor: "transparent"
-                        pressedColor: "transparent"
-                        selectedColor: "transparent"
-                        foregroundColor: shellLayoutTrack.previewIndex === 1 ? Theme.onAccentColor : Theme.fgMuted
-                        disabledForegroundColor: shellLayoutTrack.previewIndex === 1 ? Theme.onAccentColor : Theme.fgMuted
-                        hoverForegroundColor: Theme.onAccentColor
-                        selectedForegroundColor: Theme.onAccentColor
-                        onHoveredChanged: {
-                            if (hovered) {
-                                root.isLowerSectionActive = true
-                                themeList.currentIndex = rowWrap.index
-                                root.syncSelectionLabel()
-                                layoutReturnTimer.stop()
-                                shellLayoutTrack.previewIndex = 1
-                            } else if (!topbarBtn.hovered && !taskbarBtn.hovered) {
-                                if (shellLayoutTrack.previewIndex !== shellLayoutTrack.activeIndex) {
-                                    layoutReturnTimer.restart()
-                                }
-                            }
-                        }
-                        onClicked: {
-                            layoutReturnTimer.stop()
-                            themeList.currentIndex = rowWrap.index
-                            root.syncSelectionLabel()
-                            if (typeof SettingsCoordinator !== "undefined") {
-                                SettingsCoordinator.set("layout", "leftbar")
-                            }
-                            root.launched(false)
-                        }
-                    }
-
-                    Motion.MorphButton {
-                        id: taskbarBtn
-                        z: 2
-                        x: (shellLayoutTrack.slotWidth + shellLayoutTrack.slotSpacing) * 2
-                        y: 0
-                        width: shellLayoutTrack.slotWidth
-                        height: parent.height
-                        radius: 8
-                        enabled: root.available(rowWrap.modelData)
-                        text: "Taskbar"
-                        idleColor: "transparent"
-                        hoverColor: "transparent"
-                        pressedColor: "transparent"
-                        selectedColor: "transparent"
-                        foregroundColor: shellLayoutTrack.previewIndex === 2 ? Theme.onAccentColor : Theme.fgMuted
-                        disabledForegroundColor: shellLayoutTrack.previewIndex === 2 ? Theme.onAccentColor : Theme.fgMuted
-                        hoverForegroundColor: Theme.onAccentColor
-                        selectedForegroundColor: Theme.onAccentColor
-                        onHoveredChanged: {
-                            if (hovered) {
-                                root.isLowerSectionActive = true
-                                themeList.currentIndex = rowWrap.index
-                                root.syncSelectionLabel()
-                                layoutReturnTimer.stop()
-                                shellLayoutTrack.previewIndex = 2
-                            } else if (!topbarBtn.hovered && !leftbarBtn.hovered) {
-                                if (shellLayoutTrack.previewIndex !== shellLayoutTrack.activeIndex) {
-                                    layoutReturnTimer.restart()
-                                }
-                            }
-                        }
-                        onClicked: {
-                            layoutReturnTimer.stop()
-                            themeList.currentIndex = rowWrap.index
-                            root.syncSelectionLabel()
-                            if (typeof SettingsCoordinator !== "undefined") {
-                                SettingsCoordinator.set("layout", "taskbar")
-                            }
-                            root.launched(false)
-                        }
-                    }
-                }
-
-                Item {
-                    id: cavaPositionTrack
-                    visible: rowWrap.modelData.cavaPositionSwitch === true
-                    width: parent.width
-                    height: Theme.comfortableControlHeight
-
-                    readonly property bool isLocked: AppState.cavaDynamicPosition
-                    opacity: isLocked ? 0.5 : 1.0
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: root.bottomMorphDuration
-                            easing.type: Easing.BezierSpline
-                            easing.bezierCurve: root.bounceCurve
-                        }
-                    }
-
-                    readonly property real slotSpacing: Theme.spaceXs
-                    readonly property real slotWidth: Math.max(0, (width - slotSpacing * 3) / 4)
-                    readonly property int activeIndex: AppState.cavaPosition === "bottom" ? 1 : AppState.cavaPosition === "left" ? 2 : AppState.cavaPosition === "right" ? 3 : 0
-                    property int previewIndex: activeIndex
-                    onActiveIndexChanged: {
-                        cavaPosReturnTimer.stop()
-                        previewIndex = activeIndex
-                    }
-
-                    Timer {
-                        id: cavaPosReturnTimer
-                        interval: 1000
-                        repeat: false
-                        onTriggered: cavaPositionTrack.previewIndex = cavaPositionTrack.activeIndex
-                    }
-
-                    HoverHandler {
-                        enabled: !cavaPositionTrack.isLocked
-                        onHoveredChanged: {
-                            if (hovered) {
-                                root.isLowerSectionActive = true
-                                themeList.currentIndex = rowWrap.index
-                                root.syncSelectionLabel()
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        z: 0
-                        anchors.fill: parent
-                        radius: 10
-                        color: Theme.isLight ? Theme.panel : Theme.surfaceSubtle(1.15)
-                        border.width: Theme.isLight ? 1 : 0
-                        border.color: Theme.border
-                    }
-
-                    Rectangle {
-                        id: cavaPosPill
-                        z: 1
-                        x: cavaPositionTrack.previewIndex * (cavaPositionTrack.slotWidth + cavaPositionTrack.slotSpacing)
-                        y: 0
-                        width: cavaPositionTrack.slotWidth
-                        height: parent.height
-                        radius: 8
-                        color: Theme.accent
-                        readonly property bool isPreviewing: cavaPositionTrack.previewIndex !== cavaPositionTrack.activeIndex
-                        opacity: isPreviewing ? 0.5 : 1.0
-
-                        Behavior on x {
-                            NumberAnimation {
-                                duration: root.bottomMorphDuration
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: root.bounceCurve
-                            }
-                        }
-
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: root.bottomMorphDuration
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: root.bounceCurve
-                            }
-                        }
-                    }
-
-                    Motion.MorphButton {
-                        id: topPosBtn
-                        z: 2
-                        x: 0
-                        y: 0
-                        width: cavaPositionTrack.slotWidth
-                        height: parent.height
-                        radius: 8
-                        enabled: !cavaPositionTrack.isLocked && root.available(rowWrap.modelData)
-                        disabledOpacity: 1.0
-                        text: "Top"
-                        idleColor: "transparent"
-                        hoverColor: "transparent"
-                        pressedColor: "transparent"
-                        selectedColor: "transparent"
-                        foregroundColor: cavaPositionTrack.previewIndex === 0 ? Theme.onAccentColor : Theme.fgMuted
-                        disabledForegroundColor: cavaPositionTrack.previewIndex === 0 ? Theme.onAccentColor : Theme.fgMuted
-                        hoverForegroundColor: Theme.onAccentColor
-                        selectedForegroundColor: Theme.onAccentColor
-                        onHoveredChanged: {
-                            if (hovered && enabled) {
-                                root.isLowerSectionActive = true
-                                themeList.currentIndex = rowWrap.index
-                                root.syncSelectionLabel()
-                                cavaPosReturnTimer.stop()
-                                cavaPositionTrack.previewIndex = 0
-                            } else if (!bottomPosBtn.hovered && !leftPosBtn.hovered && !rightPosBtn.hovered) {
-                                if (cavaPositionTrack.previewIndex !== cavaPositionTrack.activeIndex) {
-                                    cavaPosReturnTimer.restart()
-                                }
-                            }
-                        }
-                        onClicked: {
-                            cavaPosReturnTimer.stop()
-                            themeList.currentIndex = rowWrap.index
-                            root.syncSelectionLabel()
-                            if (typeof SettingsCoordinator !== "undefined") {
-                                SettingsCoordinator.set("cava-position", "top")
-                            }
-                            root.launched(false)
-                        }
-                    }
-
-                    Motion.MorphButton {
-                        id: bottomPosBtn
-                        z: 2
-                        x: cavaPositionTrack.slotWidth + cavaPositionTrack.slotSpacing
-                        y: 0
-                        width: cavaPositionTrack.slotWidth
-                        height: parent.height
-                        radius: 8
-                        enabled: !cavaPositionTrack.isLocked && root.available(rowWrap.modelData)
-                        disabledOpacity: 1.0
-                        text: "Bottom"
-                        idleColor: "transparent"
-                        hoverColor: "transparent"
-                        pressedColor: "transparent"
-                        selectedColor: "transparent"
-                        foregroundColor: cavaPositionTrack.previewIndex === 1 ? Theme.onAccentColor : Theme.fgMuted
-                        disabledForegroundColor: cavaPositionTrack.previewIndex === 1 ? Theme.onAccentColor : Theme.fgMuted
-                        hoverForegroundColor: Theme.onAccentColor
-                        selectedForegroundColor: Theme.onAccentColor
-                        onHoveredChanged: {
-                            if (hovered && enabled) {
-                                root.isLowerSectionActive = true
-                                themeList.currentIndex = rowWrap.index
-                                root.syncSelectionLabel()
-                                cavaPosReturnTimer.stop()
-                                cavaPositionTrack.previewIndex = 1
-                            } else if (!topPosBtn.hovered && !leftPosBtn.hovered && !rightPosBtn.hovered) {
-                                if (cavaPositionTrack.previewIndex !== cavaPositionTrack.activeIndex) {
-                                    cavaPosReturnTimer.restart()
-                                }
-                            }
-                        }
-                        onClicked: {
-                            cavaPosReturnTimer.stop()
-                            themeList.currentIndex = rowWrap.index
-                            root.syncSelectionLabel()
-                            if (typeof SettingsCoordinator !== "undefined") {
-                                SettingsCoordinator.set("cava-position", "bottom")
-                            }
-                            root.launched(false)
-                        }
-                    }
-
-                    Motion.MorphButton {
-                        id: leftPosBtn
-                        z: 2
-                        x: (cavaPositionTrack.slotWidth + cavaPositionTrack.slotSpacing) * 2
-                        y: 0
-                        width: cavaPositionTrack.slotWidth
-                        height: parent.height
-                        radius: 8
-                        enabled: !cavaPositionTrack.isLocked && root.available(rowWrap.modelData)
-                        disabledOpacity: 1.0
-                        text: "Left"
-                        idleColor: "transparent"
-                        hoverColor: "transparent"
-                        pressedColor: "transparent"
-                        selectedColor: "transparent"
-                        foregroundColor: cavaPositionTrack.previewIndex === 2 ? Theme.onAccentColor : Theme.fgMuted
-                        disabledForegroundColor: cavaPositionTrack.previewIndex === 2 ? Theme.onAccentColor : Theme.fgMuted
-                        hoverForegroundColor: Theme.onAccentColor
-                        selectedForegroundColor: Theme.onAccentColor
-                        onHoveredChanged: {
-                            if (hovered && enabled) {
-                                root.isLowerSectionActive = true
-                                themeList.currentIndex = rowWrap.index
-                                root.syncSelectionLabel()
-                                cavaPosReturnTimer.stop()
-                                cavaPositionTrack.previewIndex = 2
-                            } else if (!topPosBtn.hovered && !bottomPosBtn.hovered && !rightPosBtn.hovered) {
-                                if (cavaPositionTrack.previewIndex !== cavaPositionTrack.activeIndex) {
-                                    cavaPosReturnTimer.restart()
-                                }
-                            }
-                        }
-                        onClicked: {
-                            cavaPosReturnTimer.stop()
-                            themeList.currentIndex = rowWrap.index
-                            root.syncSelectionLabel()
-                            if (typeof SettingsCoordinator !== "undefined") {
-                                SettingsCoordinator.set("cava-position", "left")
-                            }
-                            root.launched(false)
-                        }
-                    }
-
-                    Motion.MorphButton {
-                        id: rightPosBtn
-                        z: 2
-                        x: (cavaPositionTrack.slotWidth + cavaPositionTrack.slotSpacing) * 3
-                        y: 0
-                        width: cavaPositionTrack.slotWidth
-                        height: parent.height
-                        radius: 8
-                        enabled: !cavaPositionTrack.isLocked && root.available(rowWrap.modelData)
-                        disabledOpacity: 1.0
-                        text: "Right"
-                        idleColor: "transparent"
-                        hoverColor: "transparent"
-                        pressedColor: "transparent"
-                        selectedColor: "transparent"
-                        foregroundColor: cavaPositionTrack.previewIndex === 3 ? Theme.onAccentColor : Theme.fgMuted
-                        disabledForegroundColor: cavaPositionTrack.previewIndex === 3 ? Theme.onAccentColor : Theme.fgMuted
-                        hoverForegroundColor: Theme.onAccentColor
-                        selectedForegroundColor: Theme.onAccentColor
-                        onHoveredChanged: {
-                            if (hovered && enabled) {
-                                root.isLowerSectionActive = true
-                                themeList.currentIndex = rowWrap.index
-                                root.syncSelectionLabel()
-                                cavaPosReturnTimer.stop()
-                                cavaPositionTrack.previewIndex = 3
-                            } else if (!topPosBtn.hovered && !bottomPosBtn.hovered && !leftPosBtn.hovered) {
-                                if (cavaPositionTrack.previewIndex !== cavaPositionTrack.activeIndex) {
-                                    cavaPosReturnTimer.restart()
-                                }
-                            }
-                        }
-                        onClicked: {
-                            cavaPosReturnTimer.stop()
-                            themeList.currentIndex = rowWrap.index
-                            root.syncSelectionLabel()
-                            if (typeof SettingsCoordinator !== "undefined") {
-                                SettingsCoordinator.set("cava-position", "right")
-                            }
-                            root.launched(false)
-                        }
-                    }
-                }
-            }
-
-            Motion.MorphButton {
-                id: rowButton
-                visible: !rowWrap.isSpecialOption
-                enabled: root.available(rowWrap.modelData)
-                opacity: enabled ? 1 : 0.45
-                z: 2
-                x: Theme.gap
-                y: rowWrap.sectionGap
-                width: rowWrap.isFullWidth ? Math.max(0, parent.width - Theme.gap * 2 - vbar.reservedGutter) : root.leftColumnWidth
-                height: parent.height - rowWrap.sectionGap
-                radius: Theme.radius
-                selected: !rowWrap.isBottomOption && themeList.currentIndex === rowWrap.index && !root.isLowerSectionActive
-                selectedOverridesHover: !rowWrap.isBottomOption
-                idleColor: "transparent"
-                hoverColor: rowWrap.isBottomOption ? "transparent" : ((selected || focused) ? "transparent" : root.rowHoverColor)
-                pressedColor: rowWrap.isBottomOption ? "transparent" : ((selected || focused) ? "transparent" : root.rowHoverColor)
-                selectedColor: "transparent"
-                foregroundColor: Theme.fg
-                hoverForegroundColor: rowWrap.isBottomOption ? Theme.fg : ((selected || focused) ? Theme.onAccentColor : Theme.fg)
-                pressedForegroundColor: rowWrap.isBottomOption ? Theme.fg : ((selected || focused) ? Theme.onAccentColor : Theme.fg)
-                selectedForegroundColor: rowWrap.isBottomOption ? Theme.fg : Theme.onAccentColor
-                hoverScaleDelta: rowWrap.isBackendSwitch ? 0 : 0.003
-                pressScaleDelta: rowWrap.isBackendSwitch ? 0 : 0.012
-
-                scale: rowWrap.isBackendSwitch ? (hovered ? 1.1 : 1.0) : 1.0
+            Motion.SelectionPill {
+                id: selectionPill
+                parent: themeList.contentItem
+                z: 1
+                normalColor: root.isLowerSectionActive ? Theme.hoverMuted : Theme.accent
+                onNormalColorChanged: syncTarget(false)
+                opacity: shown ? (root.isLowerSectionActive ? 0.5 : 1.0) : 0
+                shown: targetItem !== null
+                duration: HAnimation.spatial
+                scale: (!root.isLowerSectionActive && targetItem) ? targetItem.scale : 1.0
                 transformOrigin: Item.Center
 
-                Behavior on scale {
+                Behavior on opacity {
                     NumberAnimation {
-                        duration: root.bottomMorphDuration
+                        duration: HAnimation.spatial
                         easing.type: Easing.BezierSpline
-                        easing.bezierCurve: root.bounceCurve
+                        easing.bezierCurve: HAnimation.spatialCurve
                     }
-                }
-
-                Component.onCompleted: {
-                    if (rowWrap.index === 0 && !rowWrap.isBottomOption) {
-                        root.lastUpperIndex = 0
-                        root.lastUpperItem = this
-                        selectionPill.targetItem = this
-                    }
-                }
-
-                onSelectedChanged: {
-                    if (selected && !rowWrap.isBottomOption) {
-                        root.lastUpperIndex = rowWrap.index
-                        root.lastUpperItem = this
-                        selectionPill.targetItem = this
-                    }
-                }
-
-                onHoveredChanged: {
-                    if (hovered) {
-                        if (rowWrap.isBottomOption) {
-                            root.isLowerSectionActive = true
-                            themeList.currentIndex = rowWrap.index
-                            root.syncSelectionLabel()
-                        } else {
-                            root.isLowerSectionActive = false
-                            root.lastUpperIndex = rowWrap.index
-                            root.lastUpperItem = this
-                            themeList.currentIndex = rowWrap.index
-                            root.syncSelectionLabel()
-                            selectionPill.targetItem = this
-                        }
-                    }
-                }
-                onClicked: root.activateIndex(rowWrap.index)
-
-                Text {
-                    anchors.left: parent.left
-                    anchors.leftMargin: Theme.pad * 1.5
-                    anchors.right: parent.right
-                    anchors.rightMargin: Theme.pad * 1.5
-                    anchors.verticalCenter: parent.verticalCenter
-                    horizontalAlignment: rowWrap.isBackendSwitch ? Text.AlignHCenter : Text.AlignLeft
-                    text: rowWrap.modelData.icon + "  " + root.labelFor(rowWrap.modelData)
-                        + (root.available(rowWrap.modelData) ? "" : " · Requires status bar mode")
-                    color: rowButton.foreground
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize + 1
-                    font.weight: (rowButton.selected || rowButton.focused) ? Font.Medium : Font.Normal
-                    elide: Text.ElideRight
                 }
             }
 
-            Motion.MorphButton {
-                id: stateButton
-                visible: !rowWrap.isFullWidth && rowWrap.hasState
-                enabled: root.available(rowWrap.modelData)
-                opacity: enabled ? 1 : 0.45
-                z: 2
-                x: Theme.gap + root.leftColumnWidth + root.columnGap
-                width: Math.max(0, root.stateColumnWidth - vbar.reservedGutter)
-                height: parent.height
-                radius: Theme.radius
-                selected: themeList.currentIndex === rowWrap.index && !rowWrap.isBottomOption && !root.isLowerSectionActive
-                selectedOverridesHover: false
-                idleColor: "transparent"
-                hoverColor: "transparent"
-                pressedColor: "transparent"
-                selectedColor: "transparent"
-                hoverScaleDelta: 0.05
-                pressScaleDelta: 0.012
-                onHoveredChanged: {
-                    if (hovered) {
-                        root.isLowerSectionActive = false
-                        root.lastUpperIndex = rowWrap.index
-                        root.lastUpperItem = rowButton
-                        themeList.currentIndex = rowWrap.index
-                        root.syncSelectionLabel()
-                        selectionPill.targetItem = rowButton
-                    }
+            ScrollBar.vertical: Motion.HScrollBar {
+                id: vbar
+            }
+
+            delegate: Item {
+                id: rowWrap
+                required property var modelData
+                required property int index
+                width: themeList.width
+                readonly property bool isSpecialOption: !!modelData && (modelData.shellLayoutSwitch === true || modelData.cavaPositionSwitch === true)
+                readonly property bool isBackendSwitch: !!modelData && modelData.backendSwitch === true
+                readonly property bool isFullWidth: isSpecialOption || isBackendSwitch
+                readonly property bool isBottomOption: isFullWidth
+                readonly property real sectionGap: (isBottomOption && index === root.upperCount && root.upperCount > 0) ? Theme.pad : 0
+                height: (isSpecialOption ? Math.round(specialColumn.implicitHeight + Theme.spaceXs * 2) : root.rowHeight) + sectionGap
+
+                readonly property bool hasState: !isSpecialOption && modelData.showState === true && modelData.toggle && (modelData.stateKind === "colorMode" || !!modelData.chromeKey || root.statePathFor(modelData).length > 0)
+                readonly property bool stateOn: modelData.stateKind === "colorMode" ? Theme.isLight
+                    : modelData.chromeKey ? root.chromeEnabled(modelData)
+                    : hasState ? root.parseState(stateView.text(), modelData.stateKind) : false
+                readonly property int observedRefreshGeneration: root.refreshGeneration
+
+                onYChanged: if (rowButton.selected) selectionPill.syncTarget(false)
+                onObservedRefreshGenerationChanged: {
+                    if (hasState && root.statePathFor(modelData)) stateView.reload()
                 }
-                onClicked: root.activateIndex(rowWrap.index)
 
-                Rectangle {
-                    id: togglePill
-                    readonly property bool isColorKind: rowWrap.modelData.stateKind === "cavaColor"
-                    readonly property bool isPositionKind: rowWrap.modelData.stateKind === "cavaPosition"
-                    // The mode pill shows the active palette instead of ON/OFF.
-                    readonly property bool isModeKind: rowWrap.modelData.stateKind === "colorMode"
-                    anchors.centerIn: parent
-                    width: Math.min(parent.width - Theme.gap * 2, Math.max(102, Theme.fontSize * 6.8 + 8))
-                    height: Math.max(28, Theme.fontSize * 1.9)
-                    radius: height / 2
-                    color: rowWrap.stateOn ? Theme.accent : Theme.surfaceSubtle(1.5)
-                    border.width: 1
-                    border.color: rowWrap.stateOn ? Theme.accent : Theme.surfaceSubtle(1.85)
+                FileView {
+                    id: stateView
+                    path: rowWrap.hasState ? root.statePathFor(rowWrap.modelData) : ""
+                    watchChanges: path.length > 0
+                    printErrors: false
+                    onFileChanged: this.reload()
+                }
 
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        x: rowWrap.stateOn ? Theme.gap + 6 : parent.width - width - Theme.gap - 6
-                        text: togglePill.isPositionKind ? (rowWrap.stateOn ? "TOP" : "BOTTOM")
-                            : togglePill.isColorKind ? (rowWrap.stateOn ? "ACCENT" : "SURFACE")
-                            : togglePill.isModeKind ? (rowWrap.stateOn ? "LIGHT" : "DARK")
-                            : (rowWrap.stateOn ? "ON" : "OFF")
-                        color: rowWrap.stateOn ? Theme.onAccentColor : Theme.fgMuted
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Math.max(9, Theme.fontSize - 2)
-                        font.weight: Font.DemiBold
+                GridLayout {
+                    id: rowGrid
+                    anchors.fill: parent
+                    anchors.topMargin: rowWrap.sectionGap
+                    anchors.leftMargin: Theme.gap
+                    anchors.rightMargin: Theme.gap + vbar.reservedGutter
+                    columns: 2
+                    rowSpacing: 0
+                    columnSpacing: root.columnGap
+
+                    Column {
+                        id: specialColumn
+                        visible: rowWrap.isSpecialOption
+                        z: 2
+                        Layout.row: 0
+                        Layout.column: 0
+                        Layout.columnSpan: 2
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
+                        spacing: Theme.spaceXs
+
+                        Item {
+                            id: specialTitleItem
+                            width: parent.width
+                            height: Math.max(24, specialTitleText.implicitHeight + 4)
+
+                            Text {
+                                id: specialTitleText
+                                anchors.left: parent.left
+                                anchors.leftMargin: Theme.pad * 1.5
+                                anchors.right: parent.right
+                                anchors.rightMargin: Theme.pad * 1.5
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: rowWrap.modelData.icon + "  " + root.labelFor(rowWrap.modelData)
+                                color: root.available(rowWrap.modelData) ? Theme.fg : Theme.fgMuted
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.fontSize + 1
+                                font.weight: Font.DemiBold
+                                elide: Text.ElideRight
+                            }
+
+                            HoverHandler {
+                                onHoveredChanged: {
+                                    if (hovered) {
+                                        root.isLowerSectionActive = true
+                                        themeList.currentIndex = rowWrap.index
+                                        root.syncSelectionLabel()
+                                    }
+                                }
+                            }
+
+                            TapHandler {
+                                onTapped: {
+                                    themeList.currentIndex = rowWrap.index
+                                    root.syncSelectionLabel()
+                                    root.activateIndex(rowWrap.index)
+                                }
+                            }
+                        }
+
+                        Item {
+                            id: specialOptionTrack
+                            visible: rowWrap.isSpecialOption
+                            width: parent.width
+                            height: Theme.comfortableControlHeight
+
+                            readonly property bool isCavaTrack: rowWrap.modelData.cavaPositionSwitch === true
+                            readonly property bool isLocked: isCavaTrack && AppState.cavaDynamicPosition
+                            readonly property var trackOptions: isCavaTrack
+                                ? [{value: "top", label: "Top"}, {value: "bottom", label: "Bottom"}, {value: "left", label: "Left"}, {value: "right", label: "Right"}]
+                                : UiCatalog.statusBarLayouts
+                            readonly property int slotCount: trackOptions.length
+                            readonly property real slotSpacing: Theme.spaceXs
+                            readonly property real slotWidth: slotCount > 0 ? Math.max(0, (width - slotSpacing * (slotCount - 1)) / slotCount) : 0
+                            readonly property int activeIndex: isCavaTrack
+                                ? (AppState.cavaPosition === "bottom" ? 1 : AppState.cavaPosition === "left" ? 2 : AppState.cavaPosition === "right" ? 3 : 0)
+                                : (ChromeLayout.taskbarMode ? 2 : ChromeLayout.leftBarMode ? 1 : 0)
+                            property int previewIndex: activeIndex
+                            property int hoveredSlot: -1
+
+                            opacity: isLocked ? 0.5 : 1.0
+                            Behavior on opacity {
+                                NumberAnimation {
+                                    duration: root.bottomMorphDuration
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: root.bounceCurve
+                                }
+                            }
+
+                            onActiveIndexChanged: {
+                                trackReturnTimer.stop()
+                                previewIndex = activeIndex
+                            }
+
+                            Timer {
+                                id: trackReturnTimer
+                                interval: 1000
+                                repeat: false
+                                onTriggered: specialOptionTrack.previewIndex = specialOptionTrack.activeIndex
+                            }
+
+                            HoverHandler {
+                                enabled: !specialOptionTrack.isLocked
+                                onHoveredChanged: {
+                                    if (hovered) {
+                                        root.isLowerSectionActive = true
+                                        themeList.currentIndex = rowWrap.index
+                                        root.syncSelectionLabel()
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                z: 0
+                                anchors.fill: parent
+                                radius: 10
+                                color: Theme.isLight ? Theme.panel : Theme.surfaceSubtle(1.15)
+                                border.width: Theme.isLight ? 1 : 0
+                                border.color: Theme.border
+                            }
+
+                            Rectangle {
+                                id: specialTrackPill
+                                z: 1
+                                x: specialOptionTrack.previewIndex * (specialOptionTrack.slotWidth + specialOptionTrack.slotSpacing)
+                                y: 0
+                                width: specialOptionTrack.slotWidth
+                                height: parent.height
+                                radius: 8
+                                color: Theme.accent
+                                readonly property bool isPreviewing: specialOptionTrack.previewIndex !== specialOptionTrack.activeIndex
+                                opacity: isPreviewing ? 0.5 : 1.0
+                                scale: specialOptionTrack.hoveredSlot >= 0 && segmentRepeater.itemAt(specialOptionTrack.hoveredSlot)
+                                    ? segmentRepeater.itemAt(specialOptionTrack.hoveredSlot).scale : 1.0
+                                transformOrigin: Item.Center
+
+                                Behavior on x {
+                                    NumberAnimation {
+                                        duration: root.bottomMorphDuration
+                                        easing.type: Easing.BezierSpline
+                                        easing.bezierCurve: root.bounceCurve
+                                    }
+                                }
+
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: root.bottomMorphDuration
+                                        easing.type: Easing.BezierSpline
+                                        easing.bezierCurve: root.bounceCurve
+                                    }
+                                }
+                            }
+
+                            Repeater {
+                                id: segmentRepeater
+                                model: specialOptionTrack.trackOptions
+
+                                Motion.MorphButton {
+                                    id: segmentBtn
+                                    required property var modelData
+                                    required property int index
+                                    z: 2
+                                    x: index * (specialOptionTrack.slotWidth + specialOptionTrack.slotSpacing)
+                                    y: 0
+                                    width: specialOptionTrack.slotWidth
+                                    height: specialOptionTrack.height
+                                    radius: 8
+                                    enabled: !specialOptionTrack.isLocked && root.available(rowWrap.modelData)
+                                    disabledOpacity: specialOptionTrack.isCavaTrack ? 1.0 : 0.45
+                                    text: modelData.label
+                                    idleColor: "transparent"
+                                    hoverColor: "transparent"
+                                    pressedColor: "transparent"
+                                    selectedColor: "transparent"
+                                    foregroundColor: specialOptionTrack.previewIndex === index ? Theme.onAccentColor : Theme.fgMuted
+                                    disabledForegroundColor: specialOptionTrack.previewIndex === index ? Theme.onAccentColor : Theme.fgMuted
+                                    hoverForegroundColor: Theme.onAccentColor
+                                    selectedForegroundColor: Theme.onAccentColor
+                                    hoverScaleDelta: Theme.hakuMenuHoverScaleDelta
+                                    pressScaleDelta: 0.018
+                                    onHoveredChanged: {
+                                        if (hovered && enabled) {
+                                            specialOptionTrack.hoveredSlot = index
+                                            root.isLowerSectionActive = true
+                                            themeList.currentIndex = rowWrap.index
+                                            root.syncSelectionLabel()
+                                            trackReturnTimer.stop()
+                                            specialOptionTrack.previewIndex = index
+                                        } else if (specialOptionTrack.hoveredSlot === index) {
+                                            specialOptionTrack.hoveredSlot = -1
+                                            if (specialOptionTrack.previewIndex !== specialOptionTrack.activeIndex) {
+                                                trackReturnTimer.restart()
+                                            }
+                                        }
+                                    }
+                                    onClicked: {
+                                        trackReturnTimer.stop()
+                                        themeList.currentIndex = rowWrap.index
+                                        root.syncSelectionLabel()
+                                        if (typeof SettingsCoordinator !== "undefined") {
+                                            SettingsCoordinator.set(specialOptionTrack.isCavaTrack ? "cava-position" : "layout", modelData.value)
+                                        }
+                                        root.launched(false)
+                                    }
+                                }
+                            }
+                        }
                     }
 
-                    Rectangle {
-                        id: toggleDot
-                        width: togglePill.height - 6
-                        height: width
-                        radius: width / 2
-                        y: 3
-                        x: rowWrap.stateOn ? togglePill.width - width - 3 : 3
-                        color: rowWrap.stateOn ? Theme.onAccentColor : Theme.accent
+                    Motion.MorphButton {
+                        id: rowButton
+                        visible: !rowWrap.isSpecialOption
+                        enabled: root.available(rowWrap.modelData)
+                        opacity: enabled ? 1 : 0.45
+                        z: 2
+                        Layout.row: 0
+                        Layout.column: 0
+                        Layout.columnSpan: rowWrap.isFullWidth ? 2 : 1
+                        Layout.preferredWidth: rowWrap.isFullWidth ? -1 : root.leftColumnWidth
+                        Layout.minimumWidth: rowWrap.isFullWidth ? 0 : root.leftColumnWidth
+                        Layout.maximumWidth: rowWrap.isFullWidth ? 16777215 : root.leftColumnWidth
+                        Layout.fillWidth: rowWrap.isFullWidth
+                        Layout.fillHeight: true
+                        radius: Theme.radius
+                        selected: !rowWrap.isBottomOption && themeList.currentIndex === rowWrap.index && !root.isLowerSectionActive
+                        selectedOverridesHover: !rowWrap.isBottomOption
+                        idleColor: "transparent"
+                        hoverColor: rowWrap.isBottomOption ? "transparent" : ((selected || focused) ? "transparent" : root.rowHoverColor)
+                        pressedColor: rowWrap.isBottomOption ? "transparent" : ((selected || focused) ? "transparent" : root.rowHoverColor)
+                        selectedColor: "transparent"
+                        foregroundColor: Theme.fg
+                        hoverForegroundColor: rowWrap.isBottomOption ? Theme.fg : ((selected || focused) ? Theme.onAccentColor : Theme.fg)
+                        pressedForegroundColor: rowWrap.isBottomOption ? Theme.fg : ((selected || focused) ? Theme.onAccentColor : Theme.fg)
+                        selectedForegroundColor: rowWrap.isBottomOption ? Theme.fg : Theme.onAccentColor
+                        hoverScaleDelta: Theme.hakuMenuHoverScaleDelta
+                        pressScaleDelta: 0.012
 
-                        Behavior on x {
-                            NumberAnimation {
-                                duration: HAnimation.spatial
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: HAnimation.spatialCurve
+                        Component.onCompleted: {
+                            if (rowWrap.index === 0 && !rowWrap.isBottomOption) {
+                                root.lastUpperIndex = 0
+                                root.lastUpperItem = this
+                                selectionPill.targetItem = this
+                            }
+                        }
+
+                        onSelectedChanged: {
+                            if (selected && !rowWrap.isBottomOption) {
+                                root.lastUpperIndex = rowWrap.index
+                                root.lastUpperItem = this
+                                selectionPill.targetItem = this
+                            }
+                        }
+
+                        onHoveredChanged: {
+                            if (hovered) {
+                                if (rowWrap.isBottomOption) {
+                                    root.isLowerSectionActive = true
+                                    themeList.currentIndex = rowWrap.index
+                                    root.syncSelectionLabel()
+                                } else {
+                                    root.isLowerSectionActive = false
+                                    root.lastUpperIndex = rowWrap.index
+                                    root.lastUpperItem = this
+                                    themeList.currentIndex = rowWrap.index
+                                    root.syncSelectionLabel()
+                                    selectionPill.targetItem = this
+                                }
+                            }
+                        }
+                        onClicked: root.activateIndex(rowWrap.index)
+
+                        Text {
+                            anchors.left: parent.left
+                            anchors.leftMargin: Theme.pad * 1.5
+                            anchors.right: parent.right
+                            anchors.rightMargin: Theme.pad * 1.5
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: rowWrap.isBackendSwitch ? Text.AlignHCenter : Text.AlignLeft
+                            text: rowWrap.modelData.icon + "  " + root.labelFor(rowWrap.modelData)
+                                + (root.available(rowWrap.modelData) ? "" : " · Requires status bar mode")
+                            color: rowButton.foreground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize + 1
+                            font.weight: (rowButton.selected || rowButton.focused) ? Font.Medium : Font.Normal
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    Motion.MorphButton {
+                        id: stateButton
+                        visible: !rowWrap.isFullWidth && rowWrap.hasState
+                        enabled: root.available(rowWrap.modelData)
+                        opacity: enabled ? 1 : 0.45
+                        z: 2
+                        Layout.row: 0
+                        Layout.column: 1
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        radius: Theme.radius
+                        selected: themeList.currentIndex === rowWrap.index && !rowWrap.isBottomOption && !root.isLowerSectionActive
+                        selectedOverridesHover: false
+                        idleColor: "transparent"
+                        hoverColor: "transparent"
+                        pressedColor: "transparent"
+                        selectedColor: "transparent"
+                        hoverScaleDelta: Theme.hakuMenuHoverScaleDelta
+                        pressScaleDelta: 0.012
+                        onHoveredChanged: {
+                            if (hovered) {
+                                root.isLowerSectionActive = false
+                                root.lastUpperIndex = rowWrap.index
+                                root.lastUpperItem = rowButton
+                                themeList.currentIndex = rowWrap.index
+                                root.syncSelectionLabel()
+                                selectionPill.targetItem = rowButton
+                            }
+                        }
+                        onClicked: root.activateIndex(rowWrap.index)
+
+                        Rectangle {
+                            id: togglePill
+                            readonly property bool isColorKind: rowWrap.modelData.stateKind === "cavaColor"
+                            readonly property bool isPositionKind: rowWrap.modelData.stateKind === "cavaPosition"
+                            // The mode pill shows the active palette instead of ON/OFF.
+                            readonly property bool isModeKind: rowWrap.modelData.stateKind === "colorMode"
+                            anchors.centerIn: parent
+                            width: Math.min(parent.width - Theme.gap * 2, Math.max(102, Theme.fontSize * 6.8 + 8))
+                            height: Math.max(28, Theme.fontSize * 1.9)
+                            radius: height / 2
+                            color: rowWrap.stateOn ? Theme.accent : Theme.surfaceSubtle(1.5)
+                            border.width: 1
+                            border.color: rowWrap.stateOn ? Theme.accent : Theme.surfaceSubtle(1.85)
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                x: rowWrap.stateOn ? Theme.gap + 6 : parent.width - width - Theme.gap - 6
+                                text: togglePill.isPositionKind ? (rowWrap.stateOn ? "TOP" : "BOTTOM")
+                                    : togglePill.isColorKind ? (rowWrap.stateOn ? "ACCENT" : "SURFACE")
+                                    : togglePill.isModeKind ? (rowWrap.stateOn ? "LIGHT" : "DARK")
+                                    : (rowWrap.stateOn ? "ON" : "OFF")
+                                color: rowWrap.stateOn ? Theme.onAccentColor : Theme.fgMuted
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Math.max(9, Theme.fontSize - 2)
+                                font.weight: Font.DemiBold
+                            }
+
+                            Rectangle {
+                                id: toggleDot
+                                width: togglePill.height - 6
+                                height: width
+                                radius: width / 2
+                                y: 3
+                                x: rowWrap.stateOn ? togglePill.width - width - 3 : 3
+                                color: rowWrap.stateOn ? Theme.onAccentColor : Theme.accent
+
+                                Behavior on x {
+                                    NumberAnimation {
+                                        duration: HAnimation.spatial
+                                        easing.type: Easing.BezierSpline
+                                        easing.bezierCurve: HAnimation.spatialCurve
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        Text {
-            anchors.centerIn: parent
-            text: root.normalizedQuery().length > 0 ? "No Theme actions found" : "No Theme actions"
-            color: Theme.fgMuted
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize + 1
-            visible: themeList.count === 0
+            Text {
+                anchors.centerIn: parent
+                text: root.normalizedQuery().length > 0 ? "No Theme actions found" : "No Theme actions"
+                color: Theme.fgMuted
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSize + 1
+                visible: themeList.count === 0
+            }
         }
     }
 }

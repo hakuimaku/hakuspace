@@ -132,6 +132,7 @@ QtObject {
     readonly property real taskManagerMiniHeightRatio: Design.taskManagerMiniHeightRatio
     readonly property real hakuMenuMinWidth: Design.hakuMenuMinWidth
     readonly property real hakuMenuMinHeight: Design.hakuMenuMinHeight
+    readonly property real hakuMenuHoverScaleDelta: ShellSettingsStore.hakuMenuHoverScaleDelta
     readonly property real dashboardWidth: Design.dashboardWidth
     readonly property real dashboardHeight: Design.dashboardHeight
     readonly property int actionLayerPadding: Design.actionLayerPadding

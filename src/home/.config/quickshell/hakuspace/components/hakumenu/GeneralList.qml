@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import Quickshell
 import "../../services"
 import "../../config/UiCatalog.js" as UiCatalog
@@ -227,211 +228,238 @@ Item {
         }
     }
 
-    ListView {
-        id: generalList
+    Item {
         anchors.fill: parent
-        anchors.margins: Theme.gap
-        anchors.bottomMargin: actionMessage.visible ? actionMessage.height + Theme.gap : Theme.gap
-        enabled: !editorLoader.active
+        anchors.leftMargin: -Theme.hakuMenuLeftPadding
+        anchors.rightMargin: -Theme.hakuMenuRightPadding
         clip: true
-        spacing: root.itemGap
-        boundsBehavior: Flickable.StopAtBounds
-        currentIndex: count > 0 ? 0 : -1
-        model: root.visibleItems
-        // Keep Add reachable when every custom row is hidden, disabled or removed.
-        header: GeneralDivider {
-            width: generalList.width - vbar.reservedGutter
-            height: visible ? implicitHeight : 0
-            visible: root.customItems.length === 0 && root.normalizedQuery().length === 0
-            showLine: false
-            showAdd: !GeneralMenuService.busy
-            onAddRequested: root.openEditor(null)
-        }
-        onCurrentIndexChanged: {
-            root.syncSelectionLabel();
-            if (currentIndex < 0) {
-                selectionPill.targetItem = null;
-            }
-        }
 
-        Motion.SelectionPill {
-            id: selectionPill
-            parent: generalList.contentItem
-            z: 0
-            normalColor: Theme.accent
-        }
-
-        ScrollBar.vertical: Motion.HScrollBar {
-            id: vbar
-        }
-
-        delegate: Item {
-            id: rowWrap
-            required property var modelData
-            required property int index
-            width: generalList.width
-            height: row.height + (modelData.sectionStart ? root.sectionGap : 0)
-
-            GeneralDivider {
-                anchors { left: parent.left; right: parent.right; rightMargin: vbar.reservedGutter }
-                height: root.sectionGap
-                visible: !!rowWrap.modelData.sectionStart
-                showAdd: root.normalizedQuery().length === 0
-                enabled: !GeneralMenuService.busy
+        ListView {
+            id: generalList
+            anchors.fill: parent
+            anchors.leftMargin: Theme.hakuMenuLeftPadding + Theme.gap
+            anchors.rightMargin: Theme.hakuMenuRightPadding + Theme.gap
+            anchors.topMargin: Theme.gap
+            anchors.bottomMargin: actionMessage.visible ? actionMessage.height + Theme.gap : Theme.gap
+            enabled: !editorLoader.active
+            clip: false
+            spacing: root.itemGap
+            boundsBehavior: Flickable.StopAtBounds
+            currentIndex: count > 0 ? 0 : -1
+            model: root.visibleItems
+            // Keep Add reachable when every custom row is hidden, disabled or removed.
+            header: GeneralDivider {
+                width: generalList.width - vbar.reservedGutter
+                height: visible ? implicitHeight : 0
+                visible: root.customItems.length === 0 && root.normalizedQuery().length === 0
+                showLine: false
+                showAdd: !GeneralMenuService.busy
                 onAddRequested: root.openEditor(null)
             }
-
-            Motion.MorphButton {
-                id: row
-                objectName: "general-row-" + rowWrap.modelData.id
-                z: 1
-                interactive: false
-                externalHovered: rowInput.containsMouse
-                externalPressed: rowInput.pressed
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.rightMargin: vbar.reservedGutter + (rail.visible ? rail.width + Theme.spaceMd : 0)
-                anchors.bottom: parent.bottom
-                height: root.rowHeight
-                radius: Theme.radius
-                selected: generalList.currentIndex === rowWrap.index
-                selectedOverridesHover: true
-                idleColor: "transparent"
-                hoverColor: (selected || focused) ? "transparent" : root.rowHoverColor
-                pressedColor: (selected || focused) ? "transparent" : root.rowHoverColor
-                selectedColor: "transparent"
-                foregroundColor: Theme.fg
-                hoverForegroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
-                pressedForegroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
-                selectedForegroundColor: Theme.onAccentColor
-                hoverScaleDelta: 0.003
-                pressScaleDelta: 0.012
-
-                Component.onCompleted: {
-                    if (selected) {
-                        selectionPill.targetItem = this;
-                    }
+            onCurrentIndexChanged: {
+                root.syncSelectionLabel();
+                if (currentIndex < 0) {
+                    selectionPill.targetItem = null;
                 }
+            }
 
-                onSelectedChanged: {
-                    if (selected) {
-                        selectionPill.targetItem = this;
-                    }
-                }
+            Motion.SelectionPill {
+                id: selectionPill
+                parent: generalList.contentItem
+                z: 0
+                normalColor: Theme.accent
+                scale: targetItem ? targetItem.scale : 1.0
+                transformOrigin: Item.Center
+            }
 
-                onHoveredChanged: {
-                    if (hovered) {
-                        generalList.currentIndex = rowWrap.index
-                        root.syncSelectionLabel()
-                    }
-                }
-                Accessible.role: Accessible.Button
-                Accessible.name: rowWrap.modelData.label
-                Accessible.onPressAction: root.activateIndex(rowWrap.index)
-                MouseArea {
-                    id: rowInput
-                    objectName: "general-row-input-" + rowWrap.modelData.id
+            ScrollBar.vertical: Motion.HScrollBar {
+                id: vbar
+            }
+
+            delegate: Item {
+                id: rowWrap
+                required property var modelData
+                required property int index
+                width: generalList.width
+                height: row.height + (modelData.sectionStart ? root.sectionGap : 0)
+
+                GridLayout {
                     anchors.fill: parent
-                    hoverEnabled: true
-                    acceptedButtons: Qt.LeftButton | Qt.RightButton
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: mouse => root.rowClicked(rowWrap.index, mouse.button)
-                }
+                    anchors.rightMargin: vbar.reservedGutter
+                    columns: 2
+                    rowSpacing: 0
+                    columnSpacing: Theme.spaceMd
 
-                Text {
-                    anchors.left: parent.left
-                    anchors.leftMargin: Theme.pad * 1.5
-                    anchors.right: parent.right
-                    anchors.rightMargin: Theme.pad * 1.5
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: rowWrap.modelData.icon + "  " + rowWrap.modelData.label
-                    color: row.foreground
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize + 1
-                    font.weight: (row.selected || row.focused) ? Font.Medium : Font.Normal
-                    elide: Text.ElideRight
-                }
-            }
+                    GeneralDivider {
+                        Layout.row: 0
+                        Layout.column: 0
+                        Layout.columnSpan: 2
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: root.sectionGap
+                        visible: !!rowWrap.modelData.sectionStart
+                        showAdd: root.normalizedQuery().length === 0
+                        enabled: !GeneralMenuService.busy
+                        onAddRequested: root.openEditor(null)
+                    }
 
-            Row {
-                id: rail
-                objectName: "general-rail-" + rowWrap.modelData.id
-                anchors { right: parent.right; rightMargin: vbar.reservedGutter; verticalCenter: row.verticalCenter }
-                visible: rowWrap.modelData.kind === "custom" && root.actionRowId === rowWrap.modelData.id
-                enabled: !GeneralMenuService.busy
-                z: 2
-                spacing: Theme.spaceSm
-                Settings.SettingsActionButton {
-                    id: editButton
-                    objectName: "general-edit-" + rowWrap.modelData.id
-                    width: 32; height: 32
-                    visible: root.deleteRowId !== rowWrap.modelData.id
-                    text: ""
-                    idleColor: Theme.hoverMuted
-                    hoverColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.12))
-                    pressedColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.2))
-                    foregroundColor: Theme.fg
-                    hoverForegroundColor: foregroundColor
-                    pressedForegroundColor: foregroundColor
-                    activeFocusOnTab: true; focused: activeFocus
-                    Accessible.name: "Edit " + rowWrap.modelData.label
-                    onClicked: root.openEditor(rowWrap.modelData)
-                    Keys.onReturnPressed: clicked()
-                    Keys.onSpacePressed: clicked()
-                    Settings.SettingsTooltip { target: editButton; active: editButton.hovered; text: "Edit custom action" }
-                }
-                Settings.SettingsActionButton {
-                    id: deleteButton
-                    objectName: "general-delete-" + rowWrap.modelData.id
-                    width: root.deleteRowId === rowWrap.modelData.id ? 84 : 32
-                    height: 32
-                    text: root.deleteRowId === rowWrap.modelData.id ? "Delete?" : "󰆴"
-                    idleColor: Theme.hoverMuted
-                    hoverColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.12))
-                    pressedColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.2))
-                    foregroundColor: Theme.fg
-                    hoverForegroundColor: foregroundColor
-                    pressedForegroundColor: foregroundColor
-                    activeFocusOnTab: true; focused: activeFocus
-                    Accessible.name: root.deleteRowId === rowWrap.modelData.id ? "Confirm delete " + rowWrap.modelData.label : "Delete " + rowWrap.modelData.label
-                    onClicked: root.deleteAction(rowWrap.modelData)
-                    Keys.onReturnPressed: clicked()
-                    Keys.onSpacePressed: clicked()
-                    Behavior on width { NumberAnimation { duration: HAnimation.fast } }
-                    Settings.SettingsTooltip {
-                        objectName: "general-delete-tooltip-" + rowWrap.modelData.id
-                        target: deleteButton
-                        active: deleteButton.hovered || deleteButton.activeFocus
-                        text: root.deleteRowId === rowWrap.modelData.id ? "Confirm deletion" : "Delete custom action"
+                    Motion.MorphButton {
+                        id: row
+                        objectName: "general-row-" + rowWrap.modelData.id
+                        z: 1
+                        Layout.row: 1
+                        Layout.column: 0
+                        Layout.columnSpan: rail.visible ? 1 : 2
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: root.rowHeight
+                        interactive: false
+                        externalHovered: rowInput.containsMouse
+                        externalPressed: rowInput.pressed
+                        radius: Theme.radius
+                        selected: generalList.currentIndex === rowWrap.index
+                        selectedOverridesHover: true
+                        idleColor: "transparent"
+                        hoverColor: (selected || focused) ? "transparent" : root.rowHoverColor
+                        pressedColor: (selected || focused) ? "transparent" : root.rowHoverColor
+                        selectedColor: "transparent"
+                        foregroundColor: Theme.fg
+                        hoverForegroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
+                        pressedForegroundColor: (selected || focused) ? Theme.onAccentColor : Theme.fg
+                        selectedForegroundColor: Theme.onAccentColor
+                        hoverScaleDelta: Theme.hakuMenuHoverScaleDelta
+                        pressScaleDelta: 0.012
+
+                        Component.onCompleted: {
+                            if (selected) {
+                                selectionPill.targetItem = this;
+                            }
+                        }
+
+                        onSelectedChanged: {
+                            if (selected) {
+                                selectionPill.targetItem = this;
+                            }
+                        }
+
+                        onHoveredChanged: {
+                            if (hovered) {
+                                generalList.currentIndex = rowWrap.index
+                                root.syncSelectionLabel()
+                            }
+                        }
+                        Accessible.role: Accessible.Button
+                        Accessible.name: rowWrap.modelData.label
+                        Accessible.onPressAction: root.activateIndex(rowWrap.index)
+                        MouseArea {
+                            id: rowInput
+                            objectName: "general-row-input-" + rowWrap.modelData.id
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            acceptedButtons: Qt.LeftButton | Qt.RightButton
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: mouse => root.rowClicked(rowWrap.index, mouse.button)
+                        }
+
+                        Text {
+                            anchors.left: parent.left
+                            anchors.leftMargin: Theme.pad * 1.5
+                            anchors.right: parent.right
+                            anchors.rightMargin: Theme.pad * 1.5
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: rowWrap.modelData.icon + "  " + rowWrap.modelData.label
+                            color: row.foreground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize + 1
+                            font.weight: (row.selected || row.focused) ? Font.Medium : Font.Normal
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    Row {
+                        id: rail
+                        objectName: "general-rail-" + rowWrap.modelData.id
+                        Layout.row: 1
+                        Layout.column: 1
+                        Layout.alignment: Qt.AlignVCenter
+                        visible: rowWrap.modelData.kind === "custom" && root.actionRowId === rowWrap.modelData.id
+                        enabled: !GeneralMenuService.busy
+                        z: 2
+                        spacing: Theme.spaceSm
+                        Settings.SettingsActionButton {
+                            id: editButton
+                            objectName: "general-edit-" + rowWrap.modelData.id
+                            width: 32; height: 32
+                            visible: root.deleteRowId !== rowWrap.modelData.id
+                            text: ""
+                            idleColor: Theme.hoverMuted
+                            hoverColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.12))
+                            pressedColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.2))
+                            foregroundColor: Theme.fg
+                            hoverForegroundColor: foregroundColor
+                            pressedForegroundColor: foregroundColor
+                            hoverScaleDelta: Theme.hakuMenuHoverScaleDelta
+                            activeFocusOnTab: true; focused: activeFocus
+                            Accessible.name: "Edit " + rowWrap.modelData.label
+                            onClicked: root.openEditor(rowWrap.modelData)
+                            Keys.onReturnPressed: clicked()
+                            Keys.onSpacePressed: clicked()
+                            Settings.SettingsTooltip { target: editButton; active: editButton.hovered; text: "Edit custom action" }
+                        }
+                        Settings.SettingsActionButton {
+                            id: deleteButton
+                            objectName: "general-delete-" + rowWrap.modelData.id
+                            width: root.deleteRowId === rowWrap.modelData.id ? 84 : 32
+                            height: 32
+                            text: root.deleteRowId === rowWrap.modelData.id ? "Delete?" : "󰆴"
+                            idleColor: Theme.hoverMuted
+                            hoverColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.12))
+                            pressedColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.2))
+                            foregroundColor: Theme.fg
+                            hoverForegroundColor: foregroundColor
+                            pressedForegroundColor: foregroundColor
+                            hoverScaleDelta: Theme.hakuMenuHoverScaleDelta
+                            activeFocusOnTab: true; focused: activeFocus
+                            Accessible.name: root.deleteRowId === rowWrap.modelData.id ? "Confirm delete " + rowWrap.modelData.label : "Delete " + rowWrap.modelData.label
+                            onClicked: root.deleteAction(rowWrap.modelData)
+                            Keys.onReturnPressed: clicked()
+                            Keys.onSpacePressed: clicked()
+                            Behavior on width { NumberAnimation { duration: HAnimation.fast } }
+                            Settings.SettingsTooltip {
+                                objectName: "general-delete-tooltip-" + rowWrap.modelData.id
+                                target: deleteButton
+                                active: deleteButton.hovered || deleteButton.activeFocus
+                                text: root.deleteRowId === rowWrap.modelData.id ? "Confirm deletion" : "Delete custom action"
+                            }
+                        }
+                        Settings.SettingsActionButton {
+                            objectName: "general-delete-cancel-" + rowWrap.modelData.id
+                            width: 32; height: 32
+                            visible: root.deleteRowId === rowWrap.modelData.id
+                            text: "×"
+                            idleColor: Theme.hoverMuted
+                            hoverColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.12))
+                            pressedColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.2))
+                            foregroundColor: Theme.fg
+                            hoverForegroundColor: foregroundColor
+                            pressedForegroundColor: foregroundColor
+                            hoverScaleDelta: Theme.hakuMenuHoverScaleDelta
+                            activeFocusOnTab: true; focused: activeFocus
+                            Accessible.name: "Cancel delete"
+                            onClicked: root.deleteRowId = ""
+                            Keys.onReturnPressed: clicked()
+                            Keys.onSpacePressed: clicked()
+                        }
                     }
                 }
-                Settings.SettingsActionButton {
-                    objectName: "general-delete-cancel-" + rowWrap.modelData.id
-                    width: 32; height: 32
-                    visible: root.deleteRowId === rowWrap.modelData.id
-                    text: "×"
-                    idleColor: Theme.hoverMuted
-                    hoverColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.12))
-                    pressedColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.2))
-                    foregroundColor: Theme.fg
-                    hoverForegroundColor: foregroundColor
-                    pressedForegroundColor: foregroundColor
-                    activeFocusOnTab: true; focused: activeFocus
-                    Accessible.name: "Cancel delete"
-                    onClicked: root.deleteRowId = ""
-                    Keys.onReturnPressed: clicked()
-                    Keys.onSpacePressed: clicked()
-                }
             }
-        }
 
-        Text {
-            anchors.centerIn: parent
-            text: GeneralMenuService.error || (root.normalizedQuery().length > 0 ? "No General actions found" : "No General actions")
-            color: Theme.fgMuted
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize + 1
-            visible: generalList.count === 0 && !GeneralMenuService.busy
+            Text {
+                anchors.centerIn: parent
+                text: GeneralMenuService.error || (root.normalizedQuery().length > 0 ? "No General actions found" : "No General actions")
+                color: Theme.fgMuted
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSize + 1
+                visible: generalList.count === 0 && !GeneralMenuService.busy
+            }
         }
     }
 

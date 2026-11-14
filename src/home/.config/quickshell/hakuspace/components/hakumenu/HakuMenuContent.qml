@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import Quickshell
 import "../../services"
 import "../../config/UiCatalog.js" as UiCatalog
@@ -38,73 +39,11 @@ Item {
     readonly property color controlHoverBg: Theme.surfaceSubtle(1.35)
     readonly property color listBg: Theme.surfaceSubtle(2.05)
     readonly property real topRowHeight: Theme.fontSize * 4
-    readonly property real controlsY: controlsAtBottom ? height - innerBottomPad - topRowHeight : innerTopPad
+    readonly property real controlsY: modeSwitcher.y
     readonly property real switcherWidth: innerWidth * 0.40
-    readonly property real searchWidth: innerWidth - switcherWidth - Theme.gap * 2
-
-    Rectangle {
-        id: modeSwitcher
-        objectName: "hakumenu-modeSwitcher"
-        x: menu.innerLeftPad
-        y: menu.controlsY
-        width: menu.switcherWidth
-        height: menu.topRowHeight
-        radius: Theme.largeRadius
-        color: menu.controlBg
-
-        readonly property var modes: UiCatalog.hakuMenuModes
-        readonly property int selectedIndex: modes.map(function(item) { return item.key }).indexOf(menu.mode)
-
-        Item {
-            id: tabLane
-            anchors.fill: parent
-            anchors.margins: Theme.gap
-            readonly property real spacing: Theme.gap
-            readonly property real slotWidth: (width - spacing * 2) / 3
-
-            Motion.SelectionPill {
-                z: 0
-                shown: modeSwitcher.selectedIndex >= 0
-                targetIndex: modeSwitcher.selectedIndex
-                slotCount: modeSwitcher.modes.length
-                slotSpacing: tabLane.spacing
-            }
-
-            Repeater {
-                model: modeSwitcher.modes
-
-                Motion.MorphButton {
-                    required property var modelData
-                    required property int index
-                    z: 1
-                    x: index * (tabLane.slotWidth + tabLane.spacing)
-                    width: tabLane.slotWidth
-                    height: tabLane.height
-                    radius: Theme.radius
-                    selected: menu.mode === modelData.key
-                    selectedOverridesHover: true
-                    idleColor: "transparent"
-                    hoverColor: "transparent"
-                    pressedColor: "transparent"
-                    selectedColor: "transparent"
-                    foregroundColor: Theme.fg
-                    hoverForegroundColor: Theme.fg
-                    pressedForegroundColor: Theme.fg
-                    selectedForegroundColor: Theme.onAccentColor
-                    hoverScaleDelta: 0.004
-                    pressScaleDelta: 0.018
-                    text: modelData.icon
-                    Accessible.role: Accessible.Button
-                    Accessible.name: modelData.label
-                    fontSize: Theme.fontSize + 5
-                    onClicked: {
-                        UiState.setHakuMenuQuery("")
-                        UiState.setHakuMenuMode(modelData.key)
-                    }
-                }
-            }
-        }
-    }
+    readonly property real searchWidth: Math.max(0, innerWidth - switcherWidth - Theme.gap * 2)
+    readonly property int controlsGridRow: controlsAtBottom ? 1 : 0
+    readonly property int contentGridRow: controlsAtBottom ? 0 : 1
 
     function moveTab(delta) {
         var modes = ["general", "drun", "theme"]
@@ -116,152 +55,248 @@ Item {
         UiState.setHakuMenuMode(modes[next])
     }
 
-    Motion.MorphButton {
-        id: searchBox
-        objectName: "hakumenu-searchBox"
-        x: modeSwitcher.x + modeSwitcher.width + Theme.gap * 2
-        y: menu.controlsY
-        width: menu.searchWidth
-        height: menu.topRowHeight
-        radius: Theme.hugRadius
-        interactive: false
-        externalHovered: searchHover.hovered
-        focused: searchInput.activeFocus
-        idleColor: menu.controlBg
-        hoverColor: menu.controlHoverBg
-        focusColor: menu.controlHoverBg
-        foregroundColor: Theme.fg
-        hoverForegroundColor: Theme.fg
-        focusForegroundColor: Theme.fg
-        hoverScaleDelta: 0
-        pressScaleDelta: 0
+    GridLayout {
+        id: contentGrid
+        anchors.fill: parent
+        anchors.topMargin: menu.innerTopPad
+        anchors.bottomMargin: menu.innerBottomPad
+        anchors.leftMargin: menu.innerLeftPad
+        anchors.rightMargin: menu.innerRightPad
+        columns: 3
+        rowSpacing: Theme.pad
+        columnSpacing: Theme.gap * 2
 
-        Text {
-            anchors.left: parent.left
-            anchors.leftMargin: Theme.pad * 1.5
-            anchors.verticalCenter: parent.verticalCenter
-            text: "Search…   > General   ~ Theme"
-            color: Theme.fgMuted
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize + 1
-            visible: searchInput.text.length === 0
-        }
+        Rectangle {
+            id: modeSwitcher
+            objectName: "hakumenu-modeSwitcher"
+            Layout.row: menu.controlsGridRow
+            Layout.column: 0
+            Layout.columnSpan: 1
+            Layout.preferredWidth: menu.switcherWidth
+            Layout.minimumWidth: menu.switcherWidth
+            Layout.maximumWidth: menu.switcherWidth
+            Layout.preferredHeight: menu.topRowHeight
+            Layout.minimumHeight: menu.topRowHeight
+            Layout.maximumHeight: menu.topRowHeight
+            radius: Theme.largeRadius
+            color: menu.controlBg
 
-        TextInput {
-            id: searchInput
-        objectName: "hakumenu-searchInput"
-            anchors.fill: parent
-            anchors.leftMargin: Theme.pad * 1.5
-            anchors.rightMargin: Theme.pad * 1.5
-            verticalAlignment: TextInput.AlignVCenter
-            color: Theme.fg
-            selectionColor: Theme.accent
-            selectedTextColor: Theme.onAccentColor
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize + 1
-            clip: true
-            focus: menu.panelOpen && menu.focusOnOpen
-            text: menu.query
-            onTextEdited: {
-                menu.keyboardActivity()
-                UiState.setHakuMenuQuery(text)
-            }
-            Keys.onPressed: menu.keyboardActivity()
-            Keys.onEscapePressed: event => {
-                UiState.closeHakuMenu()
-                event.accepted = true
-            }
-            Keys.onLeftPressed: event => {
-                menu.moveTab(-1)
-                event.accepted = true
-            }
-            Keys.onRightPressed: event => {
-                menu.moveTab(1)
-                event.accepted = true
-            }
-            Keys.onDownPressed: {
-                if (menu.mode === "general") generalList.moveSelection(1)
-                else if (menu.mode === "drun") drunList.moveSelection(1)
-                else if (menu.mode === "theme") themeList.moveSelection(1)
-            }
-            Keys.onUpPressed: {
-                if (menu.mode === "general") generalList.moveSelection(-1)
-                else if (menu.mode === "drun") drunList.moveSelection(-1)
-                else if (menu.mode === "theme") themeList.moveSelection(-1)
-            }
-            Keys.onReturnPressed: {
-                if (menu.mode === "general") generalList.activateCurrent()
-                else if (menu.mode === "drun") drunList.activateCurrent()
-                else if (menu.mode === "theme") themeList.activateCurrent()
-            }
-            Keys.onEnterPressed: {
-                if (menu.mode === "general") generalList.activateCurrent()
-                else if (menu.mode === "drun") drunList.activateCurrent()
-                else if (menu.mode === "theme") themeList.activateCurrent()
+            readonly property var modes: UiCatalog.hakuMenuModes
+            readonly property int selectedIndex: modes.map(function(item) { return item.key }).indexOf(menu.mode)
+
+            Item {
+                id: tabLane
+                anchors.fill: parent
+                anchors.margins: Theme.gap
+                readonly property real spacing: Theme.gap
+                readonly property real slotWidth: (width - spacing * 2) / 3
+
+                Motion.SelectionPill {
+                    z: 0
+                    shown: modeSwitcher.selectedIndex >= 0
+                    targetIndex: modeSwitcher.selectedIndex
+                    slotCount: modeSwitcher.modes.length
+                    slotSpacing: tabLane.spacing
+                }
+
+                Repeater {
+                    model: modeSwitcher.modes
+
+                    Motion.MorphButton {
+                        required property var modelData
+                        required property int index
+                        z: 1
+                        x: index * (tabLane.slotWidth + tabLane.spacing)
+                        width: tabLane.slotWidth
+                        height: tabLane.height
+                        radius: Theme.radius
+                        selected: menu.mode === modelData.key
+                        selectedOverridesHover: true
+                        idleColor: "transparent"
+                        hoverColor: "transparent"
+                        pressedColor: "transparent"
+                        selectedColor: "transparent"
+                        foregroundColor: Theme.fg
+                        hoverForegroundColor: Theme.fg
+                        pressedForegroundColor: Theme.fg
+                        selectedForegroundColor: Theme.onAccentColor
+                        hoverScaleDelta: Theme.hakuMenuHoverScaleDelta
+                        pressScaleDelta: 0.018
+                        text: modelData.icon
+                        Accessible.role: Accessible.Button
+                        Accessible.name: modelData.label
+                        fontSize: Theme.fontSize + 5
+                        onClicked: {
+                            UiState.setHakuMenuQuery("")
+                            UiState.setHakuMenuMode(modelData.key)
+                        }
+                    }
+                }
             }
         }
 
-        HoverHandler {
-            id: searchHover
-            cursorShape: Qt.IBeamCursor
+        Motion.MorphButton {
+            id: searchBox
+            objectName: "hakumenu-searchBox"
+            Layout.row: menu.controlsGridRow
+            Layout.column: 1
+            Layout.columnSpan: 2
+            Layout.fillWidth: true
+            Layout.preferredHeight: menu.topRowHeight
+            Layout.minimumHeight: menu.topRowHeight
+            Layout.maximumHeight: menu.topRowHeight
+            radius: Theme.hugRadius
+            interactive: false
+            externalHovered: searchHover.hovered
+            focused: searchInput.activeFocus
+            idleColor: menu.controlBg
+            hoverColor: menu.controlHoverBg
+            focusColor: menu.controlHoverBg
+            foregroundColor: Theme.fg
+            hoverForegroundColor: Theme.fg
+            focusForegroundColor: Theme.fg
+            hoverScaleDelta: 0
+            pressScaleDelta: 0
+
+            Text {
+                anchors.left: parent.left
+                anchors.leftMargin: Theme.pad * 1.5
+                anchors.verticalCenter: parent.verticalCenter
+                text: "Search…   > General   ~ Theme"
+                color: Theme.fgMuted
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSize + 1
+                visible: searchInput.text.length === 0
+            }
+
+            TextInput {
+                id: searchInput
+                objectName: "hakumenu-searchInput"
+                anchors.fill: parent
+                anchors.leftMargin: Theme.pad * 1.5
+                anchors.rightMargin: Theme.pad * 1.5
+                verticalAlignment: TextInput.AlignVCenter
+                color: Theme.fg
+                selectionColor: Theme.accent
+                selectedTextColor: Theme.onAccentColor
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSize + 1
+                clip: true
+                focus: menu.panelOpen && menu.focusOnOpen
+                text: menu.query
+                onTextEdited: {
+                    menu.keyboardActivity()
+                    UiState.setHakuMenuQuery(text)
+                }
+                Keys.onPressed: menu.keyboardActivity()
+                Keys.onEscapePressed: event => {
+                    UiState.closeHakuMenu()
+                    event.accepted = true
+                }
+                Keys.onLeftPressed: event => {
+                    if (event.modifiers & Qt.ControlModifier) {
+                        UiState.setHakuPanelTab("hakumenu")
+                    } else if (!(event.modifiers & Qt.AltModifier)) {
+                        menu.moveTab(-1)
+                    }
+                    event.accepted = true
+                }
+                Keys.onRightPressed: event => {
+                    if (event.modifiers & Qt.ControlModifier) {
+                        UiState.setHakuPanelTab("taskManager")
+                    } else if (!(event.modifiers & Qt.AltModifier)) {
+                        menu.moveTab(1)
+                    }
+                    event.accepted = true
+                }
+                Keys.onDownPressed: {
+                    if (menu.mode === "general") generalList.moveSelection(1)
+                    else if (menu.mode === "drun") drunList.moveSelection(1)
+                    else if (menu.mode === "theme") themeList.moveSelection(1)
+                }
+                Keys.onUpPressed: {
+                    if (menu.mode === "general") generalList.moveSelection(-1)
+                    else if (menu.mode === "drun") drunList.moveSelection(-1)
+                    else if (menu.mode === "theme") themeList.moveSelection(-1)
+                }
+                Keys.onReturnPressed: {
+                    if (menu.mode === "general") generalList.activateCurrent()
+                    else if (menu.mode === "drun") drunList.activateCurrent()
+                    else if (menu.mode === "theme") themeList.activateCurrent()
+                }
+                Keys.onEnterPressed: {
+                    if (menu.mode === "general") generalList.activateCurrent()
+                    else if (menu.mode === "drun") drunList.activateCurrent()
+                    else if (menu.mode === "theme") themeList.activateCurrent()
+                }
+            }
+
+            HoverHandler {
+                id: searchHover
+                cursorShape: Qt.IBeamCursor
+            }
         }
-    }
 
-    Rectangle {
-        id: mainList
-        objectName: "hakumenu-mainList"
-        x: menu.innerLeftPad
-        y: menu.controlsAtBottom ? menu.innerTopPad : menu.innerTopPad + modeSwitcher.height + Theme.pad
-        width: menu.innerWidth - (menu.showStateRegion ? stateRegion.width + Theme.gap * 2 : 0)
-        height: Math.max(0, (menu.controlsAtBottom ? menu.controlsY - Theme.pad : menu.height - menu.innerBottomPad) - y)
-        radius: Theme.largeRadius
-        color: menu.mode === "theme" ? "transparent" : menu.listBg
-        clip: true
+        Rectangle {
+            id: mainList
+            objectName: "hakumenu-mainList"
+            Layout.row: menu.contentGridRow
+            Layout.column: 0
+            Layout.columnSpan: menu.showStateRegion ? 2 : 3
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            radius: Theme.largeRadius
+            color: menu.mode === "theme" ? "transparent" : menu.listBg
+            clip: false
 
-        GeneralList {
-            id: generalList
-            anchors.fill: parent
-            anchors.margins: Theme.gap
-            visible: menu.mode === "general"
-            query: menu.query
-            panelOpen: menu.panelOpen
-            onRestoreSearchFocus: if (menu.panelOpen && menu.mode === "general") menu.forceSearchFocus()
-            rowHoverColor: menu.controlHoverBg
-            rowSelectedColor: Theme.surfaceSubtle(1.18)
-            onHighlightedLabelChanged: label => UiState.setHakuMenuSelectionLabel(label)
-            onLaunched: UiState.closeHakuMenu()
+            GeneralList {
+                id: generalList
+                anchors.fill: parent
+                anchors.margins: Theme.gap
+                visible: menu.mode === "general"
+                query: menu.query
+                panelOpen: menu.panelOpen
+                onRestoreSearchFocus: if (menu.panelOpen && menu.mode === "general") menu.forceSearchFocus()
+                rowHoverColor: menu.controlHoverBg
+                rowSelectedColor: Theme.surfaceSubtle(1.18)
+                onHighlightedLabelChanged: label => UiState.setHakuMenuSelectionLabel(label)
+                onLaunched: UiState.closeHakuMenu()
+            }
+
+            DrunList {
+                id: drunList
+                anchors.fill: parent
+                anchors.margins: Theme.gap
+                visible: menu.mode === "drun"
+                query: menu.query
+                rowHoverColor: menu.controlHoverBg
+                rowSelectedColor: Theme.surfaceSubtle(1.18)
+                onHighlightedLabelChanged: label => UiState.setHakuMenuSelectionLabel(label)
+                onLaunched: UiState.closeHakuMenu()
+            }
         }
 
-        DrunList {
-            id: drunList
-            anchors.fill: parent
-            anchors.margins: Theme.gap
-            visible: menu.mode === "drun"
-            query: menu.query
-            rowHoverColor: menu.controlHoverBg
-            rowSelectedColor: Theme.surfaceSubtle(1.18)
-            onHighlightedLabelChanged: label => UiState.setHakuMenuSelectionLabel(label)
-            onLaunched: UiState.closeHakuMenu()
+        Rectangle {
+            id: stateRegion
+            objectName: "hakumenu-stateRegion"
+            Layout.row: menu.contentGridRow
+            Layout.column: 2
+            Layout.columnSpan: 1
+            Layout.preferredWidth: menu.stateWidth
+            Layout.minimumWidth: menu.stateWidth
+            Layout.maximumWidth: menu.stateWidth
+            Layout.fillHeight: true
+            radius: Theme.largeRadius
+            color: menu.mode === "theme" ? "transparent" : menu.listBg
+            visible: menu.showStateRegion
         }
-    }
-
-    Rectangle {
-        id: stateRegion
-        objectName: "hakumenu-stateRegion"
-        x: mainList.x + mainList.width + Theme.gap * 2
-        y: mainList.y
-        width: menu.stateWidth
-        height: mainList.height
-        radius: Theme.largeRadius
-        color: menu.mode === "theme" ? "transparent" : menu.listBg
-        visible: menu.showStateRegion
     }
 
     ThemeList {
         id: themeList
-        x: mainList.x
-        y: mainList.y
-        width: mainList.width + Theme.gap * 2 + stateRegion.width
+        x: contentGrid.x + mainList.x
+        y: contentGrid.y + mainList.y
+        width: contentGrid.width
         height: mainList.height
         visible: menu.mode === "theme"
         query: menu.query

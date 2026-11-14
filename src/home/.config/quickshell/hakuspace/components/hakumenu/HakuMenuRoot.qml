@@ -59,9 +59,17 @@ FocusScope {
     Keys.priority: Keys.AfterItem
     Keys.onPressed: event => {
         keyboardActivity()
-        if (event.key === Qt.Key_Tab && (event.modifiers & Qt.ControlModifier)) {
-            UiState.setHakuPanelTab(taskManagerTab ? "hakumenu" : "taskManager")
-            event.accepted = true
+        if (event.modifiers & Qt.ControlModifier) {
+            if (event.key === Qt.Key_Tab) {
+                UiState.setHakuPanelTab(taskManagerTab ? "hakumenu" : "taskManager")
+                event.accepted = true
+            } else if (event.key === Qt.Key_Left) {
+                UiState.setHakuPanelTab("hakumenu")
+                event.accepted = true
+            } else if (event.key === Qt.Key_Right) {
+                UiState.setHakuPanelTab("taskManager")
+                event.accepted = true
+            }
         }
     }
     Keys.onEscapePressed: event => {
@@ -71,7 +79,7 @@ FocusScope {
 
     // Match root navigation before either page consumes arrow keys in its search.
     Shortcut {
-        sequence: "Alt+Left"
+        sequences: ["Ctrl+Left", "Alt+Left"]
         context: Qt.WindowShortcut
         enabled: root.panelOpen && root.interactionOwned
         onActivated: {
@@ -80,7 +88,7 @@ FocusScope {
         }
     }
     Shortcut {
-        sequence: "Alt+Right"
+        sequences: ["Ctrl+Right", "Alt+Right"]
         context: Qt.WindowShortcut
         enabled: root.panelOpen && root.interactionOwned
         onActivated: {

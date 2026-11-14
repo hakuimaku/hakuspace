@@ -54,7 +54,9 @@ Rectangle {
         var container = coordinateSpace || parent;
         if (!container) return;
 
-        var pt = container.mapFromItem(targetItem, 0, 0);
+        var pt = targetItem.parent
+            ? targetItem.parent.mapToItem(container, targetItem.x, targetItem.y)
+            : container.mapFromItem(targetItem, 0, 0);
         var tw = targetItem.width;
         var th = targetItem.height;
         var tr = (targetItem.radius !== undefined && targetItem.radius > 0) ? targetItem.radius : Theme.radius;
@@ -106,6 +108,15 @@ Rectangle {
         function onHeightChanged() { root.syncTarget(false); }
         function onRadiusChanged() { root.syncTarget(false); }
         function onDangerChanged() { root.syncTarget(false); }
+    }
+
+    Connections {
+        target: root.targetItem ? root.targetItem.parent : null
+        ignoreUnknownSignals: true
+        function onXChanged() { root.syncTarget(false); }
+        function onYChanged() { root.syncTarget(false); }
+        function onWidthChanged() { root.syncTarget(false); }
+        function onHeightChanged() { root.syncTarget(false); }
     }
 
     property int duration: HAnimation.spatial

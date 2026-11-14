@@ -28,7 +28,7 @@ Item {
         idleColor: "transparent"
         hoverColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.12))
         pressedColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.2))
-        hoverScaleDelta: 0.006
+        hoverScaleDelta: Theme.hakuMenuHoverScaleDelta
         activeFocusOnTab: true
         focused: activeFocus
         Accessible.name: "Add custom action"
