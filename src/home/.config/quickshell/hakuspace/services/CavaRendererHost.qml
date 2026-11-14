@@ -15,6 +15,7 @@ QtObject {
     property int failures: 0
     // Settings and geometry cross the socket only when their values change.
     readonly property var configuration: ({enabled: requested, available: service.available,
+        dynamicPosition: service.dynamicPosition, barHidden: service.barHidden,
         position: service.position, top: service.top, needsSurface: service.needsSurface, leftInset: service.leftInset,
         rightInset: service.rightInset, edgeInset: service.edgeInset, colorMode: service.colorMode,
         surfaceColor: service.surfaceColor.toString(), accentColor: service.accentColor.toString(),

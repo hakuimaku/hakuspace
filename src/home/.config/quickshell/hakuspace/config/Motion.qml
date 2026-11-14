@@ -19,6 +19,8 @@ QtObject {
     readonly property list<real> shellCurve: [0.16, 1.0, 0.3, 1.0, 1, 1]
     // Both wipe layers share easing while retaining independent durations.
     readonly property list<real> shellTransitionCurve: [0.65, 0.0, 0.35, 1.0, 1, 1]
+    // Snappy cartoon swing/slide with subtle overshoot settle for bar layout transitions.
+    readonly property list<real> barTransitionCurve: [0.24, 1.26, 0.32, 1.0, 1, 1]
 
     // Navigation Motion (slower, modern fluid expansion)
     readonly property int navigationOpenDuration: 600

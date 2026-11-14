@@ -16,6 +16,7 @@ QtObject {
     property list<real> shellCurve: Motion.shellCurve
     // Both wipe layers share easing while retaining independent durations.
     property list<real> shellTransitionCurve: Motion.shellTransitionCurve
+    property list<real> barTransitionCurve: Motion.barTransitionCurve
 
     // Navigation Motion (slower, modern fluid expansion)
     property int navigationOpenDuration: Motion.navigationOpenDuration

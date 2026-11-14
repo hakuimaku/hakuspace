@@ -11,8 +11,8 @@ PanelWindow {
     screen: modelData
 
     // Retain the drawing window during Settings layout changes without exposing inactive chrome.
-    readonly property bool statusActive: ChromeLayout.topStatusBarVisible
-    contentItem.visible: root.statusActive
+    readonly property bool statusActive: BarTransitionState.hostActive ? (BarTransitionState.visualEdge === "top") : ChromeLayout.topStatusBarVisible
+    contentItem.visible: BarTransitionState.hostActive ? true : root.statusActive
 
     property real barH: Theme.topBarHeight
     property real tipAreaH: 180
@@ -32,18 +32,19 @@ PanelWindow {
         color: "transparent"
         implicitHeight: root.barH
         exclusiveZone: root.barH
-        visible: root.statusActive
+        visible: ChromeLayout.topStatusBarVisible
         mask: Region {}
     }
 
     color: "transparent"
-    visible: root.statusActive || UiState.activePanel === "settings"
+    visible: BarTransitionState.hostActive || root.statusActive || UiState.activePanel === "settings"
 
     mask: Region { item: root.statusActive ? barBg : null }
 
     // Primary background chassis and container of the top status bar.
     Rectangle {
         id: barBg
+        visible: root.statusActive
         width: parent.width
         height: root.barH
         color: Theme.surface
@@ -54,6 +55,7 @@ PanelWindow {
             objectName: "topbarModules"
             ownerWindow: root
             screenName: root.modelData.name
+            opacity: BarTransitionState.hostActive ? BarTransitionState.modulesOpacity : 1
         }
     }
 

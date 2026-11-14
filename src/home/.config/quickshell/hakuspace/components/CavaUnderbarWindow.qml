@@ -6,11 +6,18 @@ import "cava"
 
 Item {
     id: rootItem
-    // Keep the window alive until its slide back to the screen edge completes.
-    readonly property bool releaseReady: !shouldBeVisible && reveal === 0 && !slideAnimation.running
+    // Keep the window alive until its curtain collapse back to the screen edge completes.
+    readonly property bool releaseReady: !shouldBeVisible && !barHidden && !switchingPosition && reveal === 0 && !slideAnimation.running
     required property var modelData
 
-    readonly property string position: CavaService.position
+    property string activePosition: "top"
+    property int activeEdgeInset: 0
+    property bool activeNeedsSurface: false
+    property bool switchingPosition: false
+    readonly property bool dynamicBarSync: CavaService.dynamicPosition
+    readonly property bool barHidden: CavaService.barHidden
+
+    readonly property string position: activePosition
     readonly property bool isVertical: position === "left" || position === "right"
     readonly property bool isLeft: position === "left"
     readonly property bool isRight: position === "right"
@@ -19,24 +26,88 @@ Item {
     readonly property bool shouldBeVisible: CavaService.enabled && CavaService.available
     // Reopening during dismissal reverses from the current visual position.
     property real reveal: 0
+
+    function syncTargetEdge() {
+        if (!rootItem) return
+        if (CavaService.position !== activePosition) {
+            if (!shouldBeVisible || (reveal === 0 && !slideAnimation.running)) {
+                activePosition = CavaService.position
+                activeEdgeInset = CavaService.edgeInset
+                activeNeedsSurface = CavaService.needsSurface
+                switchingPosition = false
+            } else {
+                switchingPosition = true
+                reveal = 0
+            }
+            return
+        }
+        activeEdgeInset = CavaService.edgeInset
+        activeNeedsSurface = CavaService.needsSurface
+        if (switchingPosition) {
+            switchingPosition = false
+            Qt.callLater(syncReveal)
+        }
+    }
+
     // Defer the initial reveal until the loader has finished constructing its visual tree.
     function syncReveal() {
-        if (rootItem) reveal = shouldBeVisible ? 1 : 0
+        if (!rootItem) return
+        if (!shouldBeVisible) {
+            switchingPosition = false
+            reveal = 0
+            return
+        }
+        if (barHidden || switchingPosition) {
+            reveal = 0
+            return
+        }
+        reveal = 1
     }
-    onShouldBeVisibleChanged: Qt.callLater(syncReveal)
-    Component.onCompleted: Qt.callLater(syncReveal)
+
+    onRevealChanged: {
+        if (switchingPosition && reveal === 0) {
+            activePosition = CavaService.position
+            activeEdgeInset = CavaService.edgeInset
+            activeNeedsSurface = CavaService.needsSurface
+            switchingPosition = false
+            if (shouldBeVisible) Qt.callLater(syncReveal)
+        }
+    }
+
+    Connections {
+        target: CavaService
+        function onPositionChanged() { Qt.callLater(rootItem.syncTargetEdge) }
+        function onEdgeInsetChanged() { Qt.callLater(rootItem.syncTargetEdge) }
+        function onNeedsSurfaceChanged() { Qt.callLater(rootItem.syncTargetEdge) }
+        function onBarHiddenChanged() {
+            Qt.callLater(rootItem.syncTargetEdge)
+            Qt.callLater(rootItem.syncReveal)
+        }
+    }
+
+    onShouldBeVisibleChanged: {
+        syncTargetEdge()
+        Qt.callLater(syncReveal)
+    }
+    Component.onCompleted: {
+        syncTargetEdge()
+        Qt.callLater(syncReveal)
+    }
+
     Behavior on reveal {
         NumberAnimation {
             id: slideAnimation
-            duration: rootItem.shouldBeVisible ? HAnimation.normal : HAnimation.fast
+            duration: rootItem.dynamicBarSync ? 500
+                : ((rootItem.shouldBeVisible && !rootItem.switchingPosition) ? HAnimation.normal : HAnimation.fast)
             easing.type: Easing.BezierSpline
-            easing.bezierCurve: rootItem.shouldBeVisible ? HAnimation.moduleCurve : HAnimation.tooltipCurve
+            easing.bezierCurve: (rootItem.shouldBeVisible && !rootItem.barHidden && !rootItem.switchingPosition) ? HAnimation.moduleCurve : HAnimation.tooltipCurve
         }
     }
+
     // Preserve the wave's distance from the selected physical screen edge.
-    readonly property int edgeInset: CavaService.edgeInset
+    readonly property int edgeInset: activeEdgeInset
     // Niri transforms Bottom layers with workspaces, separately from the visible status bar.
-    readonly property bool needsSurface: CavaService.needsSurface
+    readonly property bool needsSurface: activeNeedsSurface
     // Carry the reserved chassis area in the same surface as the wave.
     readonly property real surfaceThickness: needsSurface ? edgeInset : 0
     readonly property real surfaceHeight: isVertical ? 0 : surfaceThickness
@@ -97,6 +168,8 @@ Item {
                     anchors.rightMargin: rootItem.isRight ? rootItem.surfaceWidth : 0
                     anchors.topMargin: rootItem.isTop ? rootItem.surfaceHeight : 0
                     anchors.bottomMargin: rootItem.isBottom ? rootItem.surfaceHeight : 0
+                    position: rootItem.position
+                    bloom: rootItem.dynamicBarSync ? 1.0 : rootItem.reveal
                     screen: rootItem.modelData
                 }
             }

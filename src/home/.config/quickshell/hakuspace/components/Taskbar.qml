@@ -11,6 +11,7 @@ Item {
     id: root
     required property var modelData
     readonly property bool active: !!modelData && ChromeLayout.taskbarMode
+    readonly property bool visualActive: !!modelData && (BarTransitionState.hostActive ? (BarTransitionState.visualEdge === "bottom") : ChromeLayout.taskbarMode)
     // Default and IPC callers share the same output-specific bottom presentation.
     readonly property bool menuOwned: active && UiState.activePanel === "hakumenu"
         && UiState.hakuMenuStyle === "bottomFlare" && UiState.hakuMenuMode !== "closed"
@@ -77,17 +78,17 @@ Item {
         WlrLayershell.keyboardFocus: root.active ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
         // Preserve rendering resources while Settings can switch back to this bar.
-        visible: root.active || UiState.activePanel === "settings"
-        contentItem.visible: root.active
+        visible: BarTransitionState.hostActive || root.visualActive || UiState.activePanel === "settings"
+        contentItem.visible: BarTransitionState.hostActive ? true : root.visualActive
         color: "transparent"
         mask: Region {
             y: taskbarWindow.height - root.targetHeight
-            width: root.active ? taskbarWindow.width : 0
-            height: root.active ? root.targetHeight : 0
+            width: root.visualActive ? taskbarWindow.width : 0
+            height: root.visualActive ? root.targetHeight : 0
             Region {
                 x: root.safeRect.x; y: root.safeRect.y
-                width: root.active && !root.menuOwned ? root.safeRect.width : 0
-                height: root.active && !root.menuOwned ? root.safeRect.height : 0
+                width: root.visualActive && !root.menuOwned ? root.safeRect.width : 0
+                height: root.visualActive && !root.menuOwned ? root.safeRect.height : 0
             }
         }
         Connections {
@@ -106,6 +107,7 @@ Item {
         }
         Rectangle {
             objectName: "taskbar-surface"
+            visible: root.visualActive
             y: taskbarWindow.height - root.targetHeight
             width: taskbarWindow.width
             height: root.targetHeight
@@ -114,13 +116,16 @@ Item {
         }
         Bar.StatusModules {
             id: statusModules
+            visible: root.visualActive
             y: taskbarWindow.height - root.targetHeight
             ownerWindow: taskbarWindow
             screenName: root.modelData ? root.modelData.name : ""
             presentation: "fullBottom"
+            opacity: BarTransitionState.hostActive ? BarTransitionState.modulesOpacity : 1
         }
         AppBar.AppBarContent {
             id: appContent
+            visible: root.visualActive
             anchors.fill: parent
             modelData: root.modelData
             hostWindow: taskbarWindow
@@ -130,7 +135,7 @@ Item {
             shown: root.active && !root.menuOwned
             suppressTooltips: root.menuOwned
             enabled: !root.menuOwned
-            opacity: root.menuOwned ? 0 : 1
+            opacity: (root.menuOwned ? 0 : 1) * (BarTransitionState.hostActive ? BarTransitionState.modulesOpacity : 1)
             targetHeight: root.targetHeight
             safeRect: root.safeRect
             viewportLimit: statusModules.centerViewportWidth

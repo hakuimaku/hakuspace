@@ -27,21 +27,31 @@ QtObject {
     property color accentColor: rendererProcess ? "transparent" : Theme.accent
     readonly property color underbarColor: colorMode === "surface" ? surfaceColor : accentColor
     // The parent publishes screen geometry and live settings previews as one snapshot.
-    property string position: rendererProcess ? "top" : AppState.cavaPosition
+    property bool dynamicPosition: rendererProcess ? false : AppState.cavaDynamicPosition
+    property bool barHidden: rendererProcess ? false
+        : (dynamicPosition && (BarTransitionState.phase === "hiding" || BarTransitionState.phase === "moving"))
+    readonly property string effectivePosition: (!rendererProcess && dynamicPosition && BarTransitionState.phase === "hiding")
+        ? BarTransitionState.fromEdge
+        : AppState.cavaPosition
+    property string position: rendererProcess ? "top" : effectivePosition
     property bool top: rendererProcess ? true : (position !== "bottom")
     readonly property bool isNiri: !rendererProcess && WM.backendName === "niri"
+    readonly property bool effectiveLeftBar: !rendererProcess && (dynamicPosition && BarTransitionState.phase === "hiding"
+        ? BarTransitionState.fromEdge === "left" : ChromeLayout.leftBarMode)
+    readonly property bool effectiveTaskbar: !rendererProcess && (dynamicPosition && BarTransitionState.phase === "hiding"
+        ? BarTransitionState.fromEdge === "bottom" : ChromeLayout.taskbarMode)
     property bool needsSurface: rendererProcess ? false : (isNiri && (
-        position === "left" ? ChromeLayout.leftBarMode :
+        position === "left" ? effectiveLeftBar :
         position === "right" ? false :
-        position === "top" ? !ChromeLayout.leftBarMode :
+        position === "top" ? !effectiveLeftBar :
         true
     ))
     property real leftInset: rendererProcess ? 0 : ScreenGeometry.leftInset
     property real rightInset: rendererProcess ? 0 : ScreenGeometry.rightInset
     property int edgeInset: rendererProcess ? 0 : (
-        position === "top" ? (ChromeLayout.leftBarMode ? 0 : (ChromeLayout.taskbarMode ? ScreenGeometry.topBorderThickness : Theme.topBarHeight))
-        : position === "bottom" ? (ChromeLayout.taskbarMode ? ScreenGeometry.taskbarReservation() : ScreenGeometry.bottomInset)
-        : position === "left" ? (ChromeLayout.leftBarMode ? Math.round(ScreenGeometry.leftBarWidth) : ScreenGeometry.leftInset)
+        position === "top" ? (effectiveLeftBar ? 0 : (effectiveTaskbar ? ScreenGeometry.topBorderThickness : Theme.topBarHeight))
+        : position === "bottom" ? (effectiveTaskbar ? ScreenGeometry.taskbarHeight : ScreenGeometry.borderThickness)
+        : position === "left" ? (effectiveLeftBar ? Math.round(ScreenGeometry.leftBarWidth) : ScreenGeometry.leftInset)
         : 0
     )
     property int barCount: 64

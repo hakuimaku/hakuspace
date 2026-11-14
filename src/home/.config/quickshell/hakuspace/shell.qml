@@ -11,6 +11,7 @@ import "ipc" as Ipc
 
 ShellRoot {
     id: root
+    Component.onCompleted: BarTransitionState.hostActive = true
     // Stop wallpaper workers before Quickshell interrupts the departing configuration.
     Component.onDestruction: WallpaperService.shutdown()
     // Keep idle and logind hooks resident even before the first diagnostic IPC call.
@@ -91,7 +92,7 @@ ShellRoot {
     }
 
     Variants {
-        model: ChromeLayout.leftBarMode ? root.hikaiScreenModel : []
+        model: root.hikaiScreenModel
         LeftBar {}
     }
 
@@ -125,6 +126,11 @@ ShellRoot {
     Variants {
         model: root.hikaiScreenModel
         RoundedScreen {}
+    }
+
+    Variants {
+        model: root.hikaiScreenModel
+        BarTransitionOverlay {}
     }
 
     // Map last so an active wipe sits above existing Hikai overlay panels.

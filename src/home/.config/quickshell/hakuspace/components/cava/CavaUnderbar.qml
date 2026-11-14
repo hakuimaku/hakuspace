@@ -6,7 +6,8 @@ Item {
 
     property string style: CavaService.style
     property var screen: null
-    readonly property string position: CavaService.position
+    property string position: CavaService.position
+    property real bloom: 1.0
     readonly property bool isVertical: position === "left" || position === "right"
 
     Loader {
@@ -23,6 +24,8 @@ Item {
         id: liquidComponent
         CavaLiquid {
             anchors.fill: parent
+            isTop: root.position !== "bottom"
+            bloom: root.bloom
         }
     }
 
@@ -30,6 +33,8 @@ Item {
         id: capsuleComponent
         CavaCapsule {
             anchors.fill: parent
+            isTop: root.position !== "bottom"
+            bloom: root.bloom
         }
     }
 }

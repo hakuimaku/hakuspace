@@ -54,6 +54,8 @@ ShellRoot {
         for (var key of booleans.concat(numbers, ["position", "colorMode", "style", "surfaceColor", "accentColor"])) {
             if (key !== "enabled") CavaService[key] = state[key]
         }
+        if (typeof state.dynamicPosition === "boolean") CavaService.dynamicPosition = state.dynamicPosition
+        if (typeof state.barHidden === "boolean") CavaService.barHidden = state.barHidden
         screens = state.screens
         configured = true
         closeReported = false

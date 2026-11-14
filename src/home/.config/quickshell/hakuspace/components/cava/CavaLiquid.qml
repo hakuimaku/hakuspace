@@ -12,8 +12,8 @@ Item {
     property bool showCrestLine: true
     property color crestColor: root.inkColor
     property real crestOpacity: root.inkOpacity
-
-    readonly property bool isTop: CavaService.top
+    property bool isTop: CavaService.top
+    property real bloom: 1.0
     readonly property bool sleeping: CavaService.sleeping
     readonly property real overallEnergy: CavaService.overallEnergy
     readonly property real bassEnergy: CavaService.bassEnergy
@@ -49,6 +49,8 @@ Item {
     onSleepingChanged: canvas.requestPaint()
     onBarsChanged: canvas.requestPaint()
     onInkColorChanged: canvas.requestPaint()
+    onIsTopChanged: canvas.requestPaint()
+    onBloomChanged: canvas.requestPaint()
     onWidthChanged: canvas.requestPaint()
     onHeightChanged: canvas.requestPaint()
 
@@ -88,9 +90,11 @@ Item {
             var points = []
             var dx = w / (count - 1)
             var minBaseline = 3.5
+            var b = Math.max(0.0, Math.min(1.0, root.bloom))
+            var span = b >= 0.999 ? 1.0 : (0.22 + 0.78 * Math.pow(b, 0.72))
 
             for (var i = 0; i < count; ++i) {
-                var px = i * dx
+                var px = w * 0.5 + (i * dx - w * 0.5) * span
                 var rawVal = barList[i] || 0.0
 
                 // Bass swell around the center indices
@@ -112,7 +116,11 @@ Item {
                 var idleShape = ((w1 * 0.5 + w2 * 0.3 + w3 * 0.2) + 1.0) * 0.5
                 var idleH = idleShape * idleAmp
 
-                var peakH = Math.min(h - 4.0, minBaseline + audioH + idleH * idleWeight)
+                var curtainT = b >= 0.999 ? 1.0 : Math.max(0.0, Math.min(1.0, b * 1.5 - centerDist * 0.5))
+                var curtain = curtainT * curtainT * (3.0 - 2.0 * curtainT)
+                var crestBloom = b >= 0.999 ? 0.0 : Math.sin(curtainT * Math.PI) * targetMaxH * 0.18 * (1.0 - b * 0.4)
+
+                var peakH = Math.min(h - 4.0, (minBaseline + audioH + idleH * idleWeight + crestBloom) * curtain)
                 var py = isTopMode ? Math.min(h - 2.0, peakH) : Math.max(2.0, h - peakH)
 
                 points.push({ x: px, y: py })
@@ -138,12 +146,14 @@ Item {
             }
 
             // Close down to the base edge of the window
+            var endX = points[points.length - 1].x
+            var startX = points[0].x
             if (isTopMode) {
-                ctx.lineTo(w, 0)
-                ctx.lineTo(0, 0)
+                ctx.lineTo(endX, 0)
+                ctx.lineTo(startX, 0)
             } else {
-                ctx.lineTo(w, h)
-                ctx.lineTo(0, h)
+                ctx.lineTo(endX, h)
+                ctx.lineTo(startX, h)
             }
             ctx.closePath()
 

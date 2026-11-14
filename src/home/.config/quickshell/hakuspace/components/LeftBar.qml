@@ -15,13 +15,15 @@ PanelWindow {
     exclusiveZone: 0
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "hakuspace-leftbar"
+    readonly property bool statusActive: BarTransitionState.hostActive ? (BarTransitionState.visualEdge === "left") : ChromeLayout.leftBarMode
     color: "transparent"
-    visible: ChromeLayout.leftBarMode
-    contentItem.visible: ChromeLayout.leftBarMode
-    mask: Region { item: bar }
+    visible: BarTransitionState.hostActive || root.statusActive
+    contentItem.visible: BarTransitionState.hostActive ? true : root.statusActive
+    mask: Region { item: root.statusActive ? bar : null }
 
     Rectangle {
         id: bar
+        visible: root.statusActive
         width: ScreenGeometry.leftBarWidth
         height: parent.height
         color: Theme.surface
@@ -29,6 +31,7 @@ PanelWindow {
             anchors.fill: parent
             screenName: root.modelData.name
             ownerWindow: root
+            opacity: BarTransitionState.hostActive ? BarTransitionState.modulesOpacity : 1
         }
     }
     TooltipLayer {

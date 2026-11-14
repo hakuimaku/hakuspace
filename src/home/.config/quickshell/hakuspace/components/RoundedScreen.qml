@@ -34,14 +34,28 @@ Item {
         // Draw only the small corner masks and rails instead of repainting an output-sized image.
         Item {
             id: frame
-            x: ScreenGeometry.leftChromeWidth
+            readonly property bool transitionDriven: BarTransitionState.hostActive && BarTransitionState.armed
+            readonly property string activeEdge: BarTransitionState.phase === "hiding" ? BarTransitionState.fromEdge
+                : BarTransitionState.active ? BarTransitionState.toEdge
+                : BarTransitionState.settledEdge
+            function edgeX(edge) { return edge === "left" ? ScreenGeometry.leftBarWidth : 0 }
+            function edgeY(edge) { return edge === "top" ? Math.round(Theme.topBarHeight) : 0 }
+            function edgeBottomReserve(edge) { return edge === "bottom" ? ScreenGeometry.taskbarHeight : 0 }
+            function edgeLeftRail(edge) { return edge === "left" ? 0 : t }
+            function edgeTopInset(edge) { return edge === "top" ? 0 : t }
+            function edgeBottomInset(edge) { return edge === "bottom" ? 0 : t }
+
+            opacity: transitionDriven ? BarTransitionState.modulesOpacity : 1
+            x: transitionDriven ? edgeX(activeEdge) : ScreenGeometry.leftChromeWidth
             width: parent.width - x
-            y: ChromeLayout.topBarMode ? Math.round(Theme.topBarHeight) : 0
-            height: Math.max(0, parent.height - y - rootItem.taskbarInset)
+            y: transitionDriven ? edgeY(activeEdge) : (ChromeLayout.topBarMode ? Math.round(Theme.topBarHeight) : 0)
+            height: transitionDriven
+                ? Math.max(0, parent.height - y - edgeBottomReserve(activeEdge))
+                : Math.max(0, parent.height - y - rootItem.taskbarInset)
             readonly property real t: rootItem.sideInset
-            readonly property real leftRail: ChromeLayout.leftBarMode ? 0 : t
-            readonly property real topInset: ScreenGeometry.topBorderThickness
-            readonly property real bottomInset: ScreenGeometry.bottomInset
+            readonly property real leftRail: transitionDriven ? edgeLeftRail(activeEdge) : (ChromeLayout.leftBarMode ? 0 : t)
+            readonly property real topInset: transitionDriven ? edgeTopInset(activeEdge) : ScreenGeometry.topBorderThickness
+            readonly property real bottomInset: transitionDriven ? edgeBottomInset(activeEdge) : ScreenGeometry.bottomInset
             readonly property real r: ScreenGeometry.maskRadius(width, height)
             Repeater {
                 model: 4
