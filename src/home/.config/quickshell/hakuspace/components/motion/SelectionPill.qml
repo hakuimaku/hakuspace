@@ -85,6 +85,18 @@ Rectangle {
         }
     }
 
+    onNormalColorChanged: {
+        if (!indexedMode && targetItem) {
+            syncTarget(false);
+        }
+    }
+
+    onDangerColorChanged: {
+        if (!indexedMode && targetItem) {
+            syncTarget(false);
+        }
+    }
+
     Connections {
         target: root.targetItem
         ignoreUnknownSignals: true
