@@ -20,7 +20,7 @@ binds {
     Mod+R            repeat=false hotkey-overlay-title="Toggle Temp Note" { spawn "sh" "-c" "$HOME/.local/bin/temp_note.sh"; }
     Mod+I            hotkey-overlay-title="Settings" { spawn "sh" "-c" "$HOME/.local/bin/settings_manager.sh"; }
     Mod+N            hotkey-overlay-title="Open Notification Center" { spawn "sh" "-c" "$HOME/.local/bin/notif.sh toggle"; }
-    Mod+Escape       hotkey-overlay-title="Emergency Classic Backend" { spawn "sh" "-c" "$HOME/.local/bin/haku_backend.sh set classic"; }
+    // Mod+Escape       hotkey-overlay-title="Emergency Classic Backend" { spawn "sh" "-c" "$HOME/.local/bin/haku_backend.sh set classic"; }
 
     Mod+V            hotkey-overlay-title="Clipboard Menu" { spawn "sh" "-c" "$HOME/.local/bin/clipboard_menu.sh"; }
     Mod+Shift+V      hotkey-overlay-title="Wipe Clipboard" { spawn "sh" "-c" "$HOME/.local/bin/clipboard_menu.sh --wipe"; }
