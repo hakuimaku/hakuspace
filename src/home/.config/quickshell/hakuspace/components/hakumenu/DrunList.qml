@@ -86,7 +86,12 @@ Item {
         if (index < 0 || index >= appModel.values.length) return
         var entry = appModel.values[index]
         if (!entry) return
-        entry.execute()
+        if (entry.runInTerminal && entry.command && entry.command.length > 0) {
+            var terminal = Quickshell.env("TERMINAL") || "kitty"
+            Quickshell.execDetached([terminal, "-e"].concat(entry.command))
+        } else {
+            entry.execute()
+        }
         root.launched()
     }
 
