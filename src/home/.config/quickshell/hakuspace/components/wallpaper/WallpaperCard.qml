@@ -11,7 +11,7 @@ Item {
     // A theme outline keeps white Leftbar artwork distinct from its cradle.
     property bool outlineSelection: false
     // Presentations choose clipping and a fixed decode budget before navigation.
-    property real cornerRadius: Theme.radius + 6
+    property real cornerRadius: Theme.largeRadius
     property real decodeScale: 1
     // Only the opening selection needs a temporary circular mask.
     property real revealProgress: 1

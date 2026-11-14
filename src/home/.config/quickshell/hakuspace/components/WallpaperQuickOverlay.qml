@@ -12,7 +12,12 @@ PanelWindow {
     readonly property bool panelOpen: UiState.activePanel === "wallpaper"
         && UiState.wallpaperPresentation === presentation && UiState.wallpaperScreenName === modelData.name
     readonly property bool closing: panelOpen && UiState.wallpaperCloseRequested
-    readonly property bool releaseReady: !panelOpen && expansion === 0 && !motion.running && !fold.running && !quickExit.running && !quickRestore.running
+    readonly property bool switchingToWorkspace: presentation === "quick"
+        && UiState.activePanel === "wallpaper" && UiState.wallpaperPresentation === "workspace"
+        && UiState.wallpaperScreenName === modelData.name
+    readonly property bool releaseReady: !panelOpen && expansion === 0 && workspaceButtonReveal === 0
+        && !motion.running && !fold.running && !quickExit.running && !quickRestore.running
+        && !workspaceMorphExit.running && !buttonAnim.running
     readonly property Item browserItem: browserLoader.item
     readonly property var browser: browserLoader.item
     readonly property bool leftWorkspace: presentation === "workspace" && ChromeLayout.leftBarMode
@@ -27,13 +32,16 @@ PanelWindow {
     property real quickOpacity: 0
     // Opening starts at sixty percent; closing can continue all the way to zero.
     property real quickScale: 0.6
+    // Mode 1 -> Mode 2 morph progress and diagonal top-right button slide progress.
+    property real workspaceMorph: 0
+    property real workspaceButtonReveal: 0
     property bool introStarted: false
     // A configured first buffer precedes motion and native resource uploads.
     property bool surfacePresented: false
     screen: modelData
     anchors { top: true; bottom: true; left: true; right: true }
     color: "transparent"
-    visible: panelOpen || expansion > 0 || quickOpacity > 0
+    visible: panelOpen || expansion > 0 || quickOpacity > 0 || workspaceButtonReveal > 0
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     WlrLayershell.layer: WlrLayer.Overlay
@@ -78,15 +86,26 @@ PanelWindow {
 
     }
 
+    function startButtonAnim(opening) {
+        buttonAnim.stop()
+        buttonAnim.to = opening ? 1 : 0
+        buttonAnim.duration = opening ? 460 : 420
+        buttonAnim.easing.bezierCurve = opening
+            ? [0.22, 1.06, 0.32, 1.0, 1, 1]
+            : HAnimation.sidebarCloseCurve
+        buttonAnim.start()
+    }
     // Pulse immediately alongside the fold and connect their shared finish to zoom.
     function animate() {
         if (!browser) return
         var opening = panelOpen && !closing
-        if (!opening && quickExit.running) return
+        if (!opening && (quickExit.running || workspaceMorphExit.running)) return
         motion.stop()
         fold.stop()
         quickExit.stop()
         quickRestore.stop()
+        workspaceMorphExit.stop()
+        buttonAnim.stop()
         motion.duration = presentation === "workspace" ? HAnimation.slow : HAnimation.effects
         motion.easing.bezierCurve = presentation === "workspace" ? HAnimation.tooltipCurve : HAnimation.moduleCurve
         if (opening) {
@@ -97,7 +116,10 @@ PanelWindow {
             }
             fold.to = 1
             if (stackSpread !== 1) fold.start()
-            if (presentation === "quick" && expansion > 0) quickRestore.start()
+            if (presentation === "quick" && expansion > 0) {
+                quickRestore.start()
+                startButtonAnim(true)
+            }
             browser.resumeIntro()
             tryIntro()
         } else {
@@ -110,9 +132,13 @@ PanelWindow {
         if (!browser || !panelOpen || closing || expansion !== 0 || motion.running
                 || !surfacePresented || !modelData || width !== modelData.width || height !== modelData.height
                 || !browser || !browser.openingReady) return
+        workspaceMorph = 0
         motion.to = 1
         motion.start()
-        if (presentation === "quick") quickRestore.start()
+        if (presentation === "quick") {
+            quickRestore.start()
+            startButtonAnim(true)
+        }
     }
     Connections {
         target: root.contentItem.Window.window
@@ -135,8 +161,14 @@ PanelWindow {
     onHeightChanged: tryIntro()
     onExpansionChanged: tryIntro()
     function closeContent() {
-        if (quickExit.running) return
-        if (presentation === "quick" && (expansion > 0 || quickOpacity > 0)) {
+        if (quickExit.running || workspaceMorphExit.running) return
+        if (presentation === "quick" && (expansion > 0 || quickOpacity > 0 || workspaceButtonReveal > 0)) {
+            startButtonAnim(false)
+            if (UiState.activePanel === "wallpaper" && UiState.wallpaperPresentation === "workspace"
+                    && !!modelData && UiState.wallpaperScreenName === modelData.name) {
+                workspaceMorphExit.start()
+                return
+            }
             quickExit.start()
             return
         }
@@ -146,7 +178,8 @@ PanelWindow {
     }
     // Defer a pre-frame dismissal beyond the closing binding; reopening cancels it.
     function finishClose() {
-        if (closing && expansion === 0 && !motion.running && !fold.running && !quickExit.running && !quickRestore.running)
+        if (closing && expansion === 0 && !motion.running && !fold.running
+                && !quickExit.running && !quickRestore.running && !workspaceMorphExit.running && !buttonAnim.running)
             UiState.finishCloseWallpaper(modelData.name)
     }
     onPanelOpenChanged: animate()
@@ -193,6 +226,52 @@ PanelWindow {
             duration: HAnimation.effects
             easing.type: Easing.BezierSpline
             easing.bezierCurve: HAnimation.moduleCurve
+        }
+        NumberAnimation {
+            target: root; property: "workspaceMorph"; to: 0
+            duration: HAnimation.effects
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: HAnimation.moduleCurve
+        }
+    }
+    NumberAnimation {
+        id: buttonAnim
+        target: root; property: "workspaceButtonReveal"
+        duration: 460
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: [0.22, 1.06, 0.32, 1.0, 1, 1]
+    }
+    // When switching to Mode 2, morph the Mode 1 carousel down to the workspace rail while controls peel away.
+    ParallelAnimation {
+        id: workspaceMorphExit
+        NumberAnimation {
+            target: root; property: "workspaceMorph"; to: 1
+            duration: HAnimation.actionLayerOpenDuration
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: HAnimation.actionLayerMorphCurve
+        }
+        NumberAnimation {
+            target: root; property: "stackSpread"; to: ChromeLayout.leftBarMode ? 0.9 : 1.35
+            duration: HAnimation.actionLayerOpenDuration
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: HAnimation.actionLayerMorphCurve
+        }
+        SequentialAnimation {
+            PauseAnimation { duration: 180 }
+            NumberAnimation {
+                target: root; property: "quickOpacity"; to: 0
+                duration: 380
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: HAnimation.actionLayerContentCurve
+            }
+        }
+        onFinished: {
+            if (!root.panelOpen) {
+                root.expansion = 0
+                root.quickOpacity = 0
+                root.workspaceButtonReveal = 0
+            }
+            root.finishClose()
         }
     }
     SequentialAnimation {
@@ -273,6 +352,8 @@ PanelWindow {
             contentOpacity: root.presentation === "quick" ? root.quickOpacity : root.expansion
             spread: root.stackSpread
             selectedPulse: root.selectedPulse
+            workspaceMorph: root.presentation === "quick" ? root.workspaceMorph : 0
+            workspaceButtonReveal: root.presentation === "quick" ? root.workspaceButtonReveal : 0
             scale: root.presentation === "quick" ? root.quickScale : 1
             enabled: root.panelOpen && !root.closing
             focus: enabled

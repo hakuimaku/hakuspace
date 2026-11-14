@@ -62,10 +62,20 @@ PathView {
     // Freeze an interrupted orbit so close/reopen can continue without snapping.
     function pauseIntro() { intro.stop(); introPending = false }
     function stopIntro() { pauseIntro(); introProgress = 1 }
-    onCountChanged: tryIntro()
+    onCountChanged: {
+        offsetTrackerReady = false
+        lastTrackedOffset = offset
+        resetCrowdState()
+        resetWheelState()
+        tryIntro()
+    }
     onCurrentIndexChanged: tryIntro()
     onEnabledChanged: {
-        if (!enabled) pauseIntro()
+        if (!enabled) {
+            pauseIntro()
+            resetWheelState()
+            resetCrowdState()
+        }
         else if (introPending) tryIntro()
         else resumeIntro()
     }
@@ -78,31 +88,133 @@ PathView {
     objectName: "wallpaperReel"
     model: WallpaperLibrary.filteredItems
     // Model replacement resets PathView even when the selected index stays unchanged.
-    onModelChanged: Qt.callLater(resetPosition)
+    onModelChanged: {
+        offsetTrackerReady = false
+        resetCrowdState()
+        resetWheelState()
+        Qt.callLater(resetPosition)
+    }
     function resetPosition() {
         currentIndex = WallpaperLibrary.selectedIndex
         if (currentIndex >= 0) positionViewAtIndex(currentIndex, PathView.Center)
+        lastTrackedOffset = offset
+        offsetTrackerReady = true
     }
     // Keep input timing separate from decorative animation progress.
     property double lastMoveAt: 0
-    // Match input cadence and preserve direction instead of falling behind a held key.
-    function move(step) {
+    readonly property int baseMoveDuration: 220
+    readonly property int minMoveDuration: 130
+    // Pace mouse-wheel notches so 60Hz transitions stay continuous instead of jumping.
+    property real wheelDeltaAccum: 0
+    property int pendingWheelSteps: 0
+    // Crowd squeeze ramps immediately via EMA during motion and releases with an overshoot Bezier.
+    property real crowdFactor: 0
+    property real crowdInertia: 0
+    property real lastTrackedOffset: 0
+    property bool offsetTrackerReady: false
+    function resetCrowdState() {
+        crowdSettleTimer.stop()
+        crowdReleaseAnim.stop()
+        inertiaReleaseAnim.stop()
+        crowdFactor = 0
+        crowdInertia = 0
+    }
+    NumberAnimation {
+        id: crowdReleaseAnim
+        target: root; property: "crowdFactor"; to: 0
+        duration: 210
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: [0.22, 1.44, 0.38, 1.06, 1, 1]
+    }
+    NumberAnimation {
+        id: inertiaReleaseAnim
+        target: root; property: "crowdInertia"; to: 0
+        duration: 230
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: [0.22, 1.48, 0.38, 1.06, 1, 1]
+    }
+    Timer {
+        id: crowdSettleTimer
+        interval: 40
+        onTriggered: {
+            crowdReleaseAnim.restart()
+            inertiaReleaseAnim.restart()
+        }
+    }
+    Timer {
+        id: wheelStepTimer
+        interval: 90
+        repeat: true
+        onTriggered: root.drainWheelStep()
+    }
+    Timer {
+        id: wheelAccumResetTimer
+        interval: 220
+        onTriggered: root.wheelDeltaAccum = 0
+    }
+    function resetWheelState() {
+        wheelDeltaAccum = 0
+        pendingWheelSteps = 0
+        wheelStepTimer.stop()
+        wheelAccumResetTimer.stop()
+    }
+    function drainWheelStep() {
+        if (!pendingWheelSteps || !count) {
+            pendingWheelSteps = 0
+            wheelStepTimer.stop()
+            return
+        }
+        var dir = pendingWheelSteps > 0 ? 1 : -1
+        pendingWheelSteps -= dir
+        move(dir, minMoveDuration)
+        if (!pendingWheelSteps) wheelStepTimer.stop()
+    }
+    // Keep held-key repeat synced 1:1 while enforcing a 60Hz-safe duration floor for wheel bursts.
+    function move(step, minDuration) {
+        if (!count) return
         stopIntro()
         var now = Date.now()
-        highlightMoveDuration = Math.min(HAnimation.effects, Math.max(16, now - lastMoveAt))
+        var elapsed = now - lastMoveAt
         lastMoveAt = now
+        var floor = minDuration !== undefined ? minDuration : 16
+        highlightMoveDuration = elapsed > 0 && elapsed < baseMoveDuration
+            ? Math.max(floor, Math.round(elapsed))
+            : baseMoveDuration
         movementDirection = step === 1 ? PathView.Positive : step === -1 ? PathView.Negative : PathView.Shortest
         WallpaperLibrary.move(step)
         movementDirection = PathView.Shortest
-        highlightMoveDuration = HAnimation.effects
+        highlightMoveDuration = baseMoveDuration
+    }
+    onOffsetChanged: {
+        if (!offsetTrackerReady || count < 2) {
+            lastTrackedOffset = offset
+            offsetTrackerReady = true
+            return
+        }
+        var rawDelta = offset - lastTrackedOffset
+        if (rawDelta > count / 2) rawDelta -= count
+        else if (rawDelta < -count / 2) rawDelta += count
+        lastTrackedOffset = offset
+        var absDelta = Math.abs(rawDelta)
+        if (absDelta > 0.0005) {
+            if (crowdReleaseAnim.running) crowdReleaseAnim.stop()
+            if (inertiaReleaseAnim.running) inertiaReleaseAnim.stop()
+            var squeezeImpulse = Math.min(1, absDelta * 7.5)
+            crowdFactor = crowdFactor + (squeezeImpulse - crowdFactor) * 0.48
+            var inertiaImpulse = Math.max(-1, Math.min(1, rawDelta * 8.5))
+            crowdInertia = crowdInertia + (inertiaImpulse - crowdInertia) * 0.45
+            crowdSettleTimer.restart()
+        }
     }
     currentIndex: WallpaperLibrary.selectedIndex
     pathItemCount: vertical ? 3 : 5
-    cacheItemCount: 0
+    cacheItemCount: vertical ? 2 : 4
     preferredHighlightBegin: 0.5
     preferredHighlightEnd: 0.5
     highlightRangeMode: PathView.StrictlyEnforceRange
-    highlightMoveDuration: HAnimation.effects
+    highlightMoveDuration: baseMoveDuration
+    flickDeceleration: 650
+    maximumFlickVelocity: 1400
     dragMargin: vertical ? width / 2 : height / 2
     snapMode: PathView.SnapToItem
     clip: vertical || !workspace
@@ -188,24 +300,38 @@ PathView {
         required property int index
         readonly property real targetScale: PathView.cardScale ?? 1
         readonly property real slotX: x + width / 2 - root.width / 2
+        readonly property real verticalCenterDx: (x + width / 2) - root.cornerCurve.selected.x
+        readonly property real verticalCenterDy: (y + height / 2) - root.cornerCurve.selected.y
         readonly property real orbitPhase: Math.asin(Math.max(-1, Math.min(1, slotX / Math.max(1, root.farOffset))))
             + root.introProgress * Math.PI * 2
         readonly property real orbitOffset: root.workspace || chosen || root.introProgress >= 1
             ? 0 : Math.sin(orbitPhase) * root.farOffset - slotX
+        // Squeeze side cards inward dynamically with signed scroll inertia and rebound on settle.
+        readonly property real crowdHorizontalX: (chosen ? 0 : -slotX * 0.17 * root.crowdFactor)
+            - root.crowdInertia * root.cardWidth * (chosen ? 0.025 : 0.075)
+        readonly property real crowdVerticalX: (chosen ? 0 : -verticalCenterDx * 0.15 * root.crowdFactor)
+            - root.crowdInertia * root.cardWidth * (chosen ? 0.02 : 0.05)
+        readonly property real crowdVerticalY: (chosen ? 0 : -verticalCenterDy * 0.15 * root.crowdFactor)
+            + root.crowdInertia * root.cardWidth * (chosen ? 0.025 : 0.06)
+        readonly property real crowdScale: 1 - (chosen ? 0.022 : 0.06) * root.crowdFactor
         wallpaper: modelData
         width: root.cardWidth
         chosen: PathView.isCurrentItem
         outlineSelection: root.vertical
-        cornerRadius: Theme.radius + 6
+        cornerRadius: Theme.largeRadius
         revealProgress: !root.workspace && chosen ? root.introProgress : 1
         decodeScale: root.selectedScale
         pulse: !root.workspace && chosen ? root.selectedPulse : 1
         transform: Translate {
-            x: root.vertical || card.chosen ? 0 : (root.spread - 1) * card.slotX + root.spread * card.orbitOffset
-            y: root.vertical && !card.chosen ? (root.spread - 1) * (card.y + card.height / 2 - root.height / 2) : 0
+            x: root.vertical
+                ? card.crowdVerticalX
+                : (card.chosen ? 0 : (root.spread - 1) * card.slotX + root.spread * card.orbitOffset) + card.crowdHorizontalX
+            y: root.vertical
+                ? (card.chosen ? 0 : (root.spread - 1) * (card.y + card.height / 2 - root.height / 2)) + card.crowdVerticalY
+                : 0
         }
         visible: PathView.onPath
-        scale: targetScale * pulse
+        scale: targetScale * pulse * crowdScale
         opacity: 1
         // Selection stays above moving neighbors throughout a vertical snap.
         z: root.vertical ? (chosen ? 2 : 1) : (PathView.cardDepth ?? 0)
@@ -213,7 +339,7 @@ PathView {
         onApplied: root.applyRequested()
     }
     // Dragging updates selection after snapping, without overriding a shared-state change.
-    onMovementStarted: stopIntro()
+    onMovementStarted: { stopIntro(); resetWheelState() }
     onMovementEnded: WallpaperLibrary.selectIndex(currentIndex)
     Connections {
         target: WallpaperLibrary
@@ -224,8 +350,34 @@ PathView {
         z: 1000
         acceptedButtons: Qt.NoButton
         onWheel: event => {
-            var delta = event.angleDelta.x || event.angleDelta.y
-            if (delta) root.move(delta < 0 ? 1 : -1)
+            var ax = event.angleDelta.x
+            var ay = event.angleDelta.y
+            var raw = Math.abs(ax) > Math.abs(ay) ? ax : ay
+            if (!raw && (event.pixelDelta.x || event.pixelDelta.y)) {
+                var px = Math.abs(event.pixelDelta.x) > Math.abs(event.pixelDelta.y) ? event.pixelDelta.x : event.pixelDelta.y
+                raw = px * 2
+            }
+            if (!raw) {
+                event.accepted = true
+                return
+            }
+            var stepDir = raw < 0 ? 1 : -1
+            if ((root.wheelDeltaAccum > 0 && raw < 0) || (root.wheelDeltaAccum < 0 && raw > 0))
+                root.wheelDeltaAccum = 0
+            if ((root.pendingWheelSteps > 0 && stepDir < 0) || (root.pendingWheelSteps < 0 && stepDir > 0))
+                root.pendingWheelSteps = 0
+            root.wheelDeltaAccum += raw
+            wheelAccumResetTimer.restart()
+            while (Math.abs(root.wheelDeltaAccum) >= 120) {
+                var unit = root.wheelDeltaAccum < 0 ? 1 : -1
+                root.wheelDeltaAccum -= (root.wheelDeltaAccum < 0 ? -120 : 120)
+                if (Math.abs(root.pendingWheelSteps) < 4)
+                    root.pendingWheelSteps += unit
+            }
+            if (root.pendingWheelSteps !== 0 && !wheelStepTimer.running) {
+                root.drainWheelStep()
+                if (root.pendingWheelSteps !== 0) wheelStepTimer.start()
+            }
             event.accepted = true
         }
     }

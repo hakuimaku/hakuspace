@@ -48,6 +48,8 @@ FocusScope {
     property real contentOpacity: reveal
     property real spread: 1
     property real selectedPulse: 1
+    property real workspaceMorph: 0
+    property real workspaceButtonReveal: 1
     property bool refreshOnShow: true
     // Only the requested settings section owns a disposable editor tree.
     property string settingsSection: ""
@@ -93,6 +95,21 @@ FocusScope {
     readonly property Item settingsInputItem: details
     readonly property Item selectedInputItem: workspace ? carousel.currentItem : null
     Item { id: emptyInput; width: 0; height: 0 }
+    // Morph target matches Mode 2's selected card position and scale so switching modes glides continuously.
+    readonly property real morphTargetX: ChromeLayout.leftBarMode
+        ? sideGeometry.cardViewport.x + sideGeometry.anchors.selected.x
+        : width / 2
+    readonly property real morphTargetY: {
+        if (ChromeLayout.leftBarMode)
+            return sideGeometry.cardViewport.y + sideGeometry.anchors.selected.y
+        var wsW = Math.min(width - ScreenGeometry.leftInset - ScreenGeometry.rightInset - 24, 1900)
+        var wsH = bottomPanelHeight + bottomBarHeight
+        var wsCard = Math.max(80, Math.min(wsW / 5.2, wsH * 16 / 9 * 0.95, 360))
+        return height - wsH + (wsH - 16 - wsCard * 9 / 32 * 1.32)
+    }
+    readonly property real morphTargetScale: ChromeLayout.leftBarMode
+        ? (sideGeometry.cardWidth * sideGeometry.selectedScale) / Math.max(1, carousel.cardWidth)
+        : Math.max(80, Math.min(Math.min(width - ScreenGeometry.leftInset - ScreenGeometry.rightInset - 24, 1900) / 5.2, (bottomPanelHeight + bottomBarHeight) * 16 / 9 * 0.95, 360)) * 1.32 / Math.max(1, carousel.cardWidth)
     readonly property real topPanelHeight: Theme.topBarHeight
     readonly property real toolbarControlHeight: Math.max(24, Math.floor(topPanelHeight - 12))
     readonly property real bottomPanelHeight: height * 0.15
@@ -101,6 +118,8 @@ FocusScope {
     readonly property real mediaTabWidth: Math.min(Math.max(320, Theme.fontSize * 20), width - panelPadding * 4)
     // Reserve category navigation above the gallery in both presentations.
     readonly property real categoryTabHeight: Math.max(32, toolbarControlHeight)
+    readonly property real quickCategoryHeight: categoryTabHeight + 8
+    readonly property real quickControlGap: Theme.spaceMd
     readonly property real panelTopPadding: mediaTabHeight + Theme.gap + categoryTabHeight + panelPadding * 2
     // Overlay surfaces match the bars without changing their state or reservations.
     readonly property real bottomBarHeight: ScreenGeometry.taskbarHeight
@@ -413,16 +432,19 @@ FocusScope {
         x: (parent.width - width) / 2
         y: quickBounds.y
         width: Math.min(460, parent.width - 48)
-        height: searchControl.implicitHeight + 12 + typeLane.implicitHeight + Theme.gap + root.categoryTabHeight
+        height: searchControl.implicitHeight + root.quickControlGap + typeLane.implicitHeight + root.quickControlGap + categoryLane.height
         opacity: root.contentOpacity
         scale: (0.96 + 0.04 * root.reveal) * navigationScale
         Item {
             id: searchControl
             parent: root.workspace ? toolbar.searchSlotItem : controls
             anchors.fill: root.workspace ? parent : undefined
+            y: root.workspace ? 0 : -root.workspaceMorph * 28
             implicitHeight: 42
             width: root.workspace ? parent.width : controls.width
             height: root.workspace ? parent.height : implicitHeight
+            opacity: root.workspace ? 1 : Math.max(0, 1 - root.workspaceMorph * 2.1)
+            scale: root.workspace ? 1 : 1 - root.workspaceMorph * 0.08
             TextField {
                 id: search
                 ContextMenu.menu: null
@@ -455,7 +477,9 @@ FocusScope {
             id: typeLane
             parent: root.workspace ? typeSlot : controls
             anchors.fill: root.workspace ? parent : undefined
-            y: root.workspace ? 0 : searchControl.implicitHeight + 12
+            y: root.workspace ? 0 : searchControl.implicitHeight + root.quickControlGap - root.workspaceMorph * 16
+            opacity: root.workspace ? 1 : Math.max(0, 1 - Math.max(0, root.workspaceMorph - 0.12) * 1.9)
+            scale: root.workspace ? 1 : 1 - root.workspaceMorph * 0.1
             width: root.workspace ? parent.width : Math.min(parent.width, 248)
             implicitHeight: root.workspaceVertical ? typeSlot.height : root.workspace ? root.mediaTabHeight : 40
             height: implicitHeight
@@ -522,6 +546,8 @@ FocusScope {
                     foregroundColor: root.workspace ? Theme.fgMuted : Theme.fg
                     hoverForegroundColor: Theme.fg
                     selectedForegroundColor: root.workspace && !root.workspaceVertical ? Theme.accent : Theme.onAccentColor
+                    disabledForegroundColor: selected ? selectedForegroundColor : foregroundColor
+                    disabledOpacity: 1
                     text: root.workspaceVertical ? "" : modelData.name
                     Text {
                         id: mediaLabel
@@ -549,17 +575,82 @@ FocusScope {
             }
         }
     }
+    // Isolate reveal slide/fade from MorphButton's hover scale and opacity Behavior.
+    Item {
+        id: openWorkspaceHost
+        visible: !root.workspace
+        z: 40
+        width: 52
+        height: 52
+        x: root.width - width - ScreenGeometry.rightInset - Theme.panelPadding
+        y: ScreenGeometry.topChromeHeight + Theme.panelPadding
+        opacity: Math.max(0, Math.min(1, root.workspaceButtonReveal))
+        transform: [
+            Scale {
+                origin.x: openWorkspaceHost.width / 2
+                origin.y: openWorkspaceHost.height / 2
+                xScale: 0.78 + 0.22 * root.workspaceButtonReveal
+                yScale: 0.78 + 0.22 * root.workspaceButtonReveal
+            },
+            Translate {
+                x: (1 - root.workspaceButtonReveal) * (openWorkspaceHost.width + ScreenGeometry.rightInset + Theme.panelPadding + 36)
+                y: -(1 - root.workspaceButtonReveal) * (openWorkspaceHost.height + ScreenGeometry.topChromeHeight + Theme.panelPadding + 36)
+            }
+        ]
+        WallpaperToolbarButton {
+            id: openWorkspaceButton
+            objectName: "wallpaper-open-workspace"
+            anchors.fill: parent
+            radius: width / 2
+            icon: "\uf03e"
+            iconSize: 22
+            horizontalPadding: 0
+            description: "Open wallpaper workspace (Ctrl+Enter)"
+            showTooltip: false
+            idleColor: Theme.surface
+            hoverColor: Theme.surface
+            pressedColor: Qt.tint(Theme.surface, Qt.alpha(Theme.accent, 0.18))
+            foregroundColor: Theme.fg
+            hoverForegroundColor: Theme.fg
+            disabledForegroundColor: Theme.fg
+            disabledOpacity: 1
+            hoverScaleDelta: 0.1
+            pressScaleDelta: 0.04
+            onClicked: UiState.enterWallpaperWorkspace()
+            Keys.priority: Keys.BeforeItem
+            Keys.onPressed: event => root.handleShortcut(event)
+            Settings.SettingsTooltip {
+                objectName: "wallpaper-open-workspace-tooltip"
+                target: openWorkspaceButton
+                text: openWorkspaceButton.description
+                x: target ? Math.min((target.width - width) / 2, target.width - width) : 0
+                active: openWorkspaceButton.hovered && openWorkspaceButton.enabled && openWorkspaceButton.visible
+            }
+        }
+    }
     // One scrolling category lane follows the shared library across presentations.
     FocusScope {
         id: categoryLane
         objectName: "wallpaper-category-lane"
         readonly property real contentInset: root.workspaceVertical ? root.sideGeometry.categoryInset : 0
+        readonly property real lanePad: !root.workspace ? 4 : 0
         parent: root.workspace ? root : controls
         z: 30
         x: root.workspaceVertical ? root.sideGeometry.categoryRect.x + root.gallerySlide : root.workspace ? (root.width - width) / 2 : 0
-        y: root.workspaceVertical ? root.sideGeometry.categoryRect.y : root.workspace ? typeSlot.y + typeSlot.height + Theme.gap : typeLane.y + typeLane.height + Theme.gap
+        y: root.workspaceVertical ? root.sideGeometry.categoryRect.y : root.workspace ? typeSlot.y + typeSlot.height + Theme.gap : searchControl.implicitHeight + typeLane.implicitHeight + root.quickControlGap * 2 + root.workspaceMorph * 12
         width: root.workspaceVertical ? root.sideGeometry.categoryRect.width : root.workspace ? root.mediaTabWidth : controls.width
-        height: root.workspaceVertical ? root.sideGeometry.categoryRect.height : root.categoryTabHeight
+        height: root.workspaceVertical ? root.sideGeometry.categoryRect.height : root.workspace ? root.categoryTabHeight : root.quickCategoryHeight
+        opacity: root.workspace ? 1 : Math.max(0, 1 - Math.max(0, root.workspaceMorph - 0.2) * 1.9)
+        scale: root.workspace ? 1 : 1 - root.workspaceMorph * 0.08
+
+        Rectangle {
+            id: categoryBackdrop
+            objectName: "wallpaper-category-backdrop"
+            visible: !root.workspace
+            anchors.fill: parent
+            radius: height / 2
+            color: Theme.surface
+        }
 
         // Keep focused and selected categories inside the padded viewport.
         function ensureVisible(item) {
@@ -574,8 +665,11 @@ FocusScope {
             id: categoryPrevious
             objectName: "wallpaper-prev-category"
             visible: !root.workspaceVertical || root.sideGeometry.categoryArrows
+            x: root.workspaceVertical ? 0 : categoryLane.lanePad
+            y: root.workspaceVertical ? 0 : categoryLane.lanePad
             width: root.workspaceVertical ? parent.width : root.categoryTabHeight
             height: visible ? root.categoryTabHeight : 0
+            radius: !root.workspace ? height / 2 : Math.min(8, height / 2)
             horizontalPadding: 6
             icon: root.workspaceVertical ? "\uf106" : "\uf104"; description: "Previous category (Alt+Left)"
             showTooltip: root.workspace
@@ -594,8 +688,8 @@ FocusScope {
                 bottom: root.workspaceVertical ? categoryNext.top : parent.bottom
                 leftMargin: root.workspaceVertical ? 0 : Theme.gap
                 rightMargin: root.workspaceVertical ? 0 : Theme.gap
-                topMargin: root.workspaceVertical && categoryPrevious.visible ? Theme.gap : 0
-                bottomMargin: root.workspaceVertical && categoryNext.visible ? Theme.gap : 0
+                topMargin: root.workspaceVertical && categoryPrevious.visible ? Theme.gap : categoryLane.lanePad
+                bottomMargin: root.workspaceVertical && categoryNext.visible ? Theme.gap : categoryLane.lanePad
             }
             contentWidth: root.workspaceVertical ? width : Math.max(width, categoryButtons.width)
             contentHeight: root.workspaceVertical ? Math.max(height, categoryButtons.y + categoryButtons.height + categoryLane.contentInset) : height
@@ -640,6 +734,8 @@ FocusScope {
                         border.color: Theme.accent
                         selectedForegroundColor: Theme.onAccentColor
                         // The moving pill owns selection; buttons retain text, focus and input.
+                        hoverScaleDelta: 0.05
+                        hoverXScaleDelta: 0
                         idleColor: "transparent"
                         selectedColor: "transparent"
                         hoverColor: "transparent"
@@ -650,6 +746,8 @@ FocusScope {
                         hoverForegroundColor: selected ? selectedForegroundColor : foregroundColor
                         pressedForegroundColor: hoverForegroundColor
                         focusForegroundColor: hoverForegroundColor
+                        disabledForegroundColor: selected ? selectedForegroundColor : foregroundColor
+                        disabledOpacity: 1
                         selected: WallpaperLibrary.activeCategory === modelData
                         Accessible.role: Accessible.PageTab
                         Accessible.name: modelData || "All"
@@ -700,9 +798,12 @@ FocusScope {
             objectName: "wallpaper-next-category"
             visible: !root.workspaceVertical || root.sideGeometry.categoryArrows
             anchors.right: root.workspaceVertical ? undefined : parent.right
+            anchors.rightMargin: root.workspaceVertical ? 0 : categoryLane.lanePad
+            y: root.workspaceVertical ? 0 : categoryLane.lanePad
             anchors.bottom: root.workspaceVertical ? parent.bottom : undefined
             width: root.workspaceVertical ? parent.width : root.categoryTabHeight
             height: visible ? root.categoryTabHeight : 0
+            radius: !root.workspace ? height / 2 : Math.min(8, height / 2)
             horizontalPadding: 6
             icon: root.workspaceVertical ? "\uf107" : "\uf105"; description: "Next category (Alt+Right)"
             showTooltip: root.workspace
@@ -747,7 +848,19 @@ FocusScope {
         spread: root.spread
         selectedPulse: root.selectedPulse
         onApplyRequested: root.applySelected()
-        opacity: root.workspace ? 1 : root.contentOpacity
+        opacity: root.workspace ? 1 : root.contentOpacity * (root.workspaceMorph > 0 ? Math.max(0, 1 - Math.max(0, root.workspaceMorph - 0.25) / 0.75) : 1)
+        transform: [
+            Scale {
+                origin.x: carousel.width / 2
+                origin.y: carousel.height / 2
+                xScale: !root.workspace ? 1 + (root.morphTargetScale - 1) * root.workspaceMorph : 1
+                yScale: !root.workspace ? 1 + (root.morphTargetScale - 1) * root.workspaceMorph : 1
+            },
+            Translate {
+                x: !root.workspace ? (root.morphTargetX - (carousel.x + carousel.width / 2)) * root.workspaceMorph : 0
+                y: !root.workspace ? (root.morphTargetY - (carousel.y + carousel.height / 2)) * root.workspaceMorph : 0
+            }
+        ]
         Keys.priority: Keys.BeforeItem
         Keys.onPressed: event => root.handleShortcut(event)
     }
