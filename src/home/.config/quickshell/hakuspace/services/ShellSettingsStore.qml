@@ -26,6 +26,8 @@ QtObject {
     readonly property string statusEdge: values.chrome.statusEdge
     readonly property string notificationPopupPosition: values.chrome.notificationPopupPosition
     readonly property string actionLayerAnimation: (values.chrome && values.chrome.actionLayerAnimation) ? values.chrome.actionLayerAnimation : "scale"
+    readonly property string hakuMenuHoverScale: (values.chrome && values.chrome.hakuMenuHoverScale) ? values.chrome.hakuMenuHoverScale : "1.05"
+    readonly property real hakuMenuHoverScaleDelta: hakuMenuHoverScale === "1.00" ? 0 : hakuMenuHoverScale === "1.10" ? 0.1 : 0.05
     readonly property int baseRadius: values.appearance.baseRadius
     // Hikai mode previews with the appearance draft.
     readonly property string colorMode: values.appearance.colorMode
@@ -39,9 +41,7 @@ QtObject {
     readonly property string cavaStyle: (values.topbar && values.topbar.cavaStyle) ? values.topbar.cavaStyle : "box"
     readonly property bool showTray: values.topbar.tray
     readonly property bool showQuickControls: values.topbar.quickControls
-    readonly property bool showPowerProfile: values.topbar.powerProfile
-    readonly property bool showWallpaperWorkspace: values.topbar.wallpaperWorkspace
-    readonly property bool showRecorder: values.topbar.recorder
+    readonly property bool showDrawerOptions: values.topbar.drawerOptions
     readonly property bool showClock: values.topbar.clock
     readonly property bool showNotifications: values.topbar.notifications
     // Compact Dockbar behavior remains independent from Taskbar topology.
@@ -74,6 +74,7 @@ QtObject {
                 if (section === "chrome") {
                     var chromeAllowed = key === "statusEdge" ? ["top", "left"]
                         : key === "notificationPopupPosition" ? ["center", "anchor"]
+                        : key === "hakuMenuHoverScale" ? ["1.00", "1.05", "1.10"]
                         : ["scale", "fade", "unfold", "blur", "slide"]
                     if (chromeAllowed.indexOf(value) < 0) return false
                 }

@@ -11,3 +11,5 @@ CavaGroup 1.0 CavaGroup.qml
 WindowTitle 1.0 WindowTitle.qml
 CenterModule 1.0 CenterModule.qml
 PowerProfileGroup 1.0 PowerProfileGroup.qml
+WallpaperGroup 1.0 WallpaperGroup.qml
+DrawerOptionsGroup 1.0 DrawerOptionsGroup.qml

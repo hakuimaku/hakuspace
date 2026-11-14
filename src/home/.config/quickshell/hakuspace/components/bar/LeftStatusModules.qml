@@ -164,6 +164,13 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 visible: ShellSettingsStore.showQuickControls
             }
+            TopModules.DrawerOptionsGroup {
+                objectName: "drawer-options-module"
+                vertical: true
+                anchors.horizontalCenter: parent.horizontalCenter
+                requested: ShellSettingsStore.showDrawerOptions
+                screenName: root.screenName
+            }
             TopModules.ClockGroup {
                 anchors.horizontalCenter: parent.horizontalCenter
                 vertical: true

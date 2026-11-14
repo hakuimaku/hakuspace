@@ -11,14 +11,19 @@ from pathlib import Path
 
 # Keep runtime state outside this versioned preference schema.
 DEFAULTS = {
-    "version": 11,
-    "chrome": {"statusEdge": "top", "notificationPopupPosition": "center", "actionLayerAnimation": "scale"},
+    "version": 12,
+    "chrome": {
+        "statusEdge": "top",
+        "notificationPopupPosition": "center",
+        "actionLayerAnimation": "scale",
+        "hakuMenuHoverScale": "1.05",
+    },
     "appearance": {"baseRadius": 12, "surfaceTone": "dark", "colorMode": "dark"},
     "roundedScreen": {"radius": 20, "borderThickness": 4},
     "dock": {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 36,
              "hoverLift": 14, "hoverScale": 0, "showTrash": True, "showDevices": True},
     "topbar": {**dict.fromkeys(("workspaces", "windowTitle", "center", "cava", "tray",
-                               "quickControls", "powerProfile", "wallpaperWorkspace", "recorder", "clock", "notifications"), True),
+                               "quickControls", "drawerOptions", "clock", "notifications"), True),
                "cavaStyle": "box"},
     "idle": {"enabled": True, "dimEnabled": True, "dimTimeout": 300, "dimPercent": 10,
              "lockEnabled": True, "lockTimeout": 30, "displayOffEnabled": True,
@@ -33,7 +38,7 @@ def validate(values, partial=False):
         raise ValueError("expected a shell settings object with known fields")
     if not partial and set(values) != set(DEFAULTS):
         raise ValueError("missing shell settings fields")
-    if "version" in values and (type(values["version"]) is not int or values["version"] != 11):
+    if "version" in values and (type(values["version"]) is not int or values["version"] != 12):
         raise ValueError("unsupported schema version")
     for section in ("appearance", "roundedScreen", "topbar", "dock", "idle", "chrome"):
         if section not in values:
@@ -50,6 +55,7 @@ def validate(values, partial=False):
                     "statusEdge": ("top", "left"),
                     "notificationPopupPosition": ("center", "anchor"),
                     "actionLayerAnimation": ("scale", "fade", "unfold", "blur", "slide"),
+                    "hakuMenuHoverScale": ("1.00", "1.05", "1.10"),
                 }[key]
                 valid = type(value) is str and value in allowed
             elif section == "idle":
@@ -92,10 +98,14 @@ def migrate(values):
         if set(values) != {"version", "appearance", "topbar"} or type(values["topbar"]) is not dict:
             raise ValueError("invalid version 1 shell settings")
         # Legacy module omissions use their original enabled defaults.
-        validate({"topbar": values["topbar"]}, partial=True)
+        v1_topbar = values["topbar"]
+        v1_keys = {"workspaces", "windowTitle", "center", "cava", "tray", "quickControls", "recorder", "clock", "notifications"}
+        if set(v1_topbar) - v1_keys or any(type(v) is not bool for v in v1_topbar.values()):
+            raise ValueError("topbar: invalid value")
         upgraded = copy.deepcopy(values)
         upgraded.update(version=2, roundedScreen=copy.deepcopy(DEFAULTS["roundedScreen"]))
-        upgraded["topbar"] = {k: v for k, v in DEFAULTS["topbar"].items() if k not in ("powerProfile", "wallpaperWorkspace", "cavaStyle")} | values["topbar"]
+        upgraded["topbar"] = {k: v for k, v in DEFAULTS["topbar"].items() if k not in ("drawerOptions", "cavaStyle")} | v1_topbar
+        upgraded["topbar"].setdefault("recorder", True)
         upgraded["topbar"].setdefault("cavaStyle", "box")
         values = upgraded
     if type(original_version) is int and original_version in (1, 2):
@@ -170,21 +180,28 @@ def migrate(values):
         values.update(version=11, chrome=copy.deepcopy(DEFAULTS["chrome"]))
         if type(values.get("topbar")) is dict:
             values["topbar"].setdefault("cavaStyle", "box")
-        return validate(values), True
+        return migrate(values)[0], True
     if type(original_version) is int and original_version == 11:
+        values = copy.deepcopy(values)
+        values["version"] = 12
+        if type(values.get("chrome")) is dict:
+            for key, default_val in DEFAULTS["chrome"].items():
+                values["chrome"].setdefault(key, default_val)
+        if type(values.get("topbar")) is dict:
+            values["topbar"].setdefault("cavaStyle", "box")
+            legacy = [values["topbar"].pop(k) for k in ("powerProfile", "wallpaperWorkspace", "recorder") if k in values["topbar"]]
+            if "drawerOptions" not in values["topbar"]:
+                values["topbar"]["drawerOptions"] = any(bool(v) for v in legacy) if legacy else True
+        return validate(values), True
+    if type(original_version) is int and original_version == 12:
         migrated = False
         if type(values.get("chrome")) is dict:
-            for key in ("notificationPopupPosition", "actionLayerAnimation"):
+            for key in ("notificationPopupPosition", "actionLayerAnimation", "hakuMenuHoverScale"):
                 if key not in values["chrome"]:
                     if not migrated:
                         values = copy.deepcopy(values)
                     values["chrome"][key] = DEFAULTS["chrome"][key]
                     migrated = True
-        if type(values.get("topbar")) is dict and "cavaStyle" not in values["topbar"]:
-            if not migrated:
-                values = copy.deepcopy(values)
-            values["topbar"]["cavaStyle"] = "box"
-            migrated = True
         if migrated:
             return validate(values), True
     return validate(values), False

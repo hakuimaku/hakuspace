@@ -222,20 +222,10 @@ Item {
                 visible: ShellSettingsStore.showQuickControls
             }
 
-            TopModules.PowerProfileGroup {
-                objectName: "power-profile-module"
-                requested: ShellSettingsStore.showPowerProfile
-            }
-
-            TopModules.WallpaperGroup {
-                visible: ShellSettingsStore.showWallpaperWorkspace
+            TopModules.DrawerOptionsGroup {
+                objectName: "drawer-options-module"
+                requested: ShellSettingsStore.showDrawerOptions
                 screenName: root.screenName
-            }
-
-            TopModules.RecorderGroup {
-                objectName: "screen-recorder-module"
-                // Keep the stop control available while recording.
-                visible: ShellSettingsStore.showRecorder || isRecording
             }
 
             TopModules.ClockGroup {
