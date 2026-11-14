@@ -92,7 +92,7 @@ ActionMenu.ActionMenuPage {
         id: itemsCol
         z: 1
         anchors.fill: parent
-        spacing: Theme.spaceSm
+        spacing: Theme.actionLayerListSpacing
 
         Repeater {
             id: itemsRepeater

@@ -187,7 +187,7 @@ ActionMenu.ActionMenuPage {
         // Search input
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: Theme.comfortableControlHeight
+            Layout.preferredHeight: Theme.actionLayerRowHeight
             radius: Theme.radius
             color: Theme.surface
             border.color: searchInput.activeFocus ? Theme.accent : Theme.hoverMuted
@@ -195,20 +195,25 @@ ActionMenu.ActionMenuPage {
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: Theme.spaceLg
-                anchors.rightMargin: Theme.spaceLg
-                spacing: Theme.spaceSm
+                anchors.leftMargin: Theme.actionLayerButtonPaddingX
+                anchors.rightMargin: Theme.actionLayerButtonPaddingX
+                spacing: Theme.actionLayerButtonSpacing
 
                 Text {
                     text: ""
                     font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize - 1
+                    font.pixelSize: Theme.fontSize + Theme.actionLayerIconOffset
                     color: Theme.fgMuted
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    Layout.preferredWidth: Theme.fontSize * 2.2
                 }
 
                 TextInput {
                     id: searchInput
                     Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    verticalAlignment: TextInput.AlignVCenter
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize - 1
                     color: Theme.fg
@@ -220,6 +225,7 @@ ActionMenu.ActionMenuPage {
 
                     Text {
                         anchors.fill: parent
+                        verticalAlignment: Text.AlignVCenter
                         text: "Search fonts..."
                         font.family: parent.font.family
                         font.pixelSize: parent.font.pixelSize
@@ -310,7 +316,7 @@ ActionMenu.ActionMenuPage {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            spacing: Theme.spaceXs
+            spacing: Theme.actionLayerListSpacing
             model: root.filteredFonts
 
             ActionMenu.ActionMenuSelectionPill {

@@ -237,4 +237,44 @@ QtObject {
     // Dashboard layout geometry.
     readonly property real dashboardWidth: 960
     readonly property real dashboardHeight: 540
+
+    // Action Layer layout geometry, spacing, and icon proportions.
+    readonly property int actionLayerPadding: 32
+    readonly property int actionLayerSectionSpacing: 20
+    readonly property int actionLayerListSpacing: 8
+    readonly property int actionLayerButtonHeight: 54
+    readonly property int actionLayerButtonPaddingX: 20
+    readonly property int actionLayerButtonSpacing: 16
+    readonly property int actionLayerIconOffset: 8
+    readonly property int actionLayerHeaderIconOffset: 10
+    readonly property real actionLayerOptionWidthRatio: 0.48
+    readonly property real actionLayerOptionMinWidth: 560
+    readonly property real actionLayerOptionMaxWidth: 880
+    readonly property real actionLayerOptionHeightRatio: 0.50
+    readonly property real actionLayerOptionMinHeight: 440
+    readonly property real actionLayerOptionMaxHeight: 640
+    readonly property real actionLayerEmojiWidthRatio: 0.50
+    readonly property real actionLayerEmojiMinWidth: 640
+    readonly property real actionLayerEmojiMaxWidth: 820
+    readonly property real actionLayerEmojiHeightRatio: 0.64
+    readonly property real actionLayerEmojiMinHeight: 580
+    readonly property real actionLayerEmojiMaxHeight: 740
+    readonly property real actionLayerExitWidthRatio: 0.56
+    readonly property real actionLayerExitMinWidth: 640
+    readonly property real actionLayerExitMaxWidth: 980
+    readonly property real actionLayerExitHeightRatio: 0.64
+    readonly property real actionLayerExitMinHeight: 500
+    readonly property real actionLayerExitMaxHeight: 800
+    readonly property int actionLayerExitHeaderHeight: 38
+    readonly property int actionLayerExitRowHeight: 48
+    readonly property int actionLayerExitButtonMinWidth: 196
+    readonly property real actionLayerPowerWidthRatio: 0.78
+    readonly property real actionLayerPowerMinWidth: 820
+    readonly property real actionLayerPowerMaxWidth: 1200
+    readonly property real actionLayerPowerHeight: 210
+    readonly property real actionLayerPowerVerticalWidth: 180
+    readonly property real actionLayerPowerVerticalHeight: 540
+    readonly property int actionLayerPowerSpacing: 16
+    readonly property int actionLayerPowerTileSpacing: 10
+    readonly property real actionLayerPowerIconFactor: 3.1
 }

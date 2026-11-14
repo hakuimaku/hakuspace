@@ -107,7 +107,7 @@ ActionMenu.ActionMenuPage {
         id: col
         z: 1
         anchors.fill: parent
-        spacing: Theme.spaceSm
+        spacing: Theme.actionLayerListSpacing
 
         // Error message banner
         Text {

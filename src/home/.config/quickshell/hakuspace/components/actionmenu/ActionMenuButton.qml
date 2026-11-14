@@ -13,6 +13,9 @@ Motion.MorphButton {
     property color badgeColor: Theme.accent
     property bool danger: false
     property bool hasSubmenu: false
+    property bool centered: false
+    property int labelFontSize: Theme.fontSize
+    property int labelFontWeight: Font.Normal
 
     // Resolve the page once for pointer selection and the rendered selection fade.
     readonly property Item page: {
@@ -34,7 +37,7 @@ Motion.MorphButton {
     text: ""
 
     radius: Theme.radius
-    implicitHeight: Math.max(Theme.comfortableControlHeight, Theme.fontSize * 2.5)
+    implicitHeight: Theme.actionLayerRowHeight
 
     selectedOverridesHover: true
 
@@ -94,30 +97,32 @@ Motion.MorphButton {
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: Theme.spaceLg
-        anchors.rightMargin: Theme.spaceLg
-        spacing: Theme.spaceMd
+        anchors.leftMargin: Theme.actionLayerButtonPaddingX
+        anchors.rightMargin: Theme.actionLayerButtonPaddingX
+        spacing: Theme.actionLayerButtonSpacing
 
         Text {
             id: iconText
             visible: root.icon.length > 0
             text: root.icon
             font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize + 2
+            font.pixelSize: Theme.fontSize + Theme.actionLayerIconOffset
             color: root.contentForeground
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            Layout.preferredWidth: visible ? Theme.fontSize * 1.8 : 0
+            Layout.preferredWidth: visible ? Theme.fontSize * 2.2 : 0
         }
 
         Text {
             id: labelText
             text: root.label
             font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.pixelSize: root.labelFontSize
+            font.weight: root.labelFontWeight
             color: root.contentForeground
             elide: Text.ElideRight
             Layout.fillWidth: true
+            horizontalAlignment: root.centered ? Text.AlignHCenter : Text.AlignLeft
             verticalAlignment: Text.AlignVCenter
         }
 
@@ -181,7 +186,7 @@ Motion.MorphButton {
             visible: root.hasSubmenu
             text: "󰅂"
             font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.pixelSize: Theme.fontSize + 2
             color: root.trailingForeground
             verticalAlignment: Text.AlignVCenter
         }

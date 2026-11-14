@@ -243,7 +243,7 @@ ActionMenu.ActionMenuPage {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            spacing: 2
+            spacing: Theme.actionLayerListSpacing
             model: root.shells
 
             ActionMenu.ActionMenuSelectionPill {
@@ -385,7 +385,7 @@ ActionMenu.ActionMenuPage {
             visible: root.phase === "restart"
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: Theme.spaceSm
+            spacing: Theme.actionLayerListSpacing
 
             ActionMenu.ActionMenuSelectionPill {
                 id: restartPill

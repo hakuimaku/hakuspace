@@ -13,7 +13,7 @@ Item {
     property bool showHeader: true
     property bool canGoBack: false
     // Keep selection geometry intact while its visual fades during layer transitions.
-    property bool selectionPillShown: false
+    property bool selectionPillShown: true
     // Share the rendered fade with button text and keep overlays outside layouts.
     property real selectionPillOpacity: 0
     readonly property Item contentItem: contentContainer
@@ -101,22 +101,22 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: Theme.panelPadding
-        spacing: Theme.spaceLg
+        anchors.margins: Theme.actionLayerPadding
+        spacing: Theme.actionLayerSectionSpacing
 
         // Optional standard header
         RowLayout {
             id: headerRow
             visible: root.showHeader
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.max(36, Theme.fontSize * 2.2)
-            spacing: Theme.spaceMd
+            Layout.preferredHeight: Math.max(44, Theme.fontSize * 2.6)
+            spacing: Theme.spaceLg
 
             // Back button if canGoBack
             Motion.MorphButton {
                 id: backBtn
                 visible: root.canGoBack
-                Layout.preferredWidth: Math.max(34, Theme.fontSize * 2.2)
+                Layout.preferredWidth: Math.max(40, Theme.fontSize * 2.6)
                 Layout.preferredHeight: Layout.preferredWidth
                 radius: Theme.radius
                 text: ""
@@ -130,7 +130,7 @@ Item {
                     anchors.centerIn: parent
                     text: "󰁍"
                     font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize + 2
+                    font.pixelSize: Theme.fontSize + 4
                     color: parent.hovered ? Theme.fg : Theme.fgMuted
                 }
             }
@@ -140,53 +140,21 @@ Item {
                 visible: !root.canGoBack && root.icon.length > 0
                 text: root.icon
                 font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize + 3
+                font.pixelSize: Theme.fontSize + Theme.actionLayerHeaderIconOffset
                 color: Theme.accent
                 verticalAlignment: Text.AlignVCenter
             }
 
-            // Title & Subtitle
-            ColumnLayout {
+            // Title
+            Text {
                 Layout.fillWidth: true
-                spacing: 2
-
-                Text {
-                    Layout.fillWidth: true
-                    text: root.title
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize + 2
-                    font.weight: Font.DemiBold
-                    color: Theme.fg
-                    elide: Text.ElideRight
-                }
-
-                Text {
-                    Layout.fillWidth: true
-                    visible: root.subtitle.length > 0
-                    text: root.subtitle
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(9, Theme.fontSize - 1)
-                    color: Theme.fgDescription
-                    elide: Text.ElideRight
-                }
-            }
-
-            // Escape shortcut badge / hint
-            Rectangle {
-                Layout.alignment: Qt.AlignVCenter
-                implicitWidth: escText.implicitWidth + Theme.spaceLg
-                implicitHeight: Math.max(24, Theme.fontSize * 1.6)
-                radius: Theme.radius
-                color: Theme.hoverMuted
-
-                Text {
-                    id: escText
-                    anchors.centerIn: parent
-                    text: root.canGoBack ? "Esc: Back" : "Esc: Close"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(9, Theme.fontSize - 3)
-                    color: Theme.fgMuted
-                }
+                text: root.title
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSize + 4
+                font.weight: Font.DemiBold
+                color: Theme.fg
+                elide: Text.ElideRight
+                verticalAlignment: Text.AlignVCenter
             }
         }
 

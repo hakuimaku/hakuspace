@@ -203,7 +203,7 @@ ActionMenu.ActionMenuPage {
         id: modesCol
         z: 1
         anchors.fill: parent
-        spacing: Theme.pad
+        spacing: Theme.actionLayerListSpacing
 
         Text {
             visible: root.statusMessage.length > 0

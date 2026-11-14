@@ -110,6 +110,7 @@ Rectangle {
 
     property int duration: HAnimation.spatial
     // Allow surfaces to tune opacity separately from selection movement.
+    property bool fadeEnabled: true
     property int fadeDuration: HAnimation.buttonReleaseDuration
     property var fadeCurve: HAnimation.buttonReleaseCurve
     property var curve: HAnimation.spatialCurve
@@ -315,6 +316,7 @@ Rectangle {
 
     // Animates pill fade in and out when shown state toggles.
     Behavior on opacity {
+        enabled: root.fadeEnabled
         NumberAnimation {
             duration: root.fadeDuration
             easing.type: Easing.BezierSpline

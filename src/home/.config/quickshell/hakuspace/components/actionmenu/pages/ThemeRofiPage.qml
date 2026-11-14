@@ -204,7 +204,7 @@ ActionMenu.ActionMenuPage {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            spacing: 2
+            spacing: Theme.actionLayerListSpacing
             model: root.themes
 
             ActionMenu.ActionMenuSelectionPill {

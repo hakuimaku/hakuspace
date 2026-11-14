@@ -175,7 +175,7 @@ ActionMenu.ActionMenuPage {
             }
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: Theme.gap * 2
+            spacing: Theme.actionLayerListSpacing
             clip: true
             model: root.sources
 

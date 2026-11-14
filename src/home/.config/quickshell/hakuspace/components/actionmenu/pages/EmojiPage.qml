@@ -384,26 +384,31 @@ ActionMenu.ActionMenuPage {
 
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: Theme.comfortableControlHeight
+            Layout.preferredHeight: Theme.actionLayerRowHeight
             radius: Theme.radius
             color: Qt.alpha(Theme.overlayInk, 0.06)
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: Theme.pad
-                anchors.rightMargin: Theme.pad
-                spacing: Theme.spaceSm
+                anchors.leftMargin: Theme.actionLayerButtonPaddingX
+                anchors.rightMargin: Theme.actionLayerButtonPaddingX
+                spacing: Theme.actionLayerButtonSpacing
 
                 Text {
                     text: ""
                     font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.pixelSize: Theme.fontSize + Theme.actionLayerIconOffset
                     color: Theme.fgMuted
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    Layout.preferredWidth: Theme.fontSize * 2.2
                 }
 
                 TextInput {
                     id: searchInput
                     Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    verticalAlignment: TextInput.AlignVCenter
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
                     color: Theme.fg
@@ -412,6 +417,7 @@ ActionMenu.ActionMenuPage {
 
                     Text {
                         anchors.fill: parent
+                        verticalAlignment: Text.AlignVCenter
                         text: "Search emojis..."
                         font.family: parent.font.family
                         font.pixelSize: parent.font.pixelSize

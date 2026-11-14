@@ -216,7 +216,7 @@ ActionMenu.ActionMenuPage {
         // Search input
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.max(34, Theme.fontSize * 2.2)
+            Layout.preferredHeight: Theme.actionLayerRowHeight
             radius: Theme.radius
             color: Qt.alpha(Theme.overlayInk, 0.06)
             border.color: searchInput.activeFocus ? Theme.accent : "transparent"
@@ -224,20 +224,25 @@ ActionMenu.ActionMenuPage {
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: Theme.pad
-                anchors.rightMargin: Theme.pad
-                spacing: Theme.pad / 2
+                anchors.leftMargin: Theme.actionLayerButtonPaddingX
+                anchors.rightMargin: Theme.actionLayerButtonPaddingX
+                spacing: Theme.actionLayerButtonSpacing
 
                 Text {
                     text: ""
                     font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.pixelSize: Theme.fontSize + Theme.actionLayerIconOffset
                     color: Theme.fgMuted
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    Layout.preferredWidth: Theme.fontSize * 2.2
                 }
 
                 TextInput {
                     id: searchInput
                     Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    verticalAlignment: TextInput.AlignVCenter
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize
                     color: Theme.fg
@@ -245,6 +250,7 @@ ActionMenu.ActionMenuPage {
 
                     Text {
                         anchors.fill: parent
+                        verticalAlignment: Text.AlignVCenter
                         text: "Search clipboard history..."
                         font.family: parent.font.family
                         font.pixelSize: parent.font.pixelSize
@@ -335,7 +341,7 @@ ActionMenu.ActionMenuPage {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            spacing: 2
+            spacing: Theme.actionLayerListSpacing
             model: root.filteredEntries
 
             ActionMenu.ActionMenuSelectionPill {

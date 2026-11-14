@@ -95,11 +95,11 @@ var fontSizePresets = [10, 12, 14, 16, 18]
 // Power menu actions in their display order.
 var actionMenuPowerActions = [
     { id: "suspend", icon: "󰒲", label: "Suspend", danger: false },
-    { id: "reboot", icon: "󰑐", label: "Reboot", danger: true },
-    { id: "poweroff", icon: "󰐥", label: "Poweroff", danger: true },
-    { id: "hibernate", icon: "󰒲", label: "Hibernate", danger: false },
-    { id: "lock", icon: "󰌾", label: "Lock", danger: false },
-    { id: "logout", icon: "󰍃", label: "Logout", danger: false }
+    { id: "reboot", icon: "", label: "Reboot", danger: true },
+    { id: "poweroff", icon: "⏻", label: "Poweroff", danger: true },
+    { id: "hibernate", icon: "󰤄", label: "Hibernate", danger: false },
+    { id: "lock", icon: "󱅞", label: "Lock", danger: false },
+    { id: "logout", icon: "󰗽", label: "Logout", danger: false }
 ]
 
 // Recording modes resolved by the existing recording handlers.

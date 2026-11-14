@@ -16,8 +16,41 @@ Motion.SelectionPill {
         return item
     }
 
+    readonly property bool targetVisible: shown && (!page || page.selectionPillShown)
+    // Snap opacity when the layer opens; animate subsequent morph fades.
+    property bool allowOpacityFade: false
+    property Item _lastTargetItem: null
+    property bool _initialSnapDone: false
+
+    fadeEnabled: allowOpacityFade
+
     // Reuse SelectionPill's opacity animation without resetting its selected target.
-    opacity: shown && (!page || page.selectionPillShown) ? 1 : 0
+    opacity: targetVisible ? 1 : 0
+
+    Component.onCompleted: {
+        if (page && !page.selectionPillShown) {
+            allowOpacityFade = true
+        }
+    }
+
+    onTargetVisibleChanged: {
+        if (targetVisible && !allowOpacityFade) {
+            Qt.callLater(function() {
+                if (root) root.allowOpacityFade = true
+            })
+        } else if (!targetVisible && page && !page.selectionPillShown) {
+            allowOpacityFade = true
+        }
+    }
+
+    onTargetItemChanged: {
+        if (targetItem) {
+            if (_lastTargetItem && targetItem !== _lastTargetItem) {
+                _initialSnapDone = true
+            }
+            _lastTargetItem = targetItem
+        }
+    }
 
     // Initialize hidden-page geometry on return so the next hover animates normally.
     onShownChanged: {
@@ -43,7 +76,14 @@ Motion.SelectionPill {
         targetHeight = targetItem.height
         targetRadius = targetItem.radius > 0 ? targetItem.radius : Theme.radius
         targetColor = targetItem.danger === true ? dangerColor : normalColor
-        if (!absoluteInitialized || forceSnap) snap()
+        if (!absoluteInitialized || forceSnap || !_initialSnapDone) {
+            snap()
+            if (absoluteTargetValid && !_initialSnapDone) {
+                Qt.callLater(function() {
+                    if (root) root._initialSnapDone = true
+                })
+            }
+        }
     }
 
     Connections {

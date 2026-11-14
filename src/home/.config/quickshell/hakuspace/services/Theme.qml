@@ -134,6 +134,45 @@ QtObject {
     readonly property real hakuMenuMinHeight: Design.hakuMenuMinHeight
     readonly property real dashboardWidth: Design.dashboardWidth
     readonly property real dashboardHeight: Design.dashboardHeight
+    readonly property int actionLayerPadding: Design.actionLayerPadding
+    readonly property int actionLayerSectionSpacing: Design.actionLayerSectionSpacing
+    readonly property int actionLayerListSpacing: Design.actionLayerListSpacing
+    readonly property int actionLayerButtonHeight: Design.actionLayerButtonHeight
+    readonly property real actionLayerRowHeight: Math.max(actionLayerButtonHeight, fontSize * 3.4)
+    readonly property int actionLayerButtonPaddingX: Design.actionLayerButtonPaddingX
+    readonly property int actionLayerButtonSpacing: Design.actionLayerButtonSpacing
+    readonly property int actionLayerIconOffset: Design.actionLayerIconOffset
+    readonly property int actionLayerHeaderIconOffset: Design.actionLayerHeaderIconOffset
+    readonly property real actionLayerOptionWidthRatio: Design.actionLayerOptionWidthRatio
+    readonly property real actionLayerOptionMinWidth: Design.actionLayerOptionMinWidth
+    readonly property real actionLayerOptionMaxWidth: Design.actionLayerOptionMaxWidth
+    readonly property real actionLayerOptionHeightRatio: Design.actionLayerOptionHeightRatio
+    readonly property real actionLayerOptionMinHeight: Design.actionLayerOptionMinHeight
+    readonly property real actionLayerOptionMaxHeight: Design.actionLayerOptionMaxHeight
+    readonly property real actionLayerEmojiWidthRatio: Design.actionLayerEmojiWidthRatio
+    readonly property real actionLayerEmojiMinWidth: Design.actionLayerEmojiMinWidth
+    readonly property real actionLayerEmojiMaxWidth: Design.actionLayerEmojiMaxWidth
+    readonly property real actionLayerEmojiHeightRatio: Design.actionLayerEmojiHeightRatio
+    readonly property real actionLayerEmojiMinHeight: Design.actionLayerEmojiMinHeight
+    readonly property real actionLayerEmojiMaxHeight: Design.actionLayerEmojiMaxHeight
+    readonly property real actionLayerExitWidthRatio: Design.actionLayerExitWidthRatio
+    readonly property real actionLayerExitMinWidth: Design.actionLayerExitMinWidth
+    readonly property real actionLayerExitMaxWidth: Design.actionLayerExitMaxWidth
+    readonly property real actionLayerExitHeightRatio: Design.actionLayerExitHeightRatio
+    readonly property real actionLayerExitMinHeight: Design.actionLayerExitMinHeight
+    readonly property real actionLayerExitMaxHeight: Design.actionLayerExitMaxHeight
+    readonly property int actionLayerExitHeaderHeight: Design.actionLayerExitHeaderHeight
+    readonly property real actionLayerExitRowHeight: Math.max(Design.actionLayerExitRowHeight, fontSize * 3.1)
+    readonly property int actionLayerExitButtonMinWidth: Design.actionLayerExitButtonMinWidth
+    readonly property real actionLayerPowerWidthRatio: Design.actionLayerPowerWidthRatio
+    readonly property real actionLayerPowerMinWidth: Design.actionLayerPowerMinWidth
+    readonly property real actionLayerPowerMaxWidth: Design.actionLayerPowerMaxWidth
+    readonly property real actionLayerPowerHeight: Design.actionLayerPowerHeight
+    readonly property real actionLayerPowerVerticalWidth: Design.actionLayerPowerVerticalWidth
+    readonly property real actionLayerPowerVerticalHeight: Design.actionLayerPowerVerticalHeight
+    readonly property int actionLayerPowerSpacing: Design.actionLayerPowerSpacing
+    readonly property int actionLayerPowerTileSpacing: Design.actionLayerPowerTileSpacing
+    readonly property real actionLayerPowerIconFactor: Design.actionLayerPowerIconFactor
     
     // Convert rgba() to Qt-compatible #AARRGGBB before applying theme data.
     function parseColor(c) {

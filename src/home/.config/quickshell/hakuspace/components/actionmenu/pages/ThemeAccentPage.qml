@@ -159,7 +159,7 @@ ActionMenu.ActionMenuPage {
         // Custom Hex input row
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: Theme.comfortableControlHeight
+            Layout.preferredHeight: Theme.actionLayerRowHeight
             radius: Theme.radius
             color: Theme.surface
             border.color: hexInput.activeFocus ? Theme.accent : Theme.hoverMuted
@@ -167,20 +167,28 @@ ActionMenu.ActionMenuPage {
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: Theme.spaceLg
-                anchors.rightMargin: Theme.spaceLg
-                spacing: Theme.spaceMd
+                anchors.leftMargin: Theme.actionLayerButtonPaddingX
+                anchors.rightMargin: Theme.actionLayerButtonPaddingX
+                spacing: Theme.actionLayerButtonSpacing
 
-                Rectangle {
-                    width: 16
-                    height: 16
-                    radius: 8
-                    color: hexInput.text.match(/^#[0-9a-fA-F]{6}$/) ? hexInput.text : Theme.accent
+                Item {
+                    Layout.preferredWidth: Theme.fontSize * 2.2
+                    Layout.preferredHeight: Theme.fontSize * 2.2
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: Theme.fontSize + 4
+                        height: width
+                        radius: width / 2
+                        color: hexInput.text.match(/^#[0-9a-fA-F]{6}$/) ? hexInput.text : Theme.accent
+                    }
                 }
 
                 TextInput {
                     id: hexInput
                     Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    verticalAlignment: TextInput.AlignVCenter
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize - 1
                     color: Theme.fg
@@ -192,6 +200,7 @@ ActionMenu.ActionMenuPage {
 
                     Text {
                         anchors.fill: parent
+                        verticalAlignment: Text.AlignVCenter
                         text: "Custom #RRGGBB..."
                         font.family: parent.font.family
                         font.pixelSize: parent.font.pixelSize
@@ -239,7 +248,7 @@ ActionMenu.ActionMenuPage {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            spacing: Theme.spaceXs
+            spacing: Theme.actionLayerListSpacing
             model: root.allItems
 
             ActionMenu.ActionMenuSelectionPill {

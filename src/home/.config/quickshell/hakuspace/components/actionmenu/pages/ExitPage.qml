@@ -144,20 +144,20 @@ ActionMenu.ActionMenuPage {
 
     ColumnLayout {
         anchors.fill: parent
-        spacing: Theme.pad
+        spacing: Theme.actionLayerSectionSpacing
 
         // Process report table header
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: 30
-            radius: 6
+            Layout.preferredHeight: Math.max(Theme.actionLayerExitHeaderHeight, Theme.fontSize * 2.5)
+            radius: Math.max(6, Math.round(Theme.radius * 0.5))
             color: Qt.alpha(Theme.overlayInk, 0.04)
 
             Item {
                 id: headerCols
                 anchors.fill: parent
-                anchors.leftMargin: Theme.pad
-                anchors.rightMargin: Theme.pad
+                anchors.leftMargin: Theme.actionLayerButtonPaddingX
+                anchors.rightMargin: Theme.actionLayerButtonPaddingX
 
                 readonly property real colAppWidth: Math.floor(width * 0.50)
                 readonly property real colInstWidth: Math.floor(width * 0.25)
@@ -169,7 +169,7 @@ ActionMenu.ActionMenuPage {
                     anchors.verticalCenter: parent.verticalCenter
                     text: "Application"
                     font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.pixelSize: Theme.fontSize + 1
                     font.weight: Font.DemiBold
                     color: Theme.fgMuted
                     elide: Text.ElideRight
@@ -182,7 +182,7 @@ ActionMenu.ActionMenuPage {
                     horizontalAlignment: Text.AlignHCenter
                     text: "Instances"
                     font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.pixelSize: Theme.fontSize + 1
                     font.weight: Font.DemiBold
                     color: Theme.fgMuted
                 }
@@ -194,7 +194,7 @@ ActionMenu.ActionMenuPage {
                     horizontalAlignment: Text.AlignRight
                     text: "Memory"
                     font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSize
+                    font.pixelSize: Theme.fontSize + 1
                     font.weight: Font.DemiBold
                     color: Theme.fgMuted
                 }
@@ -214,15 +214,15 @@ ActionMenu.ActionMenuPage {
                 anchors.centerIn: parent
                 text: "Scanning active processes..."
                 font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSize
+                font.pixelSize: Theme.fontSize + 1
                 color: Theme.fgMuted
             }
 
             ListView {
                 id: processList
                 anchors.fill: parent
-                anchors.margins: 4
-                spacing: 2
+                anchors.margins: 6
+                spacing: Theme.actionLayerListSpacing
                 clip: true
                 model: root.processItems
 
@@ -232,15 +232,15 @@ ActionMenu.ActionMenuPage {
 
                 delegate: Rectangle {
                     width: processList.width - vbar.reservedGutter
-                    height: Math.max(32, Theme.fontSize * 2.0)
-                    radius: 4
-                    color: index % 2 === 0 ? "transparent" : Qt.alpha(Theme.overlayInk, 0.02)
+                    height: Theme.actionLayerExitRowHeight
+                    radius: Math.max(6, Math.round(Theme.radius * 0.5))
+                    color: index % 2 === 0 ? "transparent" : Qt.alpha(Theme.overlayInk, 0.03)
 
                     Item {
                         id: rowCols
                         anchors.fill: parent
-                        anchors.leftMargin: Theme.pad
-                        anchors.rightMargin: Theme.pad
+                        anchors.leftMargin: Theme.actionLayerButtonPaddingX
+                        anchors.rightMargin: Theme.actionLayerButtonPaddingX
 
                         readonly property real colAppWidth: Math.floor(width * 0.50)
                         readonly property real colInstWidth: Math.floor(width * 0.25)
@@ -252,8 +252,8 @@ ActionMenu.ActionMenuPage {
                             anchors.verticalCenter: parent.verticalCenter
                             text: modelData.comm
                             font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSize + 1
-                            font.weight: modelData.highRam ? Font.DemiBold : Font.Normal
+                            font.pixelSize: Theme.fontSize + 2
+                            font.weight: modelData.highRam ? Font.DemiBold : Font.Medium
                             color: modelData.highRam ? Theme.danger : Theme.fg
                             elide: Text.ElideRight
                         }
@@ -265,7 +265,7 @@ ActionMenu.ActionMenuPage {
                             horizontalAlignment: Text.AlignHCenter
                             text: modelData.pids
                             font.family: Theme.fontFamily
-                            font.pixelSize: Math.max(9, Math.round((Theme.fontSize + 1) * 0.82))
+                            font.pixelSize: Theme.fontSize + 1
                             color: Theme.fgMuted
                         }
 
@@ -277,22 +277,23 @@ ActionMenu.ActionMenuPage {
                             Row {
                                 anchors.right: parent.right
                                 anchors.verticalCenter: parent.verticalCenter
-                                spacing: 4
+                                spacing: 6
 
                                 Text {
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: modelData.ram
                                     font.family: Theme.fontFamily
-                                    font.pixelSize: Math.max(9, Math.round((Theme.fontSize + 1) * 0.82))
+                                    font.pixelSize: Theme.fontSize + 1
+                                    font.weight: modelData.highRam ? Font.DemiBold : Font.Normal
                                     color: modelData.highRam ? Theme.danger : Theme.fgDim
                                 }
 
                                 Rectangle {
                                     visible: modelData.highRam
                                     anchors.verticalCenter: parent.verticalCenter
-                                    implicitWidth: 6
-                                    implicitHeight: 6
-                                    radius: 3
+                                    implicitWidth: 8
+                                    implicitHeight: 8
+                                    radius: 4
                                     color: Theme.danger
                                 }
                             }
@@ -306,8 +307,8 @@ ActionMenu.ActionMenuPage {
         RowLayout {
             id: bottomRow
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.max(42, Theme.fontSize * 2.6)
-            spacing: Theme.pad
+            Layout.preferredHeight: Theme.actionLayerRowHeight
+            spacing: Theme.actionLayerPowerSpacing
 
             ActionMenu.ActionMenuSelectionPill {
                 id: selectionPill
@@ -322,8 +323,11 @@ ActionMenu.ActionMenuPage {
             ActionMenu.ActionMenuButton {
                 id: cancelBtn
                 z: 1
-                Layout.preferredWidth: 130
-                Layout.preferredHeight: Math.max(38, Theme.fontSize * 2.4)
+                centered: true
+                labelFontSize: Theme.fontSize + 2
+                labelFontWeight: Font.DemiBold
+                Layout.preferredWidth: Math.max(Theme.actionLayerExitButtonMinWidth, Theme.fontSize * 13)
+                Layout.preferredHeight: Theme.actionLayerRowHeight
                 radius: Theme.radius
                 selected: root.selectedActionIndex === 0
                 focused: selected
@@ -355,8 +359,11 @@ ActionMenu.ActionMenuPage {
                 id: exitBtn
                 z: 1
                 danger: true
-                Layout.preferredWidth: 150
-                Layout.preferredHeight: Math.max(38, Theme.fontSize * 2.4)
+                centered: true
+                labelFontSize: Theme.fontSize + 2
+                labelFontWeight: Font.DemiBold
+                Layout.preferredWidth: Math.max(Theme.actionLayerExitButtonMinWidth + 24, Theme.fontSize * 15)
+                Layout.preferredHeight: Theme.actionLayerRowHeight
                 radius: Theme.radius
                 selected: root.selectedActionIndex === 1
                 focused: selected

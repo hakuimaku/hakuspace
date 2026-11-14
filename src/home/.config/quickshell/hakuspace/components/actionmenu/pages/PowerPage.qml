@@ -103,7 +103,7 @@ ActionMenu.ActionMenuPage {
         id: buttonsRow
         z: 1
         anchors.fill: parent
-        spacing: Theme.pad
+        spacing: Theme.actionLayerPowerSpacing
 
         Repeater {
             id: buttonsRepeater
@@ -181,12 +181,12 @@ ActionMenu.ActionMenuPage {
 
                 ColumnLayout {
                     anchors.centerIn: parent
-                    spacing: 6
+                    spacing: Theme.actionLayerPowerTileSpacing
 
                     Text {
                         text: modelData.icon
                         font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSize * 2.2
+                        font.pixelSize: Theme.fontSize * Theme.actionLayerPowerIconFactor
                         color: pBtn.contentForeground
                         Layout.alignment: Qt.AlignHCenter
                     }
