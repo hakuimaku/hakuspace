@@ -523,7 +523,7 @@ FocusScope {
         width: Math.min(root.width, Math.max(powerAnchor.width, Math.round(root.width * 0.64)))
         height: Math.min(Math.max(140, root.height - root.cellHeight - 24),
             root.powerActions.length * 48 + Math.max(0, root.powerActions.length - 1) * 5 + 20)
-        color: Theme.surface
+        color: Theme.surfaceSubtle(1.18)
         radius: Theme.largeRadius
         border.width: 2
         border.color: Theme.accent
