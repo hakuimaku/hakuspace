@@ -17,6 +17,7 @@ DEFAULTS = {
         "notificationPopupPosition": "center",
         "actionLayerAnimation": "scale",
         "hakuMenuHoverScale": "1.05",
+        "hakuMenuTabStyle": "underline",
     },
     "appearance": {"baseRadius": 12, "surfaceTone": "dark", "colorMode": "dark"},
     "roundedScreen": {"radius": 20, "borderThickness": 4},
@@ -29,6 +30,15 @@ DEFAULTS = {
              "lockEnabled": True, "lockTimeout": 30, "displayOffEnabled": True,
              "displayOffTimeout": 30, "suspendEnabled": True, "suspendTimeout": 300,
              "respectAppInhibitors": True, "inhibitOnAudio": False},
+}
+
+
+CHROME_ALLOWED = {
+    "statusEdge": ("top", "left"),
+    "notificationPopupPosition": ("center", "anchor"),
+    "actionLayerAnimation": ("scale", "fade", "unfold", "blur", "slide"),
+    "hakuMenuHoverScale": ("1.00", "1.05", "1.10"),
+    "hakuMenuTabStyle": ("underline", "pill"),
 }
 
 
@@ -51,12 +61,7 @@ def validate(values, partial=False):
             raise ValueError(f"{section}: missing fields")
         for key, value in fields.items():
             if section == "chrome":
-                allowed = {
-                    "statusEdge": ("top", "left"),
-                    "notificationPopupPosition": ("center", "anchor"),
-                    "actionLayerAnimation": ("scale", "fade", "unfold", "blur", "slide"),
-                    "hakuMenuHoverScale": ("1.00", "1.05", "1.10"),
-                }[key]
+                allowed = CHROME_ALLOWED[key]
                 valid = type(value) is str and value in allowed
             elif section == "idle":
                 if type(DEFAULTS[section][key]) is bool:
@@ -196,8 +201,9 @@ def migrate(values):
     if type(original_version) is int and original_version == 12:
         migrated = False
         if type(values.get("chrome")) is dict:
-            for key in ("notificationPopupPosition", "actionLayerAnimation", "hakuMenuHoverScale"):
-                if key not in values["chrome"]:
+            for key in ("notificationPopupPosition", "actionLayerAnimation", "hakuMenuHoverScale", "hakuMenuTabStyle"):
+                current = values["chrome"].get(key)
+                if key not in values["chrome"] or type(current) is not str or current not in CHROME_ALLOWED[key]:
                     if not migrated:
                         values = copy.deepcopy(values)
                     values["chrome"][key] = DEFAULTS["chrome"][key]

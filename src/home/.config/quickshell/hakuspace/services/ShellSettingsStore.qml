@@ -28,6 +28,7 @@ QtObject {
     readonly property string actionLayerAnimation: (values.chrome && values.chrome.actionLayerAnimation) ? values.chrome.actionLayerAnimation : "scale"
     readonly property string hakuMenuHoverScale: (values.chrome && values.chrome.hakuMenuHoverScale) ? values.chrome.hakuMenuHoverScale : "1.05"
     readonly property real hakuMenuHoverScaleDelta: hakuMenuHoverScale === "1.00" ? 0 : hakuMenuHoverScale === "1.10" ? 0.1 : 0.05
+    readonly property string hakuMenuTabStyle: (values.chrome && values.chrome.hakuMenuTabStyle === "pill") ? "pill" : "underline"
     readonly property int baseRadius: values.appearance.baseRadius
     // Hikai mode previews with the appearance draft.
     readonly property string colorMode: values.appearance.colorMode
@@ -75,6 +76,7 @@ QtObject {
                     var chromeAllowed = key === "statusEdge" ? ["top", "left"]
                         : key === "notificationPopupPosition" ? ["center", "anchor"]
                         : key === "hakuMenuHoverScale" ? ["1.00", "1.05", "1.10"]
+                        : key === "hakuMenuTabStyle" ? ["underline", "pill"]
                         : ["scale", "fade", "unfold", "blur", "slide"]
                     if (chromeAllowed.indexOf(value) < 0) return false
                 }

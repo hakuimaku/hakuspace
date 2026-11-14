@@ -15,6 +15,9 @@ FocusScope {
     property string tab: "hakumenu"
     property string mode: UiState.hakuMenuMode
     property string query: UiState.hakuMenuQuery
+    readonly property string tabStyle: ShellSettingsStore.hakuMenuTabStyle === "pill" ? "pill" : "underline"
+    readonly property bool underlineStyle: tabStyle === "underline"
+    readonly property bool pillStyle: tabStyle === "pill"
     readonly property bool taskManagerTab: tab === "taskManager"
     readonly property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
     readonly property int switchDuration: reducedMotion ? 0 : HAnimation.hakuMenuResizeDuration
@@ -103,10 +106,11 @@ FocusScope {
         x: Theme.hakuMenuLeftPadding
         y: Theme.hakuMenuTopPadding + (root.bottomAttached ? 8 : 0)
         width: Math.max(0, parent.width - Theme.hakuMenuLeftPadding - Theme.hakuMenuRightPadding)
-        height: Theme.fontSize * 2.4 + Theme.gap * 2
+        height: root.pillStyle ? Theme.fontSize * 4 : Theme.fontSize * 2.4 + Theme.gap * 2
 
         Rectangle {
             id: bottomDivider
+            visible: root.underlineStyle
             anchors {
                 left: parent.left
                 right: parent.right
@@ -125,17 +129,29 @@ FocusScope {
             anchors.leftMargin: Theme.gap
             anchors.rightMargin: Theme.gap
             onWidthChanged: tabSelectionPill.syncTarget(false)
+            onHeightChanged: tabSelectionPill.syncTarget(false)
+
+            Connections {
+                target: root
+                function onTabStyleChanged() {
+                    Qt.callLater(function() { tabSelectionPill.syncTarget(false) })
+                }
+            }
 
             Motion.SelectionPill {
                 id: tabSelectionPill
+                z: 0
                 coordinateSpace: lane
-                targetItem: tabRepeater.count > 0
-                    ? (tabRepeater.itemAt(root.taskManagerTab ? 1 : 0) ? tabRepeater.itemAt(root.taskManagerTab ? 1 : 0).indicatorTarget : null)
-                    : null
-                duration: root.reducedMotion ? 0 : HAnimation.fast
-                trailFactor: 1.15
-                fadeDuration: root.reducedMotion ? 0 : HAnimation.fast
-                curve: HAnimation.moduleCurve
+                targetIndex: root.pillStyle ? (root.taskManagerTab ? 1 : 0) : -1
+                slotCount: root.pillStyle ? 2 : 0
+                slotSpacing: Theme.gap
+                targetItem: {
+                    if (root.pillStyle || tabRepeater.count <= 0) return null
+                    var activeTab = tabRepeater.itemAt(root.taskManagerTab ? 1 : 0)
+                    return activeTab ? activeTab.underlineTarget : null
+                }
+                normalColor: Theme.accent
+                duration: root.reducedMotion ? 0 : HAnimation.spatial
             }
             Repeater {
                 id: tabRepeater
@@ -145,18 +161,24 @@ FocusScope {
                     id: tabButton
                     required property string modelData
                     required property int index
-                    readonly property alias indicatorTarget: underlineAnchor
+                    readonly property alias underlineTarget: underlineAnchor
+                    z: 1
                     x: index * (width + Theme.gap)
                     width: Math.max(0, (lane.width - Theme.gap) / 2)
-                    height: lane.height + 8
+                    height: root.underlineStyle ? lane.height + 8 : lane.height
                     radius: Theme.radius
                     selected: root.taskManagerTab === (index === 1)
+                    selectedOverridesHover: root.pillStyle
                     idleColor: "transparent"
                     hoverColor: "transparent"
                     pressedColor: "transparent"
                     selectedColor: "transparent"
-                    hoverScaleDelta: 0
-                    pressScaleDelta: 0
+                    foregroundColor: Theme.fgMuted
+                    hoverForegroundColor: root.pillStyle ? Theme.fg : Theme.fgMuted
+                    pressedForegroundColor: hoverForegroundColor
+                    selectedForegroundColor: root.pillStyle ? Theme.onAccentColor : Theme.accent
+                    hoverScaleDelta: root.underlineStyle ? 0 : Theme.hakuMenuHoverScaleDelta
+                    pressScaleDelta: root.underlineStyle ? 0 : 0.018
                     activeFocusOnTab: true
                     Accessible.role: Accessible.PageTab
                     Accessible.name: modelData
@@ -174,12 +196,13 @@ FocusScope {
                         readonly property real radius: 1.5
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.bottom: parent.bottom
-                        width: Math.max(48, Math.ceil(tabLabel.implicitWidth) + Theme.spaceMd)
+                        width: Math.max(48, Math.ceil(underlineLabel.implicitWidth) + Theme.spaceMd)
                         height: 2.5
                     }
 
                     // Fit stacked labels inside the existing tab height above the underline.
                     Column {
+                        visible: root.underlineStyle
                         anchors.centerIn: parent
                         anchors.verticalCenterOffset: -4
                         width: parent.width
@@ -188,22 +211,49 @@ FocusScope {
                             anchors.horizontalCenter: parent.horizontalCenter
                             height: font.pixelSize
                             text: tabButton.index === 0 ? Catalog.taskManagerIcons.menu : Catalog.taskManagerIcons.overview
-                            color: tabButton.selected ? Theme.accent : Theme.fgMuted
+                            color: tabButton.foreground
                             font.family: Theme.iconFontFamily
                             font.pixelSize: Math.round(Theme.fontSize * 1.7)
                             verticalAlignment: Text.AlignVCenter
                             Accessible.ignored: true
                         }
                         Text {
-                            id: tabLabel
+                            id: underlineLabel
                             anchors.horizontalCenter: parent.horizontalCenter
                             width: Math.min(parent.width, implicitWidth)
                             height: font.pixelSize + 2
                             text: tabButton.modelData
-                            color: tabButton.selected ? Theme.accent : Theme.fgMuted
+                            color: tabButton.foreground
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.fontSize - 2
                             font.weight: tabButton.selected ? Font.Medium : Font.Normal
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    Row {
+                        visible: root.pillStyle
+                        anchors.centerIn: parent
+                        spacing: Theme.spaceSm
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: tabButton.index === 0 ? Catalog.taskManagerIcons.menu : Catalog.taskManagerIcons.overview
+                            color: tabButton.foreground
+                            font.family: Theme.iconFontFamily
+                            font.pixelSize: Math.round(Theme.fontSize * 1.45)
+                            verticalAlignment: Text.AlignVCenter
+                            Accessible.ignored: true
+                        }
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: Math.min(Math.max(0, tabButton.width - Theme.spaceMd * 2), implicitWidth)
+                            text: tabButton.modelData
+                            color: tabButton.foreground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize + 1
+                            font.weight: tabButton.selected ? Font.DemiBold : Font.Medium
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                             elide: Text.ElideRight

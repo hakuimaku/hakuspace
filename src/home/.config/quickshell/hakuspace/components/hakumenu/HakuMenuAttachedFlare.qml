@@ -111,7 +111,10 @@ Item {
 
     Connections {
         target: UiState
-        function onHakuPanelTabChanged() { if (root.panelOpen) root.renderTab = UiState.hakuPanelTab }
+        function onHakuPanelTabChanged() {
+            if (root.panelOpen && UiState.activePanel === "hakumenu" && UiState.hakuMenuMode !== "closed")
+                root.renderTab = UiState.hakuPanelTab
+        }
     }
 
     // Top-layer visual shell. This remains a pure visual surface: it owns the
