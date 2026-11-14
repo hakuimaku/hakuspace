@@ -285,9 +285,9 @@
         <keybind key="W-slash">
         <action name="Execute" command="~/.local/bin/launcher.sh emoji" />
         </keybind>
-        <keybind key="W-Escape">
+        <!-- <keybind key="W-Escape">
         <action name="Execute" command="~/.local/bin/haku_backend.sh set classic" />
-        </keybind>
+        </keybind> -->
         <keybind key="A-F4">
         <action name="Close" />
         </keybind>
