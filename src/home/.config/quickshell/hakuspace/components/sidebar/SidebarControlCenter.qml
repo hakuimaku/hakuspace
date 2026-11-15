@@ -456,20 +456,32 @@ FocusScope {
 
                     Row {
                         anchors.centerIn: parent
-                        spacing: 12
+                        // Offset slightly right so the heavier power glyph stays optically centered.
+                        anchors.horizontalCenterOffset: Math.round(Theme.fontSize * 0.55)
+                        spacing: 10
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             text: "󰐥"
-                            font.family: Theme.fontFamily
+                            font.family: Theme.iconFontFamily
                             font.pixelSize: Math.max(32, Math.round(Theme.fontSize * 2.4))
                             color: powerButton.foreground
                         }
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
-                            text: root.powerMenuOpen ? "⌃" : "⌄"
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Math.max(16, Math.round(Theme.fontSize * 1.25))
+                            anchors.verticalCenterOffset: 1
+                            text: "󰅀"
+                            font.family: Theme.iconFontFamily
+                            font.pixelSize: Math.max(22, Math.round(Theme.fontSize * 1.65))
                             color: powerButton.foreground
+                            transformOrigin: Item.Center
+                            rotation: root.powerMenuOpen ? 180 : 0
+
+                            Behavior on rotation {
+                                NumberAnimation {
+                                    duration: HAnimation.fast
+                                    easing.type: Easing.OutCubic
+                                }
+                            }
                         }
                     }
                 }
@@ -523,7 +535,7 @@ FocusScope {
         width: Math.min(root.width, Math.max(powerAnchor.width, Math.round(root.width * 0.64)))
         height: Math.min(Math.max(140, root.height - root.cellHeight - 24),
             root.powerActions.length * 48 + Math.max(0, root.powerActions.length - 1) * 5 + 20)
-        color: Theme.surfaceSubtle(1.18)
+        color: Theme.isLight ? Theme.hoverMuted : Theme.surfaceSubtle(1.18)
         radius: Theme.largeRadius
         border.width: 2
         border.color: Theme.accent
