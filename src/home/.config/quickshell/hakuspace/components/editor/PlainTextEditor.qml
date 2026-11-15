@@ -12,6 +12,12 @@ Item {
     property string placeholderText: ""
     property string fontFamily: Theme.fontFamily
     property int fontPixelSize: Math.max(12, Theme.fontSize - 1)
+    property bool zoomEnabled: false
+    property int zoomPercent: 100
+    property int zoomStep: 10
+    property int minZoomPercent: 50
+    property int maxZoomPercent: 200
+    readonly property int effectiveFontPixelSize: Math.max(8, Math.round(root.fontPixelSize * root.zoomPercent / 100))
     property int wrapMode: TextEdit.Wrap
     property bool codeEditingEnabled: false
     property bool showLineNumbers: false
@@ -45,6 +51,23 @@ Item {
     // Focus the input after its parent panel opens.
     function forceEditorFocus() {
         textArea.forceActiveFocus()
+    }
+
+    function setZoomPercent(percent) {
+        if (!zoomEnabled) return
+        zoomPercent = Math.max(minZoomPercent, Math.min(maxZoomPercent, Math.round(percent)))
+    }
+
+    function zoomIn() {
+        setZoomPercent(zoomPercent + zoomStep)
+    }
+
+    function zoomOut() {
+        setZoomPercent(zoomPercent - zoomStep)
+    }
+
+    function resetZoom() {
+        setZoomPercent(100)
     }
 
     // Apply a bounded edit so Qt retains its native undo history.
@@ -134,7 +157,7 @@ Item {
     TextMetrics {
         id: tabMetrics
         font.family: root.fontFamily
-        font.pixelSize: root.fontPixelSize
+        font.pixelSize: root.effectiveFontPixelSize
         text: "    "
     }
 
@@ -164,9 +187,10 @@ Item {
             placeholderText: root.placeholderText
             placeholderTextColor: Theme.fgMuted
             font.family: root.fontFamily
-            font.pixelSize: root.fontPixelSize
+            font.pixelSize: root.effectiveFontPixelSize
             padding: 4
-            leftPadding: root.showLineNumbers ? 56 : 4
+            readonly property int lineNumberGutterWidth: root.showLineNumbers ? Math.max(48, Math.round(48 * root.zoomPercent / 100)) : 0
+            leftPadding: root.showLineNumbers ? lineNumberGutterWidth + 8 : 4
             FontMetrics { id: lineMetrics; font: textArea.font }
             // Native layout spacing keeps line numbers aligned at fractional font sizes and scales.
             readonly property real codeLineHeight: {
@@ -176,15 +200,15 @@ Item {
                 var spacing = nextLine > 0 ? textArea.positionToRectangle(nextLine).y - textArea.positionToRectangle(0).y : 0
                 return spacing > 0 ? spacing : lineMetrics.lineSpacing
             }
-            Rectangle { visible: root.showLineNumbers; x: 52; y: textArea.cursorRectangle.y; width: Math.max(0, textArea.width - 52); height: textArea.codeLineHeight; color: Qt.alpha(Theme.hoverMuted, 0.5); z: -1 }
+            Rectangle { visible: root.showLineNumbers; x: textArea.lineNumberGutterWidth + 4; y: textArea.cursorRectangle.y; width: Math.max(0, textArea.width - (textArea.lineNumberGutterWidth + 4)); height: textArea.codeLineHeight; color: Qt.alpha(Theme.hoverMuted, 0.5); z: -1 }
             Item {
                 visible: root.showLineNumbers
                 readonly property int firstLine: Math.max(0, Math.floor((scrollView.contentItem.contentY || 0) / textArea.codeLineHeight))
                 readonly property int count: Math.min(Math.ceil(scrollView.height / textArea.codeLineHeight) + 2, textArea.lineCount - firstLine)
-                x: 0; y: 4 + firstLine * textArea.codeLineHeight; width: 48
+                x: 0; y: 4 + firstLine * textArea.codeLineHeight; width: textArea.lineNumberGutterWidth
                 Repeater {
                     model: Math.max(0, parent.count)
-                    Text { required property int index; y: index * textArea.codeLineHeight; width: 42; height: textArea.codeLineHeight; text: parent.firstLine + index + 1; horizontalAlignment: Text.AlignRight; color: Theme.fgMuted; font: textArea.font }
+                    Text { required property int index; y: index * textArea.codeLineHeight; width: textArea.lineNumberGutterWidth - 6; height: textArea.codeLineHeight; text: parent.firstLine + index + 1; horizontalAlignment: Text.AlignRight; color: Theme.fgMuted; font: textArea.font }
                 }
             }
             background: null
@@ -248,6 +272,18 @@ Item {
                     event.accepted = true
                     return
                 }
+                if (root.zoomEnabled && event.modifiers === Qt.ControlModifier) {
+                    if (event.key === Qt.Key_Minus) {
+                        root.zoomOut()
+                        event.accepted = true
+                        return
+                    }
+                    if (event.key === Qt.Key_Equal || event.key === Qt.Key_Plus) {
+                        root.zoomIn()
+                        event.accepted = true
+                        return
+                    }
+                }
                 if (!root.codeEditingEnabled || root.readOnly) return
                 if (event.modifiers === Qt.ControlModifier && event.key === Qt.Key_Z) {
                     if (root.undoSmart(false)) event.accepted = true
@@ -278,6 +314,96 @@ Item {
                 else if (event.modifiers === Qt.NoModifier && (event.key === Qt.Key_Return || event.key === Qt.Key_Enter))
                     operation = EditOps.newline(text, selectionStart, selectionEnd)
                 if (operation && root.applyEdit(operation)) event.accepted = true
+            }
+        }
+    }
+
+    Loader {
+        id: zoomPillLoader
+        active: root.zoomEnabled
+        z: 10
+        anchors { right: parent.right; bottom: parent.bottom; rightMargin: Theme.spaceMd; bottomMargin: Theme.spaceMd }
+        sourceComponent: Rectangle {
+            id: zoomPill
+            objectName: "zoomPill"
+            implicitWidth: zoomRow.implicitWidth + Theme.spaceMd * 2
+            implicitHeight: Theme.controlHeight
+            radius: height / 2
+            color: Theme.hoverMuted
+            border.width: 0
+            opacity: root.zoomPercent !== 100 ? 1.0 : 0.0
+            scale: root.zoomPercent !== 100 ? 1.0 : 0.92
+            visible: opacity > 0.01
+
+            Behavior on opacity {
+                NumberAnimation { duration: HAnimation.fast; easing.bezierCurve: HAnimation.effectsCurve }
+            }
+            Behavior on scale {
+                NumberAnimation { duration: HAnimation.fast; easing.bezierCurve: HAnimation.buttonReleaseCurve }
+            }
+
+            Row {
+                id: zoomRow
+                anchors.centerIn: parent
+                spacing: Theme.spaceXs
+
+                Repeater {
+                    model: ["out", "reset", "in"]
+                    delegate: Item {
+                        id: btn
+                        required property string modelData
+                        readonly property bool isReset: modelData === "reset"
+                        readonly property bool isOut: modelData === "out"
+                        readonly property bool isActive: isOut ? root.zoomPercent > root.minZoomPercent
+                                                       : isReset ? true
+                                                       : root.zoomPercent < root.maxZoomPercent
+                        readonly property string label: isOut ? "-" : (isReset ? root.zoomPercent + "%" : "+")
+                        objectName: isOut ? "zoomOutButton" : (isReset ? "zoomResetButton" : "zoomInButton")
+                        signal triggered()
+                        onTriggered: {
+                            if (isOut) root.zoomOut()
+                            else if (isReset) root.resetZoom()
+                            else root.zoomIn()
+                        }
+
+                        implicitWidth: Math.max(isReset ? 48 : 28, btnText.implicitWidth + Theme.spaceMd)
+                        implicitHeight: Theme.controlHeight - Theme.spaceXs * 2
+                        opacity: isActive ? 1.0 : 0.4
+                        scale: btnMouse.pressed && isActive ? 0.94 : (btnMouse.containsMouse && isActive ? 1.05 : 1.0)
+                        Accessible.role: Accessible.Button
+                        Accessible.name: isOut ? "Zoom out" : (isReset ? "Reset zoom to 100%" : "Zoom in")
+                        Behavior on scale {
+                            NumberAnimation {
+                                duration: btnMouse.pressed ? HAnimation.buttonPressDuration : HAnimation.buttonHoverDuration
+                                easing.bezierCurve: btnMouse.pressed ? HAnimation.buttonPressCurve : HAnimation.buttonHoverCurve
+                            }
+                        }
+
+                        Text {
+                            id: btnText
+                            anchors.centerIn: parent
+                            text: btn.label
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Math.max(12, Theme.fontSize - 1)
+                            font.weight: btn.isReset ? Font.Medium : Font.Normal
+                            color: btn.isReset ? Theme.accent : (btnMouse.containsMouse && btn.isActive ? Theme.fg : Theme.fgDim)
+                            Behavior on color { ColorAnimation { duration: HAnimation.buttonHoverDuration } }
+                        }
+
+                        MouseArea {
+                            id: btnMouse
+                            anchors.fill: parent
+                            enabled: btn.isActive
+                            hoverEnabled: true
+                            cursorShape: btn.isActive ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            acceptedButtons: Qt.LeftButton
+                            onClicked: {
+                                root.interactionRequested()
+                                btn.triggered()
+                            }
+                        }
+                    }
+                }
             }
         }
     }

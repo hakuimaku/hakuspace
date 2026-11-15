@@ -153,6 +153,7 @@ Item {
             Editor.PlainTextEditor {
                 id: editor
                 settingsNavigationEnabled: true
+                zoomEnabled: true
                 shortcutTarget: root.shortcutTarget
                 anchors.fill: parent
                 anchors.margins: Theme.spaceMd

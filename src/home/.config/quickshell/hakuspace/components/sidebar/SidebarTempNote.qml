@@ -21,6 +21,7 @@ FocusScope {
     PlainTextEditor {
         id: editor
         anchors.fill: parent
+        zoomEnabled: true
         text: TextStore.scratchDraft
         placeholderText: "write something temporary here :v"
         onInteractionRequested: root.interactionRequested()
