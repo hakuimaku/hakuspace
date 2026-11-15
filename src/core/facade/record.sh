@@ -5,30 +5,10 @@
 # the Classic picker. Explicit commands provide a headless API for Hikai.
 
 set -u
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-
-resolve_script() {
-    local name="$1" source_path="$2"
-    local candidate
-    for candidate in \
-        "$SCRIPT_DIR/$name" \
-        "$SCRIPT_DIR/$source_path" \
-        "$HOME/.local/bin/$name"; do
-        if [[ -x "$candidate" || -f "$candidate" ]]; then
-            printf '%s\n' "$candidate"
-            return 0
-        fi
-    done
-    printf 'record.sh: required script not found: %s\n' "$name" >&2
-    return 1
-}
-
-RECORD_CTL="$(resolve_script record_ctl.sh ../backend/media/record_ctl.sh)" || exit 1
-RECORD_ROFI="$(resolve_script record_rofi.sh ../frontend/classic/record_rofi.sh)" || exit 1
-HAKU_BACKEND_LIB="$(resolve_script haku_backend_lib.sh ../lib/haku_backend_lib.sh)" || exit 1
-
 # shellcheck source=/dev/null
-source "$HAKU_BACKEND_LIB"
+source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_backend_lib.sh" || exit 1
+RECORD_CTL="$HAKU_BIN_DIR/record_ctl.sh"
+RECORD_ROFI="$HAKU_BIN_DIR/record_rofi.sh"
 
 usage() {
     cat <<'EOF_HELP'

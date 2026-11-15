@@ -3,30 +3,10 @@
 # Public compatibility facade for wallpaper selection.
 # Classic presentation lives in wallpaper_rofi.sh; explicit actions are headless.
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-
-resolve_script() {
-    local name="$1" source_path="$2"
-    local candidate
-    for candidate in \
-        "$SCRIPT_DIR/$name" \
-        "$SCRIPT_DIR/$source_path" \
-        "$HOME/.local/bin/$name"; do
-        if [[ -x "$candidate" || -f "$candidate" ]]; then
-            printf '%s\n' "$candidate"
-            return 0
-        fi
-    done
-    printf 'wallpaper_select.sh: required script not found: %s\n' "$name" >&2
-    return 1
-}
-
-WALLPAPER_CTL="$(resolve_script wallpaper_ctl.sh ../backend/theme/wallpaper_ctl.sh)" || exit 1
-WALLPAPER_ROFI="$(resolve_script wallpaper_rofi.sh ../frontend/classic/wallpaper_rofi.sh)" || exit 1
-HAKU_BACKEND_LIB="$(resolve_script haku_backend_lib.sh ../lib/haku_backend_lib.sh)" || exit 1
-
 # shellcheck source=/dev/null
-source "$HAKU_BACKEND_LIB"
+source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_backend_lib.sh" || exit 1
+WALLPAPER_CTL="$HAKU_BIN_DIR/wallpaper_ctl.sh"
+WALLPAPER_ROFI="$HAKU_BIN_DIR/wallpaper_rofi.sh"
 
 print_help() {
     cat <<'EOF_HELP'

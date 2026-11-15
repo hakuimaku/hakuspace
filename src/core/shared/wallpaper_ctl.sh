@@ -1,0 +1,352 @@
+#!/usr/bin/env bash
+
+# Headless wallpaper controller.
+# Owns discovery, explicit apply/stop actions, thumbnail cache, and accent sync.
+# Presentation belongs in frontend/classic.
+
+set -u
+source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_cache.sh" || exit 1
+source "$HAKU_BIN_DIR/accent_color.sh" || exit 1
+
+[ -f "$HOME/hakucfg/setting.sh" ] && source "$HOME/hakucfg/setting.sh"
+
+WALL_DIR=${WALL_DIR:-$HOME/Pictures/Wallpapers}
+WALL_MPV_DIR=${WALL_MPV_DIR:-$HOME/Videos/Wallpapers}
+ACCENT_COLOR_BASED_ON_WALLPAPER=${ACCENT_COLOR_BASED_ON_WALLPAPER:-true}
+ACCENT_COLOR_MODE=${ACCENT_COLOR_MODE:-vivid}
+
+# Backend selection belongs at this compatibility boundary, never in UI delegates.
+NATIVE_HIKAI=false
+[[ $(cat "$HOME/.local/state/hakuspace/state/[shell].backend" 2>/dev/null) == hikai ]] && NATIVE_HIKAI=true
+
+SET_WALLPAPER_SCRIPT="$HAKU_BIN_DIR/wallpaper_set.sh"
+GET_ACCENT_COLOR_SCRIPT="$HAKU_BIN_DIR/get_accent_color.py"
+THEME_CTL="$HAKU_BIN_DIR/theme_ctl.sh"
+WALLPAPER_CTL_PY="$HAKU_BIN_DIR/wallpaper_ctl.py"
+# Classic video previews are disposable and do not belong in the media library.
+PREVIEW_DIR="$HAKUSPACE_CACHE_DIR/wallpaper/thumbnails/classic"
+
+current_path() {
+    python3 "$WALLPAPER_CTL_PY" source
+}
+
+current_kind() {
+    local path="${1:-}"
+    [[ -n "$path" ]] || return 0
+    if [[ "$path" == "$WALL_MPV_DIR/"* ]]; then
+        printf 'lively\n'
+    elif [[ "$path" == "$WALL_DIR/"* ]]; then
+        printf 'static\n'
+    elif [[ -f "$path" ]]; then
+        case "$(file -b --mime-type "$path" 2>/dev/null || true)" in
+            video/*) printf 'lively\n' ;;
+            image/*) printf 'static\n' ;;
+        esac
+    fi
+}
+
+preview_for_video() {
+    local path="$1"
+    local filename base
+    filename="${path#"${WALL_MPV_DIR%/}/"}"
+    [[ "$filename" == "$path" ]] && filename="$(basename -- "$path")"
+    base="${filename%.*}"
+    if [[ -f "$PREVIEW_DIR/$base.gif" ]]; then
+        printf '%s\n' "$PREVIEW_DIR/$base.gif"
+    elif [[ -f "$PREVIEW_DIR/$base.jpg" ]]; then
+        printf '%s\n' "$PREVIEW_DIR/$base.jpg"
+    elif [[ -f "$PREVIEW_DIR/$base.png" ]]; then
+        printf '%s\n' "$PREVIEW_DIR/$base.png"
+    fi
+}
+
+generate_thumbnails() {
+    local file filename
+    mkdir -p "$PREVIEW_DIR"
+    [[ -d "$WALL_MPV_DIR" ]] || return 0
+
+    while IFS= read -r -d '' file; do
+        filename="${file#"${WALL_MPV_DIR%/}/"}"
+        filename="${filename%.*}"
+        if [[ -f "$PREVIEW_DIR/$filename.gif" || -f "$PREVIEW_DIR/$filename.jpg" || -f "$PREVIEW_DIR/$filename.png" ]]; then
+            continue
+        fi
+        mkdir -p "$(dirname -- "$PREVIEW_DIR/$filename")"
+        if command -v magick >/dev/null 2>&1; then
+            magick "$file[0]" "$PREVIEW_DIR/$filename.jpg" 2>/dev/null || true
+        elif command -v convert >/dev/null 2>&1; then
+            convert "$file[0]" "$PREVIEW_DIR/$filename.jpg" 2>/dev/null || true
+        fi
+    done < <(python3 - "$WALLPAPER_CTL_PY" "$WALL_MPV_DIR" <<'PY'
+import os
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(sys.argv[1]).parent))
+from wallpaper_ctl import iter_media_files
+
+for path in iter_media_files(Path(sys.argv[2]), {".mp4"}):
+    sys.stdout.buffer.write(os.fsencode(path) + b"\0")
+PY
+    )
+}
+
+apply_accent_color() {
+    local target_image="$1"
+    local accent
+
+    [[ "$ACCENT_COLOR_BASED_ON_WALLPAPER" == true ]] || return 0
+
+    if [[ ! -f "$target_image" ]]; then
+        accent="#ffffff"
+    else
+        accent="$(python3 "$GET_ACCENT_COLOR_SCRIPT" "$target_image" "$ACCENT_COLOR_MODE")"
+    fi
+    accent="$(accent_color_or_fallback "$accent")"
+    "$THEME_CTL" set-accent "$accent"
+}
+
+resolve_static() {
+    local requested="${1:-}"
+    [[ -n "$requested" ]] || return 2
+    if [[ -f "$requested" ]]; then
+        printf '%s\n' "$requested"
+    elif [[ -f "$WALL_DIR/$requested" ]]; then
+        printf '%s\n' "$WALL_DIR/$requested"
+    else
+        printf 'wallpaper_ctl.sh: static wallpaper not found: %s\n' "$requested" >&2
+        return 2
+    fi
+}
+
+resolve_lively() {
+    local requested="${1:-}"
+    [[ -n "$requested" ]] || return 2
+    if [[ -f "$requested" ]]; then
+        printf '%s\n' "$requested"
+    elif [[ -f "$WALL_MPV_DIR/$requested" ]]; then
+        printf '%s\n' "$WALL_MPV_DIR/$requested"
+    else
+        printf 'wallpaper_ctl.sh: lively wallpaper not found: %s\n' "$requested" >&2
+        return 2
+    fi
+}
+
+apply_static() {
+    local wall
+    wall="$(resolve_static "${1:-}")" || return $?
+    "$SET_WALLPAPER_SCRIPT" "$wall" || return $?
+    [[ "$NATIVE_HIKAI" == true ]] && return 0
+    apply_accent_color "$wall"
+}
+
+apply_lively() {
+    local wall preview
+    wall="$(resolve_lively "${1:-}")" || return $?
+    if [[ "$NATIVE_HIKAI" == true ]]; then
+        "$SET_WALLPAPER_SCRIPT" "$wall"
+        return $?
+    fi
+    generate_thumbnails
+    preview="$(preview_for_video "$wall")"
+    "$SET_WALLPAPER_SCRIPT" "$wall" || return $?
+    if [[ -n "$preview" ]]; then
+        apply_accent_color "$preview"
+    else
+        apply_accent_color "not_found"
+    fi
+}
+
+stop_lively() {
+    local wall
+    if [[ "$NATIVE_HIKAI" == true ]]; then
+        qs -c hakuspace ipc call wallpaper pause
+        return $?
+    fi
+    if ! pgrep -x mpvpaper >/dev/null 2>&1; then
+        printf 'wallpaper_ctl.sh: lively wallpaper is not running.\n' >&2
+        return 3
+    fi
+
+    pkill -x mpvpaper
+    awww restore
+
+    wall="$(awww query 2>/dev/null | sed -n 's/.*currently displaying: image: //p' | head -n1)"
+    if [[ -n "$wall" && -f "$wall" ]]; then
+        "$SET_WALLPAPER_SCRIPT" "$wall" || return $?
+        apply_accent_color "$wall"
+    fi
+}
+
+list_json() {
+    local kind="$1"
+    local dir current preview_dir
+    current="$(current_path)"
+    preview_dir="$PREVIEW_DIR"
+    case "$kind" in
+        static) dir="$WALL_DIR" ;;
+        lively) dir="$WALL_MPV_DIR" ;;
+        *) return 2 ;;
+    esac
+
+    python3 - "$kind" "$dir" "$preview_dir" "$current" "$WALLPAPER_CTL_PY" <<'PY'
+import json
+import os
+from pathlib import Path
+import sys
+
+kind, directory, preview_dir, current, controller = sys.argv[1:]
+sys.path.insert(0, str(Path(controller).parent))
+from wallpaper_ctl import iter_media_files
+
+items = []
+if os.path.isdir(directory):
+    allowed = {".jpg", ".jpeg", ".png", ".gif", ".webp"} if kind == "static" else {".mp4"}
+    # Classic always lists every category; relative labels remain valid apply IDs.
+    for source in sorted(iter_media_files(Path(directory), allowed), key=lambda path: str(path).casefold()):
+        name = source.relative_to(directory).as_posix()
+        path = str(source)
+        thumb = path
+        if kind == "lively":
+            stem = os.path.splitext(name)[0]
+            thumb = "video-x-generic"
+            for ext in (".gif", ".jpg", ".png"):
+                candidate = os.path.join(preview_dir, stem + ext)
+                if os.path.isfile(candidate):
+                    thumb = candidate
+                    break
+        try:
+            stamp = os.stat(thumb)
+            preview_version = f"{stamp.st_mtime_ns}-{stamp.st_ctime_ns}"
+        except OSError:
+            preview_version = ""
+        items.append({
+            "id": name,
+            "kind": kind,
+            "path": path,
+            "label": name,
+            "thumbnail": thumb,
+            "previewVersion": preview_version,
+            "selected": os.path.abspath(path) == os.path.abspath(current) if current else False,
+        })
+json.dump(items, sys.stdout, ensure_ascii=False, separators=(",", ":"))
+sys.stdout.write("\n")
+PY
+}
+
+list_plain() {
+    local kind="$1" json
+    json="$(list_json "$kind")" || return $?
+    python3 -c 'import json,sys; [print(x["id"]) for x in json.load(sys.stdin)]' <<<"$json"
+}
+
+print_current() {
+    local as_json="${1:-}"
+    local path kind
+    if [[ "$NATIVE_HIKAI" == true ]]; then
+        if [[ "$as_json" == --json ]]; then
+            python3 "$WALLPAPER_CTL_PY" current
+        else
+            python3 "$WALLPAPER_CTL_PY" current | python3 -c 'import json,sys; print(json.load(sys.stdin).get("path", ""))'
+        fi
+        return $?
+    fi
+    path="$(current_path)"
+    kind="$(current_kind "$path")"
+    if [[ "$as_json" == "--json" ]]; then
+        python3 - "$path" "$kind" <<'PY'
+import json, sys
+path, kind = sys.argv[1:]
+print(json.dumps({"path": path or None, "kind": kind or None}, ensure_ascii=False, separators=(",", ":")))
+PY
+    else
+        printf '%s\n' "$path"
+    fi
+}
+
+print_status() {
+    local as_json="${1:-}"
+    local path kind lively=false
+    if [[ "$NATIVE_HIKAI" == true ]]; then
+        python3 "$WALLPAPER_CTL_PY" status
+        return $?
+    fi
+    path="$(current_path)"
+    kind="$(current_kind "$path")"
+    if pgrep -x mpvpaper >/dev/null 2>&1; then
+        lively=true
+    fi
+
+    if [[ "$as_json" == "--json" ]]; then
+        python3 - "$path" "$kind" "$lively" "$WALL_DIR" "$WALL_MPV_DIR" "$ACCENT_COLOR_BASED_ON_WALLPAPER" <<'PY'
+import json, sys
+path, kind, lively, static_dir, lively_dir, accent = sys.argv[1:]
+print(json.dumps({
+    "current": path or None,
+    "kind": kind or None,
+    "livelyRunning": lively == "true",
+    "staticDir": static_dir,
+    "livelyDir": lively_dir,
+    "accentFromWallpaper": accent == "true",
+}, ensure_ascii=False, separators=(",", ":")))
+PY
+    else
+        printf 'current=%s\nkind=%s\nlivelyRunning=%s\n' "$path" "$kind" "$lively"
+    fi
+}
+
+print_help() {
+    cat <<'EOF_HELP'
+Usage: wallpaper_ctl.sh COMMAND [ARG]
+Headless wallpaper discovery and control API.
+
+Commands:
+    list-static [--json]        List static wallpaper ids or structured records
+    list-lively [--json]        List video wallpaper ids or structured records
+    apply-static ID_OR_PATH     Apply an explicit static wallpaper and accent
+    apply-lively ID_OR_PATH     Apply an explicit video wallpaper and accent
+    stop-lively                 Stop video wallpaper and restore the image layer
+    current [--json]            Print current wallpaper state
+    status [--json]             Print wallpaper subsystem state
+    ensure-thumbnails           Generate missing video previews
+    -h, --help                  Show this help message
+EOF_HELP
+}
+
+case "${1:-}" in
+    list-static)
+        if [[ "${2:-}" == "--json" ]]; then list_json static; else list_plain static; fi
+        ;;
+    list-lively)
+        generate_thumbnails
+        if [[ "${2:-}" == "--json" ]]; then list_json lively; else list_plain lively; fi
+        ;;
+    apply-static)
+        apply_static "${2:-}"
+        ;;
+    apply-lively)
+        apply_lively "${2:-}"
+        ;;
+    stop-lively)
+        stop_lively
+        ;;
+    current)
+        print_current "${2:-}"
+        ;;
+    status)
+        print_status "${2:-}"
+        ;;
+    sync-accent)
+        apply_accent_color "${2:-}"
+        ;;
+    ensure-thumbnails)
+        generate_thumbnails
+        ;;
+    -h|--help)
+        print_help
+        ;;
+    *)
+        printf 'Invalid option. Use --help for usage information.\n' >&2
+        exit 2
+        ;;
+esac

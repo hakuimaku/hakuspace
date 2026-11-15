@@ -1,13 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Resolve the backend library in both flat installs and the source tree.
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-if [[ -f "$SCRIPT_DIR/haku_backend_lib.sh" ]]; then
-    source "$SCRIPT_DIR/haku_backend_lib.sh"
-else
-    source "$SCRIPT_DIR/../lib/haku_backend_lib.sh"
-fi
+# shellcheck source=/dev/null
+source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_backend_lib.sh" || exit 1
 
 # Keep the public command vocabulary independent of the shell implementation.
 case "${1:-overview-toggle}" in

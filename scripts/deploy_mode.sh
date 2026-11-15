@@ -107,7 +107,7 @@ detect_mode() {
     done < <(registry_get_common_configs)
 
     # Check key core scripts
-    for script in haku_theme.sh taskbar_manager.sh waybar_manager.sh; do
+    for script in haku_theme.sh taskbar_manager.sh statusbar_manager.sh; do
         local dst="$DEST_BIN/$script"
         if [[ -e "$dst" || -L "$dst" ]]; then
             total_checked=$((total_checked + 1))

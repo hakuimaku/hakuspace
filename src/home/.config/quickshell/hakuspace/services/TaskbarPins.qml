@@ -24,15 +24,11 @@ QtObject {
         if (busy) { pendingReload = true; return }
         run("list", [])
     }
-    // Resolve installed and source-tree controllers without interpolating application IDs.
     function run(action, args) {
         if (busy) return
         root.action = action
         root.actionId = args.length ? args[0] : ""
-        controller.command = ["sh", "-c",
-            'for script in "$1" "$2" "$3"; do if [ -x "$script" ]; then shift 3; exec "$script" "$@"; fi; done; exit 127',
-            "--", (Quickshell.env("HOME") || "") + "/.local/bin/taskbar_pins_ctl.py",
-            Env.binDir + "/taskbar_pins_ctl.py", Quickshell.shellPath("../../../../core/backend/user/taskbar_pins_ctl.py"), action].concat(args)
+        controller.command = [Env.binDir + "/pinned_apps_ctl.py", action].concat(args)
         controller.running = true
     }
     // Pin actions share the same serialized backend as external CLI edits.

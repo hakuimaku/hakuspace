@@ -12,17 +12,12 @@ QtObject {
     property var repo: ({ detected: false, version: "Not detected" })
     property var system: ({})
     property var hardware: ({})
-    readonly property string deployedScript: (Quickshell.env("HOME") || "") + "/.local/bin/hakuspace_info_ctl.py"
-    readonly property string envScript: Env.binDir + "/hakuspace_info_ctl.py"
-    readonly property string repoScript: Quickshell.shellPath("../../../../core/backend/system/hakuspace_info_ctl.py")
-
     function load() { if (!ready) refresh() }
     function refresh() {
         if (loading) return
         loading = true
         error = ""
-        infoProc.command = ["sh", "-c", 'if [ -x "$1" ]; then ctl=$1; elif [ -x "$2" ]; then ctl=$2; elif [ -x "$3" ]; then ctl=$3; else ctl=hakuspace_info_ctl.py; fi; exec "$ctl" read',
-                            "--", deployedScript, envScript, repoScript]
+        infoProc.command = [Env.binDir + "/hakuspace_info_ctl.py", "read"]
         infoProc.running = true
     }
 

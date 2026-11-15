@@ -1,67 +1,38 @@
 # HakuSpace core scripts
 
-`src/core/` is the canonical source tree for HakuSpace shell and Python runtime scripts. The source tree is organized by **runtime responsibility**, while deployment intentionally remains flat.
-
-## Runtime responsibility model
-
-The main architectural boundary is:
-
-```text
-backend/           headless domain/control commands
-frontend/classic/  Classic presentation and interactive UI
-facade/            stable public command names
-lib/               shared sourced helpers
-```
-
-A typical migrated command family looks like:
-
-```text
-Classic:
-    facade/record.sh
-        -> frontend/classic/record_rofi.sh   # interactive Classic picker
-        -> backend/media/record_ctl.sh       # explicit headless operations
-
-Hikai:
-    facade/record.sh
-        -> selected shell frontend         # collect recording choices
-        -> backend/media/record_ctl.sh       # explicit headless operations
-```
-
-The facade keeps the long-standing public basename used by keybinds, startup files, user configuration and other HakuSpace components. Frontends collect human input and translate it into explicit backend calls. Backends own state queries and mutations and must remain UI-free. See [Hikai](../../docs/hikai.md) for shell architecture.
+`src/core/` is the canonical source tree for HakuSpace shell and Python runtime scripts. The source tree uses a flat one-level taxonomy organized by **shell scope and role**, while deployment intentionally remains flat into `$HAKU_BIN_DIR` (defaulting to `~/.local/bin`).
 
 ## Directory taxonomy
 
-### `backend/`
-
-Headless, machine-callable domain logic. These scripts must not open Rofi, call `haku_pick.sh`, launch a picker, or interpret human-facing menu labels as commands.
-
-Current domains include:
-
 ```text
-backend/clipboard/   clipboard history operations
-backend/desktop/     taskbar, Waybar, desktop shortcut and emoji operations
-backend/media/       recording lifecycle
-backend/system/      power, session-exit, login-shell and system statistics snapshot operations
-backend/theme/       theme, Rofi-theme and wallpaper operations
-backend/user/        user profile and user-data operations
-backend/wm/          compositor-specific control logic
+src/core/
+├── classic/   # Classic-only (Waybar, Rofi, SwayNC, Taskbar, Classic adapters)
+├── hikai/     # Hikai-only (Quickshell controllers and services)
+├── shared/    # Cross-shell backends, engines, theme, WM helpers, utilities
+├── facade/    # Public entrypoints used by keybinds, startup, and user CLI
+└── lib/       # Shared sourced libraries and schemas (haku_*.sh, haku_*.py)
 ```
 
-Use explicit commands and stable IDs. Prefer machine-readable output for structured data.
+### `classic/`
 
-### `frontend/classic/`
+Classic-only interactive presentation adapters (`*_rofi.sh`, `hm_*_rofi.py`), Waybar/SwayNC/Taskbar controllers (`waybar_ctl.sh`, `taskbar_ctl.sh`, `notif_ctl.sh`, `rofi_theme_ctl.sh`), and Classic-specific helpers.
 
-Classic interactive presentation adapters. These scripts may build labels/icons, invoke Rofi, ask for a selection or password, and then call one explicit backend operation. Mutation logic should not be duplicated here.
+### `hikai/`
 
-`accent_color_picker.sh` also lives here because it is an interactive presentation helper even though it uses `hyprpicker` rather than Rofi.
+Hikai-only headless controllers and settings stores used by the Quickshell shell (`hikai_settings_ctl.py`, `dockbar_ctl.sh`, `hakucfg_editor_ctl.py`, `avatar_ctl.sh`, `temp_note_ctl.sh`, etc.).
+
+### `shared/`
+
+Cross-shell domain controllers, theming/rendering engines (`gen_style.sh`, `apply_style.sh`, `theme_ctl.sh`, `appearance_ctl.sh`, `wallpaper_ctl.sh`, `haku_icon_accent.py`), standalone desktop widgets (`desktop_icons.py`, `cava_layer.py`, `edge_trigger.py`, `rounded_screen.py`), and shared utilities (`pinned_apps_ctl.py`, `record_ctl.sh`, `clipboard_ctl.sh`, `power_ctl.sh`, etc.).
 
 ### `facade/`
 
-Stable public compatibility commands. These preserve the basenames and externally visible CLI used before the frontend/backend split, for example:
+Stable public compatibility commands used by WM keybinds, startup files, and HakuMenu actions, for example:
 
 ```text
+statusbar_manager.sh
 taskbar_manager.sh
-waybar_manager.sh
+dockbar_manager.sh
 change_theme.sh
 rofi_theme_switcher.sh
 niri_animation_switcher.sh
@@ -73,84 +44,37 @@ clipboard_menu.sh
 emoji_menu.sh
 shell_switcher.sh
 gen_shortcut.sh
+hakumenu.sh
+launcher.sh
 ```
 
-A facade may route no-argument Classic behavior to `frontend/classic/` while exposing explicit headless subcommands through `backend/`.
+A facade may route Classic interactive flows to `classic/` while exposing explicit headless subcommands through `shared/` or `hikai/`.
 
-The public routing entrypoints `util/launcher.sh` and `menu/hakumenu.sh` are facade-equivalent and UI-free. Their Classic Rofi adapters live in `frontend/classic/launcher_rofi.sh` and `frontend/classic/hakumenu_rofi.sh`. Source locations do not change their deployed public basenames.
+### `lib/`
 
-### Existing functional directories
+Shared sourced helpers and schema libraries such as `haku_state.sh`, `haku_cache.sh`, `haku_state.py`, `haku_theme.sh`, `haku_backend_lib.sh`, `haku_appearance.sh`, and `haku_pick.sh`.
 
-Not every existing script needs to be forced into the three-layer pattern. Families that are already cohesive remain in their established locations:
+## Flattened deployment & `HAKU_BIN_DIR`
 
-- `lib/` - shared sourced helpers such as `haku_theme.sh`, `haku_backend_lib.sh` and `haku_pick.sh`.
-- `app/` - standalone application/runtime components such as desktop icons, edge trigger, rounded screen and Cava layer.
-- `menu/` - HakuMenu providers and routing scripts.
-- `sys/` - cohesive system/runtime helpers that are not migrated compatibility facades.
-- `theme/` - cohesive render/apply helpers such as style generation and wallpaper resume/set support.
-- `util/` - cohesive general utilities that do not need a frontend/backend split.
-
-`haku_pick.sh` remains a frontend service in `lib/`: it routes selection through the active shell frontend. It must not be called from `backend/`.
-
-## Flattened deployment
-
-`deploy_hakuspace_scripts` recursively walks `src/core/` and deploys every file except `README.md` directly into:
+`deploy_hakuspace_scripts` walks `src/core/` and deploys every script except `README.md` directly into `$HAKU_BIN_DIR` (default: `$HOME/.local/bin`):
 
 ```text
-~/.local/bin/
+src/core/facade/wallpaper_select.sh   -> $HAKU_BIN_DIR/wallpaper_select.sh
+src/core/shared/wallpaper_ctl.sh      -> $HAKU_BIN_DIR/wallpaper_ctl.sh
+src/core/classic/wallpaper_rofi.sh    -> $HAKU_BIN_DIR/wallpaper_rofi.sh
 ```
 
-Therefore source paths are **not** part of the runtime public API. For example:
+Therefore source paths are **not** part of the runtime public API, and every file under `src/core/` must have a globally unique basename. A basename collision is a deployment error.
 
-```text
-src/core/facade/wallpaper_select.sh
-src/core/backend/theme/wallpaper_ctl.sh
-src/core/frontend/classic/wallpaper_rofi.sh
-```
-
-become:
-
-```text
-~/.local/bin/wallpaper_select.sh
-~/.local/bin/wallpaper_ctl.sh
-~/.local/bin/wallpaper_rofi.sh
-```
-
-The same public commands and keybinds continue to work after source-tree reorganization.
-
-## Global basename rule
-
-Because deployment is flat, every deployed filename under `src/core/` must have a globally unique basename. Two source files in different directories may **not** share the same filename.
-
-A basename collision is a deployment error, not just a source-tree style issue.
-
-## Source-tree and deployed execution
-
-Internal scripts must work in both forms:
-
-1. directly from the repository source tree; and
-2. after flat deployment into `~/.local/bin`.
-
-When resolving another HakuSpace script, use the established fallback pattern:
-
-```text
-same directory / source-tree relative path
--> ~/.local/bin/<basename>
-```
-
-Do not assume that a source-tree sibling relationship will still exist after deployment.
+Runtime scripts and Quickshell (`Env.binDir`) resolve internal commands directly via `HAKU_BIN_DIR` (defaulting to `$HOME/.local/bin`) without multi-path fallback loops.
 
 ## Change rules
 
 When adding or refactoring a command family:
 
 1. keep an existing public basename stable unless an explicit compatibility facade remains;
-2. put state/query/mutation logic in `backend/`;
-3. put Classic picker/password/presentation logic in `frontend/classic/`;
-4. keep public routing in `facade/` when a compatibility command already exists;
-5. do not duplicate backend mutations in the frontend;
-6. do not introduce UI dependencies into `backend/`;
-7. verify no basename collision;
-8. test both source-tree resolution and flattened `~/.local/bin` resolution.
-
-If symlinks are missing or stale after a source move, run the normal HakuSpace update/deployment flow so `~/.local/bin` is regenerated from the new canonical source paths.
+2. place Classic-only UI/controllers in `classic/`, Hikai-only controllers in `hikai/`, and cross-shell logic in `shared/`;
+3. keep public routing in `facade/` when a compatibility command already exists;
+4. do not duplicate backend mutations in the frontend;
+5. resolve sibling scripts via `HAKU_BIN_DIR` (`$HOME/.local/bin`);
+6. verify no basename collision and run deployment/validation checks after moving or renaming files.

@@ -58,7 +58,7 @@ QtObject {
     property int powerStageGeneration: -1
     property int sleepAcknowledged: -1
     readonly property var stages: ({dim: dim, lock: lock, displayOff: display, suspend: suspend})
-    readonly property var conditionCommand: command("idle_inhibit.sh", "sys/idle_inhibit.sh",
+    readonly property var conditionCommand: command("idle_inhibit.sh",
         ["--condition"].concat(settings.inhibitOnAudio ? [] : ["--no-audio"]))
 
     // Record transitions only, without polling or logging application metadata.
@@ -80,17 +80,14 @@ QtObject {
         logEvent("inhibitors", state)
     }
 
-    // Resolve installed helpers or the source tree without evaluating user text.
-    function command(name, source, args) {
-        return ["sh", "-c", 'if [ -x "$1" ]; then script=$1; else script=$2; fi; shift 2; exec "$script" "$@"',
-            "--", Env.binDir + "/" + name,
-            Quickshell.shellPath("../../../../core/" + source)].concat(args || [])
+    function command(name, args) {
+        return [Env.binDir + "/" + name].concat(args || [])
     }
     // Refresh only on demand and coalesce overlapping diagnostic reads.
     function refreshInhibit() {
         if (!owner || releasing || inhibitRead.running) return
         inhibitGeneration = generation
-        inhibitRead.command = command("idle_inhibit.sh", "sys/idle_inhibit.sh",
+        inhibitRead.command = command("idle_inhibit.sh",
             ["--status-json"].concat(settings.inhibitOnAudio ? [] : ["--no-audio"]))
         inhibitRead.running = true
     }
@@ -119,7 +116,7 @@ QtObject {
         logEvent("action-start", {action: job.action})
         if (job.action === "dim") brightnessOwned = true
         if (job.action === "off") displayOwned = true
-        effects.command = command("idle_actions.sh", "sys/idle_actions.sh",
+        effects.command = command("idle_actions.sh",
             ["--owner", ownerToken, job.action].concat(job.action === "dim" ? [String(settings.dimPercent)] : []))
         effects.running = true
     }
@@ -260,7 +257,7 @@ QtObject {
     Component.onDestruction: {
         recoveryRetry.stop()
         watchRetry.stop()
-        if (owner) Quickshell.execDetached(command("idle_actions.sh", "sys/idle_actions.sh", ["--owner", ownerToken, "recover"]))
+        if (owner) Quickshell.execDetached(command("idle_actions.sh", ["--owner", ownerToken, "recover"]))
     }
 
     // Timers are chained cumulatively: dim -> lock -> displayOff -> suspend
@@ -360,7 +357,7 @@ QtObject {
             root.suspendPending = false
             root.powerGeneration = root.generation
             root.powerStageGeneration = suspend.generation
-            power.command = root.command("power_ctl.sh", "backend/system/power_ctl.sh", ["suspend"])
+            power.command = root.command("power_ctl.sh", ["suspend"])
             power.running = true
         }
     }
@@ -433,7 +430,7 @@ QtObject {
         }
     }
     property Process watch: Process {
-        command: root.command("idle_session_watch.py", "backend/system/idle_session_watch.py", [])
+        command: root.command("idle_session_watch.py", [])
         stdinEnabled: true
         stdout: SplitParser { onRead: line => root.sessionEvent(line) }
         onExited: code => {

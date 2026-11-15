@@ -2,14 +2,7 @@
 
 # Library for Quickshell backend management
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-if [[ -f "$SCRIPT_DIR/haku_theme.sh" ]]; then
-    source "$SCRIPT_DIR/haku_theme.sh"
-elif [[ -f "$SCRIPT_DIR/../lib/haku_theme.sh" ]]; then
-    source "$SCRIPT_DIR/../lib/haku_theme.sh"
-else
-    source "$HOME/.local/bin/haku_theme.sh"
-fi
+source "$(dirname -- "${BASH_SOURCE[0]}")/haku_theme.sh"
 
 BACKEND_STATE_FILE="$(haku_state_path shell.backend)"
 QS_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hakuspace"

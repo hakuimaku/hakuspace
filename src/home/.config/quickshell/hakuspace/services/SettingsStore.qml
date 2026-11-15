@@ -55,20 +55,17 @@ QtObject {
         { key: "EXIT_APP_LIST_USER", group: "Exit", label: "Apps to close", type: "list", hint: "Apps targeted for graceful shutdown, then forced termination, when exiting the window manager. Example: discord, firefox, code." }
     ]
     readonly property var groups: ["General"]
-    readonly property string deployedScript: (Quickshell.env("HOME") || "") + "/.local/bin/setting_ctl.py"
-    readonly property string repoScript: Quickshell.shellPath("../../../../core/backend/user/setting_ctl.py")
-    readonly property string envScript: Env.binDir + "/setting_ctl.py"
-
     function command(action) {
-        return ["sh", "-c", 'if [ -x "$1" ]; then exec "$1" "$4"; elif [ -x "$2" ]; then exec "$2" "$4"; elif [ -x "$3" ]; then exec "$3" "$4"; else exec setting_ctl.py "$4"; fi',
-                "--", deployedScript, envScript, repoScript, action]
+        return [Env.binDir + "/setting_ctl.py", action]
     }
 
     // Pass font values as arguments to the existing theme controller.
     function themeCommand(action) {
-        return ["sh", "-c", 'if [ -x "$1" ]; then ctl=$1; elif [ -x "$2" ]; then ctl=$2; else ctl=$3; fi; if [ "$4" = read ]; then exec "$ctl" status; elif [ "$4" = list-fonts ]; then exec "$ctl" list-fonts; fi; if [ "$5" = 1 ]; then "$ctl" set-font "$6" || exit $?; fi; if [ "$7" = 1 ]; then "$ctl" set-size "$8" || exit $?; fi; exec "$ctl" status',
-            "--", (Quickshell.env("HOME") || "") + "/.local/bin/theme_ctl.sh", Env.binDir + "/theme_ctl.sh",
-            Quickshell.shellPath("../../../../core/backend/theme/theme_ctl.sh"), action,
+        var ctl = Env.binDir + "/theme_ctl.sh"
+        if (action === "read") return [ctl, "status"]
+        if (action === "list-fonts") return [ctl, "list-fonts"]
+        return ["sh", "-c", 'ctl=$1; if [ "$2" = 1 ]; then "$ctl" set-font "$3" || exit $?; fi; if [ "$4" = 1 ]; then "$ctl" set-size "$5" || exit $?; fi; exec "$ctl" status',
+            "--", ctl,
             writingFontKeys.includes("family") ? "1" : "0", writingFonts.family || "",
             writingFontKeys.includes("size") ? "1" : "0", String(writingFonts.size || 14)]
     }

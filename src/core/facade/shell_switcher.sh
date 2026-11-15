@@ -6,29 +6,10 @@
 # 2. Global switcher mode: opens layer (Rofi / Quickshell), layer auth, and restart session prompt.
 
 set -u
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-
-resolve_script() {
-    local name="$1" source_path="$2" candidate
-    for candidate in \
-        "$SCRIPT_DIR/$name" \
-        "$SCRIPT_DIR/$source_path" \
-        "$HOME/.local/bin/$name"; do
-        if [[ -x "$candidate" || -f "$candidate" ]]; then
-            printf '%s\n' "$candidate"
-            return 0
-        fi
-    done
-    printf 'shell_switcher.sh: required script not found: %s\n' "$name" >&2
-    return 1
-}
-
-SHELL_CTL="$(resolve_script shell_ctl.sh ../backend/system/shell_ctl.sh)" || exit 1
-SHELL_ROFI="$(resolve_script shell_rofi.sh ../frontend/classic/shell_rofi.sh)" || exit 1
-HAKU_BACKEND_LIB="$(resolve_script haku_backend_lib.sh ../lib/haku_backend_lib.sh)" || exit 1
-
 # shellcheck source=/dev/null
-source "$HAKU_BACKEND_LIB"
+source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_backend_lib.sh" || exit 1
+SHELL_CTL="$HAKU_BIN_DIR/shell_ctl.sh"
+SHELL_ROFI="$HAKU_BIN_DIR/shell_rofi.sh"
 
 usage() {
     cat <<'EOF_HELP'

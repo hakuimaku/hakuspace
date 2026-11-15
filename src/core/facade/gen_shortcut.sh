@@ -5,24 +5,9 @@
 # in the headless shortcut_ctl.sh backend.
 
 set -u
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-
-resolve_script() {
-    local name="$1" source_path="$2" candidate
-    for candidate in \
-        "$SCRIPT_DIR/$name" \
-        "$SCRIPT_DIR/$source_path" \
-        "$HOME/.local/bin/$name"; do
-        if [[ -x $candidate || -f $candidate ]]; then
-            printf '%s\n' "$candidate"
-            return 0
-        fi
-    done
-    printf 'gen_shortcut.sh: required script not found: %s\n' "$name" >&2
-    return 1
-}
-
-SHORTCUT_CTL="$(resolve_script shortcut_ctl.sh ../backend/desktop/shortcut_ctl.sh)" || exit 1
+# shellcheck source=/dev/null
+source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_state.sh" || exit 1
+SHORTCUT_CTL="$HAKU_BIN_DIR/shortcut_ctl.sh"
 
 usage() {
     cat <<'EOF_HELP'
@@ -72,12 +57,12 @@ case "${1:-}" in
     -m|--menu)
         shift
         [[ $# -eq 0 ]] || { printf 'gen_shortcut.sh: --menu accepts no arguments.\n' >&2; exit 2; }
-        source "$(resolve_script haku_backend_lib.sh ../lib/haku_backend_lib.sh)" || exit 1
+        # shellcheck source=/dev/null
+        source "$HAKU_BIN_DIR/haku_backend_lib.sh" || exit 1
         if haku_qs_mode; then
             haku_qs_ipc actionMenu openDefault shortcut
         else
-            SHORTCUT_ROFI="$(resolve_script shortcut_rofi.sh ../frontend/classic/shortcut_rofi.sh)" || exit 1
-            exec "$SHORTCUT_ROFI"
+            exec "$HAKU_BIN_DIR/shortcut_rofi.sh"
         fi
         ;;
     -q|--query)

@@ -131,11 +131,10 @@ QtObject {
     // Use argument arrays and explicit targets, never a stale-state toggle.
     function runtimeCommand(id, value) {
         var script = id === "layout" ? "taskbar_manager.sh" : id === "dockbar" ? "dockbar_manager.sh" : id === "idle-keep-awake" ? "idle_inhibit.sh" : "cava_manager.sh"
-        var relative = id === "layout" || id === "dockbar" ? "facade/" : id === "idle-keep-awake" ? "sys/" : "app/cava-layer/"
         var args = id === "layout" ? ["--layout", value] : id === "dockbar" ? [value ? "--enable" : "--disable"]
             : id === "idle-keep-awake" ? ["--set", value ? "on" : "off"]
             : [({cava: "--enabled", "cava-color": "--color-mode", "cava-dynamic": "--dynamic", "cava-position": "--position", "cava-height": "--height"})[id], typeof value === "boolean" ? value ? "on" : "off" : String(value)]
-        return ["sh", "-c", 'ctl=$1; [ -f "$ctl" ] || ctl=$2; shift 2; exec bash "$ctl" "$@"', "--", Env.binDir + "/" + script, Quickshell.shellPath("../../../../core/" + relative + script)].concat(args)
+        return ["bash", Env.binDir + "/" + script].concat(args)
     }
     // Update shared state immediately after success while FileViews catch up.
     function acceptRuntime(id, value) {

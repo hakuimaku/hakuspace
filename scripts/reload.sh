@@ -12,12 +12,12 @@ source "$HAKU_DIR/scripts/variables.sh"
 source "$HAKU_DIR/scripts/functions.sh"
 
 reload_waybar() {
-    local waybar_mgr="$DEST_BIN/waybar_manager.sh"
+    local waybar_mgr="$DEST_BIN/statusbar_manager.sh"
     if [[ -x "$waybar_mgr" ]]; then
         "$waybar_mgr" --reload >/dev/null 2>&1 || true
-        log_ok "Waybar reloaded."
+        log_ok "Status bar reloaded."
     else
-        log_skip "Waybar manager not executable at $(shorten_path "$waybar_mgr"). Skipping reload."
+        log_skip "Status bar manager not executable at $(shorten_path "$waybar_mgr"). Skipping reload."
     fi
 }
 

@@ -1,6 +1,6 @@
-# The Haku Menu (src/core/menu)
+# The Haku Menu
 
-Haku Menu provides a public entry point for desktop actions. The scripts in `src/core/menu/` handle routing and shared action providers.
+Haku Menu provides a public entry point for desktop actions. The scripts in `src/core/facade/` and `src/core/shared/` handle routing and shared action providers.
 
 This document covers those scripts and the Classic Rofi adapter. See [Hikai](../hikai.md) for shell architecture.
 
@@ -9,7 +9,7 @@ The providers supply choices and dispatch actions through the relevant public co
 ## The Main Hub
 
 ### `hakumenu.sh`
-This is the stable public entry point used by keybinds and other callers. It routes requests to the active shell frontend. The Classic adapter lives in `frontend/classic/hakumenu_rofi.sh`.
+This is the stable public entry point used by keybinds and other callers. It routes requests to the active shell frontend. The Classic adapter lives in `classic/hakumenu_rofi.sh`.
 
 ### `hakumenu_rofi.sh`
 This is the Classic presentation adapter. It launches Rofi and binds the three custom bash scripts to their respective tabs.
@@ -21,14 +21,14 @@ This is the Classic presentation adapter. It launches Rofi and binds the three c
 ## Action Providers
 
 ### `hm_general.sh`
-This is a thin compatibility entrypoint for `frontend/classic/hm_general_rofi.py`.
+This is a thin compatibility entrypoint for `classic/hm_general_rofi.py`.
 The adapter renders the backend snapshot with Rofi row metadata (`info`) and runs
 only the stable ID returned through `ROFI_INFO`. Labels and icons are presentation;
 duplicate labels are supported. Custom Rofi input cannot launch an action.
 
 ### Shared General menu backend
 
-`backend/user/general_menu_ctl.py` manages custom actions shared by Classic and Hikai.
+`shared/general_menu_ctl.py` manages custom actions shared by Classic and Hikai.
 User rows live in `~/hakucfg/config/hakumenu-general.json`:
 
 ```json

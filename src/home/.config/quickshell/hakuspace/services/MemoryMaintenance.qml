@@ -87,10 +87,8 @@ QtObject {
     readonly property bool recycleEligible: versionEligible && protectionReady && policy.autoRecycle
     onFdGrowthChanged: if (!policy.debug && fdGrowth < policy.fdGrowthLimit) fdClassified = false
 
-    // Resolve the same helper in deployed and source-tree layouts.
     function command(args) {
-        return ["sh", "-c", 'script=$1; [ -f "$script" ] || script=$2; shift 2; exec python3 "$script" "$@"',
-            "--", Env.binDir + "/hikai_memory_ctl.py", Quickshell.shellPath("../../../../core/backend/system/hikai_memory_ctl.py")].concat(args)
+        return ["python3", Env.binDir + "/hikai_memory_ctl.py"].concat(args)
     }
 
     // Log decisions and bounded event metadata, never every production sample.

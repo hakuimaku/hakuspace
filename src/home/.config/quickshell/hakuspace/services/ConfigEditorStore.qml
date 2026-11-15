@@ -38,13 +38,8 @@ QtObject {
     readonly property bool busy: listing || loading || saving || validating
     readonly property bool canSave: hasFile && dirty && !busy && !conflict && !text.includes("\0")
                             && unescape(encodeURIComponent(text)).length <= 96 * 1024
-    readonly property string deployedScript: (Quickshell.env("HOME") || "") + "/.local/bin/hakucfg_editor_ctl.py"
-    readonly property string envScript: Env.binDir + "/hakucfg_editor_ctl.py"
-    readonly property string repoScript: Quickshell.shellPath("../../../../core/backend/user/hakucfg_editor_ctl.py")
-
     function command(action, fileId) {
-        var result = ["sh", "-c", 'if [ -x "$1" ]; then ctl=$1; elif [ -x "$2" ]; then ctl=$2; elif [ -x "$3" ]; then ctl=$3; else ctl=hakucfg_editor_ctl.py; fi; shift 3; exec "$ctl" "$@"',
-                      "--", deployedScript, envScript, repoScript, action]
+        var result = [Env.binDir + "/hakucfg_editor_ctl.py", action]
         if (fileId) result.push(fileId)
         return result
     }

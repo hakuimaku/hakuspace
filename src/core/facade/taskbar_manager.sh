@@ -5,25 +5,10 @@
 # Domain mutation lives in taskbar_ctl.sh; Classic picker UI lives in
 # taskbar_rofi.sh.
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-
-resolve_script() {
-    local name="$1" source_path="$2"
-    local candidate
-    for candidate in \
-        "$SCRIPT_DIR/$name" \
-        "$SCRIPT_DIR/$source_path" \
-        "$HOME/.local/bin/$name"; do
-        if [[ -x "$candidate" || -f "$candidate" ]]; then
-            printf '%s\n' "$candidate"
-            return 0
-        fi
-    done
-    printf 'taskbar_manager.sh: required script not found: %s\n' "$name" >&2
-    return 1
-}
-
-TASKBAR_CTL="$(resolve_script taskbar_ctl.sh ../backend/desktop/taskbar_ctl.sh)" || exit 1
+# shellcheck source=/dev/null
+source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_state.sh" || exit 1
+TASKBAR_CTL="$HAKU_BIN_DIR/taskbar_ctl.sh"
+TASKBAR_ROFI="$HAKU_BIN_DIR/taskbar_rofi.sh"
 
 print_help() {
     cat <<'EOF_HELP'
@@ -54,7 +39,6 @@ case "${1:-}" in
         exec "$TASKBAR_CTL" --toggle-app-name
         ;;
     --icon-size)
-        TASKBAR_ROFI="$(resolve_script taskbar_rofi.sh ../frontend/classic/taskbar_rofi.sh)" || exit 1
         exec "$TASKBAR_ROFI" icon-size
         ;;
     -h|--help)

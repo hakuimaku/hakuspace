@@ -1,6 +1,6 @@
-# The Utility Toolbelt (src/core/util)
+# Utility Scripts (`src/core/shared` & `src/core/facade`)
 
-While the theming engine makes HakuSpace look aesthetically pleasing, the scripts inside `src/core/util/` make it actually useful! This folder acts as your personal toolbelt, filled with handy shell scripts that automate daily tasks, manage background services, and interact with your Window Manager.
+While the theming engine makes HakuSpace look aesthetically pleasing, the utility scripts inside `src/core/shared/` and `src/core/facade/` make it actually useful! These scripts automate daily tasks, manage background services, and interact with your Window Manager.
 
 Here is a detailed breakdown of what each utility script does under the hood:
 
@@ -58,11 +58,11 @@ Saves your eyes during late-night coding sessions.
 A quick VPN switch.
 - **What it does:** Uses the Cloudflare `warp-cli` to toggle your WARP connection on and off, routing your internet traffic through their private network for privacy and speed directly from a keybind or a Waybar module.
 
-### Waybar management
-Waybar management separates the public command, mode selection frontend and headless controller.
+### Status bar management
+Status bar management separates the public command, mode selection frontend and headless controller.
 
-- **`waybar_manager.sh` (compatibility facade):** preserves the startup/keybind CLI (`--cycle`, `--select`, `--reload`, `--toggle`). In Hikai, `--cycle` cycles between status bar layouts (Topbar <-> Leftbar), while `--toggle` returns success without changing Classic Waybar/Taskbar preferences or starting or stopping Waybar. In Classic, it cycles or toggles Waybar.
-- **`waybar_ctl.sh` (headless backend):** owns mode discovery, current-mode state, symlink changes, Waybar lifecycle, explicit `list/current/set/cycle/toggle/reload/startup` operations, and contains no picker UI.
+- **`statusbar_manager.sh` (compatibility facade):** preserves the startup/keybind CLI (`--cycle`, `--select`, `--reload`, `--toggle`). In Hikai, `--cycle` cycles between status bar layouts (Topbar <-> Leftbar), while `--toggle` returns success without changing Classic Waybar/Taskbar preferences or starting or stopping Waybar. In Classic, it cycles or toggles Waybar.
+- **`waybar_ctl.sh` (Classic backend):** owns mode discovery, current-mode state, symlink changes, Waybar lifecycle, explicit `list/current/set/cycle/toggle/reload/startup` operations, and contains no picker UI.
 - **`waybar_rofi.sh` (Classic frontend):** displays the Classic mode selector and passes the selected mode id to `waybar_ctl.sh set`.
 
 Default and user modes still come from the existing Waybar directories plus `WAYBAR_MODE_USER` in `~/hakucfg/setting.sh`; source-tree organization does not change the flat `~/.local/bin` deployment contract.

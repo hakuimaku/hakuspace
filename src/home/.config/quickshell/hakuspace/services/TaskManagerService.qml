@@ -35,10 +35,8 @@ QtObject {
     property string actionStatus: ""
     readonly property bool actionBusy: controller.running
 
-    // Resolve helpers in both flat installations and source-tree sessions.
     function command(name, args) {
-        return ["sh", "-c", 'script=$1; [ -f "$script" ] || script=$2; shift 2; exec python3 "$script" "$@"',
-            "--", Env.binDir + "/" + name, Quickshell.shellPath("../../../../core/backend/system/" + name)].concat(args)
+        return ["python3", Env.binDir + "/" + name].concat(args)
     }
 
     // Acquire exactly once for each loaded overlay, including its closing frames.

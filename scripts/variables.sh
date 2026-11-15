@@ -39,7 +39,7 @@ DEST_CONFIG="$HOME/.config"
 
 # HakuSpace script directories
 SOURCE_CORE="$SOURCE_DIR/core"
-DEST_BIN="$HOME/.local/bin"
+DEST_BIN="${HAKU_BIN_DIR:-$HOME/.local/bin}"
 
 # Arrays to handle multiple WMs (default empty for set -u safety)
 SELECTED_WMS=("${SELECTED_WMS[@]:-}")

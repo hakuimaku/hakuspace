@@ -1,17 +1,17 @@
-# HakuSpace Mini-Apps (src/core/app)
+# HakuSpace Mini-Apps
 
-The `src/core/app/` directory houses custom mini-applications built specifically for HakuSpace. Instead of relying on heavy standalone applications, HakuSpace creates native-feeling desktop widgets by cleverly combining existing Linux tools with custom bash and Python scripts.
+HakuSpace includes custom mini-applications and desktop widgets built by combining existing Linux tools with custom bash and Python scripts in `src/core/`.
 
 Currently, the following mini-apps are available:
-- [**Taskbar**](#the-taskbar-srccoreapptaskbar)
-- [**Desktop Icons**](#desktop-icons-srccoreappdesktop-icons)
-- [**Rounded Screen**](#rounded-screen-srccoreapprounded-screen)
-- [**Edge Trigger**](#edge-trigger-srccoreappedge-trigger)
-- [**Cava Underbar**](#cava-underbar-srccoreappcava-layer)
+- [**Taskbar**](#the-taskbar)
+- [**Desktop Icons**](#desktop-icons)
+- [**Rounded Screen**](#rounded-screen)
+- [**Edge Trigger**](#edge-trigger)
+- [**Cava Underbar**](#cava-underbar)
 
 ---
 
-## The Taskbar (`src/core/app/taskbar`)
+## The Taskbar
 
 The Classic Taskbar is a secondary instance of **Waybar** running a specific configuration (`~/.config/waybar/taskbar/config`).
 
@@ -34,7 +34,7 @@ The Taskbar needs to display the correct icons for your pinned applications.
 
 ---
 
-## Desktop Icons (`src/core/app/desktop-icons`)
+## Desktop Icons
 
 One of the biggest sacrifices when moving from traditional Desktop Environments (like XFCE or KDE) to modern Wayland compositors (like Hyprland or Niri) is losing your desktop icons. HakuSpace solves this by bringing them back with a fully native, Wayland-compatible desktop icon renderer!
 
@@ -61,7 +61,7 @@ You can customize almost everything about how your icons look and behave.
 
 ---
 
-## Rounded Screen (`src/core/app/rounded-screen`)
+## Rounded Screen
 
 A sleek overlay that frames your entire monitor with perfectly rounded corners and a configurable border thickness, giving your display a modern, hardware-like bezel aesthetic. 
 
@@ -82,7 +82,7 @@ You can customize the appearance by editing `~/hakucfg/config/rounded-screen.con
 
 ---
 
-## Edge Trigger (`src/core/app/edge-trigger`)
+## Edge Trigger
 
 An invisible overlay that sits at the edges of your screen, allowing you to trigger specific commands simply by hovering your mouse against the screen borders.
 
@@ -112,7 +112,7 @@ Manages the lifecycle of the Edge Trigger overlay.
 
 ---
 
-## Cava Underbar (`src/core/app/cava-layer`)
+## Cava Underbar
 
 If you like having an audio visualizer on your desktop, you've probably used `cava`. Normally, it runs inside a regular terminal window. HakuSpace takes it to the next level by embedding `cava` directly into the background of your screen, sitting just above your wallpaper but below your windows, acting as a dynamic "Underbar". It also features an "Top Mode" to make the visualizer sit above all other windows!
 

@@ -43,7 +43,7 @@ state_check() {
 
 state_init() {
     log_info "Initializing HakuSpace state directory..."
-    haku_state_migrate
+    python3 -B "$SOURCE_CORE/lib/haku_state_migrate.py"
     ensure_dir "$HAKU_STATE_ROOT"
 
     while IFS= read -r file; do

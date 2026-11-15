@@ -15,7 +15,7 @@ import tempfile
 # Use current backend validation without producing source-tree bytecode.
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / 'src/core/backend/user'))
+sys.path.insert(0, str(ROOT / 'src/core/shared'))
 from general_menu_ctl import open_parent, parse, read as read_menu_file, validate
 
 HOME = Path.home().absolute()

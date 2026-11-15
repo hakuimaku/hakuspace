@@ -3,30 +3,10 @@
 # Public compatibility facade for the power menu.
 # Classic presentation lives in power_rofi.sh; explicit actions are headless.
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-
-resolve_script() {
-    local name="$1" source_path="$2"
-    local candidate
-    for candidate in \
-        "$SCRIPT_DIR/$name" \
-        "$SCRIPT_DIR/$source_path" \
-        "$HOME/.local/bin/$name"; do
-        if [[ -x "$candidate" || -f "$candidate" ]]; then
-            printf '%s\n' "$candidate"
-            return 0
-        fi
-    done
-    printf 'shutdown.sh: required script not found: %s\n' "$name" >&2
-    return 1
-}
-
-POWER_CTL="$(resolve_script power_ctl.sh ../backend/system/power_ctl.sh)" || exit 1
-POWER_ROFI="$(resolve_script power_rofi.sh ../frontend/classic/power_rofi.sh)" || exit 1
-HAKU_BACKEND_LIB="$(resolve_script haku_backend_lib.sh ../lib/haku_backend_lib.sh)" || exit 1
-
 # shellcheck source=/dev/null
-source "$HAKU_BACKEND_LIB"
+source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_backend_lib.sh" || exit 1
+POWER_CTL="$HAKU_BIN_DIR/power_ctl.sh"
+POWER_ROFI="$HAKU_BIN_DIR/power_rofi.sh"
 
 usage() {
     cat <<'EOF_HELP'

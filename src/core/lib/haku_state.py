@@ -1,4 +1,5 @@
 """Canonical runtime state paths; resolving a path never creates files."""
+import os
 from pathlib import Path
 
 # Registered state keys and their owner-prefixed basenames.
@@ -30,6 +31,11 @@ STATE_FILES = {
     'migration.hikai-layout-v11.json': '[migration].hikai-layout-v11.json',
     'migration.hikai-chrome-v6.json': '[migration].hikai-chrome-v6.json',
 }
+
+
+def bin_dir():
+    """Return the canonical executable directory for HakuSpace runtime commands."""
+    return Path(os.environ.get("HAKU_BIN_DIR") or (Path.home() / ".local/bin"))
 
 
 def state_root():

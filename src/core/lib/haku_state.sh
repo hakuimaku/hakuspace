@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 # Shared persistent root and runtime state directory; sourcing is read-only.
+HAKU_BIN_DIR="${HAKU_BIN_DIR:-$HOME/.local/bin}"
 HAKU_STATE_ROOT="$HOME/.local/state/hakuspace"
 HAKU_STATE_DIR="$HAKU_STATE_ROOT/state"
 STATE_DIR="$HAKU_STATE_DIR"
-HAKU_STATE_LIB_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 # Resolve only registered state keys to quoted, owner-prefixed paths.
 haku_state_path() {
@@ -43,7 +43,5 @@ haku_state_path() {
 
 # Upgrade legacy files before session consumers or default initialization run.
 haku_state_migrate() {
-    local migrator="$HAKU_STATE_LIB_DIR/haku_state_migrate.py"
-    [[ -f "$migrator" ]] || migrator="$HAKU_STATE_LIB_DIR/../state/haku_state_migrate.py"
-    python3 "$migrator"
+    python3 "$(dirname -- "${BASH_SOURCE[0]}")/haku_state_migrate.py"
 }

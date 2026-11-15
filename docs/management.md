@@ -100,7 +100,7 @@ After repair, inspect the plan and rerun the updater:
 ```bash
 ./scripts/migrate.sh --status
 ./scripts/migrate.sh --plan --to v26.11
-python3 -B src/core/backend/user/general_menu_ctl.py check
+python3 -B src/core/shared/general_menu_ctl.py check
 ./update.sh
 ```
 

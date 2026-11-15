@@ -94,12 +94,8 @@ QtObject {
         }
         return true
     }
-    // Resolve the installed controller with the same source-tree fallback as General.
     function command(action) {
-        return ["sh", "-c", 'if [ -x "$1" ]; then exec "$1" "$4"; elif [ -x "$2" ]; then exec "$2" "$4"; else exec "$3" "$4"; fi',
-            "--", (Quickshell.env("HOME") || "") + "/.local/bin/hikai_settings_ctl.py",
-            Env.binDir + "/hikai_settings_ctl.py",
-            Quickshell.shellPath("../../../../core/backend/user/hikai_settings_ctl.py"), action]
+        return [Env.binDir + "/hikai_settings_ctl.py", action]
     }
     // Update a validated draft atomically so Theme and every output react together.
     function setValue(section, key, value) {

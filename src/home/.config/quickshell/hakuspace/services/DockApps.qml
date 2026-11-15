@@ -51,10 +51,7 @@ QtObject {
     property Process iconWatcher: Process {
         running: ChromeLayout.taskbarActive || ChromeLayout.dockbarActive
         stdinEnabled: true
-        command: ["sh", "-c",
-            'for script in "$1" "$2" "$3"; do if [ -f "$script" ]; then exec python3 -u "$script"; fi; done; exit 127',
-            "--", (Quickshell.env("HOME") || "") + "/.local/bin/dock_icon_watch.py",
-            Env.binDir + "/dock_icon_watch.py", Quickshell.shellPath("../../../../core/backend/user/dock_icon_watch.py")]
+        command: ["python3", "-u", Env.binDir + "/dock_icon_watch.py"]
         onStarted: write(root.iconRequest + "\n")
         stdout: SplitParser {
             onRead: data => {
@@ -85,10 +82,7 @@ QtObject {
         var ids = app.windows.map(function(window) { return window.appId }).filter(function(id) { return !!id })
         if (!ids.length) return false
         terminationKey = app.key
-        terminator.command = ["sh", "-c",
-            'for script in "$1" "$2" "$3"; do if [ -f "$script" ]; then shift 3; exec python3 "$script" "$@"; fi; done; exit 127',
-            "--", (Quickshell.env("HOME") || "") + "/.local/bin/dock_app_ctl.py",
-            Env.binDir + "/dock_app_ctl.py", Quickshell.shellPath("../../../../core/backend/user/dock_app_ctl.py"),
+        terminator.command = ["python3", Env.binDir + "/dock_app_ctl.py",
             "terminate", JSON.stringify(ids), JSON.stringify(confirmedRoots)]
         terminator.running = true
         return true

@@ -47,7 +47,7 @@ The session lifecycle manages startup, shutdown and recovery; a UI component sho
 Reload is a lifecycle transition, so initialization and teardown must tolerate it without duplicating processes, subscriptions or protocol owners.
 
 Use [services](../src/home/.config/quickshell/hakuspace/services/) for shared models and coordination, and [components](../src/home/.config/quickshell/hakuspace/components/) for presentation and reusable UI behavior.
-System operations belong behind the appropriate service or [headless backend](../src/core/backend/).
+System operations belong behind the appropriate service or [headless backend](../src/core/hikai/) (or [shared scripts](../src/core/shared/)).
 The [core script architecture](../src/core/README.md) explains public command routing and deployment.
 
 Keep slow work and external IO outside rendering bindings. Prefer external events over repeated polling when the system provides them.
@@ -136,7 +136,7 @@ Write safely and preserve unrelated user content and permissions. A malformed re
 Migrations belong to the persistence boundary, not to each UI consumer.
 Preserve explicit choices, make repeated migration safe, and make interrupted changes recoverable.
 Run a required migration before dependent runtime consumers start; a normal read should not quietly rewrite user files.
-Find current option names, schemas and defaults in the [settings backends](../src/core/backend/user/) and their shared stores.
+Find current option names, schemas and defaults in the [Hikai settings controllers](../src/core/hikai/), [shared settings controllers](../src/core/shared/) and their shared stores.
 
 ### Settings and personalisation
 

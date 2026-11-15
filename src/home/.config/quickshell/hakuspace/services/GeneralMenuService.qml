@@ -17,13 +17,8 @@ QtObject {
     signal mutationFinished(string operation, bool success)
     onErrorChanged: if (error) console.warn("General menu: " + error)
 
-    // Resolve the flat installation and source checkout without shell interpolation.
     function command(action, args) {
-        return ["sh", "-c",
-            'for script in "$1" "$2" "$3"; do if [ -f "$script" ]; then shift 3; exec python3 "$script" "$@"; fi; done; exit 127',
-            "--", Env.binDir + "/general_menu_ctl.py",
-            (Quickshell.env("HOME") || "") + "/.local/bin/general_menu_ctl.py",
-            Quickshell.shellPath("../../../../core/backend/user/general_menu_ctl.py"), action].concat(args)
+        return ["python3", Env.binDir + "/general_menu_ctl.py", action].concat(args)
     }
 
     // Serialize UI requests and let callers keep their editor open when busy.

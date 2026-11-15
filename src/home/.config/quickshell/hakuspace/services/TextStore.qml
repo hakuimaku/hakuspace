@@ -38,22 +38,10 @@ QtObject {
     property bool _scratchPendingSave: false
     property bool _scratchPendingFlush: false
 
-    readonly property string _deployedScript: (Quickshell.env("HOME") || "") + "/.local/bin/text_store_ctl.sh"
-    readonly property string _repoScript: Quickshell.shellPath("../../../../core/backend/user/text_store_ctl.sh")
-    readonly property string _envBinScript: Env.binDir + "/text_store_ctl.sh"
-
     // Builds command descriptor and environment for executing text_store_ctl.sh.
     function _runCtl(action, envPayload) {
         return {
-            command: [
-                "sh", "-c",
-                'if [ -x "$1" ]; then exec "$1" "$4"; elif [ -x "$2" ]; then exec "$2" "$4"; elif [ -x "$3" ]; then exec "$3" "$4"; else exec text_store_ctl.sh "$4"; fi',
-                "--",
-                root._deployedScript,
-                root._envBinScript,
-                root._repoScript,
-                action
-            ],
+            command: [Env.binDir + "/text_store_ctl.sh", action],
             environment: envPayload ? envPayload : ({})
         }
     }

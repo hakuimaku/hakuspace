@@ -40,9 +40,9 @@ hl.bind(mainMod .. " + SHIFT + T", hl.dsp.exec_cmd("$HOME/.local/bin/cava_manage
 hl.bind(mainMod .. " + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh"))
 hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd("$HOME/.local/bin/screenshot.sh --fullscreen"))
 
-hl.bind(mainMod .. " + SHIFT + Z", hl.dsp.exec_cmd("$HOME/.local/bin/waybar_manager.sh --cycle"))
+hl.bind(mainMod .. " + SHIFT + Z", hl.dsp.exec_cmd("$HOME/.local/bin/statusbar_manager.sh --cycle"))
 hl.bind(mainMod .. " + Z", hl.dsp.exec_cmd("$HOME/.local/bin/taskbar_manager.sh --toggle"))
-hl.bind(mainMod .. " + CTRL + Z", hl.dsp.exec_cmd("$HOME/.local/bin/waybar_manager.sh --toggle"))
+hl.bind(mainMod .. " + CTRL + Z", hl.dsp.exec_cmd("$HOME/.local/bin/statusbar_manager.sh --toggle"))
 
 -- Native Hikai navigation preserves compositor event order without shell processes.
 local function windowNavigator(action)

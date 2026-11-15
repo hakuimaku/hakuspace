@@ -43,11 +43,8 @@ QtObject {
         }
         return true
     }
-    // Resolve either an installed script or its repository counterpart.
     function command(action) {
-        return ["sh", "-c", 'if [ -f "$1" ]; then exec python3 "$1" "$3"; else exec python3 "$2" "$3"; fi',
-            "--", Env.binDir + "/hikai_wallpaper_settings_ctl.py",
-            Quickshell.shellPath("../../../../core/backend/user/hikai_wallpaper_settings_ctl.py"), action]
+        return ["python3", Env.binDir + "/hikai_wallpaper_settings_ctl.py", action]
     }
     // Replace the draft atomically so Discard retains independent nested objects.
     function setValue(section, key, value) {

@@ -38,9 +38,9 @@ binds {
     Mod+Shift+P     { screenshot-screen; }
     Mod+Alt+P       { screenshot-window; }
 
-    Mod+Shift+Z      hotkey-overlay-title="Cycle Waybar Mode" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --cycle"; }
+    Mod+Shift+Z      hotkey-overlay-title="Cycle Statusbar Mode" { spawn "sh" "-c" "$HOME/.local/bin/statusbar_manager.sh --cycle"; }
     Mod+Z            hotkey-overlay-title="Toggle Taskbar" { spawn "sh" "-c" "$HOME/.local/bin/taskbar_manager.sh --toggle"; }
-    Mod+Ctrl+Z       hotkey-overlay-title="Toggle Waybar" { spawn "sh" "-c" "$HOME/.local/bin/waybar_manager.sh --toggle"; }
+    Mod+Ctrl+Z       hotkey-overlay-title="Toggle Statusbar" { spawn "sh" "-c" "$HOME/.local/bin/statusbar_manager.sh --toggle"; }
 
     // Window management keybindings
     Mod+W            { toggle-window-floating; }

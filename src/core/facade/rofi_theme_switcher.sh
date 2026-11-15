@@ -3,26 +3,10 @@
 # Public compatibility facade for presentation-theme switching.
 # No-arg behavior remains the Classic picker; explicit commands are headless.
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-
-resolve_script() {
-    local name="$1" source_path="$2"
-    local candidate
-    for candidate in \
-        "$SCRIPT_DIR/$name" \
-        "$SCRIPT_DIR/$source_path" \
-        "$HOME/.local/bin/$name"; do
-        if [[ -x "$candidate" || -f "$candidate" ]]; then
-            printf '%s\n' "$candidate"
-            return 0
-        fi
-    done
-    printf 'rofi_theme_switcher.sh: required script not found: %s\n' "$name" >&2
-    return 1
-}
-
-ROFI_THEME_CTL="$(resolve_script rofi_theme_ctl.sh ../backend/theme/rofi_theme_ctl.sh)" || exit 1
-ROFI_THEME_ROFI="$(resolve_script rofi_theme_rofi.sh ../frontend/classic/rofi_theme_rofi.sh)" || exit 1
+# shellcheck source=/dev/null
+source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_state.sh" || exit 1
+ROFI_THEME_CTL="$HAKU_BIN_DIR/rofi_theme_ctl.sh"
+ROFI_THEME_ROFI="$HAKU_BIN_DIR/rofi_theme_rofi.sh"
 
 print_help() {
     cat <<'EOF_HELP'

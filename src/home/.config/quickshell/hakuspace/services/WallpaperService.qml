@@ -78,8 +78,7 @@ QtObject {
 
     // Pass paths as arguments so media filenames cannot become shell commands.
     function command(args) {
-        return ["sh", "-c", 'script=$1; [ -f "$script" ] || script=$2; shift 2; exec python3 "$script" "$@"',
-            "--", Env.binDir + "/wallpaper_ctl.py", Quickshell.shellPath("../../../../core/backend/theme/wallpaper_ctl.py")].concat(args)
+        return ["python3", Env.binDir + "/wallpaper_ctl.py"].concat(args)
     }
     // Encode fragments and non-ASCII paths once for local previews and video URLs.
     function fileUrl(path) { return path ? "file://" + path.split("/").map(encodeURIComponent).join("/") : "" }
@@ -206,8 +205,7 @@ QtObject {
             var failedRecord = candidate.token ? candidate : current
             // Preserve committed images; otherwise show the prepared video thumbnail without committing it.
             if (current.kind !== "static" && failedRecord.thumbnail && !thumbnailFallback.running) {
-                thumbnailFallback.command = ["sh", "-c", 'script=$1; [ -f "$script" ] || script=$2; exec bash "$script" "$3"',
-                    "--", Env.binDir + "/wallpaper_set.sh", Quickshell.shellPath("../../../../core/theme/wallpaper_set.sh"), failedRecord.thumbnail]
+                thumbnailFallback.command = ["bash", Env.binDir + "/wallpaper_set.sh", failedRecord.thumbnail]
                 thumbnailFallback.running = true
             }
         }
@@ -378,8 +376,7 @@ QtObject {
                 root.imageCleared = false
                 root.refreshPlaybackState()
                 root.manuallyPaused = false
-                accent.command = ["sh", "-c", 'script=$1; [ -f "$script" ] || script=$2; exec bash "$script" sync-accent "$3"',
-                    "--", Env.binDir + "/wallpaper_ctl.sh", Quickshell.shellPath("../../../../core/backend/theme/wallpaper_ctl.sh"), root.current.kind === "video" ? root.current.thumbnail || root.current.path : root.current.path]
+                accent.command = ["bash", Env.binDir + "/wallpaper_ctl.sh", "sync-accent", root.current.kind === "video" ? root.current.thumbnail || root.current.path : root.current.path]
                 accent.running = true
                 root.refreshCache()
                 root.publishStatus()

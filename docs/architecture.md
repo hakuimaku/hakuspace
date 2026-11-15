@@ -49,10 +49,12 @@ HakuSpace comes with two desktop shell modes that you can switch between anytime
 - **Hikai (Quickshell):** HakuSpace's Quickshell-based shell mode. See [Hikai](hikai.md) for its architecture and design contracts.
 - **Classic (Waybar + Rofi + SwayNC):** The original script-powered setup. It stays right there as a rock-solid classic experience or fallback whenever you want it (just press `SUPER + ESCAPE` or run `haku_backend.sh --toggle`).
 
-To make both shells work together without duplicating logic, the scripts inside `src/core/` are split into three simple layers (even though they all get deployed flat into `~/.local/bin`):
-- **`facade/`**: The familiar commands bound to your hotkeys (like `record.sh` or `wallpaper_select.sh`). They check which shell you're using and route the action automatically.
-- **`frontend/classic/`**: Opens the Rofi menus when you're in Classic mode.
-- **`backend/`**: The actual brain (`*_ctl.sh`, `*.py`) that does the heavy lifting behind the scenes for both Hikai and Classic.
+To make both shells work together without duplicating logic, the scripts inside `src/core/` are organized into 5 flat directories by shell scope and role (deployed flat into `$HAKU_BIN_DIR`, defaulting to `~/.local/bin`):
+- **`classic/`**: Classic-only Waybar/Rofi/SwayNC adapters and controllers.
+- **`hikai/`**: Hikai-only Quickshell controllers and settings stores.
+- **`shared/`**: Cross-shell domain logic (`*_ctl.sh`, `*.py`), theming/wallpaper engines, and desktop utilities.
+- **`facade/`**: The familiar commands bound to your hotkeys (like `record.sh`, `wallpaper_select.sh`, or `statusbar_manager.sh`). They route to the active shell or explicit headless operations.
+- **`lib/`**: Shared sourced libraries and state/cache schemas (`haku_*.sh`, `haku_*.py`).
 
 ## How Are Dotfiles Managed?
 

@@ -58,11 +58,10 @@ theme_load_state() {
     ACCENT_COLOR="$ACCENT_DARK"
 }
 
-# Derive both variants through the shared source-tree or deployed color engine.
+# Derive both variants through the shared color engine.
 theme_set_seed() {
-    local engine="$(dirname -- "${BASH_SOURCE[0]}")/accent_palette.py" palette
-    [[ -f "$engine" ]] || engine="$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/../theme/accent_palette.py"
-    palette=$(python3 "$engine" "$1" | jq -er '[.seed, .dark, .light] | join(" ")') || return 1
+    local palette
+    palette=$(python3 "$HAKU_BIN_DIR/accent_palette.py" "$1" | jq -er '[.seed, .dark, .light] | join(" ")') || return 1
     read -r ACCENT_SEED ACCENT_DARK ACCENT_LIGHT <<< "$palette"
     THEME_STATE_VERSION=2
     ACCENT_COLOR="$ACCENT_DARK"

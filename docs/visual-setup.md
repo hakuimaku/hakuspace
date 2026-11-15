@@ -47,8 +47,8 @@ and custom CSS are preserved; no global GTK4 CSS override is created.
 For assets already installed, these explicit commands activate without downloading:
 
 ```bash
-./src/core/backend/theme/appearance_ctl.sh activate gtk
-./src/core/backend/theme/appearance_ctl.sh activate symbols
+./src/core/shared/appearance_ctl.sh activate gtk
+./src/core/shared/appearance_ctl.sh activate symbols
 ```
 
 `setup.sh status` reports component `installed=yes|no`, `gtk_theme_selected`,

@@ -1,13 +1,7 @@
 #!/usr/bin/env bash
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-if [[ -f "$SCRIPT_DIR/haku_backend_lib.sh" ]]; then
-    HAKU_BACKEND_LIB="$SCRIPT_DIR/haku_backend_lib.sh"
-else
-    HAKU_BACKEND_LIB="$SCRIPT_DIR/../lib/haku_backend_lib.sh"
-fi
 # shellcheck source=/dev/null
-source "$HAKU_BACKEND_LIB"
+source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_backend_lib.sh" || exit 1
 
 case "${1:-toggle}" in
     toggle) operation=toggleDefault ;;

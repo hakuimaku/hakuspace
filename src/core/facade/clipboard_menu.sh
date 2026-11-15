@@ -5,28 +5,10 @@
 # history controller for non-interactive callers.
 
 set -u
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-
-resolve_script() {
-    local name="$1" source_path="$2"
-    local candidate
-    for candidate in \
-        "$SCRIPT_DIR/$name" \
-        "$SCRIPT_DIR/$source_path" \
-        "$HOME/.local/bin/$name"; do
-        if [[ -x "$candidate" || -f "$candidate" ]]; then
-            printf '%s\n' "$candidate"
-            return 0
-        fi
-    done
-    printf 'clipboard_menu.sh: required script not found: %s\n' "$name" >&2
-    return 1
-}
-
-CLIPBOARD_CTL="$(resolve_script clipboard_ctl.sh ../backend/clipboard/clipboard_ctl.sh)" || exit 1
-CLIPBOARD_ROFI="$(resolve_script clipboard_rofi.sh ../frontend/classic/clipboard_rofi.sh)" || exit 1
-HAKU_BACKEND_LIB="$(resolve_script haku_backend_lib.sh ../lib/haku_backend_lib.sh)" || exit 1
-source "$HAKU_BACKEND_LIB"
+# shellcheck source=/dev/null
+source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_backend_lib.sh" || exit 1
+CLIPBOARD_CTL="$HAKU_BIN_DIR/clipboard_ctl.sh"
+CLIPBOARD_ROFI="$HAKU_BIN_DIR/clipboard_rofi.sh"
 
 usage() {
     cat <<'EOF_HELP'

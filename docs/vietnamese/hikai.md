@@ -47,7 +47,7 @@ Vòng đời phiên quản lý khởi động, dừng và phục hồi; componen
 Reload cũng là một lần chuyển vòng đời. Khởi tạo và dọn dẹp phải chịu được reload mà không tạo trùng process, subscription hay bên sở hữu protocol.
 
 Đặt model và phần điều phối chung trong [services](../../src/home/.config/quickshell/hakuspace/services/), còn phần hiển thị và hành vi UI tái sử dụng trong [components](../../src/home/.config/quickshell/hakuspace/components/).
-Thao tác hệ thống nên đi qua service thích hợp hoặc [backend không có UI](../../src/core/backend/).
+Thao tác hệ thống nên đi qua service thích hợp hoặc [backend không có UI](../../src/core/hikai/) (hoặc [script dùng chung](../../src/core/shared/)).
 [Kiến trúc core script](../../src/core/README.md) giải thích cách định tuyến lệnh công khai và triển khai.
 
 Đưa việc chậm và IO bên ngoài ra khỏi binding dùng để render. Ưu tiên sự kiện thay cho polling lặp lại khi hệ thống có hỗ trợ.
@@ -136,7 +136,7 @@ Ghi an toàn và giữ nội dung, quyền truy cập không liên quan của ng
 Migration thuộc ranh giới lưu trữ, không thuộc từng nơi dùng UI.
 Giữ lựa chọn rõ ràng của người dùng, bảo đảm chạy lại an toàn và có thể phục hồi khi bị gián đoạn.
 Chạy migration bắt buộc trước khi các phần runtime phụ thuộc bắt đầu đọc; một lần đọc thông thường không nên âm thầm ghi lại file người dùng.
-Tra tên option, schema và giá trị mặc định hiện tại trong [backend thiết lập](../../src/core/backend/user/) và các store chung tương ứng.
+Tra tên option, schema và giá trị mặc định hiện tại trong [controller thiết lập Hikai](../../src/core/hikai/), [controller thiết lập dùng chung](../../src/core/shared/) và các store chung tương ứng.
 
 ### Settings và cá nhân hóa
 

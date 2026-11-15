@@ -48,10 +48,12 @@ HakuSpace hiện có 2 chế độ giao diện (shell) để bạn đổi qua l�
 - **Hikai (Quickshell):** Chế độ shell của HakuSpace dựa trên Quickshell. Xem [Hikai](hikai.md) để hiểu kiến trúc và các nguyên tắc tổ chức.
 - **Classic (Waybar + Rofi + SwayNC):** Bộ giao diện truyền thống đời đầu của HakuSpace. Vẫn được giữ nguyên để bạn đổi gió hoặc quay về bất cứ khi nào cần (chỉ cần bấm phím khẩn cấp `SUPER + ESCAPE` hoặc chạy `haku_backend.sh --toggle`).
 
-Để hai giao diện này xài chung tính năng mà không phải viết lại code hai lần, đống script trong `src/core/` được chia làm 3 lớp gọn gàng (dù lúc cài ra máy thì tất cả đều nằm chung trong `~/.local/bin`):
-- **`facade/`**: Những câu lệnh quen thuộc gắn với phím tắt (như `record.sh`, `wallpaper_select.sh`). Nó tự nhìn xem bạn đang ở Hikai hay Classic để gọi giao diện tương ứng.
-- **`frontend/classic/`**: Chuyên bật các menu Rofi khi bạn đang dùng chế độ Classic.
-- **`backend/`**: Phần "não" xử lý ngầm bên dưới (`*_ctl.sh`, `*.py`), dùng chung cho cả Hikai lẫn Classic.
+Để hai giao diện này xài chung tính năng mà không phải viết lại code hai lần, đống script trong `src/core/` được chia thành 5 thư mục phẳng theo phạm vi shell và vai trò (khi deploy vẫn nằm chung trong `$HAKU_BIN_DIR`, mặc định `~/.local/bin`):
+- **`classic/`**: Các adapter Rofi và controller chỉ dùng cho chế độ Classic.
+- **`hikai/`**: Các controller và store thiết lập chỉ dùng cho Hikai (Quickshell).
+- **`shared/`**: Phần xử lý dùng chung cho cả hai shell (`*_ctl.sh`, `*.py`), engine theme/wallpaper và các tiện ích desktop.
+- **`facade/`**: Những câu lệnh quen thuộc gắn với phím tắt (như `record.sh`, `wallpaper_select.sh`, `statusbar_manager.sh`). Nó định tuyến theo shell đang chạy hoặc thực thi lệnh headless tương ứng.
+- **`lib/`**: Thư viện dùng chung và schema state/cache (`haku_*.sh`, `haku_*.py`).
 
 ## Dotfiles được quản lý ra sao?
 

@@ -2,7 +2,7 @@
 
 HakuSpace's theming engine turns wallpaper or manual color choices into shared theme state, generated application styles and consumer updates.
 
-In this document, we'll take a deep dive into how the theming engine and the smart Accent Color extraction mechanism actually work under the hood. Theme controllers live under `src/core/backend/theme/`, rendering/apply helpers under `src/core/theme/`, and shared state libraries under `src/core/lib/`.
+In this document, we'll take a deep dive into how the theming engine and the smart Accent Color extraction mechanism actually work under the hood. Theme controllers and rendering/apply helpers live under `src/core/shared/`, while shared state and theme libraries live under `src/core/lib/`.
 
 ## The Complete Workflow
 
@@ -125,7 +125,7 @@ The controller reads the active desktop GTK and icon theme names, with native GT
 - Cursor defaults are `Haku-Dark`, size 24. Mode-only operations leave the current cursor unchanged. Full appearance apply writes cursor settings to `~/.config/environment.d/90-hakuspace-cursor.conf`.
 
 ### 3. The Built-in Icon Recoloring Engine (`haku_icon_accent.py`)
-Located at `src/core/app/icon-accent/haku_icon_accent.py` (and linked to `~/.local/bin/haku_icon_accent.py`), this pure-Python script safely updates SVG accent colors in your icon theme without needing any external dependencies.
+Located at `src/core/shared/haku_icon_accent.py` (and linked to `~/.local/bin/haku_icon_accent.py`), this pure-Python script safely updates SVG accent colors in your icon theme without needing any external dependencies.
 Managed Hikaide-Symbols uses stateless accent reconciliation: Dark receives `ACCENT_DARK`, Light receives `ACCENT_LIGHT`, and `[theme].appearance.env` remains the source of truth. Sync uses `apply --no-backup`; it validates patched SVGs before atomic replacement, leaves matching files untouched, and creates no backup, receipt or current-accent state. Interrupted multi-file writes may leave mixed accents; rerun `appearance_ctl.sh sync-accent` to converge. Mode changes only select the installed variants.
 
 Locks live under `${XDG_RUNTIME_DIR}/hakuspace/appearance/`, falling back to `${TMPDIR:-/tmp}/hakuspace-$UID/appearance/`. Successful managed reconciliation removes only legacy Hikaide backup entries identified by their theme, installation path, backend and hashed directory key; unrelated or unverified entries remain.

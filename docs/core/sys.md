@@ -1,6 +1,6 @@
-# Core System Scripts (src/core/sys)
+# Core System Scripts (`src/core/shared` & `src/core/facade`)
 
-The scripts inside `src/core/sys/` are the backbone of your desktop's lifecycle management. While other scripts handle aesthetics or quick utilities, these scripts manage how your computer sleeps, locks, shuts down, and handles user authentication.
+The system scripts inside `src/core/shared/` and `src/core/facade/` are the backbone of your desktop's lifecycle management. While other scripts handle aesthetics or quick utilities, these scripts manage how your computer sleeps, locks, shuts down, and handles user authentication.
 
 They are designed to be completely Window Manager agnostic, meaning they work seamlessly whether you're logging into Hyprland, Niri, Mango, or Labwc!
 
@@ -10,14 +10,14 @@ Here is a detailed breakdown of each script:
 
 ### `exit.sh` (The Safe Exit)
 Have you ever logged out and had your system hang, or found zombie processes still running in the background?
-- **Architecture:** `exit.sh` is now a stable public facade. Destructive cleanup and WM quit live in the headless `backend/system/session_exit_ctl.sh`; Classic confirmation/UI lives in `frontend/classic/exit_rofi.sh`.
+- **Architecture:** `exit.sh` is now a stable public facade (`src/core/facade/`). Destructive cleanup and WM quit live in the headless `shared/session_exit_ctl.sh`; Classic confirmation/UI lives in `classic/exit_rofi.sh`.
 - **Process report:** `exit.sh --process-report` (or `session_exit_ctl.sh process-report`) is side-effect free and prints active processes sorted by aggregate RAM usage.
 - **Classic confirmation:** Calling `exit.sh` with no arguments keeps the existing Rofi system-monitor confirmation. Escape, cancel, or any row other than `[!] EXIT ANYWAY` is a frontend-only no-op.
 - **Explicit execute:** `session_exit_ctl.sh execute` performs the existing graceful `SIGTERM`, forced cleanup, socket/runtime cleanup, user-systemd teardown, and Hyprland/Niri/Mango/Labwc quit branch. It requires the explicit `execute` subcommand; invoking the backend with no arguments cannot terminate the session. `exit.sh --execute` exposes the same explicit headless operation.
 
 ### `shutdown.sh` (The Power Menu)
 Your elegant replacement for typing terminal commands to reboot.
-- **Architecture:** `shutdown.sh` is the stable public facade. Classic presentation lives in `frontend/classic/power_rofi.sh`, while explicit actions live in the headless `backend/system/power_ctl.sh`. The frontend maps the selected row index to a stable action ID instead of dispatching from the displayed icon.
+- **Architecture:** `shutdown.sh` is the stable public facade (`src/core/facade/`). Classic presentation lives in `classic/power_rofi.sh`, while explicit actions live in the headless `shared/power_ctl.sh`. The frontend maps the selected row index to a stable action ID instead of dispatching from the displayed icon.
 - **Classic UI:** Calling `shutdown.sh` with no arguments keeps the icon-based menu and `shutdown.rasi`. Use `-v` / `--vertical` for `shutdown-vert.rasi`, and `-e` / `--extend` to pass Classic placement arguments through to the menu.
 - **Headless actions:** `shutdown.sh --suspend`, `--reboot`, `--poweroff`, `--hibernate`, `--lock`, and `--logout` delegate to explicit controller commands. `shutdown.sh --list` is side-effect free and prints the stable action IDs.
 - **Session-exit boundary:** Logout delegates to the stable `exit.sh` facade, so the normal power menu still gets Classic confirmation. The underlying cleanup is independently callable through `session_exit_ctl.sh execute` for explicit headless use.

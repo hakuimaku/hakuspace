@@ -4,8 +4,7 @@
 # Reads items from stdin and outputs the selected item to stdout.
 # Exits with 1 if canceled.
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/haku_backend_lib.sh"
+source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_backend_lib.sh" || exit 1
 
 PROMPT="Select"
 PASSWORD=false

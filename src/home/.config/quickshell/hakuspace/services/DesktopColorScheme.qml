@@ -15,10 +15,9 @@ QtObject {
         if (!ShellSettingsStore.ready || !writer || writer.running) return
         writer.requestedScheme = scheme
         writer.command = ["sh", "-c",
-            'gsettings set org.gnome.desktop.interface color-scheme "$1" && if [ -f "$2" ]; then exec bash "$2" apply-mode "$3"; else exec bash "$4" apply-mode "$3"; fi',
-            "--", scheme, (Quickshell.env("HOME") || "") + "/.local/bin/appearance_ctl.sh",
-            scheme === "prefer-light" ? "light" : "dark",
-            Quickshell.shellPath("../../../../core/backend/theme/appearance_ctl.sh")]
+            'gsettings set org.gnome.desktop.interface color-scheme "$1" && exec bash "$2" apply-mode "$3"',
+            "--", scheme, Env.binDir + "/appearance_ctl.sh",
+            scheme === "prefer-light" ? "light" : "dark"]
         writer.running = true
     }
     onSchemeChanged: sync()
@@ -29,9 +28,7 @@ QtObject {
     function syncKitty() {
         if (!ShellSettingsStore.ready || !kittyWriter || kittyWriter.running) return
         kittyWriter.requestedPalette = kittyPalette
-        kittyWriter.command = ["sh", "-c", 'if [ -f "$1" ]; then script="$1"; else script="$2"; fi; shift 2; exec python3 "$script" "$@"',
-            "--", (Quickshell.env("HOME") || "") + "/.local/bin/kitty_theme_ctl.py",
-            Quickshell.shellPath("../../../../core/theme/kitty_theme_ctl.py")].concat(JSON.parse(kittyPalette))
+        kittyWriter.command = ["python3", Env.binDir + "/kitty_theme_ctl.py"].concat(JSON.parse(kittyPalette))
         kittyWriter.running = true
     }
 

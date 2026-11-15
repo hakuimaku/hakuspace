@@ -24,6 +24,6 @@ QtObject {
     readonly property string stateCavaColorMode: stateDir + "/[cava].color-mode"
     readonly property string stateCavaHeight: stateDir + "/[cava].height"
     readonly property string themeDir: Quickshell.shellPath("../../../.local/state/hakuspace/theme")
-    readonly property string binDir: Quickshell.shellPath("../../../.local/bin")
+    readonly property string binDir: Quickshell.env("HAKU_BIN_DIR") || ((Quickshell.env("HOME") || "") + "/.local/bin")
     readonly property string cavaConfig: Quickshell.shellPath("../../cava/config_waybar")
 }
