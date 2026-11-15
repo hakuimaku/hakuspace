@@ -4,6 +4,9 @@ import "../../services"
 
 Item {
     id: root
+    property bool showAnnotations: true
+    property bool circularGuide: false
+    property real backgroundRadius: 0
     // Fit the entire oriented image; crop shading leaves annotation coordinates unchanged.
     // Leave room outside the image for crop handles and separation from toolbars.
     readonly property real imagePadding: 28
@@ -12,7 +15,7 @@ Item {
     readonly property real displayScale: fit
     readonly property bool imageReady: image.status === Image.Ready
     clip: true
-    Rectangle { anchors.fill: parent; color: Qt.alpha(Theme.surface, 0.6) }
+    Rectangle { anchors.fill: parent; radius: root.backgroundRadius; color: Qt.alpha(Theme.surface, 0.6) }
     Item {
         id: plane
         width: ImageEditor.orientedWidth * root.displayScale
@@ -39,7 +42,7 @@ Item {
         anchors.centerIn: parent
         width: plane.width; height: plane.height
         visible: root.imageReady
-        ImageEditorAnnotationCanvas { anchors.fill: parent }
-        ImageEditorCropOverlay { anchors.fill: parent; visible: ImageEditor.tool === "crop" }
+        ImageEditorAnnotationCanvas { anchors.fill: parent; visible: root.showAnnotations; enabled: root.showAnnotations }
+        ImageEditorCropOverlay { anchors.fill: parent; visible: ImageEditor.tool === "crop"; circularGuide: root.circularGuide }
     }
 }

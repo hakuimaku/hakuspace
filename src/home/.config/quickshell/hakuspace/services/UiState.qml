@@ -26,8 +26,45 @@ QtObject {
     property string nativeDialogOwner: ""
     property string nativeDialogScreenName: ""
     property int nativeDialogSerial: 0
+    property string avatarReturnScreenName: ""
+    property var avatarReturnAnchorRect: null
     signal nativeDialogFinished(string owner, string screenName)
     readonly property bool nativeDialogOpen: nativeDialogOwner.length > 0
+
+    // Close Dashboard before opening the avatar chooser, then return to it afterwards.
+    function beginDashboardAvatarPicker() {
+        if (activePanel !== "navigation" || nativeDialogOpen) return 0
+        var screenName = navigationScreenName
+        if (!screenName) return 0
+        avatarReturnScreenName = screenName
+        avatarReturnAnchorRect = navigationAnchorRect
+        closeNavigation()
+        ++nativeDialogSerial
+        nativeDialogScreenName = screenName
+        nativeDialogOwner = "avatarPicker"
+        claimInteraction("nativeDialog", screenName)
+        return nativeDialogSerial
+    }
+
+    function clearDashboardAvatarReturn() {
+        avatarReturnScreenName = ""
+        avatarReturnAnchorRect = null
+    }
+
+    function reopenDashboardAfterAvatar() {
+        var screenName = avatarReturnScreenName
+        var anchorRect = avatarReturnAnchorRect
+        clearDashboardAvatarReturn()
+        if (!screenName || activePanel || !Quickshell.screens.length) return false
+        var exists = Quickshell.screens.some(function(s) { return s.name === screenName })
+        if (!exists) {
+            screenName = Quickshell.screens[0].name
+            anchorRect = null
+        }
+        openNavigation(screenName, anchorRect)
+        beginNavigationHandoff("dashboard")
+        return true
+    }
 
     // Suspend the layer's keyboard lease without closing its draft-owning surface.
     function beginNativeDialog(owner) {
@@ -612,6 +649,7 @@ QtObject {
             : activePanel === "tray" && trayMenu ? trayMenu.screenName
             : activePanel === "appMenu" && appMenu ? appMenu.screenName : ""
         claimInteraction(activePanel, output)
+        if (activePanel && activePanel !== "imageEditor") clearDashboardAvatarReturn()
         if (activePanel !== "navigation") {
             navigationMode = "closed"
             navigationScreenName = ""

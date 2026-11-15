@@ -894,7 +894,7 @@ Item {
         id: navigationVisualLayer
         screen: root.modelData
         anchors { top: true; left: true; right: true; bottom: true }
-        WlrLayershell.layer: WlrLayer.Top
+        WlrLayershell.layer: UiState.nativeDialogOwner === "navigation" || UiState.nativeDialogOwner === "avatarPicker" ? WlrLayer.Bottom : WlrLayer.Top
         WlrLayershell.namespace: "hakuspace-navigation-flare"
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
@@ -981,7 +981,7 @@ Item {
         id: navigationLayer
         screen: root.modelData
         anchors { top: true; left: true; right: true; bottom: true }
-        WlrLayershell.layer: UiState.nativeDialogOwner === "navigation" ? WlrLayer.Bottom : ShellTransitionState.chromeOverlayLayer
+        WlrLayershell.layer: UiState.nativeDialogOwner === "navigation" || UiState.nativeDialogOwner === "avatarPicker" ? WlrLayer.Bottom : ShellTransitionState.chromeOverlayLayer
         WlrLayershell.namespace: "hakuspace-navigation"
         WlrLayershell.keyboardFocus: !root.panelOpen || !UiState.ownsInteraction("navigation", root.modelData.name) ? WlrKeyboardFocus.None
             : root.keyboardLease ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand

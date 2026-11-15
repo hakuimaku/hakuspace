@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Shapes
-import QtQuick.Dialogs
 import "../../services"
 
 Item {
@@ -224,8 +223,8 @@ Item {
         }
 
         onRequestChangeAvatar: {
-            avatarChooser.lease = UiState.beginNativeDialog("navigation")
-            avatarChooser.open()
+            if (ImageEditor.busy || ImageEditor.sourcePath || Avatar.busy) return
+            UiState.beginDashboardAvatarPicker()
         }
     }
 
@@ -239,25 +238,6 @@ Item {
         opacity: root.contentRevealProgress
         visible: opacity > 0.001
         z: 9
-    }
-
-    FileDialog {
-        id: avatarChooser
-        title: "Select Avatar"
-        property int lease: 0
-        Component.onDestruction: UiState.endNativeDialog(lease)
-        nameFilters: ["Image files (*.png *.jpg *.jpeg *.webp)", "All files (*)"]
-
-        onAccepted: {
-            UiState.endNativeDialog(lease)
-            Avatar.lastError = ""
-            ImageEditor.openAvatar(selectedFile, UiState.navigationScreenName)
-        }
-
-        onRejected: {
-            UiState.endNativeDialog(lease)
-            root.focusRequested()
-        }
     }
 
     // 3. Cards container clipped to active dashboard morph envelope

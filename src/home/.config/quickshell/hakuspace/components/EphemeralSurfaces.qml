@@ -13,14 +13,27 @@ Item {
         property int calendarMonthOffset: 0
     }
     // Expose resource counts without retaining destroyed surface objects.
-    readonly property var loaders: [navigation, settings, note, taskManager, tray, appMenu, center, wallpaper, wallpaperWorkspace, action, popup, osd, navigator, imageEditor]
+    readonly property var loaders: [navigation, settings, note, taskManager, tray, appMenu, center, wallpaper, wallpaperWorkspace, action, popup, osd, navigator, imageEditor, avatarEditor]
     readonly property int loadedCount: loaders.filter(function(loader) { return loader.active }).length + menu.loadedCount
     readonly property var navigationItem: navigation.active ? navigation.item : null
+    readonly property var avatarPickerItem: avatarPicker.active ? avatarPicker.item : null
 
     Base.LifecycleLoader {
         id: imageEditor
-        requested: !!root.modelData && UiState.activePanel === "imageEditor" && UiState.imageEditorScreenName === root.modelData.name
+        requested: !!root.modelData && UiState.activePanel === "imageEditor" && UiState.imageEditorScreenName === root.modelData.name && ImageEditor.mode !== "avatar"
         ImageEditing.ImageEditorOverlay { modelData: root.modelData }
+    }
+
+    Base.LifecycleLoader {
+        id: avatarEditor
+        requested: !!root.modelData && UiState.activePanel === "imageEditor" && UiState.imageEditorScreenName === root.modelData.name && ImageEditor.mode === "avatar"
+        ImageEditing.AvatarEditorOverlay { modelData: root.modelData }
+    }
+
+    Base.LifecycleLoader {
+        id: avatarPicker
+        requested: !!root.modelData && UiState.nativeDialogOwner === "avatarPicker" && UiState.nativeDialogScreenName === root.modelData.name
+        ImageEditing.AvatarFileChooser { screenName: root.modelData.name }
     }
 
     HakuMenuPanel { id: menu; modelData: root.modelData }

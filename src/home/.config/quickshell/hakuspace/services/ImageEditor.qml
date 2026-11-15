@@ -94,12 +94,14 @@ QtObject {
     }
     function finishClose() {
         if (!closing && UiState.activePanel === "imageEditor") return
+        var wasAvatar = mode === "avatar"
         if (UiState.activePanel === "imageEditor") UiState.activePanel = ""
         UiState.imageEditorScreenName = ""
         if (!busy) {
             sourcePath = ""; sourceWidth = 0; sourceHeight = 0
             annotations = []; undoStack = []; redoStack = []
             selectedAnnotation = -1; originalState = ""; dirty = false; closing = false
+            if (wasAvatar) UiState.reopenDashboardAfterAvatar()
         }
     }
     function status() {

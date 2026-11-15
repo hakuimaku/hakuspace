@@ -5,6 +5,7 @@ import "ImageEditorGeometry.js" as Geometry
 Item {
     id: root
     // A gesture previews locally and commits exactly once on release.
+    property bool circularGuide: false
     property var draft: null
     readonly property var rect: draft || ImageEditor.cropRectNormalized
     readonly property real cropLeft: rect.x * width
@@ -19,6 +20,44 @@ Item {
     Rectangle {
         x: root.cropLeft; y: root.cropTop; width: root.cropWidth; height: root.cropHeight
         color: "transparent"; border.color: Theme.accent; border.width: 2
+        Canvas {
+            id: avatarGuide
+            anchors.fill: parent
+            visible: root.circularGuide && width > 4 && height > 4
+            renderTarget: Canvas.Image
+            onWidthChanged: if (visible) requestPaint()
+            onHeightChanged: if (visible) requestPaint()
+            onVisibleChanged: if (visible) requestPaint()
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.clearRect(0, 0, width, height)
+                var size = Math.min(width, height)
+                var cx = width / 2
+                var cy = height / 2
+                var r = Math.max(1, size / 2 - 1)
+                ctx.save()
+                ctx.fillStyle = "rgba(0, 0, 0, 0.38)"
+                ctx.fillRect(0, 0, width, height)
+                ctx.globalCompositeOperation = "destination-out"
+                ctx.beginPath()
+                ctx.arc(cx, cy, r, 0, Math.PI * 2)
+                ctx.fill()
+                ctx.restore()
+                ctx.save()
+                ctx.strokeStyle = "rgba(0, 0, 0, 0.35)"
+                ctx.lineWidth = 2.5
+                ctx.beginPath()
+                ctx.arc(cx, cy, r, 0, Math.PI * 2)
+                ctx.stroke()
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.8)"
+                ctx.lineWidth = 1.5
+                ctx.setLineDash([5, 4])
+                ctx.beginPath()
+                ctx.arc(cx, cy, r, 0, Math.PI * 2)
+                ctx.stroke()
+                ctx.restore()
+            }
+        }
         Repeater {
             model: [{x: 0, y: 0}, {x: 0.5, y: 0}, {x: 1, y: 0}, {x: 1, y: 0.5},
                 {x: 1, y: 1}, {x: 0.5, y: 1}, {x: 0, y: 1}, {x: 0, y: 0.5}]
