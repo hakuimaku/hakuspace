@@ -29,3 +29,6 @@ build/
 # Agent-local test/tooling (kept outside the repo)
 /tools/
 /tests/
+
+# Ignore local release summaries and reports
+/reports/
