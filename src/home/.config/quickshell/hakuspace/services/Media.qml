@@ -20,9 +20,10 @@ QtObject {
 
     // Selects the preferred active MPRIS player from available candidates.
     function choosePlayer(list, ignoredRevision) {
+        if (!list) return null
         var candidates = []
         for (var i = 0; i < list.length; ++i) {
-            if (list[i].playbackState !== MprisPlaybackState.Stopped)
+            if (list[i] && list[i].playbackState !== MprisPlaybackState.Stopped)
                 candidates.push(list[i])
         }
         // Prefer playback; D-Bus names break ties without jumping between players.

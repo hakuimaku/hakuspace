@@ -32,6 +32,7 @@ QtObject {
 
     // Run cava while a player is active in either the media center mode (if TopBar Cava is enabled) OR requested by Dashboard.
     readonly property bool topbarRequested: ShellSettingsStore.showCava && CenterState.baseMode === "media"
+    readonly property bool policyEnabled: available && (ShellSettingsStore.showCava || dashboardRequested)
     readonly property bool shouldRun: Media.playing && Media.title !== "" && available && (topbarRequested || dashboardRequested)
     property bool stoppingForPolicy: false
 
@@ -59,17 +60,29 @@ QtObject {
     // Synchronizes the cava backend process lifecycle according to playback and subscriber state.
     function syncProcess() {
         if (!shouldRun) {
+            showTimer.stop()
+            silenceTimer.stop()
+            soundPresent = false
             bars = ""
             levels = []
-            resetSoundDetection()
-            hideTimer.stop()
-            audioVisible = false
-            if (process.running) {
-                stoppingForPolicy = true
-                process.running = false
+            if (!policyEnabled) {
+                hideTimer.stop()
+                audioVisible = false
+                if (process.running) {
+                    stoppingForPolicy = true
+                    process.running = false
+                }
+            } else if (audioVisible || process.running) {
+                // Delay teardown by 3s across pause/track switches to prevent rapid cava restarts.
+                if (!hideTimer.running) hideTimer.start()
+            } else {
+                hideTimer.stop()
             }
         } else {
             hideTimer.stop()
+            if (audioVisible && !soundPresent && !silenceTimer.running) {
+                silenceTimer.start()
+            }
             if (!stoppingForPolicy && !process.running) process.running = true
         }
     }
@@ -78,6 +91,9 @@ QtObject {
     onShouldRunChanged: {
         if (Media.playing) root.available = true
         syncProcess()
+    }
+    onPolicyEnabledChanged: {
+        if (!shouldRun) syncProcess()
     }
 
     // Sustained sound (700ms) before revealing TopBar visualizer to ensure musical start
@@ -90,9 +106,9 @@ QtObject {
         }
     }
 
-    // Retract visualizer if silence persists for 1.2 seconds continuously
+    // Retract visualizer if silence persists for 3 seconds continuously
     property Timer silenceTimer: Timer {
-        interval: 1200
+        interval: 3000
         repeat: false
         onTriggered: {
             root.soundPresent = false
@@ -100,12 +116,21 @@ QtObject {
         }
     }
 
-    // Keep visualizer visible across pause transition to prevent abrupt toggling
+    // Keep visualizer visible and process warm across 3s pause/track transitions to avoid rapid toggling
     property Timer hideTimer: Timer {
-        interval: 300
+        interval: 3000
         repeat: false
         onTriggered: {
-            if (!root.shouldRun) root.audioVisible = false
+            if (!root.shouldRun) {
+                root.bars = ""
+                root.levels = []
+                root.resetSoundDetection()
+                root.audioVisible = false
+                if (root.process.running) {
+                    root.stoppingForPolicy = true
+                    root.process.running = false
+                }
+            }
         }
     }
 

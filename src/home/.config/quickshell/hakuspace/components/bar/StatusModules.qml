@@ -140,8 +140,7 @@ Item {
                         id: cavaModule
 
                         anchors.centerIn: parent
-                        width: parent.width
-                        visible: centerCluster.showCava
+                        visible: cavaSlot.visible
                     }
 
                     Behavior on width {

@@ -12,7 +12,6 @@ TopModule {
     implicitWidth: verticalPresentation ? ScreenGeometry.leftModuleTouchSize : (fixedSlotWidth + (hovered ? 20 : 0))
     readonly property real hoverSafeWidth: fixedSlotWidth + 20
 
-    visible: CenterState.centerMode === "media" && Cava.available && Cava.audioVisible
     text: root.waveStyle === "box" ? (Media.playing && Cava.bars !== "" ? Cava.bars : Array(Cava.barCount + 1).join("▁")) : ""
     tooltip: Media.playing ? ("Audio Visualizer (" + styleLabel + ") · Click to switch") : "Media paused"
 
@@ -74,6 +73,17 @@ TopModule {
                     fluidCanvas.requestPaint()
                 }
             }
+        }
+        Connections {
+            target: Media
+            function onPlayingChanged() {
+                if (root.visible && root.waveStyle === "fluid") {
+                    fluidCanvas.requestPaint()
+                }
+            }
+        }
+        onVisibleChanged: {
+            if (visible && root.waveStyle === "fluid") requestPaint()
         }
 
         onPaint: {
