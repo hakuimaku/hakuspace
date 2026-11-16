@@ -18,6 +18,8 @@ DEFAULTS = {
         "actionLayerAnimation": "scale",
         "hakuMenuHoverScale": "1.05",
         "hakuMenuTabStyle": "underline",
+        "navigationOpenTrigger": "hover",
+        "hakuMenuOpenTrigger": "hover",
     },
     "appearance": {"baseRadius": 12, "surfaceTone": "dark", "colorMode": "dark"},
     "roundedScreen": {"radius": 20, "borderThickness": 4},
@@ -39,6 +41,8 @@ CHROME_ALLOWED = {
     "actionLayerAnimation": ("scale", "fade", "unfold", "blur", "slide"),
     "hakuMenuHoverScale": ("1.00", "1.05", "1.10"),
     "hakuMenuTabStyle": ("underline", "pill"),
+    "navigationOpenTrigger": ("hover", "click"),
+    "hakuMenuOpenTrigger": ("hover", "click"),
 }
 
 
@@ -201,7 +205,7 @@ def migrate(values):
     if type(original_version) is int and original_version == 12:
         migrated = False
         if type(values.get("chrome")) is dict:
-            for key in ("notificationPopupPosition", "actionLayerAnimation", "hakuMenuHoverScale", "hakuMenuTabStyle"):
+            for key in ("notificationPopupPosition", "actionLayerAnimation", "hakuMenuHoverScale", "hakuMenuTabStyle", "navigationOpenTrigger", "hakuMenuOpenTrigger"):
                 current = values["chrome"].get(key)
                 if key not in values["chrome"] or type(current) is not str or current not in CHROME_ALLOWED[key]:
                     if not migrated:

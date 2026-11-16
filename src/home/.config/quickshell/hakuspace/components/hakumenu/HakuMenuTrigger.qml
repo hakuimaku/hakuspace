@@ -27,13 +27,23 @@ PanelWindow {
         width: root.triggerWidth
         height: root.triggerHeight
     }
+    readonly property bool clickToOpen: ShellSettingsStore.hakuMenuOpenTrigger === "click"
     HoverHandler {
+        id: edgeHover
         onHoveredChanged: {
-            if (hovered && !(root.owner && root.owner.panelOpen))
+            if (!root.clickToOpen && hovered && !(root.owner && root.owner.panelOpen))
                 UiState.openHakuMenu(root.modelData.name, "general", "edge", root.triggerRect)
             if (hovered && root.owner) root.owner.trackTrigger(point.position.x, point.position.y)
             else if (root.owner) root.owner.leaveTrigger()
         }
         onPointChanged: if (hovered && root.owner) root.owner.trackTrigger(point.position.x, point.position.y)
+    }
+    TapHandler {
+        enabled: root.clickToOpen
+        acceptedButtons: Qt.LeftButton
+        onTapped: {
+            if (edgeHover.hovered && !(root.owner && root.owner.panelOpen))
+                UiState.openHakuMenu(root.modelData.name, "general", "edge", root.triggerRect)
+        }
     }
 }

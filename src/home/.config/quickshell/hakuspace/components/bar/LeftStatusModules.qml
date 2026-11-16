@@ -73,7 +73,6 @@ Item {
             compactVisual: true
             hoverExpansion: 0
             iconFontSize: Theme.fontSize
-            navigationAnchorItem: visualItem
             implicitWidth: implicitHeight
             screenName: root.screenName
         }

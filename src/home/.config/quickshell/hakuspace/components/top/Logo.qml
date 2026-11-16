@@ -7,16 +7,27 @@ TopModule {
     id: root
     required property string screenName
     // Leftbar can hand off its painted circle while keeping a larger pointer wrapper.
-    property Item navigationAnchorItem: root
+    property Item navigationAnchorItem: anchorBox
+    Item {
+        id: anchorBox
+        anchors.centerIn: parent
+        width: root.visualItem.width
+        height: root.visualItem.height
+    }
     icon: "󰮯"
     isAccent: true
     color: Theme.accent
     foregroundColor: Theme.onAccentColor
-    iconFontSize: Theme.fontSize + (hovered ? 2 : 0)
+    readonly property bool clickToOpen: ShellSettingsStore.navigationOpenTrigger === "click"
+    iconFontSize: Theme.fontSize + (!clickToOpen && hovered ? 2 : 0)
 
     // Keep a stable layout footprint while Navigation owns the visible Logo.
-    implicitWidth: implicitHeight + (hovered ? Theme.pad : 0)
+    implicitWidth: implicitHeight + (!clickToOpen && hovered ? Theme.pad : 0)
     radius: height / 2
+    visualScale: clickToOpen && hovered ? 1.3 : 1.0
+    Behavior on visualScale {
+        NumberAnimation { duration: HAnimation.slow; easing.bezierCurve: HAnimation.moduleCurve }
+    }
 
     readonly property bool navigationVisualActive: UiState.navigationVisualScreenName === root.screenName
 
@@ -68,7 +79,7 @@ TopModule {
             reopenHoverGuard = false
             return
         }
-        if (!navigationVisualActive && !reopenHoverGuard) {
+        if (!clickToOpen && !navigationVisualActive && !reopenHoverGuard) {
             triggerOpenNavigation()
         }
     }

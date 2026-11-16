@@ -34,6 +34,7 @@ Item {
     property int borderWidth: 0
     property string borderColor: "transparent"
     property int blinkDuration: HAnimation.normal
+    property real visualScale: 1.0
 
     signal clicked()
     signal rightClicked()
@@ -69,6 +70,7 @@ Item {
         anchors.centerIn: parent
         width: root.compactVisual ? ScreenGeometry.leftVisualSize : root.width
         height: root.visualHeight
+        scale: root.visualScale
     }
     Behavior on hoverExpansion {
         NumberAnimation { duration: HAnimation.slow; easing.bezierCurve: HAnimation.moduleCurve }
@@ -102,6 +104,7 @@ Item {
         id: row
         anchors.centerIn: parent
         spacing: Theme.gap
+        scale: root.visualScale
         
         Text {
             id: iconLabel
