@@ -1,9 +1,11 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Window
 import Quickshell.Io
 import "../../../services"
 import ".." as ActionMenu
+import "../../motion" as Motion
 
 ActionMenu.ActionMenuPage {
     id: root
@@ -354,32 +356,201 @@ ActionMenu.ActionMenuPage {
                 id: vbar
             }
 
-            delegate: ActionMenu.ActionMenuButton {
+            delegate: Motion.MorphButton {
                 id: delegateBtn
+                required property int index
+                required property var modelData
+
+                readonly property Item page: root
+                readonly property real selectionOpacity: page ? page.selectionPillOpacity : 1
+                readonly property color contentForeground: (selected || focused) && page
+                    ? page.selectionColor(Theme.fg, foreground) : foreground
+                readonly property color badgeColor: Theme.accent
+                property string previewSource: ""
+                property string _requestedRaw: ""
+
+                function loadPreview() {
+                    previewSource = "";
+                    if (!modelData || !modelData.isImage || !modelData.raw) {
+                        _requestedRaw = "";
+                        return;
+                    }
+                    _requestedRaw = modelData.raw;
+                    previewProc.command = [Env.binDir + "/clipboard_ctl.sh", "preview", modelData.raw];
+                    previewProc.running = false;
+                    previewProc.running = true;
+                }
+
                 z: 1
                 width: clipList.width - vbar.reservedGutter
-                icon: modelData.isImage ? "" : "󰅌"
-                label: modelData.preview
-                badge: modelData.id ? ("#" + modelData.id) : ""
-                badgeColor: Theme.accent
+                height: implicitHeight
+                implicitHeight: modelData.isImage
+                    ? Math.round(Theme.actionLayerRowHeight * 2.5)
+                    : Theme.actionLayerRowHeight
+                radius: Theme.radius
+                text: ""
                 selected: root.selectedIndex === index
                 focused: selected
+                selectedOverridesHover: true
+                idleColor: "transparent"
+                hoverColor: "transparent"
+                pressedColor: (selected || focused) ? "transparent" : Theme.hoverMuted
+                selectedColor: "transparent"
+                focusColor: "transparent"
+                foregroundColor: Theme.fg
+                hoverForegroundColor: (selected || focused) ? selectedForegroundColor : Theme.fg
+                pressedForegroundColor: selectedForegroundColor
+                selectedForegroundColor: Theme.onAccentColor
+                Accessible.role: Accessible.Button
+                Accessible.name: modelData.preview + (modelData.id ? (", #" + modelData.id) : "")
+                Accessible.onPressAction: clicked()
 
-                Component.onCompleted: {
-                    if (selected) selectionPill.targetItem = this;
-                }
-                onSelectedChanged: {
-                    if (selected) selectionPill.targetItem = this;
-                }
-                onPointerSelected: {
-                    if (hovered) {
-                        root.selectedIndex = index;
+                Connections {
+                    target: root
+                    function onPointerSelectionMoved() {
+                        if (delegateBtn.hovered) {
+                            root.selectedIndex = delegateBtn.index;
+                        }
                     }
                 }
 
+                Process {
+                    id: previewProc
+                    stdout: StdioCollector {
+                        id: previewCollector
+                        waitForEnd: true
+                    }
+                    onExited: code => {
+                        if (code !== 0 || !delegateBtn.modelData || delegateBtn.modelData.raw !== delegateBtn._requestedRaw) {
+                            return;
+                        }
+                        var path = previewCollector.text.trim();
+                        if (path.length > 0) {
+                            delegateBtn.previewSource = "file://" + path;
+                        }
+                    }
+                }
+
+                Component.onCompleted: {
+                    if (selected) selectionPill.targetItem = this;
+                    loadPreview();
+                }
+                onModelDataChanged: loadPreview()
+                onSelectedChanged: {
+                    if (selected) selectionPill.targetItem = this;
+                }
                 onClicked: {
                     root.selectedIndex = index;
                     copyEntry(modelData.raw);
+                }
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: Theme.actionLayerButtonPaddingX
+                    anchors.rightMargin: Theme.actionLayerButtonPaddingX
+                    spacing: Theme.actionLayerButtonSpacing
+
+                    Text {
+                        visible: !delegateBtn.modelData.isImage
+                        text: "󰅌"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize + Theme.actionLayerIconOffset
+                        color: delegateBtn.contentForeground
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        Layout.preferredWidth: visible ? Theme.fontSize * 2.2 : 0
+                    }
+
+                    Rectangle {
+                        id: thumbContainer
+                        visible: delegateBtn.modelData.isImage
+                        Layout.preferredWidth: visible ? Math.round((delegateBtn.implicitHeight - 16) * 1.6) : 0
+                        Layout.fillHeight: true
+                        Layout.topMargin: 8
+                        Layout.bottomMargin: 8
+                        radius: Math.max(4, Theme.radius - 4)
+                        color: Qt.rgba(0, 0, 0, 0.18)
+                        clip: true
+
+                        Text {
+                            anchors.centerIn: parent
+                            visible: thumbImage.status !== Image.Ready
+                            text: ""
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize + Theme.actionLayerIconOffset + 4
+                            color: delegateBtn.contentForeground
+                            opacity: 0.75
+                        }
+
+                        Image {
+                            id: thumbImage
+                            anchors.fill: parent
+                            anchors.margins: 2
+                            fillMode: Image.PreserveAspectFit
+                            asynchronous: true
+                            cache: false
+                            source: delegateBtn.previewSource
+                            visible: status === Image.Ready
+                            sourceSize: Qt.size(
+                                Math.max(1, Math.ceil(width * (delegateBtn.Window.window ? delegateBtn.Window.window.devicePixelRatio : 1))),
+                                Math.max(1, Math.ceil(height * (delegateBtn.Window.window ? delegateBtn.Window.window.devicePixelRatio : 1)))
+                            )
+                        }
+                    }
+
+                    Text {
+                        text: delegateBtn.modelData.preview
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize
+                        color: delegateBtn.contentForeground
+                        elide: Text.ElideRight
+                        maximumLineCount: delegateBtn.modelData.isImage ? 2 : 1
+                        wrapMode: delegateBtn.modelData.isImage ? Text.Wrap : Text.NoWrap
+                        Layout.fillWidth: true
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    Rectangle {
+                        visible: delegateBtn.modelData.id.length > 0
+                        implicitWidth: badgeText.implicitWidth + 8
+                        implicitHeight: Math.max(16, Theme.fontSize * 1.2)
+                        radius: 4
+                        readonly property color normalBackground: Qt.rgba(delegateBtn.badgeColor.r, delegateBtn.badgeColor.g, delegateBtn.badgeColor.b, 0.2)
+                        color: (delegateBtn.selected || delegateBtn.focused) && delegateBtn.page
+                            ? delegateBtn.page.selectionColor(normalBackground, Qt.rgba(0, 0, 0, 0.22))
+                            : normalBackground
+                        Layout.alignment: Qt.AlignVCenter
+
+                        Behavior on color {
+                            enabled: delegateBtn.selectionOpacity >= 0.999
+                            ColorAnimation {
+                                duration: delegateBtn.transitionDuration
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: delegateBtn.transitionCurve
+                            }
+                        }
+
+                        Text {
+                            id: badgeText
+                            anchors.centerIn: parent
+                            text: delegateBtn.modelData.id ? ("#" + delegateBtn.modelData.id) : ""
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Math.max(8, Theme.fontSize - 4)
+                            font.weight: Font.Medium
+                            color: (delegateBtn.selected || delegateBtn.focused) && delegateBtn.page
+                                ? delegateBtn.page.selectionColor(delegateBtn.badgeColor, Theme.onAccentColor)
+                                : delegateBtn.badgeColor
+
+                            Behavior on color {
+                                enabled: delegateBtn.selectionOpacity >= 0.999
+                                ColorAnimation {
+                                    duration: delegateBtn.transitionDuration
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: delegateBtn.transitionCurve
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
