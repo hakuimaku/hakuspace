@@ -26,8 +26,20 @@ DEFAULTS = {
     "dock": {"visibilityMode": "autohide", "exclusiveSpace": False, "iconSize": 36,
              "hoverLift": 14, "hoverScale": 0, "showTrash": True, "showDevices": True},
     "topbar": {**dict.fromkeys(("workspaces", "windowTitle", "center", "cava", "tray",
-                               "quickControls", "drawerOptions", "clock", "notifications"), True),
-               "cavaStyle": "box"},
+                               "quickControls", "drawerOptions", "clock", "notifications",
+                               "centerPromptEnabled"), True),
+               "cavaStyle": "box",
+               "centerPromptInterval": 120,
+               "centerPromptDuration": 20,
+               "centerPromptList": [
+                    "System nominal. Ready when you are!",
+                    "May your coffee be strong and your builds green :)",
+                    "Still procrastinating, or is this 'research'? o_O",
+                    "Hydrate. Unclench your jaw. Fix your posture. :O",
+                    "Time for a sip of water. Stay hydrated. :D",
+                    "Blink more. Give your eyes a quick rest. :(",
+                    "Posture check: sit up straight, drop shoulders. ^_^"
+               ]},
     "idle": {"enabled": True, "dimEnabled": True, "dimTimeout": 300, "dimPercent": 10,
              "lockEnabled": True, "lockTimeout": 30, "displayOffEnabled": True,
              "displayOffTimeout": 30, "suspendEnabled": True, "suspendTimeout": 300,
@@ -85,6 +97,14 @@ def validate(values, partial=False):
             elif section == "topbar":
                 if key == "cavaStyle":
                     valid = type(value) is str and value in ("box", "pill", "fluid")
+                elif key == "centerPromptInterval":
+                    valid = type(value) is int and 10 <= value <= 86400
+                elif key == "centerPromptDuration":
+                    valid = type(value) is int and 3 <= value <= 120
+                elif key == "centerPromptList":
+                    valid = (type(value) is list
+                             and all(type(item) is str and item.strip() and not any(ch in item for ch in "\r\n\0") for item in value)
+                             and len(set(value)) == len(value))
                 else:
                     valid = type(value) is bool
             elif section == "roundedScreen":
@@ -189,6 +209,8 @@ def migrate(values):
         values.update(version=11, chrome=copy.deepcopy(DEFAULTS["chrome"]))
         if type(values.get("topbar")) is dict:
             values["topbar"].setdefault("cavaStyle", "box")
+            for key in ("centerPromptEnabled", "centerPromptInterval", "centerPromptDuration", "centerPromptList"):
+                values["topbar"].setdefault(key, copy.deepcopy(DEFAULTS["topbar"][key]))
         return migrate(values)[0], True
     if type(original_version) is int and original_version == 11:
         values = copy.deepcopy(values)
@@ -198,6 +220,8 @@ def migrate(values):
                 values["chrome"].setdefault(key, default_val)
         if type(values.get("topbar")) is dict:
             values["topbar"].setdefault("cavaStyle", "box")
+            for key in ("centerPromptEnabled", "centerPromptInterval", "centerPromptDuration", "centerPromptList"):
+                values["topbar"].setdefault(key, copy.deepcopy(DEFAULTS["topbar"][key]))
             legacy = [values["topbar"].pop(k) for k in ("powerProfile", "wallpaperWorkspace", "recorder") if k in values["topbar"]]
             if "drawerOptions" not in values["topbar"]:
                 values["topbar"]["drawerOptions"] = any(bool(v) for v in legacy) if legacy else True
@@ -211,6 +235,13 @@ def migrate(values):
                     if not migrated:
                         values = copy.deepcopy(values)
                     values["chrome"][key] = DEFAULTS["chrome"][key]
+                    migrated = True
+        if type(values.get("topbar")) is dict:
+            for key in ("centerPromptEnabled", "centerPromptInterval", "centerPromptDuration", "centerPromptList"):
+                if key not in values["topbar"]:
+                    if not migrated:
+                        values = copy.deepcopy(values)
+                    values["topbar"][key] = copy.deepcopy(DEFAULTS["topbar"][key])
                     migrated = True
         if migrated:
             return validate(values), True

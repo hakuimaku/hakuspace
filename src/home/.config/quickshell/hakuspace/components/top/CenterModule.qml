@@ -15,14 +15,15 @@ Item {
     property string displayedMode: "idle"
     readonly property bool active: (hakuMenuActive || mode !== "idle") && maximumWidth >= Theme.fontSize * 3
     readonly property bool mediaMode: !hakuMenuActive && displayedMode === "media"
-    readonly property string icon: Media.playing ? "󰐊" : "󰏤"
-    readonly property string caption: Media.artist ? Media.title + " · " + Media.artist : Media.title
+    readonly property bool promptMode: !hakuMenuActive && displayedMode === "prompt"
+    readonly property string icon: promptMode ? "H A K U ● " : (Media.playing ? "󰐊" : "󰏤")
+    readonly property string caption: promptMode ? CenterState.activePromptText : (Media.artist ? Media.title + " · " + Media.artist : Media.title)
     property string displayedBreadcrumb: ""
     property real breadcrumbOffset: 0
     readonly property string shownCaption: hakuMenuActive ? displayedBreadcrumb : caption
 
     implicitHeight: Theme.fontSize * 1.8
-    implicitWidth: Math.min(Theme.fontSize * 26,
+    implicitWidth: Math.min(Theme.fontSize * 32,
                             (hakuMenuActive ? 0 : iconBox.width + content.spacing)
                             + label.implicitWidth + Theme.pad * 2)
                    + (hovered ? Theme.pad * 2 : 0)
@@ -172,17 +173,16 @@ Item {
                 Behavior on color { ColorAnimation { duration: HAnimation.normal } }
             }
         }
-        Text {
+        MarqueeText {
             id: label
             anchors.verticalCenter: parent.verticalCenter
             width: Math.max(0, content.width - iconBox.width - content.spacing)
+            height: parent.height
             text: root.shownCaption
             color: root.hovered ? Theme.onAccentColor : Theme.fg
-            font.family: Theme.fontFamily
-            font.pixelSize: root.mediaMode ? Theme.fontSize - 1 : Theme.fontSize
-            font.weight: Font.Bold
-            elide: Text.ElideRight
-            verticalAlignment: Text.AlignVCenter
+            fontFamily: Theme.fontFamily
+            fontPixelSize: root.mediaMode ? Theme.fontSize - 1 : Theme.fontSize
+            fontWeight: Font.Bold
             Behavior on color { ColorAnimation { duration: HAnimation.slow } }
         }
     }
@@ -207,6 +207,6 @@ Item {
     HTooltip {
         id: hoverTooltip
         target: root
-        text: Media.artist ? Media.title + "\n" + Media.artist : Media.title
+        text: root.promptMode ? CenterState.activePromptText : (Media.artist ? Media.title + "\n" + Media.artist : Media.title)
     }
 }

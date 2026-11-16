@@ -13,5 +13,15 @@ function shellDefaults() {
         dock: {visibilityMode: "autohide", exclusiveSpace: false, iconSize: 36, hoverLift: 14, hoverScale: 0,
             showTrash: true, showDevices: true},
         topbar: {workspaces: true, windowTitle: true, center: true, cava: true, cavaStyle: "box", tray: true,
-            quickControls: true, drawerOptions: true, clock: true, notifications: true}}
+            quickControls: true, drawerOptions: true, clock: true, notifications: true,
+            centerPromptEnabled: true, centerPromptInterval: 60, centerPromptDuration: 10,
+            centerPromptList: [
+                "System nominal. Ready when you are!",
+                "May your coffee be strong and your builds green :)",
+                "Still procrastinating, or is this 'research'? o_O",
+                "Hydrate. Unclench your jaw. Fix your posture. :O",
+                "Time for a sip of water. Stay hydrated. :D",
+                "Blink more. Give your eyes a quick rest. :(",
+                "Posture check: sit up straight, drop shoulders. ^_^"
+            ]}}
 }

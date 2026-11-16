@@ -47,6 +47,10 @@ QtObject {
     readonly property bool showDrawerOptions: values.topbar.drawerOptions
     readonly property bool showClock: values.topbar.clock
     readonly property bool showNotifications: values.topbar.notifications
+    readonly property bool centerPromptEnabled: values.topbar.centerPromptEnabled !== false
+    readonly property int centerPromptInterval: Number(values.topbar.centerPromptInterval) || 60
+    readonly property int centerPromptDuration: Number(values.topbar.centerPromptDuration) || 10
+    readonly property var centerPromptList: Array.isArray(values.topbar.centerPromptList) ? values.topbar.centerPromptList : []
     // Compact Dockbar behavior remains independent from Taskbar topology.
     readonly property string dockVisibilityMode: values.dock.visibilityMode
     readonly property bool dockExclusiveSpace: values.dock.exclusiveSpace
@@ -83,7 +87,13 @@ QtObject {
                         : ["scale", "fade", "unfold", "blur", "slide"]
                     if (chromeAllowed.indexOf(value) < 0) return false
                 }
-                if (section === "topbar" && (key === "cavaStyle" ? ["box", "pill", "fluid"].indexOf(value) < 0 : typeof value !== "boolean")) return false
+                if (section === "topbar") {
+                    if (key === "cavaStyle") { if (["box", "pill", "fluid"].indexOf(value) < 0) return false }
+                    else if (key === "centerPromptInterval") { if (!Number.isInteger(value) || value < 10 || value > 86400) return false }
+                    else if (key === "centerPromptDuration") { if (!Number.isInteger(value) || value < 3 || value > 120) return false }
+                    else if (key === "centerPromptList") { if (!Array.isArray(value) || value.some(function(v) { return typeof v !== "string" || !v.trim() || /[\r\n\0]/.test(v) }) || new Set(value).size !== value.length) return false }
+                    else if (typeof value !== "boolean") return false
+                }
                 if (key === "visibilityMode" && ["autohide", "always"].indexOf(value) < 0) return false
                 if (["exclusiveSpace", "showTrash", "showDevices"].indexOf(key) >= 0 && typeof value !== "boolean") return false
                 if (key === "iconSize" && (!Number.isInteger(value) || value < 24 || value > 72 || value % 4 !== 0)) return false
@@ -133,13 +143,16 @@ QtObject {
         readProc.command = command("read")
         readProc.running = true
     }
+    function sameValue(a, b) {
+        return a === b || JSON.stringify(a) === JSON.stringify(b)
+    }
     // Send changed fields so unrelated valid disk preferences survive Apply.
     function apply(keys) {
         if (!ready || (!dirty && !migrationPending && !(keys && keys.length)) || !valid || loading || saving) return
         var patch = {}
         for (var section of ["appearance", "roundedScreen", "topbar", "dock", "idle", "chrome"]) {
             for (var key in values[section]) {
-                if (keys ? !keys.includes(section + "." + key) : values[section][key] === savedValues[section][key]) continue
+                if (keys ? !keys.includes(section + "." + key) : sameValue(values[section][key], savedValues[section][key])) continue
                 if (!patch[section]) patch[section] = {}
                 patch[section][key] = values[section][key]
             }
@@ -174,7 +187,7 @@ QtObject {
             for (var section of ["appearance", "roundedScreen", "topbar", "dock", "idle", "chrome"]) {
                 for (var key in values[section]) {
                     if (section === "appearance" && key === "colorMode") continue
-                    if (values[section][key] !== savedValues[section][key]) draft[section][key] = values[section][key]
+                    if (!sameValue(values[section][key], savedValues[section][key])) draft[section][key] = values[section][key]
                 }
             }
         }
@@ -197,7 +210,7 @@ QtObject {
         for (var section in pending) {
             if (section === "version") continue
             for (var key in pending[section]) {
-                if (pending[section][key] !== writingSnapshot[section][key]) next[section][key] = pending[section][key]
+                if (!sameValue(pending[section][key], writingSnapshot[section][key])) next[section][key] = pending[section][key]
             }
         }
         values = next
@@ -214,6 +227,10 @@ QtObject {
             try {
                 var document = JSON.parse(text())
                 if (!root.validate(document)) return
+                if (!root.dirty && !root.sameValue(document, root.savedValues)) {
+                    root.reload()
+                    return
+                }
                 root.confirmStatusEdge(document.chrome.statusEdge)
             } catch (error) {}
         }

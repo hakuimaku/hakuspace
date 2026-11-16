@@ -12,12 +12,14 @@ Column {
     readonly property bool leftbar: ChromeLayout.leftBarMode
     readonly property string activeLayout: ChromeLayout.taskbarMode ? "taskbar" : ChromeLayout.leftBarMode ? "leftbar" : "topbar"
     readonly property var previewZones: Catalog.barPreviewZones(activeLayout)
-    // Search targets the preview chip instead of a duplicate preference row.
+    // Search targets the preview chip or the Top Bar center prompt settings below it.
     function reveal(id) {
-        var target = Navigation.collect(root).find(item => item.descriptorId === id)
-        if (!target) return null
-        target.forceActiveFocus()
-        return target
+        var target = Navigation.collect(bar).find(item => item.descriptorId === id)
+        if (target) {
+            target.forceActiveFocus()
+            return target
+        }
+        return centerPromptForm.reveal(id)
     }
     spacing: Theme.spaceSm
     ShellLayoutControl {
@@ -82,6 +84,24 @@ Column {
                     Item { Layout.fillWidth: true; visible: zone.hasTrailingSpacer }
                 }
             }
+        }
+    }
+    SettingsReveal {
+        id: centerPromptReveal
+        width: parent.width
+        expanded: root.activeLayout === "topbar"
+        expandedHeight: centerPromptForm.implicitHeight + Theme.spaceSm
+        GeneralSettingsForm {
+            id: centerPromptForm
+            y: Theme.spaceSm
+            width: parent.width
+            category: "Shell"
+            group: "Top Bar"
+            onlyIds: [
+                "shell.topbar.centerPromptEnabled",
+                "shell.topbar.centerPromptList"
+            ]
+            shortcutTarget: root.shortcutTarget
         }
     }
 }
