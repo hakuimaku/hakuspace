@@ -223,12 +223,28 @@ sys.exit(0 if d["backend"] == "classic" and not d["enabled"] and d["released"] e
 ' 2>/dev/null
 }
 
+# Re-render both mode variants, activate the committed backend's state files, and reload WM/Kitty.
+sync_backend_styles() {
+    if [[ -x "$HAKU_BIN_DIR/gen_style.sh" ]]; then
+        "$HAKU_BIN_DIR/gen_style.sh" >/dev/null 2>&1 || return 1
+    fi
+    if [[ -x "$HAKU_BIN_DIR/reload_config.sh" ]]; then
+        "$HAKU_BIN_DIR/reload_config.sh" >/dev/null 2>&1 || true
+    fi
+    for s in /tmp/kitty-*; do
+        [[ -S "$s" ]] || continue
+        kitty @ --to "unix:$s" ls >/dev/null 2>&1 || continue
+        kitty @ --to "unix:$s" load-config >/dev/null 2>&1 || true
+    done
+}
+
 # Recover an unresponsive transition owner to a usable Classic desktop.
 emergency_classic() {
     kill_quickshell || return 1
     # A killed QML owner cannot report release; drain its serialized effects before Classic.
     "$HAKU_BIN_DIR/idle_actions.sh" recover 9>&- || return 1
     commit_backend classic || return 1
+    sync_backend_styles || true
     kill_classic_stack
     start_classic_stack && wait_until verify_backend
 }
@@ -238,6 +254,7 @@ rollback_classic() {
     local covered="$1"
     stop_qs_supervisor || return 1
     commit_backend classic || return 1
+    sync_backend_styles || true
     if [[ "$covered" == yes ]]; then
         transition_ipc hideChrome || { emergency_classic; return 1; }
         kill_classic_stack
@@ -255,6 +272,7 @@ rollback_classic() {
 rollback_hikai() {
     kill_classic_stack
     commit_backend "$QS_BACKEND_NAME" || { emergency_classic; return 1; }
+    sync_backend_styles || true
     if quickshell_ready && start_hikai_auxiliary_stack && transition_ipc showChrome &&
         start_qs_supervisor && transition_ipc release && wait_transition_phase finished &&
         wait_until verify_backend; then
@@ -278,6 +296,7 @@ switch_to_hikai() {
         rollback_classic yes
         return 1
     fi
+    sync_backend_styles || true
     # Cava reads the backend preference to select Hikai's existing dynamic-mode policy.
     if ! "$HAKU_BIN_DIR/cava_manager.sh" --startup 9>&- || ! start_qs_supervisor || ! wait_until native_idle_ready; then
         rollback_classic yes
@@ -304,6 +323,7 @@ switch_to_classic() {
         rollback_hikai
         return 1
     fi
+    sync_backend_styles || true
     if ! transition_ipc releaseAndQuit ||
         ! wait_until process_absent -f '^(/[^ ]*/)?(qs|quickshell)( [^ ]+)* -c hakuspace( |$)' ||
         ! start_classic_notification_service || ! wait_until verify_backend; then

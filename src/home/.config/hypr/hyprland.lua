@@ -17,6 +17,12 @@ require("config/keybinding")
 require("config/rule")
 require("config/layout")
 
+-- Apply active mode style overrides before user custom config.
+local style_ok, style = pcall(dofile, os.getenv("HOME") .. "/.local/state/hakuspace/theme/hyprland-style.lua")
+if style_ok and type(style) == "table" and type(style.apply) == "function" then
+    style.apply()
+end
+
 -- User custom config file.
 local ok, custom = pcall(require, "../../hakucfg/wm/hyprland-custom")
 if not ok then
