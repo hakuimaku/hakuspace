@@ -7,11 +7,11 @@
         ]
     },
     "mpris": {
-        "format": "♪ {artist} — {title}",
+        "format": "  {artist} — {title}",
         "format-paused": "❚❚ {title}",
         "format-stopped": "",
-        "artist-len": 16,
-        "title-len": 24,
+        "artist-len": 10,
+        "title-len": 30,
         "ellipsis": "…"
     },
     "cava": {

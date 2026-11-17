@@ -1,5 +1,5 @@
 #tray {
-    background-color: @inset_bg;
+    background-color: @panel_bg;
     color: @text;
     border-style: solid;
     border-width: 2px;

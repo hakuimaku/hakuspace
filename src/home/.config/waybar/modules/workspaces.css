@@ -1,10 +1,10 @@
 #custom-logo {
-    background-color: @button_bg;
-    color: @button_fg;
+    background-color: @title_bg;
+    color: @title_fg;
     border-style: solid;
     border-width: 2px;
     border-color: @border_light @border_dark @border_dark @border_light;
-    padding: 0 10px;
+    padding: 0 8px;
     margin-right: 4px;
     font-weight: bold;
     letter-spacing: 1px;
@@ -26,9 +26,9 @@
     border-style: solid;
     border-width: 2px;
     border-color: @border_light @border_dark @border_dark @border_light;
-    min-width: 26px;
-    padding: 0 6px;
-    margin: 0 2px;
+    min-width: 22px;
+    padding: 0 4px;
+    margin: 0 1px;
     font-weight: bold;
 }
 

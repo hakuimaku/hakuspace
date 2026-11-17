@@ -1,0 +1,23 @@
+{
+    "group/brightness": {
+        "orientation": "horizontal",
+        "modules": [
+            "backlight",
+            "backlight/slider"
+        ]
+    },
+    "backlight": {
+        "format": "{icon}",
+        "format-icons": ["󰃞", "󰃟", "󰃠"],
+        "on-scroll-up": "brightnessctl set 2%+",
+        "on-scroll-down": "brightnessctl set 2%-",
+        "on-click": "$HOME/.local/bin/nightlight_toggle.sh",
+        "tooltip": true,
+        "tooltip-format": "Brightness: {percent}%\nClick: toggle night light"
+    },
+    "backlight/slider": {
+        "min": 5,
+        "max": 100,
+        "orientation": "horizontal"
+    }
+}

@@ -7,5 +7,8 @@
 @import url("modules/window-buttons.css");
 @import url("modules/music.css");
 @import url("modules/monitor.css");
+@import url("modules/backlight.css");
+@import url("modules/audio.css");
+@import url("modules/battery.css");
 @import url("modules/tray.css");
 @import url("modules/notification.css");

@@ -5,6 +5,9 @@
         "$HOME/.config/waybar/modules/window-buttons.jsonc",
         "$HOME/.config/waybar/modules/music.jsonc",
         "$HOME/.config/waybar/modules/monitor.jsonc",
+        "$HOME/.config/waybar/modules/backlight.jsonc",
+        "$HOME/.config/waybar/modules/audio.jsonc",
+        "$HOME/.config/waybar/modules/battery.jsonc",
         "$HOME/.config/waybar/modules/tray.jsonc",
         "$HOME/.config/waybar/modules/notification.jsonc"
     ],
@@ -22,15 +25,18 @@
     "modules-left": [
         "custom/logo",
         "ext/workspaces",
-        "group/music"
+        "group/brightness",
+        "group/audio"
     ],
     "modules-center": [
-        "custom/recorder",
-        "clock"
+        "group/music"
     ],
     "modules-right": [
+        "custom/recorder",
         "group/monitor",
+        "battery",
         "tray",
+        "clock",
         "group/window-buttons"
     ]
 }

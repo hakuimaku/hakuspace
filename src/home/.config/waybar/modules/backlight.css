@@ -1,0 +1,49 @@
+#brightness {
+    background-color: @panel_bg;
+    border-style: solid;
+    border-width: 2px;
+    border-color: @border_dark @border_light @border_light @border_dark;
+    padding: 0 8px;
+    margin: 0 2px;
+}
+
+#backlight {
+    background-color: transparent;
+    color: @text;
+    border: none;
+    padding: 0 6px 0 2px;
+    margin-right: 4px;
+}
+
+#backlight:hover {
+    color: @select_bg;
+}
+
+#backlight-slider {
+    background-color: transparent;
+    border: none;
+    padding: 0 2px;
+    margin: 0;
+}
+
+#backlight-slider trough {
+    min-width: 96px;
+    min-height: 10px;
+    background-color: @inset_bg;
+    border: 1px solid @border_dark;
+}
+
+#backlight-slider highlight {
+    min-height: 10px;
+    background-color: @select_bg;
+}
+
+#backlight-slider slider {
+    min-width: 10px;
+    min-height: 12px;
+    margin: 0;
+    background-color: @button_bg;
+    border-style: solid;
+    border-width: 2px;
+    border-color: @border_light @border_dark @border_dark @border_light;
+}

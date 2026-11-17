@@ -1,11 +1,22 @@
 {
     "group/monitor": {
         "orientation": "horizontal",
+        "drawer": {
+            "transition-duration": 0,
+            "transition-left-to-right": false,
+            "click-to-reveal": true
+        },
         "modules": [
+            "custom/monitor",
             "cpu",
             "memory",
             "temperature"
         ]
+    },
+    "custom/monitor": {
+        "format": "SYS",
+        "tooltip": true,
+        "tooltip-format": "Click to toggle CPU / Memory / Temp"
     },
     "cpu": {
         "interval": 2,
