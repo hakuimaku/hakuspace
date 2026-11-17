@@ -144,9 +144,9 @@ Settings uses one category rail. Search opens the matching category and highligh
 
 General includes font family and font size. The searchable font list contains installed monospace families, using the same source as Change Theme, and refreshes every time it opens. Apply saves typography through the existing theme controller and updates the shell; Reload and Discard restore saved values. Screenshot folder help appears only for Niri, whose built-in screenshot keys use its own configuration.
 
-The native Change Theme layer offers font family, font size and accent color, plus animation options when running Niri. Rofi and Waybar pickers remain in the Classic frontend. Theme pages share the shell's ink surface, spacing, typography and moving selection pill; native font changes call the theme controller directly.
+The native Change Theme layer offers font family, font size and accent color, plus animation options when running Niri. Rofi scheme pickers remain in the Classic frontend. Theme pages share the shell's ink surface, spacing, typography and moving selection pill; native font changes call the theme controller directly.
 
-Appearance and Desktop share shell preferences. Wallpaper folders, rotation and Classic transitions use general preferences; video quality, playback and preparation use wallpaper preferences. Apply saves the corresponding store, and Apply & Close saves all modified stores. Configuration lists every WM configuration file, with the active WM first. Recorder options live in Recording, Classic widget fonts and custom Waybar themes in Appearance, and exit options in Session. There are no separate Advanced or Shortcuts tabs.
+Appearance and Desktop share shell preferences. Wallpaper folders, rotation and Classic transitions use general preferences; video quality, playback and preparation use wallpaper preferences. Apply saves the corresponding store, and Apply & Close saves all modified stores. Configuration lists every WM configuration file, with the active WM first. Recorder options live in Recording, Classic widget fonts in Appearance, and exit options in Session. There are no separate Advanced or Shortcuts tabs.
 
 The wallpaper picker uses saved video quality: select an item and Apply. Preparation follows the saved policy. Video cache maintenance and browser preferences are always available in Wallpaper settings. Avatar selection opens the independent image workspace with a square crop and exports a 512×512 PNG through the avatar controller. Cancel and failed export preserve the selected avatar.
 
@@ -212,10 +212,11 @@ surfaces are Pure White, White and Gray White; the saved `surfaceTone` keys stay
 
 Each manual or wallpaper accent seed produces two contrast-correct variants.
 `Theme.qml` selects the active variant from `quickshell.json` without regenerating
-colors. Classic and global applications always receive the dark variant. Switching
-to Classic preserves Hikai's saved mode, so returning restores Light automatically.
-Classic Opaque also preserves its request while clearing effective overrides in
-Hikai, including Kitty application and compositor opacity. See [theme contracts](core/theme.md).
+colors. Hikai's shared applications receive the dark/light accent variants, while
+Classic switches shared WM, Kitty, and Btop state files to its retro configuration
+and derives its 8-scheme UI palette from the saved seed. Switching to Classic
+preserves Hikai's saved mode, so returning restores Light automatically.
+See [theme contracts](core/theme.md).
 
 ## Styling And Motion
 

@@ -61,7 +61,7 @@ Secures your computer when you step away.
 - **Mode-Aware Routing:** In **Hikai** mode, `lock.sh` requests the native Quickshell Wayland session lock (`qs -c hakuspace ipc call lock lock`) and waits until the compositor confirms every output is securely covered (`WlSessionLock.secure`). In **Classic** mode, it launches `hyprlock`.
 - **Fail-Closed Fallback:** If Hikai native locking is unavailable or does not reach the secure lock state, `lock.sh` automatically falls back to `hyprlock` rather than leaving the session unlocked.
 - **PAM & Troubleshooting:** Native Hikai locking authenticates through a single shared Quickshell `PamContext` using the system `login` PAM service (`/etc/pam.d/login`). You can inspect lock state without exposing credentials via `qs -c hakuspace ipc call lock status`.
-- **Dynamic Resolution (Classic / Fallback):** When launching `hyprlock`, it detects your monitor's current resolution (handling Hyprland, Niri, Mango, and fallback sysfs paths). Screens `1920x1080` or larger use `hyprlock.conf`, while smaller displays load `hyprlock_tiny.conf`.
+- **Single Responsive Config (Classic / Fallback):** When launching `hyprlock`, `lock.sh` invokes `hyprlock` with the unified `~/.config/hypr/hyprlock.conf`, which uses percentage sizing/positioning and the generated Classic palette (`~/.local/state/hakuspace/theme/classic/hyprlock-palette.conf`).
 
 ## Boot & Authentication
 

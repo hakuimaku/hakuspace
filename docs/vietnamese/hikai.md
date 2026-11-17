@@ -144,9 +144,9 @@ Settings dùng một rail danh mục. Search mở đúng danh mục và đánh d
 
 General có font family và font size. Danh sách font có tìm kiếm, chỉ liệt kê font monospace đã cài từ cùng nguồn với Change Theme và đọc lại mỗi khi mở. Apply lưu font qua theme controller hiện có và cập nhật shell; Reload và Discard khôi phục giá trị đã lưu. Screenshot folder chỉ hiện ghi chú với Niri vì phím chụp màn hình tích hợp dùng cấu hình riêng của Niri.
 
-Layer Change Theme native có font family, font size và màu accent; tùy chọn animation chỉ hiện khi dùng Niri. Các picker Rofi và Waybar nằm ở frontend Classic. Các trang theme dùng chung nền ink, khoảng cách, cỡ chữ và pill chọn có chuyển động của shell; đổi font native gọi trực tiếp theme controller.
+Layer Change Theme native có font family, font size và màu accent; tùy chọn animation chỉ hiện khi dùng Niri. Picker scheme Rofi nằm ở frontend Classic. Các trang theme dùng chung nền ink, khoảng cách, cỡ chữ và pill chọn có chuyển động của shell; đổi font native gọi trực tiếp theme controller.
 
-Appearance và Desktop dùng chung preference của shell. Thư mục, chu kỳ đổi và transition Classic của wallpaper dùng preference chung; chất lượng video, phát và chuẩn bị video dùng preference wallpaper. Apply lưu store tương ứng; Apply & Close lưu tất cả store đã sửa. Configuration luôn liệt kê mọi file cấu hình WM và ưu tiên WM đang chạy. Tùy chọn recorder nằm trong Recording, font widget Classic và theme Waybar riêng trong Appearance, tùy chọn thoát phiên trong Session. Không còn tab Advanced hay Shortcuts riêng.
+Appearance và Desktop dùng chung preference của shell. Thư mục, chu kỳ đổi và transition Classic của wallpaper dùng preference chung; chất lượng video, phát và chuẩn bị video dùng preference wallpaper. Apply lưu store tương ứng; Apply & Close lưu tất cả store đã sửa. Configuration luôn liệt kê mọi file cấu hình WM và ưu tiên WM đang chạy. Tùy chọn recorder nằm trong Recording, font widget Classic trong Appearance, tùy chọn thoát phiên trong Session. Không còn tab Advanced hay Shortcuts riêng.
 
 Picker wallpaper dùng chất lượng video đã lưu: chọn hình hoặc video rồi Apply. Việc chuẩn bị video theo chính sách đã chọn. Công cụ quản lý video cache và tùy chọn browser luôn hiện trong Wallpaper settings. Chọn avatar sẽ mở khung crop vuông có kéo và zoom trước khi lưu PNG 512×512; Cancel hoặc lỗi capture giữ avatar cũ.
 
@@ -259,10 +259,9 @@ preference cũ mặc định Dark và giữ nguyên các lựa chọn khác.
 
 Mỗi seed accent thủ công hoặc lấy từ wallpaper sinh đồng thời một màu cho nền tối
 và một màu cho nền sáng, bảo đảm contrast. `Theme.qml` chọn màu từ `quickshell.json`
-mà không sinh lại theme hoặc chạy ColorThief khi đổi mode. Classic và ứng dụng dùng
-chung luôn nhận accent cho nền tối. Chuyển sang Classic giữ preference Light của
-Hikai; quay lại Hikai tự khôi phục Light.
-
-Opaque chỉ có hiệu lực trong Classic. Request vẫn được lưu khi vào Hikai, nhưng các
-override được xóa, bao gồm opacity của Kitty ở cả ứng dụng lẫn compositor. Transition
-đồng bộ context dưới cover và khôi phục đúng context khi rollback. Xem [theme contracts](../core/theme.md).
+mà không sinh lại theme hoặc chạy ColorThief khi đổi mode. Hikai dùng biến thể
+tối/sáng của accent, còn Classic chuyển các file state dùng chung (WM, Kitty, Btop)
+sang cấu hình retro và ánh xạ bảng 8 scheme từ seed đã lưu. Chuyển sang Classic giữ
+nguyên preference Light của Hikai; quay lại Hikai tự khôi phục Light. Transition
+cập nhật và đồng bộ state render theo backend dưới cover và khôi phục đúng mode khi
+rollback. Xem [theme contracts](../core/theme.md).
