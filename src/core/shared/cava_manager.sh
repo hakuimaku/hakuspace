@@ -44,7 +44,7 @@ Commands:
     --enabled on|off    Set the cava layer state explicitly
     --dynamic on|off    Set dynamic position explicitly
     toggle              Toggle the cava layer
-    reload              Live-reload font/colors from the kitty config
+    reload              Live-reload scheme colors
                         (no restart, no interruption to cava itself)
     --position [POS]    Toggle or set screen position (top or bottom, Hikai)
     -d, --toggle-dynamic Toggle dynamic position (affected by panels)
@@ -143,9 +143,7 @@ start() {
 
     check_dependencies
  
-    # Classic mode is locked to top position and does not inherit Hikai positions/dynamic flags
-    local dynamic_flag=""
-
+    # Classic mode is locked to top position and always renders with the active Classic scheme color.
     local cava_conf="$HOME/hakucfg/config/cava-layer"
     if [[ -f "$cava_conf" ]]; then
         # Ensure Classic Cava orientation is always top
@@ -153,20 +151,6 @@ start() {
             sed -i -E 's/^orientation\s*=.*/orientation = top/' "$cava_conf"
         elif grep -qE '^\[output\]' "$cava_conf"; then
             sed -i -E '/^\[output\]/a orientation = top' "$cava_conf"
-        fi
-
-        # Sync color mode from state (0 = surface/black, 1 = accent/white)
-        local color_mode="$(cat "$(haku_state_path cava.color-mode)" 2>/dev/null || echo "1")"
-        local target_color="white"
-        if [[ "$color_mode" == "0" || "$color_mode" == "surface" || "$color_mode" == "black" ]]; then
-            target_color="black"
-        fi
-        if grep -qE '^foreground\s*=' "$cava_conf"; then
-            sed -i -E "s/^foreground\s*=.*/foreground = $target_color/" "$cava_conf"
-        elif grep -qE '^\[color\]' "$cava_conf"; then
-            sed -i -E "/^\[color\]/a foreground = $target_color" "$cava_conf"
-        else
-            printf '\n[color]\nforeground = %s\n' "$target_color" >> "$cava_conf"
         fi
     fi
 
@@ -176,8 +160,8 @@ start() {
         height_flag="-H $custom_h"
     fi
 
-    log "Starting: python3 $SCRIPT_PATH $dynamic_flag $height_flag $*"
-    setsid python3 "$SCRIPT_PATH" $dynamic_flag $height_flag "$@" </dev/null >"$LOGFILE" 2>&1 &
+    log "Starting: python3 $SCRIPT_PATH $height_flag $*"
+    setsid python3 "$SCRIPT_PATH" $height_flag "$@" </dev/null >"$LOGFILE" 2>&1 &
     local pid=$!
     disown "$pid" 2>/dev/null || true
     echo "$pid" > "$PIDFILE"
