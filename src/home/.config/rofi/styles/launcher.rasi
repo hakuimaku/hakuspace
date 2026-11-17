@@ -10,6 +10,7 @@ panel-body {
 
 status-bar {
     orientation: horizontal;
+    expand: false;
     background-color: @inset-bg;
     border: 2px;
     border-color: @border-dark;
@@ -21,6 +22,7 @@ status-bar {
 textbox-current-entry {
     expand: true;
     text-color: @text-muted;
+    vertical-align: 0.5;
 }
 
 num-filtered-rows,
@@ -28,6 +30,7 @@ num-rows,
 textbox-slash {
     expand: false;
     text-color: @text-mono;
+    vertical-align: 0.5;
 }
 
 textbox-slash {

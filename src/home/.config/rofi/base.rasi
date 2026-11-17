@@ -41,11 +41,12 @@ inputbar {
     text-color: @title-fg;
     padding: 3px 4px 3px 8px;
     spacing: 6px;
-    children: [ prompt, entry, case-indicator, textbox-min, textbox-max, button-close ];
+    children: [ prompt, entry, case-indicator, win-buttons ];
 }
 
 prompt {
     expand: false;
+    padding: 0px 6px 0px 2px;
     text-color: @title-fg;
     text-transform: bold;
     vertical-align: 0.5;
@@ -69,14 +70,40 @@ case-indicator {
     vertical-align: 0.5;
 }
 
-textbox-min, textbox-max, button-close {
+win-buttons {
+    orientation: horizontal;
     expand: false;
-    width: 22px;
-    padding: 2px 0px;
+    spacing: 2px;
+    children: [ win-btn-min, win-btn-max, win-btn-close ];
+}
+
+win-btn-min, win-btn-max, win-btn-close {
+    orientation: vertical;
+    expand: false;
+    width: 30px;
+    border: 2px 0px 0px 2px;
+    border-color: @border-light;
+}
+
+win-btn-min {
+    children: [ textbox-min ];
+}
+
+win-btn-max {
+    children: [ textbox-max ];
+}
+
+win-btn-close {
+    children: [ button-close ];
+}
+
+textbox-min, textbox-max, button-close {
+    expand: true;
+    padding: 2px 4px;
     background-color: @button-bg;
     text-color: @button-fg;
-    border: 2px;
-    border-color: @border-light;
+    border: 0px 2px 2px 0px;
+    border-color: @border-dark;
     horizontal-align: 0.5;
     vertical-align: 0.5;
     text-transform: bold;
@@ -92,6 +119,9 @@ textbox-max {
 
 button-close {
     content: "X";
+    background-color: @button-active-bg;
+    text-color: @button-fg;
+    cursor: pointer;
     action: "kb-cancel";
 }
 
@@ -108,17 +138,18 @@ mode-switcher {
     spacing: 4px;
 }
 
-mode-switcher button {
-    padding: 4px 10px;
+button {
+    padding: 6px 16px;
     background-color: @button-bg;
     text-color: @button-fg;
     border: 2px;
     border-color: @border-light;
     horizontal-align: 0.5;
     vertical-align: 0.5;
+    cursor: pointer;
 }
 
-mode-switcher button selected {
+button selected {
     background-color: @select-bg;
     text-color: @select-fg;
     border-color: @border-dark;
