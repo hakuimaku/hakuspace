@@ -1,60 +1,62 @@
 {
     "$schema": "/etc/xdg/swaync/configSchema.json",
+    "ignore-gtk-theme": true,
     "positionX": "right",
     "positionY": "top",
-    "control-center-margin-top": 40,
-    "control-center-margin-bottom": 60,
-    "control-center-margin-right": 0,
+    "control-center-margin-top": 8,
+    "control-center-margin-bottom": 8,
+    "control-center-margin-right": 8,
     "control-center-margin-left": 0,
     "notification-body-image-height": 200,
     "notification-body-image-width": 200,
-
     "timeout": 4,
     "timeout-low": 2,
     "timeout-critical": 0,
-
     "fit-to-screen": true,
-    "_comment": "If control-center-width changes, update min-width of .widget-buttons-grid flowboxchild > button in style.css: (width - 44) / 4 - 12 - (5..10). Currently 450 -> 84.",
-    "control-center-width": 450,
-    "notification-window-width": 600,
+    "control-center-width": 440,
+    "notification-window-width": 440,
     "keyboard-shortcuts": true,
     "image-visibility": "when-available",
-    "transition-time": 300,
-
+    "transition-time": 0,
+    "text-empty": "NO NOTIFICATIONS",
     "hide-on-clear": false,
     "hide-on-action": true,
-    
     "widgets": [
         "title",
+        "dnd",
+        "volume",
+        "backlight",
         "mpris",
         "buttons-grid",
         "menubar",
-        "volume",
-        "backlight",
-        "dnd",
         "notifications"
     ],
     "widget-config": {
         "title": {
-            "text": "Notifications",
+            "text": "SYSTEM MONITOR",
             "clear-all-button": true,
-            "button-text": "Clear All"
+            "button-text": "CLEAR ALL"
         },
         "dnd": {
-            "text": "Do Not Disturb"
+            "text": "DO NOT DISTURB"
         },
         "mpris": {
-            "autohide": true
+            "autohide": true,
+            "show-album-art": "when-available"
         },
         "volume": {
-            "label": ""
+            "label": "VOL",
+            "animation-type": "none",
+            "animation-duration": 0
         },
         "backlight": {
-            "label": "󰖨"
+            "label": "BRI"
         },
         "notifications": {
+            "vexpand": true
         },
         "buttons-grid": {
+            "buttons-per-row": 4,
             "actions": [
                 {
                     "label": "󰖩",
@@ -96,61 +98,65 @@
                     "type": "toggle",
                     "active": true,
                     "command": "$HOME/.local/bin/cava_manager.sh >/dev/null 2>&1",
-                    "update-command": "cat /tmp/cava-layer.pid && echo true || echo false"
+                    "update-command": "[ -s /tmp/cava-layer.pid ] && echo true || echo false"
                 },
                 {
                     "label": " ",
                     "type": "toggle",
                     "active": true,
                     "command": "$HOME/.local/bin/random_wallpaper.sh >/dev/null 2>&1",
-                    "update-command": "cat /tmp/random_wallpaper_status | grep -q '1' && echo true || echo false"
+                    "update-command": "grep -q '1' /tmp/random_wallpaper_status 2>/dev/null && echo true || echo false"
                 },
                 {
                     "label": "󰆧",
                     "type": "toggle",
                     "active": true,
                     "command": "$HOME/.local/bin/haku_space_mode.sh --toggle >/dev/null 2>&1",
-                    "update-command": "bash -c 'source \"$HOME/.local/bin/haku_state.sh\"; cat \"$(haku_state_path shell.haku-space.enabled)\"' | grep -q '1' && echo true || echo false"
+                    "update-command": "$HOME/.local/bin/haku_space_mode.sh --check 2>/dev/null | grep -q ENABLED && echo true || echo false"
                 }
             ]
         },
         "menubar": {
             "menu#power-buttons": {
-                "label": "󰤆",
+                "label": "󰤆  POWER",
                 "position": "left",
+                "animation-type": "slide_down",
+                "animation-duration": 0,
                 "actions": [
                     {
-                        "label": "󰑓   Reboot",
+                        "label": "󰑓   REBOOT",
                         "command": "systemctl reboot"
                     },
                     {
-                        "label": "   Lock",
+                        "label": "   LOCK",
                         "command": "$HOME/.local/bin/lock.sh"
                     },
                     {
-                        "label": "   Exit",
+                        "label": "   EXIT",
                         "command": "$HOME/.local/bin/exit.sh"
                     },
                     {
-                        "label": "󰤆   Shut down",
+                        "label": "󰤆   SHUT DOWN",
                         "command": "systemctl poweroff"
                     }
                 ]
             },
             "menu#powermode-buttons": {
-                "label": "󱓞",
+                "label": "󱓞  MODE",
                 "position": "left",
+                "animation-type": "slide_down",
+                "animation-duration": 0,
                 "actions": [
                     {
-                        "label": "Performance",
+                        "label": "PERFORMANCE",
                         "command": "powerprofilesctl set performance"
                     },
                     {
-                        "label": "Balanced",
+                        "label": "BALANCED",
                         "command": "powerprofilesctl set balanced"
                     },
                     {
-                        "label": "Power-saver",
+                        "label": "POWER-SAVER",
                         "command": "powerprofilesctl set power-saver"
                     }
                 ]
