@@ -212,7 +212,20 @@ render_quickshell() {
         mv "$THEME_RENDER_DIR/quickshell.json.tmp" "$THEME_RENDER_DIR/quickshell.json"
     fi
 }
-RENDERERS=(colors fonts hyprland rofi kitty btop newtab niri mango labwc quickshell)
+render_classic() {
+    [[ -f "$HAKU_BIN_DIR/classic_palette.py" ]] || return 0
+    local req_file eff_file requested previous effective
+    req_file="$(haku_state_path theme.classic.palette)" || return 1
+    eff_file="$(haku_state_path theme.classic.palette.effective)" || return 1
+    requested="$(cat "$req_file" 2>/dev/null || printf 'auto')"
+    previous="$(cat "$eff_file" 2>/dev/null || printf '')"
+    effective="$(python3 "$HAKU_BIN_DIR/classic_palette.py" resolve \
+        --seed "$ACCENT_SEED" --requested "$requested" --previous "$previous")" || return 1
+    python3 "$HAKU_BIN_DIR/classic_palette.py" render \
+        --scheme "$effective" --out-dir "$THEME_RENDER_DIR/classic" || return 1
+}
+
+RENDERERS=(colors fonts hyprland rofi kitty btop newtab niri mango labwc quickshell classic)
 for renderer in "${RENDERERS[@]}"; do
     "render_${renderer}"
 done

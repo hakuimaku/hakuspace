@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script manages Haku Space Mode (combining Rounded Screen dynamic, Cava dynamic, Opaque Theme and Edge Trigger).
+# This script manages Haku Space Mode (combining Cava dynamic and Opaque Theme).
 
 source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_theme.sh" || exit 1
 
@@ -13,27 +13,14 @@ fi
 
 
 turn_on() {
-    # 1. Rounded screen
-    if [[ "$(cat "$(haku_state_path screen.rounded.dynamic)" 2>/dev/null || echo "0")" != "1" ]]; then
-        "$HAKU_BIN_DIR/rounded_screen_manager.sh" --toggle-dynamic
-    fi
-    if [[ "$(cat "$(haku_state_path screen.rounded.enabled)" 2>/dev/null || echo "0")" != "1" ]]; then
-        "$HAKU_BIN_DIR/rounded_screen_manager.sh" --toggle
-    fi
-
-    # 2. Opaque Theme
+    # 1. Opaque Theme
     if [[ "$(cat "$(haku_state_path theme.opaque.enabled)" 2>/dev/null || echo "0")" != "1" ]]; then
         "$HAKU_BIN_DIR/opaque_theme.sh" --toggle
     fi
 
-    # 3. Cava
+    # 2. Cava
     if [[ "$(cat "$(haku_state_path cava.dynamic-position)" 2>/dev/null || echo "0")" != "1" ]]; then
         "$HAKU_BIN_DIR/cava_manager.sh" --toggle-dynamic
-    fi
-
-    # 4. Edge Trigger
-    if [[ "$(cat "$(haku_state_path desktop.edge-trigger.enabled)" 2>/dev/null || echo "0")" != "1" ]]; then
-        "$HAKU_BIN_DIR/edge_trigger_manager.sh" --toggle
     fi
 
     echo "1" > "$SHELL_MODE_STATE"
@@ -41,24 +28,14 @@ turn_on() {
 }
 
 turn_off() {
-    # 1. Rounded screen
-    if [[ "$(cat "$(haku_state_path screen.rounded.enabled)" 2>/dev/null || echo "0")" == "1" ]]; then
-        "$HAKU_BIN_DIR/rounded_screen_manager.sh" --toggle
-    fi
-
-    # 2. Cava
+    # 1. Cava
     if [[ "$(cat "$(haku_state_path cava.dynamic-position)" 2>/dev/null || echo "0")" == "1" ]]; then
         "$HAKU_BIN_DIR/cava_manager.sh" --toggle-dynamic
     fi
 
-    # 3. Opaque Theme
+    # 2. Opaque Theme
     if [[ "$(cat "$(haku_state_path theme.opaque.enabled)" 2>/dev/null || echo "0")" == "1" ]]; then
         "$HAKU_BIN_DIR/opaque_theme.sh" --toggle
-    fi
-
-    # 4. Edge Trigger
-    if [[ "$(cat "$(haku_state_path desktop.edge-trigger.enabled)" 2>/dev/null || echo "0")" == "1" ]]; then
-        "$HAKU_BIN_DIR/edge_trigger_manager.sh" --toggle
     fi
 
     echo "0" > "$SHELL_MODE_STATE"

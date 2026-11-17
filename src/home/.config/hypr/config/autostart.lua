@@ -27,9 +27,6 @@ hl.on("hyprland.start", function ()
     -- Resume wallpaper on startup
     hl.exec_cmd("$HOME/.local/bin/wallpaper_resume.sh")
 
-    hl.exec_cmd("$HOME/.local/bin/rounded_screen_manager.sh --startup") -- Run rounded screen if state is true
-    hl.exec_cmd("$HOME/.local/bin/edge_trigger_manager.sh --startup") -- Run edge trigger if state is true
-    hl.exec_cmd("$HOME/.local/bin/taskbar_manager.sh --startup") -- Run taskbar if state is true
     hl.exec_cmd("$HOME/.local/bin/statusbar_manager.sh") -- Run status bar
     hl.exec_cmd("$HOME/.local/bin/desktop_icons_manager.sh --startup") -- Run desktop icons if state is true
 

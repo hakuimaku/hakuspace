@@ -8,11 +8,8 @@ haku_state_migrate || exit 1
 # Stop Classic presentation and shared auxiliary processes using existing policy.
 kill_classic_stack() {
     pkill -x waybar
-    pkill -x taskbar
     pkill -x swaync
     pkill -x rofi
-    pkill -f edge_trigger.py
-    pkill -f rounded_screen.py
     if [[ -f /tmp/cava-layer.pid ]] && kill -0 "$(cat /tmp/cava-layer.pid 2>/dev/null)" 2>/dev/null; then
         echo "1" > "$(haku_state_path cava.enabled)"
     fi
@@ -28,9 +25,6 @@ start_classic_visual_stack() {
     python3 "$HAKU_BIN_DIR/kitty_theme_ctl.py" dark 9>&- || true
     "$HAKU_BIN_DIR/appearance_ctl.sh" apply-mode dark 9>&- || true
     "$HAKU_BIN_DIR/wallpaper_resume.sh" 9>&- || failed=1
-    "$HAKU_BIN_DIR/rounded_screen_manager.sh" --startup 9>&- || failed=1
-    "$HAKU_BIN_DIR/edge_trigger_manager.sh" --startup 9>&- || failed=1
-    "$HAKU_BIN_DIR/taskbar_manager.sh" --startup 9>&- || failed=1
     "$HAKU_BIN_DIR/statusbar_manager.sh" 9>&- || failed=1
     "$HAKU_BIN_DIR/desktop_icons_manager.sh" --startup 9>&- || failed=1
     "$HAKU_BIN_DIR/cava_manager.sh" --startup 9>&- || failed=1
@@ -364,12 +358,8 @@ verify_backend() {
     idle_count=$(pgrep -u "$(id -u)" -x hypridle | wc -l)
     if [[ "$current" == "$QS_BACKEND_NAME" ]]; then
         [[ "$idle_count" == 0 ]] || return 1
-        for proc in waybar taskbar rofi edge_trigger.py rounded_screen.py swaync; do
-            if [[ "$proc" == *.py ]]; then
-                process_absent -f "$proc" || return 1
-            else
-                process_absent -x "$proc" || return 1
-            fi
+        for proc in waybar rofi swaync; do
+            process_absent -x "$proc" || return 1
         done
         haku_qs_alive && notification_owned_by 'qs|quickshell' || return 1
         native_idle_ready || return 1
@@ -377,8 +367,7 @@ verify_backend() {
         [[ "$idle_count" == 1 ]] || return 1
         haku_qs_alive && return 1
         pgrep -x swaync >/dev/null && notification_owned_by swaync || return 1
-        for state in desktop.waybar.requested:waybar desktop.taskbar.requested:taskbar \
-            screen.rounded.enabled:rounded_screen.py desktop.edge-trigger.enabled:edge_trigger.py \
+        for state in desktop.waybar.requested:waybar \
             desktop.icons.enabled:desktop_icons.py; do
             [[ $(cat "$(haku_state_path "${state%%:*}")" 2>/dev/null) == 1 ]] || continue
             proc=${state#*:}

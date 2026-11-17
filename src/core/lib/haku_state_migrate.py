@@ -25,9 +25,6 @@ LEGACY_KEYS = {
     "taskbar_manual_state": "desktop.taskbar.requested",
     "dockbar_manual_state": "desktop.dockbar.requested",
     "desktop_icons_state": "desktop.icons.enabled",
-    "edge_trigger_state": "desktop.edge-trigger.enabled",
-    "rounded_screen_state": "screen.rounded.enabled",
-    "rounded_screen_dynamic_state": "screen.rounded.dynamic",
     "opaque_theme_state": "theme.opaque.enabled",
     "state.env": "theme.appearance.env",
     "idle_inhibit": "system.idle-inhibit.enabled",
@@ -39,7 +36,15 @@ LEGACY_KEYS = {
     "chrome-state-v6.json": "migration.hikai-chrome-v6.json",
 }
 # Obsolete state has no writer; retain its bytes in the migration archive only.
-RETIRED_FILES = ("taskbar_autohide_state",)
+RETIRED_FILES = (
+    "taskbar_autohide_state",
+    "edge_trigger_state",
+    "rounded_screen_state",
+    "rounded_screen_dynamic_state",
+    "[desktop].edge-trigger.enabled",
+    "[screen].rounded.enabled",
+    "[screen].rounded.dynamic",
+)
 # Required user preferences once stored alongside disposable generated data.
 CACHED_STATE_KEYS = (("current_wallpaper", "desktop.wallpaper.current.json"),
                      ("desktop-icons-positions.json", "desktop.icons.positions.json"))

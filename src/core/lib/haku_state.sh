@@ -21,11 +21,10 @@ haku_state_path() {
         desktop.icons.positions.json) name='[desktop].icons.positions.json' ;;
         desktop.wallpaper.current.json) name='[desktop].wallpaper.current.json' ;;
         desktop.wallpaper.runtime.json) name='[desktop].wallpaper.runtime.json' ;;
-        desktop.edge-trigger.enabled) name='[desktop].edge-trigger.enabled' ;;
-        screen.rounded.enabled) name='[screen].rounded.enabled' ;;
-        screen.rounded.dynamic) name='[screen].rounded.dynamic' ;;
         theme.opaque.enabled) name='[theme].opaque.enabled' ;;
         theme.appearance.env) name='[theme].appearance.env' ;;
+        theme.classic.palette) name='[theme].classic.palette' ;;
+        theme.classic.palette.effective) name='[theme].classic.palette.effective' ;;
         system.visual-sources.json) name='[system].visual-sources.json' ;;
         system.visual-reconcile.pending) name='[system].visual-reconcile.pending' ;;
         system.idle-inhibit.enabled) name='[system].idle-inhibit.enabled' ;;
