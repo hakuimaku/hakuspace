@@ -1,0 +1,22 @@
+{
+    "group/monitor": {
+        "orientation": "horizontal",
+        "modules": [
+            "cpu",
+            "memory",
+            "temperature"
+        ]
+    },
+    "cpu": {
+        "interval": 2,
+        "format": "CPU {usage}%"
+    },
+    "memory": {
+        "interval": 2,
+        "format": "MEM {used:0.1f}G"
+    },
+    "temperature": {
+        "interval": 2,
+        "format": "{temperatureC}°C"
+    }
+}

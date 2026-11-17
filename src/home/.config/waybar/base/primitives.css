@@ -1,0 +1,49 @@
+.raised {
+    background-color: @button_bg;
+    color: @button_fg;
+    border-style: solid;
+    border-width: 2px;
+    border-color: @border_light @border_dark @border_dark @border_light;
+}
+
+.inset {
+    background-color: @inset_bg;
+    color: @text;
+    border-style: solid;
+    border-width: 2px;
+    border-color: @border_dark @border_light @border_light @border_dark;
+}
+
+.titlebar {
+    background-color: @title_bg;
+    color: @title_fg;
+    font-weight: bold;
+}
+
+.tag {
+    background-color: @tag_bg;
+    color: @tag_fg;
+    border: 1px solid @border_light;
+    padding: 0 5px;
+    font-size: 11px;
+}
+
+.button {
+    background-color: @button_bg;
+    color: @button_fg;
+    border-style: solid;
+    border-width: 2px;
+    border-color: @border_light @border_dark @border_dark @border_light;
+    padding: 0 6px;
+}
+
+.button:hover {
+    background-color: @button_active_bg;
+}
+
+.pressed {
+    background-color: @button_active_bg;
+    border-style: solid;
+    border-width: 2px;
+    border-color: @border_dark @border_light @border_light @border_dark;
+}

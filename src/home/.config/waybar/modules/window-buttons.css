@@ -1,0 +1,30 @@
+#window-buttons {
+    background-color: transparent;
+    margin-left: 2px;
+}
+
+#custom-notification,
+#custom-win-hakumenu,
+#custom-win-power {
+    background-color: @button_bg;
+    color: @button_fg;
+    border-style: solid;
+    border-width: 2px;
+    border-color: @border_light @border_dark @border_dark @border_light;
+    min-width: 24px;
+    padding: 0 4px;
+    margin: 0 1px;
+    font-weight: bold;
+}
+
+#custom-notification:hover,
+#custom-win-hakumenu:hover,
+#custom-win-power:hover {
+    background-color: @button_active_bg;
+    border-color: @border_dark @border_light @border_light @border_dark;
+}
+
+#custom-win-power:hover {
+    background-color: @urgent_bg;
+    color: @urgent_fg;
+}

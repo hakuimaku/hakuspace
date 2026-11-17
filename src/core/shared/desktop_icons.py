@@ -1634,18 +1634,6 @@ class DesktopLayout(Gtk.Fixed):
         wt_item.connect("activate", on_wt)
         waybar_menu.append(wt_item)
         
-        ws_item = Gtk.MenuItem(label="Waybar Select Mode")
-        def on_ws(w):
-            subprocess.Popen([str(bin_dir() / "statusbar_manager.sh"), "--select"])
-        ws_item.connect("activate", on_ws)
-        waybar_menu.append(ws_item)
-        
-        wc_item = Gtk.MenuItem(label="Waybar Cycle Mode")
-        def on_wc(w):
-            subprocess.Popen([str(bin_dir() / "statusbar_manager.sh"), "--cycle"])
-        wc_item.connect("activate", on_wc)
-        waybar_menu.append(wc_item)
-        
         space_menu.append(waybar_item)
         menu.append(space_item)
         menu.append(Gtk.SeparatorMenuItem())

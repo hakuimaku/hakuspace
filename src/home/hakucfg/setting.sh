@@ -2,7 +2,7 @@
 
 # This script is used to set up the main settings for all hakuspace's scripts.
 # DO NOT EDIT THIS LINE :v, used for checking setting.sh is up-to-date when run update.sh
-SETTING_VERSION="26.09-2"
+SETTING_VERSION="26.12"
 
 if [[ "$1" == "--version" || "$1" == "-v" ]]; then
     echo "$SETTING_VERSION"
@@ -46,15 +46,6 @@ REC_COMMAND="wl-screenrec"
 #REC_COMMAND="$HOME/.cargo/bin/wl-screenrec"
 
 REC_OPTS="--max-fps 60" # wl-screenrec options, you can customize them as needed
-
-
-
-# ====== Waybar Theme Settings ======
-# Add your custom Waybar modes here, e.g., ("custom1" "custom2")
-# You just add your waybar config to ~/hakucfg/config/waybar with `config` and `style.css` files.
-# If name between WAYBAR_MODES_DEAULT and WAYBAR_MODE_USER is the same, WAYBAR_MODE_DEAULT (my theme) will be used.
-# Example: WAYBAR_MODE_USER=("custom1"), have ~/hakucfg/config/waybar/custom1/config and ~/hakucfg/config/waybar/custom1/style.css
-WAYBAR_MODE_USER=()
 
 
 

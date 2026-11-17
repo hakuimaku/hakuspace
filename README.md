@@ -89,7 +89,7 @@ Feature availability and keybindings can vary by compositor. Hikai does not repl
 * **User Configuration (`~/hakucfg`)**: Stores your personal configs separately from the base files.
 * **Accent Colors**: Synced across configured applications and icon themes.
 * **Smart Accent Color**: Automatically generates the accent color based on your current wallpaper.
-* **Flexible Waybar Layouts**: Supports 7 styles in Classic mode: `top`, `left`, `coredge`, `minimal`, `neon`, `island`, `legacy`, `tokyo`.
+* **Classic Waybar**: Single top bar layout styled after classic desktop window titlebars, synced to the active 8-scheme Classic palette.
 * **Wallpaper Automation**: Classic uses `awww` / `mpvpaper`; Hikai has its own wallpaper browsing and native video-rendering path, with playback and quality settings.
 * **Taskbar**: Classic provides a secondary Waybar taskbar; Hikai integrates its taskbar and dock into the Quickshell UI.
 * **Haku Space Classic Mini-Apps**:
@@ -548,7 +548,10 @@ Want to understand how HakuSpace works under the hood? We've written comprehensi
 | Contributor | Work |
 |-------------|------|
 | [hakuimaku](https://github.com/hakuimaku) | maintain & develop |
-| [tspillow](https://github.com/tspillow) | add waybar style - tokyo |
+| [tspillow](https://github.com/tspillow) | contributed the `tokyo` Waybar style (commits `5267a4df`, `4ea823c2`) |
+
+> [!note]
+> **Note on the `tokyo` Waybar style:** `tokyo` was contributed by [tspillow](https://github.com/tspillow) (commits `5267a4df`, `4ea823c2`). Sorry to see it go, but it was removed when Classic mode moved to a single unified layout under the new 8-scheme palette system. If you would like to recover it, see the last commit that still included it: [`05957567`](https://github.com/hakuimaku/hakuspace/tree/059575675bd2e5a064d18e6697d9b14155a64937/src/home/.config/waybar/tokyo).
 
 ---
 

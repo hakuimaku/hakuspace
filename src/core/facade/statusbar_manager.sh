@@ -6,17 +6,16 @@
 # shellcheck source=/dev/null
 source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_backend_lib.sh" || exit 1
 WAYBAR_CTL="$HAKU_BIN_DIR/waybar_ctl.sh"
-WAYBAR_ROFI="$HAKU_BIN_DIR/waybar_rofi.sh"
 TASKBAR_CTL="$HAKU_BIN_DIR/taskbar_ctl.sh"
 
 print_help() {
     cat <<'EOF_HELP'
 Usage: statusbar_manager.sh [OPTION]
-Select and manage the active status bar mode.
+Manage the active status bar.
 
 Options:
-    --cycle             Switch to the next status bar mode
-    --select            Select a status bar mode with the Classic picker
+    --cycle             Switch to the next status bar mode (Hikai)
+    --select            Select a status bar mode (Hikai)
     --reload            Reload status bar
     --toggle            Toggle status bar on or off
     -h, --help          Show this help message
@@ -52,11 +51,9 @@ case "${1:-}" in
     '')
         exec "$WAYBAR_CTL" startup
         ;;
-    --cycle)
-        exec "$WAYBAR_CTL" cycle
-        ;;
-    --select)
-        exec "$WAYBAR_ROFI" select
+    --cycle|--select)
+        notify-send -a "HakuSpace" -i "info" "Waybar" "Classic mode uses a single Waybar layout." >/dev/null 2>&1 || true
+        exit 0
         ;;
     --reload)
         exec "$WAYBAR_CTL" reload

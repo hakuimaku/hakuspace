@@ -1,0 +1,29 @@
+{
+    "clock": {
+        "format": "{:%H:%M · %d %b %Y}",
+        "format-alt": "{:%A, %d %B %Y}",
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+        "calendar": {
+            "mode": "month",
+            "mode-mon-col": 3,
+            "weeks-pos": "right",
+            "on-scroll": 1
+        },
+        "actions": {
+            "on-click-right": "mode",
+            "on-scroll-up": "shift_up",
+            "on-scroll-down": "shift_down"
+        }
+    },
+    "custom/recorder": {
+        "exec": "if [ -f /tmp/recording_time ]; then cat /tmp/recording_time; fi",
+        "interval": 1,
+        "format": "REC {text}",
+        "return-type": "plain",
+        "if-file-exists": "/tmp/recording_pid",
+        "hide-empty-text": true,
+        "on-click": "$HOME/.local/bin/record.sh",
+        "tooltip": true,
+        "tooltip-format": "Stop recording"
+    }
+}

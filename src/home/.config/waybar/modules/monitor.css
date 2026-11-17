@@ -1,0 +1,21 @@
+#monitor {
+    background-color: @inset_bg;
+    color: @text_mono;
+    border-style: solid;
+    border-width: 2px;
+    border-color: @border_dark @border_light @border_light @border_dark;
+    padding: 0 8px;
+}
+
+#cpu,
+#memory,
+#temperature {
+    color: @text_mono;
+    background-color: transparent;
+    padding: 0 4px;
+}
+
+#temperature.critical {
+    color: @urgent_fg;
+    background-color: @urgent_bg;
+}

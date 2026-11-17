@@ -21,7 +21,6 @@ LEGACY_KEYS = {
     "haku_shell_state": "shell.haku-space.enabled",
     "haku_space_status": "shell.haku-space.enabled",
     "waybar_manual_state": "desktop.waybar.requested",
-    "waybar_current_mode": "desktop.waybar.mode",
     "taskbar_manual_state": "desktop.taskbar.requested",
     "dockbar_manual_state": "desktop.dockbar.requested",
     "desktop_icons_state": "desktop.icons.enabled",
@@ -38,9 +37,11 @@ LEGACY_KEYS = {
 # Obsolete state has no writer; retain its bytes in the migration archive only.
 RETIRED_FILES = (
     "taskbar_autohide_state",
+    "waybar_current_mode",
     "edge_trigger_state",
     "rounded_screen_state",
     "rounded_screen_dynamic_state",
+    "[desktop].waybar.mode",
     "[desktop].edge-trigger.enabled",
     "[screen].rounded.enabled",
     "[screen].rounded.dynamic",

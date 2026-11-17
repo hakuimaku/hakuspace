@@ -14,7 +14,6 @@ haku_state_path() {
         shell.memory-maintenance.json) name='[shell].memory-maintenance.json' ;;
         shell.haku-space.enabled) name='[shell].haku-space.enabled' ;;
         desktop.waybar.requested) name='[desktop].waybar.requested' ;;
-        desktop.waybar.mode) name='[desktop].waybar.mode' ;;
         desktop.taskbar.requested) name='[desktop].taskbar.requested' ;;
         desktop.dockbar.requested) name='[desktop].dockbar.requested' ;;
         desktop.icons.enabled) name='[desktop].icons.enabled' ;;

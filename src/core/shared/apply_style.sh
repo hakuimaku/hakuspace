@@ -32,6 +32,7 @@ fi
 
 if ! $OPAQUE_CONTEXT && haku_backend_is "classic"; then
     swaync-client --reload-config --reload-css >/dev/null 2>&1 || true
+    pkill -SIGUSR2 -x waybar >/dev/null 2>&1 || true
 fi
 
 for s in /tmp/kitty-*; do

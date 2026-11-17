@@ -77,7 +77,6 @@ hakucfg_sync() {
         return 1
     fi
     ensure_dir "$DEST_CUSTOM_DIR/config"
-    ensure_dir "$DEST_CUSTOM_DIR/config/waybar"
     ensure_dir "$DEST_CUSTOM_DIR/config/rofi"
 
     # Move legacy shell settings without overwriting an existing Hikai document.
