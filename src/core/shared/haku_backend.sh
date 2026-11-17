@@ -223,18 +223,12 @@ sys.exit(0 if d["backend"] == "classic" and not d["enabled"] and d["released"] e
 ' 2>/dev/null
 }
 
-# Reconcile shared applications under the transition cover without changing preferences.
-sync_opaque_context() {
-    "$HAKU_BIN_DIR/opaque_theme.sh" sync "$1" 9>&-
-}
-
 # Recover an unresponsive transition owner to a usable Classic desktop.
 emergency_classic() {
     kill_quickshell || return 1
     # A killed QML owner cannot report release; drain its serialized effects before Classic.
     "$HAKU_BIN_DIR/idle_actions.sh" recover 9>&- || return 1
     commit_backend classic || return 1
-    sync_opaque_context classic || echo "Warning: could not restore Classic opaque context during recovery." >&2
     kill_classic_stack
     start_classic_stack && wait_until verify_backend
 }
@@ -244,7 +238,6 @@ rollback_classic() {
     local covered="$1"
     stop_qs_supervisor || return 1
     commit_backend classic || return 1
-    sync_opaque_context classic || { emergency_classic; return 1; }
     if [[ "$covered" == yes ]]; then
         transition_ipc hideChrome || { emergency_classic; return 1; }
         kill_classic_stack
@@ -262,7 +255,6 @@ rollback_classic() {
 rollback_hikai() {
     kill_classic_stack
     commit_backend "$QS_BACKEND_NAME" || { emergency_classic; return 1; }
-    sync_opaque_context "$QS_BACKEND_NAME" || { emergency_classic; return 1; }
     if quickshell_ready && start_hikai_auxiliary_stack && transition_ipc showChrome &&
         start_qs_supervisor && transition_ipc release && wait_transition_phase finished &&
         wait_until verify_backend; then
@@ -281,7 +273,6 @@ switch_to_hikai() {
     fi
     kill_classic_stack
     if ! "$HAKU_BIN_DIR/idle_backend_ctl.sh" stop-classic 9>&- ||
-        ! sync_opaque_context "$QS_BACKEND_NAME" ||
         ! "$HAKU_BIN_DIR/desktop_icons_manager.sh" --startup 9>&- || ! transition_ipc showChrome ||
         ! commit_backend "$QS_BACKEND_NAME"; then
         rollback_classic yes
@@ -309,7 +300,7 @@ switch_to_classic() {
         return 1
     fi
     if ! stop_qs_supervisor || ! transition_ipc hideChrome ||
-        ! sync_opaque_context classic || ! commit_backend classic || ! start_classic_visual_stack; then
+        ! commit_backend classic || ! start_classic_visual_stack; then
         rollback_hikai
         return 1
     fi

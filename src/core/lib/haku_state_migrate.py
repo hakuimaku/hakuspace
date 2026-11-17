@@ -24,7 +24,6 @@ LEGACY_KEYS = {
     "taskbar_manual_state": "desktop.taskbar.requested",
     "dockbar_manual_state": "desktop.dockbar.requested",
     "desktop_icons_state": "desktop.icons.enabled",
-    "opaque_theme_state": "theme.opaque.enabled",
     "state.env": "theme.appearance.env",
     "idle_inhibit": "system.idle-inhibit.enabled",
     "cava_layer_state": "cava.enabled",
@@ -41,10 +40,12 @@ RETIRED_FILES = (
     "edge_trigger_state",
     "rounded_screen_state",
     "rounded_screen_dynamic_state",
+    "opaque_theme_state",
     "[desktop].waybar.mode",
     "[desktop].edge-trigger.enabled",
     "[screen].rounded.enabled",
     "[screen].rounded.dynamic",
+    "[theme].opaque.enabled",
 )
 # Required user preferences once stored alongside disposable generated data.
 CACHED_STATE_KEYS = (("current_wallpaper", "desktop.wallpaper.current.json"),

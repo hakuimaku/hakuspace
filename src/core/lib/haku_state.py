@@ -14,7 +14,6 @@ STATE_FILES = {
     'desktop.icons.positions.json': '[desktop].icons.positions.json',
     'desktop.wallpaper.current.json': '[desktop].wallpaper.current.json',
     'desktop.wallpaper.runtime.json': '[desktop].wallpaper.runtime.json',
-    'theme.opaque.enabled': '[theme].opaque.enabled',
     'theme.appearance.env': '[theme].appearance.env',
     'theme.classic.palette': '[theme].classic.palette',
     'theme.classic.palette.effective': '[theme].classic.palette.effective',

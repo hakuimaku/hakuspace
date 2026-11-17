@@ -20,7 +20,6 @@ haku_state_path() {
         desktop.icons.positions.json) name='[desktop].icons.positions.json' ;;
         desktop.wallpaper.current.json) name='[desktop].wallpaper.current.json' ;;
         desktop.wallpaper.runtime.json) name='[desktop].wallpaper.runtime.json' ;;
-        theme.opaque.enabled) name='[theme].opaque.enabled' ;;
         theme.appearance.env) name='[theme].appearance.env' ;;
         theme.classic.palette) name='[theme].classic.palette' ;;
         theme.classic.palette.effective) name='[theme].classic.palette.effective' ;;

@@ -64,9 +64,6 @@ QtObject {
         onLoadFailed: root.dockbarManualState = false
     }
 
-    property bool opaqueThemeState: false
-    property FileView fv2: FileView { path: Env.stateThemeOpaqueEnabled; watchChanges: true; printErrors: false; onFileChanged: this.reload(); onTextChanged: { var txt = this.text().trim(); if (txt === "1") root.opaqueThemeState = true; else if (txt === "0") root.opaqueThemeState = false; else root.opaqueThemeState = false; } }
-
     property bool cavaLayerState: false
     property FileView cavaStateFile: FileView {
         path: Env.stateCavaEnabled

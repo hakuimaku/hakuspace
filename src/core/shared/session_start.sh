@@ -9,8 +9,6 @@ haku_state_migrate || exit 1
 if [[ "${1:-}" == "--early" ]]; then
     # Select the idle owner before starting either shell.
     "$HAKU_BIN_DIR/idle_backend_ctl.sh" reconcile || exit 1
-    # Restore effective opaque overrides before rendering or starting either shell.
-    "$HAKU_BIN_DIR/opaque_theme.sh" sync "$(haku_backend_get)" || true
     # Reconcile installed assets after updates or restores without failing login.
     if [[ -x "$HAKU_BIN_DIR/appearance_ctl.sh" ]]; then
         "$HAKU_BIN_DIR/appearance_ctl.sh" apply || true

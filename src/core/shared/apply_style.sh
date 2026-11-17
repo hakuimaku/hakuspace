@@ -2,12 +2,8 @@
 
 source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_backend_lib.sh" || exit 1
 
-# Context synchronization must not restart shell services during backend cutover.
-OPAQUE_CONTEXT=false
-[[ "${1:-}" == --opaque-context ]] && OPAQUE_CONTEXT=true
-
 # Apply GTK font (best-effort)
-if ! $OPAQUE_CONTEXT && command -v gsettings >/dev/null 2>&1; then
+if command -v gsettings >/dev/null 2>&1; then
     if [[ -n "${FONT_FAMILY:-}" && -n "${FONT_SIZE:-}" ]]; then
         gtk_font="${FONT_FAMILY} ${FONT_SIZE}"
         gsettings set org.gnome.desktop.interface font-name "$gtk_font" || true
@@ -16,13 +12,9 @@ if ! $OPAQUE_CONTEXT && command -v gsettings >/dev/null 2>&1; then
 fi
 
 # Reload apps
-if $OPAQUE_CONTEXT; then
-    "$HAKU_BIN_DIR/reload_config.sh" >/dev/null 2>&1 || exit 1
-else
-    "$HAKU_BIN_DIR/reload_config.sh" >/dev/null 2>&1 || true
-fi
+"$HAKU_BIN_DIR/reload_config.sh" >/dev/null 2>&1 || true
 
-if ! $OPAQUE_CONTEXT && [[ -f "$HAKU_BIN_DIR/desktop_icons_manager.sh" ]]; then
+if [[ -f "$HAKU_BIN_DIR/desktop_icons_manager.sh" ]]; then
     "$HAKU_BIN_DIR/desktop_icons_manager.sh" --reload >/dev/null 2>&1 || true
 fi
 
@@ -30,7 +22,7 @@ fi
 #     "$HAKU_BIN_DIR/taskbar_manager.sh" --reload >/dev/null 2>&1 || true
 # fi
 
-if ! $OPAQUE_CONTEXT && haku_backend_is "classic"; then
+if haku_backend_is "classic"; then
     swaync-client --reload-config --reload-css >/dev/null 2>&1 || true
     pkill -SIGUSR2 -x waybar >/dev/null 2>&1 || true
 fi
@@ -41,6 +33,6 @@ for s in /tmp/kitty-*; do
     kitty @ --to "unix:$s" load-config >/dev/null 2>&1 || true
 done
 
-if ! $OPAQUE_CONTEXT && [[ -f "$HAKU_BIN_DIR/cava_manager.sh" ]]; then
+if [[ -f "$HAKU_BIN_DIR/cava_manager.sh" ]]; then
     "$HAKU_BIN_DIR/cava_manager.sh" reload >/dev/null 2>&1 || true
 fi

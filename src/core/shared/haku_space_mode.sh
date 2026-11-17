@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script manages Haku Space Mode (combining Cava dynamic and Opaque Theme).
+# This script manages Haku Space Mode (Cava dynamic mode).
 
 source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_theme.sh" || exit 1
 
@@ -13,12 +13,6 @@ fi
 
 
 turn_on() {
-    # 1. Opaque Theme
-    if [[ "$(cat "$(haku_state_path theme.opaque.enabled)" 2>/dev/null || echo "0")" != "1" ]]; then
-        "$HAKU_BIN_DIR/opaque_theme.sh" --toggle
-    fi
-
-    # 2. Cava
     if [[ "$(cat "$(haku_state_path cava.dynamic-position)" 2>/dev/null || echo "0")" != "1" ]]; then
         "$HAKU_BIN_DIR/cava_manager.sh" --toggle-dynamic
     fi
@@ -28,14 +22,8 @@ turn_on() {
 }
 
 turn_off() {
-    # 1. Cava
     if [[ "$(cat "$(haku_state_path cava.dynamic-position)" 2>/dev/null || echo "0")" == "1" ]]; then
         "$HAKU_BIN_DIR/cava_manager.sh" --toggle-dynamic
-    fi
-
-    # 2. Opaque Theme
-    if [[ "$(cat "$(haku_state_path theme.opaque.enabled)" 2>/dev/null || echo "0")" == "1" ]]; then
-        "$HAKU_BIN_DIR/opaque_theme.sh" --toggle
     fi
 
     echo "0" > "$SHELL_MODE_STATE"
