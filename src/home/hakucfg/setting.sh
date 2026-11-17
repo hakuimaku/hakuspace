@@ -49,19 +49,14 @@ REC_OPTS="--max-fps 60" # wl-screenrec options, you can customize them as needed
 
 
 
-# ====== Rofi Theme Settings ======
-# You just add your theme "name.rasi" to the ~/hakucfg/config/rofi folder, and switch to it in Haku Menu (Theme tab)
-
-# If you have issues with rofi wallpaper image (Too lowres, dupe images,...), you can try to change them.
-# What do they do? These are ImageMagick options, Generate wallpaper preview image for some Rofi themes
+# ====== Wallpaper Preview Cache Settings ======
+# If you have issues with rofi wallpaper preview images (too lowres, dupe images,...), you can try to change them.
+# What do they do? These are ImageMagick options used to generate cached wallpaper previews.
 # Works best with wallpapers that have the subject in the center.
 # Change the options below to your liking, or leave them as default.
 # Previews live in ${XDG_CACHE_HOME:-$HOME/.cache}/hakuspace/wallpaper/; change wallpaper to regenerate them.
 
-# Rofi style: television.rasi
 # GEN_WIDE_OPTS=${GEN_WIDE_OPTS:-"-resize 800x250^ -gravity Center -crop 800x250+0+0 +repage"}
-
-# Rofi style: tablet.rasi
 # GEN_BOX_OPTS=${GEN_BOX_OPTS:-"-resize 1653x852^ -gravity Center -extent 1653x852 -gravity NorthWest -crop 1212x852+400+0 +repage"}
 
 

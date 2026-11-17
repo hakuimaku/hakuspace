@@ -1,0 +1,35 @@
+@import "../base.rasi"
+
+window {
+    width: 720px;
+}
+
+panel-body {
+    children: [ mode-switcher, message, list-frame, status-bar ];
+}
+
+status-bar {
+    orientation: horizontal;
+    background-color: @inset-bg;
+    border: 2px;
+    border-color: @border-dark;
+    padding: 3px 8px;
+    spacing: 4px;
+    children: [ textbox-current-entry, num-filtered-rows, textbox-slash, num-rows ];
+}
+
+textbox-current-entry {
+    expand: true;
+    text-color: @text-muted;
+}
+
+num-filtered-rows,
+num-rows,
+textbox-slash {
+    expand: false;
+    text-color: @text-mono;
+}
+
+textbox-slash {
+    content: "/";
+}

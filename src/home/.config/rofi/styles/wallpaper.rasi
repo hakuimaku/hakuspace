@@ -1,0 +1,52 @@
+@import "../base.rasi"
+
+configuration {
+    hover-select: true;
+    me-select-entry: "";
+    me-accept-entry: "MousePrimary";
+}
+
+window {
+    width: 82%;
+}
+
+listview {
+    columns: 4;
+    lines: 2;
+    spacing: 8px;
+    padding: 4px;
+    dynamic: false;
+    fixed-columns: true;
+}
+
+element {
+    orientation: vertical;
+    padding: 8px;
+    spacing: 6px;
+    border: 2px;
+    border-color: @border-dark;
+    background-color: @panel-bg;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color: @panel-bg;
+    text-color: @text;
+}
+
+element selected.normal,
+element selected.active {
+    background-color: @select-bg;
+    text-color: @select-fg;
+    border-color: @border-light;
+}
+
+element-icon {
+    size: 170px;
+    horizontal-align: 0.5;
+    vertical-align: 0.5;
+}
+
+element-text {
+    horizontal-align: 0.5;
+}

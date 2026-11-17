@@ -1,0 +1,17 @@
+@import "../base.rasi"
+
+window {
+    width: 52%;
+}
+
+panel-body {
+    children: [ message, list-frame ];
+}
+
+listview {
+    lines: 14;
+}
+
+element-icon {
+    enabled: false;
+}

@@ -31,7 +31,7 @@ done
 readarray -t ITEMS
 
 if haku_backend_is "classic" || ! haku_qs_alive; then
-    ROFI_ARGS=("-dmenu" "-i" "-p" "$PROMPT" "-theme" "option-menu.rasi")
+    ROFI_ARGS=("-dmenu" "-i" "-p" "$PROMPT" "-theme" "styles/menu.rasi")
     [[ "$PASSWORD" == "true" ]] && ROFI_ARGS+=("-password")
     [[ "$NO_CUSTOM" == "true" ]] && ROFI_ARGS+=("-no-custom")
     

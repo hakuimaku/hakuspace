@@ -15,7 +15,7 @@ src/core/
 
 ### `classic/`
 
-Classic-only interactive presentation adapters (`*_rofi.sh`, `hm_*_rofi.py`), Waybar/SwayNC/Taskbar controllers (`waybar_ctl.sh`, `taskbar_ctl.sh`, `notif_ctl.sh`, `rofi_theme_ctl.sh`), and Classic-specific helpers.
+Classic-only interactive presentation adapters (`*_rofi.sh`, `hm_*_rofi.py`), Waybar/SwayNC/Taskbar controllers (`waybar_ctl.sh`, `taskbar_ctl.sh`, `notif_ctl.sh`), and Classic-specific helpers.
 
 ### `hikai/`
 
@@ -34,7 +34,6 @@ statusbar_manager.sh
 taskbar_manager.sh
 dockbar_manager.sh
 change_theme.sh
-rofi_theme_switcher.sh
 niri_animation_switcher.sh
 wallpaper_select.sh
 shutdown.sh

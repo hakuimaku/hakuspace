@@ -8,10 +8,10 @@ MODE="${1:-drun}"
 
 case "$MODE" in
     drun)
-        exec rofi -show drun
+        exec rofi -show drun -theme styles/launcher.rasi
         ;;
     emoji)
-        exec rofi -modi emoji -show emoji
+        exec rofi -modi emoji -show emoji -theme styles/launcher.rasi
         ;;
     -h|--help)
         cat <<'HELP'

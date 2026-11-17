@@ -366,7 +366,6 @@ EOF
 
 registry_get_state_files() {
     cat <<'EOF'
-rofi-theme.rasi
 niri-animation.kdl
 EOF
 }
