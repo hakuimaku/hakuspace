@@ -21,9 +21,9 @@ kill_classic_stack() {
 # Restore user-enabled Classic surfaces without competing for notifications.
 start_classic_visual_stack() {
     local failed=0
-    gsettings set org.gnome.desktop.interface color-scheme prefer-dark >/dev/null 2>&1 || true
+    gsettings set org.gnome.desktop.interface color-scheme prefer-light >/dev/null 2>&1 || true
     python3 "$HAKU_BIN_DIR/kitty_theme_ctl.py" dark 9>&- || true
-    "$HAKU_BIN_DIR/appearance_ctl.sh" apply-mode dark 9>&- || true
+    "$HAKU_BIN_DIR/appearance_ctl.sh" apply-mode light classic 9>&- || true
     "$HAKU_BIN_DIR/wallpaper_resume.sh" 9>&- || failed=1
     "$HAKU_BIN_DIR/statusbar_manager.sh" 9>&- || failed=1
     "$HAKU_BIN_DIR/desktop_icons_manager.sh" --startup 9>&- || failed=1
@@ -58,7 +58,7 @@ start_classic_notification_service() {
     haku_qs_alive && return 1
     # Clear any Light preview written by an outgoing shell before its writer exited.
     python3 "$HAKU_BIN_DIR/kitty_theme_ctl.py" dark 9>&- || true
-    "$HAKU_BIN_DIR/appearance_ctl.sh" apply-mode dark 9>&- || true
+    "$HAKU_BIN_DIR/appearance_ctl.sh" apply-mode light classic 9>&- || true
     notification_owned_by swaync || wait_until notification_unowned || return 1
     if ! pgrep -x swaync >/dev/null; then
         swaync </dev/null >/dev/null 2>&1 9>&- &
@@ -228,6 +228,7 @@ sync_backend_styles() {
     if [[ -x "$HAKU_BIN_DIR/gen_style.sh" ]]; then
         "$HAKU_BIN_DIR/gen_style.sh" >/dev/null 2>&1 || return 1
     fi
+    theme_sync_classic_gtk3_override || true
     if [[ -x "$HAKU_BIN_DIR/reload_config.sh" ]]; then
         "$HAKU_BIN_DIR/reload_config.sh" >/dev/null 2>&1 || true
     fi
@@ -272,6 +273,7 @@ rollback_classic() {
 rollback_hikai() {
     kill_classic_stack
     commit_backend "$QS_BACKEND_NAME" || { emergency_classic; return 1; }
+    "$HAKU_BIN_DIR/appearance_ctl.sh" apply 9>&- || true
     sync_backend_styles || true
     if quickshell_ready && start_hikai_auxiliary_stack && transition_ipc showChrome &&
         start_qs_supervisor && transition_ipc release && wait_transition_phase finished &&
@@ -296,6 +298,7 @@ switch_to_hikai() {
         rollback_classic yes
         return 1
     fi
+    "$HAKU_BIN_DIR/appearance_ctl.sh" apply 9>&- || true
     sync_backend_styles || true
     # Cava reads the backend preference to select Hikai's existing dynamic-mode policy.
     if ! "$HAKU_BIN_DIR/cava_manager.sh" --startup 9>&- || ! start_qs_supervisor || ! wait_until native_idle_ready; then
@@ -354,12 +357,22 @@ set_backend() (
         verify_backend
         return $?
     fi
+    rm -f "$(haku_runtime_dir)/cursor-changed"
     if [[ "$target" == "$QS_BACKEND_NAME" ]]; then
         switch_to_hikai || return 1
     else
         switch_to_classic || return 1
     fi
     notify-send -a "HakuSpace" -i "info" "Backend Switched" "Successfully switched to $target backend." 9>&- || true
+    if [[ -f "$(haku_runtime_dir)/cursor-changed" ]]; then
+        local new_cursor=''
+        read -r new_cursor < "$(haku_runtime_dir)/cursor-changed" || true
+        rm -f "$(haku_runtime_dir)/cursor-changed"
+        if [[ -n "$new_cursor" ]]; then
+            notify-send -a "HakuSpace" -i "info" "Cursor Changed" \
+                "Cursor đã đổi sang ${new_cursor}. Đăng xuất và đăng nhập lại để áp dụng cho mọi ứng dụng." 9>&- || true
+        fi
+    fi
 )
 
 # Verify notification ownership and only those Classic features enabled by the user.

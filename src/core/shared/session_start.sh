@@ -17,7 +17,7 @@ if [[ "${1:-}" == "--early" ]]; then
         "$HAKU_BIN_DIR/theme_ctl.sh" apply || true
     fi
     if haku_backend_is "classic"; then
-        gsettings set org.gnome.desktop.interface color-scheme prefer-dark >/dev/null 2>&1 || true
+        gsettings set org.gnome.desktop.interface color-scheme prefer-light >/dev/null 2>&1 || true
         python3 "$HAKU_BIN_DIR/kitty_theme_ctl.py" dark || true
         pgrep -x swaync >/dev/null || swaync &
     else

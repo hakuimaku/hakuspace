@@ -67,6 +67,9 @@ def write_settings(path, values):
             os.unlink(temporary)
 
 
+MANAGED_GTK_THEMES = ("Hikaide", "Hikaide-Light", "Cassettk")
+
+
 def apply(gtk_theme, icon_theme, mode, gtk_directory):
     """Update native settings without creating global CSS overrides or changing cursors."""
     if mode not in ("dark", "light") or any("\n" in value or "\r" in value for value in (gtk_theme, icon_theme)):
@@ -74,7 +77,7 @@ def apply(gtk_theme, icon_theme, mode, gtk_directory):
     config = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
     values = {"gtk-theme-name": gtk_theme} if gtk_theme else {}
     # Theme names carry the mode; a sticky dark preference would select Light's dark fallback.
-    if gtk_theme in ("Hikaide", "Hikaide-Light"):
+    if gtk_theme in MANAGED_GTK_THEMES:
         values["gtk-application-prefer-dark-theme"] = "0"
     if icon_theme and icon_theme != "system":
         values["gtk-icon-theme-name"] = icon_theme
@@ -85,7 +88,7 @@ def apply(gtk_theme, icon_theme, mode, gtk_directory):
         if path.is_symlink() or path.exists() and not path.is_file():
             raise ValueError(f"Unsafe GTK settings: {path}")
     replacements = []
-    # Existing Hikaide overrides must follow the selected theme, including dark fallback imports.
+    # Existing managed overrides must follow the selected theme, including dark fallback imports.
     roots = (Path.home() / ".themes", Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "themes")
     for name in ("gtk.css", "gtk-dark.css"):
         path = config / "gtk-4.0" / name
@@ -93,13 +96,13 @@ def apply(gtk_theme, icon_theme, mode, gtk_directory):
             continue
         target = path.resolve(strict=False)
         managed = any(target == root / theme / "gtk-4.0" / name
-                      for root in roots for theme in ("Hikaide", "Hikaide-Light"))
+                      for root in roots for theme in MANAGED_GTK_THEMES)
         if not managed or not gtk_theme:
             continue
         replacement = Path(gtk_directory) / "gtk-4.0" / name
-        if gtk_theme in ("Hikaide", "Hikaide-Light") and not replacement.is_file():
+        if gtk_theme in MANAGED_GTK_THEMES and not replacement.is_file():
             raise ValueError(f"Missing GTK override target: {replacement}")
-        replacements.append((path, replacement if gtk_theme in ("Hikaide", "Hikaide-Light") else None))
+        replacements.append((path, replacement if gtk_theme in MANAGED_GTK_THEMES else None))
     for path in paths:
         write_settings(path, values)
     for path, replacement in replacements:

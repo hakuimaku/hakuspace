@@ -40,9 +40,20 @@ noninteractive EOF, preserves that component's selected theme and native setting
 Later updates also require confirmation before replacing an external theme.
 
 An already selected managed family follows the existing mode policy: Classic uses
-the dark variants; Hikai follows its saved Light/Dark preference. Activation never
-changes the shell backend or the saved Hikai preference. Unrelated GTK keys/comments
-and custom CSS are preserved; no global GTK4 CSS override is created.
+`Cassettk` (GTK), `Cassetton` (icons) and `Cassettsor` (cursor); Hikai follows its
+saved Light/Dark preference across `Hikaide`, `Hikaide-Symbols` and `Haku-*`.
+Activation never changes the shell backend or the saved Hikai preference. Unrelated
+GTK keys/comments and custom CSS are preserved; when a managed GTK4 CSS override
+symlink is present, it switches between `Hikaide*` and `Cassettk`.
+
+When switching between Hikai and Classic changes the active managed cursor
+(`Haku-*` ↔ `Cassettsor`), HakuSpace updates `gsettings`, writes
+`~/.config/environment.d/90-hakuspace-cursor.conf`, runs `hyprctl setcursor` on
+Hyprland, and sends a desktop notification after the target notification service is
+ready. Because `XCURSOR_THEME` from `environment.d` is read at session start and
+running applications / XWayland retain their initial cursor (and Niri, MangoWM and
+labwc do not provide a live compositor cursor reload command), logging out and
+signing back in is required for the new cursor to apply across all applications.
 
 For assets already installed, these explicit commands activate without downloading:
 
@@ -78,6 +89,9 @@ Developers may provide their own source directories at independent absolute path
 | `cursor` | `HAKU_CURSOR_SOURCE` |
 | `gtk` | `HAKU_GTK_THEME_SOURCE` |
 | `symbols` | `HAKU_ICON_THEME_SOURCE` |
+| `cassettk` | `CASSETTK_SOURCE` |
+| `cassetton` | `CASSETTON_SOURCE` |
+| `cassettsor` | `CASSETTSOR_SOURCE` |
 
 ```bash
 HAKU_CURSOR_SOURCE="$HOME/src/haku-cursor" \
