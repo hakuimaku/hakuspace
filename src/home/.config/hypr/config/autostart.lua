@@ -27,7 +27,7 @@ hl.on("hyprland.start", function ()
     -- Resume wallpaper on startup
     hl.exec_cmd("$HOME/.local/bin/wallpaper_resume.sh")
 
-    hl.exec_cmd("$HOME/.local/bin/statusbar_manager.sh") -- Run status bar
+    hl.exec_cmd("$HOME/.local/bin/statusbar_manager.sh; $HOME/.local/bin/appbar_ctl.sh --startup") -- Run status bar before Classic AppBar
     hl.exec_cmd("$HOME/.local/bin/desktop_icons_manager.sh --startup") -- Run desktop icons if state is true
 
     hl.exec_cmd("$HOME/.local/bin/welcome.sh")

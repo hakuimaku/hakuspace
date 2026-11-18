@@ -19,10 +19,14 @@ if [[ $# -eq 0 ]]; then
     IS_COLOR=""
     [[ "$CAVA_COLOR_STATUS" == "0" || "$CAVA_COLOR_STATUS" == "surface" || "$CAVA_COLOR_STATUS" == "black" ]] && IS_COLOR="Surface" || IS_COLOR="Accent"
 
-    # Taskbar
+    # Taskbar (Hikai) / AppBar (Classic)
     TASKBAR_STATUS=$(cat "$(haku_state_path desktop.taskbar.requested)" 2>/dev/null || echo "0")
     TASKBAR_TEXT="OFF"
     [[ "$TASKBAR_STATUS" == "1" ]] && TASKBAR_TEXT="ON"
+
+    APPBAR_STATUS=$(cat "$(haku_state_path desktop.appbar.enabled)" 2>/dev/null || echo "1")
+    APPBAR_TEXT="OFF"
+    [[ "$APPBAR_STATUS" == "1" ]] && APPBAR_TEXT="ON"
 
     # Desktop Icons
     DESKTOP_ICONS_STATUS=$(cat "$(haku_state_path desktop.icons.enabled)" 2>/dev/null || echo "0")
@@ -39,6 +43,8 @@ EOF
     if [[ "$BACKEND_STATUS" == "hikai" ]]; then
         printf '󰝚  Cava Color Mode (%s)\n' "$IS_COLOR"
         printf '󰐃  Taskbar (%s)\n' "$TASKBAR_TEXT"
+    else
+        printf '󰐃  AppBar (%s)\n' "$APPBAR_TEXT"
     fi
     cat <<EOF
   Desktop Icons ($DESKTOP_ICONS_TEXT)
@@ -67,6 +73,10 @@ case "$chosen" in
     *"Taskbar Mode"*|*"Taskbar"*)
         if [[ "$(cat "$(haku_state_path shell.backend)" 2>/dev/null)" == hikai ]]; then
             spawn "$HAKU_BIN_DIR/taskbar_manager.sh" --toggle
+        fi ;;
+    *"AppBar"*)
+        if [[ "$(cat "$(haku_state_path shell.backend)" 2>/dev/null || printf 'classic')" != hikai ]]; then
+            spawn "$HAKU_BIN_DIR/appbar_ctl.sh" --toggle
         fi ;;
     *"Niri Animation"*) spawn "$HAKU_BIN_DIR/niri_animation_switcher.sh" ;;
     *"Change Wallpaper"*) spawn "$HAKU_BIN_DIR/wallpaper_select.sh" ;;

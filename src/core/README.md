@@ -6,7 +6,7 @@
 
 ```text
 src/core/
-├── classic/   # Classic-only (Waybar, Rofi, SwayNC, Cava layer, Classic adapters)
+├── classic/   # Classic-only (Waybar, Rofi, SwayNC, Classic AppBar, Cava layer, Classic adapters)
 ├── hikai/     # Hikai-only (Quickshell controllers and services)
 ├── shared/    # Cross-shell backends, engines, theme, WM helpers, utilities
 ├── facade/    # Public entrypoints used by keybinds, startup, and user CLI
@@ -15,7 +15,7 @@ src/core/
 
 ### `classic/`
 
-Classic-only interactive presentation adapters (`*_rofi.sh`, `hm_*_rofi.py`), Waybar/SwayNC controllers (`waybar_ctl.sh`, `notif_ctl.sh`), standalone Classic widgets (`cava_layer.py`), and Classic-specific helpers (`classic_palette.py`).
+Classic-only interactive presentation adapters (`*_rofi.sh`, `hm_*_rofi.py`), Waybar/SwayNC/AppBar controllers (`waybar_ctl.sh`, `notif_ctl.sh`, `appbar_ctl.sh`), standalone Classic widgets (`appbar_layer.py`, `wlr_toplevel.py`, `cava_layer.py`), and Classic-specific helpers (`classic_palette.py`).
 
 ### `hikai/`
 

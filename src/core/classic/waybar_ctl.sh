@@ -71,6 +71,12 @@ stop_cmd() {
     stop_waybar
 }
 
+reanchor_appbar_if_running() {
+    if [[ -x "$HAKU_BIN_DIR/appbar_ctl.sh" ]] && pgrep -f "$HAKU_BIN_DIR/appbar_layer.py" >/dev/null 2>&1; then
+        "$HAKU_BIN_DIR/appbar_ctl.sh" reload >/dev/null 2>&1 || true
+    fi
+}
+
 reload_waybar() {
     if haku_qs_mode; then
         return 0
@@ -78,7 +84,8 @@ reload_waybar() {
     waybar_enabled || return 0
     ensure_config || return 1
     stop_waybar
-    start_waybar
+    start_waybar || return 1
+    reanchor_appbar_if_running
 }
 
 startup_waybar() {
@@ -103,6 +110,7 @@ toggle_waybar() {
         ensure_config || return 1
         start_waybar || return 1
         printf '1\n' > "$STATUS_FILE"
+        reanchor_appbar_if_running
     fi
 }
 

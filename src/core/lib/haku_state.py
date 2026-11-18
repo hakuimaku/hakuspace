@@ -8,6 +8,7 @@ STATE_FILES = {
     'shell.memory-maintenance.json': '[shell].memory-maintenance.json',
     'shell.haku-space.enabled': '[shell].haku-space.enabled',
     'desktop.waybar.requested': '[desktop].waybar.requested',
+    'desktop.appbar.enabled': '[desktop].appbar.enabled',
     'desktop.taskbar.requested': '[desktop].taskbar.requested',
     'desktop.dockbar.requested': '[desktop].dockbar.requested',
     'desktop.icons.enabled': '[desktop].icons.enabled',

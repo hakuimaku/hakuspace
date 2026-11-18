@@ -24,6 +24,9 @@ fi
 
 if haku_backend_is "classic"; then
     swaync-client --reload-config --reload-css >/dev/null 2>&1 || true
+    if [[ -x "$HAKU_BIN_DIR/appbar_ctl.sh" ]]; then
+        "$HAKU_BIN_DIR/appbar_ctl.sh" reload-style >/dev/null 2>&1 || true
+    fi
 fi
 theme_sync_classic_gtk3_override || true
 

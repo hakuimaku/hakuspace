@@ -1,13 +1,22 @@
 #!/usr/bin/env bash
 
-# Headless Taskbar domain/controller API (Hikai only).
+# Headless Taskbar/AppBar domain/controller API.
 #
-# Classic mode no longer provides a separate Waybar taskbar. Hikai reads and
-# mutates desktop.taskbar.requested through hikai_chrome_state_ctl.py.
+# In Hikai mode, HakuSpace manages the native QML Taskbar via
+# desktop.taskbar.requested and hikai_chrome_state_ctl.py.
+# In Classic mode, startup/reload/toggle/set/status route to Classic AppBar
+# (appbar_ctl.sh, desktop.appbar.enabled), keeping Hikai and Classic state separate.
 
 source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_state.sh" || exit 1
 
 if [[ ${1:-} == --status ]]; then
+    if [[ "$(cat "$(haku_state_path shell.backend)" 2>/dev/null || printf 'classic')" != "hikai" ]]; then
+        if [[ -x "$HAKU_BIN_DIR/appbar_ctl.sh" ]]; then
+            exec "$HAKU_BIN_DIR/appbar_ctl.sh" --status
+        fi
+        printf 'disabled\n'
+        exit 0
+    fi
     if [[ "$(cat "$(haku_state_path desktop.taskbar.requested)" 2>/dev/null)" == "1" ]]; then
         printf 'enabled\n'
     else
@@ -52,6 +61,12 @@ set_layout() {
 }
 
 toggle_taskbar() {
+    if ! haku_qs_mode; then
+        if [[ -x "$HAKU_BIN_DIR/appbar_ctl.sh" ]]; then
+            exec "$HAKU_BIN_DIR/appbar_ctl.sh" --toggle
+        fi
+        return 0
+    fi
     if [[ "$(cat "$MANUAL_STATE")" == 1 ]]; then set_layout disabled; else set_layout taskbar; fi
 }
 
@@ -76,6 +91,9 @@ ensure_manual_state
 
 case "${1:-}" in
     --startup|--reload)
+        if ! haku_qs_mode && [[ -x "$HAKU_BIN_DIR/appbar_ctl.sh" ]]; then
+            exec "$HAKU_BIN_DIR/appbar_ctl.sh" "$1"
+        fi
         exit 0
         ;;
     --layout)
@@ -84,7 +102,15 @@ case "${1:-}" in
         ;;
     --set)
         case "${2:-}" in
-            enabled|disabled) set_layout "$2" ;;
+            enabled|disabled)
+                if ! haku_qs_mode; then
+                    if [[ -x "$HAKU_BIN_DIR/appbar_ctl.sh" ]]; then
+                        exec "$HAKU_BIN_DIR/appbar_ctl.sh" --set "$2"
+                    fi
+                    exit 0
+                fi
+                set_layout "$2"
+                ;;
             *) printf 'taskbar_ctl.sh: --set requires enabled or disabled.\n' >&2; exit 2 ;;
         esac
         ;;

@@ -3,7 +3,7 @@
 HakuSpace includes custom mini-applications and desktop widgets built by combining existing Linux tools with custom bash and Python scripts in `src/core/`.
 
 Currently, the following mini-apps are available:
-- [**Taskbar (Hikai & Shared Pins)**](#the-taskbar)
+- [**Taskbar (Hikai), Classic AppBar & Shared Pins**](#the-taskbar)
 - [**Desktop Icons**](#desktop-icons)
 - [**Cava Underbar**](#cava-underbar)
 
@@ -11,15 +11,21 @@ Currently, the following mini-apps are available:
 
 ## The Taskbar
 
-Taskbar control separates the compatibility facade, controller, and shared pin/icon helpers used by Hikai's dock/taskbar.
+Taskbar control separates the compatibility facade, controller, and shared pin/icon helpers used by Hikai's dock/taskbar and Classic's standalone AppBar.
 
 ### Taskbar control split
 The public command remains `taskbar_manager.sh`, so existing keybinds and HakuMenu actions stay intact.
 
 - **`taskbar_manager.sh` (compatibility facade):** preserves `--startup`, `--reload`, `--toggle`, `--app-name`, and `--icon-size` and routes operations to `taskbar_ctl.sh`.
-- **`taskbar_ctl.sh` (controller):** owns the shared `[desktop].taskbar.requested` state for Hikai. When `cava.dynamic-position` is enabled in Hikai, toggling the taskbar updates `[cava].position` accordingly.
+- **`taskbar_ctl.sh` (controller):** owns `[desktop].taskbar.requested` for Hikai (and updates `[cava].position` when `cava.dynamic-position` is enabled). In Classic mode, `--startup`, `--reload`, `--toggle`, `--set`, and `--status` route to `appbar_ctl.sh` (`[desktop].appbar.enabled`), keeping Classic and Hikai preferences separate.
 
-State lives under `~/.local/state/hakuspace/state/`: `[desktop].taskbar.requested` stores the persistent request. See [Hikai](../hikai.md) for shell architecture.
+State lives under `~/.local/state/hakuspace/state/`: `[desktop].taskbar.requested` stores Hikai's preference and `[desktop].appbar.enabled` stores Classic AppBar's preference. See [Hikai](../hikai.md) for shell architecture.
+
+### Classic AppBar (`appbar_layer.py`, `wlr_toplevel.py`, `appbar_ctl.sh`)
+In Classic mode, HakuSpace provides a standalone vertical left-edge application bar built with GTK3 and `GtkLayerShell`, separate from Waybar:
+- **Cross-WM Toplevels:** `wlr_toplevel.py` speaks `zwlr_foreign_toplevel_manager_v1` directly over the Wayland socket, tracking open windows and issuing activate/close requests uniformly across Hyprland, Niri, MangoWM, and Labwc.
+- **Shared Pin Sync:** Watches `~/hakucfg/config/taskbar-pin-apps` and mutates pins through `pinned_apps_ctl.py` so pinned apps stay synchronized with Hikai's Dock.
+- **Retro Styling & Hot Reload:** Reads Classic `palette.css` and `fonts.css`; `apply_style.sh` invokes `appbar_ctl.sh reload-style` (`SIGUSR1`) to refresh colors and fonts live without restarting the bar. When Waybar is toggled back on, `waybar_ctl.sh` reloads AppBar afterwards so Waybar retains the full-width top edge.
 
 ### `taskbar_geticon.sh` (The Icon Fetcher)
 The Taskbar needs to display the correct icons for your pinned applications.

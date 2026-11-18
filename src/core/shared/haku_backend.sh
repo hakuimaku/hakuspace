@@ -15,7 +15,8 @@ kill_classic_stack() {
     fi
     pkill -f cava_layer.py
     pkill -f desktop_icons.py
-    rm -f /tmp/cava-layer.pid
+    pkill -f appbar_layer.py
+    rm -f /tmp/cava-layer.pid "$(haku_runtime_dir)/appbar-layer.pid"
 }
 
 # Restore user-enabled Classic surfaces without competing for notifications.
@@ -26,6 +27,9 @@ start_classic_visual_stack() {
     "$HAKU_BIN_DIR/appearance_ctl.sh" apply-mode light classic 9>&- || true
     "$HAKU_BIN_DIR/wallpaper_resume.sh" 9>&- || failed=1
     "$HAKU_BIN_DIR/statusbar_manager.sh" 9>&- || failed=1
+    if [[ -x "$HAKU_BIN_DIR/appbar_ctl.sh" ]]; then
+        "$HAKU_BIN_DIR/appbar_ctl.sh" --startup 9>&- || failed=1
+    fi
     "$HAKU_BIN_DIR/desktop_icons_manager.sh" --startup 9>&- || failed=1
     "$HAKU_BIN_DIR/cava_manager.sh" --startup 9>&- || failed=1
     return "$failed"
@@ -399,6 +403,7 @@ verify_backend() {
         haku_qs_alive && return 1
         pgrep -x swaync >/dev/null && notification_owned_by swaync || return 1
         for state in desktop.waybar.requested:waybar \
+            desktop.appbar.enabled:appbar_layer.py \
             desktop.icons.enabled:desktop_icons.py; do
             [[ $(cat "$(haku_state_path "${state%%:*}")" 2>/dev/null) == 1 ]] || continue
             proc=${state#*:}
