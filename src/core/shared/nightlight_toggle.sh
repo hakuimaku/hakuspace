@@ -30,6 +30,12 @@ is_nightlight_running() {
 stop_nightlight() {
     pkill -x hyprsunset >/dev/null 2>&1 || true
     pkill -x gammastep >/dev/null 2>&1 || true
+    # Wait for the outgoing gamma client to release zwlr_gamma_control_manager_v1 before starting a replacement.
+    local i=0
+    while (( i < 20 )) && is_nightlight_running; do
+        sleep 0.05
+        (( i++ ))
+    done
 }
 
 run_nightlight() {

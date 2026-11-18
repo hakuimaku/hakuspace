@@ -26,7 +26,7 @@ case "$XDG_CURRENT_DESKTOP" in
         ;;
 esac
 
-if (( nightlight_was_active )); then
+if (( nightlight_was_active )) && ! pgrep -x "hyprsunset" >/dev/null 2>&1 && ! pgrep -x "gammastep" >/dev/null 2>&1; then
     if [[ -x "$HAKU_BIN_DIR/nightlight_toggle.sh" ]]; then
         "$HAKU_BIN_DIR/nightlight_toggle.sh" --on >/dev/null 2>&1 || true
     fi
