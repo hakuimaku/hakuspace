@@ -108,11 +108,11 @@
                     "update-command": "grep -q '1' /tmp/random_wallpaper_status 2>/dev/null && echo true || echo false"
                 },
                 {
-                    "label": "󰆧",
+                    "label": "󰒃",
                     "type": "toggle",
                     "active": true,
-                    "command": "$HOME/.local/bin/haku_space_mode.sh --toggle >/dev/null 2>&1",
-                    "update-command": "$HOME/.local/bin/haku_space_mode.sh --check 2>/dev/null | grep -q ENABLED && echo true || echo false"
+                    "command": "$HOME/.local/bin/warp_toggle.sh >/dev/null 2>&1",
+                    "update-command": "warp-cli status 2>/dev/null | grep -q 'Connected' && echo true || echo false"
                 }
             ]
         },

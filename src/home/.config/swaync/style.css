@@ -632,6 +632,7 @@ blankwindow,
 
 .widget-buttons-grid flowboxchild > button label {
     color: inherit;
+    font-size: 1.35em;
     font-weight: bold;
 }
 
