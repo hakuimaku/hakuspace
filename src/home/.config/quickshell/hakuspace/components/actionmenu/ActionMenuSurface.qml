@@ -177,6 +177,8 @@ Item {
         case "niri_animation": return "pages/NiriAnimationPage.qml";
         case "shell":
         case "shellSwitcher": return "pages/ShellPage.qml";
+        case "backend":
+        case "shellBackend": return "pages/BackendPage.qml";
         case "emoji": return "pages/EmojiPage.qml";
         default: return "pages/RecordPage.qml";
         }
@@ -194,6 +196,8 @@ Item {
         case "niri_animation": return "option";
         case "shell":
         case "shellSwitcher": return "option";
+        case "backend":
+        case "shellBackend": return "option";
         case "emoji": return "emoji";
         default: return "option";
         }

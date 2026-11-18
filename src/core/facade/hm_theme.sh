@@ -29,15 +29,8 @@ if [[ $# -eq 0 ]]; then
     DESKTOP_ICONS_TEXT="OFF"
     [[ "$DESKTOP_ICONS_STATUS" == "1" ]] && DESKTOP_ICONS_TEXT="ON"
 
-    # Backend switch label follows the active shell mode.
+    # Backend status is also used below to gate Hikai-only theme actions.
     BACKEND_STATUS=$(cat "$(haku_state_path shell.backend)" 2>/dev/null || echo "classic")
-    BACKEND_LABEL="Explore the Abyss"
-    [[ "$BACKEND_STATUS" == "hikai" ]] && BACKEND_LABEL="Go back to Surface"
-
-    # Haku Space Mode
-    HAKU_LEGACY_STATUS=$(cat "$(haku_state_path shell.haku-space.enabled)" 2>/dev/null || echo "0")
-    HAKU_LEGACY_TEXT="OFF"
-    [[ "$HAKU_LEGACY_STATUS" == "1" ]] && HAKU_LEGACY_TEXT="ON"
 
     cat <<EOF
   Change Theme
@@ -45,16 +38,15 @@ if [[ $# -eq 0 ]]; then
 EOF
     if [[ "$BACKEND_STATUS" == "hikai" ]]; then
         printf '󰝚  Cava Color Mode (%s)\n' "$IS_COLOR"
+        printf '󰐃  Taskbar (%s)\n' "$TASKBAR_TEXT"
     fi
     cat <<EOF
   Desktop Icons ($DESKTOP_ICONS_TEXT)
-󰐃  Taskbar ($TASKBAR_TEXT)
 󰤕  Niri Animation
 󰏜  Change Wallpaper
 󱛹  Kill Lively Wallpaper
   Auto Random Wallpaper ($WALL_TEXT)
-󰆧  Haku Legacy Space :) ($HAKU_LEGACY_TEXT)
-󰆧  $BACKEND_LABEL
+󰆧  Shell Backend
 EOF
     exit 0
 fi
@@ -62,7 +54,7 @@ fi
 chosen="$*"
 case "$chosen" in
     *"Change Theme"*) spawn "$HAKU_BIN_DIR/change_theme.sh" ;;
-    *"Go back to Surface"*|*"Explore the Abyss"*) spawn "$HAKU_BIN_DIR/haku_backend.sh" --toggle ;;
+    *"Shell Backend"*) spawn "$HAKU_BIN_DIR/backend_switcher.sh" ;;
     *"Cava Dynamic Position"*|*"Cava Dynamic"*) spawn "$HAKU_BIN_DIR/cava_manager.sh" --toggle-dynamic ;;
     *"Cava Position"*) spawn "$HAKU_BIN_DIR/cava_manager.sh" --position ;;
     *"Cava Color Mode"*|*"Cava Color Switch"*) spawn "$HAKU_BIN_DIR/cava_manager.sh" --color-switch ;;
@@ -72,11 +64,13 @@ case "$chosen" in
         if [[ "$(cat "$(haku_state_path shell.backend)" 2>/dev/null)" == hikai && "$(cat "$(haku_state_path desktop.taskbar.requested)" 2>/dev/null)" != 1 ]]; then
             spawn "$HAKU_BIN_DIR/dockbar_manager.sh" --toggle
         fi ;;
-    *"Taskbar Mode"*|*"Taskbar"*) spawn "$HAKU_BIN_DIR/taskbar_manager.sh" --toggle ;;
+    *"Taskbar Mode"*|*"Taskbar"*)
+        if [[ "$(cat "$(haku_state_path shell.backend)" 2>/dev/null)" == hikai ]]; then
+            spawn "$HAKU_BIN_DIR/taskbar_manager.sh" --toggle
+        fi ;;
     *"Niri Animation"*) spawn "$HAKU_BIN_DIR/niri_animation_switcher.sh" ;;
     *"Change Wallpaper"*) spawn "$HAKU_BIN_DIR/wallpaper_select.sh" ;;
     *"Kill Lively Wallpaper"*) spawn "$HAKU_BIN_DIR/wallpaper_select.sh" --exit ;;
-    *"Haku Legacy Space :)"*) spawn "$HAKU_BIN_DIR/haku_space_mode.sh" --toggle ;;
     *"Auto Random Wallpaper"*) spawn "$HAKU_BIN_DIR/random_wallpaper.sh" --toggle ;;
 esac
 

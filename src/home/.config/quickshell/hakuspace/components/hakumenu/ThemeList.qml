@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell
 import Quickshell.Io
 import "../../services"
 import "../../config/UiCatalog.js" as UiCatalog
@@ -76,8 +77,6 @@ Item {
             return item.label + " · " + SettingsCoordinator.runtimeError
         if (item && item.stateKind === "colorMode" && ShellSettingsStore.error)
             return item.label + " · " + ShellSettingsStore.error
-        if (item && item.backendSwitch)
-            return hikaiBackend ? "Go back to Surface" : "Explore the Abyss"
         return item && item.label ? item.label : ""
     }
 
@@ -194,6 +193,12 @@ Item {
             return
         }
         if (item.action === "Change Wallpaper") { wallpaperRequested(); return }
+        if (item.backendSwitch) {
+            var screenName = UiState.hakuMenuScreenName || (Quickshell.screens.length ? Quickshell.screens[0].name : "")
+            root.launched(true)
+            if (screenName) UiState.openActionMenu(screenName, "backend")
+            return
+        }
 
         actionProcess.running = false
         actionProcess.command = [Env.binDir + "/hm_theme.sh", root.actionFor(item)]

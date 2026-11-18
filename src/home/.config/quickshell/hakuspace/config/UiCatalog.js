@@ -40,7 +40,7 @@ var hakuMenuThemeItems = [
     { label: "Dark / Light Mode", icon: "󰔎", action: "colorMode", toggle: true, showState: true, stateKind: "colorMode" },
     { label: "Shell Layout", icon: "󰍜", action: "layout", shellLayoutSwitch: true },
     { label: "Cava Position", icon: "󰝚", action: "cavaPosition", cavaPositionSwitch: true },
-    { label: "", icon: "󰆧", action: "", toggle: true, showState: false, stateKey: "stateShellBackend", stateKind: "backend", backendSwitch: true }
+    { label: "Shell Backend", icon: "󰆧", action: "Shell Backend", toggle: false, showState: false, stateKey: "stateShellBackend", stateKind: "backend", backendSwitch: true }
 ]
 
 // Action Menu
@@ -124,6 +124,22 @@ var actionMenuRecordModes = [
         label: "No Sound",
         secondary: "Video Only",
         isSubmenu: false
+    }
+]
+
+// Shell backends in their display order.
+var actionMenuShellBackends = [
+    {
+        id: "classic",
+        icon: "󰍹",
+        label: "Classic",
+        secondary: "Waybar · Rofi · SwayNC"
+    },
+    {
+        id: "hikai",
+        icon: "󰆧",
+        label: "Hikai",
+        secondary: "Quickshell"
     }
 ]
 

@@ -2,8 +2,8 @@
     "custom/logo": {
         "format": "[HAKU]",
         "tooltip": true,
-        "tooltip-format": "Haku Menu",
-        "on-click": "$HOME/.local/bin/hakumenu.sh"
+        "tooltip-format": "Shell Backend",
+        "on-click": "$HOME/.local/bin/backend_switcher.sh"
     },
     "ext/workspaces": {
         "format": "{name}",
