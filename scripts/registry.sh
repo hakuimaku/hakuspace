@@ -201,7 +201,11 @@ registry_get_wm_configs() {
             echo "$SOURCE_CONFIG/mango|$DEST_CONFIG/mango"
             ;;
         labwc)
-            echo "$SOURCE_CONFIG/labwc|$DEST_CONFIG/labwc"
+            echo "$SOURCE_CONFIG/labwc/autostart|$DEST_CONFIG/labwc/autostart"
+            echo "$SOURCE_CONFIG/labwc/environment|$DEST_CONFIG/labwc/environment"
+            echo "$SOURCE_CONFIG/labwc/menu.xml|$DEST_CONFIG/labwc/menu.xml"
+            echo "$SOURCE_CONFIG/labwc/themerc-override|$DEST_CONFIG/labwc/themerc-override"
+            echo "$SOURCE_CONFIG/labwc/rc.xml|$DEST_CONFIG/labwc/rc.xml.template"
             ;;
     esac
 }

@@ -26,7 +26,8 @@ THEME_RENDER_DIR="${THEME_ROOT}/theme"
 THEME_STATE_FILE="$(haku_state_path theme.appearance.env)"
 
 THEME_BTOP_DIR="${HOME}/.config/btop/themes"
-# THEME_LABWC_RC="${HOME}/.local/state/hakuspace/labwc-include.xml"
+THEME_LABWC_RC="${XDG_CONFIG_HOME:-$HOME/.config}/labwc/rc.xml"
+THEME_LABWC_RC_TEMPLATE="${XDG_CONFIG_HOME:-$HOME/.config}/labwc/rc.xml.template"
 THEME_LABWC_OVERRIDE="${HOME}/.themes/hakulab/labwc/themerc"
 
 # Default theme values.

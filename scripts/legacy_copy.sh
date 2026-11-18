@@ -44,7 +44,11 @@ copy_wm_configs() {
             ;;
         labwc)
             log_info "Deploying Labwc configs (copy)..."
-            copy_item "$SOURCE_CONFIG/labwc" "$DEST_CONFIG/labwc"
+            while IFS='|' read -r src dst; do
+                [[ -z "$src" ]] && continue
+                copy_item "$src" "$dst"
+            done < <(registry_get_wm_configs "labwc")
+            copy_item "$SOURCE_CONFIG/labwc/rc.xml" "$DEST_CONFIG/labwc/rc.xml"
             if [[ ! -d "$HOME/.themes/hakulab" && -d "$HOME_SRC_DIR/.themes/hakulab" ]]; then
                 log_info "Deploying Hakulab theme for Labwc..."
                 copy_dir_content "$HOME_SRC_DIR/.themes/hakulab" "$HOME/.themes/hakulab"

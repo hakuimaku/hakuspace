@@ -33,6 +33,7 @@ ACCENT_0X="$(hex_to_0x "$ACCENT_COLOR")"
 CLASSIC_ACCENT="$ACCENT_COLOR"
 CLASSIC_ACCENT_RGBA="$ACCENT_RGBA"
 CLASSIC_ACCENT_0X="$ACCENT_0X"
+CLASSIC_EFFECTIVE_SCHEME="gray"
 
 ACCENT_DIM_ALPHA="${ACCENT_DIM_ALPHA:-0.8}"
 ACCENT_DIM="$(hex_to_rgba_alpha "$ACCENT_COLOR" "$ACCENT_DIM_ALPHA")"
@@ -360,45 +361,20 @@ EOF
 }
 
 render_labwc() {
-    if [[ -f "$THEME_LABWC_OVERRIDE" ]]; then
-        local theme_block
-        theme_block="# BEGIN GENERATED THEME
-window.active.border.color: ${ACCENT_COLOR}
-window.inactive.border.color: #000000
-window.active.label.text.color: ${ACCENT_COLOR}
-window.inactive.label.text.color: ${ACCENT_COLOR}
-window.active.button.unpressed.image.color: ${ACCENT_COLOR}
-window.inactive.button.unpressed.image.color: ${ACCENT_COLOR}
-menu.items.active.bg: ${ACCENT_COLOR}
-menu.items.text.color: ${ACCENT_COLOR}
-menu.items.active.bg.color: ${ACCENT_COLOR}
-menu.title.bg.color: ${ACCENT_COLOR}
-osd.border.color: ${ACCENT_COLOR}
-osd.label.text.color: ${ACCENT_COLOR}
-osd.window-switcher.style-classic.item.active.border.color: ${ACCENT_COLOR}
-osd.window-switcher.style-thumbnail.item.active.border.color: ${ACCENT_COLOR}
-# END GENERATED THEME"
-        if grep -q "# BEGIN GENERATED THEME" "$THEME_LABWC_OVERRIDE"; then
-            awk -v block="$theme_block" '/# BEGIN GENERATED THEME/ { print block; skip=1; next } /# END GENERATED THEME/ { skip=0; next } !skip { print }' \
-                "$THEME_LABWC_OVERRIDE" > "${THEME_LABWC_OVERRIDE}.tmp" && cat "${THEME_LABWC_OVERRIDE}.tmp" > "$THEME_LABWC_OVERRIDE" && rm -f "${THEME_LABWC_OVERRIDE}.tmp"
-        fi
+    [[ -f "$HAKU_BIN_DIR/classic_palette.py" ]] || return 0
+    local rc_args=() rc_src=""
+    if [[ -f "${THEME_LABWC_RC_TEMPLATE:-}" ]]; then
+        rc_src="$THEME_LABWC_RC_TEMPLATE"
+    elif [[ -f "${THEME_LABWC_RC:-}" && ! -L "$THEME_LABWC_RC" ]]; then
+        rc_src="$THEME_LABWC_RC"
     fi
-
-    if [[ -f "$THEME_LABWC_RC" ]]; then
-        local labwc_font_size=$((FONT_SIZE - 2))
-        (( labwc_font_size < 8 )) && labwc_font_size=8
-        export GEN_FONT_BLOCK="        <!-- BEGIN GENERATED FONTS -->
-            <font place=\"ActiveWindow\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
-            <font place=\"InactiveWindow\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
-            <font place=\"MenuHeader\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
-            <font place=\"MenuItem\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
-            <font place=\"OnScreenDisplay\"><name>${FONT_FAMILY}</name><size>${labwc_font_size}</size><slant>normal</slant><weight>normal</weight></font>
-            <!-- END GENERATED FONTS -->"
-        if grep -q "<!-- BEGIN GENERATED FONTS -->" "$THEME_LABWC_RC"; then
-            awk '/<!-- BEGIN GENERATED FONTS -->/ { print ENVIRON["GEN_FONT_BLOCK"]; skip=1; next } /<!-- END GENERATED FONTS -->/ { skip=0; next } !skip { print }' \
-                "$THEME_LABWC_RC" > "${THEME_LABWC_RC}.tmp" && cat "${THEME_LABWC_RC}.tmp" > "$THEME_LABWC_RC" && rm -f "${THEME_LABWC_RC}.tmp"
-        fi
+    if [[ -n "$rc_src" && -n "${THEME_LABWC_RC:-}" ]]; then
+        rc_args=(--rc-template "$rc_src" --rc-out "$THEME_LABWC_RC" --font-family "$FONT_FAMILY" --font-size "$FONT_SIZE")
     fi
+    python3 "$HAKU_BIN_DIR/classic_palette.py" render-labwc \
+        --scheme "${CLASSIC_EFFECTIVE_SCHEME:-gray}" \
+        --out-dir "$(dirname "$THEME_LABWC_OVERRIDE")" \
+        "${rc_args[@]}" || return 1
 }
 
 render_quickshell() {
@@ -432,6 +408,7 @@ render_classic() {
     previous="$(cat "$eff_file" 2>/dev/null || printf '')"
     effective="$(python3 "$HAKU_BIN_DIR/classic_palette.py" resolve \
         --seed "$ACCENT_SEED" --requested "$requested" --previous "$previous")" || return 1
+    CLASSIC_EFFECTIVE_SCHEME="$effective"
     python3 "$HAKU_BIN_DIR/classic_palette.py" render \
         --scheme "$effective" --out-dir "$THEME_RENDER_DIR/classic" || return 1
     scheme_accent="$(sed -n 's/^@define-color select_bg \(#[0-9a-fA-F]\{6\}\);$/\1/p' "$CLASSIC_RENDER_DIR/palette.css" | head -n1)"

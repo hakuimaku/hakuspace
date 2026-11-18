@@ -110,11 +110,25 @@ run_doctor() {
         fi
 
         # 3. Check installed Window Managers
-        for wm in niri mango labwc; do
+        for wm in niri mango; do
             if [[ -d "$DEST_CONFIG/$wm" ]]; then
                 check_module "$SOURCE_CONFIG/$wm" "$DEST_CONFIG/$wm" "Window Manager: $wm"
             fi
         done
+        if [[ -d "$DEST_CONFIG/labwc" ]]; then
+            local start_labwc_issues labwc_issues src dst
+            start_labwc_issues=$(( ${#BROKEN_LINKS[@]} + ${#OVERWRITTEN_FILES[@]} + ${#MISSING_LINKS[@]} ))
+            while IFS='|' read -r src dst; do
+                [[ -z "$src" ]] && continue
+                check_symlink_recursive "$src" "$dst"
+            done < <(registry_get_wm_configs "labwc")
+            labwc_issues=$(( (${#BROKEN_LINKS[@]} + ${#OVERWRITTEN_FILES[@]} + ${#MISSING_LINKS[@]} - start_labwc_issues) ))
+            if [[ $labwc_issues -eq 0 ]]; then
+                log_ok "Window Manager: labwc"
+            else
+                log_warn "Window Manager: labwc (Found $labwc_issues issue$([ $labwc_issues -gt 1 ] && echo 's'))"
+            fi
+        fi
         if [[ -d "$DEST_CONFIG/hypr" ]]; then
             check_module "$SOURCE_CONFIG/hypr/config" "$DEST_CONFIG/hypr/config" "Hyprland: config"
             check_module "$SOURCE_CONFIG/hypr/hyprland.lua" "$DEST_CONFIG/hypr/hyprland.lua" "Hyprland: hyprland.lua"

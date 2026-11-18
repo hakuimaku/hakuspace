@@ -17,7 +17,7 @@
 -->
     <core>
         <decoration>server</decoration>
-        <gap>12</gap>
+        <gap>0</gap>
         <adaptiveSync>no</adaptiveSync>
         <allowTearing>no</allowTearing>
         <autoEnableOutputs>yes</autoEnableOutputs>
@@ -51,14 +51,16 @@
         <cornerRadius>0</cornerRadius>
         <keepBorder>yes</keepBorder>
         <maximizedDecoration>titlebar</maximizedDecoration>
-        <dropShadows>yes</dropShadows>
-        <dropShadowsOnTiled>yes</dropShadowsOnTiled>
+        <dropShadows>no</dropShadows>
+        <dropShadowsOnTiled>no</dropShadowsOnTiled>
 
-        <font place="ActiveWindow"><name>monospace</name><size>12</size><slant>normal</slant><weight>normal</weight></font>
+        <!-- BEGIN GENERATED FONTS -->
+        <font place="ActiveWindow"><name>monospace</name><size>12</size><slant>normal</slant><weight>bold</weight></font>
         <font place="InactiveWindow"><name>monospace</name><size>12</size><slant>normal</slant><weight>normal</weight></font>
-        <font place="MenuHeader"><name>monospace</name><size>12</size><slant>normal</slant><weight>normal</weight></font>
+        <font place="MenuHeader"><name>monospace</name><size>12</size><slant>normal</slant><weight>bold</weight></font>
         <font place="MenuItem"><name>monospace</name><size>12</size><slant>normal</slant><weight>normal</weight></font>
         <font place="OnScreenDisplay"><name>monospace</name><size>12</size><slant>normal</slant><weight>normal</weight></font>
+        <!-- END GENERATED FONTS -->
     </theme>
 
     <windowSwitcher preview="yes" outlines="yes" unshade="yes">

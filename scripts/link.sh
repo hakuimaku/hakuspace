@@ -83,6 +83,15 @@ link_module() {
         cleanup_retired_hyprlock_tiny
     fi
 
+    if [[ "${mod,,}" == "labwc" ]]; then
+        local labwc_rc="$DEST_CONFIG/labwc/rc.xml"
+        local labwc_src="$SOURCE_CONFIG/labwc/rc.xml"
+        if [[ -L "$labwc_rc" || ! -e "$labwc_rc" ]]; then
+            [[ -L "$labwc_rc" ]] && rm -f "$labwc_rc"
+            cp "$labwc_src" "$labwc_rc" || return 1
+        fi
+    fi
+
     log_ok "Module '$mod' linked successfully."
 }
 
