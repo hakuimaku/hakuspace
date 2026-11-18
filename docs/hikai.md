@@ -214,7 +214,7 @@ Each manual or wallpaper accent seed produces two contrast-correct variants.
 `Theme.qml` selects the active variant from `quickshell.json` without regenerating
 colors. Hikai's shared applications receive the dark/light accent variants, while
 Classic switches shared WM, Kitty, and Btop state files to its retro configuration
-and derives its 8-scheme UI palette from the saved seed. Switching to Classic
+and derives its 9-scheme UI palette from the saved seed (or manual override). Switching to Classic
 preserves Hikai's saved mode, so returning restores Light automatically.
 See [theme contracts](core/theme.md).
 

@@ -261,7 +261,7 @@ Mỗi seed accent thủ công hoặc lấy từ wallpaper sinh đồng thời m�
 và một màu cho nền sáng, bảo đảm contrast. `Theme.qml` chọn màu từ `quickshell.json`
 mà không sinh lại theme hoặc chạy ColorThief khi đổi mode. Hikai dùng biến thể
 tối/sáng của accent, còn Classic chuyển các file state dùng chung (WM, Kitty, Btop)
-sang cấu hình retro và ánh xạ bảng 8 scheme từ seed đã lưu. Chuyển sang Classic giữ
+sang cấu hình retro và ánh xạ bảng 9 scheme từ seed đã lưu (hoặc ghi đè thủ công). Chuyển sang Classic giữ
 nguyên preference Light của Hikai; quay lại Hikai tự khôi phục Light. Transition
 cập nhật và đồng bộ state render theo backend dưới cover và khôi phục đúng mode khi
 rollback. Xem [theme contracts](../core/theme.md).

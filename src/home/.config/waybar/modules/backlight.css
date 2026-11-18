@@ -9,14 +9,14 @@
 
 #backlight {
     background-color: transparent;
-    color: @text;
+    color: @bright_icon_fg;
     border: none;
     padding: 0 6px 0 2px;
     margin-right: 4px;
 }
 
 #backlight:hover {
-    color: @select_bg;
+    color: @bright_accent;
 }
 
 #backlight-slider {
@@ -35,7 +35,7 @@
 
 #backlight-slider highlight {
     min-height: 10px;
-    background-color: @select_bg;
+    background-color: @bright_accent;
 }
 
 #backlight-slider slider {

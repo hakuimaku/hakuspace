@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Classic 8-scheme palette catalog, HSL classifier with hysteresis, and token renderer."""
+"""Classic 9-scheme palette catalog, HSL classifier with hysteresis, and token renderer."""
 
 import argparse
 import colorsys
@@ -10,7 +10,7 @@ import re
 import sys
 from xml.sax.saxutils import escape as _xml_escape
 
-SCHEME_IDS = ("red", "orange", "yellow", "green", "blue", "indigo", "violet", "gray")
+SCHEME_IDS = ("red", "orange", "yellow", "green", "blue", "indigo", "violet", "gray", "colorful")
 CHROMATIC_IDS = ("red", "orange", "yellow", "green", "blue", "indigo", "violet")
 VALID_REQUESTS = ("auto",) + SCHEME_IDS
 
@@ -111,7 +111,67 @@ PALETTES = {
         "tag_bg": "#1f1f1f", "tag_fg": "#cccccc",
         "urgent_bg": "#952323", "urgent_fg": "#ffffff",
     },
+    "colorful": {
+        "desktop_bg": "#26231f", "window_bg": "#403b35", "panel_bg": "#332f2a", "inset_bg": "#1e1c19",
+        "title_bg": "#335f82", "title_fg": "#faf2df",
+        "text": "#f3e6cc", "text_muted": "#d5c4a1", "text_mono": "#f0d191",
+        "border_light": "#9a8a6e", "border_dark": "#141210", "border_frame": "#0a0908",
+        "button_bg": "#524b42", "button_fg": "#f3e6cc", "button_active_bg": "#3b362f",
+        "select_bg": "#e1893f", "select_fg": "#1a1108",
+        "tag_bg": "#2d3616", "tag_fg": "#c8d97c",
+        "urgent_bg": "#b82520", "urgent_fg": "#ffffff",
+    },
 }
+
+COLORFUL_ROLE_OVERRIDES = {
+    "win_min_bg": "#335f82",
+    "win_min_fg": "#faf2df",
+    "win_max_bg": "#4f6122",
+    "win_max_fg": "#f5f8e6",
+    "win_close_bg": "#8f3422",
+    "win_close_fg": "#faf2df",
+    "rofi_close_bg": "#8f3422",
+    "rofi_close_fg": "#faf2df",
+    "sys_btn_bg": "#356653",
+    "sys_btn_fg": "#f3faf5",
+    "cpu_fg": "#8fc1e8",
+    "mem_fg": "#b6d16b",
+    "temp_fg": "#eb9c57",
+    "battery_fg": "#e8c266",
+    "bright_icon_fg": "#e8c266",
+    "bright_accent": "#d9a032",
+    "audio_icon_fg": "#76c9a4",
+    "audio_accent": "#76c9a4",
+    "dnd_active_bg": "#5d7327",
+}
+
+
+def _role_tokens(scheme_id, tokens):
+    """Build per-module accent tokens, aliasing to base tokens for monochrome schemes."""
+    roles = {
+        "win_min_bg": tokens["button_bg"],
+        "win_min_fg": tokens["button_fg"],
+        "win_max_bg": tokens["button_bg"],
+        "win_max_fg": tokens["button_fg"],
+        "win_close_bg": tokens["button_bg"],
+        "win_close_fg": tokens["button_fg"],
+        "rofi_close_bg": tokens["button_active_bg"],
+        "rofi_close_fg": tokens["button_fg"],
+        "sys_btn_bg": tokens["button_bg"],
+        "sys_btn_fg": tokens["button_fg"],
+        "cpu_fg": tokens["text_mono"],
+        "mem_fg": tokens["text_mono"],
+        "temp_fg": tokens["text_mono"],
+        "battery_fg": tokens["text_mono"],
+        "bright_icon_fg": tokens["text"],
+        "bright_accent": tokens["select_bg"],
+        "audio_icon_fg": tokens["text"],
+        "audio_accent": tokens["select_bg"],
+        "dnd_active_bg": tokens["select_bg"],
+    }
+    if scheme_id == "colorful":
+        roles.update(COLORFUL_ROLE_OVERRIDES)
+    return roles
 
 
 def hex_to_hsl(hex_color):
@@ -469,6 +529,9 @@ def render_files(scheme_id, out_dir):
         css_lines.append(f"@define-color {key} {value};")
         rasi_lines.append(f"    {key.replace('_', '-')}: {value};")
         hypr_lines.append(f"${key} = {_hex_to_rgb_expr(value)}")
+    for key, value in _role_tokens(scheme_id, tokens).items():
+        css_lines.append(f"@define-color {key} {value};")
+        rasi_lines.append(f"    {key.replace('_', '-')}: {value};")
 
     rasi_lines.append("}")
     _atomic_write(out / "palette.css", "\n".join(css_lines) + "\n")
@@ -478,7 +541,7 @@ def render_files(scheme_id, out_dir):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Classic 8-scheme palette engine")
+    parser = argparse.ArgumentParser(description="Classic 9-scheme palette engine")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_res = sub.add_parser("resolve", help="Resolve effective scheme from seed and state")

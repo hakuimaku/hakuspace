@@ -9,14 +9,14 @@
 
 #pulseaudio {
     background-color: transparent;
-    color: @text;
+    color: @audio_icon_fg;
     border: none;
     padding: 0 6px 0 2px;
     margin-right: 4px;
 }
 
 #pulseaudio:hover {
-    color: @select_bg;
+    color: @audio_accent;
 }
 
 #pulseaudio.muted {
@@ -39,7 +39,7 @@
 
 #pulseaudio-slider highlight {
     min-height: 10px;
-    background-color: @select_bg;
+    background-color: @audio_accent;
 }
 
 #pulseaudio-slider slider {

@@ -35,7 +35,7 @@ Wayland dotfiles and desktop shell for Hyprland / Niri / MangoWM / Labwc
 
 </div>
 
-- **Dual Shell Modes:** Switch anytime between **Classic** (`Waybar` / `Rofi` / `SwayNC` retro 8-scheme UI) and **Hikai** (`Quickshell` native shell).
+- **Dual Shell Modes:** Switch anytime between **Classic** (`Waybar` / `Rofi` / `SwayNC` retro 9-scheme UI) and **Hikai** (`Quickshell` native shell).
 - **Multi-WM Support:** Hyprland, Niri, MangoWM, and Labwc share the same scripts, state, theming, and `~/hakucfg` customization layer.
 - **Arch Linux Focused:** Actively developed and tested on **Arch Linux** (legacy [Fedora](docs/fedora_guide.md) and [NixOS](docs/nixos.md) guides are kept for reference only).
 - **Safe & Modular:** Deep Symlink or Copy deployment, automatic backups before changes, and read-only diagnostics via `./doctor.sh`.
@@ -45,7 +45,7 @@ Wayland dotfiles and desktop shell for Hyprland / Niri / MangoWM / Labwc
 ## Shell Modes
 
 - **Hikai (Quickshell):** Integrated bar (`topbar` / `leftbar`), taskbar/dock, HakuMenu, dashboard, notifications, wallpaper browser/video renderer, image editor, and lock screen.
-- **Classic (Waybar / Rofi / SwayNC):** Retro window-titlebar top bar, unified Rofi menus, `SYSTEM MONITOR` SwayNC, cassette `Hyprlock`, and an 8-scheme palette synced from your wallpaper.
+- **Classic (Waybar / Rofi / SwayNC):** Retro window-titlebar top bar, unified Rofi menus, `SYSTEM MONITOR` SwayNC, cassette `Hyprlock`, and a 9-scheme palette synced from your wallpaper (plus manual `colorful`).
 
 Switch or check the active shell anytime:
 

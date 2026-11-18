@@ -36,7 +36,7 @@ pick_palette() {
         current_label="$effective"
     fi
 
-    local -a PALETTE_IDS=(auto red orange yellow green blue indigo violet gray)
+    local -a PALETTE_IDS=(auto red orange yellow green blue indigo violet gray colorful)
     local -a PALETTE_LABELS=(
         "<span foreground='#b8b8b8'>◐</span>  Auto (Follow Wallpaper)"
         "<span foreground='#de9492'>██</span>  Red"
@@ -47,6 +47,7 @@ pick_palette() {
         "<span foreground='#9592de'>██</span>  Indigo"
         "<span foreground='#be92de'>██</span>  Violet"
         "<span foreground='#b8b8b8'>██</span>  Gray"
+        "<span foreground='#335f82'>▌</span><span foreground='#687e29'>▌</span><span foreground='#e1893f'>▌</span><span foreground='#7d3424'>▌</span>  Colorful"
     )
     for i in "${!PALETTE_IDS[@]}"; do
         if [[ "${PALETTE_IDS[$i]}" == "$requested" ]]; then

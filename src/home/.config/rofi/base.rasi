@@ -111,16 +111,20 @@ textbox-min, textbox-max, button-close {
 
 textbox-min {
     content: "_";
+    background-color: @win-min-bg;
+    text-color: @win-min-fg;
 }
 
 textbox-max {
     content: "□";
+    background-color: @win-max-bg;
+    text-color: @win-max-fg;
 }
 
 button-close {
     content: "X";
-    background-color: @button-active-bg;
-    text-color: @button-fg;
+    background-color: @rofi-close-bg;
+    text-color: @rofi-close-fg;
     cursor: pointer;
     action: "kb-cancel";
 }

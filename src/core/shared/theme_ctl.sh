@@ -88,9 +88,9 @@ classic_palette_sync() {
 set_palette() {
     local requested="${1:-}"
     case "$requested" in
-        auto|red|orange|yellow|green|blue|indigo|violet|gray) ;;
+        auto|red|orange|yellow|green|blue|indigo|violet|gray|colorful) ;;
         *)
-            printf 'theme_ctl.sh: palette must be auto or one of red, orange, yellow, green, blue, indigo, violet, gray.\n' >&2
+            printf 'theme_ctl.sh: palette must be auto or one of red, orange, yellow, green, blue, indigo, violet, gray, colorful.\n' >&2
             return 2
             ;;
     esac
@@ -156,7 +156,7 @@ Commands:
     palette                 Print effective Classic palette scheme id
     list-fonts              Print installed font families, one per line
     set-accent HEX          Persist HEX (#RRGGBB), render, and live-apply
-    set-palette ID          Persist Classic palette (auto|red|orange|yellow|green|blue|indigo|violet|gray), render, and live-apply
+    set-palette ID          Persist Classic palette (auto|red|orange|yellow|green|blue|indigo|violet|gray|colorful), render, and live-apply
     set-font NAME           Persist font family, render, and live-apply
     set-size PX             Persist positive integer size, render, and live-apply
     apply                   Re-render and live-apply current canonical state

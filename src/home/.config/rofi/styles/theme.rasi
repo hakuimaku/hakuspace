@@ -9,7 +9,7 @@ panel-body {
 }
 
 listview {
-    lines: 9;
+    lines: 10;
     scrollbar: false;
 }
 

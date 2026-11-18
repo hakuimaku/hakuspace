@@ -1,6 +1,6 @@
 #custom-monitor {
-    background-color: @button_bg;
-    color: @button_fg;
+    background-color: @sys_btn_bg;
+    color: @sys_btn_fg;
     border-style: solid;
     border-width: 2px;
     border-color: @border_light @border_dark @border_dark @border_light;
@@ -15,7 +15,6 @@
 #cpu,
 #memory,
 #temperature {
-    color: @text_mono;
     background-color: @panel_bg;
     border-style: solid;
     border-width: 2px 0;
@@ -24,10 +23,16 @@
 }
 
 #cpu {
+    color: @cpu_fg;
     border-left-width: 2px;
 }
 
+#memory {
+    color: @mem_fg;
+}
+
 #temperature {
+    color: @temp_fg;
     border-right-width: 2px;
     margin-right: 4px;
 }

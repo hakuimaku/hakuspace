@@ -1,6 +1,6 @@
 @import url("classic-palette.css");
 
-/* Scope Classic 8-scheme color overrides strictly to Thunar without modifying global GTK themes. */
+/* Scope Classic scheme color overrides strictly to Thunar without modifying global GTK themes. */
 window.thunar {
   background-color: @window_bg;
   color: @text;

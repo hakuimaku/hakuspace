@@ -244,8 +244,8 @@ blankwindow,
 }
 
 .close-button {
-    background-color: @button_bg;
-    color: @button_fg;
+    background-color: @win_close_bg;
+    color: @win_close_fg;
     border-style: solid;
     border-width: 2px;
     border-color: @border_light @border_dark @border_dark @border_light;
@@ -315,8 +315,8 @@ blankwindow,
 
 .notification-group .notification-group-buttons > button,
 .notification-group .notification-group-close-button .close-button {
-    background-color: @button_bg;
-    color: @button_fg;
+    background-color: @win_close_bg;
+    color: @win_close_fg;
     border-style: solid;
     border-width: 2px;
     border-color: @border_light @border_dark @border_dark @border_light;
@@ -377,8 +377,8 @@ blankwindow,
 
 .widget-title > button,
 .control-center-clear-all {
-    background-color: @button_bg;
-    color: @button_fg;
+    background-color: @win_close_bg;
+    color: @win_close_fg;
     border-style: solid;
     border-width: 2px;
     border-color: @border_light @border_dark @border_dark @border_light;
@@ -425,7 +425,7 @@ blankwindow,
 
 .widget-dnd > switch:checked,
 .control-center-dnd:checked {
-    background-color: @select_bg;
+    background-color: @dnd_active_bg;
 }
 
 .widget-dnd > switch slider,
@@ -460,6 +460,14 @@ blankwindow,
     margin-right: 8px;
 }
 
+.widget-volume label {
+    color: @audio_icon_fg;
+}
+
+.widget-backlight label {
+    color: @bright_icon_fg;
+}
+
 .widget-volume scale,
 .widget-backlight scale,
 .widget-slider scale {
@@ -487,6 +495,16 @@ blankwindow,
 .widget-slider scale progress {
     background-color: @select_bg;
     border-radius: 0;
+}
+
+.widget-volume scale highlight,
+.widget-volume scale progress {
+    background-color: @audio_accent;
+}
+
+.widget-backlight scale highlight,
+.widget-backlight scale progress {
+    background-color: @bright_accent;
 }
 
 .widget-volume scale slider,

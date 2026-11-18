@@ -44,7 +44,7 @@ legacy `ACCENT_COLOR` state while retaining typography. The runtime `ACCENT_COLO
 alias selects `ACCENT_DARK` for Classic/global consumers. Hikai's independent
 `appearance.colorMode` preference lives in `~/hakucfg/hikai/hikai-shell.json` (v7),
 not in an additional runtime state key. `theme.classic.palette` stores the user's
-Classic color scheme request (`auto` or one of the 8 scheme IDs), while
+Classic color scheme request (`auto` or one of the 9 scheme IDs), while
 `theme.classic.palette.effective` caches the derived scheme ID used for hue/saturation
 hysteresis.
 

@@ -6,8 +6,6 @@
 #custom-notification,
 #custom-win-hakumenu,
 #custom-win-power {
-    background-color: @button_bg;
-    color: @button_fg;
     border-style: solid;
     border-width: 2px;
     border-color: @border_light @border_dark @border_dark @border_light;
@@ -15,6 +13,21 @@
     padding: 0 4px;
     margin: 0 1px;
     font-weight: bold;
+}
+
+#custom-notification {
+    background-color: @win_min_bg;
+    color: @win_min_fg;
+}
+
+#custom-win-hakumenu {
+    background-color: @win_max_bg;
+    color: @win_max_fg;
+}
+
+#custom-win-power {
+    background-color: @win_close_bg;
+    color: @win_close_fg;
 }
 
 #custom-notification:hover,
