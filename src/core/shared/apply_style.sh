@@ -24,7 +24,6 @@ fi
 
 if haku_backend_is "classic"; then
     swaync-client --reload-config --reload-css >/dev/null 2>&1 || true
-    pkill -SIGUSR2 -x waybar >/dev/null 2>&1 || true
 fi
 theme_sync_classic_gtk3_override || true
 
