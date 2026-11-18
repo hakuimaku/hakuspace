@@ -45,8 +45,11 @@ after success or failure and are not automatically deleted.
 
 ### Migration validity and recovery
 
-The v26.11 migration retains its receipt at
-`${XDG_STATE_HOME:-$HOME/.local/state}/hakuspace/migrations/v26.11.json`.
+The v26.12 migration retains its receipt at
+`${XDG_STATE_HOME:-$HOME/.local/state}/hakuspace/migrations/v26.12.json`
+(with `--to v26.11` retained for compatibility, and `--to v26.12` automatically
+including the v26.11 cleanup and menu conversion steps when upgrading from older
+releases, plus read-only advisory warnings for retired v26.12 user overrides).
 The recorded menu step describes conversion history. A historical `applied` step
 does not prove that `~/hakucfg/config/hakumenu-general.json` still exists or is valid.
 `scripts/migrate.sh --status` reports that history alongside `menu_destination`
@@ -99,7 +102,7 @@ After repair, inspect the plan and rerun the updater:
 
 ```bash
 ./scripts/migrate.sh --status
-./scripts/migrate.sh --plan --to v26.11
+./scripts/migrate.sh --plan --to v26.12
 python3 -B src/core/shared/general_menu_ctl.py check
 ./update.sh
 ```
@@ -194,7 +197,69 @@ Stores generated style variables, themes, and runtime tokens.
 
 ## 5. Manual / Modular Workflow
 
-You never need to copy-paste commands out of `install.sh` to configure a customized setup. You can run individual modules independently (for the complete step-by-step installation and Quickshell-only flows, see the [Installation Guide in README.md](../README.md#method-2---manual--modular-installation)):
+You never need to copy-paste commands out of `install.sh` to configure a customized setup. You can run individual modules independently:
+
+### Full Haku Space, Module by Module
+The example below installs Niri (`hyprland`, `mango`, or `labwc` work the same way):
+
+```bash
+cd ~/hakuspace
+
+# 1. Bootstrap/check the installer dependencies (Arch/yay flow)
+./scripts/dependencies.sh
+
+# 2. Review and install package groups
+./packages.sh --plan core service optional niri
+./packages.sh core service optional niri
+
+# 3. Create base directories and install ONCE_CONFIGS
+./scripts/directories.sh
+./scripts/once_configs.sh
+
+# 4. Deploy common configs + core scripts + your WM config
+./link.sh --all niri
+
+# 5. Optional: install visual software and wallpapers independently
+./scripts/setup.sh setup
+./scripts/assets.sh
+
+# 6. Initialize state and user overrides
+./scripts/state.sh init
+./scripts/hakucfg.sh sync
+
+# 7. Optional system integration used by the full installer
+./scripts/shell_setup.sh
+./scripts/display_manager.sh
+./scripts/desktop_defaults.sh
+
+# 8. Verify the installation
+./doctor.sh
+```
+
+> [!note]
+> `optional`, assets, shell setup, display-manager setup, and desktop defaults are not required for every manual installation. Skip the modules you do not want.
+
+### Quickshell-Only (Hikai Mode)
+If you already have a supported Wayland compositor configured and only want the **Quickshell / Hikai** shell without replacing your WM configuration:
+
+```bash
+cd ~/hakuspace
+
+./scripts/dependencies.sh
+./packages.sh --plan core
+./packages.sh core
+
+./scripts/directories.sh
+./link.sh quickshell core
+
+./scripts/state.sh init
+./scripts/hakucfg.sh sync
+
+~/.local/bin/haku_backend.sh set hikai
+~/.local/bin/haku_backend.sh --verify
+```
+
+If you keep your own WM config instead of linking a HakuSpace WM module, add `~/.local/bin/session_start.sh --early` to your compositor autostart (HakuSpace's bundled Hyprland, Niri, MangoWM, and Labwc configs already include it). Hikai depends on the scripts deployed by `core`; linking `quickshell` alone is not sufficient.
 
 ### Install Packages
 ```bash

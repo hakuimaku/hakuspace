@@ -1,7 +1,8 @@
 # Visual installation and development
 
-HakuSpace installs Haku Cursor, Hikaide GTK and Hikaide-Symbols through
-`scripts/setup.sh`. Normal users retain only installed assets: source repositories
+HakuSpace installs both visual families through `scripts/setup.sh`: Hikai
+(`Haku Cursor`, `Hikaide` GTK, `Hikaide-Symbols`) and Classic (`Cassettk` GTK,
+`Cassetton` icons, `Cassettsor` cursor). Normal users retain only installed assets: source repositories
 are shallow-cloned at their latest default branch into private temporary staging,
 built, validated and installed, then removed. Success, clone/build/install/verify
 failure and trapped INT/TERM all clean that staging. No source checkout or source
@@ -115,7 +116,7 @@ its own build/validation/install commands and managed destination guards.
 Environment paths take precedence over remembered source intent. Successful
 setup/apply remembers only explicit paths under
 `~/.local/state/hakuspace/state/[system].visual-sources.json`, keyed by `cursor`,
-`gtk` and `symbols`. Temporary source paths are never saved. Remove a remembered
+`gtk`, `symbols`, `cassettk`, `cassetton` and `cassettsor`. Temporary source paths are never saved. Remove a remembered
 key to return that component to disposable downloads. `status`, `path` and
 `workspace` do not write that state. Without a retained development source, `path`
 reports that none is configured. Legacy `appearance.env` is never executed.

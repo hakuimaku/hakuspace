@@ -86,7 +86,69 @@ Chứa style động, theme và cache runtime.
 
 ## 5. Hướng dẫn sử dụng thủ công (Manual Workflow)
 
-Bạn không bao giờ cần phải mở `install.sh` để copy từng dòng lệnh. Bạn có thể sử dụng các module độc lập một cách tiện lợi (xem hướng dẫn cài đặt từng bước đầy đủ tại [Installation Guide trong README.md](../../README.md#method-2---manual--modular-installation)):
+Bạn không bao giờ cần phải mở `install.sh` để copy từng dòng lệnh. Bạn có thể chạy từng module độc lập theo nhu cầu:
+
+### Cài đặt HakuSpace đầy đủ theo từng bước
+Ví dụ bên dưới cài với Niri (thay `niri` bằng `hyprland`, `mango` hoặc `labwc` tùy chọn):
+
+```bash
+cd ~/hakuspace
+
+# 1. Kiểm tra/cài dependency nền của bộ cài (Arch/yay)
+./scripts/dependencies.sh
+
+# 2. Xem trước và cài các nhóm package
+./packages.sh --plan core service optional niri
+./packages.sh core service optional niri
+
+# 3. Tạo thư mục nền và copy ONCE_CONFIGS
+./scripts/directories.sh
+./scripts/once_configs.sh
+
+# 4. Deploy cấu hình chung + core scripts + cấu hình WM
+./link.sh --all niri
+
+# 5. Tùy chọn: cài bộ visual (GTK/icons/cursor) và wallpaper
+./scripts/setup.sh setup
+./scripts/assets.sh
+
+# 6. Khởi tạo state và ~/hakucfg
+./scripts/state.sh init
+./scripts/hakucfg.sh sync
+
+# 7. Tùy chọn: shell, display manager, desktop defaults
+./scripts/shell_setup.sh
+./scripts/display_manager.sh
+./scripts/desktop_defaults.sh
+
+# 8. Kiểm tra lại toàn bộ cài đặt
+./doctor.sh
+```
+
+> [!note]
+> `optional`, assets, shell setup, display-manager setup và desktop defaults không bắt buộc với mọi cài đặt thủ công; có thể bỏ qua phần không dùng.
+
+### Chỉ dùng Quickshell (Chế độ Hikai)
+Nếu bạn đã tự cấu hình sẵn một Wayland compositor được hỗ trợ và chỉ muốn giao diện **Quickshell / Hikai** mà không thay thế cấu hình WM hiện có:
+
+```bash
+cd ~/hakuspace
+
+./scripts/dependencies.sh
+./packages.sh --plan core
+./packages.sh core
+
+./scripts/directories.sh
+./link.sh quickshell core
+
+./scripts/state.sh init
+./scripts/hakucfg.sh sync
+
+~/.local/bin/haku_backend.sh set hikai
+~/.local/bin/haku_backend.sh --verify
+```
+
+Nếu dùng cấu hình WM riêng, hãy thêm `~/.local/bin/session_start.sh --early` vào autostart của compositor (cấu hình Hyprland, Niri, MangoWM và Labwc đi kèm repo đã gọi sẵn hook này). Hikai phụ thuộc vào script của module `core`, không nên chỉ link riêng `quickshell`.
 
 ### Cài đặt Packages
 ```bash

@@ -46,7 +46,7 @@ appearance; không ghi nhớ đường dẫn staging tạm.
 HakuSpace hiện có 2 chế độ giao diện (shell) để bạn đổi qua lại bất cứ lúc nào mà vẫn giữ nguyên màu sắc và thiết lập cá nhân:
 
 - **Hikai (Quickshell):** Chế độ shell của HakuSpace dựa trên Quickshell. Xem [Hikai](hikai.md) để hiểu kiến trúc và các nguyên tắc tổ chức.
-- **Classic (Waybar + Rofi + SwayNC):** Bộ giao diện truyền thống đời đầu của HakuSpace. Vẫn được giữ nguyên để bạn đổi gió hoặc quay về bất cứ khi nào cần (chỉ cần bấm phím khẩn cấp `SUPER + ESCAPE` hoặc chạy `haku_backend.sh --toggle`).
+- **Classic (Waybar + Rofi + SwayNC):** Bộ giao diện truyền thống đời đầu của HakuSpace. Vẫn được giữ nguyên để bạn đổi gió hoặc quay về bất cứ khi nào cần (mở bộ chọn qua `backend_switcher.sh` hoặc chạy `haku_backend.sh --toggle`).
 
 Để hai giao diện này xài chung tính năng mà không phải viết lại code hai lần, đống script trong `src/core/` được chia thành 5 thư mục phẳng theo phạm vi shell và vai trò (khi deploy vẫn nằm chung trong `$HAKU_BIN_DIR`, mặc định `~/.local/bin`):
 - **`classic/`**: Các adapter Rofi và controller chỉ dùng cho chế độ Classic.

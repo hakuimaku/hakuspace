@@ -47,7 +47,7 @@ development source intent and pending appearance recovery.
 HakuSpace comes with two desktop shell modes that you can switch between anytime without losing your theme or settings:
 
 - **Hikai (Quickshell):** HakuSpace's Quickshell-based shell mode. See [Hikai](hikai.md) for its architecture and design contracts.
-- **Classic (Waybar + Rofi + SwayNC):** The original script-powered setup. It stays right there as a rock-solid classic experience or fallback whenever you want it (just press `SUPER + ESCAPE` or run `haku_backend.sh --toggle`).
+- **Classic (Waybar + Rofi + SwayNC):** The original script-powered setup. It stays right there as a rock-solid classic experience or fallback whenever you want it (open the selector via `backend_switcher.sh` or run `haku_backend.sh --toggle`).
 
 To make both shells work together without duplicating logic, the scripts inside `src/core/` are organized into 5 flat directories by shell scope and role (deployed flat into `$HAKU_BIN_DIR`, defaulting to `~/.local/bin`):
 - **`classic/`**: Classic-only Waybar/Rofi/SwayNC adapters and controllers.
