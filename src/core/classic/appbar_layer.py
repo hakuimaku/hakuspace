@@ -809,6 +809,7 @@ class AppBarController:
 
         overlay = Gtk.Overlay()
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        content.set_valign(Gtk.Align.CENTER)
         image = Gtk.Image()
         image.set_halign(Gtk.Align.CENTER)
         image.set_valign(Gtk.Align.CENTER)
