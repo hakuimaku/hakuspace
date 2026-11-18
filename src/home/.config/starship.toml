@@ -1,8 +1,13 @@
 add_newline = true
 
 format = '''
-$username$hostname$directory$git_branch$git_status$git_state$nix_shell$cmd_duration
+$sudo$username$hostname$directory$git_branch$git_status$git_state$nix_shell$cmd_duration
 $character'''
+
+[sudo]
+disabled = false
+style = 'bold fg:black bg:red'
+format = '[  sudo  ]($style)'
 
 [character]
 success_symbol = '[>](bold white) '
