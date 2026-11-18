@@ -1,7 +1,7 @@
 @import "../base.rasi"
 
 window {
-    width: 460px;
+    width: 620px;
 }
 
 panel-body {
@@ -17,7 +17,7 @@ listview {
 }
 
 element {
-    padding: 10px 12px;
+    padding: 12px 14px;
     background-color: @button-bg;
     text-color: @button-fg;
     border: 2px;

@@ -1,7 +1,7 @@
 @import "../base.rasi"
 
 window {
-    width: 560px;
+    width: 700px;
 }
 
 panel-body {
