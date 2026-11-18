@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plan and migrate verified v26.10 artifacts without executing user shell code."""
+"""Plan and migrate v26.10/v26.11/v26.12 artifacts without executing user shell code."""
 import argparse
 import fcntl
 import hashlib
@@ -21,10 +21,22 @@ from general_menu_ctl import open_parent, parse, read as read_menu_file, validat
 HOME = Path.home().absolute()
 STATE_ROOT = Path(os.environ.get('XDG_STATE_HOME') or HOME / '.local/state')
 STATE = STATE_ROOT / 'hakuspace/migrations'
-RECEIPT = STATE / 'v26.11.json'
 MENU = HOME / 'hakucfg/config/hakumenu-general.json'
 MANIFEST = json.loads((ROOT / 'scripts/migrations/v26.10-1.json').read_text())
-STEP_IDS = {'v26.11-cleanup', 'v26.11-menu'}
+TARGETS = ('v26.11', 'v26.12')
+STEP_IDS_BY_TARGET = {
+    'v26.11': {'v26.11-cleanup', 'v26.11-menu'},
+    'v26.12': {'v26.11-cleanup', 'v26.11-menu', 'v26.12-advisory'},
+}
+RETIRED_WAYBAR_MODES = (
+    'coredge', 'island', 'left', 'legacy', 'minimal',
+    'module', 'neon', 'tokyo', 'top', 'taskbar',
+)
+
+
+def receipt_path(target):
+    """Return the migration receipt path for the selected target version."""
+    return STATE / f'{target}.json'
 
 
 # Reject redirected ancestors before writing or deleting destination artifacts.
@@ -236,29 +248,113 @@ def cleanup_plan():
     return result
 
 
+def expected_setting_version():
+    """Read SETTING_VERSION from the shipped hakucfg template without executing it."""
+    template = ROOT / 'src/home/hakucfg/setting.sh'
+    if not template.is_file():
+        return '26.12'
+    match = re.search(r'^SETTING_VERSION=["\']?([^"\'\s#]+)', template.read_text(encoding='utf-8'), re.M)
+    return match.group(1) if match else '26.12'
+
+
+def collect_v26_12_warnings():
+    """Inspect retired v26.12 user overrides and stale Classic leftovers read-only."""
+    warnings = []
+    setting_path = HOME / 'hakucfg/setting.sh'
+    if setting_path.exists() or setting_path.is_symlink():
+        try:
+            safe_path(setting_path)
+            parent_fd = open_parent(setting_path, False)
+            try:
+                raw, _ = read_menu_file(parent_fd, setting_path.name)
+            finally:
+                os.close(parent_fd)
+            text = raw.decode('utf-8')
+            expected_ver = expected_setting_version()
+            ver_match = re.search(r'^SETTING_VERSION=["\']?([^"\'\s#]+)', text, re.M)
+            installed_ver = ver_match.group(1) if ver_match else 'unknown'
+            if installed_ver != expected_ver:
+                warnings.append(
+                    f'~/hakucfg/setting.sh version is {installed_ver} (expected {expected_ver}); '
+                    'back up and run scripts/hakucfg.sh sync to update.'
+                )
+            if re.search(r'^\s*(?:export\s+)?WAYBAR_MODE_USER\b', text, re.M):
+                warnings.append(
+                    'WAYBAR_MODE_USER in ~/hakucfg/setting.sh is retired in v26.12 '
+                    '(Classic uses a single Waybar layout); back up and remove it.'
+                )
+        except (OSError, ValueError, UnicodeError) as error:
+            warnings.append(f'could not inspect ~/hakucfg/setting.sh ({error}); review and back up manually.')
+
+    rofi_custom = HOME / 'hakucfg/config/rofi'
+    if rofi_custom.exists() or rofi_custom.is_symlink():
+        warnings.append(
+            '~/hakucfg/config/rofi is retired in v26.12 (Classic uses a single Rofi layout); '
+            'back up and remove unused overrides.'
+        )
+
+    waybar_dir = HOME / '.config/waybar'
+    for mode in RETIRED_WAYBAR_MODES:
+        leftover = waybar_dir / mode
+        if leftover.exists() or leftover.is_symlink():
+            warnings.append(
+                f'retired Waybar mode directory retained at ~/.config/waybar/{mode}; '
+                'back up and remove if unused.'
+            )
+
+    hyprlock_tiny = HOME / '.config/hypr/hyprlock_tiny.conf'
+    if hyprlock_tiny.exists() or hyprlock_tiny.is_symlink():
+        warnings.append(
+            'retired ~/.config/hypr/hyprlock_tiny.conf retained; back up and remove if unused.'
+        )
+    return warnings
+
+
 # Read operational history as inert JSON and never infer installed versions from Git HEAD.
-def read_receipt(source, parent_fd):
+def read_receipt_file(path, parent_fd, expected_target, step_ids):
+    raw, metadata = read_menu_file(parent_fd, path.name)
+    if metadata.st_mode & 0o022:
+        raise ValueError('migration receipt is writable by other users')
+    document = parse(raw.decode('utf-8'))
+    if (not isinstance(document, dict) or document.get('target_version') != expected_target
+            or document.get('status') not in ('pending', 'applied', 'failed', 'skipped')
+            or not isinstance(document.get('steps'), dict)
+            or set(document['steps']) - step_ids
+            or any(not isinstance(step, dict) or step.get('status') not in ('pending', 'applied', 'failed', 'skipped')
+                   for step in document['steps'].values())):
+        raise ValueError('invalid migration receipt')
+    return document
+
+
+def read_receipt(source, parent_fd, target):
+    receipt_file = receipt_path(target)
+    step_ids = STEP_IDS_BY_TARGET[target]
     try:
         if parent_fd is None:
             raise FileNotFoundError
-        raw, metadata = read_menu_file(parent_fd, RECEIPT.name)
-        if metadata.st_mode & 0o022:
-            raise ValueError('migration receipt is writable by other users')
-        document = parse(raw.decode('utf-8'))
-        if (not isinstance(document, dict) or document.get('target_version') != 'v26.11'
-                or document.get('status') not in ('pending', 'applied', 'failed', 'skipped')
-                or not isinstance(document.get('steps'), dict)
-                or set(document['steps']) - STEP_IDS
-                or any(not isinstance(step, dict) or step.get('status') not in ('pending', 'applied', 'failed', 'skipped')
-                       for step in document['steps'].values())):
-            raise ValueError('invalid migration receipt')
-        return document, True
+        return read_receipt_file(receipt_file, parent_fd, target, step_ids), True
     except FileNotFoundError:
         pass
     except (OSError, ValueError, UnicodeError) as error:
-        raise ValueError(f'{RECEIPT}: {error}') from error
-    return {'source_version': source or 'legacy-unknown', 'target_version': 'v26.11',
-            'status': 'pending', 'steps': {}}, False
+        raise ValueError(f'{receipt_file}: {error}') from error
+
+    inferred_source = source
+    steps = {}
+    # Upgrading from v26.11 carries verified v26.11 history into the v26.12 receipt while still checking live artifacts.
+    if target == 'v26.12' and parent_fd is not None:
+        prior_path = receipt_path('v26.11')
+        try:
+            prior = read_receipt_file(prior_path, parent_fd, 'v26.11', STEP_IDS_BY_TARGET['v26.11'])
+            if prior.get('status') == 'applied':
+                inferred_source = inferred_source or 'v26.11'
+                for key in ('v26.11-cleanup', 'v26.11-menu'):
+                    if key in prior['steps']:
+                        steps[key] = prior['steps'][key]
+        except (FileNotFoundError, OSError, ValueError, UnicodeError):
+            pass
+
+    return {'source_version': inferred_source or 'legacy-unknown', 'target_version': target,
+            'status': 'pending', 'steps': steps}, False
 
 
 # Use the backend's bounded parser and no-follow file reader for migration inputs.
@@ -330,20 +426,27 @@ def migrate_menu(apply, receipt):
 
 # Separate destination changes from completion, which belongs to the final update gate.
 def run(args, state_fd):
-    receipt, recorded = read_receipt(args.source, state_fd)
+    target = args.target
+    step_ids = STEP_IDS_BY_TARGET[target]
+    receipt_file = receipt_path(target)
+    receipt, recorded = read_receipt(args.source, state_fd, target)
     changes = cleanup_plan()
     menu = migrate_menu(False, receipt)
+    warnings = collect_v26_12_warnings() if target == 'v26.12' else []
     destination = menu_destination(receipt)
     invalid_destination = destination['status'] not in ('valid', 'missing', 'not-required') or (
         receipt['steps'].get('v26.11-menu', {}).get('status') == 'applied' and destination['status'] != 'valid')
-    eligible = (set(receipt['steps']) == STEP_IDS
+    eligible = (set(receipt['steps']) == step_ids
                 and all(step['status'] in ('applied', 'skipped') for step in receipt['steps'].values())
                 and not any(action in ('remove', 'replace-on-deploy') for _, action, _ in changes)
                 and menu['status'] in ('applied', 'skipped')
                 and destination['status'] in ('valid', 'not-required'))
     if args.status:
-        print(json.dumps({**receipt, 'receipt_present': recorded, 'menu_destination': destination,
-                          'completion_eligible': eligible}, indent=2))
+        payload = {**receipt, 'receipt_present': recorded, 'menu_destination': destination,
+                   'completion_eligible': eligible}
+        if target == 'v26.12':
+            payload['advisory_warnings'] = warnings
+        print(json.dumps(payload, indent=2))
         return 0
     for path, action, evidence in changes:
         print(f'LEGACY CLEANUP: {action}: {path} ({evidence})')
@@ -370,15 +473,17 @@ def run(args, state_fd):
     if args.complete:
         if not eligible:
             receipt['status'] = 'failed'
-            atomic_json(RECEIPT, receipt, state_fd)
+            atomic_json(receipt_file, receipt, state_fd)
             print(f'migrate: completion refused: destination={destination}; menu={menu}; '
                   f'check unfinished steps; backup={os.environ["BACKUP_DIR"]}', file=sys.stderr)
             return 1
         receipt['status'] = 'applied'
-        atomic_json(RECEIPT, receipt, state_fd)
+        atomic_json(receipt_file, receipt, state_fd)
         return 0
-    print(f'MIGRATION PLAN: source_version={receipt["source_version"]}; to=v26.11; menu={menu}')
+    print(f'MIGRATION PLAN: source_version={receipt["source_version"]}; to={target}; menu={menu}')
     print(f'MIGRATION DESTINATION: {destination}; completion_eligible={eligible}')
+    for warning in warnings:
+        print(f'MIGRATION WARNING [v26.12]: {warning}')
     print(f'BACKUP: {os.environ["BACKUP_DIR"]}')
     if args.plan:
         return int(menu['status'] == 'failed' or invalid_destination)
@@ -386,10 +491,10 @@ def run(args, state_fd):
         if menu['status'] == 'failed':
             receipt['steps']['v26.11-menu'] = menu
         receipt['status'] = 'failed'
-        atomic_json(RECEIPT, receipt, state_fd)
+        atomic_json(receipt_file, receipt, state_fd)
         return 1
     receipt['status'] = 'pending'
-    atomic_json(RECEIPT, receipt, state_fd)
+    atomic_json(receipt_file, receipt, state_fd)
     for path, action, _ in changes:
         if action == 'remove':
             backup(path)
@@ -399,6 +504,11 @@ def run(args, state_fd):
     unresolved = any(action == 'replace-on-deploy' for _, action, _ in cleanup_plan())
     receipt['steps']['v26.11-cleanup'] = {'status': 'failed' if unresolved else 'applied'}
     receipt['steps']['v26.11-menu'] = migrate_menu(True, receipt)
+    if target == 'v26.12':
+        receipt['steps']['v26.12-advisory'] = {
+            'status': 'applied' if warnings else 'skipped',
+            'warnings': warnings,
+        }
     failed = any(step['status'] == 'failed' for step in receipt['steps'].values())
     destination = menu_destination(receipt)
     if destination['status'] not in ('valid', 'not-required'):
@@ -407,7 +517,7 @@ def run(args, state_fd):
         receipt['status'] = 'failed'
         print(f'MIGRATION FAILED: menu={receipt["steps"]["v26.11-menu"]}; '
               f'destination={destination}; backup={os.environ["BACKUP_DIR"]}', file=sys.stderr)
-    atomic_json(RECEIPT, receipt, state_fd)
+    atomic_json(receipt_file, receipt, state_fd)
     return int(failed)
 
 
@@ -417,8 +527,8 @@ def main():
     mode = parser.add_mutually_exclusive_group(required=True)
     for name in ('plan', 'apply', 'status', 'audit', 'complete'):
         mode.add_argument('--' + name, action='store_true')
-    parser.add_argument('--from', dest='source', choices=('v26.10-1', 'legacy-unknown'))
-    parser.add_argument('--to', '--target', default='v26.11', choices=('v26.11',))
+    parser.add_argument('--from', dest='source', choices=('v26.10-1', 'v26.11', 'legacy-unknown'))
+    parser.add_argument('--to', '--target', dest='target', default='v26.12', choices=TARGETS)
     args = parser.parse_args()
     try:
         descriptor = state_directory(args.apply or args.complete)

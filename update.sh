@@ -55,7 +55,7 @@ if [[ "${HAKUSPACE_REPO_UPDATED:-0}" != 1 ]]; then
     fi
 fi
 
-"$HAKU_DIR/scripts/migrate.sh" --plan --to v26.11
+"$HAKU_DIR/scripts/migrate.sh" --plan --to v26.12
 
 # 3. Select Window Manager(s) & Detect Deploy Mode
 step_title "1 - SELECTION & MODE DETECTION"
@@ -107,7 +107,7 @@ if ask_yes_no "Apply the configuration update plan shown above?"; then
         "$HAKU_DIR/scripts/legacy_copy.sh" update "${SELECTED_WMS[@]}"
     fi
     MIGRATION_STATUS=0
-    "$HAKU_DIR/scripts/migrate.sh" --apply --to v26.11 || MIGRATION_STATUS=$?
+    "$HAKU_DIR/scripts/migrate.sh" --apply --to v26.12 || MIGRATION_STATUS=$?
     if [[ "$MIGRATION_STATUS" == 0 ]]; then
         log_ok "Configuration deployment and migration steps applied; final checks pending."
     else
@@ -128,7 +128,7 @@ ACTIVATION_PENDING=0
 if [[ "$ACTIVATION_PENDING" == 0 ]]; then
     "$HAKU_DIR/scripts/setup.sh" update || record_failure $?
 elif [[ "$ACTIVATION_PENDING" == 1 ]]; then
-    for component in cursor gtk symbols; do
+    for component in cursor gtk symbols cassettk cassetton cassettsor; do
         if "$HAKU_DIR/scripts/setup.sh" path "$component" >/dev/null 2>&1; then
             log_skip "VISUAL STATUS: $component override, skipped; use scripts/setup.sh apply $component explicitly."
         elif "$HAKU_DIR/scripts/setup.sh" verify "$component" >/dev/null 2>&1; then
@@ -168,6 +168,6 @@ step_title "7 - DIAGNOSTICS & INTEGRITY"
 "$HAKU_DIR/scripts/doctor.sh" || record_failure $?
 
 if [[ "$UPDATE_FAILED" == 0 ]]; then
-    "$HAKU_DIR/scripts/migrate.sh" --complete --to v26.11 || record_failure $?
+    "$HAKU_DIR/scripts/migrate.sh" --complete --to v26.12 || record_failure $?
 fi
 exit "$UPDATE_FAILED"

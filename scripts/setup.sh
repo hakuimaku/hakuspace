@@ -347,17 +347,9 @@ cleanup_legacy_icon_accent() {
     fi
 }
 
-# Include Classic visual components when configured, installed or explicitly requested.
+# Always manage the full Hikai + Classic visual stack (6 components).
 default_components() {
-    local -a list=(cursor gtk symbols)
-    local comp
-    for comp in cassettk cassetton cassettsor; do
-        resolve_component "$comp" || return 1
-        if [[ "$SOURCE_OVERRIDE" == 1 ]] || verify_component "$comp" 2>/dev/null; then
-            list+=("$comp")
-        fi
-    done
-    printf '%s\n' "${list[@]}"
+    printf '%s\n' cursor gtk symbols cassettk cassetton cassettsor
 }
 
 # Continue independent components after failures, but never report a failed batch as success.
@@ -491,9 +483,13 @@ generate_workspace() {
     local -a folders=("$HAKU_DIR")
     top="$(git -C "$HAKU_DIR" rev-parse --show-toplevel)" || return 1
     [[ "$top" == "$(cd "$HAKU_DIR" && pwd -P)" ]] || { fail "Not a repository root: $HAKU_DIR"; return 1; }
-    for component in cursor gtk symbols; do
+    for component in cursor gtk symbols cassettk cassetton cassettsor; do
         resolve_component "$component" || return 1
-        [[ -n "$SOURCE_PATH" ]] || { fail "Configure HAKU_*_SOURCE development repositories before creating a workspace"; return 1; }
+        if [[ -z "$SOURCE_PATH" ]]; then
+            [[ "$component" == cassett* ]] && continue
+            fail "Configure HAKU_*_SOURCE development repositories before creating a workspace"
+            return 1
+        fi
         top="$(git -C "$SOURCE_PATH" rev-parse --show-toplevel)" || return 1
         [[ "$top" == "$(cd "$SOURCE_PATH" && pwd -P)" ]] || { fail "Not a repository root: $SOURCE_PATH"; return 1; }
         folders+=("$SOURCE_PATH")
@@ -562,7 +558,7 @@ main() {
             for component in "${components[@]}"; do verify_component "$component" || return 1; done
             appearance_ctl verify ;;
         workspace) [[ $# -le 2 && "${2:-}" != --* ]] || return 2; generate_workspace "${2:-$HOME/HakuSpace.code-workspace}" ;;
-        *) printf 'Usage: setup.sh {setup|update [cursor|gtk|symbols|cassettk|cassetton]|managed|pending|status|verify [cursor|gtk|symbols|cassettk|cassetton]|workspace [FILE]|apply cursor|gtk|symbols|cassettk|cassetton|all|path cursor|gtk|symbols|cassettk|cassetton}\n' >&2; return 2 ;;
+        *) printf 'Usage: setup.sh {setup|update [cursor|gtk|symbols|cassettk|cassetton|cassettsor]|managed|pending|status|verify [cursor|gtk|symbols|cassettk|cassetton|cassettsor]|workspace [FILE]|apply cursor|gtk|symbols|cassettk|cassetton|cassettsor|all|path cursor|gtk|symbols|cassettk|cassetton|cassettsor}\n' >&2; return 2 ;;
     esac
 }
 
