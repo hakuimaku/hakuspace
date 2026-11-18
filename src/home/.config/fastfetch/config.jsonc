@@ -5,55 +5,62 @@
         "type": "auto",
         "position": "top",
         "padding": { "left": 2 },
-        "color": { "1": "white" }
+        "color": { "1": "default" }
     },
     "display": {
-        "separator": "  ",
-        "color": { "keys": "white", "output": "white", "title": "white" },
-        "constants": ["\u001b[37m", "\u001b[37m"]
+        "separator": " ",
+        "color": { "keys": "default", "output": "default", "title": "default" }
     },
     "modules": [
         {
             "type": "custom",
-            "key": "  ╭─Haku-Space─╮"
+            "format": "  {#90}╭────────────────────────────────────────╮{#}"
         },
         {
-            "type": "command",
-            "key": "  │ {$2}{$1}  user    │",
-            "text": "echo $USER"
-        },
-        {
-            "type": "kernel",
-            "key": "  │ {$2}{$1}  kernel  │"
-        },
-        {
-            "type": "os",
-            "key": "  │ {$2}{$1}  os      │"
-        },
-        {
-            "type": "wm",
-            "key": "  │ {$2}{$1}  wm      │"
-        },
-        {
-            "type": "disk",
-            "key": "  │ {$2}{$1}  disk    │",
-            "folder": "/"
-        },
-        {
-            "type": "memory",
-            "key": "  │ {$2}{$1}  memory  │"
-        },
-        {
-            "type": "packages",
-            "key": "  │   pkgs    │"
+            "type": "title",
+            "key": "  {#90}│\u001b[s\u001b[40C│\u001b[u{#}",
+            "format": "{#1}  {user-name} @ {host-name}{#}"
         },
         {
             "type": "custom",
-            "key": "  ╰────────────╯"
+            "format": "  {#90}╰────────────────────────────────────────╯{#}"
+        },
+        {
+            "type": "custom",
+            "format": "  {#90}╭─ {#}{#1}System{#}"
+        },
+        {
+            "type": "os",
+            "key": "  {#90}│ ├{#}   os     "
+        },
+        {
+            "type": "kernel",
+            "key": "  {#90}│ ├{#}   kernel "
+        },
+        {
+            "type": "wm",
+            "key": "  {#90}│ ├{#}   wm     "
+        },
+        {
+            "type": "packages",
+            "key": "  {#90}│ └{#}   pkgs   "
+        },
+        {
+            "type": "custom",
+            "format": "  {#90}├─ {#}{#1}Hardware{#}"
+        },
+        {
+            "type": "memory",
+            "key": "  {#90}│ ├{#}   memory "
+        },
+        {
+            "type": "disk",
+            "key": "  {#90}│ └{#}   disk   ",
+            "folders": "/"
         },
         {
             "type": "colors",
-            "key": "  ",
+            "key": "  {#90}╰─{#}",
             "symbol": "circle"
         }
     ]
