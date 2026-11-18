@@ -71,6 +71,10 @@ Scope {
             if (LockState.locked) return;
             Quickshell.reload(false);
         }
+        function reloadTray(): string {
+            Theme.reloadTray(true);
+            return "ok";
+        }
         function quit() {
             if (LockState.locked) return;
             Qt.quit();

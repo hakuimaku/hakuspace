@@ -118,7 +118,8 @@ quickshell_ready() {
 # Migrate preferences before the temporary runtime starts watching them.
 start_qs_transition_bootstrap() {
     "$HAKU_BIN_DIR/hikai_chrome_state_ctl.py" migrate 9>&- || return 1
-    setsid -f env QT_QPA_PLATFORM=wayland HAKUSPACE_SHELL_TRANSITION_BOOTSTRAP=classic-to-hikai \
+    setsid -f env QT_QPA_PLATFORM=wayland QT_QPA_PLATFORMTHEME=gtk3 QT_QPA_PLATFORMTHEME_QT6=gtk3 \
+        HAKUSPACE_SHELL_TRANSITION_BOOTSTRAP=classic-to-hikai \
         python3 "$HAKU_BIN_DIR/wallpaper_ctl.py" launch -c hakuspace </dev/null >>"$(haku_runtime_dir)/qs.log" 2>&1 9>&- || return 1
     wait_until quickshell_ready
 }
@@ -226,16 +227,16 @@ sys.exit(0 if d["backend"] == "classic" and not d["enabled"] and d["released"] e
 # Re-render both mode variants, activate the committed backend's state files, and reload WM/Kitty.
 sync_backend_styles() {
     if [[ -x "$HAKU_BIN_DIR/gen_style.sh" ]]; then
-        "$HAKU_BIN_DIR/gen_style.sh" >/dev/null 2>&1 || return 1
+        "$HAKU_BIN_DIR/gen_style.sh" >/dev/null 2>&1 9>&- || return 1
     fi
-    theme_sync_classic_gtk3_override || true
+    theme_sync_classic_gtk3_override 9>&- || true
     if [[ -x "$HAKU_BIN_DIR/reload_config.sh" ]]; then
-        "$HAKU_BIN_DIR/reload_config.sh" >/dev/null 2>&1 || true
+        "$HAKU_BIN_DIR/reload_config.sh" >/dev/null 2>&1 9>&- || true
     fi
     for s in /tmp/kitty-*; do
         [[ -S "$s" ]] || continue
-        kitty @ --to "unix:$s" ls >/dev/null 2>&1 || continue
-        kitty @ --to "unix:$s" load-config >/dev/null 2>&1 || true
+        kitty @ --to "unix:$s" ls >/dev/null 2>&1 9>&- || continue
+        kitty @ --to "unix:$s" load-config >/dev/null 2>&1 9>&- || true
     done
 }
 
@@ -274,6 +275,8 @@ rollback_hikai() {
     kill_classic_stack
     commit_backend "$QS_BACKEND_NAME" || { emergency_classic; return 1; }
     "$HAKU_BIN_DIR/appearance_ctl.sh" apply 9>&- || true
+    # Reload tray icons after switching from Classic's Cassetton to Hikaide-Symbols.
+    timeout 2s qs -c hakuspace ipc call shell reloadTray >/dev/null 2>&1 9>&- || true
     sync_backend_styles || true
     if quickshell_ready && start_hikai_auxiliary_stack && transition_ipc showChrome &&
         start_qs_supervisor && transition_ipc release && wait_transition_phase finished &&
@@ -299,6 +302,8 @@ switch_to_hikai() {
         return 1
     fi
     "$HAKU_BIN_DIR/appearance_ctl.sh" apply 9>&- || true
+    # Reload tray icons after switching from Classic's Cassetton to Hikaide-Symbols.
+    timeout 2s qs -c hakuspace ipc call shell reloadTray >/dev/null 2>&1 9>&- || true
     sync_backend_styles || true
     # Cava reads the backend preference to select Hikai's existing dynamic-mode policy.
     if ! "$HAKU_BIN_DIR/cava_manager.sh" --startup 9>&- || ! start_qs_supervisor || ! wait_until native_idle_ready; then
@@ -340,6 +345,8 @@ set_backend() (
     local target="$1" current
     exec 9>"$(haku_runtime_dir)/shell-switch.lock" || return 1
     flock -n 9 || { echo "A shell switch is already running." >&2; return 1; }
+    # Prevent long-lived child daemons (e.g. gammastep via reload_config.sh) from inheriting the lock FD.
+    python3 -c 'import fcntl; fcntl.fcntl(9, fcntl.F_SETFD, fcntl.FD_CLOEXEC)' 2>/dev/null || true
     current=$(haku_backend_get)
     if [[ "$target" == toggle ]]; then
         if [[ "$current" == classic ]]; then target="$QS_BACKEND_NAME"; else target=classic; fi
@@ -370,7 +377,7 @@ set_backend() (
         rm -f "$(haku_runtime_dir)/cursor-changed"
         if [[ -n "$new_cursor" ]]; then
             notify-send -a "HakuSpace" -i "info" "Cursor Changed" \
-                "Cursor đã đổi sang ${new_cursor}. Đăng xuất và đăng nhập lại để áp dụng cho mọi ứng dụng." 9>&- || true
+                "Cursor changed to ${new_cursor}. Log out and back in to apply to all applications." 9>&- || true
         fi
     fi
 )
