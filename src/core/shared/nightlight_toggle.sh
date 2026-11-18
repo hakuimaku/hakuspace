@@ -16,23 +16,35 @@ Toggle the night light for the current window manager.
 
 Options:
     --check             Report whether night light is enabled
+    --on                Enable or re-apply night light
+    --restore           Re-apply night light only if currently enabled
     -h, --help          Show this help message
 EOF
         exit 0
 fi
 
+is_nightlight_running() {
+    pgrep -x "hyprsunset" >/dev/null 2>&1 || pgrep -x "gammastep" >/dev/null 2>&1
+}
+
+stop_nightlight() {
+    pkill -x hyprsunset >/dev/null 2>&1 || true
+    pkill -x gammastep >/dev/null 2>&1 || true
+}
+
 run_nightlight() {
-    if [[ "$XDG_CURRENT_DESKTOP" == "Hyprland" ]]; then
-        hyprsunset --temperature $NIGHT_LIGHT_TEMPERATURE &
+    local desktop="${XDG_CURRENT_DESKTOP,,}"
+    if [[ "$desktop" == "hyprland" ]]; then
+        nohup hyprsunset --temperature "$NIGHT_LIGHT_TEMPERATURE" </dev/null >/dev/null 2>&1 &
         echo "Night light mode enabled with hyprsunset at $NIGHT_LIGHT_TEMPERATURE K"
     else
-        gammastep -O $NIGHT_LIGHT_TEMPERATURE &
+        nohup gammastep -O "$NIGHT_LIGHT_TEMPERATURE" </dev/null >/dev/null 2>&1 &
         echo "Night light mode enabled with gammastep at $NIGHT_LIGHT_TEMPERATURE K"
     fi
 }
 
 check_status() {
-    if pgrep "hyprsunset" > /dev/null || pgrep "gammastep" > /dev/null > /dev/null; then
+    if is_nightlight_running; then
         echo "Night light mode is currently enabled"
         exit 0
     else
@@ -41,15 +53,27 @@ check_status() {
     fi
 }
 
-# Check for --check argument
-if [[ "$1" == "--check" ]]; then
-    check_status
-fi
+case "${1:-}" in
+    --check)
+        check_status
+        ;;
+    --on)
+        stop_nightlight
+        run_nightlight
+        exit 0
+        ;;
+    --restore)
+        if is_nightlight_running; then
+            stop_nightlight
+            run_nightlight
+        fi
+        exit 0
+        ;;
+esac
 
 # Toggle
-if pgrep "hyprsunset" > /dev/null || pgrep "gammastep" > /dev/null > /dev/null; then
-    pkill hyprsunset
-    pkill gammastep
+if is_nightlight_running; then
+    stop_nightlight
     echo "Night light mode disabled"
 else
     run_nightlight
