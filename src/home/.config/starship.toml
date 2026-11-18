@@ -1,58 +1,50 @@
 add_newline = true
 
 format = '''
-[╭─●](white)  $username@$hostname $directory $git_branch$git_status$git_state ●$fill● $cmd_duration $time
-[╰─](white)$character$nix_shell '''
-
-[fill]
-symbol = '─'
-style = 'bold dimmed white'
+$username$hostname$directory$git_branch$git_status$git_state$nix_shell$cmd_duration
+$character'''
 
 [character]
-success_symbol = '[▶︎](bold white)'
-error_symbol = '[✘](bold red)'
-
-[time]
-disabled = false
-time_format = '%H:%M'
-style = 'white'
-format = '[󱑎 $time]($style)'
+success_symbol = '[>](bold white) '
+error_symbol = '[!](bold red) '
 
 [username]
-format = '[$user]($style)'
-style_root = 'bold red'
-style_user = 'bold white'
 show_always = true
+style_root = 'bold fg:black bg:red'
+style_user = 'bold fg:black bg:white'
+format = '[  $user@]($style)'
 
 [hostname]
-format = '[$ssh_symbol$hostname]($style)'
-ssh_symbol = '󰌾 '
 ssh_only = false
-style = 'bold white'
+ssh_symbol = 'ssh:'
+style = 'bold fg:black bg:white'
+format = '[$ssh_symbol$hostname  ]($style)'
 
 [directory]
-style = 'bold white'
-format = '[| 󰝰  $path]($style)'
-truncation_length = 4
+style = 'bold fg:black bg:blue'
+format = '[  $path  ]($style)'
+truncation_length = 3
+truncation_symbol = '../'
 
 [git_branch]
-symbol = '󰊢'
-style = 'blue'
-format = ' [$symbol $branch]($style)'
+symbol = 'git:'
+style = 'fg:black bg:green'
+format = '[  $symbol$branch  ]($style)'
 
 [git_status]
-style = 'yellow'
-format = ' ([\[$all_status$ahead_behind\]]($style) )'
+style = 'bold fg:black bg:yellow'
+format = '[  $all_status$ahead_behind  ]($style)'
 
 [git_state]
-style = 'green'
+style = 'bold fg:black bg:red'
+format = '[  $state( $progress_current/$progress_total)  ]($style)'
+
+[nix_shell]
+symbol = 'nix:'
+style = 'fg:black bg:purple'
+format = '[  $symbol$state( \($name\))  ]($style)'
 
 [cmd_duration]
 min_time = 2000
-style = 'white'
-format = '[󱎫 $duration]($style) 󰧄'
-
-[nix_shell]
-style = 'bold white'
-symbol = ' '
-format = 'via [$symbol$state( \($name\))]($style)  '
+style = 'fg:black bg:cyan'
+format = '[  $duration  ]($style)'

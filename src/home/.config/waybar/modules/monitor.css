@@ -1,0 +1,38 @@
+#custom-monitor {
+    background-color: @button_bg;
+    color: @button_fg;
+    border-style: solid;
+    border-width: 2px;
+    border-color: @border_light @border_dark @border_dark @border_light;
+    padding: 0 6px;
+    font-weight: bold;
+}
+
+#custom-monitor:hover {
+    background-color: @button_active_bg;
+}
+
+#cpu,
+#memory,
+#temperature {
+    color: @text_mono;
+    background-color: @panel_bg;
+    border-style: solid;
+    border-width: 2px 0;
+    border-color: @border_dark @border_light @border_light @border_dark;
+    padding: 0 6px;
+}
+
+#cpu {
+    border-left-width: 2px;
+}
+
+#temperature {
+    border-right-width: 2px;
+    margin-right: 4px;
+}
+
+#temperature.critical {
+    color: @urgent_fg;
+    background-color: @urgent_bg;
+}

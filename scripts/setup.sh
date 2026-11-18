@@ -13,6 +13,14 @@ VISUAL_SOURCES_FILE="$(haku_state_path system.visual-sources.json)"
 RECONCILE_PENDING="$(haku_state_path system.visual-reconcile.pending)"
 LEGACY_ASSET_DIR="$HAKU_STATE_ROOT/assets"
 
+appearance_ctl() {
+    "$SOURCE_CORE/shared/appearance_ctl.sh" "$@"
+}
+
+theme_ctl() {
+    "$SOURCE_CORE/shared/theme_ctl.sh" "$@"
+}
+
 # Report failures without exiting a batch before independent components are checked.
 fail() { printf 'setup: %s\n' "$*" >&2; return 1; }
 
@@ -23,13 +31,16 @@ resolve_component() {
         cursor) SOURCE_PATH=''; SOURCE_URL="$HAKU_CURSOR_REPO_URL"; override="${HAKU_CURSOR_SOURCE:-}" ;;
         gtk) SOURCE_PATH=''; SOURCE_URL="$HAKU_GTK_REPO_URL"; override="${HAKU_GTK_THEME_SOURCE:-}" ;;
         symbols) SOURCE_PATH=''; SOURCE_URL="$HAKU_SYMBOLS_REPO_URL"; override="${HAKU_ICON_THEME_SOURCE:-}" ;;
+        cassettk) SOURCE_PATH=''; SOURCE_URL="$CASSETTK_REPO_URL"; override="${CASSETTK_SOURCE:-${HAKU_CASSETTK_SOURCE:-}}" ;;
+        cassetton) SOURCE_PATH=''; SOURCE_URL="$CASSETTON_REPO_URL"; override="${CASSETTON_SOURCE:-${HAKU_CASSETTON_SOURCE:-}}" ;;
+        cassettsor) SOURCE_PATH=''; SOURCE_URL="$CASSETTSOR_REPO_URL"; override="${CASSETTSOR_SOURCE:-${HAKU_CASSETTSOR_SOURCE:-}}" ;;
         *) fail "Unknown component: $component"; return 1 ;;
     esac
     SOURCE_OVERRIDE=0
     if [[ -e "$VISUAL_SOURCES_FILE" || -L "$VISUAL_SOURCES_FILE" ]]; then
         [[ -f "$VISUAL_SOURCES_FILE" && ! -L "$VISUAL_SOURCES_FILE" && -O "$VISUAL_SOURCES_FILE" ]] || { fail 'Unsafe visual source state'; return 1; }
         saved="$(jq -er --arg key "$component" '
-            if type == "object" and ((keys - ["cursor", "gtk", "symbols"]) | length == 0)
+            if type == "object" and ((keys - ["cursor", "gtk", "symbols", "cassettk", "cassetton", "cassettsor"]) | length == 0)
                 and all(.[]; type == "string" and startswith("/") and (test("[\u0000\n\r]") | not))
             then .[$key] // "" else error("Invalid visual source state") end' "$VISUAL_SOURCES_FILE")" || return 1
     fi
@@ -162,15 +173,42 @@ install_cursor() {
     printf 'HakuSpace managed cursor v1\n' > "$target/.hakuspace-cursor"
 }
 
+install_cassettsor() {
+    local target="$HOME/.icons/Cassettsor"
+    if [[ -e "$target" || -L "$target" ]]; then
+        if [[ -L "$target" || ! -f "$target/.hakuspace-cursor" || -L "$target/.hakuspace-cursor" ]] ||
+                [[ "$(cat "$target/.hakuspace-cursor")" != 'HakuSpace managed cursor v1' ]]; then
+            fail "Refusing to overwrite an unmanaged cursor: $target"
+            return 1
+        fi
+    fi
+    (
+        cd "$SOURCE_PATH" || exit 1
+        make light && make verify || exit 1
+        [[ -d "dist/Cassettsor/cursors" && -f "dist/Cassettsor/index.theme" ]] || {
+            fail "Selected cursor was not built: Cassettsor"; exit 1;
+        }
+        make install THEME=Cassettsor
+    ) || return 1
+    [[ -f "$target/index.theme" && -d "$target/cursors" ]] || { fail "Cursor installation missing: $target"; return 1; }
+    printf 'HakuSpace managed cursor v1\n' > "$target/.hakuspace-cursor"
+}
+
 # Delegate pair validation and replacement to each upstream installer.
 install_component() {
     case "$1" in
         cursor) install_cursor ;;
-        gtk) python3 "$SOURCE_PATH/scripts/install_gtk_theme.py" --dest "$HOME/.themes" ;;
+        cassettsor) install_cassettsor ;;
+        gtk|cassettk) python3 "$SOURCE_PATH/scripts/install_gtk_theme.py" --dest "$HOME/.themes" ;;
         symbols)
             local -a args=()
             if [[ -e "$HOME/.icons/Hikaide-Symbols" || -L "$HOME/.icons/Hikaide-Symbols" ||
                     -e "$HOME/.icons/Hikaide-Symbols-Light" || -L "$HOME/.icons/Hikaide-Symbols-Light" ]]; then args=(--replace); fi
+            (cd "$SOURCE_PATH" && python3 scripts/build.py && python3 scripts/validate.py && ./scripts/install.sh "${args[@]}")
+            ;;
+        cassetton)
+            local -a args=()
+            if [[ -e "$HOME/.icons/Cassetton" || -L "$HOME/.icons/Cassetton" ]]; then args=(--replace); fi
             (cd "$SOURCE_PATH" && python3 scripts/build.py && python3 scripts/validate.py && ./scripts/install.sh "${args[@]}")
             ;;
     esac
@@ -184,10 +222,24 @@ verify_component() {
         cursor) paths=(".icons/$HAKU_CURSOR_THEME") ;;
         gtk) paths=(.themes/Hikaide .themes/Hikaide-Light) ;;
         symbols) paths=(.icons/Hikaide-Symbols .icons/Hikaide-Symbols-Light) ;;
+        cassettk) paths=(.themes/Cassettk) ;;
+        cassetton) paths=(.icons/Cassetton) ;;
+        cassettsor) paths=(.icons/Cassettsor) ;;
         *) fail "Unknown component: $1"; return 2 ;;
     esac
     for relative in "${paths[@]}"; do
         [[ -f "$HOME/$relative/index.theme" ]] || { fail "${relative##*/} installation missing"; return 1; }
+    done
+}
+
+validate_pending_tokens() {
+    local token
+    [[ -n "${1:-}" && "$1" =~ ^[a-z1\ ]+$ ]] || return 1
+    for token in $1; do
+        case "$token" in
+            1|gtk|symbols|cassettk|cassetton) ;;
+            *) return 1 ;;
+        esac
     done
 }
 
@@ -199,7 +251,7 @@ mark_reconcile_pending() {
         fail 'Unsafe visual reconcile state'; return 1;
     }
     if [[ -f "$RECONCILE_PENDING" ]]; then read -r pending < "$RECONCILE_PENDING" || return 1; fi
-    case "$pending" in 1|gtk|symbols|'gtk symbols'|'symbols gtk') ;; *) fail 'Invalid pending activation'; return 1 ;; esac
+    validate_pending_tokens "$pending" || { fail 'Invalid pending activation'; return 1; }
     if [[ "$activation" != 1 && " $pending " != *" $activation "* ]]; then
         if [[ "$pending" == 1 ]]; then pending="$activation"; else pending+=" $activation"; fi
     fi
@@ -216,9 +268,9 @@ retry_reconcile() {
     [[ -f "$RECONCILE_PENDING" && ! -L "$RECONCILE_PENDING" ]] || { fail 'Unsafe visual reconcile state'; return 1; }
     local pending component failed=0
     read -r pending < "$RECONCILE_PENDING" || return 1
-    case "$pending" in 1|gtk|symbols|'gtk symbols'|'symbols gtk') ;; *) fail 'Invalid pending activation'; return 1 ;; esac
+    validate_pending_tokens "$pending" || { fail 'Invalid pending activation'; return 1; }
     for component in $pending; do
-        if [[ "$component" != 1 ]] && ! "$SOURCE_CORE/backend/theme/appearance_ctl.sh" activate "$component"; then
+        if [[ "$component" != 1 ]] && ! appearance_ctl activate "$component"; then
             failed=1
             break
         fi
@@ -227,17 +279,17 @@ retry_reconcile() {
         return 0
     fi
     fail 'Appearance reconciliation incomplete; installed assets retained. Retry scripts/setup.sh update. Current selection:' || true
-    "$SOURCE_CORE/backend/theme/appearance_ctl.sh" selection || true
+    appearance_ctl selection || true
     return 1
 }
 
 # Reconcile current choices strictly and report selection separately from installed assets.
 reconcile_appearance() {
-    HAKUSPACE_STRICT_ASSETS=1 "$SOURCE_CORE/backend/theme/appearance_ctl.sh" verify &&
-        HAKUSPACE_STRICT_ASSETS=1 "$SOURCE_CORE/backend/theme/appearance_ctl.sh" apply &&
-        "$SOURCE_CORE/backend/theme/theme_ctl.sh" apply || return 1
+    HAKUSPACE_STRICT_ASSETS=1 appearance_ctl verify &&
+        HAKUSPACE_STRICT_ASSETS=1 appearance_ctl apply &&
+        theme_ctl apply || return 1
     local selected
-    selected="$("$SOURCE_CORE/backend/theme/appearance_ctl.sh" selection)" || return 1
+    selected="$(appearance_ctl selection)" || return 1
     printf 'Appearance applied: GTK=%s; icons=%s\nSession pending: restart existing applications/session to refresh cached styles and cursors.\n' \
         "$(jq -r '.gtk' <<< "$selected")" "$(jq -r '.icons' <<< "$selected")"
 }
@@ -245,15 +297,22 @@ reconcile_appearance() {
 # Installation and activation are separate decisions when an external theme is selected.
 activation_choice() {
     local component="$1" selected current family
-    [[ "$component" == gtk || "$component" == symbols ]] || return 0
-    if [[ "$component" == symbols && "$HAKU_ICON_THEME" == system ]]; then return 0; fi
-    selected="$("$SOURCE_CORE/backend/theme/appearance_ctl.sh" selection)" || return 1
-    if [[ "$component" == gtk ]]; then
-        current="$(jq -r '.gtk' <<< "$selected")"; family=Hikaide
-    else
-        current="$(jq -r '.icons' <<< "$selected")"; family=Hikaide-Symbols
-    fi
-    case "$current" in "$family"|"$family-Light"|system) return 0 ;; esac
+    case "$component" in
+        gtk|cassettk|symbols|cassetton) ;;
+        *) return 0 ;;
+    esac
+    if [[ ( "$component" == symbols || "$component" == cassetton ) && "$HAKU_ICON_THEME" == system ]]; then return 0; fi
+    selected="$(appearance_ctl selection)" || return 1
+    case "$component" in
+        gtk) current="$(jq -r '.gtk' <<< "$selected")"; family=Hikaide ;;
+        cassettk) current="$(jq -r '.gtk' <<< "$selected")"; family=Cassettk ;;
+        symbols) current="$(jq -r '.icons' <<< "$selected")"; family=Hikaide-Symbols ;;
+        cassetton) current="$(jq -r '.icons' <<< "$selected")"; family=Cassetton ;;
+    esac
+    case "$component:$current" in
+        gtk:*|cassettk:*) appearance_is_managed_gtk "$current" && return 0 ;;
+        symbols:*|cassetton:*) [[ "$current" == system ]] || appearance_is_managed_icons "$current" && return 0 ;;
+    esac
     if ask_yes_no "Activate $family for the current mode, replacing selected '$current'?"; then
         ACTIVATION_CHOICE="$component"
     else
@@ -288,11 +347,28 @@ cleanup_legacy_icon_accent() {
     fi
 }
 
+# Include Classic visual components when configured, installed or explicitly requested.
+default_components() {
+    local -a list=(cursor gtk symbols)
+    local comp
+    for comp in cassettk cassetton cassettsor; do
+        resolve_component "$comp" || return 1
+        if [[ "$SOURCE_OVERRIDE" == 1 ]] || verify_component "$comp" 2>/dev/null; then
+            list+=("$comp")
+        fi
+    done
+    printf '%s\n' "${list[@]}"
+}
+
 # Continue independent components after failures, but never report a failed batch as success.
 run_batch() (
     local command="$1" selection="${2:-all}" component detail failed=0 installed=0
-    local -a components=(cursor gtk symbols)
-    [[ "$selection" == all ]] || components=("$selection")
+    local -a components=()
+    if [[ "$selection" == all ]]; then
+        mapfile -t components < <(default_components) || return 2
+    else
+        components=("$selection")
+    fi
     VISUAL_SOURCE_STAGE=''
     if [[ "$command" == update && ( -e "$RECONCILE_PENDING" || -L "$RECONCILE_PENDING" ) ]]; then
         retry_reconcile
@@ -327,7 +403,7 @@ run_batch() (
     if [[ -e "$RECONCILE_PENDING" || -L "$RECONCILE_PENDING" ]]; then
         retry_reconcile || failed=1
     else
-        "$SOURCE_CORE/backend/theme/appearance_ctl.sh" verify || failed=1
+        appearance_ctl verify || failed=1
     fi
     return "$failed"
 )
@@ -345,6 +421,8 @@ for component, path, marker, expected in (
     ('cursor', home / '.icons' / sys.argv[2], '.hakuspace-cursor', 'HakuSpace managed cursor v1'),
     ('gtk', home / '.themes/Hikaide', 'index.theme', 'GtkTheme=Hikaide'),
     ('symbols', home / '.icons/Hikaide-Symbols', '.hikaide-symbols', 'Hikaide-Symbols managed theme v1'),
+    ('cassettk', home / '.themes/Cassettk', 'index.theme', 'GtkTheme=Cassettk'),
+    ('cassettsor', home / '.icons/Cassettsor', '.hakuspace-cursor', 'HakuSpace managed cursor v1'),
 ):
     metadata = path / marker
     if not path.is_symlink() and not metadata.is_symlink() and metadata.is_file():
@@ -360,13 +438,27 @@ for component, path, marker, expected in (
                     print(component)
             except ValueError:
                 pass
+for component, path, marker_name, family in (
+    ('cassetton', home / '.icons/Cassetton', '.cassetton.json', 'Cassetton'),
+):
+    if not path.is_symlink():
+        metadata = path / marker_name
+        if metadata.is_file() and not metadata.is_symlink():
+            try:
+                value = json.loads(metadata.read_text())
+                if value == {'family': family, 'version': 2, 'variant': 'dark'}:
+                    print(component)
+            except ValueError:
+                pass
 PYTHON
 }
 
 # Status derives repository and installed state without writing configuration.
 workspace_status() {
     local component status revision installed dirty
-    for component in cursor gtk symbols; do
+    local -a components=()
+    mapfile -t components < <(default_components) || return 1
+    for component in "${components[@]}"; do
         resolve_component "$component"
         status=temporary
         revision=unknown
@@ -382,13 +474,13 @@ workspace_status() {
         if verify_component "$component" 2>/dev/null; then installed=yes; else installed=no; fi
         printf '%s\t%s\t%s\t%s\tdirty=%s\tinstalled=%s\n' "$component" "$status" "${SOURCE_PATH:-not retained}" "$revision" "$dirty" "$installed"
     done
-    if "$SOURCE_CORE/backend/theme/appearance_ctl.sh" verify >/dev/null 2>&1; then
+    if appearance_ctl verify >/dev/null 2>&1; then
         echo appearance_verified=yes
     else
         echo appearance_verified=no
     fi
     local selected
-    selected="$("$SOURCE_CORE/backend/theme/appearance_ctl.sh" selection)" || return 1
+    selected="$(appearance_ctl selection)" || return 1
     printf 'gtk_theme_selected=%s\nicon_theme_selected=%s\n' "$(jq -r '.gtk' <<< "$selected")" "$(jq -r '.icons' <<< "$selected")"
     if [[ -e "$RECONCILE_PENDING" || -L "$RECONCILE_PENDING" ]]; then echo activation_pending=yes; else echo activation_pending=no; fi
 }
@@ -445,7 +537,7 @@ main() {
     case "${1:-}" in
         setup) [[ $# == 1 ]] || return 2; run_batch setup ;;
         update)
-            [[ $# -le 2 && "${2:-all}" =~ ^(all|cursor|gtk|symbols)$ ]] || return 2
+            [[ $# -le 2 && "${2:-all}" =~ ^(all|cursor|gtk|symbols|cassettk|cassetton|cassettsor)$ ]] || return 2
             run_batch update "${2:-all}" ;;
         managed) [[ $# == 1 ]] || return 2; managed_components ;;
         pending)
@@ -465,10 +557,12 @@ main() {
             if [[ $# == 2 ]]; then verify_component "$2"; return $?; fi
             retry_reconcile || return 1
             local component
-            for component in cursor gtk symbols; do verify_component "$component" || return 1; done
-            "$SOURCE_CORE/backend/theme/appearance_ctl.sh" verify ;;
+            local -a components=()
+            mapfile -t components < <(default_components) || return 1
+            for component in "${components[@]}"; do verify_component "$component" || return 1; done
+            appearance_ctl verify ;;
         workspace) [[ $# -le 2 && "${2:-}" != --* ]] || return 2; generate_workspace "${2:-$HOME/HakuSpace.code-workspace}" ;;
-        *) printf 'Usage: setup.sh {setup|update [cursor|gtk|symbols]|managed|pending|status|verify [cursor|gtk|symbols]|workspace [FILE]|apply cursor|gtk|symbols|all|path cursor|gtk|symbols}\n' >&2; return 2 ;;
+        *) printf 'Usage: setup.sh {setup|update [cursor|gtk|symbols|cassettk|cassetton]|managed|pending|status|verify [cursor|gtk|symbols|cassettk|cassetton]|workspace [FILE]|apply cursor|gtk|symbols|cassettk|cassetton|all|path cursor|gtk|symbols|cassettk|cassetton}\n' >&2; return 2 ;;
     esac
 }
 

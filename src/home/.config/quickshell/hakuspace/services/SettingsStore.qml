@@ -50,7 +50,6 @@ QtObject {
         { key: "HAKU_CLOCK_FONT_SIZE", group: "Haku Widget", label: "Clock font size", type: "int", hint: "Clock text size in Haku Widget." },
         { key: "HAKU_GENERAL_FONT_SIZE", group: "Haku Widget", label: "General font size", type: "int", hint: "General text size in Haku Widget." },
         { key: "HAKU_TERMINAL_FONT_SIZE", group: "Haku Widget", label: "Terminal font size", type: "int", hint: "Terminal text size in Haku Widget." },
-        { key: "WAYBAR_MODE_USER", group: "Waybar", label: "Custom Waybar themes", type: "list", hint: "Classic theme folder names under ~/hakucfg/config/waybar." },
         { key: "RAM_THRESHOLD_MB", group: "Exit", label: "RAM warning threshold (MB)", type: "int", hint: "RAM warning threshold in megabytes when exiting the window manager." },
         { key: "EXIT_APP_LIST_USER", group: "Exit", label: "Apps to close", type: "list", hint: "Apps targeted for graceful shutdown, then forced termination, when exiting the window manager. Example: discord, firefox, code." }
     ]

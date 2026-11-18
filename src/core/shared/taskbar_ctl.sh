@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 
-# Headless Taskbar domain/controller API.
+# Headless Taskbar domain/controller API (Hikai only).
 #
-# This script owns Taskbar state/process/theme mutation only. It must not open a
-# picker or depend on Rofi/haku_pick. Classic presentation lives in
-# taskbar_rofi.sh; taskbar_manager.sh remains the public compatibility facade.
+# Classic mode no longer provides a separate Waybar taskbar. Hikai reads and
+# mutates desktop.taskbar.requested through hikai_chrome_state_ctl.py.
 
-# Load canonical paths without initializing state during status queries.
 source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_state.sh" || exit 1
 
 if [[ ${1:-} == --status ]]; then
@@ -21,13 +19,6 @@ fi
 source "$HAKU_BIN_DIR/haku_backend_lib.sh" || exit 1
 
 MANUAL_STATE="$(haku_state_path desktop.taskbar.requested)"
-TASKBAR_REAL_DIR="$HOME/.config/waybar/taskbar"
-TASKBAR_LINK_DIR="$HOME/.config/waybar"
-TASKBAR_CONFIG="$TASKBAR_LINK_DIR/config-taskbar"
-TASKBAR_STYLE="$TASKBAR_LINK_DIR/style-taskbar.css"
-TASKBAR_PIN_APPS="$HOME/hakucfg/config/taskbar-pin-apps"
-THEME_FILE="$THEME_ROOT/taskbar-theme"
-TASKBAR_BIN="$HAKU_BIN_DIR/taskbar"
 
 ensure_manual_state() {
     if [[ ! -f "$MANUAL_STATE" ]] || ! grep -qxE '0|1' "$MANUAL_STATE"; then
@@ -35,200 +26,47 @@ ensure_manual_state() {
     fi
 }
 
-warn_theme_file() {
-    if [[ ! -f "$THEME_FILE" ]]; then
-        printf 'Warning: Taskbar theme file not found.\n' >&2
-    fi
-}
-
-ensure_symlink() {
-    local target="$1" link="$2"
-    if [[ ! -L "$link" || "$(readlink -f "$link" 2>/dev/null || true)" != "$(readlink -f "$target" 2>/dev/null || true)" ]]; then
-        ln -sf "$target" "$link"
-    fi
-}
-
-ensure_runtime() {
-    local waybar_bin
-    waybar_bin="$(command -v waybar || true)"
-    if [[ -z "$waybar_bin" ]]; then
-        printf 'Waybar binary not found in PATH. Please install Waybar first.\n' >&2
-        return 1
-    fi
-
-    mkdir -p "$HAKU_BIN_DIR" "$TASKBAR_LINK_DIR"
-    if [[ ! -L "$TASKBAR_BIN" || "$(readlink -f "$TASKBAR_BIN" 2>/dev/null || true)" != "$(readlink -f "$waybar_bin")" ]]; then
-        ln -sf "$waybar_bin" "$TASKBAR_BIN"
-    fi
-
-    ensure_symlink "$TASKBAR_REAL_DIR/config" "$TASKBAR_CONFIG"
-    ensure_symlink "$TASKBAR_REAL_DIR/style.css" "$TASKBAR_STYLE"
-}
-
-launch_taskbar() {
-    if haku_qs_mode; then return 0; fi
-    "$TASKBAR_BIN" -c "$TASKBAR_CONFIG" -s "$TASKBAR_STYLE" >/dev/null 2>&1 &
-    disown
-}
-
-is_taskbar_running() {
-    if haku_qs_mode; then
-        [[ "$(cat "$MANUAL_STATE")" == "1" ]]
-        return $?
-    fi
-    pgrep -x "taskbar" >/dev/null
-}
-
-kill_taskbar() {
-    if haku_qs_mode; then return 0; fi
-    if pgrep -x "taskbar" >/dev/null; then
-        pkill -x "taskbar"
-        for _ in $(seq 1 20); do
-            pgrep -x "taskbar" >/dev/null || break
-            sleep 0.1
-        done
-        if pgrep -x "taskbar" >/dev/null; then
-            pkill -9 -x "taskbar"
-        fi
-    fi
-}
-
-reload_taskbar() {
-    ensure_runtime || return 1
-    kill_taskbar
-    if [[ "$(cat "$MANUAL_STATE")" == "1" ]]; then
-        launch_taskbar
-    fi
-}
-
-startup_taskbar() {
-    ensure_runtime || return 1
-    if [[ "$(cat "$MANUAL_STATE")" == "1" ]] && ! is_taskbar_running; then
-        launch_taskbar
-    fi
-}
-
-# Write a known target directly so concurrent requests cannot invert each other.
 set_layout() {
-    local target
     case "${1:-}" in
-        topbar|leftbar|disabled) target=0 ;;
-        taskbar|enabled) target=1 ;;
-        cycle) target=0 ;;
+        topbar|leftbar|disabled|taskbar|enabled|cycle) ;;
         *) printf 'Invalid layout target\n' >&2; return 2 ;;
     esac
-    if haku_qs_mode; then
-        local result
-        result="$(python3 "$HAKU_BIN_DIR/hikai_chrome_state_ctl.py" layout "$1")" || return $?
-        if [[ "$(cat "$(haku_state_path cava.dynamic-position)" 2>/dev/null)" == 1 ]]; then
-            local edge is_tb
-            edge="$(grep -oP '"statusEdge":\s*"\K[^"]+' <<< "$result" 2>/dev/null || true)"
-            is_tb="$(grep -oP '"taskbar":\s*\K(true|false)' <<< "$result" 2>/dev/null || true)"
-            if [[ "$is_tb" == "true" ]]; then
-                printf 'bottom\n' > "$(haku_state_path cava.position)"
-            elif [[ "$edge" == "left" ]]; then
-                printf 'left\n' > "$(haku_state_path cava.position)"
-            else
-                printf 'top\n' > "$(haku_state_path cava.position)"
-            fi
+    if ! haku_qs_mode; then
+        printf 'Taskbar is available in Hikai only.\n' >&2
+        return 2
+    fi
+    local result
+    result="$(python3 "$HAKU_BIN_DIR/hikai_chrome_state_ctl.py" layout "$1")" || return $?
+    if [[ "$(cat "$(haku_state_path cava.dynamic-position)" 2>/dev/null)" == 1 ]]; then
+        local edge is_tb
+        edge="$(grep -oP '"statusEdge":\s*"\K[^"]+' <<< "$result" 2>/dev/null || true)"
+        is_tb="$(grep -oP '"taskbar":\s*\K(true|false)' <<< "$result" 2>/dev/null || true)"
+        if [[ "$is_tb" == "true" ]]; then
+            printf 'bottom\n' > "$(haku_state_path cava.position)"
+        elif [[ "$edge" == "left" ]]; then
+            printf 'left\n' > "$(haku_state_path cava.position)"
+        else
+            printf 'top\n' > "$(haku_state_path cava.position)"
         fi
-        return 0
     fi
-    if [[ "$1" == leftbar ]]; then
-        printf 'Leftbar is available in Hikai only\n' >&2
-        return 2
-    fi
-    if [[ "$1" == cycle ]]; then
-        printf 'Layout cycling is available in Hikai only\n' >&2
-        return 2
-    fi
-    ensure_runtime || return 1
-    [[ "$(cat "$MANUAL_STATE")" == "$target" ]] && return 0
-    printf '%s\n' "$target" > "$MANUAL_STATE"
-    kill_taskbar
-    [[ "$target" == 0 ]] || launch_taskbar
 }
 
-# Retain the public toggle API for existing keybindings.
 toggle_taskbar() {
     if [[ "$(cat "$MANUAL_STATE")" == 1 ]]; then set_layout disabled; else set_layout taskbar; fi
-}
-
-get_app_name() {
-    if [[ -f "$THEME_FILE" ]] && grep -qE '"format":\s*"\{icon\} \{name\}"' "$THEME_FILE"; then
-        printf 'on\n'
-    else
-        printf 'off\n'
-    fi
-}
-
-toggle_app_name() {
-    warn_theme_file
-    ensure_runtime || return 1
-    if [[ ! -f "$THEME_FILE" ]]; then
-        return 1
-    fi
-
-    if grep -qE '"format":\s*"\{icon\} \{name\}"' "$THEME_FILE"; then
-        sed -i -E 's/"format":\s*"\{icon\} \{name\}"/"format": "{icon}"/' "$THEME_FILE"
-        echo "Taskbar App Name disabled."
-    else
-        sed -i -E 's/"format":\s*"\{icon\}"/"format": "{icon} {name}"/' "$THEME_FILE"
-        echo "Taskbar App Name enabled."
-    fi
-
-    reload_taskbar
-}
-
-get_icon_size() {
-    local current_size=""
-    if [[ -f "$THEME_FILE" ]]; then
-        current_size="$(grep -oP '"icon-size":\s*\K\d+' "$THEME_FILE" | head -n 1 || true)"
-    fi
-    [[ -z "$current_size" ]] && current_size=40
-    printf '%s\n' "$current_size"
-}
-
-set_icon_size() {
-    local new_size="${1:-}"
-    if [[ ! "$new_size" =~ ^[0-9]+$ ]]; then
-        printf 'taskbar_ctl.sh: icon size must be a positive integer.\n' >&2
-        return 2
-    fi
-
-    warn_theme_file
-    ensure_runtime || return 1
-    if [[ ! -f "$THEME_FILE" ]]; then
-        return 1
-    fi
-
-    sed -i -E "s/\"icon-size\": *[0-9]+/\"icon-size\": $new_size/g" "$THEME_FILE"
-    echo "Icon size updated to $new_size."
-
-    if [[ -f "$TASKBAR_PIN_APPS" ]]; then
-        sed -i -E "s/\"size\": *[0-9]+/\"size\": $new_size/g" "$TASKBAR_PIN_APPS"
-        echo "Pinned app icon sizes updated to $new_size."
-    fi
-
-    reload_taskbar
 }
 
 print_help() {
     cat <<'EOF_HELP'
 Usage: taskbar_ctl.sh COMMAND [ARG]
-Headless Taskbar control API.
+Headless Taskbar control API (Hikai).
 
 Commands:
-    --startup               Restore previous state at boot
-    --reload                Reload the taskbar
+    --startup               No-op in Classic; Hikai restores from state
+    --reload                No-op in Classic
     --layout topbar|leftbar|taskbar|cycle  Set the layout explicitly or cycle status bars
     --set enabled|disabled  Set Taskbar explicitly
     --toggle                Toggle the taskbar on/off
     --status                Print enabled or disabled
-    --get-app-name          Print on or off
-    --toggle-app-name       Toggle app name format
-    --get-icon-size         Print current icon size
-    --set-icon-size PX      Set icon size explicitly
     -h, --help              Show this help message
 EOF_HELP
 }
@@ -237,29 +75,21 @@ mkdir -p "$STATE_DIR"
 ensure_manual_state
 
 case "${1:-}" in
-    --startup)
-        startup_taskbar
+    --startup|--reload)
+        exit 0
         ;;
-    --reload)
-        reload_taskbar
+    --layout)
+        [[ -n "${2:-}" ]] || { printf 'taskbar_ctl.sh: --layout requires a target.\n' >&2; exit 2; }
+        set_layout "$2"
         ;;
-    --layout|--set)
-        set_layout "${2:-}"
+    --set)
+        case "${2:-}" in
+            enabled|disabled) set_layout "$2" ;;
+            *) printf 'taskbar_ctl.sh: --set requires enabled or disabled.\n' >&2; exit 2 ;;
+        esac
         ;;
     --toggle)
         toggle_taskbar
-        ;;
-    --get-app-name)
-        get_app_name
-        ;;
-    --toggle-app-name)
-        toggle_app_name
-        ;;
-    --get-icon-size)
-        get_icon_size
-        ;;
-    --set-icon-size)
-        set_icon_size "${2:-}"
         ;;
     -h|--help)
         print_help

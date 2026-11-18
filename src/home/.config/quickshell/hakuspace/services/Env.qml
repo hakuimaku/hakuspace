@@ -17,7 +17,6 @@ QtObject {
     readonly property string stateDesktopIconsEnabled: stateDir + "/[desktop].icons.enabled"
     readonly property string stateWallpaperCurrent: stateDir + "/[desktop].wallpaper.current.json"
     readonly property string stateWallpaperRuntime: stateDir + "/[desktop].wallpaper.runtime.json"
-    readonly property string stateThemeOpaqueEnabled: stateDir + "/[theme].opaque.enabled"
     readonly property string stateCavaEnabled: stateDir + "/[cava].enabled"
     readonly property string stateCavaPosition: stateDir + "/[cava].position"
     readonly property string stateCavaDynamicPosition: stateDir + "/[cava].dynamic-position"

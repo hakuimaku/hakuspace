@@ -1591,19 +1591,6 @@ class DesktopLayout(Gtk.Fixed):
         rw_item.connect("activate", on_rw_toggle)
         space_menu.append(rw_item)
 
-        rs_on = False
-        try:
-            with open(state_path("screen.rounded.enabled"), "r") as f:
-                rs_on = (f.read().strip() == "1")
-        except:
-            pass
-        rs_item = Gtk.CheckMenuItem(label="Rounded Screen")
-        rs_item.set_active(rs_on)
-        def on_rs_toggle(w):
-            subprocess.Popen([str(bin_dir() / "rounded_screen_manager.sh"), "--toggle"])
-        rs_item.connect("activate", on_rs_toggle)
-        space_menu.append(rs_item)
-        
         space_menu.append(Gtk.SeparatorMenuItem())
         
         cw_item = Gtk.MenuItem(label="Change Wallpaper")
@@ -1630,20 +1617,6 @@ class DesktopLayout(Gtk.Fixed):
         
         space_menu.append(Gtk.SeparatorMenuItem())
         
-        taskbar_state = False
-        try:
-            with open(state_path("desktop.taskbar.requested"), "r") as f:
-                taskbar_state = (f.read().strip() == "1")
-        except:
-            pass
-            
-        taskbar_item = Gtk.CheckMenuItem(label="Taskbar")
-        taskbar_item.set_active(taskbar_state)
-        def on_taskbar(w):
-            subprocess.Popen([str(bin_dir() / "taskbar_manager.sh"), "--toggle"])
-        taskbar_item.connect("activate", on_taskbar)
-        space_menu.append(taskbar_item)
-        
         waybar_item = Gtk.MenuItem(label="Waybar")
         waybar_menu = Gtk.Menu()
         waybar_menu.get_style_context().add_class('desktop-context-menu')
@@ -1660,18 +1633,6 @@ class DesktopLayout(Gtk.Fixed):
             subprocess.Popen([str(bin_dir() / "statusbar_manager.sh"), "--toggle"])
         wt_item.connect("activate", on_wt)
         waybar_menu.append(wt_item)
-        
-        ws_item = Gtk.MenuItem(label="Waybar Select Mode")
-        def on_ws(w):
-            subprocess.Popen([str(bin_dir() / "statusbar_manager.sh"), "--select"])
-        ws_item.connect("activate", on_ws)
-        waybar_menu.append(ws_item)
-        
-        wc_item = Gtk.MenuItem(label="Waybar Cycle Mode")
-        def on_wc(w):
-            subprocess.Popen([str(bin_dir() / "statusbar_manager.sh"), "--cycle"])
-        wc_item.connect("activate", on_wc)
-        waybar_menu.append(wc_item)
         
         space_menu.append(waybar_item)
         menu.append(space_item)

@@ -48,6 +48,16 @@ deploy_symlink_recursive() {
     log_symlink "$src => $dst"
 }
 
+cleanup_retired_hyprlock_tiny() {
+    local stale="$DEST_CONFIG/hypr/hyprlock_tiny.conf"
+    local expected
+    expected="$(realpath -m "$SOURCE_CONFIG/hypr/hyprlock_tiny.conf")"
+    if [[ -L "$stale" && "$(readlink "$stale")" == "$expected" ]]; then
+        rm -f "$stale"
+        log_info "Removed retired symlink: $(shorten_path "$stale")"
+    fi
+}
+
 link_module() {
     local mod="${1:-}"
     local skip_backup="${2:-0}"
@@ -69,6 +79,10 @@ link_module() {
         deploy_symlink_recursive "$src" "$dst" "$skip_backup" || return 1
     done <<< "$mappings"
 
+    if [[ "${mod,,}" == "hyprlock" ]]; then
+        cleanup_retired_hyprlock_tiny
+    fi
+
     log_ok "Module '$mod' linked successfully."
 }
 
@@ -80,6 +94,8 @@ link_all() {
         [[ -z "$src" ]] && continue
         deploy_symlink_recursive "$src" "$dst" "$skip_backup" || return 1
     done < <(registry_get_common_configs)
+
+    cleanup_retired_hyprlock_tiny
 
     # Link core scripts
     "$HAKU_DIR/scripts/core.sh" --mode symlink $([[ "$skip_backup" -eq 1 ]] && echo "--skip-backup")

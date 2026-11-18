@@ -6,7 +6,7 @@
 
 ```text
 src/core/
-├── classic/   # Classic-only (Waybar, Rofi, SwayNC, Taskbar, Classic adapters)
+├── classic/   # Classic-only (Waybar, Rofi, SwayNC, Cava layer, Classic adapters)
 ├── hikai/     # Hikai-only (Quickshell controllers and services)
 ├── shared/    # Cross-shell backends, engines, theme, WM helpers, utilities
 ├── facade/    # Public entrypoints used by keybinds, startup, and user CLI
@@ -15,7 +15,7 @@ src/core/
 
 ### `classic/`
 
-Classic-only interactive presentation adapters (`*_rofi.sh`, `hm_*_rofi.py`), Waybar/SwayNC/Taskbar controllers (`waybar_ctl.sh`, `taskbar_ctl.sh`, `notif_ctl.sh`, `rofi_theme_ctl.sh`), and Classic-specific helpers.
+Classic-only interactive presentation adapters (`*_rofi.sh`, `hm_*_rofi.py`), Waybar/SwayNC controllers (`waybar_ctl.sh`, `notif_ctl.sh`), standalone Classic widgets (`cava_layer.py`), and Classic-specific helpers (`classic_palette.py`).
 
 ### `hikai/`
 
@@ -23,7 +23,7 @@ Hikai-only headless controllers and settings stores used by the Quickshell shell
 
 ### `shared/`
 
-Cross-shell domain controllers, theming/rendering engines (`gen_style.sh`, `apply_style.sh`, `theme_ctl.sh`, `appearance_ctl.sh`, `wallpaper_ctl.sh`, `haku_icon_accent.py`), standalone desktop widgets (`desktop_icons.py`, `cava_layer.py`, `edge_trigger.py`, `rounded_screen.py`), and shared utilities (`pinned_apps_ctl.py`, `record_ctl.sh`, `clipboard_ctl.sh`, `power_ctl.sh`, etc.).
+Cross-shell domain controllers, theming/rendering engines (`gen_style.sh`, `apply_style.sh`, `theme_ctl.sh`, `appearance_ctl.sh`, `wallpaper_ctl.sh`, `haku_icon_accent.py`), standalone desktop widgets (`desktop_icons.py`), and shared utilities (`pinned_apps_ctl.py`, `taskbar_ctl.sh`, `record_ctl.sh`, `clipboard_ctl.sh`, `power_ctl.sh`, etc.).
 
 ### `facade/`
 
@@ -34,7 +34,6 @@ statusbar_manager.sh
 taskbar_manager.sh
 dockbar_manager.sh
 change_theme.sh
-rofi_theme_switcher.sh
 niri_animation_switcher.sh
 wallpaper_select.sh
 shutdown.sh

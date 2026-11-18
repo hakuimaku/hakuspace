@@ -19,7 +19,7 @@ if [[ ${#all_files[@]} -eq 0 ]]; then
     exit 1
 fi
 
-selected=$(printf '%s\n' "${all_files[@]}" | rofi -dmenu -i -p "Add Shortcut" -theme option-menu.rasi)
+selected=$(printf '%s\n' "${all_files[@]}" | rofi -dmenu -sync -i -p "Add Shortcut" -theme styles/menu.rasi)
 rofi_status=$?
 if [[ $rofi_status -ne 0 || -z $selected ]]; then
     printf 'Cancelled.\n'

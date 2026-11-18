@@ -1,0 +1,13 @@
+{
+    "custom/logo": {
+        "format": "[HAKU]",
+        "tooltip": true,
+        "tooltip-format": "Haku Menu",
+        "on-click": "$HOME/.local/bin/hakumenu.sh"
+    },
+    "ext/workspaces": {
+        "format": "{name}",
+        "on-click": "activate",
+        "sort-by-direction": "true"
+    }
+}

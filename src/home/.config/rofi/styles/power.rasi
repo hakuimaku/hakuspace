@@ -1,0 +1,42 @@
+@import "../base.rasi"
+
+window {
+    width: 460px;
+}
+
+panel-body {
+    children: [ message, list-frame ];
+}
+
+listview {
+    columns: 2;
+    lines: 3;
+    scrollbar: false;
+    spacing: 6px;
+    padding: 4px;
+}
+
+element {
+    padding: 10px 12px;
+    background-color: @button-bg;
+    text-color: @button-fg;
+    border: 2px;
+    border-color: @border-light;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color: @button-bg;
+    text-color: @button-fg;
+}
+
+element selected.normal,
+element selected.active {
+    background-color: @select-bg;
+    text-color: @select-fg;
+    border-color: @border-dark;
+}
+
+element-icon {
+    enabled: false;
+}

@@ -17,10 +17,9 @@ $PROCESS_REPORT
 EOF_MENU
 )
 
-SELECTION=$(printf '%s\n' "$MENU_OPTIONS" | rofi -dmenu \
+SELECTION=$(printf '%s\n' "$MENU_OPTIONS" | rofi -dmenu -sync \
     -p "System Monitor" \
-    -theme option-menu.rasi \
-    -theme-str 'window {width: 50%; height: 60%; }' \
+    -theme styles/exit.rasi \
     -selected-row 0)
 rofi_status=$?
 

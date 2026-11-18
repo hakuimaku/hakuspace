@@ -1,0 +1,21 @@
+#clock {
+    background-color: @inset_bg;
+    color: @text_mono;
+    border-style: solid;
+    border-width: 2px;
+    border-color: @border_dark @border_light @border_light @border_dark;
+    padding: 0 10px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+#custom-recorder {
+    background-color: @urgent_bg;
+    color: @urgent_fg;
+    border-style: solid;
+    border-width: 2px;
+    border-color: @border_light @border_dark @border_dark @border_light;
+    padding: 0 8px;
+    margin-right: 4px;
+    font-weight: bold;
+}

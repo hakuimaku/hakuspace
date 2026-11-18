@@ -17,5 +17,6 @@ fi
 exec rofi -show "" \
     -p "Haku Menu - Search" \
     -i \
+    -theme styles/launcher.rasi \
     "${EXTEND[@]}" \
     -modes ":$HAKU_BIN_DIR/hm_general.sh,:$HAKU_BIN_DIR/hm_theme.sh,:$HAKU_BIN_DIR/hm_setting.sh"

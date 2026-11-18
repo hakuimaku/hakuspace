@@ -11,6 +11,8 @@ import sys
 # System installations participate in activation but never in mutation.
 SYSTEM_ROOTS = (Path('/usr/local/share/icons'), Path('/usr/share/icons'))
 VARIANTS = {'Hikaide-Symbols': 'dark', 'Hikaide-Symbols-Light': 'light'}
+STATIC_MANAGED = {'Cassetton': 'dark'}
+ALL_MANAGED = {**VARIANTS, **STATIC_MANAGED}
 
 
 def icon_roots():
@@ -31,7 +33,7 @@ def icon_directory(name):
 
 def managed_variant(path):
     """Require exact family, version, variant and index metadata without path escapes."""
-    mode = VARIANTS.get(path.name)
+    mode = ALL_MANAGED.get(path.name)
     try:
         if mode is None or path.resolve() != path or not path.is_dir():
             return None
@@ -41,6 +43,12 @@ def managed_variant(path):
         config = configparser.ConfigParser(interpolation=None)
         config.read_string(index.read_text())
         if config.get('Icon Theme', 'Name', fallback='') != path.name:
+            return None
+        if path.name in STATIC_MANAGED:
+            marker = path / '.cassetton.json'
+            if not marker.is_symlink() and marker.is_file() and json.loads(marker.read_text()) == {
+                    'family': 'Cassetton', 'version': 2, 'variant': mode}:
+                return mode
             return None
         marker = path / '.hikaide-symbols.json'
         if marker.exists() or marker.is_symlink():
@@ -85,6 +93,9 @@ def resolve(name, accent_mode):
     """Use one resolution result for discovery, policy, status and write targets."""
     directory = icon_directory(name)
     result = {'directory': str(directory) if directory else None, 'policy': 'disabled', 'targets': []}
+    if name in STATIC_MANAGED:
+        result['policy'] = 'missing' if directory is None else 'not-applicable'
+        return result
     if name not in VARIANTS or accent_mode == 'off':
         return result
     if directory is None:

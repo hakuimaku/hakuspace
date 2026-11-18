@@ -66,6 +66,7 @@ launch() {
         -modi "$modi" \
         -display-open "$(mode_icon WindowOpen)" \
         -display-close "$(mode_icon WindowClose)" \
+        -theme styles/launcher.rasi \
         -sidebar-mode -i
 }
 

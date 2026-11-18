@@ -1,0 +1,439 @@
+@import url("classic-palette.css");
+
+/* Scope Classic 8-scheme color overrides strictly to Thunar without modifying global GTK themes. */
+window.thunar {
+  background-color: @window_bg;
+  color: @text;
+  border-color: @border_frame;
+}
+
+.thunar paned {
+  background-color: @window_bg;
+}
+
+.thunar paned > separator {
+  background-color: @window_bg;
+  border-top-color: @border_light;
+  border-left-color: @border_light;
+  border-right-color: @border_dark;
+  border-bottom-color: @border_dark;
+}
+
+.thunar separator {
+  background-color: @border_dark;
+}
+
+.thunar .dim-label {
+  color: @text_muted;
+}
+
+.thunar menubar {
+  background-color: @window_bg;
+  background-image: none;
+  color: @text;
+  border-top-color: @border_light;
+  border-left-color: @border_light;
+  border-right-color: @border_dark;
+  border-bottom-color: @border_dark;
+}
+
+.thunar menubar > menuitem {
+  color: @text;
+  background-color: transparent;
+}
+
+.thunar menubar > menuitem:hover {
+  background-color: @select_bg;
+  color: @select_fg;
+  border-top-color: @border_dark;
+  border-left-color: @border_dark;
+  border-right-color: @border_light;
+  border-bottom-color: @border_light;
+}
+
+.thunar menu,
+.thunar .menu,
+.thunar popover {
+  background-color: @panel_bg;
+  background-image: none;
+  color: @text;
+  border-top-color: @border_light;
+  border-left-color: @border_light;
+  border-right-color: @border_dark;
+  border-bottom-color: @border_dark;
+}
+
+.thunar menu menuitem,
+.thunar popover modelbutton {
+  color: @text;
+  background-color: transparent;
+}
+
+.thunar menu menuitem:hover,
+.thunar popover modelbutton:hover,
+.thunar popover modelbutton:focus {
+  background-color: @select_bg;
+  color: @select_fg;
+}
+
+.thunar menu menuitem:disabled,
+.thunar popover modelbutton:disabled {
+  color: alpha(@text, 0.5);
+}
+
+.thunar toolbar {
+  background-color: @window_bg;
+  background-image: none;
+  color: @text;
+  border-top-color: @border_light;
+  border-left-color: @border_light;
+  border-right-color: @border_dark;
+  border-bottom-color: @border_dark;
+}
+
+.thunar button,
+.thunar toolbar button,
+.thunar toolbar button.flat {
+  background-color: @button_bg;
+  background-image: none;
+  color: @button_fg;
+  border-top-color: @border_light;
+  border-left-color: @border_light;
+  border-right-color: @border_dark;
+  border-bottom-color: @border_dark;
+}
+
+.thunar button.flat {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.thunar button:hover,
+.thunar button.flat:hover,
+.thunar toolbar button:hover,
+.thunar toolbar button.flat:hover {
+  background-color: @button_active_bg;
+  border-top-color: @border_light;
+  border-left-color: @border_light;
+  border-right-color: @border_dark;
+  border-bottom-color: @border_dark;
+}
+
+.thunar button:active,
+.thunar button:checked,
+.thunar button.flat:active,
+.thunar button.flat:checked,
+.thunar toolbar button:active,
+.thunar toolbar button:checked,
+.thunar toolbar button.flat:active,
+.thunar toolbar button.flat:checked {
+  background-color: @button_active_bg;
+  border-top-color: @border_dark;
+  border-left-color: @border_dark;
+  border-right-color: @border_light;
+  border-bottom-color: @border_light;
+}
+
+.thunar button:focus {
+  outline-color: @text;
+}
+
+.thunar button:disabled,
+.thunar toolbar button:disabled,
+.thunar toolbar button.flat:disabled {
+  background-color: @panel_bg;
+  color: alpha(@text, 0.5);
+  border-top-color: @border_light;
+  border-left-color: @border_light;
+  border-right-color: @border_dark;
+  border-bottom-color: @border_dark;
+}
+
+.thunar button.destructive-action {
+  background-color: @urgent_bg;
+  color: @urgent_fg;
+}
+
+.thunar entry,
+.thunar toolbar entry,
+.thunar .view entry {
+  background-color: @inset_bg;
+  background-image: none;
+  color: @text;
+  caret-color: @text;
+  border-top-color: @border_dark;
+  border-left-color: @border_dark;
+  border-right-color: @border_light;
+  border-bottom-color: @border_light;
+}
+
+.thunar entry selection {
+  background-color: @select_bg;
+  color: @select_fg;
+}
+
+.thunar .path-bar > button.location-button.toggle {
+  background-color: @button_bg;
+  color: @button_fg;
+  border-top-color: @border_light;
+  border-left-color: @border_light;
+  border-right-color: @border_dark;
+  border-bottom-color: @border_dark;
+}
+
+.thunar .path-bar > button.location-button.toggle:hover {
+  background-color: @button_active_bg;
+}
+
+.thunar .path-bar > button.location-button.toggle:checked {
+  background-color: @select_bg;
+  color: @select_fg;
+  border-top-color: @border_dark;
+  border-left-color: @border_dark;
+  border-right-color: @border_light;
+  border-bottom-color: @border_light;
+}
+
+.thunar .sidebar {
+  background-color: @panel_bg;
+  color: @text;
+  border-top-color: @border_dark;
+  border-left-color: @border_dark;
+  border-right-color: @border_light;
+  border-bottom-color: @border_light;
+}
+
+.thunar .sidebar treeview {
+  background-color: @panel_bg;
+  color: @text;
+}
+
+.thunar .sidebar treeview:hover {
+  background-color: @panel_bg;
+}
+
+.thunar .sidebar .cell {
+  background-color: transparent;
+}
+
+.thunar .sidebar .cell:hover {
+  background-color: @button_active_bg;
+  color: @text;
+}
+
+.thunar .sidebar .cell:selected,
+.thunar .sidebar .cell:selected:hover,
+.thunar .sidebar .cell:selected:focus,
+.thunar .sidebar treeview:selected,
+.thunar .sidebar treeview:selected:hover {
+  background-color: @inset_bg;
+  color: @text;
+  box-shadow: inset 0 2px 0 0 @border_dark, inset 0 -2px 0 0 @border_light;
+}
+
+.thunar .sidebar .cell:selected:backdrop,
+.thunar .sidebar treeview:selected:backdrop {
+  background-color: @button_active_bg;
+  color: @text_muted;
+  box-shadow: inset 0 2px 0 0 @border_dark, inset 0 -2px 0 0 @border_light;
+}
+
+.thunar .standard-view {
+  background-color: @inset_bg;
+  border-top-color: @border_dark;
+  border-left-color: @border_dark;
+  border-right-color: @border_light;
+  border-bottom-color: @border_light;
+}
+
+.thunar .standard-view .view,
+.thunar .standard-view iconview,
+.thunar .standard-view treeview {
+  background-color: @inset_bg;
+  color: @text;
+}
+
+.thunar .standard-view .view.cell,
+.thunar .standard-view .view row {
+  background-color: transparent;
+}
+
+.thunar .standard-view treeview header button {
+  background-color: @button_bg;
+  color: @button_fg;
+  border-top-color: @border_light;
+  border-left-color: @border_light;
+  border-right-color: @border_dark;
+  border-bottom-color: @border_dark;
+}
+
+.thunar .standard-view treeview.view:hover {
+  background-color: @inset_bg;
+}
+
+.thunar .standard-view .view.cell:hover:not(:selected) {
+  background-color: @panel_bg;
+}
+
+.thunar .standard-view .view:selected,
+.thunar .standard-view .view.cell:selected,
+.thunar .standard-view .view.cell:selected:focus,
+.thunar .standard-view treeview.view:selected,
+.thunar .standard-view treeview.view:selected:hover,
+.thunar .standard-view iconview:selected,
+.thunar .standard-view iconview:selected:focus {
+  background-color: @button_active_bg;
+  color: @text;
+  box-shadow: inset 0 2px 0 0 @border_dark, inset 0 -2px 0 0 @border_light;
+}
+
+.thunar .standard-view .view:selected:backdrop,
+.thunar .standard-view .view.cell:selected:backdrop,
+.thunar .standard-view iconview:selected:backdrop {
+  background-color: @panel_bg;
+  color: @text_muted;
+  box-shadow: inset 0 2px 0 0 @border_dark, inset 0 -2px 0 0 @border_light;
+}
+
+.thunar .standard-view widget.view {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.thunar .standard-view widget.view:hover {
+  background-color: alpha(@text, 0.06);
+  border-top-color: @border_light;
+  border-left-color: @border_light;
+  border-right-color: @border_dark;
+  border-bottom-color: @border_dark;
+}
+
+.thunar .standard-view widget.view:selected,
+.thunar .standard-view widget.view:selected:focus,
+.thunar .standard-view widget.view:selected:hover {
+  background-color: @button_active_bg;
+  color: @text;
+  border-top-color: @border_dark;
+  border-left-color: @border_dark;
+  border-right-color: @border_light;
+  border-bottom-color: @border_light;
+}
+
+.thunar .standard-view widget.view:active,
+.thunar .standard-view widget.view:selected:backdrop {
+  background-color: @panel_bg;
+  color: @text_muted;
+  border-top-color: @border_dark;
+  border-left-color: @border_dark;
+  border-right-color: @border_light;
+  border-bottom-color: @border_light;
+}
+
+.thunar .standard-view widget.view.rubberband,
+.thunar .standard-view widget.view.rubberband:backdrop {
+  background-color: alpha(@select_bg, 0.22);
+  border-color: @select_bg;
+}
+
+.thunar notebook {
+  background-color: @window_bg;
+}
+
+.thunar notebook > header {
+  background-color: @panel_bg;
+  border-top-color: @border_light;
+  border-left-color: @border_light;
+  border-right-color: @border_dark;
+  border-bottom-color: @border_dark;
+}
+
+.thunar notebook > header > tabs > tab {
+  background-color: @button_bg;
+  background-image: none;
+  color: @button_fg;
+  border-top-color: @border_light;
+  border-left-color: @border_light;
+  border-right-color: @border_dark;
+  border-bottom-color: @border_dark;
+}
+
+.thunar notebook > header > tabs > tab:hover {
+  background-color: @button_active_bg;
+}
+
+.thunar notebook > header > tabs > tab:checked {
+  background-color: @select_bg;
+  color: @select_fg;
+  border-top-color: @border_dark;
+  border-left-color: @border_dark;
+  border-right-color: @border_light;
+  border-bottom-color: @border_light;
+}
+
+.thunar notebook > header > tabs > tab button {
+  background-color: transparent;
+  color: inherit;
+  border-color: transparent;
+}
+
+.thunar notebook > header > tabs > tab button:hover {
+  background-color: @button_bg;
+  color: @button_fg;
+}
+
+.thunar scrollbar,
+.thunar .sidebar scrollbar.vertical {
+  background-color: @inset_bg;
+}
+
+.thunar scrollbar trough {
+  background-color: @inset_bg;
+  border-top-color: @border_dark;
+  border-left-color: @border_dark;
+  border-right-color: @border_light;
+  border-bottom-color: @border_light;
+}
+
+.thunar scrollbar slider {
+  background-color: @button_bg;
+  background-image: none;
+  border-top-color: @border_light;
+  border-left-color: @border_light;
+  border-right-color: @border_dark;
+  border-bottom-color: @border_dark;
+}
+
+.thunar scrollbar slider:active {
+  background-color: @title_bg;
+}
+
+.thunar statusbar {
+  background-color: @window_bg;
+  color: @text;
+  border-top-color: @border_light;
+  border-left-color: @border_light;
+  border-right-color: @border_dark;
+  border-bottom-color: @border_dark;
+}
+
+.thunar statusbar frame > border {
+  background-color: @inset_bg;
+  color: @text;
+  border-top-color: @border_dark;
+  border-left-color: @border_dark;
+  border-right-color: @border_light;
+  border-bottom-color: @border_light;
+}
+
+.thunar infobar {
+  background-color: @panel_bg;
+  color: @text;
+}
+
+.thunar scrolledwindow.frame,
+.thunar frame > border {
+  border-top-color: @border_dark;
+  border-left-color: @border_dark;
+  border-right-color: @border_light;
+  border-bottom-color: @border_light;
+}

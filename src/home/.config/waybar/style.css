@@ -1,0 +1,14 @@
+@import url("base/palette.css");
+@import url("../../.local/state/hakuspace/theme/fonts.css");
+@import url("base/reset.css");
+@import url("base/primitives.css");
+@import url("modules/clock.css");
+@import url("modules/workspaces.css");
+@import url("modules/window-buttons.css");
+@import url("modules/music.css");
+@import url("modules/monitor.css");
+@import url("modules/backlight.css");
+@import url("modules/audio.css");
+@import url("modules/battery.css");
+@import url("modules/tray.css");
+@import url("modules/notification.css");

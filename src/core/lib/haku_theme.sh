@@ -94,4 +94,57 @@ theme_state_value() {
     esac
 }
 
+# Toggle the local GTK3 Thunar color override via managed symlinks so user files stay untouched.
+theme_sync_classic_gtk3_override() {
+    local gtk3_dir="${XDG_CONFIG_HOME:-$HOME/.config}/gtk-3.0"
+    local gtk_css="$gtk3_dir/gtk.css"
+    local thunar_css="$gtk3_dir/thunar-classic.css"
+    local palette_link="$gtk3_dir/classic-palette.css"
+    local palette_src="$THEME_RENDER_DIR/classic/palette.css"
+    local backend="classic"
+    local backend_file target
+
+    backend_file="$(haku_state_path shell.backend)"
+    if [[ -f "$backend_file" ]]; then
+        case "$(cat "$backend_file" 2>/dev/null)" in
+            hikai) backend="hikai" ;;
+            classic) backend="classic" ;;
+        esac
+    fi
+
+    if [[ "$backend" == "classic" ]]; then
+        [[ -e "$thunar_css" && -f "$palette_src" ]] || return 0
+        mkdir -p "$gtk3_dir" || return 1
+        if [[ -L "$palette_link" ]]; then
+            target="$(readlink "$palette_link")"
+            if [[ "$target" == "$palette_src" || "$target" == */theme/classic/palette.css ]]; then
+                ln -sfn "$palette_src" "$palette_link" || return 1
+            fi
+        elif [[ ! -e "$palette_link" ]]; then
+            ln -sfn "$palette_src" "$palette_link" || return 1
+        fi
+        if [[ -L "$gtk_css" ]]; then
+            target="$(readlink "$gtk_css")"
+            if [[ "$target" == "thunar-classic.css" || "$target" == "$thunar_css" ]]; then
+                ln -sfn "thunar-classic.css" "$gtk_css" || return 1
+            fi
+        elif [[ ! -e "$gtk_css" ]]; then
+            ln -sfn "thunar-classic.css" "$gtk_css" || return 1
+        fi
+    else
+        if [[ -L "$gtk_css" ]]; then
+            target="$(readlink "$gtk_css")"
+            if [[ "$target" == "thunar-classic.css" || "$target" == "$thunar_css" ]]; then
+                rm -f "$gtk_css"
+            fi
+        fi
+        if [[ -L "$palette_link" ]]; then
+            target="$(readlink "$palette_link")"
+            if [[ "$target" == "$palette_src" || "$target" == */theme/classic/palette.css ]]; then
+                rm -f "$palette_link"
+            fi
+        fi
+    fi
+}
+
 theme_load_state || return 1

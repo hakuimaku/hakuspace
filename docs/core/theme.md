@@ -50,7 +50,7 @@ We've designed this system to be highly customizable. If you want to tweak how i
 1. **Disable Auto-Theming:** If you prefer a static color scheme that doesn't change with your wallpaper, simply open `~/hakucfg/setting.sh` and set `ACCENT_COLOR_BASED_ON_WALLPAPER=false`.
 2. **Change the Extraction Mode:** Don't like the vivid colors? Open `~/hakucfg/setting.sh` and change `ACCENT_COLOR_MODE` to `dominant`, `brightest`, or `saturated` to suit your taste.
 3. **Pick a Color Manually:** Sometimes you just want to choose the color yourself. You can run the `accent_color_picker.sh` script to open a graphical color picker. Whatever color you select there will immediately be sent through `theme_ctl.sh set-accent`, applied to your desktop, and synchronized through the HakuSpace internal icon accent engine according to `HAKU_ICON_THEME` and `HAKU_ICON_ACCENT_MODE`!
-4. **Opaque Theme Mode:** Want your panels and UI elements to be solid black rather than transparent/translucent? `opaque_theme.sh` provides this functionality. When enabled (via the Haku Menu's Setting tab), it dynamically writes solid `#000000` background rules into `THEME_RENDER_DIR/opaque/`. These rules are safely included at the bottom of Waybar, SwayNC, Rofi, GTK, and Kitty configs, allowing instant toggleable opaqueness without manual config editing.
+4. **Classic Color Schemes:** In Classic mode, `classic_palette.py` maps the extracted/selected `ACCENT_SEED` (via hue and saturation with hysteresis) — or a manual scheme selection via `theme_ctl.sh set-palette <auto|red|orange|yellow|green|blue|indigo|violet|gray>` — into one of 8 fixed opaque retro schemes rendered to `~/.local/state/hakuspace/theme/classic/` (`palette.css`, `palette.rasi`, `hyprlock-palette.conf`). Waybar, Rofi, SwayNC, Hyprlock, and Classic Cava consume these tokens directly.
 
 ## Visual Ecosystem (Icons, GTK & Cursor Sync)
 
@@ -224,38 +224,23 @@ accent synchronization use it. `quickshell.json` contains `accentDark` and `acce
 `Theme.qml` chooses between them reactively, so mode changes do not rewrite generated
 files or invoke ColorThief.
 
-## Classic Opaque context
+## Dual-mode WM, Kitty & Btop state rendering
 
-`[theme].opaque.enabled` stores the requested preference. Overrides are effective only
-in Classic. `opaque_theme.sh sync classic|hikai` reconciles Waybar, Rofi, SwayNC,
-Kitty, and compositor overrides without changing the request. Backend transitions
-synchronize under their cover barrier and restore the original context on rollback;
-early session startup reconciles the saved context.
+`gen_style.sh` always renders both `theme/hikai/` and `theme/classic/` variants regardless of which shell is currently active, then atomically publishes the active backend's files to the shared `THEME_RENDER_DIR` state paths (`hyprland-style.lua`, `niri-style.kdl`, `mangowm-style.conf`, `kitty-style.conf`) and `~/.config/btop/themes/HakuBtop.theme`. Backend transitions in `haku_backend.sh` invoke `gen_style.sh` and reload the active WM and Kitty sockets under the transition cover.
 
-Kitty loads its managed opaque override after `~/hakucfg/config/kitty.conf`. When
-effective, it sets `background_opacity 1.0`. Generated Hyprland and Niri overrides
-also force Kitty window opacity to 1.0, including inactive windows. Their includes
-follow user configuration. When ineffective these overrides are empty, restoring
-user/default transparency. Mango and Labwc have no Kitty transparency rule to override.
-Context synchronization reloads the compositor and existing Kitty sockets without
-restarting shell services. Existing Opaque on/off/toggle commands retain their API.
-Kitty enables `dynamic_background_opacity` for subsequent live toggles. Windows
-launched before that option was enabled may need to be reopened once after updating.
-
-Compositor behavior follows the [Hyprland opacity override contract](https://wiki.hypr.land/Configuring/Basics/Window-Rules/)
-and [Niri window rule contract](https://niri-wm.github.io/niri/Configuration:-Window-Rules.html).
+- **Window Manager state (`hyprland-style.lua`, `niri-style.kdl`, `mangowm-style.conf`):** Each WM loads its single state file before user `*-custom` overrides. Both modes use `$ACCENT_COLOR` for WM focus/active borders. The `classic` state disables compositor rounding, blur, and shadows and forces window/layer opacity rules to `1.0`; the `hikai` state retains Hikai's rounded/translucent rules.
+- **Kitty & Btop:** Kitty includes `theme/kitty-style.conf` after its base defaults and before `~/hakucfg/config/kitty.conf`. In Hikai, `kitty-style.conf` and `HakuBtop.theme` follow `$ACCENT_COLOR`; in Classic, both use fixed opaque retro palettes (`background_opacity 1.0` in Kitty) independent of accent color changes.
 
 ## Kitty in Hikai Light
 
 The main shell synchronizes Kitty with the live Light mode, surface and accent draft.
 The managed `theme/kitty-mode.conf` supplies light background, contrast-correct ANSI
 colors, cursor, selection and tab colors. Dark and Classic clear this override so
-Kitty resumes its base and custom colors. The include follows `~/hakucfg/config/kitty.conf`
-and precedes Classic Opaque; fonts, key bindings and user opacity remain under their
-existing owners. Open Kitty instances reload through their existing remote-control
-sockets; new terminals read the same override. Changing only a surface or mode does
-not extract wallpaper colors or rewrite the custom Kitty configuration.
+Kitty resumes its active `kitty-style.conf` and custom colors. In `kitty.conf`, the
+`kitty-mode.conf` include follows `~/hakucfg/config/kitty.conf`, while fonts, key
+bindings and user opacity remain under their existing owners. Open Kitty instances
+reload through their existing remote-control sockets; new terminals read the same
+override. Changing only a surface or mode does not extract wallpaper colors or rewrite
+the custom Kitty configuration.
 
-Cava Underbar uses opaque wave/capsule colors, matching its attachment surface.
-The crest shares the body's color, and the wave spans the full output width across
-the Rounded Screen side rails while keeping its existing stable, click-through window.
+In Hikai, Cava Underbar uses opaque wave/capsule colors matching its attachment surface, with the crest sharing the body's color while keeping its stable, click-through window.

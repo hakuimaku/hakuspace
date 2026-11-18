@@ -1,0 +1,22 @@
+{
+    "group/window-buttons": {
+        "orientation": "horizontal",
+        "modules": [
+            "custom/notification",
+            "custom/win-hakumenu",
+            "custom/win-power"
+        ]
+    },
+    "custom/win-hakumenu": {
+        "format": "□",
+        "tooltip": true,
+        "tooltip-format": "Haku Menu",
+        "on-click": "$HOME/.local/bin/hakumenu.sh"
+    },
+    "custom/win-power": {
+        "format": "X",
+        "tooltip": true,
+        "tooltip-format": "Power Menu",
+        "on-click": "$HOME/.local/bin/shutdown.sh"
+    }
+}

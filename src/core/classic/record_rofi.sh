@@ -20,7 +20,7 @@ MODE_IDS=(
 )
 
 chosen_index="$(printf '%s\n' "${MODE_LABELS[@]}" | rofi \
-    -dmenu -i -p 'Select Mode:' -format i -theme option-menu.rasi)"
+    -dmenu -sync -i -p 'Select Mode:' -format i -theme styles/menu.rasi)"
 rofi_status=$?
 if [[ $rofi_status -ne 0 || -z "$chosen_index" ]]; then
     exit 0
@@ -42,7 +42,7 @@ if (( ${#sources[@]} == 0 )); then
 fi
 
 source_index="$(printf '%s\n' "${sources[@]}" | rofi \
-    -dmenu -i -p 'Select Mic/Source:' -format i -theme option-menu.rasi)"
+    -dmenu -sync -i -p 'Select Mic/Source:' -format i -theme styles/menu.rasi)"
 rofi_status=$?
 if [[ $rofi_status -ne 0 || -z "$source_index" ]]; then
     exit 0

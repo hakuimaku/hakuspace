@@ -9,8 +9,6 @@ haku_state_migrate || exit 1
 if [[ "${1:-}" == "--early" ]]; then
     # Select the idle owner before starting either shell.
     "$HAKU_BIN_DIR/idle_backend_ctl.sh" reconcile || exit 1
-    # Restore effective opaque overrides before rendering or starting either shell.
-    "$HAKU_BIN_DIR/opaque_theme.sh" sync "$(haku_backend_get)" || true
     # Reconcile installed assets after updates or restores without failing login.
     if [[ -x "$HAKU_BIN_DIR/appearance_ctl.sh" ]]; then
         "$HAKU_BIN_DIR/appearance_ctl.sh" apply || true
@@ -19,7 +17,7 @@ if [[ "${1:-}" == "--early" ]]; then
         "$HAKU_BIN_DIR/theme_ctl.sh" apply || true
     fi
     if haku_backend_is "classic"; then
-        gsettings set org.gnome.desktop.interface color-scheme prefer-dark >/dev/null 2>&1 || true
+        gsettings set org.gnome.desktop.interface color-scheme prefer-light >/dev/null 2>&1 || true
         python3 "$HAKU_BIN_DIR/kitty_theme_ctl.py" dark || true
         pgrep -x swaync >/dev/null || swaync &
     else

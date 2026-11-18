@@ -1,0 +1,16 @@
+#tray {
+    background-color: @panel_bg;
+    color: @text;
+    border-style: solid;
+    border-width: 2px;
+    border-color: @border_dark @border_light @border_light @border_dark;
+    padding: 0 6px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    background-color: @urgent_bg;
+}

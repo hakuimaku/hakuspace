@@ -41,6 +41,7 @@ SKIP_CONFIG_NAMES=(
     "niri"
     "mango"
     "labwc"
+    "gtk-3.0"
 )
 
 # Full paths in source tree for backward compatibility
@@ -49,6 +50,7 @@ SKIP_CONFIGS=(
     "$SOURCE_CONFIG/niri"
     "$SOURCE_CONFIG/mango"
     "$SOURCE_CONFIG/labwc"
+    "$SOURCE_CONFIG/gtk-3.0"
 )
 
 # Canonical Window Manager names
@@ -162,9 +164,13 @@ registry_get_common_configs() {
     # 2. Hyprland independent files (hypridle, hyprlock)
     echo "$SOURCE_CONFIG/hypr/hypridle.conf|$DEST_CONFIG/hypr/hypridle.conf"
     echo "$SOURCE_CONFIG/hypr/hyprlock.conf|$DEST_CONFIG/hypr/hyprlock.conf"
-    echo "$SOURCE_CONFIG/hypr/hyprlock_tiny.conf|$DEST_CONFIG/hypr/hyprlock_tiny.conf"
+    echo "$SOURCE_CONFIG/hypr/cassette.svg|$DEST_CONFIG/hypr/cassette.svg"
+    echo "$SOURCE_CONFIG/hypr/cassette.png|$DEST_CONFIG/hypr/cassette.png"
 
-    # 3. Home root dotfiles
+    # 3. GTK3 Classic Thunar color override (keep user settings.ini and bookmarks untouched)
+    echo "$SOURCE_CONFIG/gtk-3.0/thunar-classic.css|$DEST_CONFIG/gtk-3.0/thunar-classic.css"
+
+    # 4. Home root dotfiles
     echo "$HOME_SRC_DIR/.nanorc|$HOME/.nanorc"
     echo "$HOME_SRC_DIR/.zshrc|$HOME/.zshrc"
 }
@@ -249,7 +255,8 @@ registry_get_managed_destinations() {
     echo "$DEST_CONFIG/hypr/hyprland.lua"
     echo "$DEST_CONFIG/hypr/hypridle.conf"
     echo "$DEST_CONFIG/hypr/hyprlock.conf"
-    echo "$DEST_CONFIG/hypr/hyprlock_tiny.conf"
+    echo "$DEST_CONFIG/hypr/cassette.svg"
+    echo "$DEST_CONFIG/hypr/cassette.png"
 
     # 3. Other WM targets
     echo "$DEST_CONFIG/niri"
@@ -262,7 +269,10 @@ registry_get_managed_destinations() {
         echo "$dst"
     done < <(registry_get_core_scripts)
 
-    # 5. Home dotfiles
+    # 5. GTK3 override file
+    echo "$DEST_CONFIG/gtk-3.0/thunar-classic.css"
+
+    # 6. Home dotfiles
     echo "$HOME/.nanorc"
     echo "$HOME/.zshrc"
 }
@@ -290,6 +300,7 @@ registry_list_modules() {
     # Special modules
     echo "hypridle"
     echo "hyprlock"
+    echo "gtk-3.0"
     echo "nanorc"
     echo "zshrc"
     echo "core"
@@ -319,7 +330,11 @@ registry_resolve_module() {
             ;;
         hyprlock)
             echo "$SOURCE_CONFIG/hypr/hyprlock.conf|$DEST_CONFIG/hypr/hyprlock.conf"
-            echo "$SOURCE_CONFIG/hypr/hyprlock_tiny.conf|$DEST_CONFIG/hypr/hyprlock_tiny.conf"
+            echo "$SOURCE_CONFIG/hypr/cassette.svg|$DEST_CONFIG/hypr/cassette.svg"
+            echo "$SOURCE_CONFIG/hypr/cassette.png|$DEST_CONFIG/hypr/cassette.png"
+            ;;
+        gtk-3.0|thunar-classic)
+            echo "$SOURCE_CONFIG/gtk-3.0/thunar-classic.css|$DEST_CONFIG/gtk-3.0/thunar-classic.css"
             ;;
         nano|nanorc|.nanorc)
             echo "$HOME_SRC_DIR/.nanorc|$HOME/.nanorc"
@@ -366,8 +381,6 @@ EOF
 
 registry_get_state_files() {
     cat <<'EOF'
-taskbar-theme
-rofi-theme.rasi
 niri-animation.kdl
 EOF
 }

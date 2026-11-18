@@ -89,14 +89,12 @@ Feature availability and keybindings can vary by compositor. Hikai does not repl
 * **User Configuration (`~/hakucfg`)**: Stores your personal configs separately from the base files.
 * **Accent Colors**: Synced across configured applications and icon themes.
 * **Smart Accent Color**: Automatically generates the accent color based on your current wallpaper.
-* **Flexible Waybar Layouts**: Supports 7 styles in Classic mode: `top`, `left`, `coredge`, `minimal`, `neon`, `island`, `legacy`, `tokyo`.
+* **Classic Waybar**: Single top bar layout styled after classic desktop window titlebars, synced to the active 8-scheme Classic palette.
 * **Wallpaper Automation**: Classic uses `awww` / `mpvpaper`; Hikai has its own wallpaper browsing and native video-rendering path, with playback and quality settings.
-* **Taskbar**: Classic provides a secondary Waybar taskbar; Hikai integrates its taskbar and dock into the Quickshell UI.
+* **Hikai Taskbar**: Hikai integrates its taskbar and dock directly into the Quickshell UI.
 * **Haku Space Classic Mini-Apps**:
-  * **Unique Cava Underbar**: *Built-in*, dynamic audio visualizer waves seamlessly layered beneath your bar.
+  * **Unique Cava Underbar**: *Built-in*, audio visualizer waves rendered on a dedicated Wayland layer.
   * **Desktop Icons**: *Built-in*, items in `~/Desktop` are rendered directly on your desktop with drag-and-drop support.
-  * **Rounded Screen Corners**: *Built-in*, smooth rounded corners and frame around your screen.
-  * **Edge Trigger**: *Built-in*, hover your mouse at the screen edges to quickly pop up menus or panels.
 
 > [!note]
 > HakuSpace is modular, but background resource usage depends on which shell services, media decoders and features are active. Use measurements from your own session rather than assuming all inactive features cost nothing.
@@ -390,18 +388,13 @@ To see how the internal icon recoloring engine (`haku_icon_accent.py`) and theme
 
 ## Performance
 
-The figures below are **Classic-stack measurements** from a system with **16GB RAM**, kept as a rough reference:
+The figures below are historical **Classic-stack reference measurements** from a system with **16GB RAM** (measured before Classic removed the standalone Taskbar, Rounded Screen, and Edge Trigger mini-apps, and before Cava Underbar moved from Kitty to VTE):
 
 - **Fresh Arch Linux + Dotfiles (Base):** ~1.1 GB RAM
-- **Taskbar enabled:** +77 MB
 - **Desktop Icons enabled:** +100 MB
-- **Cava Underbar enabled:** +100 MB (High CPU usage)
-- **Rounded Screen enabled:** +70 MB
-- **Edge Trigger enabled:** +60 MB
+- **Cava Underbar enabled (legacy Kitty version):** +100 MB (High CPU usage)
 
-**Total:** If you use all the built-in mini-apps simultaneously, it will consume at least **~1.5 GB RAM** upon startup.
-
-With **Hikai (Quickshell)** mode, RAM usage is **extremely high**, making it unsuitable for *low-end* machines. With **Fresh Arch Linux + Dotfiles (Base) + Hikai**, RAM usage is more than **~1.7GB**. However, it is more streamlined because `Cava Underbar`, `Rounded Screen`, `Edge Trigger`, and `Taskbar` are already integrated into Hikai, eliminating the need to run additional mini-apps.
+With **Hikai (Quickshell)** mode, RAM usage on **Fresh Arch Linux + Dotfiles (Base) + Hikai** is more than **~1.7GB**, making it unsuitable for *low-end* machines, though `Cava Underbar` and `Taskbar` are integrated directly into Hikai rather than running as separate mini-apps.
 
 > [!note]
 > During your actual workflow, RAM consumption will naturally expand further depending on the applications you use and your specific needs.
@@ -443,8 +436,8 @@ See [NixOS Integration](docs/nixos.md) for the retained legacy design.
 | SUPER + SHIFT + Y | Change Theme |
 | SUPER + SHIFT + E | Exit Session |
 | SUPER + SHIFT + Q | Power Menu / Shutdown |
-| SUPER + Z | Toggle Taskbar |
-| SUPER + SHIFT + Z | Cycle Bar Mode (Topbar / Leftbar in Hikai, Waybar in Classic) |
+| SUPER + Z | Toggle Taskbar (Hikai) |
+| SUPER + SHIFT + Z | Cycle Bar Mode (Topbar / Leftbar in Hikai) |
 | SUPER + CTRL + Z | Toggle Waybar (Classic) |
 | SUPER + W | Toggle Floating Window (Hyprland, Niri, MangoWM) |
 | SUPER + F | Maximize / Fullscreen Window |
@@ -509,7 +502,7 @@ Want to understand how HakuSpace works under the hood? We've written comprehensi
 - [System Scripts](docs/core/sys.md)
 - [Utilities](docs/core/util.md)
 - [Haku Menu](docs/core/menu.md)
-- [Mini-Apps (Taskbar, Desktop Icons, Rounded Screen, Edge Trigger, Cava)](docs/core/app.md)
+- [Mini-Apps (Taskbar, Desktop Icons, Cava)](docs/core/app.md)
 - [NixOS Integration](docs/nixos.md)
 - [Hikai](docs/hikai.md)
 
@@ -548,7 +541,10 @@ Want to understand how HakuSpace works under the hood? We've written comprehensi
 | Contributor | Work |
 |-------------|------|
 | [hakuimaku](https://github.com/hakuimaku) | maintain & develop |
-| [tspillow](https://github.com/tspillow) | add waybar style - tokyo |
+| [tspillow](https://github.com/tspillow) | contributed the `tokyo` Waybar style (commits `5267a4df`, `4ea823c2`) |
+
+> [!note]
+> **Note on the `tokyo` Waybar style:** `tokyo` was contributed by [tspillow](https://github.com/tspillow) (commits `5267a4df`, `4ea823c2`). Sorry to see it go, but it was removed when Classic mode moved to a single unified layout under the new 8-scheme palette system. If you would like to recover it, see the last commit that still included it: [`05957567`](https://github.com/hakuimaku/hakuspace/tree/059575675bd2e5a064d18e6697d9b14155a64937/src/home/.config/waybar/tokyo).
 
 ---
 

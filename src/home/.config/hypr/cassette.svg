@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1024" viewBox="0 0 800 512">
+  <defs>
+    <clipPath id="shell-clip">
+      <rect x="12" y="12" width="776" height="488" rx="28"/>
+    </clipPath>
+    <clipPath id="label-clip">
+      <rect x="66" y="38" width="668" height="326" rx="14"/>
+    </clipPath>
+    <clipPath id="window-clip">
+      <rect x="100" y="198" width="600" height="112" rx="14"/>
+    </clipPath>
+
+    <g id="screw">
+      <circle cx="0" cy="0" r="12" fill="#181716"/>
+      <circle cx="0" cy="0" r="9" fill="#4b4945" stroke="#22201e" stroke-width="1.5"/>
+      <circle cx="0" cy="0" r="7.5" fill="none" stroke="#625e59" stroke-width="1"/>
+      <path d="M -4.2,-1.2 L -1.2,-1.2 L -1.2,-4.2 L 1.2,-4.2 L 1.2,-1.2 L 4.2,-1.2 L 4.2,1.2 L 1.2,1.2 L 1.2,4.2 L -1.2,4.2 L -1.2,1.2 L -4.2,1.2 Z" fill="#1b1a18"/>
+    </g>
+
+    <g id="reel-hub">
+      <circle cx="0" cy="0" r="26" fill="#c6bfb1" stroke="#8a8376" stroke-width="2"/>
+      <circle cx="0" cy="0" r="20" fill="none" stroke="#aea698" stroke-width="1.5"/>
+      <circle cx="0" cy="0" r="15" fill="#161514"/>
+      <g fill="#c6bfb1">
+        <rect x="-2" y="-16" width="4" height="5" rx="0.8"/>
+        <rect x="-2" y="-16" width="4" height="5" rx="0.8" transform="rotate(60)"/>
+        <rect x="-2" y="-16" width="4" height="5" rx="0.8" transform="rotate(120)"/>
+        <rect x="-2" y="-16" width="4" height="5" rx="0.8" transform="rotate(180)"/>
+        <rect x="-2" y="-16" width="4" height="5" rx="0.8" transform="rotate(240)"/>
+        <rect x="-2" y="-16" width="4" height="5" rx="0.8" transform="rotate(300)"/>
+      </g>
+    </g>
+  </defs>
+
+  <!-- Outer cassette shell -->
+  <rect x="12" y="12" width="776" height="488" rx="28" fill="#2b2a29" stroke="#100f0e" stroke-width="4"/>
+
+  <!-- Shell bevel & grip details clipped to outer rounded body -->
+  <g clip-path="url(#shell-clip)">
+    <rect x="14" y="14" width="772" height="484" rx="26" fill="none" stroke="#43403d" stroke-width="2.5"/>
+    <path d="M 14,496 L 786,496 L 786,14" fill="none" stroke="#181715" stroke-width="3"/>
+
+    <!-- Top write-protect notches -->
+    <rect x="132" y="12" width="34" height="10" rx="2" fill="#161514"/>
+    <rect x="634" y="12" width="34" height="10" rx="2" fill="#161514"/>
+
+    <!-- Molded side grips -->
+    <g fill="#21201f" stroke="#151413" stroke-width="1">
+      <rect x="12" y="316" width="12" height="122" rx="3"/>
+      <rect x="776" y="316" width="12" height="122" rx="3"/>
+    </g>
+    <g stroke="#3d3a36" stroke-width="1.5">
+      <line x1="14" y1="330" x2="22" y2="330"/>
+      <line x1="14" y1="344" x2="22" y2="344"/>
+      <line x1="14" y1="358" x2="22" y2="358"/>
+      <line x1="14" y1="372" x2="22" y2="372"/>
+      <line x1="14" y1="386" x2="22" y2="386"/>
+      <line x1="14" y1="400" x2="22" y2="400"/>
+      <line x1="14" y1="414" x2="22" y2="414"/>
+      <line x1="14" y1="428" x2="22" y2="428"/>
+
+      <line x1="778" y1="330" x2="786" y2="330"/>
+      <line x1="778" y1="344" x2="786" y2="344"/>
+      <line x1="778" y1="358" x2="786" y2="358"/>
+      <line x1="778" y1="372" x2="786" y2="372"/>
+      <line x1="778" y1="386" x2="786" y2="386"/>
+      <line x1="778" y1="400" x2="786" y2="400"/>
+      <line x1="778" y1="414" x2="786" y2="414"/>
+      <line x1="778" y1="428" x2="786" y2="428"/>
+    </g>
+
+    <!-- Recessed label well -->
+    <rect x="60" y="32" width="680" height="338" rx="18" fill="#1e1d1b" stroke="#3c3935" stroke-width="1.5"/>
+  </g>
+
+  <!-- Cassette paper sticker label -->
+  <g clip-path="url(#label-clip)">
+    <rect x="66" y="38" width="668" height="326" fill="#d6cfc1"/>
+
+    <!-- Top muted rust header band + muted brass rule -->
+    <rect x="66" y="38" width="668" height="44" fill="#7b4e44"/>
+    <rect x="66" y="82" width="668" height="6" fill="#9c8259"/>
+
+    <!-- Side A badge -->
+    <rect x="84" y="48" width="30" height="24" rx="4" fill="#ebe5d8"/>
+    <path d="M 99,53 L 92.5,67 L 95.8,67 L 97.1,63.8 L 100.9,63.8 L 102.2,67 L 105.5,67 Z M 98,61.3 L 99,58.1 L 100,61.3 Z" fill="#7b4e44"/>
+
+    <!-- Type / length badge -->
+    <rect x="658" y="49" width="56" height="22" rx="4" fill="none" stroke="#ebe5d8" stroke-width="1.8" opacity="0.85"/>
+    <text x="686" y="64.5" font-family="monospace" font-weight="bold" font-size="13" fill="#ebe5d8" text-anchor="middle" letter-spacing="0.5">C-90</text>
+
+    <!-- Ruled lines on upper label -->
+    <line x1="88" y1="115" x2="712" y2="115" stroke="#beb6a5" stroke-width="1.2"/>
+    <line x1="88" y1="184" x2="712" y2="184" stroke="#beb6a5" stroke-width="1.2"/>
+
+    <!-- Subtle cassette technical markings -->
+    <text x="90" y="109" font-family="monospace" font-weight="bold" font-size="10" fill="#6e675c" letter-spacing="1">HIGH BIAS · TYPE II</text>
+    <text x="710" y="109" font-family="monospace" font-weight="bold" font-size="10" fill="#6e675c" text-anchor="end" letter-spacing="1">NR [ ]</text>
+
+    <!-- Bottom sticker accent rule -->
+    <rect x="66" y="320" width="668" height="4" fill="#7b4e44"/>
+  </g>
+  <rect x="66" y="38" width="668" height="326" rx="14" fill="none" stroke="#181715" stroke-width="2"/>
+
+  <!-- Recessed tape window -->
+  <rect x="96" y="194" width="608" height="120" rx="16" fill="#232220" stroke="#423f3b" stroke-width="2"/>
+  <g clip-path="url(#window-clip)">
+    <rect x="100" y="198" width="600" height="112" fill="#131211"/>
+
+    <!-- Magnetic tape ribbon running tangentially between spools -->
+    <polygon points="186,297 614,284 614,291 186,304" fill="#3a281f"/>
+    <line x1="186" y1="298" x2="614" y2="285" stroke="#4d362a" stroke-width="1"/>
+
+    <!-- Left tape spool (more tape) -->
+    <circle cx="186" cy="254" r="52" fill="#302119" stroke="#201610" stroke-width="1.5"/>
+    <circle cx="186" cy="254" r="44" fill="none" stroke="#3c2a20" stroke-width="1"/>
+    <circle cx="186" cy="254" r="35" fill="none" stroke="#251913" stroke-width="1.2"/>
+    <use href="#reel-hub" transform="translate(186,254) rotate(12)"/>
+
+    <!-- Right tape spool (less tape) -->
+    <circle cx="614" cy="254" r="39" fill="#302119" stroke="#201610" stroke-width="1.5"/>
+    <circle cx="614" cy="254" r="32" fill="none" stroke="#3c2a20" stroke-width="1"/>
+    <use href="#reel-hub" transform="translate(614,254) rotate(38)"/>
+
+    <!-- Window gauge ticks -->
+    <g stroke="#4a4640" stroke-width="1.5">
+      <line x1="290" y1="202" x2="290" y2="210"/>
+      <line x1="345" y1="202" x2="345" y2="208"/>
+      <line x1="400" y1="202" x2="400" y2="212"/>
+      <line x1="455" y1="202" x2="455" y2="208"/>
+      <line x1="510" y1="202" x2="510" y2="210"/>
+
+      <line x1="290" y1="298" x2="290" y2="306"/>
+      <line x1="345" y1="300" x2="345" y2="306"/>
+      <line x1="400" y1="296" x2="400" y2="306"/>
+      <line x1="455" y1="300" x2="455" y2="306"/>
+      <line x1="510" y1="298" x2="510" y2="306"/>
+    </g>
+  </g>
+  <rect x="100" y="198" width="600" height="112" rx="14" fill="none" stroke="#0b0a0a" stroke-width="2.5"/>
+
+  <!-- Bottom trapezoidal head bridge -->
+  <path d="M 134,498 L 166,384 Q 170,374 184,374 L 616,374 Q 630,374 634,384 L 666,498 Z"
+        fill="#33312e" stroke="#151413" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M 138,496 L 168,386 Q 172,377 184,377 L 616,377 Q 628,377 632,386"
+        fill="none" stroke="#4b4844" stroke-width="2"/>
+
+  <!-- Alignment & capstan holes on head bridge -->
+  <circle cx="206" cy="458" r="10" fill="#141312" stroke="#45413d" stroke-width="2"/>
+  <circle cx="594" cy="458" r="10" fill="#141312" stroke="#45413d" stroke-width="2"/>
+
+  <circle cx="268" cy="444" r="15" fill="#141312" stroke="#45413d" stroke-width="2.5"/>
+  <circle cx="268" cy="444" r="11" fill="#0d0c0c"/>
+  <circle cx="532" cy="444" r="15" fill="#141312" stroke="#45413d" stroke-width="2.5"/>
+  <circle cx="532" cy="444" r="11" fill="#0d0c0c"/>
+
+  <!-- Center tape pad / head slot -->
+  <rect x="364" y="432" width="72" height="38" rx="6" fill="#141312" stroke="#45413d" stroke-width="2"/>
+  <rect x="372" y="454" width="56" height="4" rx="1.5" fill="#866846"/>
+  <rect x="386" y="446" width="28" height="8" rx="2" fill="#b2aa9a"/>
+  <line x1="366" y1="439" x2="434" y2="439" stroke="#3a281f" stroke-width="3"/>
+
+  <!-- 5 housing screws -->
+  <use href="#screw" transform="translate(40,40)"/>
+  <use href="#screw" transform="translate(760,40)"/>
+  <use href="#screw" transform="translate(40,472)"/>
+  <use href="#screw" transform="translate(760,472)"/>
+  <use href="#screw" transform="translate(400,404)"/>
+</svg>

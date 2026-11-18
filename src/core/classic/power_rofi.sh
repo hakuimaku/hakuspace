@@ -5,7 +5,7 @@
 
 # shellcheck source=/dev/null
 source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_state.sh" || exit 1
-THEME="shutdown.rasi"
+THEME="styles/power.rasi"
 EXTEND=()
 POWER_CTL="$HAKU_BIN_DIR/power_ctl.sh"
 
@@ -15,7 +15,7 @@ Usage: $(basename "$0") [OPTIONS]
 
 Options:
     -e, --extend <ARG...>    Pass placement arguments to the Classic menu
-    -v, --vertical          Use the vertical shutdown theme
+    -v, --vertical          Accepted for compatibility (unified power dialog)
     -h, --help              Show this help message
 EOF_HELP
 }
@@ -28,7 +28,6 @@ while [[ $# -gt 0 ]]; do
             break
             ;;
         -v|--vertical)
-            THEME="shutdown-vert.rasi"
             shift
             ;;
         -h|--help)
@@ -44,12 +43,12 @@ while [[ $# -gt 0 ]]; do
 done
 
 OPTIONS=(
-    '󰒲'
-    ''
-    '󰤆'
-    '󰤁'
-    '󱅞'
-    '󰩈'
+    '󰒲  Suspend'
+    '  Reboot'
+    '󰤆  Power Off'
+    '󰤁  Hibernate'
+    '󱅞  Lock'
+    '󰩈  Log Out'
 )
 ACTIONS=(
     suspend
@@ -62,7 +61,8 @@ ACTIONS=(
 
 chosen_index="$(printf '%s\n' "${OPTIONS[@]}" | rofi \
     -dmenu \
-    -p "Shutdown" \
+    -sync \
+    -p "Shut Down HakuSpace" \
     -i \
     -format i \
     -theme "$THEME" \

@@ -1,0 +1,42 @@
+{
+    "include": [
+        "$HOME/.config/waybar/modules/clock.jsonc",
+        "$HOME/.config/waybar/modules/workspaces.jsonc",
+        "$HOME/.config/waybar/modules/window-buttons.jsonc",
+        "$HOME/.config/waybar/modules/music.jsonc",
+        "$HOME/.config/waybar/modules/monitor.jsonc",
+        "$HOME/.config/waybar/modules/backlight.jsonc",
+        "$HOME/.config/waybar/modules/audio.jsonc",
+        "$HOME/.config/waybar/modules/battery.jsonc",
+        "$HOME/.config/waybar/modules/tray.jsonc",
+        "$HOME/.config/waybar/modules/notification.jsonc"
+    ],
+    "layer": "top",
+    "position": "top",
+    "height": 36,
+    "margin-top": 0,
+    "margin-bottom": 0,
+    "margin-left": 0,
+    "margin-right": 0,
+    "spacing": 4,
+    "tooltip": true,
+    "reload_style_on_change": true,
+
+    "modules-left": [
+        "custom/logo",
+        "ext/workspaces",
+        "group/brightness",
+        "group/audio"
+    ],
+    "modules-center": [
+        "group/music"
+    ],
+    "modules-right": [
+        "custom/recorder",
+        "group/monitor",
+        "battery",
+        "tray",
+        "clock",
+        "group/window-buttons"
+    ]
+}

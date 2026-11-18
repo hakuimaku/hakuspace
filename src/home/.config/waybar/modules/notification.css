@@ -1,0 +1,17 @@
+#custom-notification.notification,
+#custom-notification.inhibited-notification {
+    background-color: @select_bg;
+    color: @select_fg;
+}
+
+#custom-notification.dnd-none,
+#custom-notification.dnd-inhibited-none {
+    background-color: @button_active_bg;
+    color: @text_muted;
+}
+
+#custom-notification.dnd-notification,
+#custom-notification.dnd-inhibited-notification {
+    background-color: @urgent_bg;
+    color: @urgent_fg;
+}

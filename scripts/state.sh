@@ -63,15 +63,6 @@ state_init() {
         fi
     fi
 
-    # Initialize opaque theme state if missing and opaque_theme.sh is available
-    local opaque_state="$(haku_state_path theme.opaque.enabled)"
-    if [[ ! -f "$opaque_state" ]]; then
-        if [[ -x "$DEST_BIN/opaque_theme.sh" ]]; then
-            "$DEST_BIN/opaque_theme.sh" off >/dev/null 2>&1 || true
-            log_ok "Executed opaque_theme.sh"
-        fi
-    fi
-
     log_ok "HakuSpace state initialization completed."
 }
 

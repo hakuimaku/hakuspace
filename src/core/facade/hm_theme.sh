@@ -42,7 +42,11 @@ if [[ $# -eq 0 ]]; then
     cat <<EOF
   Change Theme
 󰝚  Cava Underbar ($CAVA_TEXT)
-󰝚  Cava Color Mode ($IS_COLOR)
+EOF
+    if [[ "$BACKEND_STATUS" == "hikai" ]]; then
+        printf '󰝚  Cava Color Mode (%s)\n' "$IS_COLOR"
+    fi
+    cat <<EOF
   Desktop Icons ($DESKTOP_ICONS_TEXT)
 󰐃  Taskbar ($TASKBAR_TEXT)
 󰤕  Niri Animation

@@ -8,11 +8,8 @@ haku_state_migrate || exit 1
 # Stop Classic presentation and shared auxiliary processes using existing policy.
 kill_classic_stack() {
     pkill -x waybar
-    pkill -x taskbar
     pkill -x swaync
     pkill -x rofi
-    pkill -f edge_trigger.py
-    pkill -f rounded_screen.py
     if [[ -f /tmp/cava-layer.pid ]] && kill -0 "$(cat /tmp/cava-layer.pid 2>/dev/null)" 2>/dev/null; then
         echo "1" > "$(haku_state_path cava.enabled)"
     fi
@@ -24,13 +21,10 @@ kill_classic_stack() {
 # Restore user-enabled Classic surfaces without competing for notifications.
 start_classic_visual_stack() {
     local failed=0
-    gsettings set org.gnome.desktop.interface color-scheme prefer-dark >/dev/null 2>&1 || true
+    gsettings set org.gnome.desktop.interface color-scheme prefer-light >/dev/null 2>&1 || true
     python3 "$HAKU_BIN_DIR/kitty_theme_ctl.py" dark 9>&- || true
-    "$HAKU_BIN_DIR/appearance_ctl.sh" apply-mode dark 9>&- || true
+    "$HAKU_BIN_DIR/appearance_ctl.sh" apply-mode light classic 9>&- || true
     "$HAKU_BIN_DIR/wallpaper_resume.sh" 9>&- || failed=1
-    "$HAKU_BIN_DIR/rounded_screen_manager.sh" --startup 9>&- || failed=1
-    "$HAKU_BIN_DIR/edge_trigger_manager.sh" --startup 9>&- || failed=1
-    "$HAKU_BIN_DIR/taskbar_manager.sh" --startup 9>&- || failed=1
     "$HAKU_BIN_DIR/statusbar_manager.sh" 9>&- || failed=1
     "$HAKU_BIN_DIR/desktop_icons_manager.sh" --startup 9>&- || failed=1
     "$HAKU_BIN_DIR/cava_manager.sh" --startup 9>&- || failed=1
@@ -64,7 +58,7 @@ start_classic_notification_service() {
     haku_qs_alive && return 1
     # Clear any Light preview written by an outgoing shell before its writer exited.
     python3 "$HAKU_BIN_DIR/kitty_theme_ctl.py" dark 9>&- || true
-    "$HAKU_BIN_DIR/appearance_ctl.sh" apply-mode dark 9>&- || true
+    "$HAKU_BIN_DIR/appearance_ctl.sh" apply-mode light classic 9>&- || true
     notification_owned_by swaync || wait_until notification_unowned || return 1
     if ! pgrep -x swaync >/dev/null; then
         swaync </dev/null >/dev/null 2>&1 9>&- &
@@ -229,9 +223,20 @@ sys.exit(0 if d["backend"] == "classic" and not d["enabled"] and d["released"] e
 ' 2>/dev/null
 }
 
-# Reconcile shared applications under the transition cover without changing preferences.
-sync_opaque_context() {
-    "$HAKU_BIN_DIR/opaque_theme.sh" sync "$1" 9>&-
+# Re-render both mode variants, activate the committed backend's state files, and reload WM/Kitty.
+sync_backend_styles() {
+    if [[ -x "$HAKU_BIN_DIR/gen_style.sh" ]]; then
+        "$HAKU_BIN_DIR/gen_style.sh" >/dev/null 2>&1 || return 1
+    fi
+    theme_sync_classic_gtk3_override || true
+    if [[ -x "$HAKU_BIN_DIR/reload_config.sh" ]]; then
+        "$HAKU_BIN_DIR/reload_config.sh" >/dev/null 2>&1 || true
+    fi
+    for s in /tmp/kitty-*; do
+        [[ -S "$s" ]] || continue
+        kitty @ --to "unix:$s" ls >/dev/null 2>&1 || continue
+        kitty @ --to "unix:$s" load-config >/dev/null 2>&1 || true
+    done
 }
 
 # Recover an unresponsive transition owner to a usable Classic desktop.
@@ -240,7 +245,7 @@ emergency_classic() {
     # A killed QML owner cannot report release; drain its serialized effects before Classic.
     "$HAKU_BIN_DIR/idle_actions.sh" recover 9>&- || return 1
     commit_backend classic || return 1
-    sync_opaque_context classic || echo "Warning: could not restore Classic opaque context during recovery." >&2
+    sync_backend_styles || true
     kill_classic_stack
     start_classic_stack && wait_until verify_backend
 }
@@ -250,7 +255,7 @@ rollback_classic() {
     local covered="$1"
     stop_qs_supervisor || return 1
     commit_backend classic || return 1
-    sync_opaque_context classic || { emergency_classic; return 1; }
+    sync_backend_styles || true
     if [[ "$covered" == yes ]]; then
         transition_ipc hideChrome || { emergency_classic; return 1; }
         kill_classic_stack
@@ -268,7 +273,8 @@ rollback_classic() {
 rollback_hikai() {
     kill_classic_stack
     commit_backend "$QS_BACKEND_NAME" || { emergency_classic; return 1; }
-    sync_opaque_context "$QS_BACKEND_NAME" || { emergency_classic; return 1; }
+    "$HAKU_BIN_DIR/appearance_ctl.sh" apply 9>&- || true
+    sync_backend_styles || true
     if quickshell_ready && start_hikai_auxiliary_stack && transition_ipc showChrome &&
         start_qs_supervisor && transition_ipc release && wait_transition_phase finished &&
         wait_until verify_backend; then
@@ -287,12 +293,13 @@ switch_to_hikai() {
     fi
     kill_classic_stack
     if ! "$HAKU_BIN_DIR/idle_backend_ctl.sh" stop-classic 9>&- ||
-        ! sync_opaque_context "$QS_BACKEND_NAME" ||
         ! "$HAKU_BIN_DIR/desktop_icons_manager.sh" --startup 9>&- || ! transition_ipc showChrome ||
         ! commit_backend "$QS_BACKEND_NAME"; then
         rollback_classic yes
         return 1
     fi
+    "$HAKU_BIN_DIR/appearance_ctl.sh" apply 9>&- || true
+    sync_backend_styles || true
     # Cava reads the backend preference to select Hikai's existing dynamic-mode policy.
     if ! "$HAKU_BIN_DIR/cava_manager.sh" --startup 9>&- || ! start_qs_supervisor || ! wait_until native_idle_ready; then
         rollback_classic yes
@@ -315,10 +322,11 @@ switch_to_classic() {
         return 1
     fi
     if ! stop_qs_supervisor || ! transition_ipc hideChrome ||
-        ! sync_opaque_context classic || ! commit_backend classic || ! start_classic_visual_stack; then
+        ! commit_backend classic || ! start_classic_visual_stack; then
         rollback_hikai
         return 1
     fi
+    sync_backend_styles || true
     if ! transition_ipc releaseAndQuit ||
         ! wait_until process_absent -f '^(/[^ ]*/)?(qs|quickshell)( [^ ]+)* -c hakuspace( |$)' ||
         ! start_classic_notification_service || ! wait_until verify_backend; then
@@ -349,12 +357,22 @@ set_backend() (
         verify_backend
         return $?
     fi
+    rm -f "$(haku_runtime_dir)/cursor-changed"
     if [[ "$target" == "$QS_BACKEND_NAME" ]]; then
         switch_to_hikai || return 1
     else
         switch_to_classic || return 1
     fi
     notify-send -a "HakuSpace" -i "info" "Backend Switched" "Successfully switched to $target backend." 9>&- || true
+    if [[ -f "$(haku_runtime_dir)/cursor-changed" ]]; then
+        local new_cursor=''
+        read -r new_cursor < "$(haku_runtime_dir)/cursor-changed" || true
+        rm -f "$(haku_runtime_dir)/cursor-changed"
+        if [[ -n "$new_cursor" ]]; then
+            notify-send -a "HakuSpace" -i "info" "Cursor Changed" \
+                "Cursor đã đổi sang ${new_cursor}. Đăng xuất và đăng nhập lại để áp dụng cho mọi ứng dụng." 9>&- || true
+        fi
+    fi
 )
 
 # Verify notification ownership and only those Classic features enabled by the user.
@@ -364,12 +382,8 @@ verify_backend() {
     idle_count=$(pgrep -u "$(id -u)" -x hypridle | wc -l)
     if [[ "$current" == "$QS_BACKEND_NAME" ]]; then
         [[ "$idle_count" == 0 ]] || return 1
-        for proc in waybar taskbar rofi edge_trigger.py rounded_screen.py swaync; do
-            if [[ "$proc" == *.py ]]; then
-                process_absent -f "$proc" || return 1
-            else
-                process_absent -x "$proc" || return 1
-            fi
+        for proc in waybar rofi swaync; do
+            process_absent -x "$proc" || return 1
         done
         haku_qs_alive && notification_owned_by 'qs|quickshell' || return 1
         native_idle_ready || return 1
@@ -377,8 +391,7 @@ verify_backend() {
         [[ "$idle_count" == 1 ]] || return 1
         haku_qs_alive && return 1
         pgrep -x swaync >/dev/null && notification_owned_by swaync || return 1
-        for state in desktop.waybar.requested:waybar desktop.taskbar.requested:taskbar \
-            screen.rounded.enabled:rounded_screen.py desktop.edge-trigger.enabled:edge_trigger.py \
+        for state in desktop.waybar.requested:waybar \
             desktop.icons.enabled:desktop_icons.py; do
             [[ $(cat "$(haku_state_path "${state%%:*}")" 2>/dev/null) == 1 ]] || continue
             proc=${state#*:}

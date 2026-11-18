@@ -5,7 +5,7 @@
 
 # shellcheck source=/dev/null
 source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_state.sh" || exit 1
-ROFI_THEME="wallpaper-select.rasi"
+ROFI_THEME="styles/wallpaper.rasi"
 WALLPAPER_CTL="$HAKU_BIN_DIR/wallpaper_ctl.sh"
 
 emit_records() {

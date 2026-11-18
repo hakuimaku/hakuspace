@@ -24,6 +24,9 @@ PKG_LABWC="$SOURCE_DIR/packages/pkg-labwc.txt"
 HAKU_CURSOR_REPO_URL="https://github.com/hakuimaku/haku-cursor.git"
 HAKU_GTK_REPO_URL="https://github.com/hakuimaku/hikade-gtk-theme.git"
 HAKU_SYMBOLS_REPO_URL="https://github.com/hakuimaku/hikaide-symbols.git"
+CASSETTK_REPO_URL="https://github.com/hakuimaku/cassettk-gtk-theme.git"
+CASSETTON_REPO_URL="https://github.com/hakuimaku/cassetton-icons.git"
+CASSETTSOR_REPO_URL="https://github.com/hakuimaku/cassettsor-cursor.git"
 
 # Wallpaper archive only; visual software is managed by setup.sh.
 ARCHIVE_REPO_URL="https://github.com/hakuimaku/hakuspace-archive.git"

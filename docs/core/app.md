@@ -3,28 +3,23 @@
 HakuSpace includes custom mini-applications and desktop widgets built by combining existing Linux tools with custom bash and Python scripts in `src/core/`.
 
 Currently, the following mini-apps are available:
-- [**Taskbar**](#the-taskbar)
+- [**Taskbar (Hikai & Shared Pins)**](#the-taskbar)
 - [**Desktop Icons**](#desktop-icons)
-- [**Rounded Screen**](#rounded-screen)
-- [**Edge Trigger**](#edge-trigger)
 - [**Cava Underbar**](#cava-underbar)
 
 ---
 
 ## The Taskbar
 
-The Classic Taskbar is a secondary instance of **Waybar** running a specific configuration (`~/.config/waybar/taskbar/config`).
-
-Because it runs independently from your main top status bar, it has its own dedicated management system.
+Taskbar control separates the compatibility facade, controller, and shared pin/icon helpers used by Hikai's dock/taskbar.
 
 ### Taskbar control split
-The public command remains `taskbar_manager.sh`, so existing keybinds, startup files, HakuMenu actions and user configuration do not need to change. Internally, Taskbar control is now separated by responsibility:
+The public command remains `taskbar_manager.sh`, so existing keybinds and HakuMenu actions stay intact.
 
-- **`taskbar_manager.sh` (compatibility facade):** preserves the existing `--startup`, `--reload`, `--toggle`, `--app-name`, and `--icon-size` CLI and routes each operation to the correct internal script.
-- **`taskbar_ctl.sh` (headless backend):** owns Taskbar state, Waybar lifecycle, app-name format mutation, and explicit icon-size get/set operations. It never opens Rofi or another picker.
-- **`taskbar_rofi.sh` (Classic frontend):** owns the Rofi icon-size prompt only, then passes the chosen numeric value to `taskbar_ctl.sh`.
+- **`taskbar_manager.sh` (compatibility facade):** preserves `--startup`, `--reload`, `--toggle`, `--app-name`, and `--icon-size` and routes operations to `taskbar_ctl.sh`.
+- **`taskbar_ctl.sh` (controller):** owns the shared `[desktop].taskbar.requested` state for Hikai. When `cava.dynamic-position` is enabled in Hikai, toggling the taskbar updates `[cava].position` accordingly.
 
-State lives under `~/.local/state/hakuspace/state/`: `[desktop].taskbar.requested` stores the persistent request, while the generated `../taskbar-theme` holds Waybar Taskbar presentation settings. In Classic, the controller manages the Waybar taskbar process. In Hikai, `--toggle` updates the request without starting Waybar or requiring its runtime. See [Hikai](../hikai.md) for shell architecture.
+State lives under `~/.local/state/hakuspace/state/`: `[desktop].taskbar.requested` stores the persistent request. See [Hikai](../hikai.md) for shell architecture.
 
 ### `taskbar_geticon.sh` (The Icon Fetcher)
 The Taskbar needs to display the correct icons for your pinned applications.
@@ -61,75 +56,24 @@ You can customize almost everything about how your icons look and behave.
 
 ---
 
-## Rounded Screen
-
-A sleek overlay that frames your entire monitor with perfectly rounded corners and a configurable border thickness, giving your display a modern, hardware-like bezel aesthetic. 
-
-### `rounded_screen.py` (The Renderer)
-To bypass limitations in Wayland's layer-shell protocol (which doesn't let a single surface reserve exclusive space on all four edges without breaking other panels), this application uses a brilliant multi-window architecture:
-- **The Main Window:** Placed on the `TOP` layer. It spans the entire physical screen and draws the beautiful rounded corners and border.
-- **Dynamic Mode:** You can toggle "Dynamic Mode" from the Haku Menu. When disabled, it anchors 4 invisible dummy edges to reserve exclusive space and forces itself across the screen using a negative exclusive zone. When enabled, it respects other panels' exclusive zones (like Waybar), allowing itself to be pushed inward dynamically for perfect layout integration.
-
-### `rounded_screen_manager.sh` (The Controller)
-Manages the lifecycle of the Rounded Screen overlay.
-- **Toggling & Startup:** Controlled via `--toggle`, `--startup`, and `--toggle-dynamic`. The main toggle hooks into the Haku Menu's Theme section, while Dynamic Mode is located in the Setting section.
-- **State Management:** Remembers if you had it turned on or off across reboots using `~/.local/state/hakuspace/state/[screen].rounded.enabled` and `[screen].rounded.dynamic`.
-
-### Configuration
-You can customize the appearance by editing `~/hakucfg/config/rounded-screen.conf`.
-- **`border_thickness`**: Thickness of the black frame (e.g., 4px).
-- **`border_radius`**: How curved the corners should be (e.g., 20px).
-
----
-
-## Edge Trigger
-
-An invisible overlay that sits at the edges of your screen, allowing you to trigger specific commands simply by hovering your mouse against the screen borders.
-
-### `edge_trigger.py` (The Sensor)
-Using `GtkLayerShell` on the `OVERLAY` layer with a negative exclusive zone, this Python script creates small, invisible hover zones on your screen edges. It intelligently sits on top of all other panels (like Waybar) so it's never blocked.
-- **Dwell Time:** Prevents accidental triggers by requiring your mouse to rest in the zone for a configurable amount of time (`dwell_ms`) before activating.
-- **Cooldown:** Implements a timeout (`cooldown_ms`) after a successful trigger to prevent rapid, unintended repeated executions.
-
-### Auto-Close Mechanism (Guard Window)
-To improve the user experience, edge-triggered menus automatically close when the mouse leaves a designated "safe zone".
-- When an edge successfully triggers its command, it spawns a full-screen, invisible **guard window**.
-- Using `cairo` input shapes, the guard window has a "hole" cut out corresponding to the active menu's safe zone.
-- As long as the mouse stays inside the menu's area (the hole), clicks pass through normally. The moment the mouse moves out and touches the guard window, the script automatically sends a termination command (e.g., `pkill -x rofi` or `notif.sh close`) and destroys the guard window.
-
-Safe zones belong to this standalone app's guard logic; they do not define the geometry of the UI opened by its commands. Check its configuration and source for trigger bindings and guard bounds.
-
-### `edge_trigger_manager.sh` (The Controller)
-Manages the lifecycle of the Edge Trigger overlay.
-- **Toggling & Startup:** Controlled via `--toggle` and `--startup`. Integrated directly into the Haku Menu's Theme section. It also supports `--reload` to restart the overlay and `-h`/`--help` for usage information.
-- **State Management:** Remembers if you had it turned on or off across reboots using `~/.local/state/hakuspace/state/[desktop].edge-trigger.enabled`.
-
-### Configuration
-- **`dwell_ms`**: Time in milliseconds the pointer must stay on the edge to trigger (default: 200).
-- **`cooldown_ms`**: Minimum time in milliseconds between consecutive triggers (default: 800).
-- **Individual Lengths:** You can specify the exact length of each trigger zone independently (e.g., `edge_top_length_percent`, `edge_right_length_percent`). Both `left` and `right` triggers are shifted down by 10% from the top.
-- You can enable/disable individual edges (`top`, `bottom`, `left`, `right`) and define the exact shell command each executes.
-
----
-
 ## Cava Underbar
 
-If you like having an audio visualizer on your desktop, you've probably used `cava`. Normally, it runs inside a regular terminal window. HakuSpace takes it to the next level by embedding `cava` directly into the background of your screen, sitting just above your wallpaper but below your windows, acting as a dynamic "Underbar". It also features an "Top Mode" to make the visualizer sit above all other windows!
+If you like having an audio visualizer on your desktop, HakuSpace embeds `cava` across both backends: in Hikai as a native Quickshell visualizer (`cava_manager.sh --run-hikai`), and in Classic as a standalone transparent layer-shell bar (`cava_layer.py`).
 
-### `cava_layer.py` (The VTE Wrapper)
-This Python script uses `GtkLayerShell` and `VTE` (Virtual Terminal Emulator).
-- **Layer Shell Embedding:** It creates a borderless, completely transparent, and click-through terminal window. Depending on the settings, it renders either in the `BOTTOM` layer (under windows) or the `TOP` layer (above windows).
-- **Theme Syncing:** It dynamically parses your `~/.config/kitty/kitty.conf` to extract your current foreground, background, and accent colors, ensuring the visualizer perfectly matches your overall system theme.
-- **Running Cava:** It quietly spawns the actual `cava` C-binary inside this invisible terminal window to process your audio streams.
+### `cava_layer.py` (Classic VTE Wrapper)
+This Python script uses `GtkLayerShell` and standard `VTE` (Virtual Terminal Emulator):
+- **Layer Shell Embedding:** Creates a borderless, transparent, click-through VTE terminal anchored to the top of the screen on the `BOTTOM` layer with `exclusive_zone = 0`, so it respects exclusive zones of other layers (such as Waybar) without pushing tiled windows.
+- **Scheme Palette Syncing:** Reads the active Classic scheme token (`select_bg`, falling back to `title_bg`) directly from `~/.local/state/hakuspace/theme/classic/palette.css` and maps it across the VTE ANSI palette without any dependency on Kitty.
+- **Running Cava:** Spawns `cava -p <config>` inside the VTE terminal (`orientation = top` in Classic).
 
 ### `cava_manager.sh` (The Process Controller)
-Because the Python script acts as a background daemon, it needs a manager to handle its lifecycle.
+Because the Classic Python script runs as a background daemon and Hikai consumes raw audio frames, `cava_manager.sh` coordinates both modes:
 
-**Developer Note on CLI conventions:** Be aware that unlike other manager scripts in HakuSpace which primarily use long flags (e.g., `--toggle`, `--reload`), `cava_manager.sh` utilizes positional sub-commands (`start`, `stop`, `toggle`, `reload`) mixed with flags (e.g., `--position [top|bottom]`, `-H`/`--height`, `-d`/`--toggle-dynamic`).
+**Developer Note on CLI conventions:** Unlike manager scripts that use long flags only, `cava_manager.sh` combines positional sub-commands (`start`, `stop`, `toggle`, `reload`) with flags (`--position [top|bottom]`, `-H`/`--height`, `-d`/`--toggle-dynamic`, `-c`/`--color-switch`).
 
-- **Toggling:** `cava_manager.sh toggle` starts or stops the standalone Cava layer process and persists the request in `~/.local/state/hakuspace/state/[cava].enabled`.
-- **Position & Dynamic Mode:** `cava_manager.sh --position [top|bottom]` toggles or sets screen position (default: top in Hikai mode), and `--toggle-dynamic` toggles Dynamic Mode, which adapts to other panels' exclusive zones. The manager saves these settings in `[cava].position` and `[cava].dynamic-position`. In Hikai, Dynamic Mode stays enabled and `--toggle-dynamic` returns success without changing the saved preference.
-- **Live Reloading:** When you change your system's accent color (via `theme_ctl.sh set-accent`), you don't want the audio visualizer to stutter, drop frames, or restart. Calling `cava_manager.sh reload` sends a specific UNIX signal (`SIGUSR1`) to the Python daemon. The script intercepts this signal, re-reads the Kitty configuration, and instantly updates the visualizer's colors on the fly without ever interrupting the live audio stream!
+- **Toggling:** `cava_manager.sh toggle` starts or stops the visualizer and persists the request in `~/.local/state/hakuspace/state/[cava].enabled`.
+- **Position, Dynamic Mode & Color Mode (Hikai only):** `--position`, `--toggle-dynamic`, and `--color-switch` manage Hikai visualizer layout and color preferences (`[cava].position`, `[cava].dynamic-position`, `[cava].color-mode`). In Classic, position is always top under existing exclusive zones and the color always tracks the active Classic scheme.
+- **Live Reloading:** Calling `cava_manager.sh reload` sends `SIGUSR1` to `cava_layer.py`, which re-reads `classic/palette.css` and updates VTE colors immediately without restarting `cava`.
 
 
 

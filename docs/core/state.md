@@ -8,18 +8,15 @@ Persistent feature state lives in `~/.local/state/hakuspace/state/`. Each filena
 | `shell.memory-maintenance.json` | `[shell].memory-maintenance.json` |
 | `shell.haku-space.enabled` | `[shell].haku-space.enabled` |
 | `desktop.waybar.requested` | `[desktop].waybar.requested` |
-| `desktop.waybar.mode` | `[desktop].waybar.mode` |
 | `desktop.taskbar.requested` | `[desktop].taskbar.requested` |
 | `desktop.dockbar.requested` | `[desktop].dockbar.requested` |
 | `desktop.icons.enabled` | `[desktop].icons.enabled` |
 | `desktop.icons.positions.json` | `[desktop].icons.positions.json` |
 | `desktop.wallpaper.current.json` | `[desktop].wallpaper.current.json` |
 | `desktop.wallpaper.runtime.json` | `[desktop].wallpaper.runtime.json` |
-| `desktop.edge-trigger.enabled` | `[desktop].edge-trigger.enabled` |
-| `screen.rounded.enabled` | `[screen].rounded.enabled` |
-| `screen.rounded.dynamic` | `[screen].rounded.dynamic` |
-| `theme.opaque.enabled` | `[theme].opaque.enabled` |
 | `theme.appearance.env` | `[theme].appearance.env` |
+| `theme.classic.palette` | `[theme].classic.palette` |
+| `theme.classic.palette.effective` | `[theme].classic.palette.effective` |
 | `system.visual-sources.json` | `[system].visual-sources.json` |
 | `system.visual-reconcile.pending` | `[system].visual-reconcile.pending` |
 | `system.idle-inhibit.enabled` | `[system].idle-inhibit.enabled` |
@@ -28,6 +25,7 @@ Persistent feature state lives in `~/.local/state/hakuspace/state/`. Each filena
 | `cava.dynamic-position` | `[cava].dynamic-position` |
 | `cava.color-mode` | `[cava].color-mode` |
 | `cava.height` | `[cava].height` |
+| `migration.hikai-layout-v11.json` | `[migration].hikai-layout-v11.json` |
 | `migration.hikai-chrome-v6.json` | `[migration].hikai-chrome-v6.json` |
 
 Bash consumers source `haku_state.sh` and call `haku_state_path KEY`. Always quote the returned path: brackets are shell glob characters. Python consumers import `state_path(KEY)` from `haku_state.py`; it returns a `pathlib.Path`. QML watchers and menu indicators use the readonly state properties in `Env.qml`. Resolving a path does not create state or validate/change its value.
@@ -36,7 +34,7 @@ Installation/update, early session startup, the Quickshell supervisor, and the b
 
 The current Haku Space preference takes priority over its two older aliases. The obsolete Taskbar autohide file has no active writer; migration archives it and the desktop context menu no longer reads it. No canonical autohide preference is created.
 
-Generated `taskbar-theme`, `rofi-theme.rasi`, `niri-animation.kdl`, and `theme/` outputs stay outside the runtime `state/` namespace. `/tmp/random_wallpaper_status` also keeps its existing path.
+Generated `niri-animation.kdl` and `theme/` outputs stay outside the runtime `state/` namespace. `/tmp/random_wallpaper_status` also keeps its existing path.
 
 
 Theme appearance state uses `THEME_STATE_VERSION=2` with `ACCENT_SEED`, `ACCENT_DARK`,
@@ -44,8 +42,10 @@ Theme appearance state uses `THEME_STATE_VERSION=2` with `ACCENT_SEED`, `ACCENT_
 legacy `ACCENT_COLOR` state while retaining typography. The runtime `ACCENT_COLOR`
 alias selects `ACCENT_DARK` for Classic/global consumers. Hikai's independent
 `appearance.colorMode` preference lives in `~/hakucfg/hikai/hikai-shell.json` (v7),
-not in an additional runtime state key. `theme.opaque.enabled` records the request;
-its effective overrides apply only while the backend is Classic.
+not in an additional runtime state key. `theme.classic.palette` stores the user's
+Classic color scheme request (`auto` or one of the 8 scheme IDs), while
+`theme.classic.palette.effective` caches the derived scheme ID used for hue/saturation
+hysteresis.
 
 Visual setup stores only explicit source locations in `system.visual-sources.json`
 and an operational activation retry flag in `system.visual-reconcile.pending`.

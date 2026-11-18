@@ -1,0 +1,258 @@
+@import "~/.local/state/hakuspace/theme/rofi-style.rasi"
+@import "~/.local/state/hakuspace/theme/classic/palette.rasi"
+
+* {
+    background-color: transparent;
+    text-color: @text;
+    border-radius: 0px;
+    margin: 0px;
+    padding: 0px;
+    spacing: 0px;
+}
+
+window {
+    width: 720px;
+    location: center;
+    anchor: center;
+    border: 2px;
+    border-color: @border-frame;
+    background-color: @window-bg;
+}
+
+mainbox {
+    orientation: vertical;
+    border: 2px 0px 0px 2px;
+    border-color: @border-light;
+    children: [ window-frame ];
+}
+
+window-frame {
+    orientation: vertical;
+    border: 0px 2px 2px 0px;
+    border-color: @border-dark;
+    padding: 3px;
+    spacing: 4px;
+    children: [ inputbar, panel-body ];
+}
+
+inputbar {
+    orientation: horizontal;
+    background-color: @title-bg;
+    text-color: @title-fg;
+    padding: 3px 4px 3px 8px;
+    spacing: 6px;
+    children: [ prompt, entry, case-indicator, win-buttons ];
+}
+
+prompt {
+    expand: false;
+    padding: 0px 6px 0px 2px;
+    text-color: @title-fg;
+    text-transform: bold;
+    vertical-align: 0.5;
+}
+
+entry {
+    expand: true;
+    background-color: @inset-bg;
+    text-color: @text;
+    placeholder: "Search...";
+    placeholder-color: @text-muted;
+    border: 1px;
+    border-color: @border-dark;
+    padding: 3px 6px;
+    vertical-align: 0.5;
+}
+
+case-indicator {
+    expand: false;
+    text-color: @title-fg;
+    vertical-align: 0.5;
+}
+
+win-buttons {
+    orientation: horizontal;
+    expand: false;
+    spacing: 2px;
+    children: [ win-btn-min, win-btn-max, win-btn-close ];
+}
+
+win-btn-min, win-btn-max, win-btn-close {
+    orientation: vertical;
+    expand: false;
+    width: 30px;
+    border: 2px 0px 0px 2px;
+    border-color: @border-light;
+}
+
+win-btn-min {
+    children: [ textbox-min ];
+}
+
+win-btn-max {
+    children: [ textbox-max ];
+}
+
+win-btn-close {
+    children: [ button-close ];
+}
+
+textbox-min, textbox-max, button-close {
+    expand: true;
+    padding: 2px 4px;
+    background-color: @button-bg;
+    text-color: @button-fg;
+    border: 0px 2px 2px 0px;
+    border-color: @border-dark;
+    horizontal-align: 0.5;
+    vertical-align: 0.5;
+    text-transform: bold;
+}
+
+textbox-min {
+    content: "_";
+}
+
+textbox-max {
+    content: "□";
+}
+
+button-close {
+    content: "X";
+    background-color: @button-active-bg;
+    text-color: @button-fg;
+    cursor: pointer;
+    action: "kb-cancel";
+}
+
+panel-body {
+    orientation: vertical;
+    background-color: @panel-bg;
+    padding: 8px;
+    spacing: 6px;
+    children: [ mode-switcher, message, list-frame ];
+}
+
+mode-switcher {
+    orientation: horizontal;
+    spacing: 4px;
+}
+
+button {
+    padding: 6px 16px;
+    background-color: @button-bg;
+    text-color: @button-fg;
+    border: 2px;
+    border-color: @border-light;
+    horizontal-align: 0.5;
+    vertical-align: 0.5;
+    cursor: pointer;
+}
+
+button selected {
+    background-color: @select-bg;
+    text-color: @select-fg;
+    border-color: @border-dark;
+    text-transform: bold;
+}
+
+message {
+    background-color: @inset-bg;
+    border: 2px;
+    border-color: @border-dark;
+    padding: 6px 8px;
+}
+
+textbox {
+    text-color: @text;
+}
+
+list-frame {
+    orientation: vertical;
+    border: 2px 0px 0px 2px;
+    border-color: @border-dark;
+    children: [ list-inner ];
+}
+
+list-inner {
+    orientation: vertical;
+    border: 0px 2px 2px 0px;
+    border-color: @border-light;
+    background-color: @inset-bg;
+    padding: 3px;
+    children: [ listview ];
+}
+
+listview {
+    lines: 8;
+    columns: 1;
+    scrollbar: true;
+    cycle: true;
+    dynamic: true;
+    fixed-height: false;
+    spacing: 2px;
+}
+
+scrollbar {
+    width: 8px;
+    handle-width: 8px;
+    background-color: @window-bg;
+    handle-color: @button-bg;
+    margin: 0px 0px 0px 4px;
+}
+
+element {
+    orientation: horizontal;
+    padding: 6px 8px;
+    spacing: 10px;
+    vertical-align: 0.5;
+}
+
+element-icon {
+    size: 22px;
+    vertical-align: 0.5;
+}
+
+element-text {
+    vertical-align: 0.5;
+    text-color: inherit;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color: transparent;
+    text-color: @text;
+}
+
+element normal.active,
+element alternate.active {
+    background-color: @button-active-bg;
+    text-color: @text;
+}
+
+element normal.urgent,
+element alternate.urgent {
+    background-color: @urgent-bg;
+    text-color: @urgent-fg;
+}
+
+element selected.normal,
+element selected.active {
+    background-color: @select-bg;
+    text-color: @select-fg;
+}
+
+element selected.urgent {
+    background-color: @urgent-bg;
+    text-color: @urgent-fg;
+}
+
+element-text selected {
+    text-color: @select-fg;
+    text-transform: bold;
+}
+
+element-text selected.urgent {
+    text-color: @urgent-fg;
+    text-transform: bold;
+}

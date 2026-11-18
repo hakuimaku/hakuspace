@@ -2,7 +2,7 @@
 
 # This script is used to set up the main settings for all hakuspace's scripts.
 # DO NOT EDIT THIS LINE :v, used for checking setting.sh is up-to-date when run update.sh
-SETTING_VERSION="26.09-2"
+SETTING_VERSION="26.12"
 
 if [[ "$1" == "--version" || "$1" == "-v" ]]; then
     echo "$SETTING_VERSION"
@@ -49,28 +49,14 @@ REC_OPTS="--max-fps 60" # wl-screenrec options, you can customize them as needed
 
 
 
-# ====== Waybar Theme Settings ======
-# Add your custom Waybar modes here, e.g., ("custom1" "custom2")
-# You just add your waybar config to ~/hakucfg/config/waybar with `config` and `style.css` files.
-# If name between WAYBAR_MODES_DEAULT and WAYBAR_MODE_USER is the same, WAYBAR_MODE_DEAULT (my theme) will be used.
-# Example: WAYBAR_MODE_USER=("custom1"), have ~/hakucfg/config/waybar/custom1/config and ~/hakucfg/config/waybar/custom1/style.css
-WAYBAR_MODE_USER=()
-
-
-
-# ====== Rofi Theme Settings ======
-# You just add your theme "name.rasi" to the ~/hakucfg/config/rofi folder, and switch to it in Haku Menu (Theme tab)
-
-# If you have issues with rofi wallpaper image (Too lowres, dupe images,...), you can try to change them.
-# What do they do? These are ImageMagick options, Generate wallpaper preview image for some Rofi themes
+# ====== Wallpaper Preview Cache Settings ======
+# If you have issues with rofi wallpaper preview images (too lowres, dupe images,...), you can try to change them.
+# What do they do? These are ImageMagick options used to generate cached wallpaper previews.
 # Works best with wallpapers that have the subject in the center.
 # Change the options below to your liking, or leave them as default.
 # Previews live in ${XDG_CACHE_HOME:-$HOME/.cache}/hakuspace/wallpaper/; change wallpaper to regenerate them.
 
-# Rofi style: television.rasi
 # GEN_WIDE_OPTS=${GEN_WIDE_OPTS:-"-resize 800x250^ -gravity Center -crop 800x250+0+0 +repage"}
-
-# Rofi style: tablet.rasi
 # GEN_BOX_OPTS=${GEN_BOX_OPTS:-"-resize 1653x852^ -gravity Center -extent 1653x852 -gravity NorthWest -crop 1212x852+400+0 +repage"}
 
 

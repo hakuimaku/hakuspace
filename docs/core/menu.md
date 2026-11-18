@@ -159,9 +159,9 @@ launch commands):
 This provider exposes theme and desktop controls and dispatches selections through their public commands. State belongs to the relevant controller; menu presentation does not own it. Read the provider source for the available actions and their labels.
 
 ### `hm_setting.sh`
-This provider connects system tools and HakuSpace configuration commands.
-- **What it does:** It gives you quick access to essential GUI tools like `nm-connection-editor` (Wifi), `blueman-manager` (Bluetooth), `gparted` (Disk Manager), `ncdu` (Storage Manager), and `pavucontrol` (Audio Control).
-- **HakuSpace Configs:** It also provides toggles specifically for the Taskbar (App Name, Icon Size), Cava Modes (Color Switch, Dynamic Mode), Rounded Screen Dynamic Mode, and the Opaque Theme Mode. It offers direct shortcuts to open your `~/hakucfg` folder or edit `~/hakucfg/config/hakumenu-general.json` in VS Code. Like the Theme tab, it reads local configuration variables to dynamically display the current states of these settings.
+This provider connects system tools and HakuSpace configuration commands in Classic mode.
+- **What it does:** It gives you quick access to essential GUI tools like `nm-connection-editor` (Wifi), `blueman-manager` (Bluetooth), `gparted` (Disk Manager), `ncdu` (Storage Manager), and `pavucontrol` (Audio Control), as well as `Change Shell`.
+- **HakuSpace Configs:** It provides direct shortcuts to open your `~/hakucfg` folder or edit `~/hakucfg/config/hakumenu-general.json` in VS Code.
 
 
 ---
