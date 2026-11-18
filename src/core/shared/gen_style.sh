@@ -115,9 +115,9 @@ return {
         if hakuSpaceOpacityRule then hakuSpaceOpacityRule:set_enabled(false) end
         if rofiAnimation then rofiAnimation:set_enabled(false) end
         hl.layer_rule({
-            name = "rofi-classic-slide",
+            name = "rofi-classic",
             match = { namespace = "rofi" },
-            animation = "slide",
+            no_anim = true,
             blur = false,
         })
         hl.layer_rule({
@@ -315,6 +315,7 @@ layer_shadows=0
 border_radius=0
 focused_opacity=1.0
 unfocused_opacity=1.0
+layer_rule=no_animation:1,no_blur:1,no_shadow:1,layer_name:rofi
 EOF
     publish_active "mangowm-style.conf"
 }

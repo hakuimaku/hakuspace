@@ -30,7 +30,7 @@ layer_pick() {
             notify-send "Shell Switcher" "Missing dependency: rofi"
             return 1
         }
-        rofi -dmenu -i -no-custom -p "$prompt" -theme styles/menu.rasi "$@"
+        rofi -dmenu -sync -i -no-custom -p "$prompt" -theme styles/menu.rasi "$@"
     else
         "$HAKU_PICK" --prompt "$prompt" --no-custom "$@"
     fi
@@ -40,7 +40,7 @@ layer_password() {
     local prompt="$1"
     if haku_backend_is "classic" || ! haku_qs_alive; then
         command -v rofi >/dev/null 2>&1 || return 1
-        rofi -dmenu -password -l 0 -p "$prompt" -theme styles/menu.rasi </dev/null
+        rofi -dmenu -sync -password -l 0 -p "$prompt" -theme styles/menu.rasi </dev/null
     else
         echo -n | "$HAKU_PICK" --prompt "$prompt" --password --lines 0
     fi

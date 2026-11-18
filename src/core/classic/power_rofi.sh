@@ -61,6 +61,7 @@ ACTIONS=(
 
 chosen_index="$(printf '%s\n' "${OPTIONS[@]}" | rofi \
     -dmenu \
+    -sync \
     -p "Shut Down HakuSpace" \
     -i \
     -format i \

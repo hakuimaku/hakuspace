@@ -10,7 +10,7 @@ THEME_CTL="$HAKU_BIN_DIR/theme_ctl.sh"
 pick_font_size() {
     local current choice size
     current="$("$THEME_CTL" get size)" || return 1
-    choice="$(printf '%s\n' 10px 12px 14px 16px 18px | rofi -dmenu -p "Font Size (Current: ${current}px)" -theme styles/menu.rasi -i)"
+    choice="$(printf '%s\n' 10px 12px 14px 16px 18px | rofi -dmenu -sync -p "Font Size (Current: ${current}px)" -theme styles/menu.rasi -i)"
     [[ -z "$choice" ]] && return 0
     size="${choice//px/}"
     [[ "$size" =~ ^[0-9]+$ ]] || return 0
@@ -20,7 +20,7 @@ pick_font_size() {
 pick_font() {
     local current choice
     current="$("$THEME_CTL" get font)" || return 1
-    choice="$("$THEME_CTL" list-fonts | rofi -dmenu -p "Font (Current: ${current})" -theme styles/menu.rasi -i)"
+    choice="$("$THEME_CTL" list-fonts | rofi -dmenu -sync -p "Font (Current: ${current})" -theme styles/menu.rasi -i)"
     [[ -z "$choice" ]] && return 0
     "$THEME_CTL" set-font "$choice"
 }
@@ -57,6 +57,7 @@ pick_palette() {
 
     chosen_index="$(printf '%s\n' "${PALETTE_LABELS[@]}" | rofi \
         -dmenu \
+        -sync \
         -i \
         -markup-rows \
         -format i \
@@ -72,7 +73,7 @@ pick_palette() {
 
 open_menu() {
     local choice
-    choice="$(cat <<'EOF_MENU' | rofi -dmenu -p "Change Theme" -theme styles/theme.rasi -i
+    choice="$(cat <<'EOF_MENU' | rofi -dmenu -sync -p "Change Theme" -theme styles/theme.rasi -i
   Change Color Scheme
   Change Font
   Change Font Size

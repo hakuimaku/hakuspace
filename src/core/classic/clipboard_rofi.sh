@@ -11,7 +11,7 @@ CLIPBOARD_CTL="$HAKU_BIN_DIR/clipboard_ctl.sh"
 
 "$CLIPBOARD_CTL" ensure-watchers || exit $?
 
-result="$("$CLIPBOARD_CTL" list | rofi -dmenu \
+result="$("$CLIPBOARD_CTL" list | rofi -dmenu -sync \
     -p "󰅌 Clipboard" \
     -theme styles/menu.rasi)"
 rofi_status=$?
