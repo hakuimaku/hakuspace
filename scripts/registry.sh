@@ -162,6 +162,8 @@ registry_get_common_configs() {
     # 2. Hyprland independent files (hypridle, hyprlock)
     echo "$SOURCE_CONFIG/hypr/hypridle.conf|$DEST_CONFIG/hypr/hypridle.conf"
     echo "$SOURCE_CONFIG/hypr/hyprlock.conf|$DEST_CONFIG/hypr/hyprlock.conf"
+    echo "$SOURCE_CONFIG/hypr/cassette.svg|$DEST_CONFIG/hypr/cassette.svg"
+    echo "$SOURCE_CONFIG/hypr/cassette.png|$DEST_CONFIG/hypr/cassette.png"
 
     # 3. Home root dotfiles
     echo "$HOME_SRC_DIR/.nanorc|$HOME/.nanorc"
@@ -248,6 +250,8 @@ registry_get_managed_destinations() {
     echo "$DEST_CONFIG/hypr/hyprland.lua"
     echo "$DEST_CONFIG/hypr/hypridle.conf"
     echo "$DEST_CONFIG/hypr/hyprlock.conf"
+    echo "$DEST_CONFIG/hypr/cassette.svg"
+    echo "$DEST_CONFIG/hypr/cassette.png"
 
     # 3. Other WM targets
     echo "$DEST_CONFIG/niri"
@@ -317,6 +321,8 @@ registry_resolve_module() {
             ;;
         hyprlock)
             echo "$SOURCE_CONFIG/hypr/hyprlock.conf|$DEST_CONFIG/hypr/hyprlock.conf"
+            echo "$SOURCE_CONFIG/hypr/cassette.svg|$DEST_CONFIG/hypr/cassette.svg"
+            echo "$SOURCE_CONFIG/hypr/cassette.png|$DEST_CONFIG/hypr/cassette.png"
             ;;
         nano|nanorc|.nanorc)
             echo "$HOME_SRC_DIR/.nanorc|$HOME/.nanorc"
