@@ -15,7 +15,7 @@ fi
 "$HAKU_BIN_DIR/reload_config.sh" >/dev/null 2>&1 || true
 
 if [[ -f "$HAKU_BIN_DIR/desktop_icons_manager.sh" ]]; then
-    "$HAKU_BIN_DIR/desktop_icons_manager.sh" --reload >/dev/null 2>&1 || true
+    "$HAKU_BIN_DIR/desktop_icons_manager.sh" reload-style >/dev/null 2>&1 || true
 fi
 
 # if [[ -f "$HAKU_BIN_DIR/taskbar_manager.sh" ]]; then
