@@ -194,6 +194,27 @@ def launch(row):
     if not row['enabled']:
         raise ValueError('item is disabled')
     argv = [os.path.expanduser(arg) for arg in row['argv']]
+    rofi_pid = Path(os.environ.get('XDG_RUNTIME_DIR') or '/tmp') / 'rofi.pid'
+    if os.environ.get('ROFI_RETV') and rofi_pid.is_file():
+        wait_code = (
+            'import fcntl, os, sys, time\n'
+            'p = sys.argv[1]\n'
+            'deadline = time.monotonic() + 0.5\n'
+            'while time.monotonic() < deadline:\n'
+            '    try:\n'
+            '        fd = os.open(p, os.O_RDONLY)\n'
+            '        try:\n'
+            '            fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)\n'
+            '            break\n'
+            '        finally:\n'
+            '            os.close(fd)\n'
+            '    except BlockingIOError:\n'
+            '        time.sleep(0.01)\n'
+            '    except OSError:\n'
+            '        break\n'
+            'os.execvp(sys.argv[2], sys.argv[2:])\n'
+        )
+        argv = [sys.executable, '-B', '-c', wait_code, str(rofi_pid), *argv]
     environment = {**os.environ, 'PATH': str(bin_dir()) + os.pathsep + os.environ.get('PATH', os.defpath)}
     subprocess.Popen(argv, env=environment, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                      stderr=subprocess.DEVNULL, start_new_session=True, close_fds=True)

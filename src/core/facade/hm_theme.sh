@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
-spawn() { ( "$@" & ) >/dev/null 2>&1; }
+spawn() {
+    (
+        if [[ -n "${ROFI_RETV:-}" && -f "${XDG_RUNTIME_DIR:-/tmp}/rofi.pid" ]] && command -v flock >/dev/null 2>&1; then
+            flock -s -w 0.5 "${XDG_RUNTIME_DIR:-/tmp}/rofi.pid" true 2>/dev/null || sleep 0.05
+        fi
+        "$@"
+    ) >/dev/null 2>&1 &
+}
 # shellcheck source=/dev/null
 source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_theme.sh" || exit 1
 
