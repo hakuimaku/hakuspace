@@ -6,9 +6,12 @@ from dataclasses import dataclass, field
 import json
 import os
 from pathlib import Path
+import re
+import shlex
 import signal
 import subprocess
 import sys
+import urllib.parse
 
 import gi
 
@@ -141,6 +144,18 @@ button.appbar-item.is-armed:hover {
     border-color: @border_light @border_dark @border_dark @border_light;
 }
 
+button.appbar-item.is-drop-target,
+button.appbar-item.is-drop-target:hover {
+    background-color: @select_bg;
+    color: @select_fg;
+    border-color: @border_light @border_dark @border_dark @border_light;
+}
+
+.appbar-drop-zone.is-drop-pin {
+    border: 2px solid @select_bg;
+    background-color: @panel_bg;
+}
+
 .appbar-dots {
     min-width: 3px;
 }
@@ -269,6 +284,121 @@ def resolve_pinned_ctl():
 def resolve_pins_path():
     """Return path to the shared Classic/Hikai taskbar-pin-apps file."""
     return Path(os.environ.get("HAKUSPACE_TASKBAR_PINS_FILE") or (Path.home() / "hakucfg/config/taskbar-pin-apps"))
+
+
+PIN_ID_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.+\-]*$")
+
+
+def resolve_desktop_icons_ctl():
+    """Return path to desktop_icons_manager.sh from HAKU_BIN_DIR or sibling directory."""
+    bin_dir = Path(os.environ.get("HAKU_BIN_DIR") or (Path.home() / ".local/bin"))
+    for candidate in (
+        bin_dir / "desktop_icons_manager.sh",
+        Path(__file__).resolve().parents[1] / "shared/desktop_icons_manager.sh",
+    ):
+        if candidate.is_file():
+            return str(candidate)
+    return None
+
+
+def query_desktop_icons_enabled():
+    """Query whether Desktop Icons service is currently enabled."""
+    ctl = resolve_desktop_icons_ctl()
+    if not ctl:
+        return False
+    try:
+        res = subprocess.run([ctl, "--status"], capture_output=True, text=True, timeout=1.5)
+        return res.returncode == 0 and res.stdout.strip().lower() == "enabled"
+    except Exception:
+        return False
+
+
+def resolve_slot_desktop_file(slot, search_dirs=None):
+    """Locate the backing .desktop file path for an AppSlot, or return None."""
+    info = getattr(slot, "desktop_info", None)
+    if info is not None and hasattr(info, "get_filename"):
+        try:
+            fname = info.get_filename()
+            if fname and os.path.isfile(fname):
+                return fname
+        except Exception:
+            pass
+
+    candidates = []
+    desktop_id = getattr(slot, "desktop_id", "") or ""
+    pin_id = getattr(slot, "pin_id", "") or ""
+    app_id = getattr(slot, "app_id", "") or ""
+    for raw in (desktop_id, pin_id, app_id):
+        if not raw:
+            continue
+        fname = raw if raw.endswith(".desktop") else f"{raw}.desktop"
+        if fname not in candidates:
+            candidates.append(fname)
+
+    if not candidates:
+        return None
+
+    dirs = search_dirs if search_dirs is not None else [
+        Path.home() / ".local/share/applications",
+        Path("/usr/local/share/applications"),
+        Path("/usr/share/applications"),
+        Path.home() / ".local/share/flatpak/exports/share/applications",
+        Path("/var/lib/flatpak/exports/share/applications"),
+    ]
+    for directory in dirs:
+        base = Path(directory)
+        for fname in candidates:
+            path = base / fname
+            if path.is_file():
+                return str(path)
+    return None
+
+
+def parse_drop_uris(uris):
+    """Extract local filesystem paths from dropped text/uri-list entries."""
+    paths = []
+    for raw in uris or ():
+        item = str(raw).strip()
+        if not item or item.startswith("virtual://"):
+            continue
+        if item.startswith("file://"):
+            path = urllib.parse.unquote(item[7:])
+        elif item.startswith("/"):
+            path = item
+        else:
+            continue
+        path = path.rstrip("/") or path
+        if path and path not in paths:
+            paths.append(path)
+    return paths
+
+
+def classify_pin_drop_ids(paths):
+    """Split dropped local paths into (valid_desktop_pin_ids, other_file_paths)."""
+    pin_ids = []
+    other_paths = []
+    for path in paths:
+        if path.endswith(".desktop"):
+            stem = Path(path).name[:-8]
+            if stem and PIN_ID_RE.match(stem):
+                if stem not in pin_ids:
+                    pin_ids.append(stem)
+                continue
+        other_paths.append(path)
+    return pin_ids, other_paths
+
+
+def compute_show_desktop_plan(toplevels, previously_minimized_handles=None, ignore_ids=IGNORE_APP_IDS):
+    """Return (minimize_now, target_handles) for Show Desktop toggling."""
+    valid = [t for t in (toplevels or ()) if normalize_id(getattr(t, "app_id", "")) not in ignore_ids]
+    unminimized = [t.handle_id for t in valid if not getattr(t, "minimized", False)]
+    if unminimized:
+        return True, unminimized
+
+    minimized = [t.handle_id for t in valid if getattr(t, "minimized", False)]
+    prev = set(previously_minimized_handles or ())
+    matching_prev = [hid for hid in minimized if hid in prev]
+    return False, (matching_prev if matching_prev else minimized)
 
 
 def build_classic_css(palette_path=None, fonts_path=None):
@@ -491,6 +621,7 @@ class AppBarController:
         self.pinned_ctl = resolve_pinned_ctl()
         self.pins = []
         self.focused_handles = {}
+        self._show_desktop_handles = set()
         self.armed_key = None
         self._arm_timer_id = 0
         self._pin_reload_timer = 0
@@ -687,6 +818,12 @@ class AppBarController:
         scroll.set_vexpand(True)
 
         list_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        list_box.get_style_context().add_class("appbar-drop-zone")
+        list_box.drag_dest_set(Gtk.DestDefaults.DROP, [], Gdk.DragAction.COPY | Gdk.DragAction.MOVE)
+        list_box.drag_dest_add_uri_targets()
+        list_box.connect("drag-motion", self._on_list_drag_motion)
+        list_box.connect("drag-leave", self._on_list_drag_leave)
+        list_box.connect("drag-data-received", self._on_list_drag_data_received)
         scroll.add(list_box)
 
         bottom_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
@@ -694,6 +831,8 @@ class AppBarController:
         root_box.pack_start(scroll, True, True, 0)
         root_box.pack_end(bottom_box, False, False, 0)
         win.add(root_box)
+        win.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        win.connect("button-press-event", lambda w, ev: self._on_bar_button_press(w, ev))
         win.connect("key-press-event", self._on_window_key)
         win.connect("size-allocate", self._on_window_size_allocate)
         win.show_all()
@@ -797,6 +936,8 @@ class AppBarController:
         btn.set_can_focus(False)
         ctx = btn.get_style_context()
         ctx.add_class("appbar-item")
+        if slot.pinned:
+            ctx.add_class("is-pinned")
         if slot.is_system:
             ctx.add_class("is-system")
         if slot.active:
@@ -865,6 +1006,41 @@ class AppBarController:
 
         btn.connect("clicked", lambda _w, s=slot: self._on_left_click(s))
         btn.connect("button-press-event", lambda w, ev, s=slot, pc=pinned_count: self._on_button_press(w, ev, s, pc))
+
+        if not slot.is_system:
+            desktop_file = resolve_slot_desktop_file(slot)
+            if desktop_file:
+                btn.drag_source_set(Gdk.ModifierType.BUTTON1_MASK, [], Gdk.DragAction.COPY)
+                btn.drag_source_add_uri_targets()
+                if pixbuf is not None:
+                    btn.connect("drag-begin", lambda _w, ctx, pb=pixbuf: Gtk.drag_set_icon_pixbuf(ctx, pb, 0, 0))
+                btn.connect(
+                    "drag-data-get",
+                    lambda _w, _ctx, data, _info, _t, df=desktop_file: data.set_uris([Path(df).as_uri()]),
+                )
+
+            btn.drag_dest_set(Gtk.DestDefaults.DROP, [], Gdk.DragAction.COPY | Gdk.DragAction.MOVE)
+            btn.drag_dest_add_uri_targets()
+            btn.connect("drag-motion", self._on_slot_drag_motion)
+            btn.connect("drag-leave", self._on_slot_drag_leave)
+            btn.connect(
+                "drag-data-received",
+                lambda w, ctx, x, y, data, info, time, s=slot: self._on_slot_drag_data_received(
+                    w, ctx, x, y, data, info, time, s
+                ),
+            )
+        else:
+            btn.drag_dest_set(Gtk.DestDefaults.DROP, [], Gdk.DragAction.COPY | Gdk.DragAction.MOVE)
+            btn.drag_dest_add_uri_targets()
+            btn.connect("drag-motion", self._on_slot_drag_motion)
+            btn.connect("drag-leave", self._on_slot_drag_leave)
+            btn.connect(
+                "drag-data-received",
+                lambda w, ctx, x, y, data, info, time: self._on_system_drag_data_received(
+                    w, ctx, x, y, data, info, time
+                ),
+            )
+
         return btn
 
     def rebuild_ui(self):
@@ -950,6 +1126,224 @@ class AppBarController:
             self.focused_handles[slot.key] = win.handle_id
             self.wlr.activate(win.handle_id)
 
+    def _on_list_drag_motion(self, widget, context, _x, _y, time):
+        widget.get_style_context().add_class("is-drop-pin")
+        Gdk.drag_status(context, Gdk.DragAction.COPY, time)
+        return True
+
+    def _on_list_drag_leave(self, widget, _context, _time):
+        widget.get_style_context().remove_class("is-drop-pin")
+
+    def _on_slot_drag_motion(self, widget, context, _x, _y, time):
+        widget.get_style_context().add_class("is-drop-target")
+        Gdk.drag_status(context, Gdk.DragAction.COPY, time)
+        return True
+
+    def _on_slot_drag_leave(self, widget, _context, _time):
+        widget.get_style_context().remove_class("is-drop-target")
+
+    def _compute_drop_pin_index(self, list_box, y):
+        pinned_children = [
+            w for w in list_box.get_children()
+            if isinstance(w, Gtk.Button) and w.get_style_context().has_class("is-pinned")
+        ]
+        for idx, btn in enumerate(pinned_children):
+            alloc = btn.get_allocation()
+            if y < alloc.y + (alloc.height / 2.0):
+                return idx
+        return len(pinned_children)
+
+    def _on_list_drag_data_received(self, widget, context, _x, y, data, _info, time):
+        widget.get_style_context().remove_class("is-drop-pin")
+        paths = parse_drop_uris(data.get_uris() if data is not None else ())
+        pin_ids, _other = classify_pin_drop_ids(paths)
+        if pin_ids:
+            target_idx = self._compute_drop_pin_index(widget, y)
+            self._pin_dropped_apps(pin_ids, target_app_idx=target_idx)
+            Gtk.drag_finish(context, True, False, time)
+            return
+        Gtk.drag_finish(context, False, False, time)
+
+    def _on_system_drag_data_received(self, widget, context, _x, _y, data, _info, time):
+        widget.get_style_context().remove_class("is-drop-target")
+        paths = parse_drop_uris(data.get_uris() if data is not None else ())
+        pin_ids, _other = classify_pin_drop_ids(paths)
+        if pin_ids:
+            self._pin_dropped_apps(pin_ids)
+            Gtk.drag_finish(context, True, False, time)
+            return
+        Gtk.drag_finish(context, False, False, time)
+
+    def _on_slot_drag_data_received(self, widget, context, _x, _y, data, _info, time, slot):
+        widget.get_style_context().remove_class("is-drop-target")
+        paths = parse_drop_uris(data.get_uris() if data is not None else ())
+        if not paths:
+            Gtk.drag_finish(context, False, False, time)
+            return
+
+        pin_ids, other_paths = classify_pin_drop_ids(paths)
+        shift_held = False
+        try:
+            display = widget.get_display()
+            seat = display.get_default_seat() if display is not None else None
+            pointer = seat.get_pointer() if seat is not None else None
+            if pointer is not None:
+                _scr, _px, _py, mask = pointer.get_state()
+                shift_held = bool(mask & Gdk.ModifierType.SHIFT_MASK)
+        except Exception:
+            pass
+
+        if pin_ids and not other_paths and (slot.pinned or shift_held or slot.desktop_info is None):
+            target_idx = slot.pin_index if slot.pinned and slot.pin_index >= 0 else None
+            self._pin_dropped_apps(pin_ids, target_app_idx=target_idx)
+            Gtk.drag_finish(context, True, False, time)
+            return
+
+        ok = self._open_paths_with_slot(slot, paths)
+        Gtk.drag_finish(context, ok, False, time)
+
+    def _open_paths_with_slot(self, slot, paths):
+        files = [Gio.File.new_for_path(p) for p in paths]
+        if slot.desktop_info is not None:
+            try:
+                slot.desktop_info.launch(files, None)
+                return True
+            except GLib.Error as err:
+                print(f"[appbar-layer] Failed launching {slot.desktop_id} with files: {err}", file=sys.stderr)
+        if slot.command:
+            quoted = " ".join(shlex.quote(p) for p in paths)
+            self._spawn_shell(f"{slot.command} {quoted}")
+            return True
+        if slot.app_id:
+            try:
+                GLib.spawn_async([slot.app_id, *paths], flags=GLib.SpawnFlags.SEARCH_PATH)
+                return True
+            except GLib.Error as err:
+                print(f"[appbar-layer] Failed spawning {slot.app_id}: {err}", file=sys.stderr)
+        return False
+
+    def _run_pin_cmd_with_cb(self, args, on_done=None):
+        try:
+            proc = Gio.Subprocess.new(
+                [sys.executable, self.pinned_ctl, *args],
+                Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE,
+            )
+        except GLib.Error as err:
+            print(f"[appbar-layer] Pin command failed: {err}", file=sys.stderr)
+            if on_done is not None:
+                on_done(False)
+            return
+
+        def _done(p, result):
+            ok = False
+            try:
+                _, stdout, stderr = p.communicate_utf8_finish(result)
+                if p.get_successful() and stdout:
+                    parsed = json.loads(stdout)
+                    if isinstance(parsed, list):
+                        self.pins = parsed
+                        self.rebuild_ui()
+                        ok = True
+                elif stderr:
+                    print(f"[appbar-layer] {stderr.strip()}", file=sys.stderr)
+            except (GLib.Error, ValueError) as err:
+                print(f"[appbar-layer] Pin parse error: {err}", file=sys.stderr)
+            if on_done is not None:
+                on_done(ok)
+
+        proc.communicate_utf8_async(None, None, _done)
+
+    def _pin_dropped_apps(self, pin_ids, target_app_idx=None):
+        queue = list(pin_ids)
+        if not queue:
+            return
+
+        def _step(idx_offset=0):
+            if not queue:
+                return
+            pid = queue.pop(0)
+            def _after_add(ok):
+                if ok and target_app_idx is not None:
+                    app_positions = [
+                        i for i, pin in enumerate(self.pins)
+                        if pin.get("type") != "system" and pin.get("id") != "menu"
+                    ]
+                    src_raw = next(
+                        (i for i, pin in enumerate(self.pins) if normalize_id(pin.get("id", "")) == normalize_id(pid)),
+                        None,
+                    )
+                    if src_raw is not None and app_positions:
+                        dest_app = min(max(0, target_app_idx + idx_offset), len(app_positions) - 1)
+                        dest_raw = app_positions[dest_app]
+                        if src_raw != dest_raw:
+                            self._run_pin_cmd_with_cb(
+                                ["move", str(src_raw), str(dest_raw)],
+                                on_done=lambda _m: _step(idx_offset + 1),
+                            )
+                            return
+                _step(idx_offset + 1)
+
+            self._run_pin_cmd_with_cb(["add", pid], on_done=_after_add)
+
+        _step(0)
+
+    def toggle_show_desktop(self):
+        toplevels = self.wlr.list_toplevels()
+        minimize_now, targets = compute_show_desktop_plan(toplevels, self._show_desktop_handles)
+        if not targets:
+            self._show_desktop_handles.clear()
+            return False
+        for hid in targets:
+            self.wlr.set_minimized(hid, minimize_now)
+        if minimize_now:
+            self._show_desktop_handles = set(targets)
+        else:
+            self._show_desktop_handles.clear()
+        return True
+
+    def _append_desktop_actions(self, menu):
+        minimize_now, targets = compute_show_desktop_plan(
+            self.wlr.list_toplevels(), self._show_desktop_handles
+        )
+        sd_label = "Show Desktop" if minimize_now or not targets else "Restore Windows"
+        sd_item = Gtk.MenuItem(label=sd_label)
+        sd_item.set_sensitive(bool(targets))
+        sd_item.connect("activate", lambda _w: self.toggle_show_desktop())
+        menu.append(sd_item)
+
+        icons_ctl = resolve_desktop_icons_ctl()
+        if icons_ctl:
+            di_item = Gtk.CheckMenuItem(label="Desktop Icons")
+            di_item.set_active(query_desktop_icons_enabled())
+            di_item.connect(
+                "toggled",
+                lambda _w, cmd=icons_ctl: subprocess.Popen([cmd, "--toggle"]),
+            )
+            menu.append(di_item)
+
+    def _on_bar_button_press(self, win, event):
+        if event.button == 3:
+            self.disarm_close()
+            self._show_bar_context_menu(win, event)
+            return True
+        return False
+
+    def _show_bar_context_menu(self, anchor_widget, event):
+        menu = Gtk.Menu()
+        header = Gtk.MenuItem(label="AppBar")
+        header.set_sensitive(False)
+        menu.append(header)
+        menu.append(Gtk.SeparatorMenuItem())
+
+        open_menu_item = Gtk.MenuItem(label="Open Applications Menu")
+        open_menu_item.connect("activate", lambda _w: self._spawn_shell("$HOME/.local/bin/hakumenu.sh"))
+        menu.append(open_menu_item)
+        menu.append(Gtk.SeparatorMenuItem())
+
+        self._append_desktop_actions(menu)
+        menu.show_all()
+        menu.popup_at_pointer(event)
+
     def _on_button_press(self, widget, event, slot, pinned_count):
         if event.button == 2:
             self._on_middle_click(slot)
@@ -1010,6 +1404,8 @@ class AppBarController:
             open_item = Gtk.MenuItem(label="Open Menu")
             open_item.connect("activate", lambda _w: self._launch_slot(slot))
             menu.append(open_item)
+            menu.append(Gtk.SeparatorMenuItem())
+            self._append_desktop_actions(menu)
         else:
             for win in slot.windows:
                 title = (win.title or slot.name).strip()

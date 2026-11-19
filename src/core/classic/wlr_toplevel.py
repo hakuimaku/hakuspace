@@ -364,6 +364,18 @@ class WlrToplevelClient:
         self._send(handle_id, ZWLR_TOPLEVEL_HANDLE_ACTIVATE, struct.pack("=I", self._seat_id))
         return True
 
+    def set_minimized(self, handle_id, minimized=True):
+        """Minimize or unminimize a toplevel window."""
+        if handle_id not in self.toplevels:
+            return False
+        opcode = (
+            ZWLR_TOPLEVEL_HANDLE_SET_MINIMIZED
+            if minimized
+            else ZWLR_TOPLEVEL_HANDLE_UNSET_MINIMIZED
+        )
+        self._send(handle_id, opcode)
+        return True
+
     def close(self, handle_id):
         """Request closing a toplevel window."""
         if handle_id not in self.toplevels:
