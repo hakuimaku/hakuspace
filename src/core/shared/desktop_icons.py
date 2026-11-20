@@ -1169,17 +1169,6 @@ def find_nearest_free_cell(start_col, start_row, cols, rows, occupied, direction
 SPECIAL_KEYS = ("home", "computer", "trash")
 
 
-def get_special_cell_slots(cols, rows, direction='column'):
-    """Return (slot_map, reserved_cells) locking the first 3 cells to Home, This PC, Trash."""
-    cells = []
-    for cell in iter_grid_cells(cols, rows, direction):
-        cells.append(cell)
-        if len(cells) >= len(SPECIAL_KEYS):
-            break
-    slot_map = {key: cells[idx] for idx, key in enumerate(SPECIAL_KEYS) if idx < len(cells)}
-    return slot_map, set(slot_map.values())
-
-
 def _take_next_sequential_cell(cell_iter, occupied, cols, rows):
     """Consume iter_grid_cells iterator for the next unoccupied cell in fill order."""
     for cell in cell_iter:
@@ -1191,57 +1180,75 @@ def _take_next_sequential_cell(cell_iter, occupied, cols, rows):
     return fallback
 
 
-def compute_auto_grid_positions(keys, cols, rows, direction='column', reserve_special=False):
+def compute_auto_grid_positions(keys, cols, rows, direction='column'):
     """Assign dynamic auto-arrange coordinates without persisting to positions.json."""
-    if not reserve_special:
-        result = {}
-        for index, key in enumerate(keys):
-            if direction == 'row':
-                c = index % cols
-                r = index // cols
-            else:
-                c = index // rows
-                r = index % rows
-            result[key] = (min(c, cols - 1), min(r, rows - 1))
-        return result
-
-    slot_map, reserved_cells = get_special_cell_slots(cols, rows, direction)
+    cols = max(1, cols)
+    rows = max(1, rows)
     result = {}
-    occupied = set(reserved_cells)
-    for key in keys:
-        if key in slot_map:
-            result[key] = slot_map[key]
-    cell_iter = iter_grid_cells(cols, rows, direction)
-    for key in keys:
-        if key in slot_map:
-            continue
-        result[key] = _take_next_sequential_cell(cell_iter, occupied, cols, rows)
+    for index, key in enumerate(keys):
+        if direction == 'row':
+            c = index % cols
+            r = index // cols
+        else:
+            c = index // rows
+            r = index % rows
+        result[key] = (min(c, cols - 1), min(r, rows - 1))
     return result
 
 
 def compute_manual_grid_layout(virtual_keys, normal_keys, saved_map, cols, rows, direction='column'):
-    """Lock the first 3 grid cells exclusively to virtual special dirs and preserve saved normal positions."""
-    slot_map, reserved_cells = get_special_cell_slots(cols, rows, direction)
-    occupied = set(reserved_cells)
+    """Preserve saved icon positions, insert unsaved special dirs at (0, 0) via chain-push, and place new files."""
+    cols = max(1, cols)
+    rows = max(1, rows)
+    grid_cells = list(iter_grid_cells(cols, rows, direction))
+
+    saved_normals = [k for k in normal_keys if k in saved_map]
+    saved_virtuals = [k for k in virtual_keys if k in saved_map]
+    unsaved_virtuals = [k for k in virtual_keys if k not in saved_map]
+
+    occupied = set()
     placements = {}
+    cell_owner = {}
     new_entries = {}
-    cell_iter = iter_grid_cells(cols, rows, direction)
 
-    for key in virtual_keys:
-        if key in slot_map:
-            placements[key] = slot_map[key]
-        else:
-            placements[key] = _take_next_sequential_cell(cell_iter, occupied, cols, rows)
-
-    for key in normal_keys:
-        if key not in saved_map:
-            continue
+    for key in saved_normals + saved_virtuals:
         sc = saved_map[key]["col"]
         sr = saved_map[key]["row"]
         eff_c, eff_r = find_nearest_free_cell(sc, sr, cols, rows, occupied, direction)
         occupied.add((eff_c, eff_r))
         placements[key] = (eff_c, eff_r)
+        cell_owner[(eff_c, eff_r)] = key
 
+    shifted_keys = set()
+    # Insert in reverse order at grid_cells[0] so newly enabled special dirs claim the leading cells in order.
+    for vkey in reversed(unsaved_virtuals):
+        carry_key = vkey
+        idx = 0
+        while carry_key is not None and idx < len(grid_cells):
+            cell = grid_cells[idx]
+            prev_owner = cell_owner.get(cell)
+            cell_owner[cell] = carry_key
+            placements[carry_key] = cell
+            occupied.add(cell)
+            if prev_owner is not None:
+                shifted_keys.add(prev_owner)
+            carry_key = prev_owner
+            idx += 1
+        if carry_key is not None:
+            fc, fr = find_nearest_free_cell(cols - 1, rows - 1, cols, rows, occupied, direction)
+            placements[carry_key] = (fc, fr)
+            occupied.add((fc, fr))
+            shifted_keys.add(carry_key)
+
+    for key in unsaved_virtuals:
+        c, r = placements[key]
+        new_entries[key] = {"col": c, "row": r}
+    for key in shifted_keys:
+        if key not in unsaved_virtuals:
+            c, r = placements[key]
+            new_entries[key] = {"col": c, "row": r}
+
+    cell_iter = iter_grid_cells(cols, rows, direction)
     for key in normal_keys:
         if key in placements:
             continue
@@ -1252,22 +1259,19 @@ def compute_manual_grid_layout(virtual_keys, normal_keys, saved_map, cols, rows,
     return placements, new_entries
 
 
-def resolve_internal_drop(saved_map, dragged_keys, origin_key, target_col, target_row, cols, rows, direction='column', current_effective=None, reserved_cells=None):
-    """Update saved_map for internal drag-and-drop while keeping reserved special cells fixed."""
+def resolve_internal_drop(saved_map, dragged_keys, origin_key, target_col, target_row, cols, rows, direction='column', current_effective=None):
+    """Update saved_map for internal drag-and-drop across all desktop icons including special dirs."""
     updated = {k: dict(v) for k, v in saved_map.items()}
     tc = min(max(0, target_col), cols - 1)
     tr = min(max(0, target_row), rows - 1)
     eff = current_effective or {}
-    reserved = set(reserved_cells or ())
 
-    movable_keys = [k for k in dragged_keys if k not in SPECIAL_KEYS]
+    movable_keys = [k for k in dragged_keys if k]
     if not movable_keys:
         return updated
 
     if len(movable_keys) == 1:
         key = movable_keys[0]
-        if (tc, tr) in reserved:
-            return updated
         old_pos = updated.get(key)
         if old_pos is None and key in eff:
             old_pos = {"col": eff[key][0], "row": eff[key][1]}
@@ -1275,14 +1279,14 @@ def resolve_internal_drop(saved_map, dragged_keys, origin_key, target_col, targe
         occupant = None
         if eff:
             for other_key, (oc, orow) in eff.items():
-                if other_key == key or other_key in SPECIAL_KEYS:
+                if other_key == key:
                     continue
                 if min(max(0, oc), cols - 1) == tc and min(max(0, orow), rows - 1) == tr:
                     occupant = other_key
                     break
         else:
             for other_key in updated.keys():
-                if other_key == key or other_key in SPECIAL_KEYS:
+                if other_key == key:
                     continue
                 pos = updated[other_key]
                 oc, orow = pos["col"], pos["row"]
@@ -1292,27 +1296,23 @@ def resolve_internal_drop(saved_map, dragged_keys, origin_key, target_col, targe
 
         updated[key] = {"col": tc, "row": tr}
         if occupant is not None:
-            if (
-                old_pos is not None
-                and (old_pos["col"], old_pos["row"]) != (tc, tr)
-                and (min(max(0, old_pos["col"]), cols - 1), min(max(0, old_pos["row"]), rows - 1)) not in reserved
-            ):
+            if old_pos is not None and (old_pos["col"], old_pos["row"]) != (tc, tr):
                 updated[occupant] = {"col": old_pos["col"], "row": old_pos["row"]}
             else:
-                occupied = set(reserved)
+                occupied = set()
                 for k, v in updated.items():
-                    if k != occupant and k not in SPECIAL_KEYS:
+                    if k != occupant:
                         occupied.add((min(max(0, v["col"]), cols - 1), min(max(0, v["row"]), rows - 1)))
                 nc, nr = find_nearest_free_cell(tc, tr, cols, rows, occupied, direction)
                 updated[occupant] = {"col": nc, "row": nr}
         if eff:
             for stale_key, pos in list(updated.items()):
-                if stale_key == key or stale_key in eff or stale_key in SPECIAL_KEYS:
+                if stale_key == key or stale_key in eff:
                     continue
                 if min(max(0, pos["col"]), cols - 1) == tc and min(max(0, pos["row"]), rows - 1) == tr:
-                    occupied = set(reserved)
+                    occupied = set()
                     for k, v in updated.items():
-                        if k != stale_key and k not in SPECIAL_KEYS:
+                        if k != stale_key:
                             occupied.add((min(max(0, v["col"]), cols - 1), min(max(0, v["row"]), rows - 1)))
                     nc, nr = find_nearest_free_cell(tc, tr, cols, rows, occupied, direction)
                     updated[stale_key] = {"col": nc, "row": nr}
@@ -1325,9 +1325,9 @@ def resolve_internal_drop(saved_map, dragged_keys, origin_key, target_col, targe
     if origin_pos is None:
         origin_pos = {"col": tc, "row": tr}
 
-    occupied = set(reserved)
+    occupied = set()
     for k, v in updated.items():
-        if k not in dragged_set and k not in SPECIAL_KEYS:
+        if k not in dragged_set:
             occupied.add((min(max(0, v["col"]), cols - 1), min(max(0, v["row"]), rows - 1)))
     for k, pos_tuple in eff.items():
         if k not in dragged_set and k not in updated:
@@ -2156,9 +2156,10 @@ class DesktopIcon(Gtk.EventBox):
         }
         
         is_virtual = self.gio_file.get_uri().startswith("virtual://")
+        drag_action = Gdk.DragAction.MOVE if is_virtual else drag_action_map.get(self.outbound_mode)
 
-        if not is_virtual and self.outbound_mode in drag_action_map:
-            self.drag_source_set(Gdk.ModifierType.BUTTON1_MASK, [], drag_action_map[self.outbound_mode])
+        if drag_action is not None:
+            self.drag_source_set(Gdk.ModifierType.BUTTON1_MASK, [], drag_action)
             self.drag_source_add_uri_targets()
             self.connect("drag-data-get", self.on_drag_data_get)
             self.connect("drag-begin", self.on_drag_begin)
@@ -2975,7 +2976,7 @@ class DesktopLayout(Gtk.Fixed):
         self.rows = max(1, (self.last_alloc_height - top_margin - PADDING) // (CELL_HEIGHT + PADDING))
 
         keys = [item['icon_widget'].position_key() for item in final_list]
-        auto_map = compute_auto_grid_positions(keys, self.cols, self.rows, GRID_DIRECTION, reserve_special=True)
+        auto_map = compute_auto_grid_positions(keys, self.cols, self.rows, GRID_DIRECTION)
 
         self._is_sorting = True
         try:
@@ -2986,8 +2987,7 @@ class DesktopLayout(Gtk.Fixed):
                 raw_positions = load_positions()
                 saved_map = extract_monitor_positions(raw_positions, self.monitor_key)
                 for k, (c, r) in auto_map.items():
-                    if k not in SPECIAL_KEYS:
-                        saved_map[k] = {'col': c, 'row': r}
+                    saved_map[k] = {'col': c, 'row': r}
                 save_positions(merge_monitor_positions(raw_positions, self.monitor_key, saved_map))
             self.reposition_icons()
         finally:
@@ -3466,9 +3466,9 @@ class DesktopLayout(Gtk.Fixed):
             saved_map = extract_monitor_positions(raw_positions, self.monitor_key)
             if not saved_map and self.icons and not AUTO_ARRANGE:
                 auto_keys = virtual_keys + sorted(normal_keys, key=str.lower)
-                auto_map = compute_auto_grid_positions(auto_keys, self.cols, self.rows, GRID_DIRECTION, reserve_special=True)
+                auto_map = compute_auto_grid_positions(auto_keys, self.cols, self.rows, GRID_DIRECTION)
                 placements = auto_map
-                new_saved = {k: {'col': c, 'row': r} for k, (c, r) in auto_map.items() if k not in SPECIAL_KEYS}
+                new_saved = {k: {'col': c, 'row': r} for k, (c, r) in auto_map.items()}
                 save_positions(merge_monitor_positions(raw_positions, self.monitor_key, new_saved))
             else:
                 placements, new_entries = compute_manual_grid_layout(
@@ -3963,8 +3963,6 @@ def on_drag_data_received(widget, drag_context, x, y, data, info, time):
     widget._multi_drag_paths = None
     widget._multi_drag_origin = None
 
-    _, reserved_cells = get_special_cell_slots(cols, rows, GRID_DIRECTION)
-
     if multi_paths and multi_origin:
         widget._internal_drop_handled = True
 
@@ -3979,7 +3977,7 @@ def on_drag_data_received(widget, drag_context, x, y, data, info, time):
         origin_key = os.path.basename(multi_origin)
         updated_map = resolve_internal_drop(
             saved_map, dragged_keys, origin_key, base_col, base_row,
-            cols, rows, GRID_DIRECTION, current_effective=effective_map, reserved_cells=reserved_cells,
+            cols, rows, GRID_DIRECTION, current_effective=effective_map,
         )
         save_positions(merge_monitor_positions(raw_positions, monitor_key, updated_map))
         if layout is not None:
@@ -3991,6 +3989,19 @@ def on_drag_data_received(widget, drag_context, x, y, data, info, time):
     for uri in uris:
         if uri.startswith("virtual://"):
             widget._internal_drop_handled = True
+            if not AUTO_ARRANGE:
+                vkey = uri.rstrip("/").rsplit("/", 1)[-1]
+                if vkey:
+                    raw_positions = load_positions()
+                    saved_map = extract_monitor_positions(raw_positions, monitor_key)
+                    col, row = get_grid_pos(x, y, top_margin)
+                    updated_map = resolve_internal_drop(
+                        saved_map, [vkey], vkey, col, row,
+                        cols, rows, GRID_DIRECTION, current_effective=effective_map,
+                    )
+                    save_positions(merge_monitor_positions(raw_positions, monitor_key, updated_map))
+                    if layout is not None:
+                        layout.reposition_icons()
             success = True
             continue
 
@@ -4013,7 +4024,7 @@ def on_drag_data_received(widget, drag_context, x, y, data, info, time):
             col, row = get_grid_pos(x, y, top_margin)
             updated_map = resolve_internal_drop(
                 saved_map, [filename], filename, col, row,
-                cols, rows, GRID_DIRECTION, current_effective=effective_map, reserved_cells=reserved_cells,
+                cols, rows, GRID_DIRECTION, current_effective=effective_map,
             )
             save_positions(merge_monitor_positions(raw_positions, monitor_key, updated_map))
             if layout is not None:
@@ -4038,17 +4049,12 @@ def on_drag_data_received(widget, drag_context, x, y, data, info, time):
 
             if not AUTO_ARRANGE:
                 col, row = get_grid_pos(x, y, top_margin)
-                if (min(max(0, col), cols - 1), min(max(0, row), rows - 1)) in reserved_cells:
-                    occupied = set(reserved_cells)
-                    for pos_tuple in effective_map.values():
-                        occupied.add(pos_tuple)
-                    col, row = find_nearest_free_cell(0, 0, cols, rows, occupied, GRID_DIRECTION)
                 filename = os.path.basename(dest_path)
                 raw_positions = load_positions()
                 saved_map = extract_monitor_positions(raw_positions, monitor_key)
                 updated_map = resolve_internal_drop(
                     saved_map, [filename], filename, col, row,
-                    cols, rows, GRID_DIRECTION, current_effective=effective_map, reserved_cells=reserved_cells,
+                    cols, rows, GRID_DIRECTION, current_effective=effective_map,
                 )
                 save_positions(merge_monitor_positions(raw_positions, monitor_key, updated_map))
 
@@ -4066,11 +4072,7 @@ def on_drag_motion(widget, drag_context, x, y, time):
         col, row = get_grid_pos(x, y, layout.top_margin())
         col = min(col, layout.cols - 1)
         row = min(row, layout.rows - 1)
-        _, reserved_cells = get_special_cell_slots(layout.cols, layout.rows, GRID_DIRECTION)
-        if (col, row) in reserved_cells:
-            layout.clear_drop_target()
-        else:
-            layout.set_drop_target(col, row)
+        layout.set_drop_target(col, row)
     return False
 
 def on_drag_leave(widget, drag_context, time):
