@@ -17,22 +17,53 @@ source "$HAKU_DIR/scripts/registry.sh"
 
 # Preserve the first recoverable failure code while collecting remaining diagnostics.
 UPDATE_FAILED=0
+UPDATE_NORMAL_EXIT=0
+CURRENT_BLOCK="INITIALIZATION"
+FAILED_BLOCKS=()
+
+begin_block() {
+    CURRENT_BLOCK="${1:-UNKNOWN}"
+    step_title "$CURRENT_BLOCK"
+}
+
 record_failure() {
-    if [[ "$UPDATE_FAILED" == 0 ]]; then UPDATE_FAILED="$1"; fi
+    local code="${1:-1}"
+    local block="${2:-$CURRENT_BLOCK}"
+    if [[ "$UPDATE_FAILED" == 0 ]]; then UPDATE_FAILED="$code"; fi
+    local entry="${block} (exit=${code})"
+    local existing
+    for existing in "${FAILED_BLOCKS[@]}"; do
+        if [[ "$existing" == "$entry" ]]; then
+            return 0
+        fi
+    done
+    FAILED_BLOCKS+=("$entry")
 }
 
 # Fatal preflight/deployment errors and normal completion share the same final report.
 report_update() {
     local status=$?
-    if [[ "$status" != 0 ]]; then UPDATE_FAILED="$status"; fi
+    if [[ "$status" != 0 && "${UPDATE_NORMAL_EXIT:-0}" != 1 ]]; then
+        record_failure "$status" "$CURRENT_BLOCK"
+    fi
     echo ""
     print_divider
     if [[ "$UPDATE_FAILED" == 0 ]]; then
         log_ok "Update complete! Restart session or reload WM to apply!"
     else
         log_warn "PARTIAL / BLOCKED: update failed (exit=$UPDATE_FAILED); no completion recorded for this run. Review failures and rerun."
+        if [[ ${#FAILED_BLOCKS[@]} -gt 0 ]]; then
+            log_error "Failed block(s):"
+            local block_entry
+            for block_entry in "${FAILED_BLOCKS[@]}"; do
+                echo -e "${C_RED}    • ${block_entry}${C_RESET}"
+            done
+        fi
     fi
     echo -e "${C_MAGENTA}  Backup folder for this update: $BACKUP_DIR${C_RESET}"
+    if [[ -n "${HAKUSPACE_LOG_FILE:-}" ]]; then
+        echo -e "${C_DIM}  Log file for this update: $HAKUSPACE_LOG_FILE${C_RESET}"
+    fi
     print_divider
 }
 trap report_update EXIT
@@ -40,10 +71,16 @@ trap report_update EXIT
 print_header ">>> CONFIG UPDATER <<<"
 
 # 2. Update Dotfiles Repository
-step_title "0 - UPDATE DOTFILES REPOSITORY"
+begin_block "0 - UPDATE DOTFILES REPOSITORY"
 if [[ "${HAKUSPACE_REPO_UPDATED:-0}" != 1 ]]; then
     REPO_UPDATE_STATUS=0
     "$HAKU_DIR/scripts/repo_update.sh" --target-script "$HAKU_DIR/update.sh" || REPO_UPDATE_STATUS=$?
+    if [[ $REPO_UPDATE_STATUS -ne 0 && $REPO_UPDATE_STATUS -ne 10 ]]; then
+        if ask_yes_no "Repository update failed (exit=$REPO_UPDATE_STATUS). Perform a safe reclone of the repository?"; then
+            REPO_UPDATE_STATUS=0
+            "$HAKU_DIR/scripts/repo_update.sh" --reclone || REPO_UPDATE_STATUS=$?
+        fi
+    fi
     if [[ $REPO_UPDATE_STATUS -eq 10 ]]; then
         log_info "Re-executing updated logic..."
         log_info "Backup folder for this update: $BACKUP_DIR"
@@ -56,9 +93,10 @@ if [[ "${HAKUSPACE_REPO_UPDATED:-0}" != 1 ]]; then
 fi
 
 "$HAKU_DIR/scripts/migrate.sh" --plan --to v26.12
+export HAKUSPACE_MIGRATION_PLAN_SHOWN=1
 
 # 3. Select Window Manager(s) & Detect Deploy Mode
-step_title "1 - SELECTION & MODE DETECTION"
+begin_block "1 - SELECTION & MODE DETECTION"
 WM_LIST="$("$HAKU_DIR/scripts/select_wm.sh")"
 read -ra SELECTED_WMS <<< "$WM_LIST"
 log_ok "Selected Window Manager(s): $(registry_format_wm_list "${SELECTED_WMS[@]}")"
@@ -72,7 +110,7 @@ else
 fi
 
 # 4. Update Packages (Update Profile)
-step_title "2 - UPDATE PACKAGES"
+begin_block "2 - UPDATE PACKAGES"
 "$HAKU_DIR/scripts/packages.sh" --profile update "${SELECTED_WMS[@]}" --plan
 echo ""
 if command -v nixos-rebuild >/dev/null 2>&1; then
@@ -83,19 +121,15 @@ else
     log_skip "Skipping package update."
 fi
 
-if ! command -v nixos-rebuild >/dev/null 2>&1; then
-    "$HAKU_DIR/scripts/packages.sh" --audit-runtime || record_failure $?
-fi
-
 # 5. Deploy / Update Dotfiles Configs
-step_title "3 - UPDATE CONFIGURATIONS"
+begin_block "3 - UPDATE CONFIGURATIONS"
 echo -e "${C_BOLD}CONFIGURATION UPDATE PLAN${C_RESET}"
 echo "  • Deployment Mode:   $( [[ "$DEPLOY_MODE" == "copy" ]] && echo "Copy (Legacy)" || echo "Symlink (Deep Symlink)" )"
 echo "  • Window Manager(s): $(registry_format_wm_list "${SELECTED_WMS[@]}")"
 echo "  • Managed Scope:     Common base configs, selected WM configs, and ~/.local/bin core scripts"
 echo "  • Untouched:         ONCE_CONFIGS (${ONCE_CONFIG_NAMES[*]}), ~/hakucfg custom settings"
 echo ""
-if ask_yes_no "Apply the configuration update plan shown above?"; then
+if ask_yes_no "Apply the configuration update plan shown above?" y; then
     if [[ "$DEPLOY_MODE" == "symlink" ]]; then
         log_info "Updating configurations using Symlink mode..."
         "$HAKU_DIR/scripts/link.sh" --all
@@ -120,25 +154,69 @@ else
 fi
 
 # Reuse installed visuals; source refreshes remain an explicit setup.sh update operation.
-step_title "VISUAL ECOSYSTEM"
-"$HAKU_DIR/scripts/setup.sh" status || record_failure $?
+begin_block "VISUAL ECOSYSTEM - GTK THEME, ICONS, CURSOR SETUP"
+"$HAKU_DIR/scripts/setup.sh" status >/dev/null || record_failure $?
 # A failed activation resumes before any component starts another asset download.
 ACTIVATION_PENDING=0
 "$HAKU_DIR/scripts/setup.sh" pending || ACTIVATION_PENDING=$?
 if [[ "$ACTIVATION_PENDING" == 0 ]]; then
     "$HAKU_DIR/scripts/setup.sh" update || record_failure $?
 elif [[ "$ACTIVATION_PENDING" == 1 ]]; then
-    for component in cursor gtk symbols cassettk cassetton cassettsor; do
-        if "$HAKU_DIR/scripts/setup.sh" path "$component" >/dev/null 2>&1; then
-            log_skip "VISUAL STATUS: $component override, skipped; use scripts/setup.sh apply $component explicitly."
-        elif "$HAKU_DIR/scripts/setup.sh" verify "$component" >/dev/null 2>&1; then
-            log_skip "VISUAL STATUS: $component already installed; use scripts/setup.sh update $component explicitly to refresh assets."
-        elif ask_yes_no "Install/repair visual component '$component' from its upstream source?"; then
+    _vs_has_missing=0
+    _vs_missing_components=()
+    for component in cursor cassettsor gtk cassettk symbols cassetton; do
+        case "$component" in
+            gtk)        _vs_label="Theme (Hikaide)" ;;
+            cassettk)   _vs_label="Theme (Cassettk)" ;;
+            symbols)    _vs_label="Icons (Hikaide-Symbols)" ;;
+            cassetton)  _vs_label="Icons (Cassetton)" ;;
+            cursor)     _vs_label="Cursor (Haku)" ;;
+            cassettsor) _vs_label="Cursor (Cassettsor)" ;;
+            *)          _vs_label="$component" ;;
+        esac
+        if "$HAKU_DIR/scripts/setup.sh" verify "$component" >/dev/null 2>&1; then
+            log_skip "VISUAL STATUS: $_vs_label already installed."
+        elif "$HAKU_DIR/scripts/setup.sh" path "$component" >/dev/null 2>&1; then
+            _vs_has_missing=1
+            _vs_missing_components+=("$component")
+            log_skip "VISUAL STATUS: $_vs_label missing."
+        elif ask_yes_no "Install/repair $_vs_label from its upstream source?" y; then
             "$HAKU_DIR/scripts/setup.sh" apply "$component" || record_failure $?
         else
-            log_skip "VISUAL STATUS: $component installation/repair skipped."
+            _vs_has_missing=1
+            log_skip "VISUAL STATUS: $_vs_label installation/repair skipped."
         fi
     done
+    _vs_update_prompt="Check for updates and rebuild/replace visual ecosystem components?"
+    if [[ "$_vs_has_missing" == 1 ]]; then
+        _vs_update_prompt="Something is missing, setup again?"
+    fi
+    if ask_yes_no "$_vs_update_prompt"; then
+        log_info "Updating visual ecosystem components..."
+        _vs_update_log="$(mktemp)"
+        _vs_update_ok=1
+        for _vs_comp in "${_vs_missing_components[@]}"; do
+            if ! "$HAKU_DIR/scripts/setup.sh" apply "$_vs_comp" >>"$_vs_update_log" 2>&1; then
+                _vs_rc=$?
+                _vs_update_ok=0
+            fi
+        done
+        if [[ "$_vs_update_ok" == 1 && "$_vs_has_missing" == 0 ]]; then
+            if ! "$HAKU_DIR/scripts/setup.sh" update >>"$_vs_update_log" 2>&1; then
+                _vs_rc=$?
+                _vs_update_ok=0
+            fi
+        fi
+        if [[ "$_vs_update_ok" == 1 ]]; then
+            log_ok "Visual ecosystem updated."
+        else
+            cat "$_vs_update_log"
+            record_failure "$_vs_rc"
+        fi
+        rm -f "$_vs_update_log"
+    else
+        log_skip "Visual ecosystem update check skipped."
+    fi
 else
     log_error "Unsafe visual activation state; asset updates skipped."
     record_failure "$ACTIVATION_PENDING"
@@ -146,28 +224,33 @@ fi
 
 # 6. NixOS Update (if on NixOS)
 if [[ -n "$(command -v nixos-rebuild 2>/dev/null)" ]]; then
-    step_title "4 - NIXOS SYSTEM UPDATE"
+    begin_block "4 - NIXOS SYSTEM UPDATE"
     "$HAKU_DIR/scripts/nixos.sh" update || record_failure $?
 fi
 
 # 7. State & User Control Initialization
-step_title "5 - STATE & CONFIGURATION SYNC"
+begin_block "5 - STATE & CONFIGURATION SYNC"
 "$HAKU_DIR/scripts/state.sh" init || record_failure $?
 "$HAKU_DIR/scripts/hakucfg.sh" sync || record_failure $?
 
 # 8. Reload Active Components
-step_title "6 - RELOAD ACTIVE COMPONENTS"
+begin_block "6 - RELOAD ACTIVE COMPONENTS"
 if [[ "$UPDATE_FAILED" == 0 ]]; then
-    "$HAKU_DIR/scripts/reload.sh" waybar || record_failure $?
+    "$HAKU_DIR/scripts/reload.sh" all || record_failure $?
 else
     log_skip "Skipping reload after failed required steps; continuing diagnostics."
 fi
 
 # 9. Diagnostics Check
-step_title "7 - DIAGNOSTICS & INTEGRITY"
-"$HAKU_DIR/scripts/doctor.sh" || record_failure $?
+begin_block "7 - DIAGNOSTICS & INTEGRITY"
+if [[ "$UPDATE_FAILED" == 0 ]]; then
+    HAKUSPACE_UPDATE_PRE_COMPLETE=1 "$HAKU_DIR/scripts/doctor.sh" || record_failure $?
+else
+    "$HAKU_DIR/scripts/doctor.sh" || record_failure $?
+fi
 
 if [[ "$UPDATE_FAILED" == 0 ]]; then
     "$HAKU_DIR/scripts/migrate.sh" --complete --to v26.12 || record_failure $?
 fi
+UPDATE_NORMAL_EXIT=1
 exit "$UPDATE_FAILED"

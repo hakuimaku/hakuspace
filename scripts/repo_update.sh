@@ -87,8 +87,57 @@ update_repo() {
     return 0
 }
 
+safe_reclone() {
+    local origin_url=""
+    origin_url="$(git -C "$HAKU_DIR" remote get-url origin 2>/dev/null || true)"
+    if [[ -z "$origin_url" ]]; then
+        log_error "Cannot reclone: remote 'origin' URL is not configured."
+        return 1
+    fi
+
+    local repo_parent repo_name temp_backup clone_status=0
+    repo_parent="$(dirname "$HAKU_DIR")"
+    repo_name="$(basename "$HAKU_DIR")"
+    temp_backup="$(mktemp -d "${repo_parent}/.${repo_name}.reclone-bak.XXXXXX")" || {
+        log_error "Failed to create temporary backup directory for safe reclone."
+        return 1
+    }
+
+    log_info "Moving current repository to temporary backup: $temp_backup/repo"
+    cd "$repo_parent" || {
+        rmdir "$temp_backup" 2>/dev/null || true
+        return 1
+    }
+
+    if ! mv "$HAKU_DIR" "$temp_backup/repo"; then
+        log_error "Failed to move repository to temporary backup."
+        rmdir "$temp_backup" 2>/dev/null || true
+        return 1
+    fi
+
+    log_info "Cloning fresh repository from $origin_url..."
+    git clone "$origin_url" "$HAKU_DIR" || clone_status=$?
+
+    if [[ "$clone_status" -eq 0 ]]; then
+        rm -rf "$temp_backup"
+        log_ok "Repository recloned successfully."
+        return "$STATUS_REEXEC"
+    fi
+
+    log_error "Reclone failed (exit=$clone_status); rolling back to previous repository..."
+    rm -rf "$HAKU_DIR"
+    if mv "$temp_backup/repo" "$HAKU_DIR"; then
+        rmdir "$temp_backup" 2>/dev/null || true
+        log_ok "Rollback succeeded; previous repository restored."
+    else
+        log_error "Rollback failed! Previous repository remains at: $temp_backup/repo"
+    fi
+    return "$clone_status"
+}
+
 # CLI Entrypoint
 MODE=""
+RECLONE=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -96,12 +145,16 @@ while [[ $# -gt 0 ]]; do
             MODE="$2"
             shift 2
             ;;
+        --reclone)
+            RECLONE=1
+            shift
+            ;;
         --target-script)
             # Accept the legacy argument for callers predating revision-based detection.
             shift 2
             ;;
         --help|-h)
-            echo "Usage: $0 [--mode latest|stable|skip] [--target-script <path>]"
+            echo "Usage: $0 [--mode latest|stable|skip] [--reclone] [--target-script <path>]"
             exit 0
             ;;
         *)
@@ -111,4 +164,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-update_repo "$MODE"
+if [[ "$RECLONE" -eq 1 ]]; then
+    safe_reclone
+else
+    update_repo "$MODE"
+fi

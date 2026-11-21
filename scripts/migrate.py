@@ -449,6 +449,8 @@ def run(args, state_fd):
         print(json.dumps(payload, indent=2))
         return 0
     for path, action, evidence in changes:
+        if action == 'preserve' and evidence == 'ownership unproven':
+            continue
         print(f'LEGACY CLEANUP: {action}: {path} ({evidence})')
     if args.audit:
         if (destination['status'] not in ('valid', 'not-required') or menu['status'] == 'failed'
@@ -480,11 +482,12 @@ def run(args, state_fd):
         receipt['status'] = 'applied'
         atomic_json(receipt_file, receipt, state_fd)
         return 0
-    print(f'MIGRATION PLAN: source_version={receipt["source_version"]}; to={target}; menu={menu}')
-    print(f'MIGRATION DESTINATION: {destination}; completion_eligible={eligible}')
-    for warning in warnings:
-        print(f'MIGRATION WARNING [v26.12]: {warning}')
-    print(f'BACKUP: {os.environ["BACKUP_DIR"]}')
+    if args.plan or os.environ.get('HAKUSPACE_MIGRATION_PLAN_SHOWN') != '1':
+        print(f'MIGRATION PLAN: source_version={receipt["source_version"]}; to={target}; menu={menu}')
+        print(f'MIGRATION DESTINATION: {destination}; completion_eligible={eligible}')
+        for warning in warnings:
+            print(f'MIGRATION WARNING [v26.12]: {warning}')
+        print(f'BACKUP: {os.environ["BACKUP_DIR"]}')
     if args.plan:
         return int(menu['status'] == 'failed' or invalid_destination)
     if menu['status'] == 'failed' or invalid_destination:

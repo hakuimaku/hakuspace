@@ -383,7 +383,7 @@ run_batch() (
             continue
         fi
         detail="$REPO_STATUS"
-        if install_component "$component" && mark_reconcile_pending "$ACTIVATION_CHOICE" && verify_component "$component" && remember_source "$component"; then
+        if install_component "$component" && mark_reconcile_pending "$ACTIVATION_CHOICE" && verify_component "$component"; then
             installed=1
             printf '  %-8s %s + installed\n' "$component" "$detail"
         else

@@ -133,8 +133,17 @@ EOF
 # Control & Confirmation helpers
 ask_yes_no() {
     local prompt="${1:-}"
+    local default="${2:-n}"
+    local hint="(y/n)"
+    if [[ "$default" == "y" || "$default" == "Y" ]]; then
+        hint="(Y/n)"
+    fi
     local answer=""
-    ui_prompt "${prompt} (y/n): " answer
+    ui_prompt "${prompt} ${hint}: " answer
+    if [[ -z "$answer" ]]; then
+        [[ "$default" == "y" || "$default" == "Y" ]]
+        return $?
+    fi
     [[ "$answer" =~ ^[yY]([eE][sS])?$ ]]
 }
 

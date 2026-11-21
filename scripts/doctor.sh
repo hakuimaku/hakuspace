@@ -146,7 +146,12 @@ run_doctor() {
     case "$migration_status" in
         0) ;;
         2) migration_note='migration history unverified; receipt missing'; log_warn "$migration_note" ;;
-        3) migration_note='migration pending finalization'; log_info "$migration_note" ;;
+        3)
+            if [[ "${HAKUSPACE_UPDATE_PRE_COMPLETE:-0}" != 1 ]]; then
+                migration_note='migration pending finalization'
+                log_info "$migration_note"
+            fi
+            ;;
         *) MISSING_LINKS+=("Migration incomplete or destination invalid; run scripts/migrate.sh --plan") ;;
     esac
     # The shared core manifest requires this runtime for both Classic and Hikai installations.
