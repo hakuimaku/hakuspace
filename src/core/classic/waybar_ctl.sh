@@ -40,7 +40,10 @@ start_waybar() {
     local log_file="$(haku_runtime_dir)/waybar.log" pid deadline=$((SECONDS + 10))
     # Clear old readiness before forking the new Waybar process.
     : > "$log_file" || return 1
-    waybar >> "$log_file" 2>&1 &
+    (
+        trap '' HUP
+        exec waybar </dev/null >> "$log_file" 2>&1
+    ) &
     pid=$!
     while kill -0 "$pid" 2>/dev/null; do
         if grep -q 'Bar configured (width: .* for output: ' "$log_file"; then
