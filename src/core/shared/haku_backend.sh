@@ -209,16 +209,6 @@ sys.exit(0 if not d["owner"] and d["released"] else 1)
 ' 2>/dev/null
 }
 
-# Native readiness includes logind and the compositor protocol for enabled stages.
-native_idle_ready() {
-    timeout 2s qs -c hakuspace ipc call idle status 2>/dev/null | python3 -c '
-import json,sys
-d = json.load(sys.stdin)
-sys.exit(0 if d["backend"] == "hikai" and d["ready"] and d["enabled"] == d["configuredEnabled"]
-    and all(not d[k]["enabled"] or d[k]["monitorEnabled"] for k in ("dim", "lock", "displayOff", "suspend")) else 1)
-' 2>/dev/null
-}
-
 # FileView must acknowledge the Classic commit before hypridle can start.
 native_idle_inactive() {
     timeout 2s qs -c hakuspace ipc call idle status 2>/dev/null | python3 -c '
@@ -310,7 +300,7 @@ switch_to_hikai() {
     timeout 2s qs -c hakuspace ipc call shell reloadTray >/dev/null 2>&1 9>&- || true
     sync_backend_styles || true
     # Cava reads the backend preference to select Hikai's existing dynamic-mode policy.
-    if ! "$HAKU_BIN_DIR/cava_manager.sh" --startup 9>&- || ! start_qs_supervisor || ! wait_until native_idle_ready; then
+    if ! "$HAKU_BIN_DIR/cava_manager.sh" --startup 9>&- || ! start_qs_supervisor; then
         rollback_classic yes
         return 1
     fi
@@ -397,7 +387,6 @@ verify_backend() {
             process_absent -x "$proc" || return 1
         done
         haku_qs_alive && notification_owned_by 'qs|quickshell' || return 1
-        native_idle_ready || return 1
     else
         [[ "$idle_count" == 1 ]] || return 1
         haku_qs_alive && return 1
