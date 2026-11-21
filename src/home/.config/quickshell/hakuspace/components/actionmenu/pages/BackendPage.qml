@@ -1,8 +1,10 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import "../../../config" as Config
 import "../../../services"
 import "../../../config/UiCatalog.js" as UiCatalog
+import "../../motion" as Motion
 import ".." as ActionMenu
 
 ActionMenu.ActionMenuPage {
@@ -11,20 +13,26 @@ ActionMenu.ActionMenuPage {
     title: "Shell Backend"
     subtitle: "Current: " + (currentBackend === "hikai" ? "Hikai" : "Classic")
     icon: "󰆧"
-    geometryProfile: "option"
+    geometryProfile: degraded ? "exitReport" : "option"
 
     readonly property var backends: UiCatalog.actionMenuShellBackends
     readonly property string currentBackend: AppState.shellBackend
+    readonly property bool degraded: ShellHealth.degraded
+    readonly property var issues: ShellHealth.issues
     property int selectedIndex: 0
 
-    Component.onCompleted: {
+    function syncSelectedIndex() {
+        var preferredId = degraded ? "classic" : currentBackend;
         for (var i = 0; i < backends.length; i++) {
-            if (backends[i].id === currentBackend) {
+            if (backends[i].id === preferredId) {
                 selectedIndex = i;
                 break;
             }
         }
     }
+
+    Component.onCompleted: syncSelectedIndex()
+    onDegradedChanged: syncSelectedIndex()
 
     // Launches the headless backend transition without binding it to this ephemeral page.
     function activateBackend(backendId) {
@@ -110,16 +118,163 @@ ActionMenu.ActionMenuPage {
         anchors.fill: parent
         spacing: Theme.actionLayerListSpacing
 
+        Rectangle {
+            id: healthBanner
+            objectName: "backendHealthBanner"
+            visible: root.degraded
+            Layout.fillWidth: true
+            implicitHeight: bannerCol.implicitHeight + Theme.cardPadding * 2
+            radius: Theme.radius
+            color: bannerHit.containsMouse ? Theme.danger : Theme.dangerFill
+            border.width: 0
+
+            property bool copied: false
+            readonly property color inkColor: Config.Design.onAccentDark
+            readonly property color mutedInkColor: Qt.rgba(0, 0, 0, 0.82)
+
+            Timer {
+                id: copiedTimer
+                interval: 1800
+                onTriggered: healthBanner.copied = false
+            }
+
+            MouseArea {
+                id: bannerHit
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    Quickshell.execDetached(["wl-copy", "--", ShellHealth.logPath]);
+                    healthBanner.copied = true;
+                    copiedTimer.restart();
+                }
+            }
+
+            ColumnLayout {
+                id: bannerCol
+                z: 1
+                anchors.fill: parent
+                anchors.margins: Theme.cardPadding
+                spacing: Theme.spaceSm
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.spaceSm
+
+                    Text {
+                        text: ""
+                        font.family: Theme.iconFontFamily
+                        font.pixelSize: Theme.fontSize + 4
+                        font.weight: Font.Bold
+                        color: healthBanner.inkColor
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: "Hikai degraded mode (" + root.issues.length + " issue" + (root.issues.length === 1 ? "" : "s") + ")"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize + 2
+                        font.weight: Font.Bold
+                        color: healthBanner.inkColor
+                        elide: Text.ElideRight
+                    }
+
+                    Motion.MorphButton {
+                        Layout.preferredHeight: Theme.fontSize * 2.0
+                        Layout.preferredWidth: retryLabel.implicitWidth + Theme.pad * 1.8
+                        radius: Theme.radius
+                        text: ""
+                        idleColor: Qt.rgba(0, 0, 0, 0.16)
+                        hoverColor: Qt.rgba(0, 0, 0, 0.28)
+                        pressedColor: Qt.rgba(0, 0, 0, 0.38)
+                        foregroundColor: healthBanner.inkColor
+                        hoverForegroundColor: healthBanner.inkColor
+                        onClicked: ShellHealth.retryNow()
+
+                        Text {
+                            id: retryLabel
+                            anchors.centerIn: parent
+                            text: "Retry"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize - 1
+                            font.weight: Font.Bold
+                            color: healthBanner.inkColor
+                        }
+                    }
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    text: "Recommended: switch back to Classic mode until these errors are resolved.\n"
+                        + (healthBanner.copied ? "Copied log path: " : "Click box to copy log path: ")
+                        + ShellHealth.logPath
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize
+                    font.weight: Font.Medium
+                    color: healthBanner.inkColor
+                    wrapMode: Text.Wrap
+                }
+
+                Flickable {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Math.min(contentHeight, 136)
+                    contentWidth: width
+                    contentHeight: issueList.implicitHeight
+                    clip: true
+                    interactive: contentHeight > height
+                    boundsBehavior: Flickable.StopAtBounds
+
+                    ColumnLayout {
+                        id: issueList
+                        width: parent.width
+                        spacing: Theme.spaceXs
+
+                        Repeater {
+                            model: root.issues
+                            delegate: ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 2
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "• " + modelData.label
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSize
+                                    font.weight: Font.Bold
+                                    color: healthBanner.inkColor
+                                    elide: Text.ElideRight
+                                }
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    Layout.leftMargin: Theme.spaceMd
+                                    text: modelData.detail
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Math.max(11, Theme.fontSize - 1)
+                                    color: healthBanner.mutedInkColor
+                                    wrapMode: Text.Wrap
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         Repeater {
             id: backendsRepeater
             model: root.backends
             delegate: ActionMenu.ActionMenuButton {
                 id: btn
+                readonly property bool isRecommendedFallback: root.degraded && modelData.id === "classic" && root.currentBackend !== "classic"
                 Layout.fillWidth: true
                 icon: modelData.icon
                 label: modelData.label
-                secondaryText: modelData.secondary
-                badge: modelData.id === root.currentBackend ? "Active" : ""
+                secondaryText: isRecommendedFallback
+                    ? "Recommended fallback"
+                    : modelData.secondary
+                badge: modelData.id === root.currentBackend ? "Active" : (isRecommendedFallback ? "Recommended" : "")
+                badgeColor: isRecommendedFallback ? Theme.warning : Theme.accent
                 selected: root.selectedIndex === index
                 focused: selected
 

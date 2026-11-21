@@ -16,6 +16,7 @@ ShellRoot {
     Component.onDestruction: WallpaperService.shutdown()
     // Keep idle and logind hooks resident even before the first diagnostic IPC call.
     readonly property bool nativeIdleEnabled: IdleService.enabled
+    readonly property bool shellHealthDegraded: ShellHealth.degraded
 
     DesktopColorScheme {}
 

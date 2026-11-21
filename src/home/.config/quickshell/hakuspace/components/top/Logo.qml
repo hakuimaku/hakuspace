@@ -15,8 +15,8 @@ TopModule {
         height: root.visualItem.height
     }
     icon: "󰮯"
-    isAccent: true
-    color: Theme.accent
+    isAccent: !ShellHealth.degraded
+    color: ShellHealth.degraded ? Theme.dangerFill : Theme.accent
     foregroundColor: Theme.onAccentColor
     readonly property bool clickToOpen: ShellSettingsStore.navigationOpenTrigger === "click"
     iconFontSize: Theme.fontSize + (!clickToOpen && hovered ? 2 : 0)

@@ -151,6 +151,7 @@ Item {
     // Selection and hover are intentionally separate: selection owns accent;
     // hover uses a neutral gray and expands the sector/icon.
     readonly property color selectedColor: Theme.accent
+    readonly property color logoBaseColor: ShellHealth.degraded ? Theme.dangerFill : Theme.accent
     readonly property color hoverColor: Theme.surfaceHighlight(1.35)
     readonly property color idleColor: Theme.surfaceSubtle(1.18)
     readonly property real hoverSliceScale: 1.20
@@ -1270,7 +1271,7 @@ Item {
             height: root.logoBaseHeight
                     + (root.circularShellDiameter - root.logoBaseHeight) * root.logoMorphProgress
             radius: Math.min(width, height) / 2
-            color: root.blendColor(Theme.accent, Theme.surface, root.logoMorphProgress)
+            color: root.blendColor(root.logoBaseColor, Theme.surface, root.logoMorphProgress)
             opacity: root.closingFromDashboard ? 0.0
                      : Math.max(0.0, 1.0 - root.dashboardMorphProgress / 0.35)
             visible: (root.panelOpen || root.closing) && opacity > 0.001
@@ -1285,7 +1286,7 @@ Item {
             width: root.logoProxyWidth
             height: root.logoProxyHeight
             radius: Math.min(width, height) / 2
-            color: root.blendColor(Theme.accent, Theme.surface, root.logoMorphProgress)
+            color: root.blendColor(root.logoBaseColor, Theme.surface, root.logoMorphProgress)
             border.width: root.logoMorphProgress > 0.05 ? 2 : 0
             readonly property color baseBorderColor: Theme.surfaceHighlight(1.55)
             border.color: Qt.rgba(baseBorderColor.r, baseBorderColor.g, baseBorderColor.b,
@@ -1297,7 +1298,7 @@ Item {
             Text {
                 anchors.centerIn: parent
                 text: "󰮯"
-                color: root.blendColor(Theme.onAccentColor, Theme.accent, root.logoMorphProgress)
+                color: root.blendColor(Theme.onAccentColor, root.logoBaseColor, root.logoMorphProgress)
                 font.family: Theme.fontFamily
                 font.weight: Font.Bold
                 font.pixelSize: Math.max(Theme.fontSize,

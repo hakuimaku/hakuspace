@@ -197,7 +197,7 @@ Item {
         case "shell":
         case "shellSwitcher": return "option";
         case "backend":
-        case "shellBackend": return "option";
+        case "shellBackend": return (typeof ShellHealth !== "undefined" && ShellHealth.degraded) ? "exitReport" : "option";
         case "emoji": return "emoji";
         default: return "option";
         }

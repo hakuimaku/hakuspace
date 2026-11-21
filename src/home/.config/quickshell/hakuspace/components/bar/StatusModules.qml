@@ -82,6 +82,19 @@ Item {
 
             // Workspaces, WindowTitle and any future non-Logo left
             // modules belong in this row so they all clear Navigation.
+            Item {
+                visible: bugsModule.visible
+                width: Theme.gap
+                height: 1
+            }
+
+            TopModules.BugsGroup {
+                id: bugsModule
+                objectName: "bugs-module"
+                screenName: root.screenName
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
             TopModules.Workspaces {
                 visible: ShellSettingsStore.showWorkspaces && WM.supported && items.length > 0
                 screenName: root.screenName

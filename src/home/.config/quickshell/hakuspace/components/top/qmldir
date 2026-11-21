@@ -13,3 +13,4 @@ CenterModule 1.0 CenterModule.qml
 PowerProfileGroup 1.0 PowerProfileGroup.qml
 WallpaperGroup 1.0 WallpaperGroup.qml
 DrawerOptionsGroup 1.0 DrawerOptionsGroup.qml
+BugsGroup 1.0 BugsGroup.qml

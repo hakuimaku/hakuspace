@@ -24,6 +24,12 @@ Scope {
         function forceStage(stage: string): string { return IdleService.forceStage(stage) }
     }
 
+    IpcHandler {
+        target: "health"
+        function status(): string { return ShellHealth.status() }
+        function retry(): string { return ShellHealth.retryNow() }
+    }
+
     // Transition IPC changes presentation state only; bash owns the cutover.
     IpcHandler {
         target: "shellTransition"

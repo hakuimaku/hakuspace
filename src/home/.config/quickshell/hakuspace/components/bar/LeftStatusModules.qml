@@ -48,7 +48,8 @@ Item {
         UiState.closeTrayMenuIfScreen(screenName)
     }
     readonly property var lanes: LeftBarGeometry.lanes(ScreenGeometry.leftbarUsableBottom(screenName),
-        logoSlot.y + logoSlot.height, workspaces.visible ? workspaces.height + ScreenGeometry.leftModuleInset * 2 : 0,
+        bugsSlot.visible ? (bugsSlot.y + bugsSlot.height) : (logoSlot.y + logoSlot.height),
+        workspaces.visible ? workspaces.height + ScreenGeometry.leftModuleInset * 2 : 0,
         status.height + ScreenGeometry.leftModuleInset * 2, ShellSettingsStore.showWindowTitle ? windowTitle.preferredVerticalHeight : 0,
         Math.max(12, ScreenGeometry.leftModuleGap), ScreenGeometry.leftModuleInset, Theme.fontSize)
 
@@ -74,6 +75,21 @@ Item {
             hoverExpansion: 0
             iconFontSize: Theme.fontSize
             implicitWidth: implicitHeight
+            screenName: root.screenName
+        }
+    }
+    Item {
+        id: bugsSlot
+        objectName: "leftbar-bugs-slot"
+        visible: ShellHealth.showIndicator
+        opacity: (root.navigationWorkspaceHidden ? 0 : 1) * root.wallpaperOpacity
+        enabled: visible && !root.navigationWorkspaceHidden && !root.wallpaperWorkspaceActive
+        y: logoSlot.y + logoSlot.height + ScreenGeometry.leftModuleGap + 1
+        width: parent.width
+        height: visible ? ScreenGeometry.leftControlSlotHeight : 0
+        TopModules.BugsGroup {
+            anchors.centerIn: parent
+            compact: true
             screenName: root.screenName
         }
     }

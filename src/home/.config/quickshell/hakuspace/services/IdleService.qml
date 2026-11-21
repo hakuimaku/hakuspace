@@ -154,6 +154,13 @@ QtObject {
         if (!watch.running) watch.running = true
         return "ok"
     }
+    // Retry recoverable idle dependencies without altering active stage state.
+    function retryReadiness() {
+        if (!owner || releasing) return
+        if (!recovered && !effects.running) enqueue("claim")
+        if (!logindReady && !watch.running) { watchRetry.stop(); watch.running = true }
+        if (inhibitError) refreshInhibit()
+    }
     // A required recovery or retry keeps release pending, including after process failure.
     function finishRelease() {
         if (!releasing || !owner || recovering || effects.running || currentJob || power.running || jobs.length ||
