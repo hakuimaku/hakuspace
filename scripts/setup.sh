@@ -151,26 +151,43 @@ resolve_cursor_theme() {
 }
 
 # Preserve the archive's exact-target guard and managed cursor ownership marker.
-install_cursor() {
-    resolve_cursor_theme || return 1
-    local target="$HOME/.icons/$HAKU_CURSOR_THEME"
+install_cursor_variant() {
+    local theme="$1" skip_unmanaged="${2:-0}"
+    HAKU_CURSOR_THEME="$theme" resolve_cursor_theme || return 1
+    local target="$HOME/.icons/$theme"
     if [[ -e "$target" || -L "$target" ]]; then
         if [[ -L "$target" || ! -f "$target/.hakuspace-cursor" || -L "$target/.hakuspace-cursor" ]] ||
                 [[ "$(cat "$target/.hakuspace-cursor")" != 'HakuSpace managed cursor v1' ]]; then
+            if [[ "$skip_unmanaged" == 1 ]]; then
+                printf 'Skipping unmanaged cursor sibling: %s\n' "$target" >&2
+                return 0
+            fi
             fail "Refusing to overwrite an unmanaged cursor: $target"
             return 1
         fi
     fi
     (
         cd "$SOURCE_PATH" || exit 1
-        make "$CURSOR_BUILD_TARGET" STYLE="$CURSOR_STYLE" && make verify || exit 1
-        [[ -d "dist/$HAKU_CURSOR_THEME/cursors" && -f "dist/$HAKU_CURSOR_THEME/index.theme" ]] || {
-            fail "Selected cursor was not built: $HAKU_CURSOR_THEME"; exit 1;
+        HAKU_CURSOR_THEME="$theme" make "$CURSOR_BUILD_TARGET" STYLE="$CURSOR_STYLE" && make verify || exit 1
+        [[ -d "dist/$theme/cursors" && -f "dist/$theme/index.theme" ]] || {
+            fail "Selected cursor was not built: $theme"; exit 1;
         }
-        make install THEME="$HAKU_CURSOR_THEME"
+        HAKU_CURSOR_THEME="$theme" make install THEME="$theme"
     ) || return 1
     [[ -f "$target/index.theme" && -d "$target/cursors" ]] || { fail "Cursor installation missing: $target"; return 1; }
     printf 'HakuSpace managed cursor v1\n' > "$target/.hakuspace-cursor"
+}
+
+install_cursor() {
+    local primary="$HAKU_CURSOR_THEME" sibling=""
+    install_cursor_variant "$primary" 0 || return 1
+    case "$primary" in
+        Haku-Dark) sibling="Haku-Light" ;;
+        Haku-Light) sibling="Haku-Dark" ;;
+    esac
+    if [[ -n "$sibling" ]]; then
+        install_cursor_variant "$sibling" 1 || return 1
+    fi
 }
 
 install_cassettsor() {
@@ -219,7 +236,11 @@ verify_component() {
     local relative
     local -a paths=()
     case "$1" in
-        cursor) paths=(".icons/$HAKU_CURSOR_THEME") ;;
+        cursor)
+            case "$HAKU_CURSOR_THEME" in
+                Haku-Dark|Haku-Light) paths=(.icons/Haku-Dark .icons/Haku-Light) ;;
+                *) paths=(".icons/$HAKU_CURSOR_THEME") ;;
+            esac ;;
         gtk) paths=(.themes/Hikaide .themes/Hikaide-Light) ;;
         symbols) paths=(.icons/Hikaide-Symbols .icons/Hikaide-Symbols-Light) ;;
         cassettk) paths=(.themes/Cassettk) ;;
