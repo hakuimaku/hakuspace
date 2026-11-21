@@ -115,13 +115,34 @@ def apply(gtk_theme, icon_theme, mode, gtk_directory):
                 os.replace(staged, path)
 
 
+def apply_cursor(cursor_theme, cursor_size):
+    """Update GTK 3/4 cursor theme and size in native settings.ini."""
+    if not cursor_theme or "\n" in cursor_theme or "\r" in cursor_theme:
+        raise ValueError("Invalid cursor theme name")
+    if not re.fullmatch(r"[1-9][0-9]*", str(cursor_size)):
+        raise ValueError("Invalid cursor size")
+    config = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+    values = {
+        "gtk-cursor-theme-name": cursor_theme,
+        "gtk-cursor-theme-size": str(cursor_size),
+    }
+    paths = [config / f"gtk-{version}/settings.ini" for version in ("3.0", "4.0")]
+    for path in paths:
+        if path.is_symlink() or path.exists() and not path.is_file():
+            raise ValueError(f"Unsafe GTK settings: {path}")
+    for path in paths:
+        write_settings(path, values)
+
+
 if __name__ == "__main__":
     try:
         if sys.argv[1:] in (["current"], ["current", "--strict"]):
             print(json.dumps(current_themes(strict=sys.argv[1:] == ["current", "--strict"])))
+        elif len(sys.argv) == 4 and sys.argv[1] == "cursor":
+            apply_cursor(sys.argv[2], sys.argv[3])
         elif len(sys.argv) == 5:
             apply(*sys.argv[1:])
         else:
-            raise ValueError("usage: appearance_settings.py current [--strict] | GTK_THEME ICON_THEME dark|light GTK_DIRECTORY")
+            raise ValueError("usage: appearance_settings.py current [--strict] | cursor THEME SIZE | GTK_THEME ICON_THEME dark|light GTK_DIRECTORY")
     except (OSError, ValueError) as error:
         sys.exit(str(error))

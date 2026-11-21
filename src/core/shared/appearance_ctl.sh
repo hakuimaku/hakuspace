@@ -323,7 +323,7 @@ apply() {
     fi
     if appearance_is_managed_gtk "$HAKU_GTK_THEME"; then change_gtk=1; fi
     if appearance_is_managed_icons "$HAKU_ICON_THEME"; then change_icons=1; fi
-    if [[ "$mode_only" != 1 || "$backend_explicit" == 1 ]] && appearance_is_managed_cursor "$HAKU_CURSOR_THEME"; then
+    if appearance_is_managed_cursor "$HAKU_CURSOR_THEME"; then
         change_cursor=1
     fi
     local HAKU_GTK_THEME="$(appearance_gtk_theme_for_mode "$mode" "$backend")"
@@ -360,6 +360,8 @@ apply() {
         apply_cursor=1
     elif [[ "$backend_explicit" == 1 && "$change_cursor" == 1 ]]; then
         apply_cursor=1
+    elif [[ "$change_cursor" == 1 && "$previous_cursor" != "$HAKU_CURSOR_THEME" ]] && cursor_installed; then
+        apply_cursor=1
     fi
     local setting value component failed=0
     local schema=org.gnome.desktop.interface
@@ -384,13 +386,58 @@ apply() {
         fi
     done
     if [[ "$apply_cursor" == 1 ]] && cursor_installed; then
-        local directory="${XDG_CONFIG_HOME:-$HOME/.config}/environment.d" temporary
+        local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
+        local directory="$config_dir/environment.d" temporary
         mkdir -p "$directory" || return 1
         temporary="$(mktemp "$directory/90-hakuspace-cursor.conf.XXXXXX")" || return 1
         if ! printf 'XCURSOR_THEME=%s\nXCURSOR_SIZE=%s\n' "$HAKU_CURSOR_THEME" "$HAKU_CURSOR_SIZE" > "$temporary" ||
+                ! chmod 0644 "$temporary" ||
                 ! mv -f "$temporary" "$directory/90-hakuspace-cursor.conf"; then
             rm -f "$temporary"
             return 1
+        fi
+        local default_dir="$HOME/.icons/default"
+        if [[ ! -L "$default_dir" && ! -L "$default_dir/index.theme" ]]; then
+            mkdir -p "$default_dir" || return 1
+            temporary="$(mktemp "$default_dir/index.theme.XXXXXX")" || return 1
+            if ! printf '[Icon Theme]\nName=Default\nComment=Default Cursor Theme\nInherits=%s\n' "$HAKU_CURSOR_THEME" > "$temporary" ||
+                    ! chmod 0644 "$temporary" ||
+                    ! mv -f "$temporary" "$default_dir/index.theme"; then
+                rm -f "$temporary"
+                return 1
+            fi
+        fi
+        local labwc_dir="$config_dir/labwc"
+        if [[ -d "$labwc_dir" ]]; then
+            local labwc_env_dir="$labwc_dir/environment.d"
+            mkdir -p "$labwc_env_dir" || return 1
+            temporary="$(mktemp "$labwc_env_dir/90-hakuspace-cursor.env.XXXXXX")" || return 1
+            if ! printf 'XCURSOR_THEME=%s\nXCURSOR_SIZE=%s\n' "$HAKU_CURSOR_THEME" "$HAKU_CURSOR_SIZE" > "$temporary" ||
+                    ! chmod 0644 "$temporary" ||
+                    ! mv -f "$temporary" "$labwc_env_dir/90-hakuspace-cursor.env"; then
+                rm -f "$temporary"
+                return 1
+            fi
+        fi
+        if [[ "$change_gtk" == 1 || "$change_icons" == 1 ]]; then
+            helper="$(resolve_settings_helper)" || return 1
+            python3 "$helper" cursor "$HAKU_CURSOR_THEME" "$HAKU_CURSOR_SIZE" || return 1
+        fi
+        if [[ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+            if command -v systemctl >/dev/null 2>&1; then
+                systemctl --user set-environment \
+                    "XCURSOR_THEME=$HAKU_CURSOR_THEME" \
+                    "XCURSOR_SIZE=$HAKU_CURSOR_SIZE" \
+                    "HYPRCURSOR_THEME=$HAKU_CURSOR_THEME" \
+                    "HYPRCURSOR_SIZE=$HAKU_CURSOR_SIZE" >/dev/null 2>&1 || true
+            fi
+            if command -v dbus-update-activation-environment >/dev/null 2>&1; then
+                dbus-update-activation-environment --systemd \
+                    "XCURSOR_THEME=$HAKU_CURSOR_THEME" \
+                    "XCURSOR_SIZE=$HAKU_CURSOR_SIZE" \
+                    "HYPRCURSOR_THEME=$HAKU_CURSOR_THEME" \
+                    "HYPRCURSOR_SIZE=$HAKU_CURSOR_SIZE" >/dev/null 2>&1 || true
+            fi
         fi
         if [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] && command -v hyprctl >/dev/null 2>&1; then
             hyprctl setcursor "$HAKU_CURSOR_THEME" "$HAKU_CURSOR_SIZE" || { asset_warning 'Hyprland cursor activation failed' || failed=1; }
@@ -399,6 +446,17 @@ apply() {
             local rt_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hakuspace"
             if [[ -d "$rt_dir" && -w "$rt_dir" ]]; then
                 printf '%s\n' "$HAKU_CURSOR_THEME" > "$rt_dir/cursor-changed" 2>/dev/null || true
+            fi
+            if [[ "$mode_only" == 1 && "$backend" != classic ]]; then
+                local gen_style="$HAKU_BIN_DIR/gen_style.sh" reload_cfg="$HAKU_BIN_DIR/reload_config.sh"
+                [[ -x "$gen_style" ]] || gen_style="$SCRIPT_DIR/gen_style.sh"
+                [[ -x "$reload_cfg" ]] || reload_cfg="$SCRIPT_DIR/../lib/reload_config.sh"
+                if [[ -x "$gen_style" ]]; then
+                    "$gen_style" >/dev/null 2>&1 || true
+                fi
+                if [[ -x "$reload_cfg" ]]; then
+                    "$reload_cfg" >/dev/null 2>&1 || true
+                fi
             fi
         fi
     fi

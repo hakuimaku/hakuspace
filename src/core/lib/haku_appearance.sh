@@ -91,10 +91,21 @@ appearance_cursor_theme_for_mode() {
     case "$backend" in
         classic) printf '%s\n' Cassettsor ;;
         *)
-            if [[ "${HAKU_CONFIGURED_CURSOR_THEME:-Haku-Dark}" == Cassettsor ]]; then
-                printf '%s\n' Haku-Dark
+            local base="${HAKU_CONFIGURED_CURSOR_THEME:-Haku-Dark}"
+            [[ "$base" == Cassettsor ]] && base=Haku-Dark
+            if [[ "$mode" == light ]]; then
+                case "$base" in
+                    Haku-Dark|Haku-Light) printf '%s\n' Haku-Light ;;
+                    *-Light) printf '%s\n' "$base" ;;
+                    Haku-*) printf '%s\n' "${base}-Light" ;;
+                    *) printf '%s\n' Haku-Light ;;
+                esac
             else
-                printf '%s\n' "${HAKU_CONFIGURED_CURSOR_THEME:-Haku-Dark}"
+                case "$base" in
+                    Haku-Light) printf '%s\n' Haku-Dark ;;
+                    Haku-*-Light) printf '%s\n' "${base%-Light}" ;;
+                    *) printf '%s\n' "$base" ;;
+                esac
             fi ;;
     esac
 }

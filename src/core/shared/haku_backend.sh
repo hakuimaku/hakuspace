@@ -358,22 +358,12 @@ set_backend() (
         verify_backend
         return $?
     fi
-    rm -f "$(haku_runtime_dir)/cursor-changed"
     if [[ "$target" == "$QS_BACKEND_NAME" ]]; then
         switch_to_hikai || return 1
     else
         switch_to_classic || return 1
     fi
     notify-send -a "HakuSpace" -i "info" "Backend Switched" "Successfully switched to $target backend." 9>&- || true
-    if [[ -f "$(haku_runtime_dir)/cursor-changed" ]]; then
-        local new_cursor=''
-        read -r new_cursor < "$(haku_runtime_dir)/cursor-changed" || true
-        rm -f "$(haku_runtime_dir)/cursor-changed"
-        if [[ -n "$new_cursor" ]]; then
-            notify-send -a "HakuSpace" -i "info" "Cursor Changed" \
-                "Cursor changed to ${new_cursor}. Log out and back in to apply to all applications." 9>&- || true
-        fi
-    fi
 )
 
 # Verify notification ownership and only those Classic features enabled by the user.
