@@ -235,7 +235,7 @@ Facade công khai định tuyến yêu cầu theo chế độ đã chọn; backe
 Giữ state UI của Hikai và preference UI của Classic tách biệt, trừ khi dữ liệu chung là chủ đích của contract.
 
 Đổi chế độ phải giữ lựa chọn người dùng, trả tài nguyên của runtime cũ và tránh nhiều bên tranh quyền sở hữu service desktop.
-Giữ đường phục hồi khi Hikai không khởi động được. Kiểm chứng lệnh chung ở cả hai chế độ khi đổi định tuyến hoặc ý nghĩa backend.
+Giữ đường phục hồi khi Hikai không khởi động được. Chỉ các điều kiện sống còn của shell (IPC, chrome và quyền sở hữu notification) chặn việc vào Hikai, còn lỗi ở service nền cho phép shell chạy ở chế độ suy giảm thông qua một health owner dùng chung để retry các lỗi có thể phục hồi, hiện cảnh báo trên bar, ghi báo cáo lỗi và gợi ý quay về Classic trong backend switcher. Kiểm chứng lệnh chung ở cả hai chế độ khi đổi định tuyến hoặc ý nghĩa backend.
 
 ## Quy tắc viết tài liệu
 

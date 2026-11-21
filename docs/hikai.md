@@ -301,7 +301,7 @@ Public facades route requests to the selected mode; backends should not depend o
 Keep Hikai UI state and Classic UI preferences separate unless a shared data contract is intentional.
 
 Changing modes should preserve user choices, release the old runtime's resources and avoid competing owners of a desktop service.
-Keep recovery available when Hikai cannot start. Verify shared command behavior in both modes when changing routing or backend semantics.
+Keep recovery available when Hikai cannot start. Core shell readiness (IPC, chrome, and notification ownership) gates mode entry, while resident service faults allow degraded operation under a shared health owner that retries recoverable failures, surfaces bar diagnostics, logs the fault report, and offers Classic fallback in the backend switcher. Verify shared command behavior in both modes when changing routing or backend semantics.
 
 ## Documentation Rules
 
