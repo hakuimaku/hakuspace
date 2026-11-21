@@ -22,8 +22,9 @@ source cleanup. `hakuspace-archive` and `scripts/assets.sh` supply wallpapers on
 
 `update.sh` checks installed visual files after deploying dotfiles and skips complete
 installations, including after a reboot. It asks before installing or repairing a
-missing component and preserves configured development source overrides. GTK and
-icon installations require both dark and light variants. These checks use installed
+missing component and preserves configured development source overrides. GTK, icon
+and default Haku cursor (`Haku-Dark` / `Haku-Light`) installations require both dark
+and light variants. These checks use installed
 files rather than the deleted temporary sources or ownership metadata alone.
 `./scripts/setup.sh verify <component>` performs this read-only component check.
 To refresh installed assets explicitly, run `./scripts/setup.sh update [component]`;
@@ -47,14 +48,16 @@ Activation never changes the shell backend or the saved Hikai preference. Unrela
 GTK keys/comments and custom CSS are preserved; when a managed GTK4 CSS override
 symlink is present, it switches between `Hikaide*` and `Cassettk`.
 
-When switching between Hikai and Classic changes the active managed cursor
-(`Haku-*` ↔ `Cassettsor`), HakuSpace updates `gsettings`, writes
-`~/.config/environment.d/90-hakuspace-cursor.conf`, runs `hyprctl setcursor` on
-Hyprland, and sends a desktop notification after the target notification service is
-ready. Because `XCURSOR_THEME` from `environment.d` is read at session start and
-running applications / XWayland retain their initial cursor (and Niri, MangoWM and
-labwc do not provide a live compositor cursor reload command), logging out and
-signing back in is required for the new cursor to apply across all applications.
+When switching between Hikai and Classic, or toggling Hikai Dark/Light mode when
+the target managed cursor variant is installed (`Haku-Dark` / `Haku-Light` ↔
+`Cassettsor`), HakuSpace updates `gsettings`, `~/.icons/default/index.theme`,
+GTK `settings.ini` (when managed GTK/icon themes are active),
+`~/.config/environment.d/90-hakuspace-cursor.conf`,
+`~/.config/labwc/environment.d/90-hakuspace-cursor.env`, the `systemd --user`
+and D-Bus activation environments, plus the WM style configs (`niri-style.kdl`,
+`hyprland-style.lua`, `mangowm-style.conf`) and reloads the active compositor
+(`hyprctl setcursor`, `niri msg action load-config-file`, `mmsg -d reload_config`,
+or `labwc --reconfigure`).
 
 For assets already installed, these explicit commands activate without downloading:
 
