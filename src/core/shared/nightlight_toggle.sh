@@ -3,6 +3,13 @@
 # This script toggles the night light mode
 # hyprsunset (hyprland) or gammastep (other WM)
 
+if [[ -f "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_state.sh" ]]; then
+    source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_state.sh" || exit 1
+else
+    source "$(dirname -- "${BASH_SOURCE[0]}")/../lib/haku_state.sh" || exit 1
+fi
+STATE_FILE="$(haku_state_path system.nightlight.enabled)" || exit 1
+
 # Include NIGHT_LIGHT_TEMPERATURE variable from setting.sh
 [ -f "$HOME/hakucfg/setting.sh" ] && source "$HOME/hakucfg/setting.sh"
 
@@ -17,11 +24,18 @@ Toggle the night light for the current window manager.
 Options:
     --check             Report whether night light is enabled
     --on                Enable or re-apply night light
+    --off               Disable night light
     --restore           Re-apply night light only if currently enabled
+    --startup           Start night light if saved state is enabled
     -h, --help          Show this help message
 EOF
         exit 0
 fi
+
+save_state() {
+    mkdir -p "$STATE_DIR"
+    printf '%s\n' "$1" > "$STATE_FILE"
+}
 
 is_nightlight_running() {
     pgrep -x "hyprsunset" >/dev/null 2>&1 || pgrep -x "gammastep" >/dev/null 2>&1
@@ -66,6 +80,13 @@ case "${1:-}" in
     --on)
         stop_nightlight
         run_nightlight
+        save_state 1
+        exit 0
+        ;;
+    --off)
+        stop_nightlight
+        save_state 0
+        echo "Night light mode disabled"
         exit 0
         ;;
     --restore)
@@ -75,13 +96,23 @@ case "${1:-}" in
         fi
         exit 0
         ;;
+    --startup)
+        if [[ "$(cat "$STATE_FILE" 2>/dev/null)" == "1" ]]; then
+            if ! is_nightlight_running; then
+                run_nightlight
+            fi
+        fi
+        exit 0
+        ;;
 esac
 
 # Toggle
 if is_nightlight_running; then
     stop_nightlight
+    save_state 0
     echo "Night light mode disabled"
 else
     run_nightlight
+    save_state 1
     echo "Night light mode enabled"
 fi

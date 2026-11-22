@@ -29,6 +29,7 @@ hl.on("hyprland.start", function ()
 
     hl.exec_cmd("$HOME/.local/bin/statusbar_manager.sh; $HOME/.local/bin/appbar_ctl.sh --startup") -- Run status bar before Classic AppBar
     hl.exec_cmd("$HOME/.local/bin/desktop_icons_manager.sh --startup") -- Run desktop icons if state is true
+    hl.exec_cmd("$HOME/.local/bin/nightlight_toggle.sh --startup") -- Run night light if state is true
 
     hl.exec_cmd("$HOME/.local/bin/welcome.sh")
 end)

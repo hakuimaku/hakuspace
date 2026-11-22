@@ -27,6 +27,7 @@ haku_state_path() {
         system.visual-sources.json) name='[system].visual-sources.json' ;;
         system.visual-reconcile.pending) name='[system].visual-reconcile.pending' ;;
         system.idle-inhibit.enabled) name='[system].idle-inhibit.enabled' ;;
+        system.nightlight.enabled) name='[system].nightlight.enabled' ;;
         cava.enabled) name='[cava].enabled' ;;
         cava.position) name='[cava].position' ;;
         cava.dynamic-position) name='[cava].dynamic-position' ;;

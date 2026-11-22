@@ -21,6 +21,7 @@ STATE_FILES = {
     'system.visual-sources.json': '[system].visual-sources.json',
     'system.visual-reconcile.pending': '[system].visual-reconcile.pending',
     'system.idle-inhibit.enabled': '[system].idle-inhibit.enabled',
+    'system.nightlight.enabled': '[system].nightlight.enabled',
     'cava.enabled': '[cava].enabled',
     'cava.position': '[cava].position',
     'cava.dynamic-position': '[cava].dynamic-position',

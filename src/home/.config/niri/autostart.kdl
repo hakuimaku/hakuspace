@@ -22,5 +22,6 @@ spawn-at-startup "sh" "-c" "$HOME/.local/bin/wallpaper_resume.sh"
 
 spawn-at-startup "sh" "-c" "$HOME/.local/bin/statusbar_manager.sh; $HOME/.local/bin/appbar_ctl.sh --startup" // Run status bar before Classic AppBar
 spawn-at-startup "sh" "-c" "$HOME/.local/bin/desktop_icons_manager.sh --startup" // Run desktop icons if state is true
+spawn-at-startup "sh" "-c" "$HOME/.local/bin/nightlight_toggle.sh --startup" // Run night light if state is true
 
 spawn-at-startup "sh" "-c" "$HOME/.local/bin/welcome.sh"
