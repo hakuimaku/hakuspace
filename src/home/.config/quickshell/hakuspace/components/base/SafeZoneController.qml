@@ -12,6 +12,8 @@ Item {
     property bool pointerInside: false
     property bool keyboardLease: false
     property bool animationLease: false
+    property bool dragActive: false
+    property bool dragSuspendExit: false
     property var externalTokens: []
     readonly property bool externallyLeased: externalTokens.length > 0
     readonly property bool closePending: closeTimer.running
@@ -42,10 +44,27 @@ Item {
         pointerInside = false
         keyboardLease = false
         animationLease = false
+        dragActive = false
+        dragSuspendExit = false
         externalTokens = []
         lastPointerX = -1
         lastPointerY = -1
         closeTimer.stop()
+    }
+
+    function setDragActive(dragging) {
+        if (dragActive === dragging) return
+        dragActive = dragging
+        if (dragging) {
+            dragSuspendExit = true
+            keyboardLease = false
+            cancelClose()
+        } else {
+            var insideNow = lastPointerX >= 0 && (containsPoint ? containsPoint(lastPointerX, lastPointerY) : pointerInside)
+            pointerInside = insideNow
+            if (insideNow) dragSuspendExit = false
+            else cancelClose()
+        }
     }
 
     function pointerEntered(x, y) { pointerMoved(x, y) }
@@ -57,15 +76,17 @@ Item {
         lastPointerX = x
         lastPointerY = y
         pointerInside = containsPoint ? containsPoint(x, y) : true
+        if (dragSuspendExit && !dragActive && pointerInside) dragSuspendExit = false
         if (moved && pointerInside && keyboardLease) forcePointerMode()
-        if (pointerInside) cancelClose()
+        if (pointerInside || dragSuspendExit || dragActive) cancelClose()
         else scheduleClose()
     }
 
     function pointerExited() {
         if (!active || closing) return
         pointerInside = false
-        scheduleClose()
+        if (dragSuspendExit || dragActive) cancelClose()
+        else scheduleClose()
     }
 
     function beginKeyboardLease() { forceKeyboardMode() }
@@ -96,12 +117,14 @@ Item {
     function cancelClose() { closeTimer.stop() }
     function scheduleClose() {
         if (active && !closing && closeOnPointerExit && !pointerInside && !keyboardLease
-                && !externallyLeased && !animationLease && !focusRestoreLease && !closeTimer.running)
+                && !externallyLeased && !animationLease && !focusRestoreLease
+                && !dragSuspendExit && !dragActive && !closeTimer.running)
             closeTimer.start()
     }
     function commitClose() {
         if (active && !closing && closeOnPointerExit && !pointerInside && !keyboardLease
-                && !externallyLeased && !animationLease && !focusRestoreLease)
+                && !externallyLeased && !animationLease && !focusRestoreLease
+                && !dragSuspendExit && !dragActive)
             closeRequested("pointer-exit")
     }
     function forcePointerMode() {

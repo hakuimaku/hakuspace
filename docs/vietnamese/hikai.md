@@ -107,6 +107,10 @@ Phân biệt vị trí cửa sổ, hình vẽ, vùng tương tác và phần des
 Nếu dùng các cửa sổ riêng để vẽ và nhận input cho cùng một surface, cả hai phải lấy từ cùng geometry và state chuyển tiếp.
 Chỉ dành không gian một lần cho mỗi phần đóng góp vào bố cục; đừng suy ra nó từ hình dạng animation ở thời điểm hiện tại.
 
+Các overlay theo dõi không modal được tách ra từ menu (`HakuMenu`) hoặc panel dùng chung một lease dữ liệu tại coordinator cho đến khi cả surface gốc lẫn mọi overlay tách ra đều đóng.
+Cửa sổ overlay chỉ đặt input mask lên đúng diện tích các pill đang hiển thị, và chỉ mở rộng tạm thời trong phiên kéo overlay, để phần màn hình còn lại hoàn toàn xuyên thấu chuột.
+Các pill overlay bỏ qua vùng dành riêng của work area để đặt tự do trên màn hình và tự căn chỉnh tránh chồng lấn khi lại gần widget khác.
+
 ### Quy tắc 2 layer cho Flare Surface gắn workarea
 Mọi panel/popup có hiệu ứng Flare (tai thỏ cong kết nối viền `RoundedScreen` hoặc thanh Bar) bắt buộc áp dụng mô hình 2 layer tách biệt:
 - **Layer 1 - Nền giả Flare (`WlrLayer.Top`)**: Chỉ vẽ hình thể `FlareSurface` và tai thỏ. Không nhận input (`mask: Region {}`), không nhận focus. `PanelWindow` được giữ map liên tục (`visible: true; mask: Region {}`) để tránh compositor (như Hyprland) raise window mới map đè lên fullscreen. Đồng thời `FlareSurface` được kiểm soát qua thuộc tính `!hasFullscreen` (từ `ToplevelManager`), đảm bảo tai thỏ flare lập tức ẩn khi có window fullscreen.
@@ -177,6 +181,7 @@ Hủy xác nhận đang mở ở lớp trong cùng trước khi đóng lớp cha
 
 Xác định lúc surface sẵn sàng nhận input và lúc đóng trả lại quyền đó.
 Handoff pointer giữa trigger và nội dung nên dùng hành vi safe zone chung, suy ra từ vùng thực tế, gồm cả hành lang di chuyển.
+Khi một phiên kéo rời khỏi safe zone của menu để tách phần tử ra ngoài màn hình, cơ chế tự đóng theo pointer exit sẽ tạm đình chỉ cho đến khi con trỏ quay lại bên trong vùng menu hoặc menu được đóng tường minh.
 Đừng thêm timer không liên quan hay vùng chặn input toàn output để che lỗi ownership.
 
 Danh tính output và hệ tọa độ là một phần của mỗi yêu cầu đặt vị trí.

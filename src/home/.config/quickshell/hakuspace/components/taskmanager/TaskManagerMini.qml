@@ -46,6 +46,7 @@ Item {
     Connections {
         target: TaskManagerService
         function onSnapshotChanged() { root.retainSnapshot() }
+        function onReadyChanged() { root.retainSnapshot() }
     }
 
     TaskManagerMiniDashboard {

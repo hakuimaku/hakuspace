@@ -130,6 +130,11 @@ QtObject {
     readonly property real hakuMenuHeightRatio: Design.hakuMenuHeightRatio
     readonly property real taskManagerMiniWidthRatio: Design.taskManagerMiniWidthRatio
     readonly property real taskManagerMiniHeightRatio: Design.taskManagerMiniHeightRatio
+    readonly property real taskManagerMiniLeftColumnRatio: Design.taskManagerMiniLeftColumnRatio
+    readonly property real taskMetricPillHeight: Math.round(fontSize * Design.taskMetricPillHeightFactor)
+    readonly property int taskMetricPillPaddingX: Design.taskMetricPillPaddingX
+    readonly property real taskMetricPillIconFactor: Design.taskMetricPillIconFactor
+    readonly property real taskMetricPillValueFactor: Design.taskMetricPillValueFactor
     readonly property real hakuMenuMinWidth: Design.hakuMenuMinWidth
     readonly property real hakuMenuMinHeight: Design.hakuMenuMinHeight
     readonly property real hakuMenuHoverScaleDelta: ShellSettingsStore.hakuMenuHoverScaleDelta

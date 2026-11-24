@@ -17,6 +17,8 @@ Item {
     property bool showNumeric: false
     property bool interactive: true
     property bool reducedMotion: false
+    property bool borderless: false
+    onBorderlessChanged: canvas.requestPaint()
     // Change only the painted emphasis; telemetry and the wave clock remain independent.
     property bool emphasized: false
     onEmphasizedChanged: canvas.requestPaint()
@@ -128,8 +130,8 @@ Item {
 
             var cx = w / 2
             var cy = h / 2
-            // Keep the thicker stroke inside the existing outer edge.
-            var r = Math.min(cx, cy) - 2.5
+            // Keep the thicker stroke inside the existing outer edge when bordered.
+            var r = Math.min(cx, cy) - (root.borderless ? 0.5 : 2.5)
             if (r <= 0) return
 
             ctx.save()
@@ -138,7 +140,7 @@ Item {
             ctx.arc(cx, cy, r, 0, Math.PI * 2)
             ctx.clip()
 
-            ctx.fillStyle = Theme.isLight ? "#cecac3" : "#16151b"
+            ctx.fillStyle = root.borderless ? Theme.hoverMuted : (Theme.isLight ? "#cecac3" : "#16151b")
             ctx.fill()
 
             if (root.currentAvailable && root.fillRatio > 0.001) {
@@ -179,11 +181,13 @@ Item {
 
             ctx.restore()
 
-            ctx.beginPath()
-            ctx.arc(cx, cy, r, 0, Math.PI * 2)
-            ctx.lineWidth = 3.5
-            ctx.strokeStyle = root.emphasized ? Qt.alpha(Theme.accent, 0.45) : (Theme.isLight ? "#aba59c" : "#36353d")
-            ctx.stroke()
+            if (!root.borderless) {
+                ctx.beginPath()
+                ctx.arc(cx, cy, r, 0, Math.PI * 2)
+                ctx.lineWidth = 3.5
+                ctx.strokeStyle = root.emphasized ? Qt.alpha(Theme.accent, 0.45) : (Theme.isLight ? "#aba59c" : "#36353d")
+                ctx.stroke()
+            }
         }
     }
 

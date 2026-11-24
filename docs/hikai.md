@@ -107,6 +107,10 @@ Keep window placement, drawn shape, interactive bounds and reserved desktop spac
 When separate windows render and handle input for one surface, derive both from the same geometry and transition state.
 Reserve space once for each intended layout contribution; do not infer it from an animation's current shape.
 
+Detached non-modal monitor overlays pulled from a menu (`HakuMenu`) or panel share one telemetry lease in their coordinator until both the origin surface and every detached overlay close.
+Their overlay window restricts its input mask to the active pill shapes, expanding across the screen only during an active overlay drag, so the rest of the screen remains click-through.
+Overlay pills ignore desktop work-area exclusions for free placement and resolve magnetic alignment without overlapping adjacent overlays.
+
 ### Two-Layer Flare Policy for Workarea Surfaces
 Any panel, popup, or menu attached to the workarea with a Flare effect (curved ears connecting to `RoundedScreen` or bar edges) must use the decoupled 2-layer pattern:
 - **Layer 1 - Visual Flare Bed (`WlrLayer.Top`)**: Draws only the `FlareSurface` silhouette and ears. No input (`mask: Region {}`), no focus. The `PanelWindow` remains permanently mapped (`visible: true; mask: Region {}`) to prevent compositors from raising newly mapped Top surfaces over an active fullscreen client, while `FlareSurface` visibility is strictly gated on `!hasFullscreen` via `ToplevelManager`.
@@ -243,6 +247,7 @@ Cancel the innermost active confirmation before dismissing its parent; do not lo
 
 Define when a surface becomes ready for input and when closing releases it.
 Pointer handoff between a trigger and content should use shared safe-zone behavior derived from real bounds, including the travel corridor.
+When a drag session leaves a menu's safe zone to detach an item onto the screen, safe-zone pointer-exit dismissal stays suspended until the pointer re-enters the menu bounds or the menu closes explicitly.
 Do not add unrelated timers or full-output input blockers to hide an ownership problem.
 
 Treat output identity and coordinate space as part of every placement request.

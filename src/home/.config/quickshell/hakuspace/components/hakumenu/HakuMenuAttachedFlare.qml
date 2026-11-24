@@ -5,6 +5,7 @@ import "../../services"
 import "../base" as Base
 import "../base/SafeZoneGeometry.js" as SafeZoneGeometry
 import "../flare" as Flare
+import "../taskmanager" as TaskManager
 import "HakuMenuGeometry.js" as Geometry
 
 Item {
@@ -40,7 +41,7 @@ Item {
     readonly property var taskSize: Geometry.attachedTaskSize(screenWidth, screenHeight,
         ScreenGeometry.leftInset, ScreenGeometry.rightInset,
         bottomAttached ? ScreenGeometry.bottomHostReservation() + controlHeight : ScreenGeometry.topChromeHeight,
-        bottomAttached ? ScreenGeometry.bottomHostOppositeInset : ScreenGeometry.bottomInset, menu.miniHeight, Theme)
+        bottomAttached ? ScreenGeometry.bottomHostOppositeInset : ScreenGeometry.bottomInset, 0, Theme)
     readonly property real targetMenuWidth: Geometry.targetWidth(screenWidth, renderTab, UiState.hakuMenuMode,
         ScreenGeometry.leftInset, ScreenGeometry.rightInset, Theme)
     readonly property real maxMenuWidth: taskManagerTab ? taskSize.width
@@ -82,6 +83,40 @@ Item {
     function trackTrigger(x, y) { lifetime.pointerMoved(x, y) }
     function leaveTrigger() { lifetime.pointerExited() }
 
+    readonly property bool menuDraggingHere: !!root.modelData
+        && TaskManagerOverlayState.isDraggingFromMenuOnScreen(root.modelData.name)
+    onMenuDraggingHereChanged: lifetime.setDragActive(menuDraggingHere)
+
+    function syncMenuRect() {
+        if (!root.modelData) return
+        if (root.panelOpen) {
+            TaskManagerOverlayState.setMenuRect(root.modelData.name, true,
+                contentSurface.x, contentSurface.y, contentSurface.width, contentSurface.height)
+        } else if (TaskManagerOverlayState.activeMenuRect.screenName === root.modelData.name) {
+            TaskManagerOverlayState.setMenuRect(root.modelData.name, false, 0, 0, 0, 0)
+        }
+    }
+
+    Component.onCompleted: syncMenuRect()
+
+    Component.onDestruction: {
+        if (root.modelData && TaskManagerOverlayState.activeMenuRect.screenName === root.modelData.name) {
+            TaskManagerOverlayState.setMenuRect(root.modelData.name, false, 0, 0, 0, 0)
+        }
+    }
+
+    Connections {
+        target: TaskManagerOverlayState
+        function onDragPointerXChanged() {
+            if (root.menuDraggingHere)
+                lifetime.pointerMoved(TaskManagerOverlayState.dragPointerX, TaskManagerOverlayState.dragPointerY)
+        }
+        function onDragPointerYChanged() {
+            if (root.menuDraggingHere)
+                lifetime.pointerMoved(TaskManagerOverlayState.dragPointerX, TaskManagerOverlayState.dragPointerY)
+        }
+    }
+
     Base.SafeZoneController {
         id: lifetime
         active: root.panelOpen
@@ -94,6 +129,7 @@ Item {
     height: screenHeight
 
     onPanelOpenChanged: {
+        syncMenuRect()
         if (panelOpen) {
             renderTab = UiState.hakuPanelTab
             if (visuallyClosed) {
@@ -165,6 +201,11 @@ Item {
         color: "transparent"
 
         mask: Region {
+            Region {
+                x: 0; y: 0
+                width: root.menuDraggingHere ? root.screenWidth : 0
+                height: root.menuDraggingHere ? root.screenHeight : 0
+            }
             Region {
                 x: root.safeZone(0).x; y: root.safeZone(0).y
                 width: root.bottomAttached ? root.safeZone(0).width : 0
@@ -264,8 +305,13 @@ Item {
             y: root.bottomAttached ? root.menuTop - morph.mHeight : root.menuTop
             width: Math.max(0, morph.mEnd - morph.mStart)
             height: root.controlHeight > 0 ? Math.max(0, Math.min(root.menuHeight, morph.mHeight - root.controlHeight)) : morph.mHeight
+            onXChanged: root.syncMenuRect()
+            onYChanged: root.syncMenuRect()
+            onWidthChanged: root.syncMenuRect()
+            onHeightChanged: root.syncMenuRect()
             radius: Math.min(Theme.hugRadius, width / 2, height / 2)
             color: Theme.surface
+            border.width: 0
             clip: true
             visible: width > 0.01 && height > 0.01
 
@@ -343,6 +389,22 @@ Item {
                         && UiState.ownsInteraction("hakumenu", root.modelData.name)
                 }
             }
+        }
+
+        TaskManager.TaskManagerMetricPill {
+            id: menuDragGhost
+            objectName: "hakuMenuMetricDragGhost"
+            z: 1000
+            visible: root.menuDraggingHere && !TaskManagerOverlayState.dragOutsideMenu
+            metricId: TaskManagerOverlayState.dragMetricId || "cpu"
+            snapshot: TaskManagerService.ready ? TaskManagerService.snapshot : TaskManagerOverlayState.snapshot
+            inOverlay: false
+            pressed: true
+            reducedMotion: root.reducedMotion
+            width: Math.max(80, TaskManagerOverlayState.dragPillWidth)
+            height: Math.max(36, TaskManagerOverlayState.dragPillHeight)
+            x: TaskManagerOverlayState.dragPointerX - TaskManagerOverlayState.dragGrabOffsetX
+            y: TaskManagerOverlayState.dragPointerY - TaskManagerOverlayState.dragGrabOffsetY
         }
     }
 }

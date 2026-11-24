@@ -2,6 +2,7 @@ import QtQuick
 import "../services"
 import "base" as Base
 import "imageeditor" as ImageEditing
+import "taskmanager" as TaskManager
 
 Item {
     id: root
@@ -13,7 +14,7 @@ Item {
         property int calendarMonthOffset: 0
     }
     // Expose resource counts without retaining destroyed surface objects.
-    readonly property var loaders: [navigation, settings, note, taskManager, tray, appMenu, center, wallpaper, wallpaperWorkspace, action, popup, osd, navigator, imageEditor, avatarEditor]
+    readonly property var loaders: [navigation, settings, note, taskManager, taskMetricOverlay, tray, appMenu, center, wallpaper, wallpaperWorkspace, action, popup, osd, navigator, imageEditor, avatarEditor]
     readonly property int loadedCount: loaders.filter(function(loader) { return loader.active }).length + menu.loadedCount
     readonly property var navigationItem: navigation.active ? navigation.item : null
     readonly property var avatarPickerItem: avatarPicker.active ? avatarPicker.item : null
@@ -61,6 +62,11 @@ Item {
     TaskManagerHost {
         id: taskManager
         modelData: root.modelData
+    }
+    Base.LifecycleLoader {
+        id: taskMetricOverlay
+        requested: !!root.modelData && TaskManagerOverlayState.screenHasOverlayOrDrag(root.modelData.name)
+        TaskManager.TaskManagerOverlayMonitor { modelData: root.modelData }
     }
     Base.LifecycleLoader {
         id: tray

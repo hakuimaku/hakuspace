@@ -229,8 +229,13 @@ QtObject {
     readonly property real hakuMenuThemeWidthRatio: 0.36
     readonly property real hakuMenuMaxWidthRatio: 0.42
     readonly property real hakuMenuHeightRatio: 0.42
-    readonly property real taskManagerMiniWidthRatio: 0.45
-    readonly property real taskManagerMiniHeightRatio: 0.48
+    readonly property real taskManagerMiniWidthRatio: 0.43
+    readonly property real taskManagerMiniHeightRatio: 0.398
+    readonly property real taskManagerMiniLeftColumnRatio: 0.34
+    readonly property real taskMetricPillHeightFactor: 3.7
+    readonly property int taskMetricPillPaddingX: 24
+    readonly property real taskMetricPillIconFactor: 2.35
+    readonly property real taskMetricPillValueFactor: 1.4
     readonly property real hakuMenuMinWidth: 680
     readonly property real hakuMenuMinHeight: 450
 
