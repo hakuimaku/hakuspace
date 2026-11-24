@@ -53,7 +53,6 @@ Switch or check the active shell anytime:
 ~/.local/bin/backend_switcher.sh            # Open interactive selector
 ~/.local/bin/haku_backend.sh set hikai      # Switch to Hikai
 ~/.local/bin/haku_backend.sh set classic    # Switch to Classic
-~/.local/bin/haku_backend.sh --verify       # Verify active shell health
 ```
 
 <details>
@@ -75,8 +74,8 @@ Package manifests: [pkg-core](src/packages/pkg-core.txt) · [pkg-service](src/pa
 > Requires an existing **Arch Linux** (or derivative) base with network, audio, Bluetooth, and GPU drivers already working.
 
 ```bash
-# Clone latest release (or omit --branch for main)
-git clone --depth 1 --branch v26.11 https://github.com/hakuimaku/hakuspace.git ~/hakuspace
+# Clone latest git, run installer, and deploy to your home directory
+git clone https://github.com/hakuimaku/hakuspace.git ~/hakuspace
 cd ~/hakuspace
 chmod +x install.sh
 ./install.sh
