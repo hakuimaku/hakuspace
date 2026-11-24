@@ -77,9 +77,8 @@ Item {
         WlrLayershell.namespace: "hakuspace-taskbar"
         WlrLayershell.keyboardFocus: root.active ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
-        // Preserve rendering resources while Settings can switch back to this bar.
-        visible: BarTransitionState.hostActive || root.visualActive || UiState.activePanel === "settings"
-        contentItem.visible: BarTransitionState.hostActive ? true : root.visualActive
+        visible: !!root.modelData && BarTransitionState.bottomWindowMapped
+        contentItem.visible: root.visualActive
         color: "transparent"
         mask: Region {
             y: taskbarWindow.height - root.targetHeight

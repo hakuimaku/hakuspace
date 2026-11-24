@@ -10,9 +10,8 @@ PanelWindow {
     required property var modelData
     screen: modelData
 
-    // Retain the drawing window during Settings layout changes without exposing inactive chrome.
     readonly property bool statusActive: BarTransitionState.hostActive ? (BarTransitionState.visualEdge === "top") : ChromeLayout.topStatusBarVisible
-    contentItem.visible: BarTransitionState.hostActive ? true : root.statusActive
+    contentItem.visible: root.statusActive
 
     property real barH: Theme.topBarHeight
     property real tipAreaH: 180
@@ -37,7 +36,7 @@ PanelWindow {
     }
 
     color: "transparent"
-    visible: BarTransitionState.hostActive || root.statusActive || UiState.activePanel === "settings"
+    visible: BarTransitionState.topWindowMapped
 
     mask: Region { item: root.statusActive ? barBg : null }
 

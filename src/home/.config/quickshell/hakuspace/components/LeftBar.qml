@@ -17,8 +17,8 @@ PanelWindow {
     WlrLayershell.namespace: "hakuspace-leftbar"
     readonly property bool statusActive: BarTransitionState.hostActive ? (BarTransitionState.visualEdge === "left") : ChromeLayout.leftBarMode
     color: "transparent"
-    visible: BarTransitionState.hostActive || root.statusActive
-    contentItem.visible: BarTransitionState.hostActive ? true : root.statusActive
+    visible: BarTransitionState.leftWindowMapped
+    contentItem.visible: root.statusActive
     mask: Region { item: root.statusActive ? bar : null }
 
     Rectangle {

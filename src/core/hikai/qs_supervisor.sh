@@ -42,6 +42,8 @@ while true; do
     "$HAKU_BIN_DIR/hikai_chrome_state_ctl.py" migrate >> "$LOG_FILE" 2>&1 || exit 1
     echo "[$(date -Iseconds)] Starting quickshell..." >> "$LOG_FILE"
     QT_QPA_PLATFORM=wayland QT_QPA_PLATFORMTHEME=gtk3 QT_QPA_PLATFORMTHEME_QT6=gtk3 \
+        MALLOC_ARENA_MAX="${MALLOC_ARENA_MAX:-2}" \
+        QSG_RENDER_LOOP="${QSG_RENDER_LOOP:-basic}" \
         python3 "$HAKU_BIN_DIR/wallpaper_ctl.py" launch -c hakuspace >> "$LOG_FILE" 2>&1
     
     EXIT_CODE=$?
