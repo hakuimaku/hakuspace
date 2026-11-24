@@ -9,8 +9,9 @@ PanelWindow {
     id: root
     required property var modelData
     screen: modelData
-    // RoundedScreen owns the only left exclusive zone; this drawing plane stays stable.
-    anchors { top: true; bottom: true; left: true; right: true }
+    // RoundedScreen owns the only left exclusive zone; bound width to rail + tooltip headroom.
+    anchors { top: true; bottom: true; left: true }
+    implicitWidth: Math.min(root.modelData ? root.modelData.width : 580, Math.ceil(ScreenGeometry.contentLeftEdge + 500 + ScreenGeometry.borderThickness * 2))
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     WlrLayershell.layer: WlrLayer.Top

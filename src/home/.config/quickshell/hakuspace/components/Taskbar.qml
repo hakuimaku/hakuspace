@@ -20,10 +20,10 @@ Item {
     readonly property var safeRect: Safe.rect((taskbarWindow.width - appContent.viewportWidth) / 2 - Theme.hugRadius,
         taskbarWindow.height - targetHeight - appContent.headroom, appContent.viewportWidth + Theme.hugRadius * 2,
         targetHeight + appContent.headroom)
-    // Publish only the live center lane; status modules keep their own input.
+    // Publish only the live center lane in screen coordinates; status modules keep their own input.
     readonly property var centerRect: active ? Safe.rect(
         (taskbarWindow.width - Math.min(taskbarWindow.width, statusModules.centerViewportWidth)) / 2,
-        taskbarWindow.height - targetHeight,
+        (root.modelData ? root.modelData.height : taskbarWindow.height) - targetHeight,
         Math.min(taskbarWindow.width, statusModules.centerViewportWidth), targetHeight) : null
     property string registeredOutput: ""
     onCenterRectChanged: syncGeometry()
@@ -71,8 +71,9 @@ Item {
         id: taskbarWindow
         readonly property bool bottomChromeHost: true
         screen: root.modelData
-        // Keep one physical coordinate plane while status tooltips change size.
-        anchors { top: true; bottom: true; left: true; right: true }
+        // Bound the bottom drawing plane to bar + tooltip/lift headroom; StatusModules/AppBarContent apply screenOffsetY.
+        anchors { bottom: true; left: true; right: true }
+        implicitHeight: Math.ceil(root.targetHeight + Math.max(180, appContent.headroom))
         WlrLayershell.layer: WlrLayer.Top
         WlrLayershell.namespace: "hakuspace-taskbar"
         WlrLayershell.keyboardFocus: root.active ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None

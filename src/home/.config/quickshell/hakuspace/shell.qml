@@ -89,18 +89,33 @@ ShellRoot {
 
     Variants {
         model: root.hikaiScreenModel
-        TopBar {}
+        LazyLoader {
+            id: topBarLoader
+            required property var modelData
+            active: BarTransitionState.topWindowMapped
+            TopBar { modelData: topBarLoader.modelData }
+        }
     }
 
     Variants {
         model: root.hikaiScreenModel
-        LeftBar {}
+        LazyLoader {
+            id: leftBarLoader
+            required property var modelData
+            active: BarTransitionState.keepLeftBarMounted || BarTransitionState.leftWindowMapped
+            LeftBar { modelData: leftBarLoader.modelData }
+        }
     }
 
     // Separate hosts reuse the same app content without sharing enable policy.
     Variants {
         model: root.hikaiScreenModel
-        Taskbar {}
+        LazyLoader {
+            id: taskbarLoader
+            required property var modelData
+            active: BarTransitionState.bottomWindowMapped
+            Taskbar { modelData: taskbarLoader.modelData }
+        }
     }
     Variants {
         model: root.hikaiScreenModel
@@ -131,12 +146,22 @@ ShellRoot {
 
     Variants {
         model: root.hikaiScreenModel
-        BarTransitionOverlay {}
+        LazyLoader {
+            id: barTransitionLoader
+            required property var modelData
+            active: BarTransitionState.active || BarTransitionState.overlayVisible
+            BarTransitionOverlay { modelData: barTransitionLoader.modelData }
+        }
     }
 
     // Map last so an active wipe sits above existing Hikai overlay panels.
     Variants {
         model: Quickshell.screens
-        ShellTransitionOverlay {}
+        LazyLoader {
+            id: shellTransitionLoader
+            required property var modelData
+            active: ShellTransitionState.active
+            ShellTransitionOverlay { modelData: shellTransitionLoader.modelData }
+        }
     }
 }

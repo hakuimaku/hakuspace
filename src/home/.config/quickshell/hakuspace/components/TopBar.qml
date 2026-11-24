@@ -15,8 +15,9 @@ PanelWindow {
 
     property real barH: Theme.topBarHeight
     property real tipAreaH: 180
-    // Keep a stable drawing plane while tooltip and OSD geometry animates inside it.
-    anchors { top: true; bottom: true; left: true; right: true }
+    // Bound the drawing plane to bar + tooltip/OSD headroom while keeping screen-origin (0, 0).
+    anchors { top: true; left: true; right: true }
+    implicitHeight: Math.ceil(root.barH + root.tipAreaH)
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "hakuspace-bar"
 
