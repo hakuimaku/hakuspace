@@ -6,8 +6,7 @@ import "TaskManagerMotion.js" as Motion
 
 ComboBox {
     id: root
-    property var visuals
-    property int padX: 11
+    property int padX: Theme.spaceMd
     property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
     property alias unfurlProgress: dropdownPopup.unfurlProgress
     property bool popupOpen: false
@@ -16,16 +15,16 @@ ComboBox {
     property bool _wasOpenOnPress: false
 
     font.family: Theme.fontFamily
-    font.pixelSize: visuals ? visuals.bodyFontSize : 12
-    implicitHeight: 30
+    font.pixelSize: Theme.fontSize - 1
+    implicitHeight: Theme.controlHeight
 
     // Prevent default Qt palette from injecting light rectangles in dark mode.
-    palette.button: visuals ? visuals.controlSurface : Theme.surface
-    palette.buttonText: visuals ? visuals.primaryFg : Theme.fg
-    palette.base: visuals ? visuals.popupSurface : Theme.surface
-    palette.text: visuals ? visuals.primaryFg : Theme.fg
-    palette.window: visuals ? visuals.popupSurface : Theme.surface
-    palette.windowText: visuals ? visuals.primaryFg : Theme.fg
+    palette.button: Theme.surfaceSubtle(1.35)
+    palette.buttonText: Theme.fg
+    palette.base: Theme.surface
+    palette.text: Theme.fg
+    palette.window: Theme.surface
+    palette.windowText: Theme.fg
     palette.highlight: "transparent"
     palette.highlightedText: Theme.accent
 
@@ -60,11 +59,11 @@ ComboBox {
     }
 
     background: Rectangle {
-        radius: 6
+        radius: height / 2
         border.width: 0
         color: toggleArea.pressed || root.down || root.popupOpen || root.activeFocus
-            ? (visuals ? visuals.controlFocusSurface : Theme.hoverMuted)
-            : (hoverHandler.hovered ? (visuals ? visuals.hoverSurface : Theme.hoverMuted) : (visuals ? visuals.controlSurface : Theme.surface))
+            ? Theme.hoverMuted
+            : (hoverHandler.hovered ? Theme.hoverMuted : Theme.surfaceSubtle(1.35))
 
         Behavior on color {
             enabled: !root.reducedMotion
@@ -93,7 +92,7 @@ ComboBox {
 
     contentItem: Label {
         leftPadding: root.padX
-        rightPadding: root.padX + 14
+        rightPadding: root.padX + Theme.spaceMd
         text: root.displayText
         font: root.font
         color: Theme.accent
@@ -105,7 +104,7 @@ ComboBox {
         x: root.width - width - root.padX + 2
         y: (root.height - height) / 2
         text: root.popupOpen ? "▴" : "▾"
-        font.pixelSize: visuals ? visuals.metaFontSize : 10
+        font.pixelSize: Theme.fontSize - 1
         color: root.popupOpen ? Theme.accent : Theme.fgMuted
     }
 
@@ -116,7 +115,7 @@ ComboBox {
         readonly property bool isCurrent: root.currentIndex === index
         readonly property bool isHighlighted: root.highlightedIndex === index
         width: ListView.view ? ListView.view.width : root.width
-        height: 28
+        height: Theme.controlHeight
         padding: 0
         highlighted: isHighlighted
 
@@ -125,15 +124,15 @@ ComboBox {
         contentItem: Item {
             Row {
                 anchors.fill: parent
-                anchors.leftMargin: 10
-                anchors.rightMargin: 10
-                spacing: 6
+                anchors.leftMargin: Theme.spaceMd
+                anchors.rightMargin: Theme.spaceMd
+                spacing: Theme.spaceSm
 
                 Rectangle {
                     objectName: "dropdownActivePill_" + optionItem.index
                     anchors.verticalCenter: parent.verticalCenter
                     width: optionItem.isCurrent ? Math.max(1, Math.round(4 * root.unfurlProgress)) : 0
-                    height: optionItem.isCurrent ? Math.max(2, Math.round(10 * root.unfurlProgress)) : 0
+                    height: optionItem.isCurrent ? Math.max(2, Math.round(12 * root.unfurlProgress)) : 0
                     radius: 2
                     border.width: 0
                     color: Theme.accent
@@ -145,7 +144,7 @@ ComboBox {
                     width: parent.width - (optionItem.isCurrent ? 14 : 0)
                     text: optionItem.modelData
                     font: root.font
-                    color: optionItem.isCurrent ? Theme.accent : (optionItem.isHighlighted || optionHover.hovered ? (visuals ? visuals.primaryFg : Theme.fg) : Theme.fgMuted)
+                    color: optionItem.isCurrent ? Theme.accent : (optionItem.isHighlighted || optionHover.hovered ? Theme.fg : Theme.fgMuted)
                     verticalAlignment: Text.AlignVCenter
                     elide: Text.ElideRight
                 }
@@ -153,13 +152,11 @@ ComboBox {
         }
 
         background: Rectangle {
-            radius: 5
+            radius: Theme.radius
             border.width: 0
-            color: optionItem.isCurrent
-                ? (visuals ? visuals.selectedSurface : Theme.hoverMuted)
-                : ((optionItem.isHighlighted || optionHover.hovered)
-                    ? (visuals ? visuals.hoverSurface : Theme.hoverMuted)
-                    : "transparent")
+            color: (optionItem.isCurrent || optionItem.isHighlighted || optionHover.hovered)
+                ? Theme.hoverMuted
+                : "transparent"
         }
     }
 
@@ -167,9 +164,9 @@ ComboBox {
         id: dropdownPopup
         objectName: "taskDropdownPopup"
         property real unfurlProgress: 0.0
-        readonly property int targetFullHeight: Math.max(40, dropdownList.implicitHeight + 12)
-        y: root.height + 4
-        width: Math.max(root.width, 108)
+        readonly property int targetFullHeight: Math.max(Theme.controlHeight + Theme.spaceMd, dropdownList.implicitHeight + Theme.spaceMd)
+        y: root.height + Theme.spaceXs
+        width: Math.max(root.width, 120)
         height: Math.max(0, Math.round(targetFullHeight * dropdownPopup.unfurlProgress))
         implicitHeight: targetFullHeight
         padding: 0
@@ -219,13 +216,13 @@ ComboBox {
 
             ListView {
                 id: dropdownList
-                x: 6
-                y: 6
-                width: dropdownPopup.width - 12
+                x: Theme.spaceSm
+                y: Theme.spaceXs
+                width: dropdownPopup.width - Theme.spaceMd
                 height: implicitHeight
                 clip: true
                 spacing: 2
-                implicitHeight: Math.min(168, contentHeight)
+                implicitHeight: Math.min(180, contentHeight)
                 model: dropdownPopup.visible ? root.delegateModel : null
                 currentIndex: root.highlightedIndex
             }
@@ -243,9 +240,9 @@ ComboBox {
         }
 
         background: Rectangle {
-            radius: 8
+            radius: Theme.radius
             border.width: 0
-            color: visuals ? visuals.popupSurface : Theme.surface
+            color: Theme.surfaceSubtle(1.6)
             clip: true
         }
     }

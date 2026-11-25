@@ -7,121 +7,123 @@ import "../../../config/UiCatalog.js" as Catalog
 
 RowLayout {
     id: root
-    // Share identical column geometry and column-based color mapping between header and virtualized rows.
     property bool header: false
     property var process: ({})
     property bool selected: false
     property bool isPinned: false
-    property var visuals
+    property string sortKey: "cpu"
+    property bool descending: true
 
-    readonly property bool compactColumns: width > 0 && width < 480
-    readonly property int dataFontSize: (visuals ? visuals.tableFontSize : 12) - (compactColumns ? 1 : 0)
-    readonly property int labelFontSize: root.header
-        ? ((visuals ? visuals.metaFontSize : 11) - (compactColumns ? 1 : 0))
-        : dataFontSize
-    readonly property int userColumnWidth: compactColumns ? 50 : 88
-    readonly property int cpuColumnWidth: compactColumns ? 58 : 72
-    readonly property int memColumnWidth: compactColumns ? 70 : 96
-    readonly property int thrColumnWidth: compactColumns ? 36 : 44
+    signal sortRequested(string key)
 
-    readonly property color fgCol: selected ? Theme.onAccentColor : (visuals ? visuals.primaryFg : Theme.fg)
-    readonly property color headerAccentCol: visuals ? visuals.headerAccentFg : Qt.alpha(Theme.accent, 0.68)
+    readonly property bool compactColumns: width > 0 && width < 440
+    readonly property int rowFontSize: root.header ? (Theme.fontSize - 1) : Theme.fontSize
+    readonly property int cpuColumnWidth: compactColumns ? 74 : 92
+    readonly property int memColumnWidth: compactColumns ? 88 : 108
 
-    spacing: compactColumns ? 6 : 10
+    spacing: compactColumns ? Theme.spaceSm : Theme.spaceMd
 
-    TextMetrics {
-        id: pidWidth
-        font.family: Theme.fontFamily
-        font.pixelSize: root.dataFontSize
-        text: "9999999"
+    function headerSuffix(colKey) {
+        if (!root.header || root.sortKey !== colKey) return ""
+        return root.descending ? " ↓" : " ↑"
     }
 
-    Label {
-        id: pidCell
-        objectName: "taskManagerPid"
-        Layout.minimumWidth: Math.ceil(pidWidth.width) + (root.compactColumns ? 6 : 10)
-        Layout.preferredWidth: Layout.minimumWidth
-        Layout.maximumWidth: Layout.minimumWidth
-        font.family: Theme.fontFamily
-        font.pixelSize: root.labelFontSize
-        text: root.header ? "PID" : String(root.process.pid)
-        color: root.header ? Theme.fgMuted : root.fgCol
-        elide: Text.ElideNone
-    }
-
-    RowLayout {
+    Item {
         Layout.fillWidth: true
         Layout.minimumWidth: 0
-        spacing: Theme.spaceXs
-        Label {
-            objectName: "taskManagerProcessPin"
-            visible: !root.header && root.isPinned
-            text: Catalog.taskManagerIcons.pin
-            color: root.selected ? Theme.onAccentColor : Theme.accent
-            font.family: Theme.iconFontFamily
-            font.pixelSize: root.labelFontSize
+        Layout.fillHeight: true
+
+        RowLayout {
+            anchors.fill: parent
+            spacing: Theme.spaceXs
+
+            Label {
+                objectName: "taskManagerProcessPin"
+                visible: !root.header && root.isPinned
+                text: Catalog.taskManagerIcons.pin
+                color: root.selected ? Theme.onAccentColor : Theme.accent
+                font.family: Theme.iconFontFamily
+                font.pixelSize: root.rowFontSize
+            }
+
+            Label {
+                objectName: "taskManagerProcessName"
+                Layout.fillWidth: true
+                Layout.minimumWidth: 0
+                font.family: Theme.fontFamily
+                font.pixelSize: root.rowFontSize
+                font.bold: (root.header && root.sortKey === "name") || (!root.header && (root.selected || root.isPinned))
+                text: root.header ? ("Process" + root.headerSuffix("name")) : String(root.process.name || "—")
+                color: root.header
+                    ? (root.sortKey === "name" ? Theme.accent : Theme.fgMuted)
+                    : (root.selected ? Theme.onAccentColor : Theme.fg)
+                elide: Text.ElideRight
+            }
         }
-        Label {
-            objectName: "taskManagerProcessName"
-            Layout.fillWidth: true
-            Layout.minimumWidth: 0
-            font.family: Theme.fontFamily
-            font.pixelSize: root.labelFontSize
-            font.bold: !root.header && (root.selected || root.isPinned)
-            text: root.header ? "PROCESS" : String(root.process.name || "—")
-            color: root.header ? root.headerAccentCol : (root.selected ? Theme.onAccentColor : Theme.accent)
-            elide: Text.ElideRight
+
+        MouseArea {
+            enabled: root.header
+            anchors.fill: parent
+            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onClicked: root.sortRequested("name")
         }
     }
 
-    Label {
-        objectName: "taskManagerProcessUser"
-        Layout.minimumWidth: root.userColumnWidth
-        Layout.preferredWidth: root.userColumnWidth
-        Layout.maximumWidth: root.userColumnWidth
-        font.family: Theme.fontFamily
-        font.pixelSize: root.labelFontSize
-        text: root.header ? "USER" : String(root.process.user || "—")
-        color: root.header ? Theme.fgMuted : root.fgCol
-        elide: Text.ElideRight
-    }
-
-    Label {
-        objectName: "taskManagerProcessCpu"
+    Item {
         Layout.minimumWidth: root.cpuColumnWidth
         Layout.preferredWidth: root.cpuColumnWidth
         Layout.maximumWidth: root.cpuColumnWidth
-        font.family: Theme.fontFamily
-        font.pixelSize: root.labelFontSize
-        text: root.header ? "CPU" : Logic.metric(root.process.cpuTotalPercent, "%")
-        color: root.header ? root.headerAccentCol : (root.selected ? Theme.onAccentColor : Theme.accent)
-        horizontalAlignment: Text.AlignRight
-        elide: Text.ElideRight
+        Layout.fillHeight: true
+
+        Label {
+            objectName: "taskManagerProcessCpu"
+            anchors.fill: parent
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignRight
+            font.family: Theme.fontFamily
+            font.pixelSize: root.rowFontSize
+            font.bold: (root.header && root.sortKey === "cpu") || (!root.header && root.selected)
+            text: root.header ? ("CPU" + root.headerSuffix("cpu")) : Logic.metric(root.process.cpuTotalPercent, "%")
+            color: root.header
+                ? (root.sortKey === "cpu" ? Theme.accent : Theme.fgMuted)
+                : (root.selected ? Theme.onAccentColor : Theme.accent)
+            elide: Text.ElideRight
+        }
+
+        MouseArea {
+            enabled: root.header
+            anchors.fill: parent
+            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onClicked: root.sortRequested("cpu")
+        }
     }
 
-    Label {
-        objectName: "taskManagerProcessMemory"
+    Item {
         Layout.minimumWidth: root.memColumnWidth
         Layout.preferredWidth: root.memColumnWidth
         Layout.maximumWidth: root.memColumnWidth
-        font.family: Theme.fontFamily
-        font.pixelSize: root.labelFontSize
-        text: root.header ? "MEM" : Logic.bytes(root.process.rss)
-        color: root.header ? Theme.fgMuted : root.fgCol
-        horizontalAlignment: Text.AlignRight
-        elide: Text.ElideRight
-    }
+        Layout.fillHeight: true
 
-    Label {
-        objectName: "taskManagerProcessThreads"
-        Layout.minimumWidth: root.thrColumnWidth
-        Layout.preferredWidth: root.thrColumnWidth
-        Layout.maximumWidth: root.thrColumnWidth
-        font.family: Theme.fontFamily
-        font.pixelSize: root.labelFontSize
-        text: root.header ? "THR" : String(root.process.threads !== undefined ? root.process.threads : "—")
-        color: root.header ? root.headerAccentCol : (root.selected ? Theme.onAccentColor : Theme.accent)
-        horizontalAlignment: Text.AlignRight
-        elide: Text.ElideNone
+        Label {
+            objectName: "taskManagerProcessMemory"
+            anchors.fill: parent
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: Text.AlignRight
+            font.family: Theme.fontFamily
+            font.pixelSize: root.rowFontSize
+            font.bold: root.header && root.sortKey === "memory"
+            text: root.header ? ("RAM" + root.headerSuffix("memory")) : Logic.bytes(root.process.rss)
+            color: root.header
+                ? (root.sortKey === "memory" ? Theme.accent : Theme.fgMuted)
+                : (root.selected ? Theme.onAccentColor : Theme.fg)
+            elide: Text.ElideRight
+        }
+
+        MouseArea {
+            enabled: root.header
+            anchors.fill: parent
+            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onClicked: root.sortRequested("memory")
+        }
     }
 }

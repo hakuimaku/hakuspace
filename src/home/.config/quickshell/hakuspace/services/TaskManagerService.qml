@@ -124,7 +124,7 @@ QtObject {
     }
 
     // Restart once with the latest requested interval after the previous child exits.
-    property int intervalMs: 1000
+    property int intervalMs: 2000
     readonly property var monitorCommand: command("task_manager_monitor.py", ["--stream", "--interval-ms", String(intervalMs)])
     function setIntervalMs(ms) {
         if (!Number.isFinite(ms)) return

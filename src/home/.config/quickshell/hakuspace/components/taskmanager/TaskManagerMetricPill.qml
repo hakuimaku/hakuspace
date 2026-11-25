@@ -11,6 +11,8 @@ Rectangle {
     property var snapshot: ({})
     property var history: TaskManagerService.history
     property bool inOverlay: false
+    property bool selectable: false
+    property bool selected: false
     property bool showUsed: false
     property bool dismissConfirm: false
     property bool hovered: false
@@ -19,10 +21,14 @@ Rectangle {
 
     readonly property string iconGlyph: metricId === "cpu" ? Catalog.taskManagerIcons.cpu
         : metricId === "gpu" ? Catalog.taskManagerIcons.gpu
+        : metricId === "disk" ? Catalog.taskManagerIcons.disk
+        : metricId === "network" ? Catalog.taskManagerIcons.network
         : Catalog.taskManagerIcons.memory
 
     readonly property string historyKey: metricId === "cpu" ? "cpu"
         : metricId === "gpu" ? "gpu"
+        : metricId === "disk" ? "disk"
+        : metricId === "network" ? "network"
         : "memory"
 
     readonly property real rawPercent: {
@@ -35,11 +41,28 @@ Rectangle {
             var g = gpus[0] || ({})
             return Number.isFinite(g.usage) ? g.usage : NaN
         }
+        if (metricId === "disk") {
+            var mounts = snapshot && snapshot.disks && Array.isArray(snapshot.disks.mounts) ? snapshot.disks.mounts : []
+            var mount = mounts.find(function(item) { return item && item.mount === "/" }) || mounts[0] || null
+            return mount && Number.isFinite(mount.percent) ? mount.percent : NaN
+        }
+        if (metricId === "network") {
+            return NaN
+        }
         var m = snapshot && snapshot.memory ? snapshot.memory : ({})
         return Number.isFinite(m.percent) ? m.percent : NaN
     }
 
-    readonly property string valueText: Number.isFinite(rawPercent) ? Math.round(rawPercent) + "%" : "—"
+    readonly property string valueText: {
+        if (metricId === "network") {
+            var netAll = snapshot && snapshot.network && snapshot.network.all ? snapshot.network.all : ({})
+            var rxOk = Number.isFinite(netAll.rxBps)
+            var txOk = Number.isFinite(netAll.txBps)
+            if (!rxOk && !txOk) return "—"
+            return Logic.bytes((rxOk ? netAll.rxBps : 0) + (txOk ? netAll.txBps : 0)) + "/s"
+        }
+        return Number.isFinite(rawPercent) ? Math.round(rawPercent) + "%" : "—"
+    }
     readonly property string usedValueText: {
         if (metricId === "ram") {
             var m = snapshot && snapshot.memory ? snapshot.memory : ({})
@@ -68,7 +91,9 @@ Rectangle {
         return "—"
     }
     readonly property string displayValueText: (root.inOverlay && root.showUsed) ? usedValueText : valueText
-    readonly property int horizontalInset: Math.max(Theme.taskMetricPillPaddingX, Math.round(height * 0.46))
+    readonly property int horizontalInset: root.selectable
+        ? Math.max(Theme.spaceLg, Math.round(height * 0.38))
+        : Math.max(Theme.taskMetricPillPaddingX, Math.round(height * 0.46))
 
     readonly property int sparklineWindowMs: 30000
     readonly property var sparklineSeries: {
@@ -78,6 +103,25 @@ Rectangle {
         if (!Number.isFinite(latestT)) return []
         var cutoff = latestT - sparklineWindowMs
         var out = []
+        if (root.metricId === "disk" || root.metricId === "network") {
+            var maxVal = 1024
+            var rawOut = []
+            for (var j = 0; j < src.length; j++) {
+                var s = src[j]
+                if (!s || !Number.isFinite(s.t) || s.t < cutoff) continue
+                var a = root.metricId === "disk" ? s.read : s.rx
+                var b = root.metricId === "disk" ? s.write : s.tx
+                if (Number.isFinite(a) || Number.isFinite(b)) {
+                    var total = (Number.isFinite(a) ? a : 0) + (Number.isFinite(b) ? b : 0)
+                    if (total > maxVal) maxVal = total
+                    rawOut.push({ t: s.t, raw: total })
+                }
+            }
+            for (var r = 0; r < rawOut.length; r++) {
+                out.push({ t: rawOut[r].t, v: Math.max(0, Math.min(100, (rawOut[r].raw / maxVal) * 100.0)) })
+            }
+            return out
+        }
         for (var i = 0; i < src.length; i++) {
             var sample = src[i]
             if (!sample || !Number.isFinite(sample.t) || sample.t < cutoff) continue
@@ -91,7 +135,10 @@ Rectangle {
 
     onSparklineSeriesChanged: pillSparkline.requestPaint()
     onRawPercentChanged: pillSparkline.requestPaint()
+    onValueTextChanged: pillSparkline.requestPaint()
     onInOverlayChanged: pillSparkline.requestPaint()
+    onSelectedChanged: pillSparkline.requestPaint()
+    onSelectableChanged: pillSparkline.requestPaint()
 
     Connections {
         target: Theme
@@ -102,7 +149,9 @@ Rectangle {
 
     border.width: 0
     radius: height / 2
-    color: inOverlay ? Theme.surface : Theme.accent
+    color: root.selectable
+        ? (root.selected ? Theme.accent : (root.hovered ? Theme.hoverMuted : (Theme.isLight ? Theme.surfaceSubtle(1.04) : Theme.surfaceSubtle(1.22))))
+        : (inOverlay ? Theme.surface : Theme.accent)
     clip: true
 
     scale: pressed && !reducedMotion ? 0.985 : (hovered && !reducedMotion ? 1.05 : 1.0)
@@ -150,9 +199,13 @@ Rectangle {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             text: root.iconGlyph
-            color: root.inOverlay ? Theme.accent : Theme.onAccentColor
+            color: root.selectable
+                ? (root.selected ? Theme.onAccentColor : Theme.accent)
+                : (root.inOverlay ? Theme.accent : Theme.onAccentColor)
             font.family: Theme.iconFontFamily
-            font.pixelSize: Math.max(32, Math.round(Math.min(root.height * 0.7, Theme.fontSize * Theme.taskMetricPillIconFactor)))
+            font.pixelSize: root.selectable
+                ? Math.max(22, Math.round(Math.min(root.height * 0.56, Theme.fontSize * Theme.taskMetricPillIconFactor)))
+                : Math.max(32, Math.round(Math.min(root.height * 0.7, Theme.fontSize * Theme.taskMetricPillIconFactor)))
             Accessible.ignored: true
 
             Behavior on color {
@@ -206,6 +259,9 @@ Rectangle {
                         var ratioY = Math.max(0, Math.min(1, series[i].v / 100.0))
                         pts.push({ x: pad + ratioX * w, y: pad + h - ratioY * h })
                     }
+                    if (pts.length > 0 && pts[0].x > pad + 1) {
+                        pts.unshift({ x: pad, y: pts[0].y })
+                    }
                 } else {
                     var fallbackPct = Number.isFinite(root.rawPercent) ? Math.max(0, Math.min(100, root.rawPercent)) : 0
                     var fy = pad + h - (fallbackPct / 100.0) * h
@@ -213,12 +269,13 @@ Rectangle {
                     pts.push({ x: pad + w, y: fy })
                 }
 
-                var strokeCol = root.inOverlay
-                    ? Qt.alpha(Theme.accent, 0.88)
-                    : Qt.alpha(Theme.onAccentColor, 0.80)
-                var fillCol = root.inOverlay
-                    ? Qt.alpha(Theme.accent, 0.16)
-                    : Qt.alpha(Theme.onAccentColor, 0.16)
+                var useOnAccent = root.selectable ? root.selected : !root.inOverlay
+                var strokeCol = useOnAccent
+                    ? Qt.alpha(Theme.onAccentColor, 0.80)
+                    : Qt.alpha(Theme.accent, 0.88)
+                var fillCol = useOnAccent
+                    ? Qt.alpha(Theme.onAccentColor, 0.16)
+                    : Qt.alpha(Theme.accent, 0.16)
 
                 ctx.beginPath()
                 ctx.moveTo(pts[0].x, pad + h)
@@ -250,11 +307,15 @@ Rectangle {
             horizontalAlignment: Text.AlignRight
             elide: Text.ElideRight
             text: root.displayValueText
-            color: root.inOverlay ? Theme.fg : Theme.onAccentColor
+            color: root.selectable
+                ? (root.selected ? Theme.onAccentColor : Theme.fg)
+                : (root.inOverlay ? Theme.fg : Theme.onAccentColor)
             font.family: Theme.fontFamily
             font.pixelSize: (root.inOverlay && root.showUsed)
                 ? Math.max(13, Math.round(root.height * 0.31))
-                : Math.max(15, Math.round(Math.min(root.height * 0.39, Theme.fontSize * Theme.taskMetricPillValueFactor)))
+                : (root.selectable
+                    ? Math.max(Theme.fontSize, Math.round(Math.min(root.height * 0.42, Theme.fontSize * Theme.taskMetricPillValueFactor)))
+                    : Math.max(15, Math.round(Math.min(root.height * 0.39, Theme.fontSize * Theme.taskMetricPillValueFactor))))
             font.bold: true
             Accessible.ignored: true
 

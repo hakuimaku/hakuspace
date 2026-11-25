@@ -3,39 +3,21 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import "../../../services"
-import "TaskManagerMotion.js" as Motion
+import "../../../config/UiCatalog.js" as Catalog
+import ".." as TaskManager
+import "../TaskManagerLogic.js" as Logic
 
 FocusScope {
     id: root
 
-    // Reuse two focus cards across metric changes.
-    property string focusedMetric: "memory"
-    property string currentFocusMetric: "memory"
-    property string incomingMetric: ""
-    property string pendingMetric: ""
-
-    // Keep aliases used by lifecycle probes.
-    readonly property alias displayMetric: root.currentFocusMetric
-    property string morphFromMetric: "memory"
-    property string morphToMetric: "memory"
-
-    property int frontCardIndex: 0  // 0 -> focusCardA, 1 -> focusCardB
-    readonly property int backCardIndex: frontCardIndex === 0 ? 1 : 0
-    property real focusMorphProgress: 1.0
-    property bool _manualMorphActive: false
-    property bool _suppressFocusSignal: false
-    readonly property bool transitionActive: focusMorphAnim.running || root._manualMorphActive
-    readonly property alias focusMorphActive: root.transitionActive
-
-    property rect incomingStartRect: Qt.rect(0, 0, 140, 92)
-    property rect incomingTargetRect: Qt.rect(0, 0, 298, 160)
-    readonly property alias morphFocusRect: root.focusSlotRect
-
-    readonly property var frontFocusCard: frontCardIndex === 0 ? focusCardA : focusCardB
-    readonly property var backFocusCard: frontCardIndex === 0 ? focusCardB : focusCardA
-    readonly property alias focusCard: root.frontFocusCard
-    readonly property alias incomingCard: root.backFocusCard
-    readonly property alias incomingMorphCard: root.incomingCard
+    readonly property var metricOrder: ["cpu", "ram", "gpu", "disk", "network"]
+    property string focusedMetric: "cpu"
+    property int committedIndex: 0
+    property int pendingIndex: -1
+    property int transitionDirection: 0
+    property bool transitioning: false
+    property real transitionProgress: 0.0
+    readonly property real slideDistance: Math.max(40, Theme.spaceXl * 2.5)
 
     property string interfaceName: ""
     property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
@@ -63,6 +45,14 @@ FocusScope {
     property string actionStatus: TaskManagerService.actionStatus
     property bool actionBusy: TaskManagerService.actionBusy
 
+    readonly property var telemetrySnapshot: ({
+        cpu: root.cpuData || ({}),
+        memory: root.memoryData || ({}),
+        gpus: root.gpusData || [],
+        disks: root.disksData || ({}),
+        network: root.networkData || ({})
+    })
+
     // Process table state exposed for existing lifecycle/input contracts.
     property alias query: processPane.query
     property alias sortKey: processPane.sortKey
@@ -77,271 +67,227 @@ FocusScope {
 
     signal closeRequested()
 
-    readonly property bool compactWidth: width > 0 && width < 840
-    readonly property bool compactHeight: height > 0 && height < 540
-    readonly property bool ultraCompactHeight: height > 0 && height < 450
-    readonly property int leftWidth: visuals.leftPaneWidth(width)
-    readonly property int rowGap: visuals.gridGap(height)
-    readonly property int cpuHeight: visuals.cpuCardHeight(height)
-    readonly property int compactCardHeight: visuals.compactCardHeight(height)
-    readonly property int focusHeight: visuals.focusCardHeight(height)
-
     readonly property var primaryGpu: (Array.isArray(gpusData) && gpusData.length > 0) ? gpusData[0] : null
     readonly property var diskMounts: (disksData && Array.isArray(disksData.mounts)) ? disksData.mounts : []
-    readonly property var mainMount: diskMounts.find(m => m && m.mount === "/") || diskMounts[0] || null
-    readonly property var netInterfaces: ((networkData && Array.isArray(networkData.interfaces)) ? networkData.interfaces : []).filter(row => !row.loopback)
-    readonly property var netNames: ["All"].concat(netInterfaces.map(row => row.name))
+    readonly property var mainMount: diskMounts.find(function(m) { return m && m.mount === "/" }) || diskMounts[0] || null
+    readonly property var netInterfaces: ((networkData && Array.isArray(networkData.interfaces)) ? networkData.interfaces : []).filter(function(row) { return !row.loopback })
+    readonly property var netNames: ["All"].concat(netInterfaces.map(function(row) { return row.name }))
     readonly property string effectiveInterface: netNames.includes(interfaceName) ? interfaceName : ((networkData && networkData.defaultInterface) || "All")
     readonly property var netTraffic: effectiveInterface === "All"
-        ? ((networkData && networkData.all) || {})
-        : (netInterfaces.find(row => row.name === effectiveInterface) || {})
-
-    TaskManagerVisuals { id: visuals }
+        ? ((networkData && networkData.all) || ({}))
+        : (netInterfaces.find(function(row) { return row.name === effectiveInterface }) || ({}))
 
     NumberAnimation {
-        id: focusMorphAnim
+        id: carouselAnim
         target: root
-        property: "focusMorphProgress"
-        from: 0.0
-        to: 1.0
-        duration: HAnimation.taskManagerFocusMorphDuration
+        property: "transitionProgress"
         easing.type: Easing.BezierSpline
-        easing.bezierCurve: HAnimation.taskManagerFocusMorphCurve
+        easing.bezierCurve: HAnimation.dashboardWidgetSwitchCurve
         onFinished: {
-            if (root.focusMorphProgress >= 0.999) {
-                root._finishStackedMorph()
+            if (root.pendingIndex >= 0) {
+                root.committedIndex = root.pendingIndex
+                root.focusedMetric = root.metricOrder[root.committedIndex] || "cpu"
             }
+            root.pendingIndex = -1
+            root.transitionDirection = 0
+            root.transitioning = false
+            root.transitionProgress = 0.0
         }
     }
 
-    onFocusMorphProgressChanged: {
-        if (root.transitionActive && root.backFocusCard) {
-            root.backFocusCard.progress = root.focusMorphProgress
-            root.backFocusCard.roleProgress = root.focusMorphProgress
-        }
-    }
+    function selectMetric(metricId) {
+        var nextIdx = metricOrder.indexOf(metricId)
+        if (nextIdx < 0) return
 
-    function _metricCardItem(metricId) {
-        if (metricId === "gpu") return gpuCompactCard
-        if (metricId === "disk") return diskCompactCard
-        if (metricId === "network") return networkCompactCard
-        return memoryCompactCard
-    }
-
-    function _itemRectInFocusLayer(item) {
-        if (!item || !focusLayer) return Qt.rect(0, 0, 0, 0)
-        var pt = item.mapToItem(focusLayer, 0, 0)
-        return Qt.rect(pt.x, pt.y, item.width, item.height)
-    }
-
-    readonly property rect focusSlotRect: {
-        if (!focusSlot || !focusLayer || focusSlot.width <= 0) return Qt.rect(0, 0, 298, 160)
-        var pt = focusSlot.mapToItem(focusLayer, 0, 0)
-        return Qt.rect(pt.x, pt.y, focusSlot.width, focusSlot.height)
-    }
-
-    function _beginStackedFocusMorph(targetMetric) {
-        if (!targetMetric || targetMetric === root.currentFocusMetric) {
-            root.pendingMetric = ""
+        if (root.reducedMotion || root.width <= 0 || root.height <= 0) {
+            carouselAnim.stop()
+            root.committedIndex = nextIdx
+            root.pendingIndex = -1
+            root.transitionDirection = 0
+            root.transitioning = false
+            root.transitionProgress = 0.0
+            root.focusedMetric = metricId
             return
         }
 
-        if (root.reducedMotion || root.width <= 0 || root.height <= 0 || !focusSlot || focusSlot.width <= 0) {
-            focusMorphAnim.stop()
-            root._manualMorphActive = false
-            root.pendingMetric = ""
-            var nextCard = root.backFocusCard
-            nextCard.metricId = targetMetric
-            nextCard.progress = 1.0
-            nextCard.roleProgress = 1.0
-            nextCard.isFront = true
-            nextCard.isAnimating = false
-            nextCard.interactive = true
-            nextCard.z = 10
-            nextCard.visible = true
-
-            var prevCard = root.frontFocusCard
-            prevCard.isFront = false
-            prevCard.isAnimating = false
-            prevCard.interactive = false
-            prevCard.z = 5
-            prevCard.visible = false
-
-            root.frontCardIndex = root.backCardIndex
-            root.currentFocusMetric = targetMetric
-            root.morphFromMetric = targetMetric
-            root.morphToMetric = targetMetric
-            root.incomingMetric = ""
-            root.focusMorphProgress = 1.0
-            return
-        }
-
-        var srcCard = _metricCardItem(targetMetric)
-        var startR = _itemRectInFocusLayer(srcCard)
-        var endR = root.focusSlotRect
-
-        root.morphFromMetric = root.currentFocusMetric
-        root.morphToMetric = targetMetric
-        root.incomingMetric = targetMetric
-        root.incomingStartRect = startR
-        root.incomingTargetRect = endR
-
-        var incoming = root.backFocusCard
-        var oldFront = root.frontFocusCard
-
-        // Keep the outgoing card visible until the incoming card arrives.
-        oldFront.isAnimating = false
-        oldFront.interactive = false
-        oldFront.z = 10
-        oldFront.visible = true
-
-        incoming.metricId = targetMetric
-        incoming.startRect = startR
-        incoming.targetRect = endR
-        incoming.progress = 0.0
-        incoming.roleProgress = 0.0
-        incoming.isFront = true
-        incoming.isAnimating = true
-        incoming.interactive = false
-        incoming.z = 20
-        incoming.visible = true
-
-        root._manualMorphActive = false
-        root.focusMorphProgress = 0.0
-        focusMorphAnim.duration = HAnimation.taskManagerFocusMorphDuration
-        focusMorphAnim.start()
-    }
-
-    function _finishStackedMorph() {
-        focusMorphAnim.stop()
-        root._manualMorphActive = false
-        root.focusMorphProgress = 1.0
-
-        var newlyFocused = root.incomingMetric !== "" ? root.incomingMetric : root.currentFocusMetric
-        var newFront = root.backFocusCard
-        var oldFront = root.frontFocusCard
-
-        // Promote the incoming card without recreating its content.
-        newFront.isAnimating = false
-        newFront.progress = 1.0
-        newFront.roleProgress = 1.0
-        newFront.isFront = true
-        newFront.interactive = true
-        newFront.z = 10
-        newFront.visible = true
-
-        oldFront.isAnimating = false
-        oldFront.isFront = false
-        oldFront.interactive = false
-        oldFront.z = 5
-        oldFront.visible = false
-
-        root.frontCardIndex = root.backCardIndex
-        root.currentFocusMetric = newlyFocused
-        root.focusedMetric = newlyFocused
-        root.morphFromMetric = newlyFocused
-        root.morphToMetric = newlyFocused
-        root.incomingMetric = ""
-
-        if (root.pendingMetric !== "" && root.pendingMetric !== root.currentFocusMetric) {
-            var nextTarget = root.pendingMetric
-            root.pendingMetric = ""
-            root._beginStackedFocusMorph(nextTarget)
-        } else {
-            root.pendingMetric = ""
-        }
-    }
-
-    function finishFocusMorphImmediately() {
-        if (!focusMorphAnim.running && !root._manualMorphActive) return
-        _finishStackedMorph()
-    }
-
-    function setFocusMorphState(fromMetric, toMetric, progress) {
-        focusMorphAnim.stop()
-        root.pendingMetric = ""
-        var p = Motion.clamp01(progress)
-
-        if (p >= 0.999 || fromMetric === toMetric) {
-            root._manualMorphActive = false
-            root.focusedMetric = toMetric
-            if (root.currentFocusMetric !== toMetric) {
-                var nextCard = root.backFocusCard
-                var prevCard = root.frontFocusCard
-                nextCard.metricId = toMetric
-                nextCard.progress = 1.0
-                nextCard.roleProgress = 1.0
-                nextCard.isFront = true
-                nextCard.isAnimating = false
-                nextCard.interactive = true
-                nextCard.z = 10
-                nextCard.visible = true
-
-                prevCard.isFront = false
-                prevCard.isAnimating = false
-                prevCard.interactive = false
-                prevCard.z = 5
-                prevCard.visible = false
-
-                root.frontCardIndex = root.backCardIndex
-                root.currentFocusMetric = toMetric
-                root.morphFromMetric = toMetric
-                root.morphToMetric = toMetric
+        if (root.transitioning && root.pendingIndex >= 0) {
+            if (nextIdx === root.pendingIndex) return
+            carouselAnim.stop()
+            if (nextIdx === root.committedIndex) {
+                var oldCommitted = root.committedIndex
+                root.committedIndex = root.pendingIndex
+                root.pendingIndex = oldCommitted
+                root.transitionDirection = nextIdx >= root.committedIndex ? 1 : -1
+                root.transitionProgress = Math.max(0.0, Math.min(1.0, 1.0 - root.transitionProgress))
+                root.focusedMetric = metricId
+                carouselAnim.from = root.transitionProgress
+                carouselAnim.to = 1.0
+                carouselAnim.duration = Math.max(60, Math.round(HAnimation.dashboardWidgetSwitchDuration * (1.0 - root.transitionProgress)))
+                carouselAnim.start()
+                return
             }
-            root.incomingMetric = ""
-            root.focusMorphProgress = 1.0
-        } else {
-            root.focusedMetric = toMetric
-            if (root.currentFocusMetric !== fromMetric) {
-                root.frontFocusCard.metricId = fromMetric
-                root.frontFocusCard.progress = 1.0
-                root.frontFocusCard.roleProgress = 1.0
-                root.frontFocusCard.isFront = true
-                root.frontFocusCard.isAnimating = false
-                root.frontFocusCard.interactive = false
-                root.frontFocusCard.z = 10
-                root.frontFocusCard.visible = true
-                root.currentFocusMetric = fromMetric
-                root.morphFromMetric = fromMetric
-            }
-
-            var srcCard = _metricCardItem(toMetric)
-            var startR = _itemRectInFocusLayer(srcCard)
-            var endR = root.focusSlotRect
-
-            root.morphToMetric = toMetric
-            root.incomingMetric = toMetric
-            root.incomingStartRect = startR
-            root.incomingTargetRect = endR
-
-            var incoming = root.backFocusCard
-            incoming.metricId = toMetric
-            incoming.startRect = startR
-            incoming.targetRect = endR
-            incoming.progress = p
-            incoming.roleProgress = p
-            incoming.isFront = true
-            incoming.isAnimating = true
-            incoming.interactive = false
-            incoming.z = 20
-            incoming.visible = true
-
-            root.frontFocusCard.isAnimating = false
-            root.frontFocusCard.interactive = false
-            root.frontFocusCard.z = 10
-            root.frontFocusCard.visible = true
-
-            root.focusMorphProgress = p
-            root._manualMorphActive = true
+            root.committedIndex = root.pendingIndex
         }
+
+        if (nextIdx === root.committedIndex) return
+
+        root.transitionDirection = nextIdx >= root.committedIndex ? 1 : -1
+        root.pendingIndex = nextIdx
+        root.transitioning = true
+        root.transitionProgress = 0.0
+        root.focusedMetric = metricId
+        carouselAnim.from = 0.0
+        carouselAnim.to = 1.0
+        carouselAnim.duration = HAnimation.dashboardWidgetSwitchDuration
+        carouselAnim.start()
     }
 
-    onWidthChanged: if (root.transitionActive) root.finishFocusMorphImmediately()
-    onHeightChanged: if (root.transitionActive) root.finishFocusMorphImmediately()
+    function metricIconGlyph(metricId) {
+        if (metricId === "cpu") return Catalog.taskManagerIcons.cpu
+        if (metricId === "gpu") return Catalog.taskManagerIcons.gpu
+        if (metricId === "disk") return Catalog.taskManagerIcons.disk
+        if (metricId === "network") return Catalog.taskManagerIcons.network
+        return Catalog.taskManagerIcons.memory
+    }
+
+    function metricDisplayLabel(metricId) {
+        if (metricId === "cpu") return "CPU"
+        if (metricId === "gpu") return "GPU"
+        if (metricId === "disk") return "Disk"
+        if (metricId === "network") return "Network"
+        return "RAM"
+    }
+
+    function metricGaugePercent(metricId) {
+        if (metricId === "cpu") return root.cpuData && Number.isFinite(root.cpuData.usage) ? root.cpuData.usage : NaN
+        if (metricId === "ram") return root.memoryData && Number.isFinite(root.memoryData.percent) ? root.memoryData.percent : NaN
+        if (metricId === "gpu") return root.primaryGpu && Number.isFinite(root.primaryGpu.usage) ? root.primaryGpu.usage : NaN
+        if (metricId === "disk") return root.mainMount && Number.isFinite(root.mainMount.percent) ? root.mainMount.percent : NaN
+        if (metricId === "network") {
+            var rxOk = Number.isFinite(root.netTraffic.rxBps)
+            var txOk = Number.isFinite(root.netTraffic.txBps)
+            if (!rxOk && !txOk) return NaN
+            var current = (rxOk ? root.netTraffic.rxBps : 0) + (txOk ? root.netTraffic.txBps : 0)
+            var peak = 102400
+            if (Array.isArray(root.historyData)) {
+                for (var i = 0; i < root.historyData.length; i++) {
+                    var s = root.historyData[i]
+                    if (!s) continue
+                    var total = (Number.isFinite(s.rx) ? s.rx : 0) + (Number.isFinite(s.tx) ? s.tx : 0)
+                    if (total > peak) peak = total
+                }
+            }
+            return Math.max(0, Math.min(100, (current / peak) * 100.0))
+        }
+        return NaN
+    }
+
+    function metricHeroValue(metricId) {
+        if (metricId === "network") {
+            var rxOk = Number.isFinite(root.netTraffic.rxBps)
+            var txOk = Number.isFinite(root.netTraffic.txBps)
+            if (!rxOk && !txOk) return "—"
+            return Logic.bytes((rxOk ? root.netTraffic.rxBps : 0) + (txOk ? root.netTraffic.txBps : 0)) + "/s"
+        }
+        if (metricId === "gpu") {
+            if (!root.primaryGpu) return root.serviceReady ? "Unsupported" : "—"
+            if (Number.isFinite(root.primaryGpu.usage)) return Math.round(root.primaryGpu.usage) + "%"
+            var gStatus = Logic.gpuUsage(root.primaryGpu)
+            return gStatus === "Unavailable" ? "—" : gStatus
+        }
+        var val = metricGaugePercent(metricId)
+        return Number.isFinite(val) ? Math.round(val) + "%" : "—"
+    }
+
+    function detailRowsForMetric(metricId) {
+        if (metricId === "cpu") {
+            var c = root.cpuData || ({})
+            var tempVal = Number.isFinite(c.temperatureC) ? (Math.round(c.temperatureC) + " °C") : "—"
+            var freqRaw = c.frequencyHighestMHz !== undefined && c.frequencyHighestMHz !== null
+                ? c.frequencyHighestMHz
+                : (c.frequencyMHz !== undefined && c.frequencyMHz !== null ? c.frequencyMHz : c.frequencyAverageMHz)
+            var freqVal = Number.isFinite(freqRaw) ? (Math.round(freqRaw) + " MHz") : "—"
+            var loadVal = Array.isArray(c.load) && c.load.length > 0
+                ? c.load.slice(0, 3).map(function(v) { return Number.isFinite(v) ? v.toFixed(2) : "—" }).join(" / ")
+                : "—"
+            var coresVal = Array.isArray(c.cores) && c.cores.length > 0 ? (c.cores.length + " threads") : "—"
+            return [
+                { label: "Temp", value: tempVal },
+                { label: "Freq", value: freqVal },
+                { label: "Load", value: loadVal },
+                { label: "Cores", value: coresVal }
+            ]
+        }
+        if (metricId === "ram") {
+            var m = root.memoryData || ({})
+            var usedVal = (Number.isFinite(m.used) && Number.isFinite(m.total))
+                ? (Logic.bytes(m.used) + " / " + Logic.bytes(m.total)) : "—"
+            var availVal = Number.isFinite(m.availableBytes) ? Logic.bytes(m.availableBytes) : "—"
+            var cacheVal = Number.isFinite(m.cache) ? Logic.bytes(m.cache) : "—"
+            var swapVal = (Number.isFinite(m.swapTotal) && m.swapTotal > 0)
+                ? (Logic.bytes(m.swapUsed || 0) + " / " + Logic.bytes(m.swapTotal)) : "—"
+            return [
+                { label: "Used", value: usedVal },
+                { label: "Available", value: availVal },
+                { label: "Cache", value: cacheVal },
+                { label: "Swap", value: swapVal }
+            ]
+        }
+        if (metricId === "gpu") {
+            var g = root.primaryGpu || ({})
+            var devVal = g.name || (root.serviceReady ? "Unsupported" : "—")
+            var gTempVal = Number.isFinite(g.temperatureC) ? (Math.round(g.temperatureC) + " °C") : "—"
+            var vramVal = g.memoryType === "shared"
+                ? "Shared"
+                : (Number.isFinite(g.memoryUsed)
+                    ? (Logic.bytes(g.memoryUsed) + (Number.isFinite(g.memoryTotal) && g.memoryTotal > 0 ? " / " + Logic.bytes(g.memoryTotal) : ""))
+                    : "—")
+            var cpParts = []
+            if (Number.isFinite(g.clockMHz)) cpParts.push(Math.round(g.clockMHz) + " MHz")
+            if (Number.isFinite(g.powerW)) cpParts.push(g.powerW.toFixed(1) + " W")
+            var cpVal = cpParts.length > 0 ? cpParts.join(" · ") : (Number.isFinite(g.usage) ? "—" : Logic.gpuUsage(g))
+            return [
+                { label: "Device", value: devVal },
+                { label: "Temp", value: gTempVal },
+                { label: "VRAM", value: vramVal },
+                { label: "Power", value: cpVal }
+            ]
+        }
+        if (metricId === "disk") {
+            var mount = root.mainMount
+            var d = root.disksData || ({})
+            var mountVal = mount && mount.mount ? mount.mount : "—"
+            var spaceVal = (mount && Number.isFinite(mount.used) && Number.isFinite(mount.total))
+                ? (Logic.bytes(mount.used) + " / " + Logic.bytes(mount.total)) : "—"
+            var readVal = Number.isFinite(d.readBps) ? (Logic.bytes(d.readBps) + "/s") : "—"
+            var writeVal = Number.isFinite(d.writeBps) ? (Logic.bytes(d.writeBps) + "/s") : "—"
+            return [
+                { label: "Mount", value: mountVal },
+                { label: "Used", value: spaceVal },
+                { label: "Read", value: readVal },
+                { label: "Write", value: writeVal }
+            ]
+        }
+        var net = root.netTraffic || ({})
+        var downVal = Number.isFinite(net.rxBps) ? (Logic.bytes(net.rxBps) + "/s") : "—"
+        var upVal = Number.isFinite(net.txBps) ? (Logic.bytes(net.txBps) + "/s") : "—"
+        var totalVal = (Number.isFinite(net.rxBytes) || Number.isFinite(net.txBytes))
+            ? Logic.bytes((Number.isFinite(net.rxBytes) ? net.rxBytes : 0) + (Number.isFinite(net.txBytes) ? net.txBytes : 0))
+            : "—"
+        var stateVal = root.effectiveInterface === "All"
+            ? (root.netInterfaces.length + " active")
+            : (net.up === true ? "Up" : (net.up === false ? "Down" : "—"))
+        return [
+            { label: "Down", value: downVal },
+            { label: "Up", value: upVal },
+            { label: "Total", value: totalVal },
+            { label: "Link", value: stateVal }
+        ]
+    }
 
     // Discard stale selection and confirmation as soon as a process disappears.
     onProcessesDataChanged: {
-        if (root.selectedKey && !(root.processesData || []).some(row => row.key === root.selectedKey)) {
+        if (root.selectedKey && !(root.processesData || []).some(function(row) { return row.key === root.selectedKey })) {
             root.selectedKey = ""
             root.killKey = ""
             root.detailsOpen = false
@@ -349,60 +295,16 @@ FocusScope {
     }
 
     function resetVisualState() {
-        focusMorphAnim.stop()
-        root.pendingMetric = ""
-        root._manualMorphActive = false
-        root.incomingMetric = ""
-        root.focusMorphProgress = 1.0
-
-        root.frontCardIndex = 0
-        if (typeof focusCardA !== "undefined" && focusCardA) {
-            focusCardA.metricId = "memory"
-            focusCardA.progress = 1.0
-            focusCardA.roleProgress = 1.0
-            focusCardA.isFront = true
-            focusCardA.isAnimating = false
-            focusCardA.interactive = true
-            focusCardA.z = 10
-            focusCardA.visible = true
-            if (typeof focusCardA.resetState === "function") focusCardA.resetState("memory")
-        }
-
-        if (typeof focusCardB !== "undefined" && focusCardB) {
-            focusCardB.metricId = "memory"
-            focusCardB.progress = 1.0
-            focusCardB.roleProgress = 1.0
-            focusCardB.isFront = false
-            focusCardB.isAnimating = false
-            focusCardB.interactive = false
-            focusCardB.z = 5
-            focusCardB.visible = false
-            if (typeof focusCardB.resetState === "function") focusCardB.resetState("memory")
-        }
-
-        root._suppressFocusSignal = true
-        root.focusedMetric = "memory"
-        root.currentFocusMetric = "memory"
-        root.morphFromMetric = "memory"
-        root.morphToMetric = "memory"
-        root._suppressFocusSignal = false
+        carouselAnim.stop()
+        root.focusedMetric = "cpu"
+        root.committedIndex = 0
+        root.pendingIndex = -1
+        root.transitionDirection = 0
+        root.transitioning = false
+        root.transitionProgress = 0.0
     }
 
-    Component.onCompleted: {
-        resetVisualState()
-    }
-
-    function selectMetric(metricId) {
-        if (metricId === "memory" || metricId === "gpu" || metricId === "disk" || metricId === "network") {
-            if (metricId === root.focusedMetric && !root.transitionActive) return
-            root.focusedMetric = metricId
-            if (root.transitionActive) {
-                root.pendingMetric = (metricId !== root.incomingMetric) ? metricId : ""
-                return
-            }
-            root._beginStackedFocusMorph(metricId)
-        }
-    }
+    Component.onCompleted: resetVisualState()
 
     function forceFocus() {
         processPane.forceFocus()
@@ -424,202 +326,244 @@ FocusScope {
 
     RowLayout {
         anchors.fill: parent
-        spacing: visuals.paneGap(root.width)
+        spacing: Theme.spaceLg
 
-        Item {
+        ColumnLayout {
             id: leftPane
             objectName: "taskTelemetryPane"
-            Layout.preferredWidth: root.leftWidth
-            Layout.minimumWidth: root.leftWidth
-            Layout.maximumWidth: root.leftWidth
+            readonly property int paneWidth: Math.max(300, Math.min(380, Math.round(root.width * 0.36)))
+            Layout.fillWidth: false
+            Layout.minimumWidth: paneWidth
+            Layout.preferredWidth: paneWidth
+            Layout.maximumWidth: paneWidth
             Layout.fillHeight: true
+            spacing: Theme.spaceMd
 
-            Flickable {
-                anchors.fill: parent
-                contentWidth: width
-                contentHeight: telemetryGrid.implicitHeight
-                interactive: contentHeight > height + 2
-                boundsBehavior: Flickable.StopAtBounds
+            // Hero Focus Card: single active water gauge + metric details.
+            Rectangle {
+                id: heroFocusCard
+                objectName: "taskHeroFocusCard"
+                Layout.fillWidth: true
+                Layout.preferredHeight: Math.max(176, Math.round(root.height * 0.36))
+                radius: Theme.largeRadius
+                border.width: 0
+                color: Theme.isLight ? Theme.surfaceSubtle(1.04) : Theme.surfaceSubtle(1.22)
                 clip: true
 
-                GridLayout {
-                    id: telemetryGrid
-                    width: parent.width
-                    columns: 2
-                    rowSpacing: root.rowGap
-                    columnSpacing: root.rowGap
+                Item {
+                    id: heroViewport
+                    anchors.fill: parent
+                    anchors.margins: Theme.cardPadding
+                    clip: true
 
-                    TaskCpuCard {
-                        Layout.columnSpan: 2
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: root.cpuHeight
-                        Layout.minimumHeight: root.cpuHeight
-                        Layout.maximumHeight: root.cpuHeight
-                        cpu: root.cpuData
-                        visuals: visuals
-                        compact: root.compactWidth || root.compactHeight
-                        ultraCompact: root.ultraCompactHeight
-                        reducedMotion: root.reducedMotion
-                    }
+                    Repeater {
+                        model: root.metricOrder
 
-                    // Reserve focus geometry while cards animate above the grid.
-                    Item {
-                        id: focusSlot
-                        objectName: "taskFocusSlot"
-                        Layout.columnSpan: 2
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: root.focusHeight
-                        Layout.minimumHeight: root.focusHeight
-                        Layout.maximumHeight: root.focusHeight
-                    }
+                        Item {
+                            id: heroSlide
+                            required property int index
+                            required property string modelData
+                            objectName: "taskHeroSlide_" + modelData
 
-                    TaskMetricCard {
-                        id: memoryCompactCard
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: root.compactCardHeight
-                        Layout.minimumHeight: root.compactCardHeight
-                        Layout.maximumHeight: root.compactCardHeight
-                        metricId: "memory"
-                        title: "Memory"
-                        selected: root.focusedMetric === "memory"
-                        visualSuppressed: root.transitionActive && root.incomingMetric === "memory"
-                        primaryValue: visuals.dashMetric(root.memoryData.percent, "%")
-                        secondaryValue: visuals.dashPairBytes(root.memoryData.used, root.memoryData.total)
-                        barValue: visuals.clampPercent(root.memoryData.percent)
-                        barAvailable: Number.isFinite(root.memoryData.percent)
-                        waterWavePhase: root.sharedWaterWavePhase
-                        memory: root.memoryData
-                        gpus: root.gpusData
-                        disks: root.disksData
-                        network: root.networkData
-                        compact: root.compactWidth || root.compactHeight
-                        ultraCompact: root.ultraCompactHeight
-                        reducedMotion: root.reducedMotion
-                        visuals: visuals
-                        onActivated: id => root.selectMetric(id)
-                    }
+                            width: heroViewport.width
+                            height: heroViewport.height
 
-                    TaskMetricCard {
-                        id: gpuCompactCard
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: root.compactCardHeight
-                        Layout.minimumHeight: root.compactCardHeight
-                        Layout.maximumHeight: root.compactCardHeight
-                        metricId: "gpu"
-                        title: "GPU"
-                        selected: root.focusedMetric === "gpu"
-                        visualSuppressed: root.transitionActive && root.incomingMetric === "gpu"
-                        primaryValue: visuals.gpuHeroText(root.primaryGpu, root.serviceReady)
-                        secondaryValue: root.primaryGpu && root.primaryGpu.name ? root.primaryGpu.name : "—"
-                        barValue: root.primaryGpu ? visuals.clampPercent(root.primaryGpu.usage) : 0
-                        barAvailable: !!(root.primaryGpu && Number.isFinite(root.primaryGpu.usage))
-                        waterWavePhase: root.sharedWaterWavePhase
-                        memory: root.memoryData
-                        gpus: root.gpusData
-                        disks: root.disksData
-                        network: root.networkData
-                        compact: root.compactWidth || root.compactHeight
-                        ultraCompact: root.ultraCompactHeight
-                        reducedMotion: root.reducedMotion
-                        visuals: visuals
-                        onActivated: id => root.selectMetric(id)
-                    }
+                            readonly property bool isCurrent: !root.transitioning && root.committedIndex === index
+                            readonly property bool isOutgoing: root.transitioning && root.committedIndex === index
+                            readonly property bool isIncoming: root.transitioning && root.pendingIndex === index
 
-                    TaskMetricCard {
-                        id: diskCompactCard
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: root.compactCardHeight
-                        Layout.minimumHeight: root.compactCardHeight
-                        Layout.maximumHeight: root.compactCardHeight
-                        metricId: "disk"
-                        title: "Disk"
-                        selected: root.focusedMetric === "disk"
-                        visualSuppressed: root.transitionActive && root.incomingMetric === "disk"
-                        primaryValue: root.mainMount ? visuals.dashMetric(root.mainMount.percent, "%") : "—"
-                        secondaryValue: "R " + visuals.dashRate(root.disksData ? root.disksData.readBps : null)
-                            + " · W " + visuals.dashRate(root.disksData ? root.disksData.writeBps : null)
-                        barValue: root.mainMount ? visuals.clampPercent(root.mainMount.percent) : 0
-                        barAvailable: !!(root.mainMount && Number.isFinite(root.mainMount.percent))
-                        waterWavePhase: root.sharedWaterWavePhase
-                        memory: root.memoryData
-                        gpus: root.gpusData
-                        disks: root.disksData
-                        network: root.networkData
-                        compact: root.compactWidth || root.compactHeight
-                        ultraCompact: root.ultraCompactHeight
-                        reducedMotion: root.reducedMotion
-                        visuals: visuals
-                        onActivated: id => root.selectMetric(id)
-                    }
+                            visible: isCurrent || isOutgoing || isIncoming
 
-                    TaskMetricCard {
-                        id: networkCompactCard
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: root.compactCardHeight
-                        Layout.minimumHeight: root.compactCardHeight
-                        Layout.maximumHeight: root.compactCardHeight
-                        metricId: "network"
-                        title: "Network"
-                        selected: root.focusedMetric === "network"
-                        visualSuppressed: root.transitionActive && root.incomingMetric === "network"
-                        primaryValue: "↓ " + visuals.dashRate(root.netTraffic.rxBps)
-                        secondaryValue: "↑ " + visuals.dashRate(root.netTraffic.txBps)
-                        waterWavePhase: root.sharedWaterWavePhase
-                        memory: root.memoryData
-                        gpus: root.gpusData
-                        disks: root.disksData
-                        network: root.networkData
-                        compact: root.compactWidth || root.compactHeight
-                        ultraCompact: root.ultraCompactHeight
-                        reducedMotion: root.reducedMotion
-                        visuals: visuals
-                        onActivated: id => root.selectMetric(id)
+                            x: isOutgoing
+                                ? (-root.transitionDirection * root.slideDistance * root.transitionProgress)
+                                : (isIncoming
+                                    ? (root.transitionDirection * root.slideDistance * (1.0 - root.transitionProgress))
+                                    : 0)
+
+                            opacity: isOutgoing
+                                ? (1.0 - root.transitionProgress)
+                                : (isIncoming
+                                    ? root.transitionProgress
+                                    : (isCurrent ? 1.0 : 0.0))
+
+                            readonly property real gaugeVal: root.metricGaugePercent(modelData)
+                            readonly property bool gaugeAvail: Number.isFinite(gaugeVal)
+                            readonly property real gaugeSize: Math.max(76, Math.min(104,
+                                Math.round(heroViewport.height * 0.62),
+                                Math.round(heroViewport.width * 0.32)))
+                            readonly property var detailRows: root.detailRowsForMetric(modelData)
+
+                            RowLayout {
+                                anchors.fill: parent
+                                spacing: Theme.spaceLg
+
+                                Item {
+                                    Layout.preferredWidth: waterGauge.diameter
+                                    Layout.preferredHeight: waterGauge.diameter
+                                    Layout.alignment: Qt.AlignVCenter
+
+                                    HoverHandler { id: gaugeHover }
+
+                                    TaskWaterGauge {
+                                        id: waterGauge
+                                        objectName: "taskHeroWaterGauge_" + heroSlide.modelData
+                                        anchors.centerIn: parent
+                                        diameter: heroSlide.gaugeSize
+                                        borderless: true
+                                        interactive: false
+                                        emphasized: gaugeHover.hovered
+                                        scale: (gaugeHover.hovered && !root.reducedMotion) ? 1.05 : 1.0
+                                        metricId: heroSlide.modelData
+                                        available: heroSlide.gaugeAvail
+                                        value: heroSlide.gaugeAvail ? heroSlide.gaugeVal : 0
+                                        wavePhase: root.sharedWaterWavePhase
+                                        reducedMotion: root.reducedMotion || !heroSlide.visible
+                                        Accessible.ignored: true
+
+                                        Behavior on scale {
+                                            enabled: !root.reducedMotion
+                                            NumberAnimation {
+                                                duration: gaugeHover.hovered ? HAnimation.buttonHoverDuration : HAnimation.buttonReleaseDuration
+                                                easing.type: Easing.BezierSpline
+                                                easing.bezierCurve: gaugeHover.hovered ? HAnimation.buttonHoverCurve : HAnimation.buttonReleaseCurve
+                                            }
+                                        }
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    Layout.minimumWidth: 0
+                                    Layout.alignment: Qt.AlignVCenter
+                                    spacing: Theme.spaceXs
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: Theme.spaceSm
+
+                                        Text {
+                                            text: root.metricIconGlyph(heroSlide.modelData)
+                                            color: Theme.accent
+                                            font.family: Theme.iconFontFamily
+                                            font.pixelSize: Theme.fontSize + 2
+                                            Accessible.ignored: true
+                                        }
+
+                                        Text {
+                                            text: root.metricDisplayLabel(heroSlide.modelData)
+                                            color: Theme.fg
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.fontSize + 2
+                                            font.bold: true
+                                        }
+
+                                        Item { Layout.fillWidth: true }
+
+                                        Text {
+                                            objectName: "taskHeroValue_" + heroSlide.modelData
+                                            text: root.metricHeroValue(heroSlide.modelData)
+                                            color: Theme.accent
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Math.round(Theme.fontSize * 1.55)
+                                            font.bold: true
+                                        }
+                                    }
+
+                                    TaskDropdown {
+                                        id: interfaceCombo
+                                        objectName: "taskNetworkInterfaceDropdown"
+                                        visible: heroSlide.modelData === "network"
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: Theme.controlHeight - 4
+                                        reducedMotion: root.reducedMotion
+                                        model: root.netNames
+                                        currentIndex: Math.max(0, root.netNames.indexOf(root.effectiveInterface))
+                                        Accessible.name: "Network interface"
+                                        onActivated: root.interfaceName = root.netNames[currentIndex] || "All"
+                                    }
+
+                                    Repeater {
+                                        model: heroSlide.detailRows
+
+                                        RowLayout {
+                                            required property var modelData
+                                            Layout.fillWidth: true
+                                            spacing: Theme.spaceSm
+
+                                            Text {
+                                                text: modelData.label
+                                                color: Theme.fgMuted
+                                                font.family: Theme.fontFamily
+                                                font.pixelSize: Theme.fontSize - 1
+                                            }
+
+                                            Text {
+                                                Layout.fillWidth: true
+                                                Layout.minimumWidth: 0
+                                                horizontalAlignment: Text.AlignRight
+                                                text: modelData.value
+                                                color: Theme.fg
+                                                font.family: Theme.fontFamily
+                                                font.pixelSize: Theme.fontSize - 1
+                                                elide: Text.ElideRight
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
 
-            Item {
-                id: focusLayer
-                objectName: "taskFocusLayer"
-                anchors.fill: parent
-                z: 20
+            // 5 selectable vertical Metric Pills.
+            ColumnLayout {
+                id: metricPillList
+                objectName: "taskTelemetryPillList"
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                spacing: Theme.spaceSm
 
-                TaskFocusLayerCard {
-                    id: focusCardA
-                    instanceId: 0
-                    idleRect: root.focusSlotRect
-                    compact: root.compactWidth || root.compactHeight
-                    ultraCompact: root.ultraCompactHeight
-                    reducedMotion: root.reducedMotion
-                    waterWavePhase: root.sharedWaterWavePhase
-                    memory: root.memoryData
-                    gpus: root.gpusData
-                    disks: root.disksData
-                    network: root.networkData
-                    history: root.historyData
-                    serviceReady: root.serviceReady
-                    interfaceName: root.interfaceName
-                    visuals: visuals
-                    onInterfaceSelected: name => root.interfaceName = name
-                }
+                Repeater {
+                    model: root.metricOrder
 
-                TaskFocusLayerCard {
-                    id: focusCardB
-                    instanceId: 1
-                    idleRect: root.focusSlotRect
-                    compact: root.compactWidth || root.compactHeight
-                    ultraCompact: root.ultraCompactHeight
-                    reducedMotion: root.reducedMotion
-                    waterWavePhase: root.sharedWaterWavePhase
-                    memory: root.memoryData
-                    gpus: root.gpusData
-                    disks: root.disksData
-                    network: root.networkData
-                    history: root.historyData
-                    serviceReady: root.serviceReady
-                    interfaceName: root.interfaceName
-                    visuals: visuals
-                    onInterfaceSelected: name => root.interfaceName = name
+                    Item {
+                        id: pillSlot
+                        required property string modelData
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.minimumHeight: Theme.comfortableControlHeight
+
+                        TaskManager.TaskManagerMetricPill {
+                            id: metricPill
+                            objectName: "taskTelemetryPill_" + pillSlot.modelData
+                            anchors.fill: parent
+                            metricId: pillSlot.modelData
+                            snapshot: root.telemetrySnapshot
+                            history: root.historyData
+                            selectable: true
+                            selected: root.focusedMetric === pillSlot.modelData
+                            hovered: pillMouse.containsMouse || pillSlot.activeFocus
+                            pressed: pillMouse.pressed
+                            reducedMotion: root.reducedMotion
+                        }
+
+                        activeFocusOnTab: true
+                        Accessible.role: Accessible.Button
+                        Accessible.name: root.metricDisplayLabel(pillSlot.modelData) + " " + metricPill.displayValueText
+                        Keys.onReturnPressed: event => { root.selectMetric(pillSlot.modelData); event.accepted = true }
+                        Keys.onEnterPressed: event => { root.selectMetric(pillSlot.modelData); event.accepted = true }
+                        Keys.onSpacePressed: event => { root.selectMetric(pillSlot.modelData); event.accepted = true }
+
+                        MouseArea {
+                            id: pillMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            acceptedButtons: Qt.LeftButton
+                            onClicked: root.selectMetric(pillSlot.modelData)
+                        }
+                    }
                 }
             }
         }
@@ -627,6 +571,7 @@ FocusScope {
         TaskProcessPane {
             id: processPane
             Layout.fillWidth: true
+            Layout.minimumWidth: 360
             Layout.fillHeight: true
             processes: root.processesData
             statusError: root.statusError
@@ -635,9 +580,6 @@ FocusScope {
             actionStatus: root.actionStatus
             actionBusy: root.actionBusy
             interactionOwned: root.interactionOwned
-            visuals: visuals
-            compact: root.compactWidth || root.compactHeight
-            ultraCompact: root.ultraCompactHeight
             reducedMotion: root.reducedMotion
             onCloseRequested: root.closeRequested()
             onSignalRequested: (proc, sig) => TaskManagerService.sendSignal(proc, sig)

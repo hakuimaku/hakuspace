@@ -257,7 +257,7 @@ PanelWindow {
                         text: TaskManagerService.error ? "Error" : (TaskManagerService.warmingUp ? "Warming up…" : "Live")
                         color: TaskManagerService.error ? Theme.danger : Theme.fgMuted
                         font.family: Theme.fontFamily
-                        font.pixelSize: Math.max(11, Theme.fontSize - 3)
+                        font.pixelSize: Theme.fontSize - 1
                     }
                 }
 
@@ -292,18 +292,18 @@ PanelWindow {
                     objectName: "taskManagerCloseButton"
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 26
-                    height: 26
-                    radius: 6
+                    width: 28
+                    height: 28
+                    radius: height / 2
                     border.width: 0
                     hoverScaleDelta: 0
                     pressScaleDelta: 0
-                    fontSize: Math.max(12, Theme.fontSize - 2)
-                    idleColor: Qt.alpha(Theme.overlayInk, Theme.isLight ? 0.05 : 0.038)
+                    fontSize: Theme.fontSize - 1
+                    idleColor: Theme.surfaceSubtle(1.4)
                     foregroundColor: Theme.fgMuted
-                    hoverColor: Qt.alpha(Theme.overlayInk, Theme.isLight ? 0.09 : 0.075)
-                    hoverForegroundColor: Qt.alpha(Theme.overlayInk, Theme.isLight ? 0.92 : 0.95)
-                    focusColor: Qt.alpha(Theme.overlayInk, Theme.isLight ? 0.11 : 0.095)
+                    hoverColor: Theme.hoverMuted
+                    hoverForegroundColor: Theme.fg
+                    focusColor: Theme.hoverMuted
                     focusForegroundColor: Theme.accent
                     text: "×"
                     activeFocusOnTab: true
