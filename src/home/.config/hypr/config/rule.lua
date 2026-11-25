@@ -192,6 +192,13 @@ hl.layer_rule({
     no_anim = true,
 })
 
+-- Notification popup geometry is animated by QML rather than the compositor.
+hl.layer_rule({
+    name = "haku-notification-popup",
+    match = { namespace = "hakuspace-notification-popup.*" },
+    no_anim = true,
+})
+
 -- Desktop icons disable animations.
 hl.layer_rule({
     name = "haku-desktop-icons",

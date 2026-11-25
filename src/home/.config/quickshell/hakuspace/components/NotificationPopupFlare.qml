@@ -13,10 +13,27 @@ PanelWindow {
         && (!root.modelData || w.screens.length === 0 || w.screens.includes(root.modelData) || w.screens.some(s => s.name === root.modelData.name)))
     property var popup: null
     readonly property bool flareActive: !root.hasFullscreen && !!root.popup
+    readonly property bool attachedMode: ShellSettingsStore.notificationPopupPosition === "anchor"
+    readonly property bool leftAttachedMode: attachedMode && ChromeLayout.leftBarMode
+    readonly property bool bottomAttachedMode: attachedMode && !leftAttachedMode && ScreenGeometry.bottomAttached
+    readonly property real screenW: root.modelData ? root.modelData.width : 0
+    readonly property real screenH: root.modelData ? root.modelData.height : 0
+    readonly property real earMargin: Math.ceil(Math.max(Theme.largeRadius + 4, Theme.hugRadius) + 8)
+    readonly property real maxPopupStackH: Math.ceil(3 * (Theme.fontSize * 13 + (Theme.cardPadding + Theme.spaceXs) * 2 + Theme.spaceSm * 2) + 2 * Theme.spaceSm + Theme.hugRadius + 8)
+    readonly property real topOffset: ChromeLayout.topBarMode ? Theme.topBarHeight : ScreenGeometry.topBorderThickness
+    readonly property real boundedCenterW: Math.min(screenW, Math.ceil(450 + earMargin * 2))
+    readonly property real boundedLeftW: Math.min(screenW, Math.ceil(ScreenGeometry.contentLeftEdge + 450 + Theme.hugRadius + 8))
+    readonly property real boundedTopH: Math.min(screenH, Math.ceil(topOffset + maxPopupStackH))
+    readonly property real boundedBottomH: Math.min(screenH, Math.ceil(ScreenGeometry.taskbarHeight + maxPopupStackH))
+    readonly property int windowOffsetX: !attachedMode && screenW > boundedCenterW ? Math.floor((screenW - boundedCenterW) / 2) : 0
+    readonly property int windowOffsetY: bottomAttachedMode && screenH > boundedBottomH ? Math.floor(screenH - boundedBottomH) : 0
     screen: modelData
     anchors { top: true; left: true }
-    implicitWidth: flareActive && root.modelData ? root.modelData.width : 1
-    implicitHeight: flareActive && root.modelData ? root.modelData.height : 1
+    margins.left: windowOffsetX
+    margins.top: windowOffsetY
+    // Keep a fixed bounded surface per chrome edge so popup open/close never triggers a Wayland resize.
+    implicitWidth: Math.max(1, Math.ceil(leftAttachedMode ? boundedLeftW : !attachedMode ? boundedCenterW : screenW))
+    implicitHeight: Math.max(1, Math.ceil(leftAttachedMode ? screenH : bottomAttachedMode ? boundedBottomH : boundedTopH))
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "hakuspace-notification-popup-flare"
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -30,8 +47,8 @@ PanelWindow {
         anchors.fill: parent
         active: root.flareActive
         sourceComponent: Flare.FlareSurface {
-            x: root.popup && root.popup.leftAttached ? ScreenGeometry.contentLeftEdge : 0
-            y: root.popup ? root.popup.attachmentY : 0
+            x: (root.popup && root.popup.leftAttached ? ScreenGeometry.contentLeftEdge : 0) - root.windowOffsetX
+            y: (root.popup ? root.popup.attachmentY : 0) - root.windowOffsetY
             attach: root.popup ? root.popup.attachMode : Flare.FlareHost.Top
             transform: Matrix4x4 {
                 matrix: root.popup && root.popup.leftAttached
