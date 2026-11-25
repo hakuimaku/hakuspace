@@ -222,6 +222,13 @@ else
     record_failure "$ACTIVATION_PENDING"
 fi
 
+begin_block "WALLPAPERS"
+if ask_yes_no "Update HakuSpace wallpapers from archive (adds missing wallpapers without overwriting existing ones)?"; then
+    "$HAKU_DIR/scripts/assets.sh" || record_failure $?
+else
+    log_skip "Wallpaper update skipped."
+fi
+
 # 6. NixOS Update (if on NixOS)
 if [[ -n "$(command -v nixos-rebuild 2>/dev/null)" ]]; then
     begin_block "4 - NIXOS SYSTEM UPDATE"
