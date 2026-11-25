@@ -97,7 +97,7 @@ Item {
     Behavior on reveal {
         NumberAnimation {
             id: slideAnimation
-            duration: rootItem.dynamicBarSync ? 500
+            duration: (rootItem.dynamicBarSync || rootItem.barHidden) ? 500
                 : ((rootItem.shouldBeVisible && !rootItem.switchingPosition) ? HAnimation.normal : HAnimation.fast)
             easing.type: Easing.BezierSpline
             easing.bezierCurve: (rootItem.shouldBeVisible && !rootItem.barHidden && !rootItem.switchingPosition) ? HAnimation.moduleCurve : HAnimation.tooltipCurve

@@ -28,17 +28,16 @@ QtObject {
     readonly property color underbarColor: colorMode === "surface" ? surfaceColor : accentColor
     // The parent publishes screen geometry and live settings previews as one snapshot.
     property bool dynamicPosition: rendererProcess ? false : AppState.cavaDynamicPosition
-    property bool barHidden: rendererProcess ? false
-        : (dynamicPosition && (BarTransitionState.phase === "hiding" || BarTransitionState.phase === "moving"))
+    property bool barHidden: rendererProcess ? false : BarTransitionState.active
     readonly property string effectivePosition: (!rendererProcess && dynamicPosition && BarTransitionState.phase === "hiding")
         ? BarTransitionState.fromEdge
         : AppState.cavaPosition
     property string position: rendererProcess ? "top" : effectivePosition
     property bool top: rendererProcess ? true : (position !== "bottom")
     readonly property bool isNiri: !rendererProcess && WM.backendName === "niri"
-    readonly property bool effectiveLeftBar: !rendererProcess && (dynamicPosition && BarTransitionState.phase === "hiding"
+    readonly property bool effectiveLeftBar: !rendererProcess && (BarTransitionState.phase === "hiding"
         ? BarTransitionState.fromEdge === "left" : ChromeLayout.leftBarMode)
-    readonly property bool effectiveTaskbar: !rendererProcess && (dynamicPosition && BarTransitionState.phase === "hiding"
+    readonly property bool effectiveTaskbar: !rendererProcess && (BarTransitionState.phase === "hiding"
         ? BarTransitionState.fromEdge === "bottom" : ChromeLayout.taskbarMode)
     property bool needsSurface: rendererProcess ? false : (isNiri && (
         position === "left" ? effectiveLeftBar :
