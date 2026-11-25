@@ -7,27 +7,45 @@ QtObject {
     property bool isRecording: false
     property string recordTime: ""
 
-    property Timer pollTimer: Timer {
-        interval: 1000
-        repeat: true
-        running: true
-        triggeredOnStart: true
-        onTriggered: { if (!poll.running) poll.running = true }
+    property bool _pidPresent: false
+    property string _rawTime: ""
+
+    function _sync() {
+        root.isRecording = root._pidPresent
+        root.recordTime = root._pidPresent ? root._rawTime : ""
     }
-    // The recording script publishes status through these /tmp files.
-    property Process poll: Process {
-        command: ["bash", "-c", "if [ -f /tmp/recording_pid ]; then echo \"T:$(cat /tmp/recording_time 2>/dev/null)\"; else echo \"STOPPED\"; fi"]
-        stdout: SplitParser {
-            onRead: data => {
-                var line = data.trim()
-                if (line.startsWith("T:")) {
-                    root.isRecording = true
-                    root.recordTime = line.substring(2)
-                } else if (line === "STOPPED") {
-                    root.isRecording = false
-                    root.recordTime = ""
-                }
+
+    // record_ctl.sh creates /tmp/recording_pid, updates /tmp/recording_time every second, and removes both on stop.
+    property FileView pidFile: FileView {
+        path: "/tmp/recording_pid"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onTextChanged: {
+            root._pidPresent = text().trim().length > 0
+            root._sync()
+        }
+        onLoadFailed: {
+            root._pidPresent = false
+            root._sync()
+        }
+    }
+
+    property FileView timeFile: FileView {
+        path: "/tmp/recording_time"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onTextChanged: {
+            var value = text().trim()
+            if (value.length > 0 || !root._pidPresent) {
+                root._rawTime = value
+                root._sync()
             }
+        }
+        onLoadFailed: {
+            root._rawTime = ""
+            root._sync()
         }
     }
 }

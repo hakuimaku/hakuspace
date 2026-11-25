@@ -463,6 +463,8 @@ def main():
     """Expose JSON commands and configure decoder policy before Qt initializes."""
     if len(sys.argv) > 1 and sys.argv[1] == "launch":
         environment = os.environ.copy()
+        environment.setdefault("MALLOC_ARENA_MAX", "2")
+        environment.setdefault("QSG_RENDER_LOOP", "basic")
         try:
             decode = settings_run("read")["values"]["playback"]["hardwareDecode"]
         except (ValueError, OSError) as error:

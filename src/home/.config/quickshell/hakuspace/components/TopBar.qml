@@ -10,14 +10,14 @@ PanelWindow {
     required property var modelData
     screen: modelData
 
-    // Retain the drawing window during Settings layout changes without exposing inactive chrome.
     readonly property bool statusActive: BarTransitionState.hostActive ? (BarTransitionState.visualEdge === "top") : ChromeLayout.topStatusBarVisible
-    contentItem.visible: BarTransitionState.hostActive ? true : root.statusActive
+    contentItem.visible: root.statusActive
 
     property real barH: Theme.topBarHeight
     property real tipAreaH: 180
-    // Keep a stable drawing plane while tooltip and OSD geometry animates inside it.
-    anchors { top: true; bottom: true; left: true; right: true }
+    // Bound the drawing plane to bar + tooltip/OSD headroom while keeping screen-origin (0, 0).
+    anchors { top: true; left: true; right: true }
+    implicitHeight: Math.ceil(root.barH + root.tipAreaH)
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "hakuspace-bar"
 
@@ -37,7 +37,7 @@ PanelWindow {
     }
 
     color: "transparent"
-    visible: BarTransitionState.hostActive || root.statusActive || UiState.activePanel === "settings"
+    visible: BarTransitionState.topWindowMapped
 
     mask: Region { item: root.statusActive ? barBg : null }
 

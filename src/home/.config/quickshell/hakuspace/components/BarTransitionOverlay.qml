@@ -15,8 +15,8 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     color: "transparent"
-    // Stay mapped so step transitions only toggle barRect visibility inside the existing Wayland surface.
-    visible: true
+    // Map only while a bar transition is active so the overlay does not hold idle GPU buffers.
+    visible: BarTransitionState.active || BarTransitionState.overlayVisible
     mask: Region {}
 
     readonly property string fromEdge: BarTransitionState.fromEdge

@@ -12,8 +12,11 @@ PanelWindow {
         w.fullscreen && (w.activated || ToplevelManager.activeToplevel === w)
         && (!root.modelData || w.screens.length === 0 || w.screens.includes(root.modelData) || w.screens.some(s => s.name === root.modelData.name)))
     property var popup: null
+    readonly property bool flareActive: !root.hasFullscreen && !!root.popup
     screen: modelData
-    anchors { top: true; bottom: true; left: true; right: true }
+    anchors { top: true; left: true }
+    implicitWidth: flareActive && root.modelData ? root.modelData.width : 1
+    implicitHeight: flareActive && root.modelData ? root.modelData.height : 1
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "hakuspace-notification-popup-flare"
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -25,7 +28,7 @@ PanelWindow {
 
     Loader {
         anchors.fill: parent
-        active: !root.hasFullscreen && !!root.popup
+        active: root.flareActive
         sourceComponent: Flare.FlareSurface {
             x: root.popup && root.popup.leftAttached ? ScreenGeometry.contentLeftEdge : 0
             y: root.popup ? root.popup.attachmentY : 0

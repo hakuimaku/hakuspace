@@ -9,16 +9,17 @@ PanelWindow {
     id: root
     required property var modelData
     screen: modelData
-    // RoundedScreen owns the only left exclusive zone; this drawing plane stays stable.
-    anchors { top: true; bottom: true; left: true; right: true }
+    // RoundedScreen owns the only left exclusive zone; bound width to rail + tooltip headroom.
+    anchors { top: true; bottom: true; left: true }
+    implicitWidth: Math.min(root.modelData ? root.modelData.width : 580, Math.ceil(ScreenGeometry.contentLeftEdge + 500 + ScreenGeometry.borderThickness * 2))
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.namespace: "hakuspace-leftbar"
     readonly property bool statusActive: BarTransitionState.hostActive ? (BarTransitionState.visualEdge === "left") : ChromeLayout.leftBarMode
     color: "transparent"
-    visible: BarTransitionState.hostActive || root.statusActive
-    contentItem.visible: BarTransitionState.hostActive ? true : root.statusActive
+    visible: BarTransitionState.leftWindowMapped
+    contentItem.visible: root.statusActive
     mask: Region { item: root.statusActive ? bar : null }
 
     Rectangle {

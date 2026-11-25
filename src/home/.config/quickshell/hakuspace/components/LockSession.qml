@@ -52,9 +52,15 @@ Scope {
 
     Variants {
         model: Quickshell.screens
-        LockReleaseOverlay {
-            visible: root.releaseActive
-            progress: root.releaseProgress
+        LazyLoader {
+            id: lockReleaseLoader
+            required property var modelData
+            active: root.releaseActive
+            LockReleaseOverlay {
+                modelData: lockReleaseLoader.modelData
+                visible: root.releaseActive
+                progress: root.releaseProgress
+            }
         }
     }
 
