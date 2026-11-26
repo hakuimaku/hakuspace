@@ -37,7 +37,7 @@ QtObject {
     readonly property var catalog: [
         { key: "WELCOME_MSG", group: "General", label: "Welcome message", type: "bool", hint: "Show the welcome message on startup." },
         { key: "NIGHT_LIGHT_TEMPERATURE", group: "General", label: "Night light temperature", type: "int", hint: "Color temperature used by night light." },
-        { key: "SCREENSHOT_DIR", group: "General", label: "Screenshot directory", type: "path", hint: "Directory where HakuSpace screenshots are saved. Niri uses its built-in screenshot tool, so this setting does not apply there. Configure Niri in ~/hakucfg/wm/niri-custom.kdl, or bind the HakuSpace screenshot script." },
+        { key: "SCREENSHOT_DIR", group: "General", label: "Screenshot directory", type: "path", hint: "Directory where HakuSpace screenshots are saved." },
         { key: "WALL_DIR", group: "Wallpaper", label: "Wallpaper directory", type: "path", hint: "Directory containing static wallpapers." },
         { key: "WALL_MPV_DIR", group: "Wallpaper", label: "Video wallpaper directory", type: "path", hint: "Directory for lively video wallpapers." },
         { key: "WALL_INTERVAL", group: "Wallpaper", label: "Change interval (seconds)", type: "int", hint: "Interval in seconds between random wallpaper changes." },

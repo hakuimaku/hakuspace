@@ -15,8 +15,8 @@ Item {
     
     // Settings consume session capabilities instead of repeating compositor rules.
     readonly property var uiCaps: ({
-        screenshotDirectory: backendName !== "niri",
-        nativeScreenshot: backendName === "niri",
+        screenshotDirectory: true,
+        nativeScreenshot: false,
         workspaceSettings: supported,
         compositorAnimationSettings: backendName === "niri",
         currentWmConfig: backendName,

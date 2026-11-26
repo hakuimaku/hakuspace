@@ -34,9 +34,8 @@ binds {
 
     Mod+T            hotkey-overlay-title="Cava Underbar" { spawn "sh" "-c" "$HOME/.local/bin/cava_manager.sh"; }
     Mod+Shift+T      hotkey-overlay-title="Toggle Cava Position" { spawn "sh" "-c" "$HOME/.local/bin/cava_manager.sh --position"; }
-    Mod+P           { screenshot; }
-    Mod+Shift+P     { screenshot-screen; }
-    Mod+Alt+P       { screenshot-window; }
+    Mod+P            hotkey-overlay-title="Screenshot Region" { spawn "sh" "-c" "$HOME/.local/bin/screenshot.sh"; }
+    Mod+Shift+P      hotkey-overlay-title="Screenshot Fullscreen" { spawn "sh" "-c" "$HOME/.local/bin/screenshot.sh --fullscreen"; }
 
     Mod+Shift+Z      hotkey-overlay-title="Cycle Statusbar Mode" { spawn "sh" "-c" "$HOME/.local/bin/statusbar_manager.sh --cycle"; }
     Mod+Z            hotkey-overlay-title="Toggle Taskbar" { spawn "sh" "-c" "$HOME/.local/bin/taskbar_manager.sh --toggle"; }
