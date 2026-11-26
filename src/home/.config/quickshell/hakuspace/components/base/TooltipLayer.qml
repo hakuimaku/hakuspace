@@ -12,7 +12,7 @@ Item {
     property string screenName: ""
     property real sideAttachmentX: ScreenGeometry.contentLeftEdge
     property bool bottomAttached: false
-    property real tipAreaHeight: 180
+    property real tipAreaHeight: 220
     height: tipAreaHeight
     property real minimumTooltipWidth: 0
     readonly property real maxTooltipWidth: Math.min(Math.max(500, minimumTooltipWidth), Math.max(0, horizontalBounds.end - horizontalBounds.start - (leftAttached ? sideAttachmentX : 0)))

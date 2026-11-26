@@ -73,7 +73,7 @@ Item {
         screen: root.modelData
         // Bound the bottom drawing plane to bar + tooltip/lift headroom; StatusModules/AppBarContent apply screenOffsetY.
         anchors { bottom: true; left: true; right: true }
-        implicitHeight: Math.ceil(root.targetHeight + Math.max(180, appContent.headroom))
+        implicitHeight: Math.ceil(root.targetHeight + Math.max(220, appContent.headroom))
         WlrLayershell.layer: WlrLayer.Top
         WlrLayershell.namespace: "hakuspace-taskbar"
         WlrLayershell.keyboardFocus: root.active ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None

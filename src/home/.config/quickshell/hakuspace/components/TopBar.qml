@@ -14,7 +14,7 @@ PanelWindow {
     contentItem.visible: root.statusActive
 
     property real barH: Theme.topBarHeight
-    property real tipAreaH: 180
+    property real tipAreaH: 220
     // Bound the drawing plane to bar + tooltip/OSD headroom while keeping screen-origin (0, 0).
     anchors { top: true; left: true; right: true }
     implicitHeight: Math.ceil(root.barH + root.tipAreaH)
