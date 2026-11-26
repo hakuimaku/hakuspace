@@ -14,7 +14,7 @@ function shellDefaults() {
             showTrash: true, showDevices: true},
         topbar: {workspaces: true, windowTitle: true, center: true, cava: true, cavaStyle: "box", tray: true,
             quickControls: true, drawerOptions: true, clock: true, notifications: true,
-            centerPromptEnabled: true, centerPromptInterval: 60, centerPromptDuration: 10,
+            centerPromptEnabled: true, centerPromptInterval: 300, centerPromptDuration: 10,
             centerPromptList: [
                 "System nominal. Ready when you are!",
                 "May your coffee be strong and your builds green :)",

@@ -29,7 +29,7 @@ DEFAULTS = {
                                "quickControls", "drawerOptions", "clock", "notifications",
                                "centerPromptEnabled"), True),
                "cavaStyle": "box",
-               "centerPromptInterval": 120,
+               "centerPromptInterval": 300,
                "centerPromptDuration": 20,
                "centerPromptList": [
                     "System nominal. Ready when you are!",

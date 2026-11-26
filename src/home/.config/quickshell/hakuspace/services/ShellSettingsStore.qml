@@ -48,7 +48,7 @@ QtObject {
     readonly property bool showClock: values.topbar.clock
     readonly property bool showNotifications: values.topbar.notifications
     readonly property bool centerPromptEnabled: values.topbar.centerPromptEnabled !== false
-    readonly property int centerPromptInterval: Number(values.topbar.centerPromptInterval) || 60
+    readonly property int centerPromptInterval: Number(values.topbar.centerPromptInterval) || 300
     readonly property int centerPromptDuration: Number(values.topbar.centerPromptDuration) || 10
     readonly property var centerPromptList: Array.isArray(values.topbar.centerPromptList) ? values.topbar.centerPromptList : []
     // Compact Dockbar behavior remains independent from Taskbar topology.
