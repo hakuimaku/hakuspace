@@ -122,7 +122,7 @@ in
         unzip
         zip
         rofi-emoji
-        wl-screenrec
+        gpu-screen-recorder
         wget
         cava
         tty-clock

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plan and migrate v26.10/v26.11/v26.12 artifacts without executing user shell code."""
+"""Plan and migrate v26.10/v26.11/v26.12/v26.12-1 artifacts without executing user shell code."""
 import argparse
 import fcntl
 import hashlib
@@ -9,6 +9,8 @@ from pathlib import Path
 import re
 import shlex
 import shutil
+import stat
+import subprocess
 import sys
 import tempfile
 
@@ -17,16 +19,18 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'src/core/shared'))
 from general_menu_ctl import open_parent, parse, read as read_menu_file, validate
+import setting_ctl
 
 HOME = Path.home().absolute()
 STATE_ROOT = Path(os.environ.get('XDG_STATE_HOME') or HOME / '.local/state')
 STATE = STATE_ROOT / 'hakuspace/migrations'
 MENU = HOME / 'hakucfg/config/hakumenu-general.json'
 MANIFEST = json.loads((ROOT / 'scripts/migrations/v26.10-1.json').read_text())
-TARGETS = ('v26.11', 'v26.12')
+TARGETS = ('v26.11', 'v26.12', 'v26.12-1')
 STEP_IDS_BY_TARGET = {
     'v26.11': {'v26.11-cleanup', 'v26.11-menu'},
     'v26.12': {'v26.11-cleanup', 'v26.11-menu', 'v26.12-advisory'},
+    'v26.12-1': {'v26.11-cleanup', 'v26.11-menu', 'v26.12-advisory', 'v26.12-1-recorder'},
 }
 RETIRED_WAYBAR_MODES = (
     'coredge', 'island', 'left', 'legacy', 'minimal',
@@ -252,12 +256,12 @@ def expected_setting_version():
     """Read SETTING_VERSION from the shipped hakucfg template without executing it."""
     template = ROOT / 'src/home/hakucfg/setting.sh'
     if not template.is_file():
-        return '26.12'
+        return '26.12-1'
     match = re.search(r'^SETTING_VERSION=["\']?([^"\'\s#]+)', template.read_text(encoding='utf-8'), re.M)
-    return match.group(1) if match else '26.12'
+    return match.group(1) if match else '26.12-1'
 
 
-def collect_v26_12_warnings():
+def collect_v26_12_warnings(suppress_version_mismatch=False):
     """Inspect retired v26.12 user overrides and stale Classic leftovers read-only."""
     warnings = []
     setting_path = HOME / 'hakucfg/setting.sh'
@@ -273,7 +277,7 @@ def collect_v26_12_warnings():
             expected_ver = expected_setting_version()
             ver_match = re.search(r'^SETTING_VERSION=["\']?([^"\'\s#]+)', text, re.M)
             installed_ver = ver_match.group(1) if ver_match else 'unknown'
-            if installed_ver != expected_ver:
+            if installed_ver != expected_ver and not suppress_version_mismatch:
                 warnings.append(
                     f'~/hakucfg/setting.sh version is {installed_ver} (expected {expected_ver}); '
                     'back up and run scripts/hakucfg.sh sync to update.'
@@ -340,18 +344,21 @@ def read_receipt(source, parent_fd, target):
 
     inferred_source = source
     steps = {}
-    # Upgrading from v26.11 carries verified v26.11 history into the v26.12 receipt while still checking live artifacts.
-    if target == 'v26.12' and parent_fd is not None:
-        prior_path = receipt_path('v26.11')
-        try:
-            prior = read_receipt_file(prior_path, parent_fd, 'v26.11', STEP_IDS_BY_TARGET['v26.11'])
-            if prior.get('status') == 'applied':
-                inferred_source = inferred_source or 'v26.11'
-                for key in ('v26.11-cleanup', 'v26.11-menu'):
-                    if key in prior['steps']:
-                        steps[key] = prior['steps'][key]
-        except (FileNotFoundError, OSError, ValueError, UnicodeError):
-            pass
+    # Upgrading carries verified prior history into the next receipt while still checking live artifacts.
+    if target in ('v26.12', 'v26.12-1') and parent_fd is not None:
+        prior_targets = ('v26.12', 'v26.11') if target == 'v26.12-1' else ('v26.11',)
+        for prior_target in prior_targets:
+            prior_path = receipt_path(prior_target)
+            try:
+                prior = read_receipt_file(prior_path, parent_fd, prior_target, STEP_IDS_BY_TARGET[prior_target])
+                if prior.get('status') == 'applied':
+                    inferred_source = inferred_source or prior_target
+                    for key in STEP_IDS_BY_TARGET[prior_target]:
+                        if key in prior['steps']:
+                            steps[key] = prior['steps'][key]
+                    break
+            except (FileNotFoundError, OSError, ValueError, UnicodeError):
+                pass
 
     return {'source_version': inferred_source or 'legacy-unknown', 'target_version': target,
             'status': 'pending', 'steps': steps}, False
@@ -424,6 +431,160 @@ def migrate_menu(apply, receipt):
         return {'status': 'failed', 'reason': f'manual migration required: {affected}: {error}'}
 
 
+def rewrite_rec_opts_for_gsr(rec_opts, was_wl):
+    """Convert wl-screenrec --max-fps flags in REC_OPTS to gpu-screen-recorder -f."""
+    warnings = []
+    try:
+        tokens = shlex.split(rec_opts)
+    except ValueError:
+        if was_wl:
+            warnings.append(
+                'could not parse custom REC_OPTS in ~/hakucfg/setting.sh; '
+                'review it for gpu-screen-recorder compatibility.'
+            )
+        return None, warnings
+
+    rewritten = []
+    converted_fps = False
+    other_tokens = False
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if token == '--max-fps' and index + 1 < len(tokens) and re.fullmatch(r'[1-9][0-9]*', tokens[index + 1]):
+            rewritten.extend(['-f', tokens[index + 1]])
+            converted_fps = True
+            index += 2
+            continue
+        if token.startswith('--max-fps='):
+            fps = token.split('=', 1)[1]
+            if re.fullmatch(r'[1-9][0-9]*', fps):
+                rewritten.extend(['-f', fps])
+                converted_fps = True
+                index += 1
+                continue
+        rewritten.append(token)
+        other_tokens = True
+        index += 1
+
+    if converted_fps and other_tokens and was_wl:
+        warnings.append(
+            'migrated --max-fps to -f in ~/hakucfg/setting.sh REC_OPTS; '
+            'review remaining custom options for gpu-screen-recorder compatibility.'
+        )
+    elif not converted_fps and other_tokens and was_wl:
+        warnings.append(
+            'custom REC_OPTS in ~/hakucfg/setting.sh was preserved; '
+            'verify its flags work with gpu-screen-recorder.'
+        )
+
+    if not converted_fps:
+        return None, warnings
+    new_value = ' '.join(rewritten) if all(re.fullmatch(r'[A-Za-z0-9_./:+-]+', t) for t in rewritten) else shlex.join(rewritten)
+    return (new_value if new_value != rec_opts else None), warnings
+
+
+# Migrate wl-screenrec defaults in ~/hakucfg/setting.sh without executing shell code.
+def migrate_recorder_settings(apply, receipt):
+    previous = receipt['steps'].get('v26.12-1-recorder', {})
+    setting_path = HOME / 'hakucfg/setting.sh'
+    if not setting_path.exists() and not setting_path.is_symlink():
+        return {'status': 'skipped', 'reason': 'no ~/hakucfg/setting.sh'}, []
+    try:
+        safe_path(setting_path)
+        parent_fd = open_parent(setting_path, False)
+        try:
+            raw, metadata = read_menu_file(parent_fd, setting_path.name)
+        finally:
+            os.close(parent_fd)
+        text = raw.decode('utf-8')
+        lines, values, positions, unsupported, missing, duplicates, version = setting_ctl.inspect(text)
+    except (OSError, ValueError, UnicodeError) as error:
+        return {'status': 'failed', 'reason': f'manual migration required: {setting_path}: {error}'}, []
+
+    if 'REC_COMMAND' in duplicates or 'REC_OPTS' in duplicates:
+        return {'status': 'failed', 'reason': f'manual migration required: duplicate recorder setting in {setting_path}'}, []
+
+    changes = {}
+    warnings = []
+    rec_cmd = values.get('REC_COMMAND')
+    was_wl = rec_cmd in ('wl-screenrec', '$HOME/.cargo/bin/wl-screenrec', '${HOME}/.cargo/bin/wl-screenrec')
+    if was_wl:
+        changes['REC_COMMAND'] = 'gpu-screen-recorder'
+
+    if 'REC_OPTS' in values:
+        new_opts, opt_warnings = rewrite_rec_opts_for_gsr(values['REC_OPTS'], was_wl)
+        warnings.extend(opt_warnings)
+        if new_opts is not None:
+            changes['REC_OPTS'] = new_opts
+    elif 'REC_OPTS' in unsupported and was_wl:
+        warnings.append(
+            'custom REC_OPTS shell expression in ~/hakucfg/setting.sh was preserved; '
+            'verify its flags work with gpu-screen-recorder.'
+        )
+
+    expected_ver = expected_setting_version()
+    bump_ver = (
+        'SETTING_VERSION' in positions
+        and version == '26.12'
+        and version != expected_ver
+        and not missing
+        and not unsupported
+        and not duplicates
+    )
+
+    if not changes and not bump_ver:
+        if previous.get('status') == 'applied':
+            return previous, warnings
+        return {'status': 'skipped', 'reason': 'no wl-screenrec settings to migrate'}, warnings
+
+    updated_keys = sorted(list(changes.keys()) + (['SETTING_VERSION'] if bump_ver else []))
+    if not apply:
+        return {'status': 'pending', 'reason': f'update {", ".join(updated_keys)}'}, warnings
+
+    try:
+        backup(setting_path)
+        for key, value in changes.items():
+            match = setting_ctl.ASSIGNMENT.match(lines[positions[key]])
+            original, comment = setting_ctl.split_comment(match.group(3))
+            lines[positions[key]] = match.group(1) + key + '=' + setting_ctl.serialize(key, value, original) + comment + match.group(4)
+        if bump_ver:
+            match = setting_ctl.ASSIGNMENT.match(lines[positions['SETTING_VERSION']])
+            _, comment = setting_ctl.split_comment(match.group(3))
+            lines[positions['SETTING_VERSION']] = match.group(1) + 'SETTING_VERSION=' + setting_ctl.quote(expected_ver) + comment + match.group(4)
+        updated_text = ''.join(lines)
+
+        parent_fd = open_parent(setting_path, False)
+        temp_name = None
+        try:
+            fcntl.flock(parent_fd, fcntl.LOCK_EX)
+            current, _ = read_menu_file(parent_fd, setting_path.name)
+            if current != raw:
+                raise ValueError('destination changed during migration; preserved')
+            fd, temporary = tempfile.mkstemp(prefix='.migration-setting-', dir=f'/proc/self/fd/{parent_fd}')
+            temp_name = Path(temporary).name
+            with os.fdopen(fd, 'w', encoding='utf-8') as stream:
+                stream.write(updated_text)
+                stream.flush()
+                os.fchmod(stream.fileno(), stat.S_IMODE(metadata.st_mode))
+                os.fsync(stream.fileno())
+            checked = subprocess.run(['bash', '-n'], input=updated_text, capture_output=True, text=True)
+            if checked.returncode:
+                raise ValueError(checked.stderr.strip() or 'bash syntax check failed')
+            os.replace(temp_name, setting_path.name, src_dir_fd=parent_fd, dst_dir_fd=parent_fd)
+            temp_name = None
+            os.fsync(parent_fd)
+        finally:
+            if temp_name is not None:
+                try:
+                    os.unlink(temp_name, dir_fd=parent_fd)
+                except FileNotFoundError:
+                    pass
+            os.close(parent_fd)
+        return {'status': 'applied', 'updated': updated_keys}, warnings
+    except (OSError, ValueError, UnicodeError) as error:
+        return {'status': 'failed', 'reason': f'manual migration required: {setting_path}: {error}'}, warnings
+
+
 # Separate destination changes from completion, which belongs to the final update gate.
 def run(args, state_fd):
     target = args.target
@@ -432,7 +593,13 @@ def run(args, state_fd):
     receipt, recorded = read_receipt(args.source, state_fd, target)
     changes = cleanup_plan()
     menu = migrate_menu(False, receipt)
-    warnings = collect_v26_12_warnings() if target == 'v26.12' else []
+    recorder, rec_warnings = migrate_recorder_settings(False, receipt) if target == 'v26.12-1' else ({'status': 'skipped'}, [])
+    suppress_ver_warn = (
+        target == 'v26.12-1'
+        and recorder.get('status') == 'pending'
+        and 'SETTING_VERSION' in recorder.get('reason', '')
+    )
+    warnings = (collect_v26_12_warnings(suppress_ver_warn) + rec_warnings) if target in ('v26.12', 'v26.12-1') else []
     destination = menu_destination(receipt)
     invalid_destination = destination['status'] not in ('valid', 'missing', 'not-required') or (
         receipt['steps'].get('v26.11-menu', {}).get('status') == 'applied' and destination['status'] != 'valid')
@@ -440,12 +607,15 @@ def run(args, state_fd):
                 and all(step['status'] in ('applied', 'skipped') for step in receipt['steps'].values())
                 and not any(action in ('remove', 'replace-on-deploy') for _, action, _ in changes)
                 and menu['status'] in ('applied', 'skipped')
+                and (target != 'v26.12-1' or recorder['status'] in ('applied', 'skipped'))
                 and destination['status'] in ('valid', 'not-required'))
     if args.status:
         payload = {**receipt, 'receipt_present': recorded, 'menu_destination': destination,
                    'completion_eligible': eligible}
-        if target == 'v26.12':
+        if target in ('v26.12', 'v26.12-1'):
             payload['advisory_warnings'] = warnings
+        if target == 'v26.12-1':
+            payload['recorder_migration'] = recorder
         print(json.dumps(payload, indent=2))
         return 0
     for path, action, evidence in changes:
@@ -454,6 +624,7 @@ def run(args, state_fd):
         print(f'LEGACY CLEANUP: {action}: {path} ({evidence})')
     if args.audit:
         if (destination['status'] not in ('valid', 'not-required') or menu['status'] == 'failed'
+                or (target == 'v26.12-1' and recorder['status'] in ('failed', 'pending'))
                 or any(action in ('remove', 'replace-on-deploy') for _, action, _ in changes)):
             print(f'MIGRATION AUDIT: incomplete; receipt={receipt["status"]}; '
                   f'destination={destination}; menu={menu}', file=sys.stderr)
@@ -483,16 +654,19 @@ def run(args, state_fd):
         atomic_json(receipt_file, receipt, state_fd)
         return 0
     if args.plan or os.environ.get('HAKUSPACE_MIGRATION_PLAN_SHOWN') != '1':
-        print(f'MIGRATION PLAN: source_version={receipt["source_version"]}; to={target}; menu={menu}')
+        plan_extra = f'; recorder={recorder}' if target == 'v26.12-1' else ''
+        print(f'MIGRATION PLAN: source_version={receipt["source_version"]}; to={target}; menu={menu}{plan_extra}')
         print(f'MIGRATION DESTINATION: {destination}; completion_eligible={eligible}')
         for warning in warnings:
-            print(f'MIGRATION WARNING [v26.12]: {warning}')
+            print(f'MIGRATION WARNING [{target}]: {warning}')
         print(f'BACKUP: {os.environ["BACKUP_DIR"]}')
     if args.plan:
-        return int(menu['status'] == 'failed' or invalid_destination)
-    if menu['status'] == 'failed' or invalid_destination:
+        return int(menu['status'] == 'failed' or recorder['status'] == 'failed' or invalid_destination)
+    if menu['status'] == 'failed' or recorder['status'] == 'failed' or invalid_destination:
         if menu['status'] == 'failed':
             receipt['steps']['v26.11-menu'] = menu
+        if target == 'v26.12-1' and recorder['status'] == 'failed':
+            receipt['steps']['v26.12-1-recorder'] = recorder
         receipt['status'] = 'failed'
         atomic_json(receipt_file, receipt, state_fd)
         return 1
@@ -507,7 +681,13 @@ def run(args, state_fd):
     unresolved = any(action == 'replace-on-deploy' for _, action, _ in cleanup_plan())
     receipt['steps']['v26.11-cleanup'] = {'status': 'failed' if unresolved else 'applied'}
     receipt['steps']['v26.11-menu'] = migrate_menu(True, receipt)
-    if target == 'v26.12':
+    if target == 'v26.12-1':
+        recorder, rec_warnings = migrate_recorder_settings(True, receipt)
+        receipt['steps']['v26.12-1-recorder'] = recorder
+        for warning in rec_warnings:
+            print(f'MIGRATION WARNING [{target}]: {warning}')
+        warnings = collect_v26_12_warnings() + rec_warnings
+    if target in ('v26.12', 'v26.12-1'):
         receipt['steps']['v26.12-advisory'] = {
             'status': 'applied' if warnings else 'skipped',
             'warnings': warnings,
@@ -518,7 +698,8 @@ def run(args, state_fd):
         failed = True
     if failed:
         receipt['status'] = 'failed'
-        print(f'MIGRATION FAILED: menu={receipt["steps"]["v26.11-menu"]}; '
+        recorder_info = f'; recorder={receipt["steps"].get("v26.12-1-recorder")}' if target == 'v26.12-1' else ''
+        print(f'MIGRATION FAILED: menu={receipt["steps"]["v26.11-menu"]}{recorder_info}; '
               f'destination={destination}; backup={os.environ["BACKUP_DIR"]}', file=sys.stderr)
     atomic_json(receipt_file, receipt, state_fd)
     return int(failed)
@@ -530,8 +711,8 @@ def main():
     mode = parser.add_mutually_exclusive_group(required=True)
     for name in ('plan', 'apply', 'status', 'audit', 'complete'):
         mode.add_argument('--' + name, action='store_true')
-    parser.add_argument('--from', dest='source', choices=('v26.10-1', 'v26.11', 'legacy-unknown'))
-    parser.add_argument('--to', '--target', dest='target', default='v26.12', choices=TARGETS)
+    parser.add_argument('--from', dest='source', choices=('v26.10-1', 'v26.11', 'v26.12', 'legacy-unknown'))
+    parser.add_argument('--to', '--target', dest='target', default='v26.12-1', choices=TARGETS)
     args = parser.parse_args()
     try:
         descriptor = state_directory(args.apply or args.complete)

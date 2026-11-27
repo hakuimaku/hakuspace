@@ -1,4 +1,4 @@
-wl-screenrec-git              # Wayland screen recorder (AUR)
+gpu-screen-recorder           # GPU-accelerated screen recorder
 rsync                         # Fast incremental file sync/copy
 wget                          # Command-line downloader
 chafa                         # Render images/videos as terminal graphics

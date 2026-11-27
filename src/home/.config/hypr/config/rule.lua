@@ -142,10 +142,10 @@ floatingApps = hl.window_rule({
     float = true,
 })
 
--- Browser popups like save, etc. should usually be floating
+-- Portal dialogs (save, open, screen share picker) should float centered
 floatingXdgPortal = hl.window_rule({
-    name  = "xdg-desktop-portal-gtk",
-    match = { class = "xdg-desktop-portal-gtk" },
+    name  = "xdg-desktop-portal",
+    match = { class = "xdg-desktop-portal-(gtk|gnome)|hyprland-share-picker" },
 
     float = true,
     center = true,

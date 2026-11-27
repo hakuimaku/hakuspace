@@ -15,28 +15,41 @@ usage() {
 Usage: record.sh [OPTION]
 
 Interactive:
-    Classic                           Stop active recording, otherwise open Classic picker
-    Hikai                             Stop active recording, otherwise open native Action Layer
+    Classic [--screen|--select]       Stop active recording, otherwise open Classic picker
+    Hikai [--screen|--select]         Stop active recording, otherwise open native Action Layer
 
 Headless API:
     --status [--json]                 Show recorder state
     --list-modes [--json]             List stable recording mode IDs
     --list-sources [--json]           List physical microphone/source IDs
-    --start MODE [--source ID]        Start an explicit recording mode
+    --start MODE [--source ID] [--target screen|portal]
+                                      Start an explicit recording mode
     --stop                            Stop the active recording
     -h, --help                        Show this help message
 EOF_HELP
 }
 
-case "${1:-}" in
-    '')
-        if [[ "$("$RECORD_CTL" status)" == recording ]]; then
-            exec "$RECORD_CTL" stop
-        fi
-        if haku_backend_is "classic"; then
-            exec "$RECORD_ROFI"
-        fi
+open_interactive() {
+    local target=$1
+    if [[ "$("$RECORD_CTL" status)" == recording ]]; then
+        exec "$RECORD_CTL" stop
+    fi
+    if haku_backend_is "classic"; then
+        exec "$RECORD_ROFI" --target "$target"
+    fi
+    if [[ "$target" == portal ]]; then
+        haku_qs_ipc actionMenu openDefault recordSelect
+    else
         haku_qs_ipc actionMenu openDefault record
+    fi
+}
+
+case "${1:-}" in
+    ''|--screen)
+        open_interactive screen
+        ;;
+    --select|--portal)
+        open_interactive portal
         ;;
     --status)
         shift

@@ -45,11 +45,11 @@ after success or failure and are not automatically deleted.
 
 ### Migration validity and recovery
 
-The v26.12 migration retains its receipt at
-`${XDG_STATE_HOME:-$HOME/.local/state}/hakuspace/migrations/v26.12.json`
-(with `--to v26.11` retained for compatibility, and `--to v26.12` automatically
-including the v26.11 cleanup and menu conversion steps when upgrading from older
-releases, plus read-only advisory warnings for retired v26.12 user overrides).
+The v26.12-1 migration retains its receipt at
+`${XDG_STATE_HOME:-$HOME/.local/state}/hakuspace/migrations/v26.12-1.json`
+(with `--to v26.11` and `--to v26.12` retained for compatibility, and `--to v26.12-1`
+automatically including prior cleanup, menu conversion, and recorder setting migration
+when upgrading from older releases, plus read-only advisory warnings for retired user overrides).
 The recorded menu step describes conversion history. A historical `applied` step
 does not prove that `~/hakucfg/config/hakumenu-general.json` still exists or is valid.
 `scripts/migrate.sh --status` reports that history alongside `menu_destination`
@@ -102,7 +102,7 @@ After repair, inspect the plan and rerun the updater:
 
 ```bash
 ./scripts/migrate.sh --status
-./scripts/migrate.sh --plan --to v26.12
+./scripts/migrate.sh --plan --to v26.12-1
 python3 -B src/core/shared/general_menu_ctl.py check
 ./update.sh
 ```

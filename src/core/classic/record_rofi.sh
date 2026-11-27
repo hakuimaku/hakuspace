@@ -8,6 +8,21 @@ set -u
 source "${HAKU_BIN_DIR:-$HOME/.local/bin}/haku_state.sh" || exit 1
 RECORD_CTL="$HAKU_BIN_DIR/record_ctl.sh"
 
+target="screen"
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --target)
+            [[ $# -ge 2 ]] || { printf 'record_rofi.sh: --target requires screen or portal.\n' >&2; exit 2; }
+            target=$2
+            shift 2
+            ;;
+        *)
+            printf 'record_rofi.sh: unknown argument: %s\n' "$1" >&2
+            exit 2
+            ;;
+    esac
+done
+
 MODE_LABELS=(
     '󰑊 Only Sound'
     '󰍬 Micro and Sound'
@@ -32,7 +47,7 @@ fi
 
 mode=${MODE_IDS[$chosen_index]}
 if [[ "$mode" != mic-system ]]; then
-    exec "$RECORD_CTL" start "$mode"
+    exec "$RECORD_CTL" start "$mode" --target "$target"
 fi
 
 mapfile -t sources < <("$RECORD_CTL" list-sources)
@@ -52,4 +67,4 @@ if [[ ! "$source_index" =~ ^[0-9]+$ ]] || (( source_index < 0 || source_index >=
     exit 1
 fi
 
-exec "$RECORD_CTL" start mic-system --source "${sources[$source_index]}"
+exec "$RECORD_CTL" start mic-system --source "${sources[$source_index]}" --target "$target"

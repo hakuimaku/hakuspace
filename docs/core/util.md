@@ -35,8 +35,8 @@ A robust wrapper around your Wayland screen capture tools.
 ### Screen recording
 Screen recording keeps the long-standing `record.sh` keybind command, but selection and capture lifecycle are now separated.
 
-- **`record.sh` (compatibility facade):** with no arguments, stops an active recording or opens the selected shell's recording frontend. It also exposes explicit `--status`, `--list-modes`, `--list-sources`, `--start`, and `--stop` commands for headless callers.
-- **`record_ctl.sh` (headless backend):** owns `wl-screenrec`, PipeWire/Pulse setup, physical source discovery, virtual mic+system mixing, timer/state files, and stop/cleanup. Stable mode IDs are `system-audio`, `mic-system`, and `no-audio`.
+- **`record.sh` (compatibility facade):** with no arguments (or `--screen`), stops an active recording or opens the selected shell's recording frontend targeting `-w screen`; `--select` (or `--portal`) opens the frontend targeting `-w portal`. It also exposes explicit `--status`, `--list-modes`, `--list-sources`, `--start`, and `--stop` commands for headless callers.
+- **`record_ctl.sh` (headless backend):** owns `gpu-screen-recorder` (default `-w screen`, or `-w portal` with `--target portal` where timer waits for `-write-first-frame-ts` so selection time is excluded), physical source discovery, native audio mixing (`-a`), timer/state files, and stop/cleanup. Stable mode IDs are `system-audio`, `mic-system`, and `no-audio`.
 - **`record_rofi.sh` (Classic frontend):** owns only the mode and microphone/source menus, then delegates the selected stable IDs to `record_ctl.sh`.
 
 Recordings still default to `~/Videos`, and invoking the public facade again while recording still sends the normal interrupt/cleanup path.

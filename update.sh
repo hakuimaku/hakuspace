@@ -92,7 +92,7 @@ if [[ "${HAKUSPACE_REPO_UPDATED:-0}" != 1 ]]; then
     fi
 fi
 
-"$HAKU_DIR/scripts/migrate.sh" --plan --to v26.12
+"$HAKU_DIR/scripts/migrate.sh" --plan --to v26.12-1
 export HAKUSPACE_MIGRATION_PLAN_SHOWN=1
 
 # 3. Select Window Manager(s) & Detect Deploy Mode
@@ -141,7 +141,7 @@ if ask_yes_no "Apply the configuration update plan shown above?" y; then
         "$HAKU_DIR/scripts/legacy_copy.sh" update "${SELECTED_WMS[@]}"
     fi
     MIGRATION_STATUS=0
-    "$HAKU_DIR/scripts/migrate.sh" --apply --to v26.12 || MIGRATION_STATUS=$?
+    "$HAKU_DIR/scripts/migrate.sh" --apply --to v26.12-1 || MIGRATION_STATUS=$?
     if [[ "$MIGRATION_STATUS" == 0 ]]; then
         log_ok "Configuration deployment and migration steps applied; final checks pending."
     else
@@ -257,7 +257,7 @@ else
 fi
 
 if [[ "$UPDATE_FAILED" == 0 ]]; then
-    "$HAKU_DIR/scripts/migrate.sh" --complete --to v26.12 || record_failure $?
+    "$HAKU_DIR/scripts/migrate.sh" --complete --to v26.12-1 || record_failure $?
 fi
 UPDATE_NORMAL_EXIT=1
 exit "$UPDATE_FAILED"

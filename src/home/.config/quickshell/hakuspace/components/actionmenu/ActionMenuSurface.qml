@@ -167,7 +167,8 @@ Item {
     // Maps flow ID string to QML component page path.
     function pageUrlForFlow(flowId) {
         switch (flowId) {
-        case "record": return "pages/RecordPage.qml";
+        case "record":
+        case "recordSelect": return "pages/RecordPage.qml";
         case "power": return "pages/PowerPage.qml";
         case "exit": return "pages/ExitPage.qml";
         case "theme": return "pages/ThemePage.qml";
@@ -190,7 +191,8 @@ Item {
         case "power": return "powerHorizontal";
         case "exit": return "exitReport";
         case "theme": return "option";
-        case "record": return "option";
+        case "record":
+        case "recordSelect": return "option";
         case "clipboard": return "option";
         case "niriAnimation":
         case "niri_animation": return "option";
@@ -280,10 +282,14 @@ Item {
 
         var comp = Qt.createComponent(initialUrl);
         if (comp.status === Component.Ready) {
-            var page = comp.createObject(pageStackHost, {
+            var initProps = {
                 canGoBack: false,
                 selectionPillShown: true
-            });
+            };
+            if (root.flow === "recordSelect") {
+                initProps.captureTarget = "portal";
+            }
+            var page = comp.createObject(pageStackHost, initProps);
             if (page) {
                 page.anchors.fill = pageStackHost;
                 connectPageSignals(page);

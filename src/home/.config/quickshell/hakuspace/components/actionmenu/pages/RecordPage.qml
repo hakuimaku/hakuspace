@@ -9,12 +9,13 @@ ActionMenu.ActionMenuPage {
     id: root
 
     title: "Screen Recording"
-    subtitle: "Select capture mode"
+    subtitle: captureTarget === "portal" ? "Select capture mode (screen chooser)" : "Select capture mode"
     icon: "󰕧"
     geometryProfile: "option"
 
     signal pushSubmenu(string pageUrl, var props, var seedGeom, string profile)
 
+    property string captureTarget: "screen"
     property int selectedIndex: 0
 
     readonly property var modes: UiCatalog.actionMenuRecordModes
@@ -27,9 +28,9 @@ ActionMenu.ActionMenuPage {
 
         if (mode.isSubmenu) {
             var geom = btn && btn.getSurfaceGeometry ? btn.getSurfaceGeometry() : null;
-            root.pushSubmenu("pages/RecordSourcePage.qml", {}, geom, "option");
+            root.pushSubmenu("pages/RecordSourcePage.qml", { captureTarget: root.captureTarget }, geom, "option");
         } else {
-            Quickshell.execDetached([Env.binDir + "/record_ctl.sh", "start", mode.id]);
+            Quickshell.execDetached([Env.binDir + "/record_ctl.sh", "start", mode.id, "--target", root.captureTarget]);
             root.requestClose();
         }
     }
@@ -128,13 +129,7 @@ ActionMenu.ActionMenuPage {
 
                 onClicked: {
                     root.selectedIndex = index;
-                    var geom = getSurfaceGeometry();
-                    if (modelData.isSubmenu) {
-                        root.pushSubmenu("pages/RecordSourcePage.qml", {}, geom, "option");
-                    } else {
-                        Quickshell.execDetached([Env.binDir + "/record_ctl.sh", "start", modelData.id]);
-                        root.requestClose();
-                    }
+                    root.activateIndex(index);
                 }
             }
         }

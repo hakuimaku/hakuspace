@@ -62,7 +62,7 @@ Package manifests: [pkg-core](src/packages/pkg-core.txt) · [pkg-service](src/pa
 
 - **Shell / Bar / Launcher:** [Quickshell](https://quickshell.org/), [Waybar](https://github.com/alexays/waybar), [Rofi](https://github.com/davatorium/rofi), [SwayNC](https://github.com/ErikReider/SwayNotificationCenter)
 - **Terminal & Prompt:** [Kitty](https://github.com/kovidgoyal/kitty), [Fish](https://fishshell.com/) + [Starship](https://starship.rs/)
-- **Files, Media & Lock:** [Thunar](https://docs.xfce.org/xfce/thunar/start), [Awww](https://codeberg.org/LGFae/awww), `mpvpaper`, [Hyprlock](https://github.com/hyprwm/hyprlock), [Hypridle](https://github.com/hyprwm/Hypridle), [wl-screenrec](https://github.com/russelltg/wl-screenrec), [Ly](https://codeberg.org/fairyglade/ly#systemd)
+- **Files, Media & Lock:** [Thunar](https://docs.xfce.org/xfce/thunar/start), [Awww](https://codeberg.org/LGFae/awww), `mpvpaper`, [Hyprlock](https://github.com/hyprwm/hyprlock), [Hypridle](https://github.com/hyprwm/Hypridle), [gpu-screen-recorder](https://git.dec05eba.com/gpu-screen-recorder/about/), [Ly](https://codeberg.org/fairyglade/ly#systemd)
 
 </details>
 
@@ -113,7 +113,7 @@ Common hotkeys across compositors (full configs: [Hyprland](src/home/.config/hyp
 | `SUPER + C` | Close Window | `SUPER + E` / `B` | File Manager / Browser |
 | `SUPER + TAB` | Haku Menu | `SUPER + N` | Notification Center |
 | `SUPER + V` / `SHIFT + V` | Clipboard / Wipe | `SUPER + /` | Emoji Menu |
-| `SUPER + P` / `SHIFT + P` | Screenshot / Fullscreen | `SUPER + F11` | Screen Recorder |
+| `SUPER + P` / `SHIFT + P` | Screenshot / Fullscreen | `SUPER + K` / `SHIFT + K` | Screen Recorder / Select Screen |
 | `SUPER + Y` / `SHIFT + Y` | Wallpaper / Theme | `SUPER + T` | Cava Underbar |
 | `SUPER + Z` / `SHIFT + Z` | Taskbar / Bar Mode (Hikai) | `SUPER + CTRL + Z` | Toggle Waybar (Classic) |
 | `SUPER + SHIFT + E` / `Q` | Exit Session / Power Menu | `SUPER + 1..9` | Switch Workspace (`SHIFT` to move) |

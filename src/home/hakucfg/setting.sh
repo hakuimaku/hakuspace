@@ -2,7 +2,7 @@
 
 # This script is used to set up the main settings for all hakuspace's scripts.
 # DO NOT EDIT THIS LINE :v, used for checking setting.sh is up-to-date when run update.sh
-SETTING_VERSION="26.12"
+SETTING_VERSION="26.12-1"
 
 if [[ "$1" == "--version" || "$1" == "-v" ]]; then
     echo "$SETTING_VERSION"
@@ -40,12 +40,10 @@ ACCENT_COLOR_MODE="vivid"
 # ====== Screen Recording Settings ======
 SCREENREC_SAVE_DIR="$HOME/Videos"
 
-# Default command for wl-screenrec, ensure it's in your PATH
-REC_COMMAND="wl-screenrec"
-# If you install wl-screenrec by cargo, uncomment the above line and comment the below one
-#REC_COMMAND="$HOME/.cargo/bin/wl-screenrec"
+# Default command for gpu-screen-recorder, ensure it's in your PATH
+REC_COMMAND="gpu-screen-recorder"
 
-REC_OPTS="--max-fps 60" # wl-screenrec options, you can customize them as needed
+REC_OPTS="-f 60" # gpu-screen-recorder options, you can customize them as needed
 
 
 

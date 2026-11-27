@@ -41,14 +41,14 @@ Column {
                     id: flag
                     required property string modelData
                     width: parent.width; spacing: Theme.spaceSm
-                    Text { text: flag.modelData === "--max-fps" ? "Maximum frame rate" : flag.modelData === "--transition-duration" ? "Transition duration (seconds)" : flag.modelData.substring(2).replace(/-/g, " "); color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 1; font.weight: Font.DemiBold }
+                    Text { text: (flag.modelData === "-f" || flag.modelData === "--max-fps") ? "Maximum frame rate" : flag.modelData === "--transition-duration" ? "Transition duration (seconds)" : flag.modelData.replace(/^--+/, "").replace(/-/g, " "); color: Theme.fg; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 1; font.weight: Font.DemiBold }
                     Loader {
                         width: parent.width
                         sourceComponent: flag.modelData === "--transition-type" ? transitionType : flag.modelData === "--transition-duration" ? freeText : numeric
                         Component {
                             id: numeric
                             SettingsValueSlider {
-                                descriptor: ({label: flag.modelData, min: 1, max: flag.modelData === "--transition-step" ? 255 : 999, step: 1, unit: flag.modelData.indexOf("fps") >= 0 ? "fps" : ""})
+                                descriptor: ({label: flag.modelData, min: 1, max: flag.modelData === "--transition-step" ? 255 : 999, step: 1, unit: (flag.modelData === "-f" || flag.modelData.indexOf("fps") >= 0) ? "fps" : ""})
                                 value: Number(root.parsed.values[flag.modelData] || 60)
                                 shortcutTarget: root.shortcutTarget
                                 onEdited: value => { var next = Arguments.replace(root.raw, root.flags, flag.modelData, value, root.converted); if (next !== null) SettingsCoordinator.set(root.preference, next, true) }

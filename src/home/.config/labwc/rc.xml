@@ -332,8 +332,11 @@
         <action name="Execute" command="~/.local/bin/shutdown.sh" />
         </keybind>
 
-        <keybind key="W-f11">
+        <keybind key="W-k">
         <action name="Execute" command="~/.local/bin/record.sh" />
+        </keybind>
+        <keybind key="W-S-k">
+        <action name="Execute" command="~/.local/bin/record.sh --select" />
         </keybind>
         <keybind key="W-t">
         <action name="Execute" command="~/.local/bin/cava_manager.sh" />
@@ -855,6 +858,9 @@
         <windowRule identifier="seycava">
             <skipWindowSwitcher>yes</skipWindowSwitcher>
             <action name="SnapToEdge" direction="down-right" />
+        </windowRule>
+        <windowRule identifier="xdg-desktop-portal-*">
+            <action name="AutoPlace" policy="center" />
         </windowRule>
     </windowRules>
 

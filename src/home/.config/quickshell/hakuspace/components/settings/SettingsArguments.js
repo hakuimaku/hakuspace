@@ -37,5 +37,5 @@ function extras(text, flags, extra, allowVariables) {
     var spans = Object.keys(parsed.spans).map(function(key) { return parsed.spans[key] }).sort(function(a, b) { return a.start - b.start })
     return spans.map(function(span) { return text.substring(span.start, span.end) }).concat(extra.trim() ? [extra] : []).join(" ")
 }
-var recording = {"--max-fps": /^[1-9][0-9]{0,2}$/}
+var recording = {"-f": /^[1-9][0-9]{0,2}$/}
 var wallpaper = {"--transition-type": /^(none|simple|fade|left|right|top|bottom|wipe|wave|grow|center|any|outer|random)$/, "--transition-step": /^(?:[1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/, "--transition-fps": /^[1-9][0-9]{0,2}$/, "--transition-duration": /^(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/}

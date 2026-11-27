@@ -15,8 +15,8 @@ var general = [
     {key: "ACCENT_COLOR_MODE", category: "Appearance", label: "Wallpaper accent color", summary: "Choose which color becomes your highlight.", control: "choice", options: [{value: "vivid", label: "Vivid"}, {value: "dominant", label: "Dominant"}, {value: "brightest", label: "Brightest"}, {value: "saturated", label: "Saturated"}]},
     {key: "AWWW_OPTS", category: "Wallpaper", label: "Wallpaper transition options", summary: "Customize awww arguments for image wallpapers.", control: "text"},
     {key: "SCREENREC_SAVE_DIR", category: "Recording", label: "Recording folder", summary: "Save screen recordings in this folder.", control: "path"},
-    {key: "REC_COMMAND", category: "Recording", label: "Recorder command", summary: "Customize wl-screenrec command path.", control: "text"},
-    {key: "REC_OPTS", category: "Recording", label: "Recording options", summary: "Customize additional wl-screenrec options.", control: "text"},
+    {key: "REC_COMMAND", category: "Recording", label: "Recorder command", summary: "Customize gpu-screen-recorder command path.", control: "text"},
+    {key: "REC_OPTS", category: "Recording", label: "Recording options", summary: "Customize additional gpu-screen-recorder options.", control: "text"},
     {key: "HAKU_CLOCK_FONT_SIZE", category: "Appearance", label: "Widget clock size", summary: "Clock font size for the Haku widget.", control: "number", min: 1, max: 256, step: 1},
     {key: "HAKU_GENERAL_FONT_SIZE", category: "Appearance", label: "Widget text size", summary: "Text font size for the Haku widget.", control: "number", min: 1, max: 256, step: 1},
     {key: "HAKU_TERMINAL_FONT_SIZE", category: "Appearance", label: "Widget terminal size", summary: "Terminal font size for the Haku widget.", control: "number", min: 1, max: 256, step: 1},
@@ -32,7 +32,7 @@ var generalDefaults = {
     WALL_MPV_DIR: "$HOME/Videos/Wallpapers", WALL_INTERVAL: 300,
     ACCENT_COLOR_BASED_ON_WALLPAPER: true, ACCENT_COLOR_MODE: "vivid",
     AWWW_OPTS: "--transition-type random --transition-step 90 --transition-fps 60",
-    SCREENREC_SAVE_DIR: "$HOME/Videos", REC_COMMAND: "wl-screenrec", REC_OPTS: "--max-fps 60",
+    SCREENREC_SAVE_DIR: "$HOME/Videos", REC_COMMAND: "gpu-screen-recorder", REC_OPTS: "-f 60",
     HAKU_CLOCK_FONT_SIZE: 10, HAKU_GENERAL_FONT_SIZE: 11, HAKU_TERMINAL_FONT_SIZE: 14,
     RAM_THRESHOLD_MB: 300, EXIT_APP_LIST_USER: []
 }

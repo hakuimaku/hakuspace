@@ -15,6 +15,7 @@ ActionMenu.ActionMenuPage {
     geometryProfile: "option"
     canGoBack: true
 
+    property string captureTarget: "screen"
     property var sources: []
     property int selectedIndex: 0
     property string rawOutput: ""
@@ -73,7 +74,7 @@ ActionMenu.ActionMenuPage {
     function activateSource(idx) {
         if (idx < 0 || idx >= sources.length) return;
         var sourceId = sources[idx].id;
-        Quickshell.execDetached([Env.binDir + "/record_ctl.sh", "start", "mic-system", "--source", sourceId]);
+        Quickshell.execDetached([Env.binDir + "/record_ctl.sh", "start", "mic-system", "--source", sourceId, "--target", root.captureTarget]);
         root.requestClose();
     }
 
