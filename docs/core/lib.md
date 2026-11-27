@@ -47,7 +47,7 @@ HakuSpace supports four different Window Managers (Hyprland, Niri, MangoWM, and 
 - **Execution:** 
   - If you're on Hyprland, it runs `hyprctl reload`.
   - On Niri, it runs `niri msg action load-config-file`.
-  - On MangoWM, it triggers `mmsg -d reload_config`.
+  - On MangoWM, it triggers `mmsg dispatch reload_config`.
   - On Labwc, it executes `labwc --reconfigure`.
 - **Why it matters:** Because of this library, other scripts (like theme switchers or setting toggles) don't need to care about which Window Manager you are using. They just call `reload_config.sh` and trust that the system will handle it correctly!
 

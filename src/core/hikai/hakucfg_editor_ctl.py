@@ -228,7 +228,7 @@ def reload_file(file_id):
     wm = {"wm/niri-custom.kdl": "niri", "wm/hyprland-custom.lua": "hyprland", "wm/mango-custom.conf": "mango"}.get(file_id)
     if not wm or wm not in desktop.split(":"):
         fail("Save & Reload is available only for the active compositor's custom config; use Save only")
-    command = {"niri": ["niri", "msg", "action", "load-config-file"], "hyprland": ["hyprctl", "reload"], "mango": ["mmsg", "-d", "reload_config"]}[wm]
+    command = {"niri": ["niri", "msg", "action", "load-config-file"], "hyprland": ["hyprctl", "reload"], "mango": ["mmsg", "dispatch", "reload_config"]}[wm]
     result = subprocess.run(command, capture_output=True, text=True, timeout=15)
     if result.returncode:
         fail("reload failed: " + (result.stderr or result.stdout).strip()[:4096])

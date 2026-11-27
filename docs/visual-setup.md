@@ -56,7 +56,7 @@ GTK `settings.ini` (when managed GTK/icon themes are active),
 `~/.config/labwc/environment.d/90-hakuspace-cursor.env`, the `systemd --user`
 and D-Bus activation environments, plus the WM style configs (`niri-style.kdl`,
 `hyprland-style.lua`, `mangowm-style.conf`) and reloads the active compositor
-(`hyprctl setcursor`, `niri msg action load-config-file`, `mmsg -d reload_config`,
+(`hyprctl setcursor`, `niri msg action load-config-file`, `mmsg dispatch reload_config`,
 or `labwc --reconfigure`).
 
 For assets already installed, these explicit commands activate without downloading:

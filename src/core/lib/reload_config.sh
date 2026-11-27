@@ -18,7 +18,6 @@ case "$XDG_CURRENT_DESKTOP" in
         niri msg action load-config-file
         ;;
     mango)
-        mmsg -d reload_config
         mmsg dispatch reload_config
         ;;
     labwc)

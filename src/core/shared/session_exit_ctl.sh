@@ -134,7 +134,6 @@ quit_wm() {
             ;;
         mango)
             mmsg dispatch quit
-            mmsg -s -q
             ;;
         labwc)
             labwc --exit
