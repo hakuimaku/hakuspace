@@ -44,11 +44,37 @@ Item {
         return true
     }
 
+    function entryKey(entry) {
+        if (!entry) return ""
+        return String(entry.id || entry.name || "").trim()
+    }
+
+    function matchTier(entry, q) {
+        if (!q) return 0
+        var name = (entry.name || "").toLowerCase()
+        if (name.startsWith(q)) return 3
+        if (name.indexOf(q) >= 0) return 2
+        return 1
+    }
+
     function sortedApplications() {
+        var _historyRev = DrunHistory.revision
+        var q = normalizedQuery()
+        var nowMs = Date.now()
         var entries = [...DesktopEntries.applications.values]
             .filter(function(entry) { return root.matches(entry) })
 
         entries.sort(function(a, b) {
+            if (q.length > 0) {
+                var tierDiff = root.matchTier(b, q) - root.matchTier(a, q)
+                if (tierDiff !== 0) return tierDiff
+            }
+            var aKey = root.entryKey(a)
+            var bKey = root.entryKey(b)
+            var scoreDiff = DrunHistory.score(bKey, nowMs) - DrunHistory.score(aKey, nowMs)
+            if (Math.abs(scoreDiff) > 1e-9) return scoreDiff > 0 ? 1 : -1
+            var lastDiff = DrunHistory.lastUsed(bKey) - DrunHistory.lastUsed(aKey)
+            if (lastDiff !== 0) return lastDiff > 0 ? 1 : -1
             return (a.name || a.id || "").localeCompare(b.name || b.id || "")
         })
         return entries
@@ -93,6 +119,7 @@ Item {
         } else {
             entry.execute()
         }
+        DrunHistory.record(root.entryKey(entry))
         root.launched()
     }
 

@@ -53,3 +53,4 @@ singleton TaskManagerService 1.0 TaskManagerService.qml
 singleton TaskManagerPins 1.0 TaskManagerPins.qml
 singleton TaskManagerOverlayState 1.0 TaskManagerOverlayState.qml
 singleton GeneralMenuService 1.0 GeneralMenuService.qml
+singleton DrunHistory 1.0 DrunHistory.qml
