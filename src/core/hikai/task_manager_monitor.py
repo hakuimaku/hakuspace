@@ -447,6 +447,12 @@ class Monitor:
                     except KeyError:
                         self.users[uid] = str(uid)
                 cmdline = (path / 'cmdline').read_bytes().replace(b'\0', b' ').decode(errors='replace').strip()
+                try:
+                    exe = os.readlink(path / 'exe')
+                    if exe.endswith(' (deleted)'):
+                        exe = exe[:-10]
+                except OSError:
+                    exe = ''
                 # Verify identity after the multi-file read to discard a reused PID.
                 if parse_stat((path / 'stat').read_text())['startTime'] != process['startTime']:
                     continue
@@ -456,7 +462,7 @@ class Monitor:
             counters[key] = process['ticks']
             cpu = max(0, (process['ticks'] - old[key]) / self.hz / elapsed * 100) if key in old and elapsed > 0 else None
             rss = max(0, process.pop('rssPages') * self.page_size)
-            process.update(key=key, cmdline=cmdline, user=self.users[uid], uid=uid, rss=rss,
+            process.update(key=key, cmdline=cmdline, exe=exe, user=self.users[uid], uid=uid, rss=rss,
                            cpuPercent=cpu, cpuTotalPercent=cpu / logical_count if cpu is not None and logical_count > 0 else None,
                            memoryPercent=percent(rss, memory_total) if memory_total else None, runtimeSeconds=max(0, uptime - process['startTime'] / self.hz))
             process.pop('ticks')

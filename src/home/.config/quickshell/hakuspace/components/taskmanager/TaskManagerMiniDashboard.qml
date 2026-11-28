@@ -1004,12 +1004,13 @@ FocusScope {
                         Rectangle {
                             id: pinRow
                             objectName: "taskManagerMiniPinnedRow"
+                            readonly property bool isOnline: pinRowWrapper.modelData.online !== false
                             anchors.horizontalCenter: parent.horizontalCenter
                             width: Math.max(0, parent.width - Theme.spaceMd * 2)
                             height: parent.height
                             radius: height / 2
                             border.width: 0
-                            color: Theme.surfaceSubtle(1.4)
+                            color: isOnline ? Theme.surfaceSubtle(1.4) : Theme.surfaceSubtle(1.18)
 
                             readonly property bool rowHovered: rowClickMouse.containsMouse || unpinMouse.containsMouse
                             scale: (rowHovered && !root.reducedMotion) ? 1.05 : 1.0
@@ -1050,7 +1051,8 @@ FocusScope {
                                     Layout.fillWidth: true
                                     Layout.minimumWidth: 0
                                     text: pinRowWrapper.modelData.name
-                                    color: Theme.fg
+                                    color: pinRow.isOnline ? Theme.fg : Theme.fgMuted
+                                    opacity: pinRow.isOnline ? 1.0 : 0.72
                                     font.family: Theme.fontFamily
                                     font.pixelSize: Theme.fontSize
                                     font.weight: Font.Medium
@@ -1059,21 +1061,23 @@ FocusScope {
 
                                 Text {
                                     objectName: "taskManagerMiniPinnedCpu"
-                                    Layout.preferredWidth: Theme.fontSize * 3.6
+                                    Layout.preferredWidth: Math.max(Theme.fontSize * 3.6, implicitWidth)
                                     horizontalAlignment: Text.AlignRight
-                                    text: Logic.metric(pinRowWrapper.modelData.cpuTotalPercent, "%", 0)
-                                    color: Theme.accent
+                                    text: pinRow.isOnline ? Logic.metric(pinRowWrapper.modelData.cpuTotalPercent, "%", 0) : "Offline"
+                                    color: pinRow.isOnline ? Theme.accent : Theme.fgMuted
+                                    opacity: pinRow.isOnline ? 1.0 : 0.65
                                     font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.fontSize
-                                    font.bold: true
+                                    font.pixelSize: pinRow.isOnline ? Theme.fontSize : (Theme.fontSize - 1)
+                                    font.bold: pinRow.isOnline
                                 }
 
                                 Text {
                                     objectName: "taskManagerMiniPinnedRam"
                                     Layout.preferredWidth: Theme.fontSize * 5.2
                                     horizontalAlignment: Text.AlignRight
-                                    text: Logic.bytes(pinRowWrapper.modelData.rss)
+                                    text: pinRow.isOnline ? Logic.bytes(pinRowWrapper.modelData.rss) : "—"
                                     color: Theme.fgMuted
+                                    opacity: pinRow.isOnline ? 1.0 : 0.65
                                     font.family: Theme.fontFamily
                                     font.pixelSize: Theme.fontSize - 1
                                 }
