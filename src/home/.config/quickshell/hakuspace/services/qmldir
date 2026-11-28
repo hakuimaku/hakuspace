@@ -23,6 +23,9 @@ singleton Clock 1.0 Clock.qml
 singleton UserIdentity 1.0 UserIdentity.qml
 singleton DashboardTooltip 1.0 DashboardTooltip.qml
 singleton TextStore 1.0 TextStore.qml
+singleton AgendaStore 1.0 AgendaStore.qml
+singleton FocusTimer 1.0 FocusTimer.qml
+singleton DeviceHubService 1.0 DeviceHubService.qml
 singleton SettingsStore 1.0 SettingsStore.qml
 singleton ShellSettingsStore 1.0 ShellSettingsStore.qml
 DesktopColorScheme 1.0 DesktopColorScheme.qml

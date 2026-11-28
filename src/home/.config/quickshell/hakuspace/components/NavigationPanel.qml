@@ -32,7 +32,10 @@ Item {
     onRawHasFullscreenChanged: syncFullscreenLatch()
     onAnyToplevelActiveChanged: syncFullscreenLatch()
     onHasFullscreenToplevelOnScreenChanged: syncFullscreenLatch()
-    onClosingChanged: syncFullscreenLatch()
+    onClosingChanged: {
+        syncFullscreenLatch()
+        syncDashboardLeases()
+    }
     Component.onCompleted: syncFullscreenLatch()
     readonly property bool hasFullscreen: rawHasFullscreen || (latchedFullscreen && hasFullscreenToplevelOnScreen)
     required property var modelData
@@ -40,6 +43,8 @@ Item {
     property QtObject dashboardState: QtObject {
         property int widgetIndex: 0
         property int calendarMonthOffset: 0
+        property real customWidth: 0
+        property real customHeight: 0
     }
 
     readonly property bool panelOpen: UiState.activePanel === "navigation"
@@ -48,6 +53,25 @@ Item {
     readonly property bool dashboardExpanded: panelOpen && UiState.navigationMode === "handoff-dashboard"
     readonly property bool dashboardVisuallyActive: dashboardExpanded || dashboardMorphProgress > 0.001
     property real dashboardMorphProgress: 0.0
+    property bool dashboardPinned: false
+    readonly property bool dashboardInputActive: dashboardExpanded && !!dashboardLoader.item && dashboardLoader.item.inputActive
+    readonly property bool dashboardResizing: dashboardExpanded && !!dashboardLoader.item && dashboardLoader.item.resizing
+
+    function syncDashboardLeases() {
+        var keepOpen = panelOpen && dashboardExpanded && !closing
+        if (keepOpen && dashboardPinned) lifetime.acquireExternalLease("dashboard-pin")
+        else lifetime.releaseExternalLease("dashboard-pin", false)
+
+        if (keepOpen && dashboardInputActive) lifetime.acquireExternalLease("dashboard-input")
+        else lifetime.releaseExternalLease("dashboard-input", false)
+
+        if (keepOpen && dashboardResizing) lifetime.acquireExternalLease("dashboard-resize")
+        else lifetime.releaseExternalLease("dashboard-resize", false)
+    }
+
+    onDashboardPinnedChanged: syncDashboardLeases()
+    onDashboardInputActiveChanged: syncDashboardLeases()
+    onDashboardResizingChanged: syncDashboardLeases()
 
     onDashboardExpandedChanged: {
         dashboardMorphAnim.stop()
@@ -58,6 +82,7 @@ Item {
             dashboardMorphAnim.easing.bezierCurve = HAnimation.dashboardOpenCurve
             dashboardMorphAnim.start()
         } else {
+            dashboardPinned = false
             dashboardMorphAnim.from = dashboardMorphProgress
             dashboardMorphAnim.to = 0.0
             dashboardMorphAnim.duration = HAnimation.dashboardCloseDuration
@@ -73,6 +98,7 @@ Item {
                 })
             }
         }
+        syncDashboardLeases()
     }
 
     NumberAnimation {
@@ -194,8 +220,12 @@ Item {
     readonly property real hoverOverflow: Math.ceil(circleDiameter * 0.12)
     readonly property real controllerX: shellX + shellPadding
     readonly property real controllerY: shellY + shellPadding
-    readonly property real dashboardVisualWidth: Theme.dashboardWidth
-    readonly property real dashboardVisualHeight: Theme.dashboardHeight
+    readonly property real dashboardMinWidth: Theme.dashboardWidth
+    readonly property real dashboardMinHeight: Theme.dashboardHeight
+    readonly property real dashboardMaxWidth: Math.max(dashboardMinWidth, Math.min(modelData.width - 48, Math.round(modelData.width * 0.80)))
+    readonly property real dashboardMaxHeight: Math.max(dashboardMinHeight, Math.min(modelData.height - logicalAttachmentY - 36, Math.round(modelData.height * 0.82)))
+    readonly property real dashboardVisualWidth: Math.max(dashboardMinWidth, Math.min(dashboardMaxWidth, (dashboardState && dashboardState.customWidth > 0) ? dashboardState.customWidth : dashboardMinWidth))
+    readonly property real dashboardVisualHeight: Math.max(dashboardMinHeight, Math.min(dashboardMaxHeight, (dashboardState && dashboardState.customHeight > 0) ? dashboardState.customHeight : dashboardMinHeight))
 
     // Sidebar interaction geometry:
     readonly property bool sidebarExpanded: UiState.navigationMode === "handoff-sidebar"
@@ -430,6 +460,8 @@ Item {
 
     function requestClose() {
         if (!panelOpen) return
+        dashboardPinned = false
+        syncDashboardLeases()
         if (sidebarToolOpen) closeSidebarTool()
         if (sidebarExpanded || dashboardExpanded) UiState.cancelNavigationHandoff()
         UiState.closeNavigation()
@@ -692,6 +724,7 @@ Item {
         function onNativeDialogFinished(owner, screenName) {
             if (owner !== "navigation" || screenName !== root.modelData.name) return
             lifetime.releaseExternalLease("nativeDialog", root.panelOpen && UiState.ownsInteraction(owner, screenName))
+            root.syncDashboardLeases()
         }
     }
 
@@ -771,6 +804,8 @@ Item {
         }
 
         lifetime.cancelClose()
+        dashboardPinned = false
+        syncDashboardLeases()
         if (root.sidebarToolOpen) root.closeSidebarTool()
 
         // Ownership moving to another monitor does not animate the stale output.
@@ -1031,6 +1066,11 @@ Item {
                 width: root.panelOpen || root.closing ? root.safeZone(7).width : 0
                 height: root.panelOpen || root.closing ? root.safeZone(7).height : 0
             }
+            Region {
+                x: 0; y: 0
+                width: root.dashboardResizing ? navigationLayer.width : 0
+                height: root.dashboardResizing ? navigationLayer.height : 0
+            }
         }
 
         HoverHandler {
@@ -1040,7 +1080,7 @@ Item {
                 if (!hovered) lifetime.pointerExited()
                 else {
                     lifetime.pointerEntered(point.position.x, point.position.y)
-                    if (root.panelOpen) keyHandler.forceActiveFocus()
+                    if (root.panelOpen && !root.dashboardInputActive) keyHandler.forceActiveFocus()
                 }
             }
             onPointChanged: {
@@ -1216,6 +1256,7 @@ Item {
                 expanded: root.panelOpen && root.dashboardExpanded && !root.closing
                 morphProgress: root.dashboardMorphProgress
                 hasFullscreen: root.hasFullscreen
+                pinned: root.dashboardPinned
                 // A full Dashboard -> closed transition reuses the Dashboard ->
                 // Navigation morph path, whose zero-progress geometry is the
                 // Navigation start envelope rather than 0x0. Fade only the tail
@@ -1232,6 +1273,19 @@ Item {
                     if (root.panelOpen) {
                         keyHandler.forceActiveFocus()
                     }
+                }
+                onPinToggled: {
+                    root.dashboardPinned = !root.dashboardPinned
+                }
+                onResizeRequested: (newWidth, newHeight) => {
+                    if (!root.dashboardState) return
+                    root.dashboardState.customWidth = Math.max(root.dashboardMinWidth, Math.min(root.dashboardMaxWidth, Math.round(newWidth)))
+                    root.dashboardState.customHeight = Math.max(root.dashboardMinHeight, Math.min(root.dashboardMaxHeight, Math.round(newHeight)))
+                }
+                onResizeResetRequested: {
+                    if (!root.dashboardState) return
+                    root.dashboardState.customWidth = 0
+                    root.dashboardState.customHeight = 0
                 }
             }
         }
@@ -1313,6 +1367,18 @@ Item {
                     if (root.sidebarExpanded) UiState.cancelNavigationHandoff()
                     UiState.closeNavigation()
                 }
+            }
+        }
+
+        // Intercept Esc at the window level so focused text editors release focus first before closing.
+        Shortcut {
+            sequence: StandardKey.Cancel
+            context: Qt.WindowShortcut
+            enabled: root.panelOpen && root.dashboardExpanded
+                && !(dashboardLoader.item && dashboardLoader.item.inputComposing)
+            onActivated: {
+                if (root.dashboardInputActive) keyHandler.forceActiveFocus()
+                else root.requestClose()
             }
         }
 
@@ -1403,7 +1469,8 @@ Item {
                 }
             }
             Keys.onEscapePressed: event => {
-                if (root.sidebarToolOpen && root.activeSidebarTool !== "controlCenter") root.closeSidebarTool(true)
+                if (root.dashboardExpanded && root.dashboardInputActive) keyHandler.forceActiveFocus()
+                else if (root.sidebarToolOpen && root.activeSidebarTool !== "controlCenter") root.closeSidebarTool(true)
                 else root.requestClose()
                 event.accepted = true
             }

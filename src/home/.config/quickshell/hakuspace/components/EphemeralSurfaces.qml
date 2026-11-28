@@ -12,6 +12,8 @@ Item {
     property QtObject dashboardState: QtObject {
         property int widgetIndex: 0
         property int calendarMonthOffset: 0
+        property real customWidth: 0
+        property real customHeight: 0
     }
     // Expose resource counts without retaining destroyed surface objects.
     readonly property var loaders: [navigation, settings, note, taskManager, taskMetricOverlay, tray, appMenu, center, wallpaper, wallpaperWorkspace, action, popup, osd, navigator, imageEditor, avatarEditor]

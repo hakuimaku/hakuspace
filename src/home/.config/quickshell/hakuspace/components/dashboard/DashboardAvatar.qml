@@ -133,7 +133,7 @@ Item {
         cursorShape: root.interactive ? Qt.PointingHandCursor : Qt.ArrowCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         onEntered: {
-            if (root.interactive) DashboardTooltip.show(root, "Left click: Back to Navigation\nRight click: Change avatar")
+            if (root.interactive) DashboardTooltip.show(root, "Left click: Back to Navigation\nRight click: Change avatar", "right")
         }
         onExited: {
             DashboardTooltip.hide(root)

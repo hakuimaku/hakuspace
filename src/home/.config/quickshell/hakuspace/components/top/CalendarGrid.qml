@@ -1,8 +1,10 @@
 import QtQuick
+import Quickshell
 import "../../services"
 
 Item {
     id: root
+    readonly property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
     property date currentDate: new Date()
     property int monthOffset: 0
     property var payload: null
@@ -13,19 +15,67 @@ Item {
     property bool showNavControls: false
     property bool showHeader: true
     property bool dayHoverEnabled: false
+    property bool selectable: false
+    property string selectedDateKey: ""
+    property var markedDateKeys: ({})
 
     signal previousMonthRequested()
     signal nextMonthRequested()
     signal resetMonthRequested()
+    signal dateSelected(string dateKey)
+
+    function dateKeyFor(year, monthIndex, day) {
+        var m = monthIndex + 1
+        return year + "-" + (m < 10 ? "0" + m : String(m)) + "-" + (day < 10 ? "0" + day : String(day))
+    }
 
     readonly property date firstDay: new Date(currentDate.getFullYear(), currentDate.getMonth() + monthOffset, 1)
     readonly property int mondayOffset: (firstDay.getDay() + 6) % 7
     readonly property int daysInMonth: new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0).getDate()
 
-    readonly property real headerHeight: showHeader ? (showNavControls ? Math.max(26, title.implicitHeight) : title.implicitHeight) : 0
+    readonly property real headerHeight: showHeader ? (showNavControls ? Math.max(34, title.implicitHeight) : title.implicitHeight) : 0
     readonly property real availableGridHeight: Math.max(0, maxHeight - headerHeight - weekdayRow.implicitHeight - Theme.gap * 2)
     readonly property real cellWidth: Math.min(preferredCellWidth, Math.max(16, maxWidth / 7))
     readonly property real cellHeight: Math.max(14, Math.min(preferredCellHeight, availableGridHeight / 6))
+
+    property int _lastMonthOffset: 0
+    property real _monthSlideX: 0
+    property real _monthOpacity: 1.0
+
+    Component.onCompleted: _lastMonthOffset = monthOffset
+
+    onMonthOffsetChanged: {
+        var dir = monthOffset > _lastMonthOffset ? 1 : (monthOffset < _lastMonthOffset ? -1 : 0)
+        _lastMonthOffset = monthOffset
+        if (dir !== 0 && root.showNavControls && !root.reducedMotion) {
+            monthSwitchAnim.stop()
+            monthSlideAnim.from = dir * 18
+            monthSwitchAnim.start()
+        }
+    }
+
+    ParallelAnimation {
+        id: monthSwitchAnim
+        NumberAnimation {
+            id: monthSlideAnim
+            target: root
+            property: "_monthSlideX"
+            from: 18
+            to: 0
+            duration: HAnimation.dashboardWidgetSwitchDuration
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: HAnimation.dashboardWidgetSwitchCurve
+        }
+        NumberAnimation {
+            target: root
+            property: "_monthOpacity"
+            from: 0.25
+            to: 1.0
+            duration: HAnimation.dashboardWidgetSwitchDuration
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: HAnimation.dashboardWidgetSwitchCurve
+        }
+    }
 
     implicitWidth: cellWidth * 7
     implicitHeight: (showHeader ? (headerHeight + Theme.gap) : 0) + weekdayRow.implicitHeight + Theme.gap + cellHeight * 6
@@ -43,17 +93,26 @@ Item {
             visible: root.showNavControls
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            width: 24
-            height: 24
-            radius: 12
-            color: prevMouse.containsMouse ? Theme.hoverMuted : "transparent"
+            width: 32
+            height: 32
+            radius: 16
+            color: root.selectable ? "transparent" : (prevMouse.containsMouse ? Theme.hoverMuted : "transparent")
+            scale: (root.selectable && prevMouse.containsMouse && !root.reducedMotion) ? 1.05 : 1.0
             Behavior on color { ColorAnimation { duration: HAnimation.fast } }
+            Behavior on scale {
+                enabled: !root.reducedMotion
+                NumberAnimation {
+                    duration: prevMouse.containsMouse ? HAnimation.buttonHoverDuration : HAnimation.buttonReleaseDuration
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: prevMouse.containsMouse ? HAnimation.buttonHoverCurve : HAnimation.buttonReleaseCurve
+                }
+            }
 
             Text {
                 anchors.centerIn: parent
-                text: "‹"
-                font.family: Theme.fontFamily
-                font.pixelSize: 16
+                text: "󰅁"
+                font.family: Theme.iconFontFamily
+                font.pixelSize: 19
                 color: Theme.fg
             }
 
@@ -74,6 +133,8 @@ Item {
             anchors.centerIn: parent
             width: title.implicitWidth
             height: title.implicitHeight
+            opacity: root._monthOpacity
+            transform: Translate { x: root._monthSlideX * 0.5 }
 
             Text {
                 id: title
@@ -104,17 +165,26 @@ Item {
             anchors.left: titleContainer.right
             anchors.leftMargin: 6
             anchors.verticalCenter: parent.verticalCenter
-            width: 22
-            height: 22
-            radius: 11
-            color: resetMouse.containsMouse ? Theme.hoverMuted : "transparent"
+            width: 32
+            height: 32
+            radius: 16
+            color: root.selectable ? "transparent" : (resetMouse.containsMouse ? Theme.hoverMuted : "transparent")
+            scale: (root.selectable && resetMouse.containsMouse && !root.reducedMotion) ? 1.05 : 1.0
             Behavior on color { ColorAnimation { duration: HAnimation.fast } }
+            Behavior on scale {
+                enabled: !root.reducedMotion
+                NumberAnimation {
+                    duration: resetMouse.containsMouse ? HAnimation.buttonHoverDuration : HAnimation.buttonReleaseDuration
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: resetMouse.containsMouse ? HAnimation.buttonHoverCurve : HAnimation.buttonReleaseCurve
+                }
+            }
 
             Text {
                 anchors.centerIn: parent
-                text: "↺"
-                font.family: Theme.fontFamily
-                font.pixelSize: 13
+                text: "󰑐"
+                font.family: Theme.iconFontFamily
+                font.pixelSize: 18
                 color: resetMouse.containsMouse ? Theme.accent : Theme.fgDim
                 Behavior on color { ColorAnimation { duration: HAnimation.fast } }
             }
@@ -136,17 +206,26 @@ Item {
             visible: root.showNavControls
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            width: 24
-            height: 24
-            radius: 12
-            color: nextMouse.containsMouse ? Theme.hoverMuted : "transparent"
+            width: 32
+            height: 32
+            radius: 16
+            color: root.selectable ? "transparent" : (nextMouse.containsMouse ? Theme.hoverMuted : "transparent")
+            scale: (root.selectable && nextMouse.containsMouse && !root.reducedMotion) ? 1.05 : 1.0
             Behavior on color { ColorAnimation { duration: HAnimation.fast } }
+            Behavior on scale {
+                enabled: !root.reducedMotion
+                NumberAnimation {
+                    duration: nextMouse.containsMouse ? HAnimation.buttonHoverDuration : HAnimation.buttonReleaseDuration
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: nextMouse.containsMouse ? HAnimation.buttonHoverCurve : HAnimation.buttonReleaseCurve
+                }
+            }
 
             Text {
                 anchors.centerIn: parent
-                text: "›"
-                font.family: Theme.fontFamily
-                font.pixelSize: 16
+                text: "󰅂"
+                font.family: Theme.iconFontFamily
+                font.pixelSize: 19
                 color: Theme.fg
             }
 
@@ -187,6 +266,9 @@ Item {
         anchors.topMargin: Theme.gap
         anchors.horizontalCenter: parent.horizontalCenter
         columns: 7
+        opacity: root._monthOpacity
+        transform: Translate { x: root._monthSlideX }
+
         Repeater {
             model: 42
             Item {
@@ -195,49 +277,88 @@ Item {
                 height: root.cellHeight
                 readonly property int day: index - root.mondayOffset + 1
                 readonly property bool isValidDay: day > 0 && day <= root.daysInMonth
+                readonly property string dateKey: isValidDay ? root.dateKeyFor(root.firstDay.getFullYear(), root.firstDay.getMonth(), day) : ""
                 readonly property bool today: isValidDay
                     && root.firstDay.getFullYear() === root.currentDate.getFullYear()
                     && root.firstDay.getMonth() === root.currentDate.getMonth()
                     && day === root.currentDate.getDate()
-                readonly property bool isHovered: root.dayHoverEnabled && isValidDay && dayMouse.containsMouse
+                readonly property bool isSelected: root.selectable && isValidDay && root.selectedDateKey === dateKey
+                readonly property bool hasMarker: isValidDay && !!(root.markedDateKeys && root.markedDateKeys[dateKey])
+                readonly property bool isHovered: (root.dayHoverEnabled || root.selectable) && isValidDay && dayMouse.containsMouse
                 readonly property real markerDiameter: Math.min(parent.width - 2, Math.max(16, root.cellHeight - 2))
 
-                // Circular day highlight indicator for current date and hovered cell.
+                z: (root.selectable && isHovered) ? 2 : 0
+                scale: (root.selectable && isHovered && !root.reducedMotion) ? 1.05 : 1.0
+                Behavior on scale {
+                    enabled: !root.reducedMotion
+                    NumberAnimation {
+                        duration: cellItem.isHovered ? HAnimation.buttonHoverDuration : HAnimation.buttonReleaseDuration
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: cellItem.isHovered ? HAnimation.buttonHoverCurve : HAnimation.buttonReleaseCurve
+                    }
+                }
+
+                // Circular day highlight indicator for selected date and today.
                 Rectangle {
+                    id: dayHighlight
                     anchors.centerIn: parent
                     width: cellItem.markerDiameter
                     height: cellItem.markerDiameter
                     radius: cellItem.markerDiameter / 2
-                    visible: cellItem.today || cellItem.isHovered
-                    color: cellItem.today ? Theme.accent : Theme.surfaceHighlight(1.25)
-                    scale: (cellItem.isHovered && !cellItem.today) ? 1.08 : 1.0
-                    border.width: 0
+                    visible: root.selectable ? (cellItem.isSelected || cellItem.today)
+                        : (cellItem.today || cellItem.isSelected || cellItem.isHovered)
+                    color: root.selectable
+                        ? (cellItem.isSelected ? Theme.accent : Theme.surfaceSubtle(1.25))
+                        : (cellItem.today ? Theme.accent
+                            : (cellItem.isSelected ? Theme.surfaceHighlight(1.35) : Theme.surfaceHighlight(1.25)))
+                    scale: (!root.selectable && cellItem.isHovered && !cellItem.today && !cellItem.isSelected) ? 1.08 : 1.0
+                    border.width: root.selectable ? 0 : ((cellItem.isSelected && !cellItem.today) ? 1 : 0)
+                    border.color: Theme.accent
 
-                    // Animates day marker highlight color on hover.
-                    Behavior on color { ColorAnimation { duration: HAnimation.fast } }
-                    // Animates day marker scale slightly on hover.
+                    Behavior on color {
+                        enabled: !root.reducedMotion
+                        ColorAnimation { duration: HAnimation.fast }
+                    }
                     Behavior on scale { NumberAnimation { duration: HAnimation.buttonHoverDuration } }
                 }
 
                 Text {
                     anchors.centerIn: parent
+                    anchors.verticalCenterOffset: cellItem.hasMarker ? -2 : 0
                     text: cellItem.isValidDay ? cellItem.day : ""
-                    color: cellItem.today ? Theme.onAccentColor : (cellItem.isHovered ? Theme.fg : Theme.fg)
+                    color: root.selectable
+                        ? (cellItem.isSelected ? Theme.onAccentColor : (cellItem.today ? Theme.accent : Theme.fg))
+                        : (cellItem.today ? Theme.onAccentColor : Theme.fg)
                     font.family: Theme.fontFamily
                     font.pixelSize: {
                         if (root.cellHeight > 24) return Theme.fontSize
                         if (root.cellHeight >= 20) return Theme.fontSize - 1
                         return Math.max(10, root.cellHeight - 5)
                     }
-                    font.weight: cellItem.today ? Font.Bold : (cellItem.isHovered ? Font.DemiBold : Font.Normal)
+                    font.weight: (cellItem.today || cellItem.isSelected) ? Font.Bold : (!root.selectable && cellItem.isHovered ? Font.DemiBold : Font.Normal)
+                }
+
+                Rectangle {
+                    id: taskDot
+                    visible: cellItem.hasMarker
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: dayHighlight.bottom
+                    anchors.bottomMargin: 2
+                    width: 4
+                    height: 4
+                    radius: 2
+                    color: root.selectable
+                        ? (cellItem.isSelected ? Theme.onAccentColor : Theme.accent)
+                        : (cellItem.today ? Theme.onAccentColor : Theme.accent)
                 }
 
                 MouseArea {
                     id: dayMouse
                     anchors.fill: parent
-                    hoverEnabled: root.dayHoverEnabled && cellItem.isValidDay
-                    enabled: root.dayHoverEnabled && cellItem.isValidDay
-                    cursorShape: (root.dayHoverEnabled && cellItem.isValidDay) ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    hoverEnabled: (root.dayHoverEnabled || root.selectable) && cellItem.isValidDay
+                    enabled: (root.dayHoverEnabled || root.selectable) && cellItem.isValidDay
+                    cursorShape: ((root.dayHoverEnabled || root.selectable) && cellItem.isValidDay) ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    acceptedButtons: Qt.LeftButton
                     onEntered: {
                         if (root.dayHoverEnabled && cellItem.isValidDay) {
                             var d = new Date(root.firstDay.getFullYear(), root.firstDay.getMonth(), cellItem.day)
@@ -249,6 +370,12 @@ Item {
                     onExited: {
                         if (root.dayHoverEnabled) {
                             DashboardTooltip.hide(cellItem)
+                        }
+                    }
+                    onClicked: {
+                        if (root.selectable && cellItem.isValidDay) {
+                            DashboardTooltip.dismiss()
+                            root.dateSelected(cellItem.dateKey)
                         }
                     }
                 }

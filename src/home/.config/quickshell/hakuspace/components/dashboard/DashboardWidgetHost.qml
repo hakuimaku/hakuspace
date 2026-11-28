@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import "../../services"
 import "../../config/UiCatalog.js" as UiCatalog
 
@@ -6,32 +7,48 @@ Rectangle {
     id: root
 
     radius: Theme.largeRadius
-    color: Theme.surface
+    color: Theme.surfaceSubtle(1.6)
     border.width: 0
-    border.color: Theme.surfaceHighlight(1.25)
     clip: true
+
+    readonly property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
 
     // Resolve presentation metadata to the existing local widget implementations.
     property var widgets: UiCatalog.dashboardWidgets.map(function(widget) {
         return Object.assign({}, widget, {component: ({calendar: calendarWidgetComponent,
+            devices: deviceHubWidgetComponent,
             bio: bioWidgetComponent})[widget.key]})
     })
+    property bool active: false
     property int currentIndex: 0
     // Calendar navigation survives unloading its visual widget.
     property int calendarMonthOffset: 0
 
     readonly property int widgetCount: widgets ? widgets.length : 0
-    readonly property var currentWidget: (widgets && widgetCount > 0 && currentIndex >= 0 && currentIndex < widgetCount)
-                                         ? widgets[currentIndex] : null
+    readonly property int safeCurrentIndex: widgetCount > 0 ? Math.max(0, Math.min(widgetCount - 1, currentIndex)) : 0
+    readonly property var currentWidget: (widgets && widgetCount > 0)
+                                         ? widgets[safeCurrentIndex] : null
     readonly property string currentKey: currentWidget ? currentWidget.key : ""
     readonly property string currentTitle: currentWidget ? currentWidget.title : ""
 
     // Staged transition state
-    property int committedIndex: currentIndex
+    property int committedIndex: safeCurrentIndex
     property int pendingIndex: -1
     property int transitionDirection: 0 // -1: prev, +1: next
     property bool transitioning: false
     property real transitionProgress: 0.0
+
+    Component.onCompleted: {
+        if (widgetCount > 0 && currentIndex !== safeCurrentIndex) {
+            currentIndex = safeCurrentIndex
+        }
+        committedIndex = safeCurrentIndex
+    }
+    onCurrentIndexChanged: {
+        if (!transitioning && widgetCount > 0) {
+            committedIndex = safeCurrentIndex
+        }
+    }
 
     readonly property real slideDistance: 64
 
@@ -83,17 +100,17 @@ Rectangle {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 36
-        anchors.topMargin: Math.max(8, Math.round(Theme.pad * 0.8))
-        anchors.leftMargin: Math.max(12, Math.round(Theme.pad * 1.2))
-        anchors.rightMargin: Math.max(12, Math.round(Theme.pad * 1.2))
+        height: 38
+        anchors.topMargin: Math.max(10, Math.round(Theme.pad * 0.9))
+        anchors.leftMargin: Math.max(14, Math.round(Theme.pad * 1.25))
+        anchors.rightMargin: Math.max(14, Math.round(Theme.pad * 1.25))
 
         // Animated title container
         Item {
             id: titleContainer
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            width: 140
+            width: Math.max(140, headerArea.width - switchControls.width - 16)
             height: parent.height
             clip: true
 
@@ -102,7 +119,7 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.transitioning ? root.widgets[root.committedIndex].title : root.currentTitle
                 font.family: Theme.fontFamily
-                font.pixelSize: Math.max(12, Theme.fontSize - 1)
+                font.pixelSize: Theme.fontSize + 1
                 font.weight: Font.Bold
                 color: Theme.fg
                 opacity: root.transitioning ? (1.0 - root.transitionProgress) : 1.0
@@ -114,7 +131,7 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 text: (root.transitioning && root.pendingIndex >= 0) ? root.widgets[root.pendingIndex].title : ""
                 font.family: Theme.fontFamily
-                font.pixelSize: Math.max(12, Theme.fontSize - 1)
+                font.pixelSize: Theme.fontSize + 1
                 font.weight: Font.Bold
                 color: Theme.fg
                 visible: root.transitioning
@@ -132,27 +149,28 @@ Rectangle {
             visible: root.widgetCount > 1
 
             Rectangle {
-                width: 26
-                height: 26
-                radius: 13
-                color: prevArea.containsMouse ? Theme.hoverMuted : "transparent"
+                width: 32
+                height: 32
+                radius: 16
+                color: "transparent"
                 opacity: root.transitioning ? 0.5 : 1.0
-                scale: prevArea.pressed && !root.transitioning ? 0.92 : 1.0
+                scale: (prevArea.pressed && !root.transitioning && !root.reducedMotion) ? 0.92
+                    : ((prevArea.containsMouse && !root.transitioning && !root.reducedMotion) ? 1.05 : 1.0)
 
-                Behavior on color { ColorAnimation { duration: HAnimation.fast } }
                 Behavior on scale {
+                    enabled: !root.reducedMotion
                     NumberAnimation {
-                        duration: HAnimation.buttonHoverDuration
-                        easing.bezierCurve: HAnimation.buttonHoverCurve
+                        duration: prevArea.containsMouse ? HAnimation.buttonHoverDuration : HAnimation.buttonReleaseDuration
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: prevArea.containsMouse ? HAnimation.buttonHoverCurve : HAnimation.buttonReleaseCurve
                     }
                 }
 
                 Text {
                     anchors.centerIn: parent
-                    text: "‹"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 17
-                    font.weight: Font.Bold
+                    text: "󰅁"
+                    font.family: Theme.iconFontFamily
+                    font.pixelSize: 19
                     color: Theme.fg
                 }
 
@@ -168,27 +186,28 @@ Rectangle {
             }
 
             Rectangle {
-                width: 26
-                height: 26
-                radius: 13
-                color: nextArea.containsMouse ? Theme.hoverMuted : "transparent"
+                width: 32
+                height: 32
+                radius: 16
+                color: "transparent"
                 opacity: root.transitioning ? 0.5 : 1.0
-                scale: nextArea.pressed && !root.transitioning ? 0.92 : 1.0
+                scale: (nextArea.pressed && !root.transitioning && !root.reducedMotion) ? 0.92
+                    : ((nextArea.containsMouse && !root.transitioning && !root.reducedMotion) ? 1.05 : 1.0)
 
-                Behavior on color { ColorAnimation { duration: HAnimation.fast } }
                 Behavior on scale {
+                    enabled: !root.reducedMotion
                     NumberAnimation {
-                        duration: HAnimation.buttonHoverDuration
-                        easing.bezierCurve: HAnimation.buttonHoverCurve
+                        duration: nextArea.containsMouse ? HAnimation.buttonHoverDuration : HAnimation.buttonReleaseDuration
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: nextArea.containsMouse ? HAnimation.buttonHoverCurve : HAnimation.buttonReleaseCurve
                     }
                 }
 
                 Text {
                     anchors.centerIn: parent
-                    text: "›"
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 17
-                    font.weight: Font.Bold
+                    text: "󰅂"
+                    font.family: Theme.iconFontFamily
+                    font.pixelSize: 19
                     color: Theme.fg
                 }
 
@@ -266,6 +285,15 @@ Rectangle {
         DashboardCalendarWidget {
             monthOffset: root.calendarMonthOffset
             onMonthOffsetChanged: root.calendarMonthOffset = monthOffset
+            anchors.fill: parent
+        }
+    }
+
+    Component {
+        id: deviceHubWidgetComponent
+
+        DashboardDeviceHubWidget {
+            active: root.active && !root.transitioning && root.currentKey === "devices"
             anchors.fill: parent
         }
     }

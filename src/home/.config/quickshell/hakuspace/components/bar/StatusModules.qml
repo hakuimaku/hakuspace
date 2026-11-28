@@ -123,6 +123,7 @@ Item {
         objectName: "centerStatusModules"
         anchors.centerIn: parent
         anchors.verticalCenterOffset: root.presentation === "top" ? Theme.topBarTopPadding / 2 : 0
+        z: FocusTimer.active ? 5 : 0
         active: root.showCenterCluster
         width: active && item ? item.implicitWidth : 0
         height: active && item ? item.implicitHeight : 0
@@ -133,11 +134,16 @@ Item {
 
                 readonly property real safeSpan: Math.max(0, 2 * Math.min(root.width / 2 - (leftModules.x + leftModules.width) - Theme.gap, root.width / 2 - rightLane.width - Theme.gap))
                 readonly property real cavaSlotWidth: cavaModule.hoverSafeWidth
+                readonly property real timerSlotWidth: timerModule.implicitWidth
                 readonly property bool hakuMenuActive: UiState.activePanel === "hakumenu" && UiState.hakuMenuScreenName === root.screenName
                 readonly property bool dashboardActive: (UiState.dashboardVisuallyActive || UiState.navigationMode === "handoff-dashboard") && (UiState.navigationScreenName === "" || UiState.navigationScreenName === root.screenName || UiState.navigationVisualScreenName === root.screenName)
-                readonly property bool showCava: ShellSettingsStore.showCava && !hakuMenuActive && !dashboardActive && CenterState.centerMode === "media" && Cava.available && Cava.audioVisible && safeSpan >= cavaSlotWidth + Theme.gap + Theme.fontSize * 3
+                // Priority order: Timer > CenterModule > Cava; timer remains visible even when safeSpan reaches 0.
+                readonly property bool showTimer: FocusTimer.active && !hakuMenuActive && !dashboardActive
+                readonly property real timerReserved: showTimer ? (timerSlotWidth + Theme.gap) : 0
+                readonly property real effectiveSpan: Math.max(0, safeSpan - timerReserved)
+                readonly property bool showCava: ShellSettingsStore.showCava && !hakuMenuActive && !dashboardActive && CenterState.centerMode === "media" && Cava.available && Cava.audioVisible && effectiveSpan >= cavaSlotWidth + Theme.gap + Theme.fontSize * 3
 
-                spacing: showCava ? Theme.gap : 0
+                spacing: 0
                 opacity: (CenterState.osdVisible || CenterState.osdExpansion > 0 || dashboardActive) ? 0 : 1
                 enabled: !CenterState.osdVisible && CenterState.osdExpansion === 0 && !dashboardActive
 
@@ -161,9 +167,21 @@ Item {
                             duration: HAnimation.normal
                             easing.bezierCurve: HAnimation.moduleCurve
                         }
-
                     }
+                }
 
+                Item {
+                    id: cavaGap
+                    width: centerCluster.showCava && (centerModule.visible || centerCluster.showTimer) ? Theme.gap : 0
+                    height: 1
+                    visible: width > 0
+
+                    Behavior on width {
+                        NumberAnimation {
+                            duration: HAnimation.normal
+                            easing.bezierCurve: HAnimation.moduleCurve
+                        }
+                    }
                 }
 
                 TopModules.CenterModule {
@@ -171,16 +189,29 @@ Item {
 
                     visible: ShellSettingsStore.showCenter && centerModule.active
                     screenName: root.screenName
-                    maximumWidth: Math.max(0, centerCluster.safeSpan - (cavaSlot.width > 0 ? cavaSlot.width + centerCluster.spacing : 0))
+                    maximumWidth: Math.max(0, centerCluster.effectiveSpan - (cavaSlot.width > 0 ? cavaSlot.width + Theme.gap : 0))
                 }
 
-                // Animates center cluster spacing when the cava visualizer expands or collapses.
-                Behavior on spacing {
-                    NumberAnimation {
-                        duration: HAnimation.normal
-                        easing.bezierCurve: HAnimation.moduleCurve
-                    }
+                Item {
+                    id: timerGap
+                    width: centerCluster.showTimer && centerModule.visible ? Theme.gap : 0
+                    height: 1
+                    visible: width > 0
+                }
 
+                Item {
+                    id: timerSlot
+
+                    width: centerCluster.showTimer ? centerCluster.timerSlotWidth : 0
+                    height: timerModule.implicitHeight
+                    visible: width > 0
+                    clip: true
+
+                    TopModules.FocusTimerGroup {
+                        id: timerModule
+                        anchors.centerIn: parent
+                        visible: timerSlot.visible
+                    }
                 }
 
                 // Animates center cluster opacity when OSD feedback or dashboard becomes active.
@@ -189,13 +220,9 @@ Item {
                         duration: HAnimation.fast
                         easing.bezierCurve: HAnimation.effectsCurve
                     }
-
                 }
-
             }
-
         }
-
     }
 
     Flickable {

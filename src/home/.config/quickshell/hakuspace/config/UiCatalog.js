@@ -174,6 +174,10 @@ var dashboardWidgets = [
         title: "Calendar"
     },
     {
+        key: "devices",
+        title: "Audio Mixer"
+    },
+    {
         key: "bio",
         title: "Bio"
     }

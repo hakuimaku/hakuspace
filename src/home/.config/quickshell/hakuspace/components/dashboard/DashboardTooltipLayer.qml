@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import "../../services"
 
 Item {
@@ -6,12 +7,14 @@ Item {
 
     anchors.fill: parent
     enabled: false
-    visible: bubbleOpacity > 0.001
+    visible: bubble.opacity > 0.001
     z: 100
 
-    property real bubbleOpacity: 0.0
+    readonly property bool reducedMotion: Quickshell.env("HAKUSPACE_REDUCED_MOTION") === "1"
+    property bool bubbleShown: false
     property real bubbleX: 0
     property real bubbleY: 0
+    property bool flippedAbove: false
     property string displayText: ""
 
     Timer {
@@ -22,9 +25,9 @@ Item {
             if (DashboardTooltip.active && DashboardTooltip.currentTarget && root.parent && root.parent.isFullyOpen) {
                 root.displayText = DashboardTooltip.currentText
                 root.positionBubble()
-                root.bubbleOpacity = 1.0
+                root.bubbleShown = true
             } else {
-                root.bubbleOpacity = 0.0
+                root.bubbleShown = false
             }
         }
     }
@@ -36,12 +39,17 @@ Item {
                 delayTimer.restart()
             } else {
                 delayTimer.stop()
-                root.bubbleOpacity = 0.0
+                root.bubbleShown = false
             }
         }
         function onCurrentTextChanged() {
-            if (DashboardTooltip.active && root.bubbleOpacity > 0.001) {
+            if (DashboardTooltip.active && root.bubbleShown) {
                 root.displayText = DashboardTooltip.currentText
+                root.positionBubble()
+            }
+        }
+        function onPlacementChanged() {
+            if (DashboardTooltip.active && root.bubbleShown) {
                 root.positionBubble()
             }
         }
@@ -53,7 +61,7 @@ Item {
             if (root.parent.morphProgress < 0.95) {
                 DashboardTooltip.dismiss()
                 delayTimer.stop()
-                root.bubbleOpacity = 0.0
+                root.bubbleShown = false
             }
         }
     }
@@ -66,27 +74,46 @@ Item {
             var pt = target.mapToItem(root, 0, 0)
             var targetWidth = target.width || 0
             var targetHeight = target.height || 0
-
-            // Prefer placing below the target; flip above if near bottom edge
-            var tx = pt.x + (targetWidth - bubble.width) / 2
-            var ty = pt.y + targetHeight + 6
-
-            // Horizontal clamping within envelope
             var pad = 12
-            if (tx < pad) tx = pad
-            if (tx + bubble.width > root.width - pad) {
-                tx = Math.max(pad, root.width - bubble.width - pad)
-            }
+            var minX = pad
+            var maxX = (root.parent && root.parent.currentBodyWidth > 0)
+                ? Math.min(root.width, root.parent.currentBodyWidth) - pad
+                : root.width - pad
+            var originY = (root.parent && root.parent.contentOriginY !== undefined)
+                ? Math.max(0, root.parent.contentOriginY) : 0
+            var minY = originY + pad
+            var maxY = (root.parent && root.parent.currentBodyHeight > 0)
+                ? Math.min(root.height, originY + root.parent.currentBodyHeight) - pad
+                : root.height - pad
 
-            // Vertical flipping if overflow
-            if (ty + bubble.height > root.height - pad) {
-                ty = Math.max(pad, pt.y - bubble.height - 6)
+            var tx
+            var ty
+            root.flippedAbove = false
+            if (DashboardTooltip.placement === "right") {
+                tx = pt.x + targetWidth + 10
+                if (tx + bubble.width > maxX) {
+                    var flippedLeft = pt.x - bubble.width - 10
+                    if (flippedLeft >= minX) tx = flippedLeft
+                }
+                tx = Math.max(minX, Math.min(tx, Math.max(minX, maxX - bubble.width)))
+                ty = pt.y + (targetHeight - bubble.height) / 2
+                ty = Math.max(minY, Math.min(ty, Math.max(minY, maxY - bubble.height)))
+            } else {
+                // Prefer placing below the target; flip above if near bottom edge
+                tx = pt.x + (targetWidth - bubble.width) / 2
+                ty = pt.y + targetHeight + 6
+                tx = Math.max(minX, Math.min(tx, Math.max(minX, maxX - bubble.width)))
+                if (ty + bubble.height > maxY) {
+                    root.flippedAbove = true
+                    ty = Math.max(minY, pt.y - bubble.height - 6)
+                }
+                ty = Math.max(minY, Math.min(ty, Math.max(minY, maxY - bubble.height)))
             }
 
             root.bubbleX = Math.round(tx)
             root.bubbleY = Math.round(ty)
         } catch (e) {
-            root.bubbleOpacity = 0.0
+            root.bubbleShown = false
         }
     }
 
@@ -101,11 +128,47 @@ Item {
         color: Qt.darker(Theme.surface, 1.15)
         border.width: 1
         border.color: Theme.surfaceHighlight(1.35)
-        opacity: root.bubbleOpacity
+        opacity: root.bubbleShown ? 1.0 : 0.0
+        scale: (root.bubbleShown || root.reducedMotion) ? 1.0 : 0.92
+        transformOrigin: Item.Center
+
+        transform: Translate {
+            x: (root.bubbleShown || root.reducedMotion) ? 0
+                : (DashboardTooltip.placement === "right" ? -4 : 0)
+            y: (root.bubbleShown || root.reducedMotion) ? 0
+                : (DashboardTooltip.placement === "right" ? 0 : (root.flippedAbove ? 4 : -4))
+
+            Behavior on x {
+                enabled: !root.reducedMotion
+                NumberAnimation {
+                    duration: HAnimation.tooltipDuration
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: HAnimation.tooltipCurve
+                }
+            }
+            Behavior on y {
+                enabled: !root.reducedMotion
+                NumberAnimation {
+                    duration: HAnimation.tooltipDuration
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: HAnimation.tooltipCurve
+                }
+            }
+        }
 
         Behavior on opacity {
+            enabled: !root.reducedMotion
             NumberAnimation {
-                duration: HAnimation.slow
+                duration: HAnimation.tooltipDuration
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: HAnimation.tooltipCurve
+            }
+        }
+        Behavior on scale {
+            enabled: !root.reducedMotion
+            NumberAnimation {
+                duration: HAnimation.tooltipDuration
+                easing.type: Easing.BezierSpline
                 easing.bezierCurve: HAnimation.tooltipCurve
             }
         }

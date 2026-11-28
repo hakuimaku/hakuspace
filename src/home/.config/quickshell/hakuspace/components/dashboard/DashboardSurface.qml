@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 import QtQuick.Shapes
 import "../../services"
 
@@ -29,19 +30,44 @@ Item {
     property bool expanded: false
     property real morphProgress: 0.0
     property bool hasFullscreen: false
+    property bool pinned: false
+
+    // Detect active text editing inside Dashboard so SafeZone locks against accidental pointer-exit close.
+    readonly property Item _focusedItem: root.Window.window ? root.Window.window.activeFocusItem : null
+    readonly property bool inputActive: root.expanded && _isDescendantTextInput(_focusedItem)
+    readonly property bool inputComposing: inputActive && !!_focusedItem && _focusedItem.inputMethodComposing === true
+
+    function _isDescendantTextInput(item) {
+        if (!item || typeof item.cursorPosition !== "number" || typeof item.selectedText !== "string" || item.readOnly === true) {
+            return false
+        }
+        var curr = item
+        while (curr) {
+            if (curr === root) return true
+            curr = curr.parent
+        }
+        return false
+    }
 
     signal requestReturnToNavigation()
     signal focusRequested()
+    signal pinToggled()
+    signal resizeRequested(real newWidth, real newHeight)
+    signal resizeResetRequested()
 
+    property bool resizing: false
     property real targetWidth: Theme.dashboardWidth
     property real targetHeight: Theme.dashboardHeight
+
+    onExpandedChanged: if (!expanded) resizing = false
+    Component.onDestruction: resizing = false
 
     readonly property bool isFullyOpen: morphProgress >= 0.98
 
     // 20 logical px Dashboard shell inset
     readonly property real innerPadding: 24
     readonly property real railGap: 14
-    readonly property real cardGap: 12
+    readonly property real cardGap: 14
     readonly property real cornerRadius: Theme.largeRadius
     readonly property real flareRadius: Theme.giantRadius
 
@@ -104,10 +130,10 @@ Item {
 
     // Usable card layout rows:
     // Row 1 (Clock | Media) takes ~24% of dashboard height (e.g. 120-136px),
-    // Row 2 (Widget | Monitor) fills the rest down to 20px bottom padding.
+    // Row 2 (Widget | Secondary) fills the rest down to 20px bottom padding.
     readonly property real topClusterX: contentX
     readonly property real topClusterY: innerPadding
-    readonly property real row1Height: Math.max(104, Math.min(136, Math.round(dashboardHeight * 0.24)))
+    readonly property real row1Height: Math.max(122, Math.min(176, Math.round(dashboardHeight * 0.26)))
     readonly property real row2Y: topClusterY + row1Height + cardGap
     readonly property real row2Height: Math.max(160, finalBodyBottom - row2Y - bottomPadding)
 
@@ -158,13 +184,13 @@ Item {
     readonly property real widgetHostOpacity: isFullyOpen ? 1.0
         : Math.max(0.0, Math.min(1.0, (cardMorphProgress - 0.15) / 0.65))
 
-    // Card 4: Monitor (Row 2, Col 2)
-    readonly property real monitorCardTargetX: contentX + col1Width + cardGap
-    readonly property real monitorCardTargetY: row2Y
-    readonly property real monitorCardX: monitorCardTargetX + (36 * Math.max(0.0, 1.0 - cardMorphProgress))
-    readonly property real monitorCardY: monitorCardTargetY + (28 * Math.max(0.0, 1.0 - cardMorphProgress))
-    readonly property real monitorCardScale: Math.max(0.70, 0.70 + 0.30 * cardMorphProgress)
-    readonly property real monitorCardOpacity: isFullyOpen ? 1.0
+    // Card 4: Secondary slot (Row 2, Col 2)
+    readonly property real secondaryCardTargetX: contentX + col1Width + cardGap
+    readonly property real secondaryCardTargetY: row2Y
+    readonly property real secondaryCardX: secondaryCardTargetX + (36 * Math.max(0.0, 1.0 - cardMorphProgress))
+    readonly property real secondaryCardY: secondaryCardTargetY + (28 * Math.max(0.0, 1.0 - cardMorphProgress))
+    readonly property real secondaryCardScale: Math.max(0.70, 0.70 + 0.30 * cardMorphProgress)
+    readonly property real secondaryCardOpacity: isFullyOpen ? 1.0
         : Math.max(0.0, Math.min(1.0, (cardMorphProgress - 0.20) / 0.65))
 
     // Input mask bounds exposed for NavigationPanel overlay mask union
@@ -228,19 +254,7 @@ Item {
         }
     }
 
-    // Profile rail (username + Hikaide identity below Avatar)
-    DashboardProfileRail {
-        id: profileRail
-        x: root.avatarX
-        y: root.mapY(root.avatarY + root.avatarDiameter + 14)
-        railWidth: root.avatarDiameter
-        railHeight: Math.max(0, (root.finalBodyBottom - root.bottomPadding) - (root.avatarY + root.avatarDiameter + 14))
-        opacity: root.contentRevealProgress
-        visible: opacity > 0.001
-        z: 9
-    }
-
-    // 3. Cards container clipped to active dashboard morph envelope
+    // 3. Cards & profile rail container clipped to active dashboard morph envelope
     Item {
         id: cardsClipper
         x: 0
@@ -256,6 +270,18 @@ Item {
             anchors.fill: parent
             opacity: root.contentRevealProgress
             enabled: root.isFullyOpen
+
+            // Profile rail tracks currentBodyHeight inside cardsClipper so Pin stays glued to Dashboard during open/close.
+            DashboardProfileRail {
+                id: profileRail
+                x: root.avatarX
+                y: root.avatarY + root.avatarDiameter + 14
+                railWidth: root.avatarDiameter
+                railHeight: Math.max(0, (root.currentBodyHeight - root.bottomPadding) - (root.avatarY + root.avatarDiameter + 14))
+                pinned: root.pinned
+                z: 4
+                onPinToggled: root.pinToggled()
+            }
 
             // Row 1: Clock | MPRIS
             DashboardClockCard {
@@ -281,9 +307,10 @@ Item {
                 active: root.expanded
             }
 
-            // Row 2: Dynamic Widget Host | Monitor
+            // Row 2: Dynamic Widget Host | Secondary slot
             DashboardWidgetHost {
                 id: widgetHost
+                active: root.expanded
                 currentIndex: root.viewState ? root.viewState.widgetIndex : 0
                 calendarMonthOffset: root.viewState ? root.viewState.calendarMonthOffset : 0
                 onCurrentIndexChanged: if (root.viewState) root.viewState.widgetIndex = currentIndex
@@ -297,21 +324,164 @@ Item {
                 transformOrigin: Item.Center
             }
 
-            DashboardMonitorCard {
-                id: monitorCard
-                x: root.monitorCardX
-                y: root.monitorCardY
+            DashboardAgendaCard {
+                id: agendaCard
+                x: root.secondaryCardX
+                y: root.secondaryCardY
                 width: root.col2Width
                 height: root.row2Height
-                scale: root.monitorCardScale
-                opacity: root.monitorCardOpacity
+                scale: root.secondaryCardScale
+                opacity: root.secondaryCardOpacity
                 transformOrigin: Item.Center
                 active: root.expanded
             }
         }
     }
 
-    // 4. Scoped hover tooltip layer for Dashboard elements
+    // 4. Drag-to-resize handles (Right, Bottom/Top, and Corner) active when fully open
+    MouseArea {
+        id: rightResizeMouse
+        visible: root.isFullyOpen
+        enabled: root.isFullyOpen
+        x: Math.max(0, root.currentBodyWidth - width)
+        y: root.bottomAttached ? (root.contentOriginY + 20) : 0
+        width: 10
+        height: Math.max(0, root.currentBodyHeight - 20)
+        hoverEnabled: true
+        cursorShape: Qt.SizeHorCursor
+        acceptedButtons: Qt.LeftButton
+        z: 30
+
+        property point pressPos: Qt.point(0, 0)
+        property real startWidth: 0
+        property real startHeight: 0
+
+        onPressed: mouse => {
+            DashboardTooltip.dismiss()
+            pressPos = mapToItem(root, mouse.x, mouse.y)
+            startWidth = root.targetWidth
+            startHeight = root.targetHeight
+            root.resizing = true
+        }
+        onPositionChanged: mouse => {
+            if (!root.resizing) return
+            var pos = mapToItem(root, mouse.x, mouse.y)
+            root.resizeRequested(startWidth + (pos.x - pressPos.x), startHeight)
+        }
+        onReleased: root.resizing = false
+        onCanceled: root.resizing = false
+    }
+
+    MouseArea {
+        id: verticalResizeMouse
+        visible: root.isFullyOpen
+        enabled: root.isFullyOpen
+        x: 0
+        y: root.bottomAttached ? root.contentOriginY : Math.max(0, root.currentBodyHeight - height)
+        width: Math.max(0, root.currentBodyWidth - 20)
+        height: 10
+        hoverEnabled: true
+        cursorShape: Qt.SizeVerCursor
+        acceptedButtons: Qt.LeftButton
+        z: 30
+
+        property point pressPos: Qt.point(0, 0)
+        property real startWidth: 0
+        property real startHeight: 0
+
+        onPressed: mouse => {
+            DashboardTooltip.dismiss()
+            pressPos = mapToItem(root, mouse.x, mouse.y)
+            startWidth = root.targetWidth
+            startHeight = root.targetHeight
+            root.resizing = true
+        }
+        onPositionChanged: mouse => {
+            if (!root.resizing) return
+            var pos = mapToItem(root, mouse.x, mouse.y)
+            var dy = pos.y - pressPos.y
+            var deltaH = root.bottomAttached ? -dy : dy
+            root.resizeRequested(startWidth, startHeight + deltaH)
+        }
+        onReleased: root.resizing = false
+        onCanceled: root.resizing = false
+    }
+
+    Item {
+        id: cornerResizeHandle
+        visible: root.isFullyOpen
+        x: Math.max(0, root.currentBodyWidth - width)
+        y: root.bottomAttached ? root.contentOriginY : Math.max(0, root.currentBodyHeight - height)
+        width: 20
+        height: 20
+        z: 31
+
+        readonly property real gripOpacity: (cornerResizeMouse.containsMouse || root.resizing) ? 0.72 : 0.22
+
+        Rectangle {
+            width: 11
+            height: 2
+            radius: 1
+            color: Theme.fgMuted
+            opacity: cornerResizeHandle.gripOpacity
+            rotation: root.bottomAttached ? 45 : -45
+            anchors.centerIn: parent
+            anchors.horizontalCenterOffset: 2
+            anchors.verticalCenterOffset: root.bottomAttached ? -2 : 2
+        }
+
+        Rectangle {
+            width: 6
+            height: 2
+            radius: 1
+            color: Theme.fgMuted
+            opacity: cornerResizeHandle.gripOpacity
+            rotation: root.bottomAttached ? 45 : -45
+            anchors.centerIn: parent
+            anchors.horizontalCenterOffset: 5
+            anchors.verticalCenterOffset: root.bottomAttached ? -5 : 5
+        }
+
+        MouseArea {
+            id: cornerResizeMouse
+            anchors.fill: parent
+            enabled: root.isFullyOpen
+            hoverEnabled: true
+            cursorShape: root.bottomAttached ? Qt.SizeBDiagCursor : Qt.SizeFDiagCursor
+            acceptedButtons: Qt.LeftButton
+
+            property point pressPos: Qt.point(0, 0)
+            property real startWidth: 0
+            property real startHeight: 0
+
+            onEntered: if (!root.resizing) DashboardTooltip.show(cornerResizeHandle, "Drag to resize · Double-click to reset")
+            onExited: DashboardTooltip.hide(cornerResizeHandle)
+            onPressed: mouse => {
+                DashboardTooltip.dismiss()
+                pressPos = mapToItem(root, mouse.x, mouse.y)
+                startWidth = root.targetWidth
+                startHeight = root.targetHeight
+                root.resizing = true
+            }
+            onPositionChanged: mouse => {
+                if (!root.resizing) return
+                var pos = mapToItem(root, mouse.x, mouse.y)
+                var dx = pos.x - pressPos.x
+                var dy = pos.y - pressPos.y
+                var deltaH = root.bottomAttached ? -dy : dy
+                root.resizeRequested(startWidth + dx, startHeight + deltaH)
+            }
+            onReleased: root.resizing = false
+            onCanceled: root.resizing = false
+            onDoubleClicked: {
+                DashboardTooltip.dismiss()
+                root.resizing = false
+                root.resizeResetRequested()
+            }
+        }
+    }
+
+    // 5. Scoped hover tooltip layer for Dashboard elements
     DashboardTooltipLayer {
         id: tooltipLayer
     }
