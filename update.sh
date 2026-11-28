@@ -109,6 +109,27 @@ else
     log_ok "Detected deployment mode: Symlink"
 fi
 
+# Separate from package group updates so legacy replacements run before group installs.
+if "$HAKU_DIR/scripts/pkg_migrate.sh" --has-pending; then
+    begin_block "PACKAGE MIGRATION"
+    "$HAKU_DIR/scripts/pkg_migrate.sh" --plan
+    echo ""
+    if ask_yes_no "Migrate the legacy package(s) shown above now?" y; then
+        PKG_MIGRATE_STATUS=0
+        "$HAKU_DIR/scripts/pkg_migrate.sh" --apply || PKG_MIGRATE_STATUS=$?
+        if [[ "$PKG_MIGRATE_STATUS" == 0 ]]; then
+            log_ok "Package migration completed."
+        elif [[ "$PKG_MIGRATE_STATUS" == 2 ]]; then
+            log_warn "Package migration incomplete; previous package(s) were preserved or rolled back. Retry later with ./scripts/pkg_migrate.sh --apply."
+        else
+            record_failure "$PKG_MIGRATE_STATUS"
+            log_error "Package migration failed (exit=$PKG_MIGRATE_STATUS); review output before continuing."
+        fi
+    else
+        log_skip "Skipping package migration; you can run ./scripts/pkg_migrate.sh --apply later."
+    fi
+fi
+
 # 4. Update Packages (Update Profile)
 begin_block "2 - UPDATE PACKAGES"
 "$HAKU_DIR/scripts/packages.sh" --profile update "${SELECTED_WMS[@]}" --plan
