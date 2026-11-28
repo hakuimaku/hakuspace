@@ -40,6 +40,9 @@ QtObject {
     property string runtimeDirectory: ""
     property string pendingOutput: ""
     property bool awaitingAvatar: false
+    property string savedOutputPath: ""
+    property bool overwriteTarget: false
+    property bool applyAfterSave: false
     readonly property int orientedWidth: rotation % 180 ? sourceHeight : sourceWidth
     readonly property int orientedHeight: rotation % 180 ? sourceWidth : sourceHeight
     readonly property var outputSize: Geometry.outputSize(cropRectNormalized, orientedWidth, orientedHeight, outputScale, mode === "avatar")
@@ -74,15 +77,19 @@ QtObject {
         cropRatio = mode === "avatar" ? 1 : 0
         tool = "crop"; selectedAnnotation = -1
         lastError = ""; dirty = false; closing = false
+        savedOutputPath = ""; overwriteTarget = false; applyAfterSave = false
         UiState.imageEditorScreenName = screenName
         UiState.claimInteraction("imageEditor", screenName)
         UiState.activePanel = "imageEditor"
         busy = true
-        inspectProc.command = ["python3", controller, "inspect", path]
+        inspectProc.command = requestedMode === "wallpaper"
+            ? ["python3", controller, "inspect", "--mode", "wallpaper", path]
+            : ["python3", controller, "inspect", path]
         inspectProc.running = true
         return true
     }
     function openAvatar(path, screen) { return openSession(path, "avatar", screen || UiState.navigationScreenName) }
+    function openWallpaper(path, screen) { return openSession(path, "wallpaper", screen || UiState.wallpaperScreenName) }
     function openScreenshot(path, screen) { return openSession(path, "screenshot", screen) }
     function open(path, screen) { return openSession(path, "file", screen) }
 
@@ -95,13 +102,17 @@ QtObject {
     function finishClose() {
         if (!closing && UiState.activePanel === "imageEditor") return
         var wasAvatar = mode === "avatar"
+        var wasWallpaper = mode === "wallpaper"
+        var savedPath = savedOutputPath
         if (UiState.activePanel === "imageEditor") UiState.activePanel = ""
         UiState.imageEditorScreenName = ""
         if (!busy) {
             sourcePath = ""; sourceWidth = 0; sourceHeight = 0
             annotations = []; undoStack = []; redoStack = []
             selectedAnnotation = -1; originalState = ""; dirty = false; closing = false
+            savedOutputPath = ""; overwriteTarget = false; applyAfterSave = false
             if (wasAvatar) UiState.reopenDashboardAfterAvatar()
+            else if (wasWallpaper) UiState.reopenWallpaperAfterEdit(savedPath)
         }
     }
     function status() {
@@ -171,10 +182,12 @@ QtObject {
     }
 
     // Stage a private JSON spec and start rendering only after FileView reports its save.
-    function save(outputPath) {
+    function save(outputPath, options) {
         if (!ready || (mode === "avatar" && Avatar.busy)) return false
         pendingOutput = mode === "screenshot" ? sourcePath : localPath(outputPath || "")
-        if (mode === "file" && !pendingOutput) return false
+        if ((mode === "file" || mode === "wallpaper") && !pendingOutput) return false
+        overwriteTarget = mode === "wallpaper" && !!(options && options.overwrite)
+        applyAfterSave = mode === "wallpaper" && !!(options && options.applyAfterSave)
         busy = true; lastError = ""
         stageProc.running = true
         return true
@@ -183,6 +196,7 @@ QtObject {
         var value = Ops.snapshot(root)
         value.sourcePath = sourcePath; value.fingerprint = sourceFingerprint
         value.mode = mode; value.outputPath = mode === "avatar" ? runtimeDirectory + "/avatar.png" : pendingOutput
+        if (mode === "wallpaper") value.overwrite = overwriteTarget
         return value
     }
     function fail(message) {
@@ -271,6 +285,13 @@ QtObject {
                 if (root.mode === "avatar") {
                     root.awaitingAvatar = true
                     Avatar.setAvatar(result.path)
+                } else if (root.mode === "wallpaper") {
+                    root.savedOutputPath = result.path || ""
+                    root.lastError = result.warning || ""
+                    if (result.path && (root.applyAfterSave || (result.overwritten && WallpaperService.current.path === result.path)))
+                        WallpaperService.select(result.path, WallpaperSettingsStore.savedValues.playback.profile, false)
+                    root.closing = true
+                    root.cleanup()
                 } else {
                     root.lastError = result.warning || ""
                     // A committed image closes the workspace even when clipboard delivery fails.

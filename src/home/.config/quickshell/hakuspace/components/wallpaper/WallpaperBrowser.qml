@@ -19,16 +19,18 @@ FocusScope {
     property string screenName: UiState.wallpaperScreenName
     FontMetrics { id: categoryFontMetrics; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize - 1 }
     FontMetrics { id: mediaFontMetrics; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSize + 1 }
+    // Cap the Leftbar corner ear radius so max shell radius (24px -> 96px giantRadius) never crowds toolbar controls.
+    readonly property real leftSurfaceRadius: Math.min(Theme.giantRadius, 48)
     // Width measurement stays independent of the toolbar's wrapped height.
     readonly property var leftMetrics: ({width: width, height: height, left: ScreenGeometry.contentLeftEdge,
         right: ScreenGeometry.rightInset, top: ScreenGeometry.topBorderThickness,
-        bottom: ScreenGeometry.bottomReservation(screenName), padding: Theme.pad, gap: Theme.gap, radius: Theme.giantRadius,
+        bottom: ScreenGeometry.bottomReservation(screenName), padding: Theme.pad, gap: Theme.gap, radius: leftSurfaceRadius,
         toolbarWidth: toolbar.implicitWidth, toolbarHeight: toolbar.implicitHeight,
         mediaHeight: mediaTabHeight, categoryHeight: categoryTabHeight, categoryCount: WallpaperLibrary.categories.length,
         labelWidth: WallpaperLibrary.categories.reduce((value, name) => Math.max(value,
             categoryFontMetrics.advanceWidth(name || "All")), mediaFontMetrics.advanceWidth("Images") * 2 + Theme.gap)})
     readonly property real leftInfoWidth: WorkspaceGeometry.infoWidth({width: width, left: ScreenGeometry.contentLeftEdge,
-        right: ScreenGeometry.rightInset, gap: Theme.gap, radius: Theme.giantRadius, toolbarWidth: toolbar.implicitWidth})
+        right: ScreenGeometry.rightInset, gap: Theme.gap, radius: leftSurfaceRadius, toolbarWidth: toolbar.implicitWidth})
     readonly property var sideGeometry: WorkspaceGeometry.leftLayout(leftMetrics)
     readonly property real rightRailWidth: sideGeometry.railRect.width
     readonly property real infoSlide: -(sideGeometry.infoSurfaceRect.width + ScreenGeometry.roundedRadius) * (1 - reveal)
@@ -93,7 +95,8 @@ FocusScope {
     readonly property Item mediaInputItem: typeSlot
     readonly property Item categoryInputItem: categoryLane
     readonly property Item settingsInputItem: details
-    readonly property Item selectedInputItem: workspace ? carousel.currentItem : null
+    readonly property Item selectedInputItem: workspace ? carousel.selectedSlotItem : null
+    readonly property Item actionInputItem: workspaceVertical ? carousel.leftActionItem : null
     Item { id: emptyInput; width: 0; height: 0 }
     // Morph target matches Mode 2's selected card position and scale so switching modes glides continuously.
     readonly property real morphTargetX: ChromeLayout.leftBarMode
@@ -145,7 +148,7 @@ FocusScope {
         function onQueryChanged() { root.query = WallpaperLibrary.query }
         function onFilterChanged() { root.filter = WallpaperLibrary.filter }
         function onActiveCategoryChanged() { carousel.stopIntro() }
-        function onSelectedPathChanged() {
+        function onSelectedGroupKeyChanged() {
             if (!root.workspace && root.enabled && root.interactionReady && root.reveal === 1
                     && !carousel.introRunning && !carousel.introPending) navigationBounce.restart()
         }
@@ -162,6 +165,21 @@ FocusScope {
         var accepted = WallpaperLibrary.applySelected()
         if (accepted && !workspace) dismiss()
         return accepted
+    }
+    function editWallpaper(item) {
+        if (!item || item.kind !== "static" || ImageEditor.busy) return false
+        carousel.stopIntro()
+        var targetScreen = root.screenName || UiState.wallpaperScreenName
+        UiState.beginWallpaperEdit(targetScreen, root.presentation)
+        if (!ImageEditor.openWallpaper(item.path, targetScreen)) {
+            UiState.clearWallpaperEditReturn()
+            return false
+        }
+        return true
+    }
+    function editSelected() { return editWallpaper(selected) }
+    function cycleSelectedLayer(step) {
+        return !!selected && WallpaperLibrary.cycleLayer(selected.groupKey, step)
     }
     function dismiss() { closeRequested() }
     // Shuffle changes only browsing selection, including video items.
@@ -180,11 +198,15 @@ FocusScope {
         var control = event.modifiers === Qt.ControlModifier
         // Alt navigates categories without consuming the media selector's Ctrl shortcuts.
         var alt = event.modifiers === Qt.AltModifier
+        var shift = event.modifiers === Qt.ShiftModifier
         var plain = event.modifiers === Qt.NoModifier
         if (plain && event.key === Qt.Key_Escape) dismiss()
         else if (settingsSection) return false
         else if (control && [Qt.Key_Return, Qt.Key_Enter].includes(event.key)) UiState.enterWallpaperWorkspace()
         else if (plain && [Qt.Key_Return, Qt.Key_Enter].includes(event.key) && !categoryLane.activeFocus) applySelected()
+        else if (plain && event.key === Qt.Key_E && !search.activeFocus) editSelected()
+        else if ((plain && event.key === Qt.Key_BracketLeft && !search.activeFocus) || (shift && event.key === Qt.Key_Up)) cycleSelectedLayer(-1)
+        else if ((plain && event.key === Qt.Key_BracketRight && !search.activeFocus) || (shift && event.key === Qt.Key_Down)) cycleSelectedLayer(1)
         else if (workspace && plain && event.key === Qt.Key_Tab) {
             if (search.activeFocus) carousel.forceActiveFocus()
             else search.forceActiveFocus()
@@ -255,6 +277,8 @@ FocusScope {
         readonly property real corner: root.sideGeometry.infoRadius
         readonly property real bodyWidth: width - corner
         readonly property real bodyHeight: height - corner
+        // Keep the inner convex corner tighter than outer ears so bottom-right toolbar buttons retain clear margin.
+        readonly property real innerCorner: Math.min(corner, Theme.largeRadius, 32, bodyWidth / 2, bodyHeight / 2)
         preferredRendererType: Shape.CurveRenderer
         ShapePath {
             fillColor: Theme.surface
@@ -265,10 +289,10 @@ FocusScope {
                 controlX: informationSurface.bodyWidth; controlY: 0
                 x: informationSurface.bodyWidth; y: informationSurface.corner
             }
-            PathLine { x: informationSurface.bodyWidth; y: informationSurface.bodyHeight - informationSurface.corner }
+            PathLine { x: informationSurface.bodyWidth; y: informationSurface.bodyHeight - informationSurface.innerCorner }
             PathQuad {
                 controlX: informationSurface.bodyWidth; controlY: informationSurface.bodyHeight
-                x: informationSurface.bodyWidth - informationSurface.corner; y: informationSurface.bodyHeight
+                x: informationSurface.bodyWidth - informationSurface.innerCorner; y: informationSurface.bodyHeight
             }
             PathLine { x: informationSurface.corner; y: informationSurface.bodyHeight }
             PathQuad {
@@ -847,7 +871,10 @@ FocusScope {
         leftLayout: root.sideGeometry
         spread: root.spread
         selectedPulse: root.selectedPulse
+        workspaceMorph: root.workspaceMorph
         onApplyRequested: root.applySelected()
+        onEditRequested: item => root.editWallpaper(item)
+        onLayerStepRequested: (groupKey, step) => WallpaperLibrary.cycleLayer(groupKey, step)
         opacity: root.workspace ? 1 : root.contentOpacity * (root.workspaceMorph > 0 ? Math.max(0, 1 - Math.max(0, root.workspaceMorph - 0.25) / 0.75) : 1)
         transform: [
             Scale {

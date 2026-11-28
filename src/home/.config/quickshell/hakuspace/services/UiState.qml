@@ -28,6 +28,8 @@ QtObject {
     property int nativeDialogSerial: 0
     property string avatarReturnScreenName: ""
     property var avatarReturnAnchorRect: null
+    property string wallpaperReturnScreenName: ""
+    property string wallpaperReturnPresentation: ""
     signal nativeDialogFinished(string owner, string screenName)
     readonly property bool nativeDialogOpen: nativeDialogOwner.length > 0
 
@@ -63,6 +65,32 @@ QtObject {
         }
         openNavigation(screenName, anchorRect)
         beginNavigationHandoff("dashboard")
+        return true
+    }
+
+    // Preserve the active wallpaper presentation so the editor returns to the same mode.
+    function beginWallpaperEdit(screenName, presentation) {
+        wallpaperReturnScreenName = screenName || wallpaperScreenName
+        wallpaperReturnPresentation = presentation === "workspace" ? "workspace" : "quick"
+    }
+
+    function clearWallpaperEditReturn() {
+        wallpaperReturnScreenName = ""
+        wallpaperReturnPresentation = ""
+    }
+
+    function reopenWallpaperAfterEdit(savedPath) {
+        var screenName = wallpaperReturnScreenName
+        var presentation = wallpaperReturnPresentation
+        clearWallpaperEditReturn()
+        if (savedPath) WallpaperLibrary.pendingSelectPath = savedPath
+        if (!screenName || activePanel || !Quickshell.screens.length) {
+            if (savedPath) WallpaperLibrary.refresh()
+            return false
+        }
+        var exists = Quickshell.screens.some(function(s) { return s.name === screenName })
+        if (!exists) screenName = Quickshell.screens[0].name
+        openWallpaperPresentation(screenName, presentation || "quick")
         return true
     }
 
@@ -652,7 +680,10 @@ QtObject {
             : activePanel === "tray" && trayMenu ? trayMenu.screenName
             : activePanel === "appMenu" && appMenu ? appMenu.screenName : ""
         claimInteraction(activePanel, output)
-        if (activePanel && activePanel !== "imageEditor") clearDashboardAvatarReturn()
+        if (activePanel && activePanel !== "imageEditor") {
+            clearDashboardAvatarReturn()
+            clearWallpaperEditReturn()
+        }
         if (activePanel !== "navigation") {
             navigationMode = "closed"
             navigationScreenName = ""

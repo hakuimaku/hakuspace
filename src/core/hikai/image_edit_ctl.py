@@ -14,7 +14,15 @@ from xml.sax.saxutils import escape
 
 # Only local raster formats enter ImageMagick; vector/delegate inputs are rejected.
 FORMATS = {"image/png": "PNG", "image/jpeg": "JPEG", "image/webp": "WEBP"}
+WALLPAPER_FORMATS = {
+    **FORMATS,
+    "image/avif": "AVIF",
+    "image/bmp": "BMP",
+    "image/x-ms-bmp": "BMP",
+    "image/gif": "GIF",
+}
 EXTENSIONS = {".png": "PNG", ".jpg": "JPEG", ".jpeg": "JPEG", ".webp": "WEBP"}
+EDITED_STEM_RE = re.compile(r"^.+?_\[edited\](?:_.+)?$")
 LIMITS = ["-limit", "memory", "256MiB", "-limit", "map", "512MiB", "-limit", "disk", "2GiB", "-limit", "thread", "2"]
 
 
@@ -36,17 +44,25 @@ def local_path(value):
     return Path(value)
 
 
-def inspect(value):
+def inspect(value, mode="file"):
     """Return dimensions after EXIF orientation without exporting intermediate pixels."""
     path = local_path(value)
-    if not path.is_file() or path.is_symlink():
+    allow_extended = mode == "wallpaper"
+    if allow_extended:
+        if path.is_symlink():
+            path = path.resolve(strict=True)
+        if not path.is_file():
+            raise ValueError("The source must be a readable regular image.")
+    elif not path.is_file() or path.is_symlink():
         raise ValueError("The source must be a readable regular image, not a symbolic link.")
     stamp = fingerprint(path)
     mime = run(["file", "-b", "--mime-type", "--", str(path)], text=True).stdout.strip()
-    if mime not in FORMATS:
-        raise ValueError("Supported image types: PNG, JPEG and WebP.")
+    allowed = WALLPAPER_FORMATS if allow_extended else FORMATS
+    if mime not in allowed:
+        supported = "PNG, JPEG, WebP, AVIF, BMP and GIF." if allow_extended else "PNG, JPEG and WebP."
+        raise ValueError("Supported image types: " + supported)
     with path.open("rb") as image:
-        result = run(["magick", "identify", *LIMITS, "-ping", "-format", "%w %h %[orientation]", FORMATS[mime] + ":-[0]"], stdin=image, text=True).stdout.split()
+        result = run(["magick", "identify", *LIMITS, "-ping", "-format", "%w %h %[orientation]", allowed[mime] + ":-[0]"], stdin=image, text=True).stdout.split()
     width, height = int(result[0]), int(result[1])
     if width < 1 or height < 1 or width * height > 100_000_000:
         raise ValueError("The image exceeds the 100 megapixel editing limit.")
@@ -54,7 +70,7 @@ def inspect(value):
         width, height = height, width
     if stamp != fingerprint(path):
         raise ValueError("The source changed while it was being inspected.")
-    return dict(path=str(path), width=width, height=height, format=FORMATS[mime], mime=mime, fingerprint=stamp)
+    return dict(path=str(path), width=width, height=height, format=allowed[mime], mime=mime, fingerprint=stamp)
 
 
 def number(value, low, high):
@@ -121,20 +137,30 @@ def crop_pixels(crop, width, height):
 
 def render(spec):
     """Render into a sibling temporary file and commit only after every operation succeeds."""
-    info = inspect(spec["sourcePath"])
+    mode = spec["mode"]
+    if mode not in ("avatar", "screenshot", "file", "wallpaper"):
+        raise ValueError("Invalid editor mode.")
+    info = inspect(spec["sourcePath"], mode=mode)
     source = Path(info["path"])
     if info["fingerprint"] != spec["fingerprint"]:
         raise ValueError("The source changed. Reopen it before saving.")
-    mode = spec["mode"]
-    if mode not in ("avatar", "screenshot", "file"):
-        raise ValueError("Invalid editor mode.")
     output = local_path(spec["outputPath"])
     if output.is_symlink():
         raise ValueError("Symbolic output destinations are not supported.")
     output = output.parent.resolve(strict=True) / output.name
-    if mode == "screenshot" and output != source.resolve():
-        raise ValueError("Screenshot saves must replace the captured image.")
-    if mode != "screenshot" and (output.exists() or output == source.resolve()):
+    overwrite = bool(spec.get("overwrite", False))
+    wallpaper_overwrite = False
+    if mode == "screenshot":
+        if output != source.resolve():
+            raise ValueError("Screenshot saves must replace the captured image.")
+    elif mode == "wallpaper":
+        if output == source.resolve():
+            if not overwrite or not EDITED_STEM_RE.match(source.stem):
+                raise ValueError("Only an existing [edited] wallpaper can be overwritten.")
+            wallpaper_overwrite = True
+        elif output.exists():
+            raise ValueError("Save As requires a new file name.")
+    elif output.exists() or output == source.resolve():
         raise ValueError("Save As requires a new file name.")
     encoding = EXTENSIONS.get(output.suffix.lower())
     if not encoding or (mode in ("avatar", "screenshot") and encoding != "PNG"):
@@ -175,9 +201,9 @@ def render(spec):
         staged.chmod(0o600)
         with staged.open("rb") as result:
             os.fsync(result.fileno())
-        if fingerprint(source) != info["fingerprint"] or source.is_symlink():
+        if fingerprint(source) != info["fingerprint"] or (mode != "wallpaper" and source.is_symlink()):
             raise ValueError("The source changed during export; it was not replaced.")
-        if mode == "screenshot":
+        if mode == "screenshot" or wallpaper_overwrite:
             os.replace(staged, output)
         else:
             # Linking preserves Save As's no-overwrite guarantee even under a race.
@@ -191,7 +217,7 @@ def render(spec):
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
         except (OSError, subprocess.SubprocessError):
             warning = "Image saved, but the clipboard could not be updated."
-    return dict(path=str(output), width=ow, height=oh, warning=warning)
+    return dict(path=str(output), width=ow, height=oh, warning=warning, overwritten=wallpaper_overwrite)
 
 
 def terminate(signum, _frame):
@@ -205,10 +231,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("inspect", "render"))
     parser.add_argument("path")
+    parser.add_argument("--mode", choices=("avatar", "screenshot", "file", "wallpaper"), default="file")
     args = parser.parse_args()
     try:
         if args.action == "inspect":
-            result = inspect(args.path)
+            result = inspect(args.path, mode=args.mode)
         else:
             path = Path(args.path)
             if path.stat().st_size > 16 * 1024 * 1024:

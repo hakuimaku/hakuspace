@@ -16,14 +16,14 @@ Item {
         property real customHeight: 0
     }
     // Expose resource counts without retaining destroyed surface objects.
-    readonly property var loaders: [navigation, settings, note, taskManager, taskMetricOverlay, tray, appMenu, center, wallpaper, wallpaperWorkspace, action, popup, osd, navigator, imageEditor, avatarEditor]
+    readonly property var loaders: [navigation, settings, note, taskManager, taskMetricOverlay, tray, appMenu, center, wallpaper, wallpaperWorkspace, action, popup, osd, navigator, imageEditor, avatarEditor, wallpaperEditor]
     readonly property int loadedCount: loaders.filter(function(loader) { return loader.active }).length + menu.loadedCount
     readonly property var navigationItem: navigation.active ? navigation.item : null
     readonly property var avatarPickerItem: avatarPicker.active ? avatarPicker.item : null
 
     Base.LifecycleLoader {
         id: imageEditor
-        requested: !!root.modelData && UiState.activePanel === "imageEditor" && UiState.imageEditorScreenName === root.modelData.name && ImageEditor.mode !== "avatar"
+        requested: !!root.modelData && UiState.activePanel === "imageEditor" && UiState.imageEditorScreenName === root.modelData.name && ImageEditor.mode !== "avatar" && ImageEditor.mode !== "wallpaper"
         ImageEditing.ImageEditorOverlay { modelData: root.modelData }
     }
 
@@ -31,6 +31,12 @@ Item {
         id: avatarEditor
         requested: !!root.modelData && UiState.activePanel === "imageEditor" && UiState.imageEditorScreenName === root.modelData.name && ImageEditor.mode === "avatar"
         ImageEditing.AvatarEditorOverlay { modelData: root.modelData }
+    }
+
+    Base.LifecycleLoader {
+        id: wallpaperEditor
+        requested: !!root.modelData && UiState.activePanel === "imageEditor" && UiState.imageEditorScreenName === root.modelData.name && ImageEditor.mode === "wallpaper"
+        ImageEditing.WallpaperEditorOverlay { modelData: root.modelData }
     }
 
     Base.LifecycleLoader {

@@ -1,11 +1,14 @@
 import QtQuick
 import "../../services"
+import "../settings" as Settings
 
 PathView {
     id: root
     // Leftbar uses three still-image delegates; horizontal presentations keep five.
     property string presentation: "quick"
     readonly property bool workspace: presentation === "workspace"
+    readonly property Item selectedSlotItem: selectedCardOverlay
+    readonly property Item leftActionItem: leftCornerActions
     // Wait for the bounded visible delegates before revealing a cold workspace.
     readonly property bool thumbnailsSettled: !count || !!currentItem && currentItem.parent.children
         .filter(item => item.wallpaper !== undefined && item.visible).every(item => item.thumbnailSettled)
@@ -15,13 +18,16 @@ PathView {
     property var leftLayout: null
     property real spread: 1
     property real selectedPulse: 1
+    property real workspaceMorph: 0
     signal applyRequested()
+    signal editRequested(var wallpaper)
+    signal layerStepRequested(string groupKey, int step)
     readonly property real contentPadding: vertical && leftLayout ? leftLayout.padding : workspace ? 8 : 0
     // Workspace cards use the bottom rail and rise gradually toward the selection.
     readonly property real selectedScale: vertical && leftLayout ? leftLayout.selectedScale : workspace ? 1.32 : 1
     readonly property real cardWidth: vertical ? (leftLayout ? leftLayout.cardWidth : 1) : workspace
         ? Math.max(80, Math.min(width / 5.2, height * 16 / 9 * 0.95, 360))
-        : Math.max(80, Math.min(width * 0.56, (height - 32) * 16 / 9, 920))
+        : Math.max(80, Math.min(width * 0.56, (height - 48) * 16 / 9, 920))
     readonly property real selectedLift: workspace ? contentPadding : 0
     readonly property real cardBottom: height - contentPadding
     readonly property real cardGap: vertical && leftLayout ? leftLayout.gap : 8
@@ -317,6 +323,7 @@ PathView {
         wallpaper: modelData
         width: root.cardWidth
         chosen: PathView.isCurrentItem
+        compactCard: root.workspace
         outlineSelection: root.vertical
         cornerRadius: Theme.largeRadius
         revealProgress: !root.workspace && chosen ? root.introProgress : 1
@@ -333,10 +340,484 @@ PathView {
         visible: PathView.onPath
         scale: targetScale * pulse * crowdScale
         opacity: 1
-        // Selection stays above moving neighbors throughout a vertical snap.
-        z: root.vertical ? (chosen ? 2 : 1) : (PathView.cardDepth ?? 0)
+        // Selection stays above moving neighbors and Mode 2 cradle actions stay behind all cards.
+        z: root.vertical ? (chosen ? 4 : 3) : ((PathView.cardDepth ?? 0) + 2)
         onSelected: { root.stopIntro(); WallpaperLibrary.selectIndex(index); root.forceActiveFocus() }
         onApplied: root.applyRequested()
+    }
+    // Shared selected-item action state for Mode 1 overlay and Mode 2 cradle actions.
+    QtObject {
+        id: actionState
+        readonly property var selectedStack: WallpaperLibrary.selected
+        readonly property bool baseReady: root.enabled && !!selectedStack && root.count > 0
+        readonly property bool quickReady: !root.workspace && baseReady && root.introProgress >= 1
+        readonly property bool workspaceReady: root.workspace && baseReady
+        readonly property bool showQuickEdit: quickReady && selectedStack.kind === "static"
+        readonly property bool showQuickLayers: quickReady && selectedStack.layerCount > 1
+        readonly property bool showWorkspaceEdit: workspaceReady && selectedStack.kind === "static"
+        readonly property bool showWorkspaceLayers: workspaceReady && selectedStack.layerCount > 1
+        readonly property bool activeOnTop: !!selectedStack && WallpaperService.current.path === selectedStack.path
+        readonly property bool hiddenLayerActive: !!selectedStack && selectedStack.layerCount > 1 && !activeOnTop
+            && !!selectedStack.layers && selectedStack.layers.some(layer => layer.path === WallpaperService.current.path)
+        readonly property string activeLayerText: (showQuickLayers || showWorkspaceLayers)
+            ? ((selectedStack.layerLabel || "Edited") + " · " + (selectedStack.activeLayerIndex + 1) + "/" + selectedStack.layerCount)
+            : ""
+        property string displayLayerText: ""
+        onActiveLayerTextChanged: if (activeLayerText) displayLayerText = activeLayerText
+        Component.onCompleted: if (activeLayerText) displayLayerText = activeLayerText
+    }
+
+    // Stronger spring bounce for Mode 1 floating Edit button and Layer pill synced with navigation.
+    property real quickEditBounceScale: 1
+    property real quickEditBounceY: 0
+    property real quickPillBounceScale: 1
+    property real quickPillBounceY: 0
+    function triggerQuickBounce(includeEdit) {
+        if (root.workspace || !root.enabled || root.introRunning || root.introPending || root.introProgress < 1) return
+        if (includeEdit) quickEditBounce.restart()
+        quickPillBounce.restart()
+    }
+    SequentialAnimation {
+        id: quickEditBounce
+        ParallelAnimation {
+            NumberAnimation {
+                target: root; property: "quickEditBounceScale"; to: 0.85
+                duration: HAnimation.buttonPressDuration
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: HAnimation.buttonPressCurve
+            }
+            NumberAnimation {
+                target: root; property: "quickEditBounceY"; to: -5
+                duration: HAnimation.buttonPressDuration
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: HAnimation.buttonPressCurve
+            }
+        }
+        ParallelAnimation {
+            NumberAnimation {
+                target: root; property: "quickEditBounceScale"; to: 1
+                duration: HAnimation.normal + 60
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: [0.22, 1.52, 0.36, 1.0, 1, 1]
+            }
+            NumberAnimation {
+                target: root; property: "quickEditBounceY"; to: 0
+                duration: HAnimation.normal + 60
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: [0.22, 1.52, 0.36, 1.0, 1, 1]
+            }
+        }
+    }
+    SequentialAnimation {
+        id: quickPillBounce
+        ParallelAnimation {
+            NumberAnimation {
+                target: root; property: "quickPillBounceScale"; to: 0.86
+                duration: HAnimation.buttonPressDuration
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: HAnimation.buttonPressCurve
+            }
+            NumberAnimation {
+                target: root; property: "quickPillBounceY"; to: 5
+                duration: HAnimation.buttonPressDuration
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: HAnimation.buttonPressCurve
+            }
+        }
+        ParallelAnimation {
+            NumberAnimation {
+                target: root; property: "quickPillBounceScale"; to: 1
+                duration: HAnimation.normal + 60
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: [0.22, 1.52, 0.36, 1.0, 1, 1]
+            }
+            NumberAnimation {
+                target: root; property: "quickPillBounceY"; to: 0
+                duration: HAnimation.normal + 60
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: [0.22, 1.52, 0.36, 1.0, 1, 1]
+            }
+        }
+    }
+    Connections {
+        target: WallpaperLibrary
+        function onSelectedGroupKeyChanged() { root.triggerQuickBounce(true) }
+        function onLayerCycled(groupKey, step) {
+            if (WallpaperLibrary.selectedGroupKey === groupKey) root.triggerQuickBounce(false)
+        }
+    }
+
+    // Mode 2 Topbar: sit beneath carousel cards (z: 0 < card z: 2..4) while keeping pointer priority over PathView.
+    Item {
+        id: topbarShoulderActions
+        objectName: "wallpaper-topbar-shoulder-actions"
+        z: 0
+        visible: root.workspace && !root.vertical
+        anchors.fill: parent
+        readonly property real selectedHalfW: root.cardWidth * root.selectedScale / 2
+        readonly property real selectedLeft: root.width / 2 - selectedHalfW
+        readonly property real selectedRight: root.width / 2 + selectedHalfW
+        readonly property real nearTop: root.pathCenterY(root.nearScale)
+            - root.cardWidth * 9 / 16 * root.nearScale / 2
+        readonly property real shoulderGap: Theme.spaceLg
+
+        Item {
+            id: topbarLayerHost
+            property real reveal: actionState.showWorkspaceLayers ? 1 : 0
+            Behavior on reveal {
+                NumberAnimation {
+                    duration: HAnimation.effects
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: HAnimation.moduleCurve
+                }
+            }
+            visible: reveal > 0.01
+            opacity: reveal
+            enabled: actionState.showWorkspaceLayers
+            width: topbarLayerPill.width
+            height: topbarLayerPill.height
+            x: Math.max(Theme.panelPadding, topbarShoulderActions.selectedLeft - topbarShoulderActions.shoulderGap - width)
+            y: topbarShoulderActions.nearTop - height - Theme.spaceMd
+            transform: [
+                Scale {
+                    origin.x: topbarLayerHost.width
+                    origin.y: topbarLayerHost.height / 2
+                    xScale: 0.9 + 0.1 * topbarLayerHost.reveal
+                    yScale: 0.9 + 0.1 * topbarLayerHost.reveal
+                },
+                Translate {
+                    y: (1 - topbarLayerHost.reveal) * 10
+                }
+            ]
+            WallpaperLayerPill {
+                id: topbarLayerPill
+                objectName: "wallpaper-topbar-layer-switcher"
+                text: actionState.displayLayerText
+                hiddenLayerActive: actionState.hiddenLayerActive
+                compact: false
+                maxPillWidth: Math.max(116, topbarShoulderActions.selectedLeft - Theme.panelPadding - topbarShoulderActions.shoulderGap)
+                surfaceColor: Theme.hoverMuted
+                onStepRequested: step => {
+                    if (actionState.selectedStack) root.layerStepRequested(actionState.selectedStack.groupKey, step)
+                }
+            }
+        }
+
+        Item {
+            id: topbarEditHost
+            property real reveal: actionState.showWorkspaceEdit ? 1 : 0
+            Behavior on reveal {
+                NumberAnimation {
+                    duration: HAnimation.effects
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: HAnimation.moduleCurve
+                }
+            }
+            visible: reveal > 0.01
+            opacity: reveal
+            enabled: actionState.showWorkspaceEdit
+            width: 48
+            height: 48
+            x: Math.min(root.width - Theme.panelPadding - width, topbarShoulderActions.selectedRight + topbarShoulderActions.shoulderGap)
+            y: topbarShoulderActions.nearTop - height - Theme.spaceMd
+            transform: [
+                Scale {
+                    origin.x: topbarEditHost.width / 2
+                    origin.y: topbarEditHost.height / 2
+                    xScale: 0.86 + 0.14 * topbarEditHost.reveal
+                    yScale: 0.86 + 0.14 * topbarEditHost.reveal
+                },
+                Translate {
+                    y: (1 - topbarEditHost.reveal) * 10
+                }
+            ]
+            WallpaperToolbarButton {
+                id: topbarEditButton
+                objectName: "wallpaper-topbar-edit"
+                anchors.fill: parent
+                radius: width / 2
+                icon: "\uf044"
+                iconSize: 22
+                horizontalPadding: 0
+                description: "Edit wallpaper (E)"
+                showTooltip: false
+                idleColor: Theme.hoverMuted
+                hoverColor: Theme.hoverMuted
+                pressedColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.22))
+                foregroundColor: Theme.fg
+                hoverForegroundColor: Theme.fg
+                disabledForegroundColor: Theme.fg
+                disabledOpacity: 1
+                border.width: 0
+                hoverScaleDelta: 0.05
+                hoverXScaleDelta: 0
+                pressScaleDelta: 0.03
+                pressXScaleDelta: 0
+                onClicked: if (actionState.selectedStack) root.editRequested(actionState.selectedStack)
+                Settings.SettingsTooltip {
+                    objectName: "wallpaper-topbar-edit-tooltip"
+                    target: topbarEditButton
+                    text: topbarEditButton.description
+                    x: target ? Math.min((target.width - width) / 2, target.width - width) : 0
+                    y: -height - 8
+                    active: topbarEditButton.hovered && topbarEditButton.enabled && topbarEditButton.visible
+                }
+            }
+        }
+    }
+
+    // Mode 2 Leftbar: dock Layer switcher and Edit button beneath cards in the bottom-right corner.
+    Item {
+        id: leftCornerActions
+        objectName: "wallpaper-leftbar-corner-actions"
+        z: 0
+        // Drive visibility from reveal progress instead of child.visible to avoid QML parent/child visibility deadlock.
+        readonly property bool editShown: leftEditHost.reveal > 0.01
+        readonly property bool layerShown: leftLayerHost.reveal > 0.01
+        visible: root.workspace && root.vertical && (editShown || layerShown)
+        readonly property real selectedHeight: root.cardWidth * root.selectedScale * 9 / 16
+        readonly property real nearWidth: root.cardWidth * root.nearScale
+        readonly property real selectedBottom: root.cornerCurve.selected.y + selectedHeight / 2
+        readonly property real leftCardRight: root.cornerCurve.left.x + nearWidth / 2
+        readonly property real pocketLeft: leftCardRight + Theme.spaceMd
+        readonly property real pocketRight: root.width - Theme.pad
+        readonly property real pocketTop: selectedBottom + Theme.spaceSm
+        readonly property real pocketBottom: root.height - Theme.pad
+        readonly property real pocketWidth: Math.max(48, pocketRight - pocketLeft)
+        readonly property real pocketHeight: Math.max(46, pocketBottom - pocketTop)
+        readonly property real rowWidth: (layerShown ? leftLayerPill.width + Theme.spaceSm : 0)
+            + (editShown ? leftEditHost.width : 0)
+        width: Math.min(pocketWidth, Math.max(46, rowWidth))
+        height: Math.min(pocketHeight, 48)
+        x: pocketRight - width
+        y: Math.max(pocketTop, Math.round(pocketTop + (pocketHeight - height) / 2))
+
+        Item {
+            id: leftLayerHost
+            property real reveal: actionState.showWorkspaceLayers ? 1 : 0
+            Behavior on reveal {
+                NumberAnimation {
+                    duration: HAnimation.effects
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: HAnimation.moduleCurve
+                }
+            }
+            visible: reveal > 0.01
+            opacity: reveal
+            enabled: actionState.showWorkspaceLayers
+            anchors.right: leftCornerActions.editShown ? leftEditHost.left : parent.right
+            anchors.rightMargin: leftCornerActions.editShown ? Theme.spaceSm : 0
+            anchors.verticalCenter: parent.verticalCenter
+            width: leftLayerPill.width
+            height: leftLayerPill.height
+            transform: [
+                Scale {
+                    origin.x: leftLayerHost.width
+                    origin.y: leftLayerHost.height / 2
+                    xScale: 0.9 + 0.1 * leftLayerHost.reveal
+                    yScale: 0.9 + 0.1 * leftLayerHost.reveal
+                },
+                Translate {
+                    y: (1 - leftLayerHost.reveal) * 8
+                }
+            ]
+            WallpaperLayerPill {
+                id: leftLayerPill
+                objectName: "wallpaper-leftbar-layer-switcher"
+                text: actionState.displayLayerText
+                hiddenLayerActive: actionState.hiddenLayerActive
+                compact: true
+                maxPillWidth: Math.max(108, leftCornerActions.pocketWidth - leftEditHost.width - Theme.spaceSm)
+                surfaceColor: Theme.hoverMuted
+                onStepRequested: step => {
+                    if (actionState.selectedStack) root.layerStepRequested(actionState.selectedStack.groupKey, step)
+                }
+            }
+        }
+
+        Item {
+            id: leftEditHost
+            property real reveal: actionState.showWorkspaceEdit ? 1 : 0
+            Behavior on reveal {
+                NumberAnimation {
+                    duration: HAnimation.effects
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: HAnimation.moduleCurve
+                }
+            }
+            visible: reveal > 0.01
+            opacity: reveal
+            enabled: actionState.showWorkspaceEdit
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            width: 46
+            height: 46
+            transform: [
+                Scale {
+                    origin.x: leftEditHost.width / 2
+                    origin.y: leftEditHost.height / 2
+                    xScale: 0.86 + 0.14 * leftEditHost.reveal
+                    yScale: 0.86 + 0.14 * leftEditHost.reveal
+                },
+                Translate {
+                    y: (1 - leftEditHost.reveal) * 8
+                }
+            ]
+            WallpaperToolbarButton {
+                id: leftEditButton
+                objectName: "wallpaper-leftbar-edit"
+                anchors.fill: parent
+                radius: width / 2
+                icon: "\uf044"
+                iconSize: 21
+                horizontalPadding: 0
+                description: "Edit wallpaper (E)"
+                showTooltip: false
+                idleColor: Theme.hoverMuted
+                hoverColor: Theme.hoverMuted
+                pressedColor: Qt.tint(Theme.hoverMuted, Qt.alpha(Theme.accent, 0.22))
+                foregroundColor: Theme.fg
+                hoverForegroundColor: Theme.fg
+                disabledForegroundColor: Theme.fg
+                disabledOpacity: 1
+                border.width: 0
+                hoverScaleDelta: 0.05
+                hoverXScaleDelta: 0
+                pressScaleDelta: 0.03
+                pressXScaleDelta: 0
+                onClicked: if (actionState.selectedStack) root.editRequested(actionState.selectedStack)
+                Settings.SettingsTooltip {
+                    objectName: "wallpaper-leftbar-edit-tooltip"
+                    target: leftEditButton
+                    text: leftEditButton.description
+                    x: target ? Math.min((target.width - width) / 2, target.width - width) : 0
+                    y: -height - 8
+                    active: leftEditButton.hovered && leftEditButton.enabled && leftEditButton.visible
+                }
+            }
+        }
+    }
+
+    // Mode 1 keeps floating Edit and Layer controls anchored to the center slot with lively bounce.
+    Item {
+        id: selectedCardOverlay
+        objectName: "wallpaper-selected-overlay"
+        z: 500
+        readonly property real slotWidth: root.cardWidth * root.selectedScale
+        readonly property real slotHeight: slotWidth * 9 / 16
+        readonly property real slotCenterX: root.vertical ? root.cornerCurve.selected.x : root.width / 2
+        readonly property real slotCenterY: root.vertical ? root.cornerCurve.selected.y : root.pathCenterY(root.selectedScale)
+        x: slotCenterX - slotWidth / 2
+        y: slotCenterY - slotHeight / 2
+        width: slotWidth
+        height: slotHeight
+        readonly property real morphFade: Math.max(0, 1 - root.workspaceMorph * 2.2)
+
+        Item {
+            id: editButtonHost
+            property real reveal: actionState.showQuickEdit ? 1 : 0
+            Behavior on reveal {
+                NumberAnimation {
+                    duration: HAnimation.effects
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: HAnimation.moduleCurve
+                }
+            }
+            visible: !root.workspace && reveal > 0.01 && selectedCardOverlay.morphFade > 0.01
+            opacity: reveal * selectedCardOverlay.morphFade
+            enabled: actionState.showQuickEdit && root.workspaceMorph === 0
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.margins: 18
+            width: 56
+            height: 56
+            transform: [
+                Scale {
+                    origin.x: editButtonHost.width / 2
+                    origin.y: editButtonHost.height / 2
+                    xScale: (0.86 + 0.14 * editButtonHost.reveal) * root.quickEditBounceScale * (1 - root.workspaceMorph * 0.1)
+                    yScale: (0.86 + 0.14 * editButtonHost.reveal) * root.quickEditBounceScale * (1 - root.workspaceMorph * 0.1)
+                },
+                Translate {
+                    y: (1 - editButtonHost.reveal) * -8 + root.quickEditBounceY - root.workspaceMorph * 16
+                }
+            ]
+            WallpaperToolbarButton {
+                id: editButton
+                objectName: "wallpaper-card-edit"
+                anchors.fill: parent
+                radius: width / 2
+                icon: "\uf044"
+                iconSize: 26
+                horizontalPadding: 0
+                description: "Edit wallpaper (E)"
+                showTooltip: false
+                idleColor: Theme.surface
+                hoverColor: Theme.surface
+                pressedColor: Qt.tint(Theme.surface, Qt.alpha(Theme.accent, 0.18))
+                foregroundColor: Theme.fg
+                hoverForegroundColor: Theme.fg
+                disabledForegroundColor: Theme.fg
+                disabledOpacity: 1
+                border.width: 0
+                hoverScaleDelta: 0.05
+                hoverXScaleDelta: 0
+                pressScaleDelta: 0.03
+                pressXScaleDelta: 0
+                onClicked: if (actionState.selectedStack) root.editRequested(actionState.selectedStack)
+                Settings.SettingsTooltip {
+                    objectName: "wallpaper-card-edit-tooltip"
+                    target: editButton
+                    text: editButton.description
+                    x: target ? Math.min((target.width - width) / 2, target.width - width) : 0
+                    active: editButton.hovered && editButton.enabled && editButton.visible
+                }
+            }
+        }
+
+        Item {
+            id: layerPillHost
+            property real reveal: actionState.showQuickLayers ? 1 : 0
+            Behavior on reveal {
+                NumberAnimation {
+                    duration: HAnimation.effects
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: HAnimation.moduleCurve
+                }
+            }
+            visible: !root.workspace && reveal > 0.01 && selectedCardOverlay.morphFade > 0.01
+            opacity: reveal * selectedCardOverlay.morphFade
+            enabled: actionState.showQuickLayers && root.workspaceMorph === 0
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            anchors.margins: 18
+            height: layerSwitcher.height
+            width: layerSwitcher.width
+            transform: [
+                Scale {
+                    origin.x: layerPillHost.width / 2
+                    origin.y: layerPillHost.height / 2
+                    xScale: (0.9 + 0.1 * layerPillHost.reveal) * root.quickPillBounceScale * (1 - root.workspaceMorph * 0.1)
+                    yScale: (0.9 + 0.1 * layerPillHost.reveal) * root.quickPillBounceScale * (1 - root.workspaceMorph * 0.1)
+                },
+                Translate {
+                    y: (1 - layerPillHost.reveal) * 10 + root.quickPillBounceY + root.workspaceMorph * 16
+                }
+            ]
+
+            WallpaperLayerPill {
+                id: layerSwitcher
+                objectName: "wallpaper-layer-switcher"
+                text: actionState.displayLayerText
+                hiddenLayerActive: actionState.hiddenLayerActive
+                compact: false
+                maxPillWidth: Math.max(120, selectedCardOverlay.width - 36)
+                surfaceColor: Qt.alpha(Theme.surface, 0.94)
+                onStepRequested: step => {
+                    if (actionState.selectedStack) root.layerStepRequested(actionState.selectedStack.groupKey, step)
+                }
+            }
+        }
     }
     // Dragging updates selection after snapping, without overriding a shared-state change.
     onMovementStarted: { stopIntro(); resetWheelState() }

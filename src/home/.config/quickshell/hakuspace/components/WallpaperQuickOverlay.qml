@@ -63,6 +63,9 @@ PanelWindow {
             item: root.inputActive && root.leftWorkspace ? browser.categoryInputItem : null
         }
         Region {
+            item: root.inputActive && root.leftWorkspace && browser.actionInputItem && browser.actionInputItem.visible ? browser.actionInputItem : null
+        }
+        Region {
             item: root.inputActive && browser.settingsInputItem.visible ? browser.settingsInputItem : null
         }
         Region {
