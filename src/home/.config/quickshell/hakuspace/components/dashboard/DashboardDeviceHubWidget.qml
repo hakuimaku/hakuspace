@@ -1314,7 +1314,7 @@ Item {
         // Empty state message
         Text {
             anchors.centerIn: parent
-            visible: !DeviceHubService.loading
+            visible: DeviceHubService.initialized
                 && ((root.audioTab === "apps" && streamList.count === 0)
                     || (root.audioTab !== "apps" && deviceList.count === 0))
             width: Math.max(0, parent.width - root.hoverInsetX * 2)

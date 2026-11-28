@@ -8,6 +8,7 @@ QtObject {
     id: root
 
     property int _subscribers: 0
+    property bool initialized: false
     property bool loading: false
     property bool actionBusy: false
     property string error: ""
@@ -31,7 +32,7 @@ QtObject {
     function acquire() {
         _subscribers++
         if (_subscribers === 1) {
-            refresh()
+            refresh(initialized)
         }
     }
 
@@ -50,11 +51,11 @@ QtObject {
         _activeDrags = Math.max(0, _activeDrags - 1)
         if (_activeDrags === 0 && !_volumeWriting && _refreshPending) {
             _refreshPending = false
-            Qt.callLater(root.refresh)
+            Qt.callLater(function() { root.refresh(true) })
         }
     }
 
-    function refresh() {
+    function refresh(silent) {
         if (_activeDrags > 0 || _volumeWriting) {
             _refreshPending = true
             return
@@ -63,7 +64,7 @@ QtObject {
             _refreshPending = true
             return
         }
-        loading = true
+        loading = !silent
         statusProc.command = [_ctlPath, "status"]
         statusProc.running = true
     }
@@ -88,7 +89,7 @@ QtObject {
         if (actionProc.running) return
         if (_actionQueue.length === 0) {
             actionBusy = false
-            refresh()
+            refresh(true)
             return
         }
         var next = _actionQueue.shift()
@@ -125,7 +126,7 @@ QtObject {
             }
             if (_activeDrags === 0) {
                 _refreshPending = false
-                Qt.callLater(root.refresh)
+                Qt.callLater(function() { root.refresh(true) })
             } else {
                 _refreshPending = true
             }
@@ -190,7 +191,7 @@ QtObject {
         interval: 4000
         repeat: true
         running: root._subscribers > 0 && root._activeDrags === 0 && !root._volumeWriting
-        onTriggered: root.refresh()
+        onTriggered: root.refresh(true)
     }
 
     property Process statusProc: Process {
@@ -205,6 +206,7 @@ QtObject {
                 root._refreshPending = true
                 return
             }
+            root.initialized = true
             if (code === 0) {
                 try {
                     var parsed = JSON.parse(statusStdout.text.trim() || "{}")
@@ -238,7 +240,7 @@ QtObject {
 
             if (root._refreshPending) {
                 root._refreshPending = false
-                Qt.callLater(root.refresh)
+                Qt.callLater(function() { root.refresh(true) })
             }
         }
     }
