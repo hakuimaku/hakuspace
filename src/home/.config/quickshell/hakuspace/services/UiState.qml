@@ -156,13 +156,16 @@ QtObject {
     property rect taskManagerRect: Qt.rect(0, 0, 0, 0)
     signal taskManagerClosing(string screenName)
     signal taskManagerFocusRequested(string screenName)
-    readonly property string hakuMenuTabLabel: hakuMenuMode === "general" ? "General"
+    readonly property string hakuMenuTabLabel: hakuPanelTab === "taskManager" ? "Performance"
+                                                   : hakuMenuMode === "general" ? "General"
                                                    : hakuMenuMode === "drun" ? "Drun"
                                                    : hakuMenuMode === "theme" ? "Theme"
                                                    : ""
-    readonly property string hakuMenuBreadcrumb: hakuMenuSelectionLabel.length > 0
-                                                  ? hakuMenuTabLabel + " → " + hakuMenuSelectionLabel
-                                                  : hakuMenuTabLabel
+    readonly property string hakuMenuBreadcrumb: hakuPanelTab === "taskManager"
+                                                  ? hakuMenuTabLabel
+                                                  : (hakuMenuSelectionLabel.length > 0
+                                                     ? hakuMenuTabLabel + " → " + hakuMenuSelectionLabel
+                                                     : hakuMenuTabLabel)
 
 
     // Clear captured transient anchors before transferring status ownership.
